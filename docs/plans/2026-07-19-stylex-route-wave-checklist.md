@@ -2043,3 +2043,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 868: unrelated avatar-wrap fallback consumers remain unchanged and no compensating geometry is added.
 - [ ] Batch 868: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 868: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 869: populated pull-request detail action wrapper preserves the legacy `mr5`/inline-block source contract and owns exact `margin-right:5px` in the existing `actionWrapper` StyleX owner.
+- [x] Batch 869: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390x844 with computed margin, Edit/Close controls, containment/no-overflow, screenshots, and Edit navigation.
+- [x] Batch 869: route TSX only spreads the existing StyleX owner props; DOM/copy/state/navigation behavior and unrelated `.mr5` fallback consumers remain unchanged, with no compensating geometry.
+- [ ] Batch 869: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 869: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

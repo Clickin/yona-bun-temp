@@ -236,6 +236,7 @@ function PullRequestOverviewBody({
       );
     },
   });
+  const actionWrapperStyleProps = stylex.props(styles.actionWrapper);
 
   return (
     <>
@@ -319,7 +320,8 @@ function PullRequestOverviewBody({
 
             {/* Mirrors legacy git/view.scala.html's mr5 inline-block action wrapper. */}
             <div
-              className={`${stylex.props(styles.actionWrapper).className} mr5`}
+              {...actionWrapperStyleProps}
+              className={`${actionWrapperStyleProps.className} mr5`}
               data-stylex-owner="pull-request-detail-action-wrapper"
             >
               {pullRequest.permissions.canUpdate ? (

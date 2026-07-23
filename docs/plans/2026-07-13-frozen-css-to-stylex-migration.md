@@ -7075,3 +7075,16 @@ unrelated consumers. Managed System-Chrome normal and explicit fallback-off
 focused runs pass 2/2 each with desktop/mobile geometry and interaction
 evidence. Live legacy screenshot comparison remains unverified. Approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
+
+## Batch 869
+
+Move the populated pull-request detail action wrapper's exact frozen `.mr5`
+`margin-right:5px` declaration into the existing `actionWrapper` StyleX owner.
+Preserve the legacy `mr5` class, inline-block source contract, Edit/Close controls,
+DOM order, React/TanStack navigation and state behavior, and the existing responsive
+action-row shell; leave unrelated `.mr5` consumers in fallback. Managed external
+System-Chrome normal and explicit fallback-off focused runs pass 1/1 each at
+1366x900 and 390x844 with computed margin, controls, containment/no-overflow,
+deterministic screenshots, and Edit navigation. Live legacy screenshot comparison
+remains unverified because `127.0.0.1:9000` is unavailable. Approved Yoram
+footer/provider/developer-contact/repository differences remain intentional.

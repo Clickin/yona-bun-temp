@@ -67,7 +67,7 @@ export const styles = stylex.create({
   conflictCode: { display: "block", fontWeight: "normal", padding: "5px", margin: "5px 0" },
   conflictButton: { margin: "0 5px", fontWeight: "normal" },
   actions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" },
-  actionWrapper: { display: "inline-block" },
+  actionWrapper: { display: "inline-block", marginRight: "5px" },
   comments: { minWidth: 0 },
   helpActions: { textAlign: "right" },
   reviewers: { display: "inline-block", marginRight: "5px" },
