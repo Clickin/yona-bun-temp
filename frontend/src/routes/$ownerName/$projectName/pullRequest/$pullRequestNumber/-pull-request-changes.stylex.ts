@@ -161,6 +161,9 @@ export const styles = stylex.create({
     color: "#999",
     verticalAlign: "middle",
   },
+  reviewCardAvatar: {
+    marginLeft: "5px",
+  },
   reviewCardComments: {
     color: "#3592b5",
     marginTop: "2px",

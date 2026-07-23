@@ -2038,3 +2038,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 867: existing mobile metadata flex baseline is recorded without compensating geometry or fallback removal.
 - [ ] Batch 867: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 867: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 868: pull-request changes review-card avatar preserves the legacy `avatar-wrap smaller ml5` span and owns the exact frozen `margin-left:5px` in the existing route-local StyleX boundary.
+- [x] Batch 868: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390x844 with source/import ownership, 20x20 geometry, containment/no-overflow, screenshots, and hash navigation.
+- [x] Batch 868: unrelated avatar-wrap fallback consumers remain unchanged and no compensating geometry is added.
+- [ ] Batch 868: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 868: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

@@ -6860,6 +6860,18 @@ system-Chrome normal/fallback-off checks pass 1/1 each at desktop and 390px.
 Live legacy screenshot parity is explicitly unverified; approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
 
+## Batch 868
+
+Move the populated pull-request changes review-card avatar's exact frozen `.ml5`
+`margin-left:5px` declaration into the existing route-local review-card StyleX boundary.
+Preserve the legacy `avatar-wrap smaller ml5` span, 20x20 avatar geometry, image/alt, review-card
+order/copy, and TanStack Router hash navigation; leave unrelated avatar fallback consumers
+unchanged. Managed external System-Chrome normal and explicit fallback-off focused runs pass 1/1
+each at 1366x900 and 390x844 with source/import ownership, computed margin, containment/no-overflow,
+deterministic screenshots, and hash navigation. Live legacy screenshot comparison remains
+unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer/provider/developer-contact/
+repository differences remain intentional.
+
 ## Batch 848
 
 Repair the existing organization enrollment-request accept type boundary. The

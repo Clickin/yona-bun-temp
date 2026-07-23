@@ -54,6 +54,7 @@ const sx = {
   reviewCardContent: stylex.props(styles.reviewCardContent),
   reviewCardInfo: stylex.props(styles.reviewCardInfo),
   reviewCardDate: stylex.props(styles.reviewCardDate),
+  reviewCardAvatar: stylex.props(styles.reviewCardAvatar),
   reviewCardComments: stylex.props(styles.reviewCardComments),
 } as const;
 
@@ -907,7 +908,8 @@ function ReviewCard({
           {thread.createdLabel}
         </span>
         <span
-          className="avatar-wrap smaller ml5"
+          {...sx.reviewCardAvatar}
+          className={`avatar-wrap smaller ml5 ${sx.reviewCardAvatar.className}`}
           data-stylex-owner="pull-request-changes-review-card-avatar"
         >
           <img
