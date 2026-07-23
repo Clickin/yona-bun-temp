@@ -6781,3 +6781,18 @@ checks the icon DOM/color without claiming glyph visibility because the icon
 font remains fallback-owned. Live legacy screenshot parity is explicitly
 unverified; approved Yoram footer/provider/developer-contact/repository
 differences remain intentional.
+
+## Batch 843
+
+Own the authenticated organization-home project-card stats icon paint from
+the frozen legacy cascade. `organization/view.scala.html:113-135` emits the
+member/watch counts, eye icon, and conditional lightbulb ramp state;
+`_page.less:7013-7025` defines `font-size:16px`, 5px left/right margins, and
+the ramp-on/off colors `#B6DA54`/`#DADADA` through the complete `yobi.less`
+import chain. React preserves the legacy icon elements/classes, count copy and
+order, titles, and state while route-local StyleX owns only those declarations.
+Focused managed system-Chrome normal/fallback-off checks pass 1/1 each at
+desktop and 390px. Fallback-off checks icon DOM/declarations without claiming
+glyph visibility because the icon font remains fallback-owned. Live legacy
+screenshot parity is explicitly unverified; approved Yoram footer/provider/
+developer-contact/repository differences remain intentional.

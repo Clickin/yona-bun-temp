@@ -100,6 +100,12 @@ const organizationProjectCardChildPaintStyles = stylex.create({
   ownerName: { color: "#999", fontSize: "19px" },
 });
 
+const organizationProjectCardStatsIconStyles = stylex.create({
+  icon: { fontSize: "16px", marginLeft: "5px", marginRight: "5px" },
+  rampOn: { color: "#B6DA54" },
+  rampOff: { color: "#DADADA" },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -431,6 +437,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
   const projectScope = stringField(project.projectScope, "").toLowerCase();
   const isPrivate = booleanField(project.isPrivate) || projectScope === "private";
   const isProtected = booleanField(project.isProtected) || projectScope === "protected";
+  const isWatching = booleanField(project.isWatching);
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
   const projectLogoUrl = stringField(project.logoUrl, "").trim();
@@ -614,7 +621,8 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
           ></ul>
           <p>
             <i
-              className={`${stylex.props(organizationProjectCardMigrationStyles.iconMiddle).className} yobicon-friends`}
+              className={`${stylex.props(organizationProjectCardMigrationStyles.iconMiddle, organizationProjectCardStatsIconStyles.icon).className} yobicon-friends`}
+              data-stylex-owner="organization-home-project-card-stats-friends-icon"
             ></i>
             <strong
               {...stylex.props(styles.projectCardStatsCount)}
@@ -622,7 +630,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             >
               {numberField(project.memberCount)}
             </strong>
-            <i className="yobicon-eye"></i>{" "}
+            <i
+              className={`${stylex.props(organizationProjectCardStatsIconStyles.icon).className} yobicon-eye`}
+              data-stylex-owner="organization-home-project-card-stats-eye-icon"
+            ></i>{" "}
             <strong
               {...stylex.props(styles.projectCardStatsCount)}
               data-stylex-owner="organization-home-project-card-count"
@@ -630,9 +641,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
               {numberField(project.watchCount)}
             </strong>
             <i
-              className={`yobicon-lightbulb ${booleanField(project.isWatching) ? "ramp-on" : "ramp-off"}`}
+              className={`${stylex.props(organizationProjectCardStatsIconStyles.icon, isWatching ? organizationProjectCardStatsIconStyles.rampOn : organizationProjectCardStatsIconStyles.rampOff).className} yobicon-lightbulb ${isWatching ? "ramp-on" : "ramp-off"}`}
+              data-stylex-owner="organization-home-project-card-stats-lightbulb-icon"
               title={
-                booleanField(project.isWatching)
+                isWatching
                   ? t("project.default.group.watching")
                   : t("project.you.are.not.watching", { args: [""] })
               }

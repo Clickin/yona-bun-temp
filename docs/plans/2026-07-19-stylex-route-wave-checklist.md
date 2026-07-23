@@ -22,6 +22,15 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified and no compensating geometry was added.
 - [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries.
 
+### 2026-07-23 Batch 843 organization-home project-card stats icons
+
+- [x] `organization/view.scala.html:113-135`, frozen `_page.less:7013-7025`, and the complete `yobi.less` import chain are recorded as output/cascade sources.
+- [x] Route-local StyleX owns only the three stats icon font-size/side margins and conditional lightbulb ramp colors; legacy DOM/classes/counts/titles/state and icon-font fallback remain.
+- [x] `frontend/tests/stylex-organization-project-card-stats-icons.e2e.ts` verifies source provenance, three owners/classes, count/copy/order, computed declarations/colors, desktop/mobile containment, no overflow, and no inline style.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each; fallback-off checks icon DOM/declarations without claiming fallback-owned glyph visibility.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified and no compensating geometry was added.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.
