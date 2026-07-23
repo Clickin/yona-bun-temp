@@ -67,6 +67,9 @@ export const styles = stylex.create({
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
+  commitMessageWrapper: {
+    marginLeft: "5px",
+  },
   listDate: {
     color: codeBranchTheme.listMutedText,
     fontSize: "8pt",

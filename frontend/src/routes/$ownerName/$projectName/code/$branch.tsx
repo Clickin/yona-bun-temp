@@ -430,7 +430,11 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
             </Link>
           </div>
           <div className={`${stylex.props(styles.listMessage).className} span5 commitMsg`}>
-            <span className="ml5">
+            <span
+              {...stylex.props(styles.commitMessageWrapper)}
+              className={`${stylex.props(styles.commitMessageWrapper).className} ml5`}
+              data-stylex-owner={`project-code-branch-${entry.kind}-commit-message`}
+            >
               <Link
                 activeOptions={{
                   exact: true,

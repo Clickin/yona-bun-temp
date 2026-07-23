@@ -6793,6 +6793,17 @@ font remains fallback-owned. Live legacy screenshot parity is explicitly
 unverified; approved Yoram footer/provider/developer-contact/repository
 differences remain intentional.
 
+## Batch 865
+
+Move the populated code-branch folder/file commit-message wrappers' exact
+frozen `.ml5` `margin-left:5px` declaration into the existing code-branch
+StyleX boundary. Preserve the legacy span/class/Link DOM, targets, copy/order,
+and row behavior. Managed System-Chrome normal and explicit fallback-off
+focused runs pass 1/1 each with computed ownership, desktop/mobile containment,
+branch-picker interaction, and deterministic screenshots. Existing depth/list
+responsive hiding remains unchanged; live legacy screenshot comparison is
+unverified. Approved Yoram footer differences remain intentional.
+
 ## Batch 843
 
 Own the authenticated organization-home project-card stats icon paint from

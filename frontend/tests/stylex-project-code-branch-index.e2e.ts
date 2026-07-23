@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const routeSource = readFileSync(
@@ -10,6 +11,33 @@ const styleSource = readFileSync(
   fileURLToPath(
     new URL("../src/routes/$ownerName/$projectName/-code-branch.stylex.ts", import.meta.url),
   ),
+  "utf8",
+);
+const screenshotDirectory = resolve(
+  process.cwd(),
+  "output/playwright/stylex-project-code-branch-index",
+);
+mkdirSync(screenshotDirectory, { recursive: true });
+const legacyFolderSource = readFileSync(
+  fileURLToPath(
+    new URL("../../yona-original/app/views/code/partial_view_folder.scala.html", import.meta.url),
+  ),
+  "utf8",
+);
+const legacyCommonSource = readFileSync(
+  fileURLToPath(
+    new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
+  ),
+  "utf8",
+);
+const legacyPageSource = readFileSync(
+  fileURLToPath(
+    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  ),
+  "utf8",
+);
+const legacyYobiSource = readFileSync(
+  fileURLToPath(new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url)),
   "utf8",
 );
 
@@ -31,6 +59,29 @@ test("code branch index keeps six independent visible StyleX owners", () => {
   expect(styleSource).toContain("listHeader");
   expect(styleSource).toContain("listRow");
   expect(routeSource).not.toContain("globalColors");
+});
+
+test("populated commit-message wrappers own the frozen ml5 margin", () => {
+  expect(legacyFolderSource).toContain(
+    '<span class="ml5"><a href="@fieldText(file, "commitUrl")">',
+  );
+  expect(legacyFolderSource).toContain(
+    '<span class="ml5"><a href="${commitUrl}">${commitMsg}</a></span>',
+  );
+  expect(legacyCommonSource).toContain(".ml5 { margin-left:5px; }");
+  expect(legacyPageSource).toContain(
+    ".commitMsg { font-size:10pt; color:#7e7e7e; .text-overflow; }",
+  );
+  expect(legacyPageSource).toContain(".listhead { display:none; }");
+  expect(legacyPageSource).toContain(".row-fluid   { line-height:40px; }");
+  expect(legacyPageSource).toContain(".listitem {");
+  expect(legacyYobiSource).toContain('@import "less/_common.less";');
+  expect(legacyYobiSource).toContain('@import "less/_page.less";');
+  expect(styleSource).toContain("commitMessageWrapper");
+  expect(styleSource).toContain('marginLeft: "5px"');
+  expect(routeSource).toContain(
+    "data-stylex-owner={`project-code-branch-${entry.kind}-commit-message`}",
+  );
 });
 
 test("populated code branch preserves folder output, branch interaction, and responsive geometry", async ({
@@ -104,9 +155,7 @@ test("populated code branch preserves folder output, branch interaction, and res
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/code/main`, { waitUntil: "commit" });
-    await expect(
-      page.locator('[data-stylex-owner="project-code-branch-list-header"]'),
-    ).toBeVisible();
+    const actualViewportWidth = await page.evaluate(() => window.innerWidth);
     await expect(page.locator('[data-stylex-owner="project-code-branch-list-row"]')).toHaveCount(2);
     await expect(page.locator('[data-stylex-owner="project-code-branch-breadcrumbs"]')).toHaveText(
       "sample",
@@ -117,39 +166,70 @@ test("populated code branch preserves folder output, branch interaction, and res
       "href",
       `${basePath}/admin/sample/code/main/src#cb-src`,
     );
+    const commitWrappers = page.locator('[data-stylex-owner$="-commit-message"]');
+    await expect(commitWrappers).toHaveCount(2);
+    const commitIds = ["abcdef1", "1234567"];
+    for (let index = 0; index < 2; index += 1) {
+      const wrapper = commitWrappers.nth(index);
+      await expect(wrapper).toHaveClass(/\bml5\b/);
+      await expect(wrapper).toHaveAttribute("data-style-src", /-code-branch\.stylex\.ts/);
+      const commitLink = wrapper.locator("a");
+      await expect(commitLink).toHaveCount(1);
+      await expect(commitLink).toHaveAttribute(
+        "href",
+        `${basePath}/admin/sample/commit/${commitIds[index]}?branch=main`,
+      );
+      const wrapperMetrics = await wrapper.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return { marginLeft: style.marginLeft, left: box.left, right: box.right };
+      });
+      expect(wrapperMetrics.marginLeft).toBe("5px");
+      expect(wrapperMetrics.right).toBeLessThanOrEqual(actualViewportWidth + 1);
+    }
+
+    if (actualViewportWidth < 768) {
+      const documentOverflow = await page.evaluate(
+        () =>
+          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
+          window.innerWidth,
+      );
+      expect(documentOverflow).toBeLessThanOrEqual(1);
+    }
 
     const metrics = await page
       .locator('[data-stylex-owner="project-code-branch-list"]')
       .evaluate((list) => {
-        const header = list.querySelector<HTMLElement>(
-          "[data-stylex-owner=project-code-branch-list-header]",
-        );
         const row = list.querySelector<HTMLElement>(
           "[data-stylex-owner=project-code-branch-list-row]",
         );
-        if (!header || !row) throw new Error("code branch list owners missing");
-        const headerStyle = getComputedStyle(header);
+        if (!row) throw new Error("code branch list row owner missing");
         const rowStyle = getComputedStyle(row);
         return {
           right: list.getBoundingClientRect().right,
           viewport: window.innerWidth,
-          headerHeight: header.getBoundingClientRect().height,
-          headerLineHeight: headerStyle.lineHeight,
           rowBorder: rowStyle.borderBottomWidth,
           rowLineHeight: rowStyle.lineHeight,
         };
       });
     expect(metrics.right).toBeLessThanOrEqual(metrics.viewport + 1);
-    expect(metrics.headerHeight).toBe(40);
-    expect(metrics.headerLineHeight).toBe("40px");
     expect(metrics.rowBorder).toBe("1px");
     expect(metrics.rowLineHeight).toBe("40px");
+    await page.screenshot({
+      path: join(screenshotDirectory, `${viewport.width}x${viewport.height}.png`),
+      fullPage: true,
+    });
   }
 
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/code/main`, { waitUntil: "commit" });
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/main`);
   const picker = page.locator('[data-stylex-owner="project-code-branch-picker"]');
+  await expect(picker).toBeVisible();
   await picker.locator("button.select2-choice").click();
-  await expect(picker.locator(".select2-drop-active")).toBeVisible();
-  await picker.locator(".select2-result-label", { hasText: "feature/release" }).click();
+  const pickerDrop = page.locator('[data-stylex-owner="project-code-branch-picker-drop"]');
+  await expect(pickerDrop).toBeVisible();
+  await pickerDrop.locator(".select2-result-label", { hasText: "feature/release" }).click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease`);
   await expect(page.locator("[data-stylex-owner=project-code-branch-list-row]")).toHaveCount(2);
 });
