@@ -6924,3 +6924,15 @@ three-route search bridge is not yet fully retired. Managed system-Chrome
 normal/fallback-off focused runs pass 5/5 each with desktop/mobile screenshots;
 live legacy screenshot comparison remains unverified. The approved Yoram footer
 identity differences remain intentional.
+
+## Batch 854
+
+Port the organization `/organizations/$organizationName/search` populated issue
+and empty result states into the existing route-local StyleX ownership boundary.
+Preserve legacy result DOM/order/copy, links, keyword highlighting, category
+navigation, and responsive geometry; add only stable nested result owners.
+Shared `app.css` and generated fallback remain unchanged. Managed system-Chrome
+normal/fallback-off focused runs pass 5/5 each with desktop/mobile screenshots;
+fallback-off mobile retains the documented 8px authenticated shell baseline
+without CSS compensation. Live legacy screenshot comparison remains unverified.
+The approved Yoram footer identity differences remain intentional.

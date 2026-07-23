@@ -600,6 +600,7 @@ function OrganizationSearchResultList({
                           ? `${stylex.props(styles.title).className} ${titleClassName}`
                           : undefined
                       }
+                      data-stylex-owner="organization-search-result-item-title"
                     >
                       {titleClassName ? (
                         <HighlightedText text={item.title} keyword={result.keyword} />
@@ -611,7 +612,7 @@ function OrganizationSearchResultList({
                 ) : null}
                 <div
                   className={`${stylex.props(styles.content).className} search-content`}
-                  data-stylex-owner="organization-search-content-meta"
+                  data-stylex-owner="organization-search-result-item-content"
                 >
                   {reviewThreadOnPullRequest ? (
                     snippets
@@ -623,7 +624,7 @@ function OrganizationSearchResultList({
                 </div>
                 <div
                   className={`${stylex.props(styles.meta).className} search-meta-info`}
-                  data-stylex-owner="organization-search-content-meta"
+                  data-stylex-owner="organization-search-result-item-meta"
                 >
                   <Link
                     to={projectLink.to}
@@ -1031,6 +1032,7 @@ function HighlightedText({ keyword, text }: { keyword: string; text: string }) {
     nodes.push(
       <strong
         className={`${stylex.props(styles.keyword).className} keyword`}
+        data-stylex-owner="organization-search-keyword"
         key={`keyword-${start}`}
       >
         {matchText}

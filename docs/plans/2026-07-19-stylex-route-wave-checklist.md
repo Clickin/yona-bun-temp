@@ -1968,3 +1968,12 @@ desktop/mobile geometry, and filtering.
 - [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 5/5 each; screenshots are under `output/playwright/stylex-global-search-results/`.
 - [ ] Live legacy screenshot comparison is unavailable, so direct legacy screenshot parity remains unverified; no compensating geometry was added.
 - [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.
+
+### 2026-07-23 Batch 854 organization search populated/empty result states
+
+- [x] `search/result.scala.html`, `partial_search.scala.html`, all eight search partials, frozen `_page.less:6375-6519`/empty-result rules, Bootstrap, messages, and the complete `yobi.less` import chain are recorded.
+- [x] Organization search preserves legacy result DOM/order/copy, category interaction, links, keyword highlighting, empty image, and responsive state; only nested issue title/content/meta/keyword owners were added.
+- [x] `frontend/tests/stylex-organization-search-results.e2e.ts` covers source/import provenance, computed declarations, desktop/390px owned-box containment, interaction, screenshots, and empty dynamic-style ownership.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 5/5 each; screenshots are under `output/playwright/stylex-organization-search-results/`.
+- [ ] Live legacy screenshot comparison is unavailable; fallback-off mobile retains the known 8px authenticated shell baseline and no compensating geometry was added.
+- [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.
