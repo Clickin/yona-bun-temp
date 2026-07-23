@@ -8,7 +8,7 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 
 - [x] Legacy `user/login.scala.html:36-99` skeleton, login messages, frozen `_page.less` title/form declarations, `_responsive.less` mobile width rules, `_common.less` utility output, and Bootstrap form/button cascade are mapped; the inline focus script is behavior evidence only.
 - [x] `loginform.tsx` and `-loginform.stylex.ts` preserve the anonymous normal page/full → title/tagline → form → hidden redirect → fields → submit → empty provider row → remember/forgot action order, copy, names, placeholders, autocomplete, REST/TanStack session and redirect behavior, and route-local StyleX ownership. Verification/social/error states are excluded from this one-state slice.
-- [ ] Focused `frontend/tests/stylex-anonymous-login-normal.e2e.ts` normal and `VITE_DISABLE_LEGACY_FALLBACK=1` desktop 1366/mobile 390 runs remain for the parent agent; live legacy screenshot availability is unverified because localhost was unavailable, so parity is not claimed.
+- [x] Focused `frontend/tests/stylex-anonymous-login-normal.e2e.ts` normal and `VITE_DISABLE_LEGACY_FALLBACK=1` runs pass 3/3 each in managed system Chrome, covering desktop 1366/mobile 390 DOM, copy, field, and containment contracts; live legacy screenshot availability remains unverified because localhost was unavailable, so screenshot parity is not claimed.
 
 ### 2026-07-23 Batch 828 organization boards populated pagination
 
