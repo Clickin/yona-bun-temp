@@ -6936,3 +6936,15 @@ normal/fallback-off focused runs pass 5/5 each with desktop/mobile screenshots;
 fallback-off mobile retains the documented 8px authenticated shell baseline
 without CSS compensation. Live legacy screenshot comparison remains unverified.
 The approved Yoram footer identity differences remain intentional.
+
+## Batch 855
+
+Port the project `/$ownerName/$projectName/search` populated issue and empty
+result states into the existing route-local StyleX ownership boundary. Preserve
+legacy result DOM/order/copy, category interaction, links, highlighting, and
+pagination; add only stable nested result-part ownership markers. Shared
+`app.css` and generated fallback remain unchanged. Managed system-Chrome
+normal/fallback-off focused runs pass 5/5 each with desktop/mobile screenshots;
+the fallback-off shell allowance is documented without compensating geometry.
+Live legacy screenshot comparison remains unverified. The approved Yoram
+footer identity differences remain intentional.

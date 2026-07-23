@@ -555,6 +555,7 @@ function ProjectSearchResultList({
         {...emptyResultProps}
         className={`${emptyResultProps.className} empty-result`}
         data-stylex-owner="project-search-empty-result"
+        data-stylex-part="empty-result"
       ></div>
     );
   }
@@ -683,6 +684,7 @@ function ProjectSearchResultList({
                   <div
                     className={`${sx.titleWrap.className} title-wrap`}
                     data-stylex-owner="project-search-title"
+                    data-stylex-part="result-item-title"
                   >
                     <span className={`${sx.postId.className} post-id`}>#{item.number}</span>
                     <Link
@@ -703,6 +705,7 @@ function ProjectSearchResultList({
                 <div
                   className={`${sx.content.className} search-content`}
                   data-stylex-owner="project-search-content"
+                  data-stylex-part="result-item-content"
                 >
                   {reviewThreadOnPullRequest ? (
                     snippets
@@ -715,6 +718,7 @@ function ProjectSearchResultList({
                 <div
                   className={`${sx.meta.className} search-meta-info`}
                   data-stylex-owner="project-search-meta"
+                  data-stylex-part="result-item-meta"
                 >
                   {item.authorLabel ? (
                     <RouterLink
@@ -821,6 +825,7 @@ function ProjectSearchResultList({
       {...emptyResultProps}
       className={`${emptyResultProps.className} empty-result`}
       data-stylex-owner="project-search-empty-result"
+      data-stylex-part="empty-result"
     ></div>
   );
 }
@@ -1110,6 +1115,7 @@ function HighlightedProjectSearchText({ keyword, text }: { keyword: string; text
       <strong
         className={`${sx.keyword.className} keyword`}
         data-stylex-owner="project-search-keyword"
+        data-stylex-part="result-keyword"
         key={`keyword-${start}`}
       >
         {matchText}

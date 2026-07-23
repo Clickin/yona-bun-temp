@@ -1969,6 +1969,15 @@ desktop/mobile geometry, and filtering.
 - [ ] Live legacy screenshot comparison is unavailable, so direct legacy screenshot parity remains unverified; no compensating geometry was added.
 - [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.
 
+### 2026-07-23 Batch 855 project search populated/empty result states
+
+- [x] `search/result.scala.html`, `search/partial_search.scala.html`, all eight search result partials, frozen `_page.less:6375-6519`/empty-result rules, Bootstrap responsive rules, messages, and the complete `yobi.less` import chain are recorded.
+- [x] Project search preserves legacy result DOM/order/copy, category interaction, links, keyword highlighting, pagination, empty image, and responsive state; only nested result-part ownership markers were added.
+- [x] `frontend/tests/stylex-project-search-results.e2e.ts` covers source/import provenance, computed declarations, desktop/390px owned-box containment, interaction, and screenshots.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 5/5 each; screenshots are under `output/playwright/stylex-project-search-results/`.
+- [ ] Live legacy screenshot comparison is unavailable; fallback-off retains the known authenticated shell allowance and no compensating geometry was added.
+- [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.
+
 ### 2026-07-23 Batch 854 organization search populated/empty result states
 
 - [x] `search/result.scala.html`, `partial_search.scala.html`, all eight search partials, frozen `_page.less:6375-6519`/empty-result rules, Bootstrap, messages, and the complete `yobi.less` import chain are recorded.
