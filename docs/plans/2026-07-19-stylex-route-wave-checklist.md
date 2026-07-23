@@ -2069,3 +2069,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 873: shared `.mr5` fallback remains for unrelated consumers; no route-specific geometry compensation or fallback retirement was added.
 - [ ] Batch 873: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 873: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 874: populated new pull-request forms preserve legacy `mr5 select2-offscreen` only on original `fromProjectId`/`toProjectId` selects and own exact `margin-right:5px`; branch selects and visible Select2 controls remain excluded.
+- [x] Batch 874: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390px, with mode-aware computed margins, visible Select2 copy/geometry, project-switch interaction, containment/no-overflow, and deterministic screenshots.
+- [x] Batch 874: normal fallback mode intentionally computes original project-select margin as `0px` because frozen `.select2-offscreen` uses `margin:0 !important`; fallback-off exposes StyleX `5px`. Fallback-owned Select2 height differences receive no compensation.
+- [ ] Batch 874: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 874: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

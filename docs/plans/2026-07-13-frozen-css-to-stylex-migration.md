@@ -7142,6 +7142,28 @@ Live legacy screenshot comparison remains unverified because
 `127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
 developer-contact, and upstream-repository differences remain intentional.
 
+## Batch 874
+
+Move the populated new pull-request form's two legacy `.mr5`
+`margin-right:5px` consumers—the original `fromProjectId` and `toProjectId`
+project selects—into the existing new-pull-request StyleX boundary. Preserve
+the legacy `mr5 select2-offscreen` source-select DOM, React-owned visible
+Select2 control geometry, selected values, project-switch interaction, labels,
+order, and branch behavior; do not add margin to branch selects or compensate
+the visible Select2 control. The frozen `.select2-offscreen { margin:0
+!important; }` cascade intentionally wins in normal fallback mode, so original
+project-select computed margin is `0px` with fallback and `5px` in explicit
+fallback-off mode; visible-control height remains fallback-owned and is only
+required to stay contained. Managed external System-Chrome normal and
+explicit fallback-off focused runs pass 1/1 each at 1366x900 and 390x844 with
+source ownership, mode-aware computed margins, Select2 copy/geometry,
+project-switch interaction, containment/no-overflow, and deterministic
+screenshots under
+`frontend/output/playwright/stylex-project-pull-request-create-form-mr5/`.
+Live legacy screenshot comparison remains unverified because
+`127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
+developer-contact, and upstream-repository differences remain intentional.
+
 ## Batch 873
 
 Move the populated pull-request edit form's two legacy `.mr5`

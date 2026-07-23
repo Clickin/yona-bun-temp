@@ -452,11 +452,13 @@ function PullRequestBranchSelectors({
           ref={fromProjectRef}
           id="fromProjectId"
           name="fromProjectId"
-          className="mr5 select2-offscreen"
+          {...stylex.props(styles.projectSelect)}
+          className={`${stylex.props(styles.projectSelect).className} mr5 select2-offscreen`}
           tabIndex={-1}
           defaultValue={String(selected.fromProjectId)}
           key={`from-project-${selected.fromProjectId}`}
           onChange={(event) => changeValue("fromProjectId", event.currentTarget.value, true)}
+          data-stylex-owner="new-pull-request-from-project-original"
         >
           <option></option>
           {formOptions.fromProjects.map((project) => (
@@ -518,11 +520,13 @@ function PullRequestBranchSelectors({
           ref={toProjectRef}
           id="toProjectId"
           name="toProjectId"
-          className="mr5 select2-offscreen"
+          {...stylex.props(styles.projectSelect)}
+          className={`${stylex.props(styles.projectSelect).className} mr5 select2-offscreen`}
           tabIndex={-1}
           defaultValue={String(selected.toProjectId)}
           key={`to-project-${selected.toProjectId}`}
           onChange={(event) => changeValue("toProjectId", event.currentTarget.value, true)}
+          data-stylex-owner="new-pull-request-to-project-original"
         >
           <option></option>
           {formOptions.toProjects.map((project) => (
