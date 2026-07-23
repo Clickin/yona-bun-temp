@@ -2134,3 +2134,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 886: normal and fallback-off desktop/mobile screenshots were visually inspected; computed margin/no-overflow and plugin-only attribute absence pass without route compensation.
 - [ ] Batch 886: full live legacy/Yoram shell screenshot parity and fallback-off branch selector/list shell differences remain gaps outside this breadcrumb owner.
 - [x] Batch 886: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 887: project code file-view breadcrumb preserves legacy `code-breadcrumb-wrap ml10 pull-left` DOM/order/links and owns exact `margin-left:10px` through the route-local StyleX owner.
+- [x] Batch 887: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs at 1366x900 and 390x844 pass 1/1 each; deterministic normal/fallback-off screenshots were visually inspected.
+- [x] Batch 887: adjacent code-file guards pass 7/7; full live legacy/Yoram screenshot parity and fallback-off global shell/list differences remain screen-wide/fallback-owned gaps outside this breadcrumb owner, with no route-specific compensation.
+- [x] Batch 887: the focused source/runtime guard checks frozen legacy evidence, computed 10px margin, link order, no inline/plugin-only attributes, and no horizontal overflow.
+- [x] Batch 887: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.

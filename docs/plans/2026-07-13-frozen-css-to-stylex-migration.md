@@ -6766,6 +6766,21 @@ inline/intrinsic sizing is intentionally not pixel-normalized and receives no
 compensating geometry. Live legacy screenshot parity is explicitly unverified.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional.
+## Batch 887
+
+Move the project code file-view breadcrumb wrapper's exact frozen `.ml10`
+`margin-left:10px` declaration into the existing route-local StyleX owner.
+Preserve the legacy `code-breadcrumb-wrap ml10 pull-left` DOM/order, project
+and path links, branch picker, and React navigation semantics; keep the shared
+fallback for unrelated consumers. The focused test covers normal and
+fallback-off screenshot output at 1366x900 and 390x844; verification is run by
+the main agent after this bounded patch. The focused normal/fallback-off/
+restored-normal runs pass 1/1 each, adjacent code-file guards pass 7/7, and
+normal/fallback-off desktop/mobile screenshots were visually inspected.
+Fallback-off shell differences remain outside this breadcrumb owner and receive
+no route-specific compensation.
+Approved Yoram footer NAVER/provider/developer-contact/upstream-repository
+differences remain intentional.
 
 ## Batch 877
 

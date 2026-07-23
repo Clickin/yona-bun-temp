@@ -185,6 +185,7 @@ function ProjectCodeFileBody({
   const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
   const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
+  const breadcrumbsStyleProps = stylex.props(styles.breadcrumbs);
   const newFilePathWithSearch = `${projectPath(
     ownerName,
     projectName,
@@ -298,7 +299,12 @@ function ProjectCodeFileBody({
                 );
               })}
             </select>
-            <div id="breadcrumbs" className="code-breadcrumb-wrap ml10 pull-left">
+            <div
+              {...breadcrumbsStyleProps}
+              id="breadcrumbs"
+              className={`${breadcrumbsStyleProps.className} code-breadcrumb-wrap ml10 pull-left`}
+              data-stylex-owner="project-code-file-breadcrumbs"
+            >
               <Link
                 to="/$ownerName/$projectName/code/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}

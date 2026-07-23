@@ -74,6 +74,9 @@ export const styles = stylex.create({
     color: codeFileColors.metadataText,
     minWidth: 0,
   },
+  breadcrumbs: {
+    marginLeft: "10px",
+  },
   // partial_view_file.scala.html author link; frozen _common.less .ml5.
   authorLink: {
     marginLeft: "5px",
