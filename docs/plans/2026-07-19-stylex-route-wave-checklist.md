@@ -2048,3 +2048,9 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 869: route TSX only spreads the existing StyleX owner props; DOM/copy/state/navigation behavior and unrelated `.mr5` fallback consumers remain unchanged, with no compensating geometry.
 - [ ] Batch 869: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 869: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 870: populated pull-request overview safe/conflict/merging alert icons preserve the legacy `yobicon-* mr5` DOM and own exact `margin-right:5px` through the existing `alertIcon` StyleX owner.
+- [x] Batch 870: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390x844 across all three alert states with source metadata, computed margin, copy/order, containment/no-overflow, and screenshots.
+- [x] Batch 870: unrelated `.mr5` consumers remain fallback-owned; no route-specific geometry compensation or fallback selector retirement was added.
+- [x] Batch 870: fallback-off verifies the three icon DOMs, StyleX source, and computed declarations; the shared Yobicon glyph foundation remains fallback-owned and receives no speculative replacement.
+- [ ] Batch 870: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 870: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

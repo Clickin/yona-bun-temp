@@ -1015,6 +1015,7 @@ export function PullRequestStateInfo({
       );
     },
   });
+  const alertIconStyleProps = stylex.props(styles.alertIcon);
 
   if (pullRequest.state.toLowerCase() === "merged") {
     return (
@@ -1072,7 +1073,11 @@ export function PullRequestStateInfo({
       <div
         className={`alert alert-warnning ${stylex.props(styles.alert, styles.alertWarning).className}`}
       >
-        <i className={`${stylex.props(styles.alertIcon).className} yobicon-supportrequest mr5`}></i>
+        <i
+          {...alertIconStyleProps}
+          className={`${alertIconStyleProps.className ?? ""} yobicon-supportrequest mr5`.trim()}
+          data-stylex-owner="pull-request-detail-alert-icon"
+        ></i>
         <span>{t("pullRequest.is.merging")}</span>
       </div>
     );
@@ -1083,7 +1088,9 @@ export function PullRequestStateInfo({
         className={`alert alert-success ${stylex.props(styles.alert, styles.alertSuccess).className}`}
       >
         <i
-          className={`${stylex.props(styles.alertIcon).className} yobicon-check-circle-alt mr5`}
+          {...alertIconStyleProps}
+          className={`${alertIconStyleProps.className ?? ""} yobicon-check-circle-alt mr5`.trim()}
+          data-stylex-owner="pull-request-detail-alert-icon"
         ></i>
         <span>{t("pullRequest.is.safe")}</span>
       </div>
@@ -1091,7 +1098,11 @@ export function PullRequestStateInfo({
   }
   return (
     <div className={`alert alert-error ${stylex.props(styles.alert, styles.alertError).className}`}>
-      <i className={`${stylex.props(styles.alertIcon).className} yobicon-error mr5`}></i>
+      <i
+        {...alertIconStyleProps}
+        className={`${alertIconStyleProps.className ?? ""} yobicon-error mr5`.trim()}
+        data-stylex-owner="pull-request-detail-alert-icon"
+      ></i>
       <span>{t("pullRequest.is.not.safe")}</span>
       {currentUserLoginId === pullRequest.contributor.loginId ? (
         <PullRequestConflictGuide pullRequest={pullRequest} runtimeConfig={runtimeConfig} />

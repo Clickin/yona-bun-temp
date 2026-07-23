@@ -53,7 +53,12 @@ export const styles = stylex.create({
     fontWeight: "bold",
     borderRadius: "3px",
   },
-  alertIcon: { marginTop: "-2px", fontSize: "15px", verticalAlign: "middle" },
+  alertIcon: {
+    marginTop: "-2px",
+    marginRight: "5px",
+    fontSize: "15px",
+    verticalAlign: "middle",
+  },
   alertSuccess: { color: "#468847" },
   alertError: { color: "#b94a48" },
   alertWarning: { color: "#c09853" },

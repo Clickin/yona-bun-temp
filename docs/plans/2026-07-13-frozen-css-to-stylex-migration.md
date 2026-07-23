@@ -7088,3 +7088,19 @@ System-Chrome normal and explicit fallback-off focused runs pass 1/1 each at
 deterministic screenshots, and Edit navigation. Live legacy screenshot comparison
 remains unverified because `127.0.0.1:9000` is unavailable. Approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
+
+## Batch 870
+
+Move the populated pull-request overview safe/conflict/merging alert icons'
+exact frozen `.mr5` `margin-right:5px` declaration into the existing
+`alertIcon` StyleX owner. Preserve all three legacy icon classes, `mr5`, alert
+copy/order, conditional state behavior, and the existing alert geometry while
+leaving unrelated `.mr5` consumers in fallback. Managed external System-Chrome
+normal and explicit fallback-off focused runs pass 1/1 each at 1366x900 and
+390x844 with computed margin, source metadata, three-state coverage,
+containment/no-overflow, and deterministic screenshots. The shared Yobicon
+glyph foundation remains fallback-owned, so fallback-off verifies the icon DOM
+and StyleX declarations without claiming glyph visibility. Live legacy
+screenshot comparison remains unverified because `127.0.0.1:9000` is
+unavailable. Approved Yoram footer/provider/developer-contact/repository
+differences remain intentional.
