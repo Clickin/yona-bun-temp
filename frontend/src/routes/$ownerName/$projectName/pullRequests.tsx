@@ -37,6 +37,7 @@ const sx = {
   reviewerCount: stylex.props(styles.reviewerCount),
   badge: stylex.props(styles.badge),
   content: stylex.props(styles.content),
+  twoColumnAnchor: stylex.props(styles.twoColumnAnchor),
   twoColumnPopover: stylex.props(styles.twoColumnPopover),
   rowPointer: stylex.props(styles.rowPointer),
   grayTextSeparator: stylex.props(styles.grayTextSeparator),
@@ -959,11 +960,14 @@ function TwoColumnModeCheckbox({
   };
 
   useEffect(() => clearPopoverTimers, []);
+  const twoColumnAnchorStyleProps = sx.twoColumnAnchor;
   const popoverStyle = sx.twoColumnPopover;
 
   return (
     <div
-      className="two-column-icon mr10 hide-in-mobile"
+      {...twoColumnAnchorStyleProps}
+      className={`${twoColumnAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
+      data-stylex-owner="project-pullrequests-two-column-anchor"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
       onBlur={hidePopover}

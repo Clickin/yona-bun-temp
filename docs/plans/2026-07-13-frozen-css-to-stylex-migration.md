@@ -7298,3 +7298,24 @@ select2, and empty-state differences remain documented gaps outside this
 margin owner; no route-specific compensation was added. Approved Yoram footer,
 provider, developer-contact, and upstream-repository differences remain
 intentional.
+
+## Batch 881
+
+Move the authenticated project pull-request list's exact frozen `.mr10`
+`margin-right:10px` declaration into the existing project-pullrequests
+`twoColumnAnchor` StyleX owner. Preserve the legacy
+`two-column-icon mr10 hide-in-mobile` wrapper, `#two-column-mode-checkbox`,
+`#two-column-mode`, title/copy, tab/control order, React hover/focus popover,
+keyboard checkbox/localStorage behavior, and mobile visibility; keep the
+shared `.mr10` fallback for unrelated consumers. Managed external System-Chrome
+normal and explicit fallback-off focused runs pass 1/1 each at 1366x900 and
+390x844; adjacent project pull-request guards pass 3/3, with deterministic
+screenshots under
+`frontend/output/playwright/stylex-project-pull-requests-two-column-margin/`.
+Live legacy/local paired desktop and mobile captures both returned 200 and were
+visually inspected. The comparison records existing desktop
+`gnbSearchForm`/missing `pageWrap`/`projectPageWrap`/`leftMenu` and
+`postListWrap` horizontal drift, plus mobile `gnbUsermenu` and shell-wrapper
+drift; these are screen-wide or fallback-owned gaps outside this margin owner
+and receive no route-specific compensation. Approved Yoram footer, provider,
+developer-contact, and upstream-repository differences remain intentional.
