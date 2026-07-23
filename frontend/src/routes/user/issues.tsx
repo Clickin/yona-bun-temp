@@ -1439,6 +1439,7 @@ function TwoColumnModeCheckbox({
     isControlHovered ? issueStyles.modeControlTextHover : null,
     checked ? issueStyles.modeControlTextSelected : null,
   );
+  const anchorProps = stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl);
   const clearPopoverTimer = () => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1462,10 +1463,10 @@ function TwoColumnModeCheckbox({
 
   return (
     <div
-      className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl)}
+      {...anchorProps}
+      className={`two-column-icon mr10 hide-in-mobile ${anchorProps.className ?? ""}`.trim()}
       data-stylex-owner="user-issues-two-column-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
@@ -1539,6 +1540,7 @@ function ShowSubtasksCheckbox({
     isControlHovered ? issueStyles.modeControlTextHover : null,
     checked ? issueStyles.modeControlTextSelected : null,
   );
+  const anchorProps = stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl);
   const clearPopoverTimer = () => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1562,10 +1564,10 @@ function ShowSubtasksCheckbox({
 
   return (
     <div
-      className="show-subtasks mr10"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl)}
+      {...anchorProps}
+      className={`show-subtasks mr10 ${anchorProps.className ?? ""}`.trim()}
       data-stylex-owner="user-issues-subtasks-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}

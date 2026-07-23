@@ -2079,3 +2079,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 875: existing fallback-off shell differences remain recorded without route-specific compensation or fallback retirement.
 - [ ] Batch 875: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 875: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 876: authenticated populated `/user/issues` two-column and show-subtasks wrappers preserve legacy `mr10` classes and own exact `margin-right:10px` through the existing `modeControl` StyleX owner.
+- [x] Batch 876: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390px, including computed target/non-target margins, control order/copy, hover popovers, checkbox interaction, containment/no-overflow, and screenshots.
+- [x] Batch 876: live legacy/local paired desktop and mobile captures both return 200 and are visually inspected; the comparison records existing desktop `gnbSearchForm`/`leftMenu` and mobile `gnbUsermenu` shell drift outside this owner.
+- [ ] Batch 876: screen-wide legacy screenshot parity remains a gap for the recorded global-shell drift; no route-specific compensation was added.
+- [x] Batch 876: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

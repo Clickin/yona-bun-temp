@@ -40,6 +40,7 @@ export const styles = stylex.create({
     display: "inline-block",
     lineHeight: "37px",
     marginLeft: "10px",
+    marginRight: "10px",
   },
   modeControlLabel: { paddingLeft: "0px", paddingTop: "4px" },
   modeControlInput: {

@@ -7198,3 +7198,24 @@ compensating geometry was added. Live legacy screenshot comparison remains
 unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer,
 provider, developer-contact, and upstream-repository differences remain
 intentional.
+
+## Batch 876
+
+Move the authenticated populated `/user/issues` mode-control wrappers'
+exact frozen `.mr10` `margin-right:10px` declaration into the existing
+route-local `modeControl` StyleX owner. Preserve the legacy
+`two-column-icon mr10 hide-in-mobile` and `show-subtasks mr10` DOM/classes,
+control order, copy, IDs, hover/focus popovers, checkbox state behavior, and
+responsive visibility; keep other issue/project route consumers and the
+shared fallback unchanged. Managed external System-Chrome normal and
+explicit fallback-off focused runs pass 1/1 each at 1366x900 and 390x844 with
+computed target margins, non-target margin exclusion, interaction,
+containment/no-overflow, and deterministic screenshots under
+`frontend/output/playwright/stylex-user-issues-two-column-margin/`.
+Live legacy/local paired desktop and mobile captures both returned 200 and
+were visually inspected. The comparison still reports existing global-shell
+drift (`gnbSearchForm`/`leftMenu` on desktop and `gnbUsermenu` on mobile), so
+screen-wide screenshot parity remains an explicit gap outside this margin
+owner; no route-specific compensation was added. Approved Yoram footer,
+provider, developer-contact, and upstream-repository differences remain
+intentional.
