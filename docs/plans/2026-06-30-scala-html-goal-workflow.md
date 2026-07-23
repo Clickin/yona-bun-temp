@@ -596,3 +596,13 @@ Actual legacy display/open and local fallback-off open desktop/mobile images
 were inspected. The 60px desktop/0px mobile gutter, dashed row, and 12px
 textarea/OK input line align. Fixture, locale, assets, and the user-approved
 Yoram footer/contact/repository deviations remain excluded.
+## Batch 858
+
+Port the project members add-member bubble and username input declarations from
+`project/members.scala.html` and the frozen `_page.less`/`_responsive.less`
+cascade into the existing route-local StyleX boundary. Preserve the legacy
+DOM, classes, ids, names, copy, typeahead interaction, and React mutation
+boundary. Managed system-Chrome normal and fallback-off focused add-member
+checks pass; live legacy screenshot comparison remains unverified. The
+approved Yoram footer NAVER/provider/developer-contact/repository differences
+are intentional and must remain documented as such.

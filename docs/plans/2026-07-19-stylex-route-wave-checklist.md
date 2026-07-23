@@ -1994,3 +1994,7 @@ desktop/mobile geometry, and filtering.
 - [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 5/5 each; screenshots are under `output/playwright/stylex-organization-search-results/`.
 - [ ] Live legacy screenshot comparison is unavailable; fallback-off mobile retains the known 8px authenticated shell baseline and no compensating geometry was added.
 - [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.
+- [x] Batch 858: project members add-member bubble/input StyleX ownership is recorded with legacy source mapping, stable owners, computed desktop/mobile geometry, and typeahead coverage.
+- [x] Batch 858: managed system-Chrome normal and fallback-off focused add-member checks pass 1/1 each; screenshots are saved under `output/playwright/visual-sweep/`.
+- [ ] Batch 858: live legacy rendering is unavailable, so direct screenshot parity remains explicitly unverified; no compensating geometry was added.
+- [x] Batch 858: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

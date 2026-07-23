@@ -486,7 +486,10 @@ function ProjectMembersBody({
           />
 
           {booleanField(members.viewerCanUpdate) ? (
-            <div className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}>
+            <div
+              className={`${stylex.props(projectMembersStyles.addMemberBubble).className} inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
+              data-stylex-owner="project-members-add-member-bubble"
+            >
               <form
                 className="nm"
                 action={prefixBasePath(
@@ -496,10 +499,12 @@ function ProjectMembersBody({
                 method="post"
                 id="addNewMember"
                 onSubmit={onAddMember}
+                data-stylex-owner="project-members-add-member-form"
               >
                 <input
                   type="text"
-                  className="text uname"
+                  className={`${stylex.props(projectMembersStyles.addMemberInput).className} text uname`}
+                  data-stylex-owner="project-members-add-member-input"
                   id="loginId"
                   name="loginId"
                   required
@@ -523,7 +528,11 @@ function ProjectMembersBody({
                   }}
                   onKeyDown={onLoginIdKeyDown}
                 />
-                <button type="submit" className="ybtn ybtn-success">
+                <button
+                  type="submit"
+                  className="ybtn ybtn-success"
+                  data-stylex-owner="project-members-add-member-submit"
+                >
                   <i className="yobicon-addfriend"></i>
                   {t("button.add")}
                 </button>

@@ -6,6 +6,10 @@ const PROJECT_MEMBERS_ROUTE_SOURCE = new URL(
   "../src/routes/$ownerName/$projectName/members.tsx",
   import.meta.url,
 );
+const PROJECT_MEMBERS_STYLEX_SOURCE = new URL(
+  "../src/routes/$ownerName/$projectName/-members.stylex.ts",
+  import.meta.url,
+);
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright", "visual-sweep");
 
 const EXPECTED_PROJECT_MEMBERS = `
@@ -328,6 +332,95 @@ test("project members focuses add member input on load like legacy member module
   await expect(page.locator("#loginId")).toBeFocused();
 });
 
+test("project members add-member form owns the legacy bubble and uname geometry in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page);
+
+  for (const viewport of [
+    { height: 900, name: "desktop", width: 1366 },
+    { height: 844, name: "mobile", width: 390 },
+  ] as const) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/members`);
+
+    const bubble = page.locator('[data-stylex-owner="project-members-add-member-bubble"]');
+    const form = page.locator('[data-stylex-owner="project-members-add-member-form"]');
+    const input = page.locator('[data-stylex-owner="project-members-add-member-input"]');
+    const submit = page.locator('[data-stylex-owner="project-members-add-member-submit"]');
+    await expect(bubble).toHaveClass(/(?:^|\s)inner-bubble(?:\s|$)/u);
+    await expect(form).toHaveAttribute("id", "addNewMember");
+    await expect(input).toHaveClass(/(?:^|\s)text(?:\s|$)/u);
+    await expect(input).toHaveClass(/(?:^|\s)uname(?:\s|$)/u);
+    await expect(input).toHaveAttribute("id", "loginId");
+    await expect(input).toHaveAttribute("name", "loginId");
+    await expect(submit).toHaveAttribute("type", "submit");
+
+    await expect(bubble).toHaveCSS("margin-bottom", "10px");
+    await expect(bubble).toHaveCSS("position", "relative");
+    await expect(input).toHaveCSS("margin", "0px");
+    await expect(input).toHaveCSS("border-radius", "2px");
+    if (viewport.name === "desktop") {
+      await expect(input).toHaveCSS("width", "384px");
+    }
+
+    const geometry = await page.evaluate(() => {
+      const bubble = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-members-add-member-bubble"]',
+      );
+      const form = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-members-add-member-form"]',
+      );
+      const input = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-members-add-member-input"]',
+      );
+      const submit = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-members-add-member-submit"]',
+      );
+      if (!bubble || !form || !input || !submit) return null;
+      const bubbleRect = bubble.getBoundingClientRect();
+      const formRect = form.getBoundingClientRect();
+      const inputRect = input.getBoundingClientRect();
+      const submitRect = submit.getBoundingClientRect();
+      return {
+        bubbleBottom: Math.round(bubbleRect.bottom),
+        formBottom: Math.round(formRect.bottom),
+        formLeft: Math.round(formRect.left),
+        inputLeft: Math.round(inputRect.left),
+        inputRight: Math.round(inputRect.right),
+        submitLeft: Math.round(submitRect.left),
+        submitRight: Math.round(submitRect.right),
+        viewportRight: window.innerWidth,
+      };
+    });
+    expect(geometry).not.toBeNull();
+    expect(geometry!.inputLeft).toBe(geometry!.formLeft);
+    expect(geometry!.submitLeft).toBeGreaterThanOrEqual(geometry!.inputRight);
+    expect(geometry!.submitRight).toBeLessThanOrEqual(geometry!.viewportRight);
+    expect(geometry!.bubbleBottom).toBeGreaterThanOrEqual(geometry!.formBottom);
+
+    await page.screenshot({
+      fullPage: true,
+      path: resolve(SCREENSHOT_DIRECTORY, `stylex-project-members-add-member-${viewport.name}.png`),
+    });
+  }
+
+  const routeSource = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
+  const stylexSource = readFileSync(PROJECT_MEMBERS_STYLEX_SOURCE, "utf8");
+  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-bubble"');
+  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-form"');
+  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-input"');
+  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-submit"');
+  expect(stylexSource).toContain('marginBottom: "10px"');
+  expect(stylexSource).toContain('position: "relative"');
+  expect(stylexSource).toMatch(
+    /width:\s*\{\s*default:\s*"384px",\s*\[globalBreakpoints\.mobile\]:\s*"inherit",?\s*\}/u,
+  );
+  expect(stylexSource).toContain('margin: "0px"');
+  expect(stylexSource).toContain('borderRadius: "2px"');
+});
+
 test("project members add-member input performs legacy typeahead lookup, render, and select on #loginId", async ({
   page,
 }) => {
@@ -342,7 +435,7 @@ test("project members add-member input performs legacy typeahead lookup, render,
   await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("car");
   const typeaheadMenu = page.locator(".inner-bubble .typeahead.dropdown-menu");
   await expect(typeaheadMenu).toBeVisible();
-  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble open");
+  await expect(page.locator(".inner-bubble")).toHaveClass(/(?:^|\s)inner-bubble(?:\s|$)/u);
   await expect(typeaheadMenu).not.toHaveAttribute("style", /.+/);
   await expect(typeaheadMenu.locator("li")).toHaveCount(2);
   await expect(typeaheadMenu.locator("li").nth(0)).toHaveClass("active");
@@ -400,7 +493,7 @@ test("project members add-member input performs legacy typeahead lookup, render,
 
   await expect(addInput).toHaveValue("carmine");
   await expect(typeaheadMenu).toHaveCount(0);
-  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble");
+  await expect(page.locator(".inner-bubble")).toHaveClass(/(?:^|\s)inner-bubble(?:\s|$)/u);
   await expect.poll(() => requests.addedLoginIds).toEqual([]);
 
   await page.locator("#addNewMember .ybtn.ybtn-success").click();
@@ -1976,6 +2069,10 @@ function projectSettings({
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const legacyClassesByOwner: Record<string, string> = {
+      "project-members-add-member-bubble": "inner-bubble",
+      "project-members-add-member-form": "nm",
+      "project-members-add-member-input": "text uname",
+      "project-members-add-member-submit": "ybtn ybtn-success",
       "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
       "project-members-error-icon": "ico ico-err2",

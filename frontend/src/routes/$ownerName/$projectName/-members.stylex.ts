@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { globalBreakpoints } from "../../../theme.stylex";
 
 // Frozen paint evidence: _yobiUI.less `.avatar-wrap` and
 // _page.less `.members.project .member .member-id`.
@@ -9,6 +10,20 @@ export const projectMembersTheme = stylex.defineVars({
 });
 
 export const projectMembersStyles = stylex.create({
+  // Frozen _page.less `.inner-bubble` declarations for the add-member form.
+  addMemberBubble: {
+    marginBottom: "10px",
+    position: "relative",
+  },
+  // Frozen _page.less `.inner-bubble .text.uname` plus _responsive.less mobile cascade.
+  addMemberInput: {
+    borderRadius: "2px",
+    margin: "0px",
+    width: {
+      default: "384px",
+      [globalBreakpoints.mobile]: "inherit",
+    },
+  },
   errorWrap: {
     padding: "100px 0px",
     textAlign: "center",
