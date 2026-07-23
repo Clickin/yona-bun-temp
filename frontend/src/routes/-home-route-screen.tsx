@@ -103,6 +103,10 @@ const homeSidebarPopoverStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavProjectOrganizationListStyles = stylex.create({
+  item: { marginLeft: 0 },
+});
+
 function DefaultLandingRedirect({ href }: { href: string }) {
   const router = useRouter();
 
@@ -5856,6 +5860,8 @@ function SidebarOrganizationList({
                     stylex.props(
                       isAuthenticatedSidenav &&
                         authenticatedSidenavFavoriteOrganizationRowStyles.row,
+                      isAuthenticatedSidenav &&
+                        authenticatedSidenavProjectOrganizationListStyles.item,
                     ).className
                   }`.trimEnd()
             }
@@ -6240,6 +6246,7 @@ function SidebarAllProjectItem({
           : `user-li${favored ? " show-always" : showNonFavorite ? "" : " hide"} ${
               stylex.props(
                 isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.row,
+                isAuthenticatedSidenav && authenticatedSidenavProjectOrganizationListStyles.item,
               ).className
             }`.trimEnd()
       }
@@ -6958,7 +6965,7 @@ function SidebarProjectItem({
       className={
         isLeftSidebar
           ? stylex.props(leftSidebarDirectProjectRowStyles.row).className
-          : `user-li ${stylex.props(authenticatedSidenavDirectProjectRowStyles.row).className}`
+          : `user-li ${stylex.props(authenticatedSidenavDirectProjectRowStyles.row, authenticatedSidenavProjectOrganizationListStyles.item).className}`
       }
       data-stylex-owner={
         isLeftSidebar

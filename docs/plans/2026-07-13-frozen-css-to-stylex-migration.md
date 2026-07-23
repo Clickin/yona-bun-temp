@@ -6837,3 +6837,18 @@ now route-owned, but it is only one consumer. The global `app.css`/generated
 fallback family therefore remains enabled; no selector, route, or frozen file
 is changed until a complete all-consumer owner graph exists. This is a C/R
 evidence decision with no Scala audit row and no screenshot-parity claim.
+
+## Batch 847
+
+Move the exact frozen `.user-project-list li { margin-left: 0; }` reset into
+the authenticated sidebar's existing route-local StyleX boundary. Legacy
+output is `sidebar.scala.html:58-74` plus
+`common/usermenu_tab_content_list.scala.html:1-13`; the complete frozen
+`yobi.less` chain and `_usermenu.less` establish the list-item declaration.
+The route preserves the three authenticated row DOM/class owners, tab/search
+interaction, star controls, links, and copy. Managed system-Chrome normal and
+fallback-off checks pass 3/3, with deterministic desktop/mobile screenshots
+saved under `frontend/output/playwright/stylex-authenticated-sidebar-project-list/`.
+Live legacy rendering was unavailable, so screenshot parity is explicitly
+unverified and no compensating geometry was added. The approved Yoram
+footer/provider/developer-contact/repository differences remain intentional.

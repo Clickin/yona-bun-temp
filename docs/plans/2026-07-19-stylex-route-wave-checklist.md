@@ -57,6 +57,15 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] This is a documented C/R decision, not a route-state implementation; no Scala audit row is added.
 - [ ] A complete all-consumer owner graph is still required before any shared `.avatar-wrap` fallback retirement; no deletion or parity claim is made here.
 
+### 2026-07-23 Batch 847 authenticated sidebar project/organization list-item margin
+
+- [x] `sidebar.scala.html:58-74`, `common/usermenu_tab_content_list.scala.html:1-13`, the complete frozen `yobi.less` import chain, and `_usermenu.less` `.user-project-list li { margin-left:0; }` are recorded as output/cascade sources.
+- [x] The existing authenticated sidebar route-local StyleX boundary owns the exact reset for organization, nested-project, and direct-project rows; tabs, search filtering, star controls, Link behavior, legacy classes/order/copy, and unrelated sidebar consumers remain unchanged.
+- [x] `frontend/tests/stylex-authenticated-sidebar-project-list.e2e.ts` verifies static provenance, all three owners, computed margin, visible tab/search/list interaction, desktop/390px containment, and deterministic screenshots.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off runs pass 3/3; screenshot outputs are under `frontend/output/playwright/stylex-authenticated-sidebar-project-list/`.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.
