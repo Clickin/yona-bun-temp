@@ -7213,6 +7213,36 @@ evidence, not a route-specific compensation trigger. Seed-content/date and
 the Yoram footer versus legacy NAVER Labs/developer-contact/upstream-repository
 footer remain intentional or fixture differences.
 
+## Batch 883
+
+Move the pull-request detail header's exact legacy `.mr10`
+`margin-right:10px` declaration from the state/date wrapper into the existing
+pull-request detail StyleX boundary. Preserve the legacy
+`pull-right mr10 mt10` wrapper, date and state-badge order/copy, open/closed/
+conflict badge states, header containment, and the existing badge's separate
+paint/spacing declarations; do not move the badge's own `marginRight:25px` or
+add route-specific compensation. The legacy evidence is
+`yona-original/app/views/git/view.scala.html`,
+`yona-original/app/views/git/partial_info.scala.html`,
+`yona-original/app/views/git/partial_state.scala.html`,
+`yona-original/public/javascripts/service/yobi.git.View.js`, frozen
+`_common.less`/`_page.less`/`_responsive.less` and Bootstrap CSS/responsive CSS,
+the full `yobi.less` import chain, and `conf/messages`.
+
+Managed external System-Chrome normal, explicit fallback-off, and restored
+normal focused runs pass 1/1 each at 1366x900 and 390x844. Focused screenshots
+under `frontend/output/playwright/stylex-project-pull-request-detail-mr10/`
+were visually inspected for open, closed, and conflict states on desktop and
+mobile. Adjacent PR detail guards pass 4/5; the existing detail-render test's
+mock uses a stale pull-request API path and cannot find the content owner, so
+that fixture failure is recorded separately from this wrapper change. Live
+legacy/Yoram `/admin/sample/pullRequest/1` sweeps complete without geometry
+diffs at desktop/mobile, but the parity fixture is mismatched (`404→200`:
+legacy error page versus Yoram empty/detail shell), so populated live screenshot
+parity remains a documented fixture gap. Approved Yoram footer,
+provider, developer-contact, and upstream-repository differences remain
+intentional.
+
 ## Batch 873
 
 Move the populated pull-request edit form's two legacy `.mr5`

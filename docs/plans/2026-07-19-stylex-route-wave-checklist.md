@@ -2114,3 +2114,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 882: live legacy/Yoram `/admin` desktop and mobile captures both returned 200 and were visually inspected; the sweep reports a known React-owner selector false negative plus existing shell/content geometry drift.
 - [ ] Batch 882: screen-wide legacy screenshot parity remains a gap for the recorded global shell/header/content drift and fixture differences; no route-specific compensation was added.
 - [x] Batch 882: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 883: pull-request detail header state/date wrapper preserves `pull-right mr10 mt10` and owns exact `margin-right:10px` through the existing pull-request detail StyleX boundary; badge paint and its separate margin remain unchanged.
+- [x] Batch 883: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390px; open/closed/conflict state and desktop/mobile screenshots were inspected.
+- [x] Batch 883: adjacent PR detail guards pass 4/5; the one failure is the pre-existing detail test's stale mock API path, not the header wrapper.
+- [ ] Batch 883: live populated legacy screenshot parity remains a fixture gap because `/admin/sample/pullRequest/1` compares legacy 404 error state to Yoram 200 empty/detail shell (`404→200`), despite no geometry diff being reported.
+- [x] Batch 883: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.

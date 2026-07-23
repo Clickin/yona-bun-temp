@@ -40,6 +40,7 @@ export const styles = stylex.create({
   badgeRejected: { backgroundColor: "#fd8658" },
   badgeMerged: { backgroundColor: "#65c9df" },
   badgeConflict: { backgroundColor: "#c0392b" },
+  headerStateDate: { marginRight: "10px" },
   author: {
     color: pullRequestDetailColors.accentText,
     marginTop: "20px",

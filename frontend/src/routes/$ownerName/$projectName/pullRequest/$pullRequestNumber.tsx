@@ -760,11 +760,16 @@ export function PullRequestHeader({
       );
     },
   });
+  const headerStateDateStyleProps = stylex.props(styles.headerStateDate);
 
   return (
     <>
       <div className="board-header issue">
-        <div className="pull-right mr10 mt10">
+        <div
+          {...headerStateDateStyleProps}
+          className={`${headerStateDateStyleProps.className ?? ""} pull-right mr10 mt10`.trim()}
+          data-stylex-owner="pull-request-detail-header-state-date"
+        >
           <div className="date" title={pullRequest.createdLabel}>
             {pullRequest.createdLabel}
           </div>
