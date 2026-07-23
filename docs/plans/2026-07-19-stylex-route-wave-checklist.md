@@ -2018,3 +2018,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 863: focused System-Chrome normal and explicit fallback-off runs pass 2/2 each at desktop/390px, including computed margin, containment, public/private selection, and conditional protected visibility.
 - [ ] Batch 863: live legacy screenshot comparison remains unavailable, so direct screenshot parity is explicitly unverified and no compensating geometry was added.
 - [x] Batch 863: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 864: populated code-file author Link preserves the legacy committer/metadata DOM and owns frozen `.ml5` `margin-left:5px` through route-local StyleX; shared fallback remains for unrelated consumers.
+- [x] Batch 864: focused System-Chrome normal and explicit fallback-off runs pass 1/1 each at desktop/390px, with computed source ownership, author navigation, containment, and deterministic screenshots.
+- [x] Batch 864: fallback-off mobile metadata overlap is recorded as an existing shell baseline; no compensating geometry was added.
+- [ ] Batch 864: live legacy screenshot comparison remains unavailable, so direct screenshot parity is explicitly unverified.
+- [x] Batch 864: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

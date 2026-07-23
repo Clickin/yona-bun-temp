@@ -636,6 +636,7 @@ function FileView({
               <img src={stringField(file.avatarUrl, "")} alt="" width="32" height="32" />
             </Link>
             <Link
+              {...stylex.props(styles.authorLink)}
               to="/$user"
               params={{ user: authorLoginId }}
               activeOptions={{
@@ -649,7 +650,8 @@ function FileView({
                 className: undefined,
                 "data-status": undefined,
               }}
-              className="ml5"
+              className={`${stylex.props(styles.authorLink).className} ml5`}
+              data-stylex-owner="project-code-file-author-link"
             >
               {stringField(file.author, "")}
             </Link>

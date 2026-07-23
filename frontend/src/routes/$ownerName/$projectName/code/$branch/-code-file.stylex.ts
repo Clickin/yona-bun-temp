@@ -71,6 +71,10 @@ export const styles = stylex.create({
     color: codeFileColors.metadataText,
     minWidth: 0,
   },
+  // partial_view_file.scala.html author link; frozen _common.less .ml5.
+  authorLink: {
+    marginLeft: "5px",
+  },
   commentCount: {
     marginRight: "8px",
     color: codeFileColors.commentText,

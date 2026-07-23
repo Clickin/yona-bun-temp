@@ -6991,6 +6991,18 @@ utility declarations for legacy/plugin output. This is a static fallback
 retirement with no route DOM or screenshot geometry change. The approved
 Yoram footer/provider/developer-contact/repository differences remain
 intentional.
+
+## Batch 864
+
+Move the populated project code-file author Link's exact frozen `.ml5`
+`margin-left:5px` declaration into the existing code-file StyleX boundary.
+Preserve the legacy committer/avatar/author/date/revision DOM, Link target and
+copy, and metadata behavior. Managed System-Chrome normal and explicit
+fallback-off focused runs pass 1/1 each with desktop/mobile computed geometry,
+containment, navigation, and deterministic screenshots. The fallback-off mobile
+metadata overlap is an existing shell baseline with no compensating geometry;
+live legacy screenshot comparison remains unverified. Approved Yoram footer
+differences remain intentional.
 ## Batch 861
 
 Move the populated project-home README Edit link's exact frozen `.ml5`
