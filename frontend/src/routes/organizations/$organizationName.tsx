@@ -41,6 +41,35 @@ const organizationMenuMigrationStyles = stylex.create({
       backgroundColor: "#dadada",
     },
   },
+  activeItem: {
+    color: "#fc491e",
+    "::before": {
+      border: "8px solid transparent",
+      borderBottomColor: "#ddd",
+      borderStyle: "outset outset solid outset",
+      bottom: "0",
+      content: '" "',
+      height: "0",
+      left: "50%",
+      marginLeft: "-8px",
+      overflow: "hidden",
+      position: "absolute",
+      width: "0",
+    },
+    "::after": {
+      border: "8px solid transparent",
+      borderBottomColor: "#fff",
+      borderStyle: "outset outset solid outset",
+      bottom: "-1px",
+      content: '" "',
+      height: "0",
+      left: "50%",
+      marginLeft: "-8px",
+      overflow: "hidden",
+      position: "absolute",
+      width: "0",
+    },
+  },
 });
 
 const organizationProjectCardMigrationStyles = stylex.create({
@@ -896,7 +925,13 @@ export function OrganizationMenu({
           data-stylex-owner="organization-menu-group"
         >
           <li
-            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "home" ? "active" : ""}`.trim()}
+            className={`${
+              stylex.props(
+                organizationMenuMigrationStyles.item,
+                active === "home" && organizationMenuMigrationStyles.activeItem,
+              ).className
+            } ${active === "home" ? "active" : ""}`.trim()}
+            data-stylex-owner="organization-menu-item-home"
           >
             <Link
               activeOptions={{
@@ -911,6 +946,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
+              data-stylex-owner="organization-menu-link-home"
               params={{ organizationName }}
               hash="organization-home-active-sentinel"
               mask={{
@@ -923,7 +959,13 @@ export function OrganizationMenu({
             </Link>
           </li>
           <li
-            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "issues" ? "active" : ""}`.trim()}
+            className={`${
+              stylex.props(
+                organizationMenuMigrationStyles.item,
+                active === "issues" && organizationMenuMigrationStyles.activeItem,
+              ).className
+            } ${active === "issues" ? "active" : ""}`.trim()}
+            data-stylex-owner="organization-menu-item-issues"
           >
             <Link
               activeOptions={{
@@ -938,6 +980,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
+              data-stylex-owner="organization-menu-link-issues"
               params={{ organizationName }}
               search={{
                 assigneeId: "",
@@ -956,7 +999,13 @@ export function OrganizationMenu({
             </Link>
           </li>
           <li
-            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "boards" ? "active" : ""}`.trim()}
+            className={`${
+              stylex.props(
+                organizationMenuMigrationStyles.item,
+                active === "boards" && organizationMenuMigrationStyles.activeItem,
+              ).className
+            } ${active === "boards" ? "active" : ""}`.trim()}
+            data-stylex-owner="organization-menu-item-boards"
           >
             <Link
               activeOptions={{
@@ -971,6 +1020,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
+              data-stylex-owner="organization-menu-link-boards"
               params={{ organizationName }}
               search={{
                 filter: "",
@@ -985,7 +1035,13 @@ export function OrganizationMenu({
             </Link>
           </li>
           <li
-            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "pullrequests" ? "active" : ""}`.trim()}
+            className={`${
+              stylex.props(
+                organizationMenuMigrationStyles.item,
+                active === "pullrequests" && organizationMenuMigrationStyles.activeItem,
+              ).className
+            } ${active === "pullrequests" ? "active" : ""}`.trim()}
+            data-stylex-owner="organization-menu-item-pullrequests"
           >
             <Link
               activeOptions={{
@@ -1000,6 +1056,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
+              data-stylex-owner="organization-menu-link-pullrequests"
               params={{ organizationName }}
               search={{ filter: "", pageNum: 1 }}
               to="/organizations/$organizationName/pullrequests"

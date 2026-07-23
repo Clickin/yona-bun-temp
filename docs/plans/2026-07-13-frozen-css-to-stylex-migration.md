@@ -6645,6 +6645,23 @@ Live legacy rendering was unavailable, so screenshot parity remains explicitly
 unverified and no compensating geometry was added. The approved Yoram footer/
 provider/developer-contact/repository differences remain intentional.
 
+## Batch 840
+
+Move the authenticated organization-home project-menu active state into the
+existing organization route-local StyleX boundary. The legacy
+`yona-original/app/views/organization/menu.scala.html` emits four plain-text
+menu links with conditional `active` classes; frozen `_page.less:627-686`
+provides the active color and exact `::before`/`::after` triangle declarations,
+while `_responsive.less:281-283`, the complete `yobi.less` import chain,
+`_common.less`, Bootstrap, and `conf/messages` complete the cascade and copy.
+React preserves the existing item/link owners, classes, DOM/order/copy, Link
+navigation, active state, and natural mobile text wrapping; organization route
+StyleX owns only the active paint/pseudos. Focused managed system-Chrome
+normal/fallback-off runs pass 1/1 each at 1366px and 390px. Mobile vertical
+wrapping remains legacy-derived and receives no compensation. Live legacy
+screenshot parity is explicitly unverified. Approved Yoram footer/provider/
+developer-contact/repository differences remain intentional.
+
 ## Batch 835
 
 Move the project-members enrollment-request avatar wrapper into the existing

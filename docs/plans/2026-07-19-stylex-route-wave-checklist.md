@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-23 Batch 840 organization-home project-menu active pseudo
+
+- [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.
+- [x] The existing organization menu item/link owners now add only exact active color and `::before`/`::after` pseudo declarations; legacy plain-text links, classes, DOM/order/copy, Link navigation, active state, and natural mobile wrapping remain.
+- [x] `frontend/tests/stylex-organization-menu-active-pseudo.e2e.ts` verifies source provenance, active order/hrefs, computed pseudo content/position/border colors, hover, desktop/mobile horizontal/top containment, and fallback-off behavior.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; mobile vertical wrapping is legacy-derived and no compensating geometry was added.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries; these identity differences remain intentional.
+
 ### 2026-07-23 Anonymous default `/users/loginform` screen state
 
 - [x] Legacy `user/login.scala.html:36-99` skeleton, login messages, frozen `_page.less` title/form declarations, `_responsive.less` mobile width rules, `_common.less` utility output, and Bootstrap form/button cascade are mapped; the inline focus script is behavior evidence only.
