@@ -6682,3 +6682,18 @@ fallback retains the frozen declaration for other legacy modal consumers, and
 the focused root-dialog normal/fallback-off contracts cover the owner,
 interaction, desktop/mobile containment, and centered action row. The approved
 Yoram footer identity deviation remains intentional.
+
+## Batch 837
+
+Move the project-home member-card avatar wrapper into the existing route-local
+StyleX boundary. Legacy output is `yona-original/app/views/project/home.scala.html:128-135`;
+frozen `_common.less:140-153`, `_page.less:2677-2702`, Bootstrap
+`.img-rounded`/`.pull-left`, and the complete `yobi.less` import chain establish
+the wrapper border, radius, float, overflow, 24px size, and member-row layout.
+React preserves the avatar link/image attributes, fallback URL, member copy,
+order, and responsive containment. Managed system-Chrome normal/fallback-off
+focused checks pass 1/1 each. Live legacy rendering was unavailable, so
+screenshot parity remains explicitly unverified and no compensating geometry
+was added. The Yoram footer intentionally omits unrelated NAVER/NAVER LABS/
+NAVER CLOUD, upstream Yona repository, and developer-contact entries; this is
+an approved identity diff and must not be restored.

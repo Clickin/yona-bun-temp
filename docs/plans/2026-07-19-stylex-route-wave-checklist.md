@@ -1788,6 +1788,15 @@ desktop/mobile geometry, and filtering.
 - [x] `frontend/tests/legacy-fallback-off.e2e.ts` verifies bridge absence, generated fallback retention, and the complete direct consumer graph in normal and fallback-off modes.
 - [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
 
+### 2026-07-23 Batch 837 project-home member-card avatar wrapper
+
+- [x] `project/home.scala.html:128-135`, frozen `_common.less:140-153`, `_page.less:2677-2702`, Bootstrap `.img-rounded`/`.pull-left`, and the complete `yobi.less` import chain are recorded as the output and geometry source.
+- [x] The project route-local StyleX owner preserves the avatar link/image attributes, fallback URL, member copy/order, and responsive containment.
+- [x] The focused E2E verifies source provenance, owner/classes/computed wrapper declarations, fallback attributes, and desktop/mobile containment.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries; these identity differences remain intentional.
+
 ### 2026-07-23 Batch 836 project-home History avatar wrapper
 
 - [x] `project/partial_history.scala.html:49-55` and the complete frozen `yobi.less` import chain, `_common.less:207` `.mr10`, and Bootstrap `.pull-left` are recorded as the output and geometry source.

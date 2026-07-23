@@ -53,6 +53,19 @@ const projectHistoryStyles = stylex.create({
   historyDate: { color: "#bbb", marginLeft: "5px" },
 });
 
+const projectHomeMemberAvatarStyles = stylex.create({
+  avatar: {
+    border: "1px solid #ccc",
+    borderRadius: "3px",
+    display: "inline-block",
+    float: "left",
+    height: "24px",
+    overflow: "hidden",
+    verticalAlign: "top",
+    width: "24px",
+  },
+});
+
 const projectHeaderStyles = stylex.create({
   background: (backgroundImage: string) => ({ backgroundImage }),
   outer: {
@@ -2519,7 +2532,8 @@ function ProjectMember({
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, prefixBasePath(basePath, `/${loginId}`))}
-        className="avatar-wrap img-rounded pull-left small"
+        className={`${stylex.props(projectHomeMemberAvatarStyles.avatar).className} avatar-wrap img-rounded pull-left small`}
+        data-stylex-owner="project-home-member-avatar"
       >
         <img
           src={
