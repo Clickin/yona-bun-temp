@@ -6971,3 +6971,12 @@ Managed system-Chrome normal/fallback-off organization checks pass 3/3 and
 project fallback-off passes 1/1; live legacy screenshot comparison remains
 unverified. Approved Yoram footer/provider/developer-contact/repository
 differences remain intentional.
+## Batch 860
+
+Retire only the source-less React-side `.ml4` and `.mr3` utility bridges from
+`frontend/src/app.css`. The current React/TSX inventory emits neither class;
+the frozen LESS sources and generated `legacy-fallback.css` retain both exact
+utility declarations for legacy/plugin output. This is a static fallback
+retirement with no route DOM or screenshot geometry change. The approved
+Yoram footer/provider/developer-contact/repository differences remain
+intentional.

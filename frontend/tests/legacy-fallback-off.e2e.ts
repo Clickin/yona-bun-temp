@@ -77,6 +77,30 @@ test("inner-bubble fallback bridge is retired while frozen legacy output remains
   expect(emailSettings).not.toContain("inner-bubble");
 });
 
+test("source-less ml4 and mr3 React utility bridges are retired", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const generatedFallback = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
+  expect(appCss).not.toContain(".ml4 {");
+  expect(appCss).not.toContain(".mr3 {");
+  expect(generatedFallback).toContain(".ml4 {");
+  expect(generatedFallback).toContain("margin-left: 4px;");
+  expect(generatedFallback).toContain(".mr3 {");
+  expect(generatedFallback).toContain("margin-right: 3px;");
+
+  const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
+  for (const className of ["ml4", "mr3"]) {
+    expect(
+      runtimeSources.some((file) => {
+        const source = readFileSync(file, "utf8");
+        return new RegExp(`(?:["' ]|^)${className}(?:["' ]|$)`, "u").test(source);
+      }),
+    ).toBe(false);
+  }
+});
+
 test("root Yoram dialog center-txt bridge is retired while legacy fallback remains", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const generatedFallback = readFileSync(

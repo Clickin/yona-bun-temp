@@ -2003,3 +2003,6 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 859: managed dynamic-port system-Chrome organization add-form/fallback checks pass 3/3 and project fallback-off passes 1/1.
 - [ ] Batch 859: live legacy rendering is unavailable, so direct screenshot parity remains explicitly unverified; no compensating geometry was added.
 - [x] Batch 859: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 860: current React/TSX inventory emits neither `.ml4` nor `.mr3`; only the source-less React-side app.css utility arms were retired.
+- [x] Batch 860: generated legacy fallback retains both frozen utility declarations and the static fallback-off contract verifies absence/retention.
+- [x] Batch 860: no route implementation changed, so no Scala audit row or screenshot geometry claim is required; approved Yoram footer differences remain intentional.
