@@ -1960,3 +1960,11 @@ desktop/mobile geometry, and filtering.
 - [x] Shared `app.css` search bridge and generated fallback are retained pending populated/empty-state computed geometry and screenshot proof.
 - [ ] Live legacy screenshot parity for the full search-result family remains unverified; no compensating geometry was added.
 - [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional.
+### 2026-07-23 Batch 853 global search populated/empty result states
+
+- [x] `search/partial_search.scala.html` plus all eight search result partials, frozen `_page.less:6375-6495`/empty-result rules, Bootstrap, messages, and the complete `yobi.less` import chain are recorded.
+- [x] Global `/search` keeps legacy result DOM/order/copy, category Link navigation, keyword highlighting, project fork/create metadata, empty background, and responsive state; only nested avatar-image ownership and the Vite legacy-logo fallback were added.
+- [x] `frontend/tests/stylex-global-search-results.e2e.ts` covers source/import provenance, computed StyleX declarations, loaded fallback asset, desktop/390px containment, interaction, screenshots, and no overflow.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 5/5 each; screenshots are under `output/playwright/stylex-global-search-results/`.
+- [ ] Live legacy screenshot comparison is unavailable, so direct legacy screenshot parity remains unverified; no compensating geometry was added.
+- [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.

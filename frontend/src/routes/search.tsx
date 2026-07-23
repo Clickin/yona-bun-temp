@@ -17,6 +17,7 @@ import {
   type SearchType,
 } from "../api/search";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
+import defaultProjectLogoUrl from "../assets/legacy/project_default_logo.png";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -437,7 +438,7 @@ function GlobalSearchResultList({
                 data-stylex-owner="global-search-avatar"
               >
                 <GlobalSearchProjectLogoImage
-                  src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
+                  src={item.projectLogoUrl?.trim() || defaultProjectLogoUrl}
                 />
               </Link>
               <div
@@ -532,10 +533,15 @@ function GlobalSearchResultList({
                 >
                   {isDefaultUserSearchAvatar(item.avatarUrl) ? (
                     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-                    <img {...stylex.props(styles.avatarImage)} src={item.avatarUrl} />
+                    <img
+                      {...stylex.props(styles.avatarImage)}
+                      data-stylex-owner="global-search-avatar-image"
+                      src={item.avatarUrl}
+                    />
                   ) : (
                     <img
                       {...stylex.props(styles.avatarImage)}
+                      data-stylex-owner="global-search-avatar-image"
                       src={item.avatarUrl || ""}
                       alt={item.authorLabel}
                       width="32"
@@ -1044,8 +1050,14 @@ function globalSearchInternalLinkTarget(href: string, runtimeConfig: RuntimeConf
 }
 
 function GlobalSearchProjectLogoImage({ src }: { src: string }) {
-  /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
-  return <img {...stylex.props(styles.avatarImage)} src={src} />;
+  return (
+    /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
+    <img
+      {...stylex.props(styles.avatarImage)}
+      data-stylex-owner="global-search-avatar-image"
+      src={src}
+    />
+  );
 }
 
 function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {

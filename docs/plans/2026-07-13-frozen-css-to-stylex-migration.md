@@ -6912,3 +6912,15 @@ populated/empty states have paired computed-geometry and screenshot evidence,
 then verify the remaining consumers. This C/R batch changes documentation only;
 it has no Scala audit row and makes no screenshot-parity claim. Approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
+## Batch 853
+
+Port the global `/search` populated project-result and empty-result states into
+the existing route-local StyleX boundary. Preserve all legacy result DOM,
+classes, copy/order, category navigation, keyword highlighting, links, and
+responsive geometry. Add only the nested avatar-image owner marker and use the
+existing Vite-imported legacy default project logo when REST returns an empty
+logo URL. Shared `app.css` and generated fallback remain retained because the
+three-route search bridge is not yet fully retired. Managed system-Chrome
+normal/fallback-off focused runs pass 5/5 each with desktop/mobile screenshots;
+live legacy screenshot comparison remains unverified. The approved Yoram footer
+identity differences remain intentional.
