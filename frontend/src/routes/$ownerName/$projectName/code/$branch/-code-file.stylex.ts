@@ -43,6 +43,9 @@ export const styles = stylex.create({
   folderText: { overflow: "hidden", textOverflow: "ellipsis" },
   folderFilename: { fontSize: "10pt", whiteSpace: "nowrap" },
   folderCommitMessage: { color: "#7e7e7e", fontSize: "10pt" },
+  folderCommitMessageWrapper: {
+    marginLeft: "5px",
+  },
   folderCommitDate: {
     paddingRight: "5px",
     color: "#7e7e7e",

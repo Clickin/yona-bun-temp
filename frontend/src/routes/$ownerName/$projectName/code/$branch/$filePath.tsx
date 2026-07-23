@@ -519,7 +519,11 @@ function FolderListEntry({
         className={`${stylex.props(styles.folderText, styles.folderCommitMessage).className} span5 commitMsg`}
         data-stylex-owner="project-code-folder-commit-message"
       >
-        <span className="ml5">
+        <span
+          {...stylex.props(styles.folderCommitMessageWrapper)}
+          className={`${stylex.props(styles.folderCommitMessageWrapper).className} ml5`}
+          data-stylex-owner="project-code-folder-commit-message-wrapper"
+        >
           <Link
             activeOptions={{
               exact: true,

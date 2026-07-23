@@ -6804,6 +6804,20 @@ branch-picker interaction, and deterministic screenshots. Existing depth/list
 responsive hiding remains unchanged; live legacy screenshot comparison is
 unverified. Approved Yoram footer differences remain intentional.
 
+## Batch 866
+
+Move the populated code-folder listing's inner folder/file commit-message
+wrapper exact frozen `.ml5` `margin-left:5px` declaration into the existing
+code-file StyleX boundary. Preserve the legacy `span`, `ml5`, Link targets,
+copy/order, and folder/file row structure while retaining shared fallback for
+unrelated consumers. Managed System-Chrome normal and explicit fallback-off
+focused runs pass 2/2 each at desktop/390px with computed ownership,
+containment/no-overflow, folder/file navigation, and deterministic screenshots.
+Existing list/depth responsive behavior remains unchanged; live legacy
+screenshot comparison is unverified because `127.0.0.1:9000` is unavailable.
+Approved Yoram footer/provider/developer-contact/repository differences remain
+intentional.
+
 ## Batch 843
 
 Own the authenticated organization-home project-card stats icon paint from

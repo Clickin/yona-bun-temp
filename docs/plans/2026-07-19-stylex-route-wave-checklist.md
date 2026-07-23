@@ -2028,3 +2028,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 865: existing depth/list responsive hiding is recorded without compensating geometry or fallback removal.
 - [ ] Batch 865: live legacy screenshot comparison remains unavailable, so direct screenshot parity is explicitly unverified.
 - [x] Batch 865: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 866: populated code-folder folder/file commit-message wrappers preserve the legacy `span`/`ml5`/Link DOM and own frozen `.ml5` `margin-left:5px` through the existing code-file StyleX boundary; shared fallback remains for unrelated consumers.
+- [x] Batch 866: focused System-Chrome normal and explicit fallback-off runs pass 2/2 each at desktop/390px, with computed source ownership, row/list containment/no-overflow, folder/file navigation, and deterministic screenshots.
+- [x] Batch 866: existing list/depth responsive behavior is recorded without compensating geometry or fallback removal.
+- [ ] Batch 866: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 866: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
