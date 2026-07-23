@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const repoRoot = resolve("..");
 const screenshotDirectory = resolve("../output/playwright/visual-sweep");
 const owners = {
   page: "organization-members-page",
@@ -11,6 +12,7 @@ const owners = {
   addForm: "organization-members-add-form",
   avatar: "organization-member-avatar",
   avatarImage: "organization-member-avatar-image",
+  enrollmentAvatarWrap: "organization-enrollment-avatar-wrap",
   id: "organization-member-id",
   meta: "organization-member-meta",
   list: "organization-members-list",
@@ -43,6 +45,150 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(theme).toContain('avatarSurface: "#dddddd"');
   expect(theme).toContain('idText: "#cccccc"');
   expect(theme).not.toMatch(/(?:margin|padding|width|height|font|lineHeight)/u);
+});
+
+test("organization enrollment avatar owner follows the frozen legacy float boundary", () => {
+  const route = readFileSync("src/routes/organizations/$organizationName/members.tsx", "utf8");
+  const legacyTemplate = readFileSync(
+    resolve(repoRoot, "yona-original/app/views/organization/members.scala.html"),
+    "utf8",
+  );
+  const legacyCommon = readFileSync(
+    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_common.less"),
+    "utf8",
+  );
+  const legacyBootstrap = readFileSync(
+    resolve(repoRoot, "yona-original/public/bootstrap/css/bootstrap.css"),
+    "utf8",
+  );
+  const legacyYobi = readFileSync(
+    resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
+    "utf8",
+  );
+
+  expect(route).toContain('data-stylex-owner="organization-enrollment-avatar-wrap"');
+  expect(route).toContain('float: "left"');
+  expect(route).toContain('marginRight: "10px"');
+  expect(legacyTemplate).toContain('<div class="pull-left mr10">');
+  expect(legacyTemplate).toContain(
+    '<img src="@user.avatarUrl" height="65" width="65" class="img-circle"/>',
+  );
+  expect(legacyCommon).toContain(".mr10 { margin-right:10px; }");
+  expect(legacyBootstrap).toContain(".pull-left {");
+  expect(legacyBootstrap).toContain("  float: left;");
+  for (const importedStylesheet of [
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_responsive.less";',
+  ]) {
+    expect(legacyYobi).toContain(importedStylesheet);
+  }
+});
+
+test("organization enrollment request preserves avatar geometry, order, copy, and accept interaction", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const fixture = { populated: false, enrollment: true };
+  const enrollmentFixture = { loginId: "pending", userId: 3 };
+  const requests = await mockMembers(page, fixture, enrollmentFixture);
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+
+  const request = page.locator(".project-page-wrap .row-fluid").last().locator(".span2").first();
+  const avatarWrap = request.locator(`[data-stylex-owner="${owners.enrollmentAvatarWrap}"]`);
+  const avatar = request.locator("img.img-circle");
+  const details = request.locator('[data-stylex-owner="organization-members-enrollment-details"]');
+  const accept = request.locator(".enrollAcceptBtn");
+
+  await expect(request).toBeVisible();
+  await expect(avatarWrap).toHaveCount(1);
+  await expect(avatarWrap).toHaveClass(/\bpull-left\b.*\bmr10\b/u);
+  await expect(avatar).toHaveAttribute("width", "65");
+  await expect(avatar).toHaveAttribute("height", "65");
+  await expect(request.locator("a")).toHaveCount(2);
+  await expect(request).toContainText("Pending User");
+  await expect(request).toContainText("(pending)");
+  await expect(accept).toHaveText(/Add/u);
+  await expect(accept).toHaveAttribute("data-loginid", "pending");
+  await expect(avatarWrap).toHaveCSS("float", "left");
+  await expect(avatarWrap).toHaveCSS("margin-right", "10px");
+
+  await expect(request.locator(":scope > div").nth(0)).toHaveAttribute(
+    "data-stylex-owner",
+    owners.enrollmentAvatarWrap,
+  );
+  await expect(request.locator(":scope > div").nth(1)).toHaveAttribute(
+    "data-stylex-owner",
+    "organization-members-enrollment-details",
+  );
+
+  const desktopGeometry = await request.evaluate((element) => {
+    const wrap = element.querySelector<HTMLElement>(
+      '[data-stylex-owner="organization-enrollment-avatar-wrap"]',
+    );
+    const image = wrap?.querySelector<HTMLImageElement>("img");
+    const details = element.querySelector<HTMLElement>(
+      '[data-stylex-owner="organization-members-enrollment-details"]',
+    );
+    if (!wrap || !image || !details) return null;
+    const box = (target: Element) => {
+      const rect = target.getBoundingClientRect();
+      return {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      };
+    };
+    const row = element.parentElement?.getBoundingClientRect() ?? element.getBoundingClientRect();
+    return {
+      details: box(details),
+      image: box(image),
+      row: { bottom: row.bottom, left: row.left, right: row.right, top: row.top },
+      scrollWidth: document.documentElement.scrollWidth,
+      wrap: box(wrap),
+    };
+  });
+  expect(desktopGeometry).not.toBeNull();
+  expect(desktopGeometry!.scrollWidth).toBeLessThanOrEqual(1374);
+  expect(desktopGeometry!.wrap.width).toBe(65);
+  expect(desktopGeometry!.wrap.left).toBeGreaterThanOrEqual(desktopGeometry!.row.left);
+  expect(desktopGeometry!.wrap.right).toBe(desktopGeometry!.image.right);
+  expect(desktopGeometry!.details.left).toBe(desktopGeometry!.wrap.right + 10);
+  expect(desktopGeometry!.details.right).toBeLessThanOrEqual(desktopGeometry!.row.right);
+  expect(desktopGeometry!.image.width).toBe(65);
+  expect(desktopGeometry!.image.height).toBe(65);
+
+  const acceptRequestPromise = page.waitForRequest(
+    (request) => request.method() === "POST" && request.url().includes("/api/v1/organizations/"),
+  );
+  await accept.click();
+  const acceptRequest = await acceptRequestPromise;
+  expect(acceptRequest.url()).toContain(
+    `/api/v1/organizations/weblabs/enrollments/${enrollmentFixture.userId}/accept`,
+  );
+  await expect.poll(() => requests.acceptedEnrollments).toEqual([enrollmentFixture]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileGeometry = await request.evaluate((element) => {
+    const row = element.getBoundingClientRect();
+    const container = element.parentElement?.getBoundingClientRect();
+    const wrap = element
+      .querySelector<HTMLElement>('[data-stylex-owner="organization-enrollment-avatar-wrap"]')
+      ?.getBoundingClientRect();
+    const image = element.querySelector<HTMLImageElement>("img")?.getBoundingClientRect();
+    return wrap && image && container
+      ? { container, image, row, wrap, scrollWidth: document.documentElement.scrollWidth }
+      : null;
+  });
+  expect(mobileGeometry).not.toBeNull();
+  expect(mobileGeometry!.scrollWidth).toBeLessThanOrEqual(398);
+  expect(mobileGeometry!.wrap.left).toBeGreaterThanOrEqual(mobileGeometry!.container.left);
+  expect(mobileGeometry!.image.right).toBeGreaterThan(mobileGeometry!.row.right);
+  expect(mobileGeometry!.image.right).toBeLessThanOrEqual(mobileGeometry!.container.right);
 });
 
 for (const viewport of [
@@ -166,7 +312,11 @@ for (const viewport of [
   });
 }
 
-async function mockMembers(page: Page, fixture: { populated: boolean }) {
+async function mockMembers(
+  page: Page,
+  fixture: { populated: boolean; enrollment?: boolean },
+  enrollmentFixture = { loginId: "pending", userId: 3 },
+) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -185,12 +335,32 @@ async function mockMembers(page: Page, fixture: { populated: boolean }) {
     userLabel: "Site Admin",
   };
   const fulfillSession = (route: Route) =>
-    route.fulfill({ contentType: "application/json", json: session });
+    route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
+      json: session,
+    });
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
     await page.route(url, fulfillSession);
 
   await page.route("**/api/v1/organizations/weblabs/admin", (route) =>
-    route.fulfill({ contentType: "application/json", json: adminPayload(fixture.populated) }),
+    route.fulfill({
+      contentType: "application/json",
+      json: adminPayload(fixture.populated, fixture.enrollment ?? false),
+    }),
+  );
+  const acceptedEnrollments: Array<{ loginId: string; userId: number }> = [];
+  await page.route(
+    `**/api/v1/organizations/weblabs/enrollments/${enrollmentFixture.userId}/accept`,
+    async (route) => {
+      if (route.request().method() === "POST") {
+        acceptedEnrollments.push(enrollmentFixture);
+      }
+      await route.fulfill({
+        contentType: "application/json",
+        json: adminPayload(fixture.populated, fixture.enrollment ?? false),
+      });
+    },
   );
   await page.route("**/api/v1/organizations/weblabs/container", (route) =>
     route.fulfill({
@@ -220,12 +390,22 @@ async function mockMembers(page: Page, fixture: { populated: boolean }) {
       },
     }),
   );
+  return { acceptedEnrollments };
 }
 
-function adminPayload(populated: boolean) {
+function adminPayload(populated: boolean, enrollment = false) {
   return {
     deleteAllowed: true,
-    enrollmentRequests: [],
+    enrollmentRequests: enrollment
+      ? [
+          {
+            avatarUrl: "/assets/images/default-avatar-64.png",
+            loginId: "pending",
+            userId: 3,
+            userLabel: "Pending User",
+          },
+        ]
+      : [],
     id: 42,
     logoUrl: "",
     members: populated

@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   addOrganizationMemberRest,
+  acceptOrganizationEnrollmentRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
   updateOrganizationMemberRoleRest,
@@ -143,6 +144,18 @@ function OrganizationMembersBody({
       return addOrganizationMemberRest(runtimeConfig, csrfToken, {
         loginId: String(formData.get("loginId") ?? ""),
         organizationName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: adminQueryKey });
+    },
+  });
+  const acceptEnrollmentMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
+        organizationName,
+        userId,
       });
     },
     onSuccess() {
@@ -389,11 +402,11 @@ function OrganizationMembersBody({
                 {organization.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
                     key={stringField(user.loginId, "")}
-                    onAccept={(loginId) => {
+                    onAccept={(userId, loginId) => {
                       setLoginIdQuery(loginId);
                       setIsTypeaheadOpen(false);
                       setActiveSuggestionIndex(0);
-                      addLoginId(loginId);
+                      acceptEnrollmentMutation.mutate(userId);
                     }}
                     user={user}
                   />
@@ -535,6 +548,11 @@ const styles = stylex.create({
   enrollmentDetails: {
     width: "60px",
   },
+  // Legacy organization/members.scala.html enrolled-user avatar wrapper.
+  enrollmentAvatarWrap: {
+    float: "left",
+    marginRight: "10px",
+  },
   memberList: {
     listStyle: "none",
     margin: "0px",
@@ -619,15 +637,20 @@ function EnrollmentRequest({
   onAccept,
   user,
 }: {
-  onAccept: (loginId: string) => void;
+  onAccept: (userId: number, loginId: string) => void;
   user: YoramUserItem;
 }) {
   const { t } = useLegacyMessages();
   const loginId = stringField(user.loginId, "");
+  const avatarWrapProps = stylex.props(styles.enrollmentAvatarWrap);
+  const enrollmentDetailsProps = stylex.props(styles.enrollmentDetails);
 
   return (
     <div className="span2">
-      <div className="pull-left mr10">
+      <div
+        className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}
+        data-stylex-owner="organization-enrollment-avatar-wrap"
+      >
         <Link
           activeProps={{
             "aria-current": undefined,
@@ -647,8 +670,7 @@ function EnrollmentRequest({
         </Link>
       </div>
       <div
-        className="pull-left"
-        {...stylex.props(styles.enrollmentDetails)}
+        className={`${enrollmentDetailsProps.className ?? ""} pull-left`.trim()}
         data-stylex-owner="organization-members-enrollment-details"
       >
         <span>
@@ -669,7 +691,7 @@ function EnrollmentRequest({
           type="button"
           className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
           data-loginid={loginId}
-          onClick={() => onAccept(loginId)}
+          onClick={() => onAccept(user.userId, loginId)}
         >
           <i className="yobicon-addfriend"></i>
           {t("button.add")}

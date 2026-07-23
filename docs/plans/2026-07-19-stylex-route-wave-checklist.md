@@ -1788,6 +1788,15 @@ desktop/mobile geometry, and filtering.
 - [x] `frontend/tests/legacy-fallback-off.e2e.ts` verifies bridge absence, generated fallback retention, and the complete direct consumer graph in normal and fallback-off modes.
 - [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
 
+### 2026-07-23 Batch 834 organization enrollment-request avatar wrapper
+
+- [x] `organization/members.scala.html:89-103` and the frozen `_common.less` `.pull-left`/`.mr10` rules plus the complete `yobi.less` import chain are recorded as the output and geometry source.
+- [x] The route-local StyleX owner preserves the legacy avatar dimensions, link/details/button order, copy, and React-owned accept mutation behavior.
+- [x] The focused E2E verifies source provenance, computed geometry, desktop/390px behavior, and the actual enrollment accept POST.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused suites pass 5/5 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+- [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+
 ### 2026-07-23 Batch 833 global Yoram dialog center alignment
 
 - [x] `common/scripts.scala.html` and the frozen LESS import chain are mapped; the global `#yobiDialog` confirmation row retains legacy DOM/copy and now has a stable root StyleX owner.
