@@ -6811,6 +6811,16 @@ system-Chrome normal/fallback-off checks pass 1/1 each at desktop and 390px.
 Live legacy screenshot parity is explicitly unverified; approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
 
+## Batch 848
+
+Repair the existing organization enrollment-request accept type boundary. The
+legacy `organization/members.scala.html:89-103` Add control sends a numeric
+enrollment user id; the React `YoramRecord` field is runtime-normalized with
+`Number(user.userId)` before the existing accept mutation. No DOM, CSS,
+StyleX, fallback, or screenshot geometry changes. The existing organization
+members focused suite passes 5/5 in managed system Chrome, and the full
+frontend TypeScript check now passes.
+
 ## Batch 845
 
 Own the organization-home member-panel avatar wrapper/image cascade. The

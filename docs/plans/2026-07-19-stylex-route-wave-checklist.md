@@ -66,6 +66,13 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
 - [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
 
+### 2026-07-23 Batch 848 organization enrollment-request accept type boundary
+
+- [x] `organization/members.scala.html:89-103` and the legacy enrollment accept contract are recorded as the numeric user-id interaction source.
+- [x] The existing React accept handler normalizes `user.userId` with `Number(...)`; DOM/classes/copy/order, mutation path, StyleX declarations, fallback, and geometry are unchanged.
+- [x] Existing `frontend/tests/stylex-organization-members-list.e2e.ts` passes 5/5 in managed system Chrome, including accept interaction and desktop/mobile populated/empty states.
+- [x] Full frontend TypeScript check, production build, and StyleX verifier pass; this is a type-only repair with no new screenshot-parity claim.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.

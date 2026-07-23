@@ -37,6 +37,8 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(route).toContain('marginLeft: "5px"');
   expect(route).toContain('[globalBreakpoints.mobile]: "95%"');
   expect(route).toContain('[globalBreakpoints.mobile]: "100vw"');
+  expect(route).toContain("onAccept={(userId, loginId) =>");
+  expect(route).toContain("onAccept(Number(user.userId), loginId)");
   expect(route).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
   expect(route).not.toContain('className="member-name"');
   expect(route).not.toContain('className="member-id"');

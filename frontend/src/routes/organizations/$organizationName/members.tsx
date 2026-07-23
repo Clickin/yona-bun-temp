@@ -691,7 +691,7 @@ function EnrollmentRequest({
           type="button"
           className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
           data-loginid={loginId}
-          onClick={() => onAccept(user.userId, loginId)}
+          onClick={() => onAccept(Number(user.userId), loginId)}
         >
           <i className="yobicon-addfriend"></i>
           {t("button.add")}
