@@ -6980,3 +6980,14 @@ utility declarations for legacy/plugin output. This is a static fallback
 retirement with no route DOM or screenshot geometry change. The approved
 Yoram footer/provider/developer-contact/repository differences remain
 intentional.
+## Batch 861
+
+Move the populated project-home README Edit link's exact frozen `.ml5`
+`margin-left:5px` declaration into the existing project-home StyleX boundary.
+Preserve the legacy `ybtn vmiddle ml5` Link DOM, README populated/empty states,
+copy, route/query target, and React navigation; keep the shared `.ml5` fallback
+for unrelated consumers. Managed system-Chrome normal and explicit
+fallback-off focused runs pass 1/1 each with desktop/mobile geometry and
+screenshots. Live legacy screenshot comparison remains unverified. Approved
+Yoram footer/provider/developer-contact/repository differences remain
+intentional.

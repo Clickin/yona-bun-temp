@@ -2006,3 +2006,7 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 860: current React/TSX inventory emits neither `.ml4` nor `.mr3`; only the source-less React-side app.css utility arms were retired.
 - [x] Batch 860: generated legacy fallback retains both frozen utility declarations and the static fallback-off contract verifies absence/retention.
 - [x] Batch 860: no route implementation changed, so no Scala audit row or screenshot geometry claim is required; approved Yoram footer differences remain intentional.
+- [x] Batch 861: project-home `partial_readme.scala.html`/`_common.less` provenance is recorded; the README Edit link owns frozen `margin-left:5px` through the existing project-home StyleX boundary.
+- [x] Batch 861: populated/empty README DOM, `ybtn vmiddle ml5` contract, desktop/390px geometry, screenshots, and Edit navigation are covered by the focused E2E; normal and explicit fallback-off runs pass 1/1 each.
+- [ ] Batch 861: live legacy screenshot comparison remains unavailable; no compensating geometry was added.
+- [x] Batch 861: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

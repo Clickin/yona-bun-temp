@@ -53,9 +53,7 @@ test("project home header and milestone StyleX owners retain legacy geometry wit
   await mockProjectHome(page);
 
   await page.goto(`${basePath}/admin/sample`);
-  await expect(
-    page.locator("[data-stylex-owner=project-home-header-background]"),
-  ).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=project-home-header-background]")).toBeVisible();
   await expect(
     page.locator("[data-stylex-owner=project-home-milestone-progress-wrap]"),
   ).toBeVisible();
@@ -71,14 +69,20 @@ test("project home header and milestone StyleX owners retain legacy geometry wit
     const avatar = style("[data-stylex-owner=project-header-avatar]");
     const breadcrumb = style("[data-stylex-owner=project-header-breadcrumb-wrap]");
     const progress = style("[data-stylex-owner=project-home-milestone-progress-wrap]");
-    const wrapElement = document.querySelector<HTMLElement>("[data-stylex-owner=project-header-wrap]");
+    const wrapElement = document.querySelector<HTMLElement>(
+      "[data-stylex-owner=project-header-wrap]",
+    );
     const outerElement = document.querySelector<HTMLElement>(
       "[data-stylex-owner=project-home-header-background]",
     );
     if (!wrapElement || !outerElement) throw new Error("Missing project header geometry");
     return {
       avatar: { bottom: avatar.bottom, height: avatar.height, width: avatar.width },
-      breadcrumb: { bottom: breadcrumb.bottom, left: breadcrumb.left, position: breadcrumb.position },
+      breadcrumb: {
+        bottom: breadcrumb.bottom,
+        left: breadcrumb.left,
+        position: breadcrumb.position,
+      },
       outer: { height: outer.height },
       progress: {
         color: progress.color,
@@ -110,8 +114,14 @@ test("project home header and milestone StyleX owners retain legacy geometry wit
   expect(styles.wrap.widthRatio).toBeCloseTo(0.97, 2);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS("height", "50px");
-  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS("width", "50px");
+  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS(
+    "height",
+    "50px",
+  );
+  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS(
+    "width",
+    "50px",
+  );
   await expect(page.locator("[data-stylex-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
     "bottom",
     "5px",
@@ -581,6 +591,84 @@ test("project home README tab renders README Markdown instead of compatibility H
     ),
   );
   await expect(page.locator(".readme-body")).not.toContainText("Server HTML should not render");
+});
+
+test("project home README Edit link owns legacy ml5 spacing and navigation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  const styleSource = await readFile(
+    "src/routes/$ownerName/$projectName/-project-home.stylex.ts",
+    "utf8",
+  );
+  const legacySource = await readFile(
+    "../yona-original/app/views/project/partial_readme.scala.html",
+    "utf8",
+  );
+
+  expect(routeSource).toContain("projectHomeStyles.readmeEditLink");
+  expect(routeSource).toContain('data-stylex-owner="project-home-readme-edit-link"');
+  expect(styleSource).toContain('readmeEditLink: { marginLeft: "5px" }');
+  expect(legacySource).toContain('class="ybtn vmiddle ml5"');
+  expect(legacySource).toContain('<div class="bubble-wrap gray readme">');
+
+  await mockProjectHome(page, {
+    readmeFile: {
+      bodyHtml: "<p>Server HTML should not render</p>",
+      bodyMarkdown: "Project **README**",
+      name: "README.md",
+    },
+  });
+
+  for (const viewport of [
+    { name: "desktop", width: 1280, height: 720 },
+    { name: "mobile", width: 390, height: 720 },
+  ]) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto(`${basePath}/admin/sample`);
+
+    const edit = page.locator('[data-stylex-owner="project-home-readme-edit-link"]');
+    await expect(edit).toHaveText("Edit");
+    await expect(edit).toHaveClass(/ybtn/u);
+    await expect(edit).toHaveClass(/vmiddle/u);
+    await expect(edit).toHaveClass(/ml5/u);
+    await expect(edit).toHaveCSS("margin-left", "5px");
+    await expect(edit).toHaveCSS("vertical-align", "middle");
+    await expect(edit).toHaveAttribute("href", `${basePath}/admin/sample/postform?readme=true`);
+
+    const geometry = await page.evaluate(() => {
+      const header = document.querySelector<HTMLElement>(".readme-wrap > header");
+      const name = document.querySelector<HTMLElement>(".readme-wrap > header > strong");
+      const edit = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-home-readme-edit-link"]',
+      );
+      if (!header || !name || !edit) throw new Error("Missing README Edit geometry");
+      const headerBox = header.getBoundingClientRect();
+      const nameBox = name.getBoundingClientRect();
+      const editBox = edit.getBoundingClientRect();
+      return {
+        editBottom: editBox.bottom,
+        editLeft: editBox.left,
+        editTop: editBox.top,
+        headerBottom: headerBox.bottom,
+        headerTop: headerBox.top,
+        nameRight: nameBox.right,
+        scrollWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(geometry.editTop).toBeGreaterThanOrEqual(geometry.headerTop);
+    expect(geometry.editBottom).toBeLessThanOrEqual(geometry.headerBottom);
+    expect(geometry.editLeft).toBeGreaterThanOrEqual(geometry.nameRight);
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+
+    await page.screenshot({
+      path: `output/playwright/visual-sweep/stylex-project-home-readme-edit-${viewport.name}.png`,
+      fullPage: true,
+    });
+  }
+
+  await page.locator('[data-stylex-owner="project-home-readme-edit-link"]').click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform?readme=true`);
 });
 
 test("project home README tab treats an empty README file as an existing README", async ({
@@ -1753,7 +1841,12 @@ async function canonicalizeLocator(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            !attr.name.startsWith("data-stylex-") &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => normalizeSerializedAttr(node, attr))
         .filter(Boolean)
@@ -1807,7 +1900,12 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            !attr.name.startsWith("data-stylex-") &&
+            attr.name !== "alt",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => normalizeSerializedAttr(node, attr))
         .filter(Boolean)

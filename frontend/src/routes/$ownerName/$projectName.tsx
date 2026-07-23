@@ -1891,7 +1891,8 @@ function ReadmePane({
                   basePath,
                   prefixBasePath(basePath, `/${ownerName}/${projectName}/postform?readme=true`),
                 )}
-                className="ybtn vmiddle ml5"
+                className={`${stylex.props(projectHomeStyles.readmeEditLink).className} ybtn vmiddle ml5`}
+                data-stylex-owner="project-home-readme-edit-link"
               >
                 {t("button.edit")}
               </Link>
