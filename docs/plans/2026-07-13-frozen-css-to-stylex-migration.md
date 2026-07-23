@@ -6795,6 +6795,23 @@ no route-specific compensation.
 Approved Yoram footer NAVER/provider/developer-contact/upstream-repository
 differences remain intentional.
 
+## Batch 889
+
+Move the project issue-label form category heading's exact frozen `.mr20`
+`margin-right:20px` declaration into the existing route-local StyleX owner.
+Preserve the `h5` category heading DOM/order, category copy, right alignment,
+exclusive-label controls, React edit/delete behavior, and the shared fallback
+for unrelated consumers. Managed external System-Chrome normal, explicit
+fallback-off, and restored-normal focused runs pass 1/1 each at 1366x900 and
+390x844; normal and fallback-off desktop/mobile screenshots were visually
+inspected. The adjacent labelsform guards pass 7/8; the one failure is a
+pre-existing guard that rejects the existing `errorMessage` margin in
+`-labelsform.stylex.ts`, which this batch did not change. Fallback-off global
+navigation/form-shell drift remains outside this heading owner and receives no
+route-specific compensation. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
+
 ## Batch 877
 
 Move the authenticated populated project issue-list mode-control wrappers'

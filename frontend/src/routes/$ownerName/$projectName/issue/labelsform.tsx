@@ -83,7 +83,10 @@ const styles = stylex.create({
     textAlign: "right",
   },
   listNameColumn: { paddingLeft: "8px", lineHeight: "30px" },
-  categoryHeading: { textAlign: "right" },
+  categoryHeading: {
+    marginRight: "20px",
+    textAlign: "right",
+  },
   categoryName: { marginRight: "2px" },
   exclusiveIcon: {
     color: labelsFormColors.notice,

@@ -2144,3 +2144,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 888: adjacent projectform guards pass 3/3; the known 390px form-shell/warning text width baseline is outside this owner and receives no compensation.
 - [x] Batch 888: focused source/runtime guard checks Scala/LESS/page/messages provenance, computed margin/color/copy, no inline/plugin-only attrs, target diagnostics, and Git/Subversion interaction.
 - [x] Batch 888: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 889: project labels form category headings preserve the legacy `h5` category DOM/copy and own exact `margin-right:20px` through the existing route-local StyleX owner while retaining `mr20` for fallback/unrelated consumers.
+- [x] Batch 889: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390x844; normal/fallback-off desktop/mobile screenshots were visually inspected.
+- [x] Batch 889: focused source/runtime guard checks Scala partial provenance, frozen `.mr20`, computed 20px margin, right alignment, owner/source metadata, no inline/plugin-only attrs, and owner-outside shell diagnostics.
+- [x] Batch 889: adjacent labelsform guards pass 7/8; the one failure is the pre-existing `stylex-project-labelsform.e2e.ts` rejection of the unchanged `errorMessage` margin in `-labelsform.stylex.ts`.
+- [x] Batch 889: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored; fallback-off global navigation/form-shell drift remains outside this owner without compensation.
