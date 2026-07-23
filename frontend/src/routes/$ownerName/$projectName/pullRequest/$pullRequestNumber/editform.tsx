@@ -436,7 +436,11 @@ function PullRequestMarkdownEditor({ value }: { value: string }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
-    <div className="mt10">
+    <div
+      {...stylex.props(sx.markdownEditorWrapper)}
+      className={`${stylex.props(sx.markdownEditorWrapper).className} mt10`.trim()}
+      data-stylex-owner="pull-request-editform-markdown-editor-wrapper"
+    >
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>

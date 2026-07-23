@@ -17,6 +17,7 @@ export const styles = stylex.create({
   },
   form: { backgroundColor: newPullRequestTheme.formSurface },
   editorWrapper: { position: "relative" },
+  markdownEditorWrapper: { marginTop: "10px" },
   branchPicker: { width: "220px" },
   select2Choice: {
     boxSizing: "border-box",

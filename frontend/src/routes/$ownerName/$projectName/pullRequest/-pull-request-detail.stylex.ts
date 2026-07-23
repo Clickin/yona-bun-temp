@@ -103,5 +103,8 @@ export const styles = stylex.create({
     verticalAlign: "baseline",
   },
   branchInfoStartIcon: { "::before": { content: '"\\e4ed"' } },
-  branchInfoDirectionIcon: { "::before": { content: '"\\e504"' } },
+  branchInfoDirectionIcon: {
+    margin: "0 5px 0 10px",
+    "::before": { content: '"\\e504"' },
+  },
 });

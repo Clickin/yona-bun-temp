@@ -32,6 +32,7 @@ const sx = {
   title: stylex.props(styles.title),
   issueNumber: stylex.props(styles.issueNumber),
   editor: stylex.props(styles.editor),
+  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
   editorPositioned: stylex.props(styles.editorPositioned),
   editorTabContent: stylex.props(styles.editorTabContent),
   assigneeInput: stylex.props(styles.assigneeInput),
@@ -1039,7 +1040,11 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
     }
   }, [focusRequest]);
   return (
-    <div className="mt10">
+    <div
+      {...sx.markdownEditorWrapper}
+      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
+      data-stylex-owner="issue-editform-markdown-editor-wrapper"
+    >
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>

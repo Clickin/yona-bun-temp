@@ -49,6 +49,7 @@ export const styles = stylex.create({
     minHeight: "300px",
     width: "100%",
   },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorPositioned: { position: "relative" },
   editorTabContent: { position: "relative", overflow: "visible" },
   assigneeInput: { width: "100%" },

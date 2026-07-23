@@ -56,6 +56,7 @@ export const styles = stylex.create({
     width: "97%",
   },
   editorWrap: { position: "relative" },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
   editor: {
     borderColor: pullRequestEditColors.editorBorder,

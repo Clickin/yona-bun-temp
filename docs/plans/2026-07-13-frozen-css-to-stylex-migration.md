@@ -7544,3 +7544,22 @@ remain screen-wide or fallback-owned gaps outside these owners, so no
 route-specific compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+## Batch 894
+
+Move the issue editform, new pull-request form, and pull-request editform
+markdown-editor wrappers' exact frozen `.mt10` `margin-top:10px` declaration
+into their existing route-local StyleX boundaries. Move the pull-request
+detail branch-direction icon's legacy `.ml10` result into the existing branch
+icon StyleX boundary while preserving the existing frozen icon margin cascade
+(`margin: 0 5px 0 10px`). Preserve legacy editor/branch DOM, classes, copy,
+tab/link order, interaction, and React/TanStack behavior. Managed external
+System-Chrome integrated normal, explicit fallback-off, and restored-normal
+focused runs pass 4/4 each at 1366x900 and 390x844. Normal and fallback-off
+desktop/mobile screenshots for all four owners were visually inspected.
+Adjacent guards pass 16/21; five unchanged failures are pre-existing new
+pull-request conflict/form/Select2 fixture or selector assumptions and a
+pull-request detail markdown fixture load. Fallback-off global shell drift and
+full live legacy/Yoram shell screenshot parity remain screen-wide or
+fallback-owned gaps outside these owners, so no route-specific compensation
+was added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
+repository differences remain intentional.
