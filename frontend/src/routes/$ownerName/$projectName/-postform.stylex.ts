@@ -23,6 +23,7 @@ export const styles = stylex.create({
   },
   attachWrap: { textAlign: "center" },
   editorWrapper: { position: "relative" },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },

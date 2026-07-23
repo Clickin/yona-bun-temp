@@ -18,6 +18,7 @@ import { styles } from "./-postform.stylex";
 
 const sx = {
   editorWrapper: stylex.props(styles.editorWrapper),
+  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
   editorTabContent: stylex.props(styles.editorTabContent),
   page: stylex.props(styles.page),
   form: stylex.props(styles.form),
@@ -343,7 +344,11 @@ function BoardPostMarkdownEditor({
     }
   }, [focusRequest]);
   return (
-    <div className="mt10">
+    <div
+      {...sx.markdownEditorWrapper}
+      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
+      data-stylex-owner="project-postform-markdown-editor-wrapper"
+    >
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <Link

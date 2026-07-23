@@ -55,6 +55,9 @@ export const userSettingsProfileStyles = stylex.create({
     verticalAlign: "middle",
     width: "206px",
   },
+  profileFieldRow: {
+    marginTop: "10px",
+  },
   resetVisited: {
     clear: "both",
     paddingTop: "5px",

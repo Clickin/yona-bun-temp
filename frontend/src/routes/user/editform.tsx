@@ -389,7 +389,11 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       >
         <dl>
           <dt>{t("user.loginId")}</dt>
-          <dd className="mt10">
+          <dd
+            {...stylex.props(userSettingsProfileStyles.profileFieldRow)}
+            className="mt10"
+            data-stylex-owner="user-settings-profile-login-id-row"
+          >
             <input
               type="text"
               className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
@@ -399,7 +403,11 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             />
           </dd>
           <dt>{t("user.name")}</dt>
-          <dd className="mt10">
+          <dd
+            {...stylex.props(userSettingsProfileStyles.profileFieldRow)}
+            className="mt10"
+            data-stylex-owner="user-settings-profile-name-row"
+          >
             <input
               key={`name-${displayName}`}
               type="text"
@@ -410,7 +418,11 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             />
           </dd>
           <dt>{t("user.email")}</dt>
-          <dd className="mt10">
+          <dd
+            {...stylex.props(userSettingsProfileStyles.profileFieldRow)}
+            className="mt10"
+            data-stylex-owner="user-settings-profile-email-row"
+          >
             <input
               key={`email-${email}`}
               type="email"

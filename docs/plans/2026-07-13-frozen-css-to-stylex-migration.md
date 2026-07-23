@@ -7525,3 +7525,22 @@ organization shell/navigation drift remains outside this due-date owner and
 receives no route-specific compensation. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+## Batch 893
+
+Move the project postform markdown-editor wrapper's exact frozen `.mt10`
+`margin-top:10px` declaration into the existing postform StyleX boundary, and
+move the three profile editform `<dd class="mt10">` rows' same exact
+declaration into the existing user-settings profile StyleX boundary. Preserve
+the legacy editor/profile DOM, class consumers, copy, field order, tab order,
+avatar upload exception, and React behavior; leave the unrelated avatar
+upload wrapper's `mt10` consumer unchanged. Managed external System-Chrome
+focused normal, explicit fallback-off, and restored-normal runs pass 4/4 each
+at 1366x900 and 390x844. Normal and fallback-off desktop/mobile screenshots
+were visually inspected. Adjacent guards pass 10/13; the three unchanged
+failures are the pre-existing email action class/fixture assumptions and the
+pre-existing user-settings tab theme-boundary assertion. Fallback-off global
+shell/navigation drift and full live legacy/Yoram shell screenshot parity
+remain screen-wide or fallback-owned gaps outside these owners, so no
+route-specific compensation was added. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
