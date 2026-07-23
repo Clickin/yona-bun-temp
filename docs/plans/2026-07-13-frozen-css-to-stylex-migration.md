@@ -6824,3 +6824,16 @@ while route-local StyleX owns only those declarations. Focused managed
 system-Chrome normal/fallback-off checks pass 1/1 each at desktop and 390px.
 Live legacy screenshot parity is explicitly unverified; approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
+
+## Batch 846
+
+Refresh the shared `.avatar-wrap` consumer graph before attempting any
+fallback retirement. Frozen `_yobiUI.less:439-466` defines the base wrapper and
+nested image family, while `_page.less` contains multiple descendant avatar
+consumers. A read-only React inventory finds independent emitters across
+project, issue, commit, code, pull-request, user, search, organization,
+import, UI-kit, and home routes. The organization-home member-panel avatar is
+now route-owned, but it is only one consumer. The global `app.css`/generated
+fallback family therefore remains enabled; no selector, route, or frozen file
+is changed until a complete all-consumer owner graph exists. This is a C/R
+evidence decision with no Scala audit row and no screenshot-parity claim.

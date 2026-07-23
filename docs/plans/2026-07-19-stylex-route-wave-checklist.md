@@ -49,6 +49,14 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified and no compensating geometry was added.
 - [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries.
 
+### 2026-07-23 Batch 846 shared `.avatar-wrap` consumer-graph refresh
+
+- [x] Frozen `_yobiUI.less:439-466` base/nested-image declarations and `_page.less` descendant selector consumers are enumerated.
+- [x] The React inventory confirms independent avatar-wrap emitters remain across project, issue, commit, code, PR, user, search, organization, import, UI-kit, and home routes; the organization-home member-panel owner is only one bounded consumer.
+- [x] No shared selector, route TSX, frozen source, or generated fallback was changed; the global family remains enabled by default.
+- [x] This is a documented C/R decision, not a route-state implementation; no Scala audit row is added.
+- [ ] A complete all-consumer owner graph is still required before any shared `.avatar-wrap` fallback retirement; no deletion or parity claim is made here.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.
