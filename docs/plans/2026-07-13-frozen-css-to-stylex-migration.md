@@ -8131,3 +8131,8 @@ intercepts pointer clicks and do not claim modal screenshot parity. The selected
 guards pass 4/5; one unchanged `stylex-project-home-progress.e2e.ts` guard retains an exact source
 assertion for an older dynamic-progress expression. Approved Yoram footer NAVER Labs,
 developer-contact, and upstream-repository/provider differences remain intentional.
+## Batch 929
+
+Move the populated milestone-detail issue metadata count and label surface into the existing route-local StyleX boundary. Preserve the legacy count partial anchors, icon/value order, colors, counts, milestone link, and copy. Explicit StyleX declarations own the frozen count-group border and spacing; no route-specific compensation is permitted.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. The legacy `:first-child` selector does not match these anchor-wrapped icons, so both modes correctly retain the 1px icon divider. Captures under `frontend/output/playwright/stylex-project-milestone-detail-ml10/{normal,fallback-off}/` were inspected. Live legacy pair, global fallback audit, full fallback-off suite, and production build remain final-profile deferred; approved Yoram footer differences remain intentional.

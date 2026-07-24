@@ -48,6 +48,13 @@ const sx = {
   issueTitle: stylex.props(styles.issueTitle),
   issueInfos: stylex.props(styles.infos),
   issueInfosItem: stylex.props(styles.infosItem),
+  issueCountGroups: stylex.props(styles.infosItem, styles.itemCountGroups),
+  issueCommentsCount: stylex.props(styles.commentsCount),
+  issueVoteCount: stylex.props(styles.voteCount),
+  issueSharerCount: stylex.props(styles.sharerCount),
+  issueCountLinkOffset: stylex.props(styles.countLinkOffset),
+  issueCountIcon: stylex.props(styles.countGroups, styles.countIcon),
+  issueCountValue: stylex.props(styles.countGroups, styles.countValue),
   issueMeta: stylex.props(styles.issueMeta),
   issueAssigneeRail: stylex.props(styles.issueAssigneeRail),
   issueDueDateRail: stylex.props(styles.issueDueDateRail),
@@ -1244,6 +1251,7 @@ function MilestoneIssueRow({
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ ownerName, projectName, milestoneId: stringField(issue.milestoneId) }}
                   {...LEGACY_MILESTONE_LINK_PROPS}
+                  data-stylex-owner="milestone-detail-issue-milestone-link"
                   title={t("milestone")}
                 >
                   {stringField(issue.milestoneTitle)}
@@ -1254,21 +1262,31 @@ function MilestoneIssueRow({
             numberField(issue.voterCount) ||
             numberField(issue.sharerCount) ? (
               <span
-                {...sx.issueInfosItem}
-                className={`${sx.issueInfosItem.className} infos-item item-count-groups`}
-                data-stylex-owner="milestone-detail-issue-infos-item"
+                {...sx.issueCountGroups}
+                className={`${sx.issueCountGroups.className} item-count-groups`}
+                data-stylex-owner="milestone-detail-issue-count-groups"
               >
                 {numberField(issue.commentCount) ? (
                   <Link
                     to="/$ownerName/$projectName/issue/$issueNumber"
                     params={{ ownerName, projectName, issueNumber }}
                     hash="comments"
-                    className="comments-count comments-count-color"
+                    {...sx.issueCommentsCount}
+                    className={`${sx.issueCommentsCount.className} comments-count comments-count-color`}
+                    data-stylex-owner="milestone-detail-issue-comments-count"
                   >
-                    <span className="count-groups item-icon">
+                    <span
+                      {...sx.issueCountIcon}
+                      className={`${sx.issueCountIcon.className} count-groups item-icon`}
+                      data-stylex-owner="milestone-detail-issue-count-icon"
+                    >
                       <i className="yobicon-comment2"></i>
                     </span>
-                    <span className="count-groups item-count">
+                    <span
+                      {...sx.issueCountValue}
+                      className={`${sx.issueCountValue.className} count-groups item-count`}
+                      data-stylex-owner="milestone-detail-issue-count-value"
+                    >
                       {numberField(issue.commentCount)}
                     </span>
                   </Link>
@@ -1278,22 +1296,46 @@ function MilestoneIssueRow({
                     to="/$ownerName/$projectName/issue/$issueNumber"
                     params={{ ownerName, projectName, issueNumber }}
                     hash="vote"
-                    className="vote-count vote-color"
+                    {...sx.issueVoteCount}
+                    className={`${sx.issueVoteCount.className} ${numberField(issue.commentCount) ? sx.issueCountLinkOffset.className : ""} vote-count vote-color`}
+                    data-stylex-owner="milestone-detail-issue-vote-count"
                   >
-                    <span className="count-groups item-icon">
+                    <span
+                      {...sx.issueCountIcon}
+                      className={`${sx.issueCountIcon.className} count-groups item-icon`}
+                      data-stylex-owner="milestone-detail-issue-count-icon"
+                    >
                       <i className="yobicon-hearts"></i>
                     </span>
-                    <span className="count-groups item-count strong">
+                    <span
+                      {...sx.issueCountValue}
+                      className={`${sx.issueCountValue.className} count-groups item-count strong`}
+                      data-stylex-owner="milestone-detail-issue-count-value"
+                    >
                       {numberField(issue.voterCount)}
                     </span>
                   </Link>
                 ) : null}
                 {numberField(issue.sharerCount) ? (
-                  <button type="button" className="sharer-color" title={t("issue.sharer")}>
-                    <span className="count-groups item-icon">
+                  <button
+                    type="button"
+                    {...sx.issueSharerCount}
+                    className={`${sx.issueSharerCount.className} ${numberField(issue.commentCount) || numberField(issue.voterCount) ? sx.issueCountLinkOffset.className : ""} sharer-color`}
+                    data-stylex-owner="milestone-detail-issue-sharer-count"
+                    title={t("issue.sharer")}
+                  >
+                    <span
+                      {...sx.issueCountIcon}
+                      className={`${sx.issueCountIcon.className} count-groups item-icon`}
+                      data-stylex-owner="milestone-detail-issue-count-icon"
+                    >
                       <i className="yobicon-friends"></i>
                     </span>
-                    <span className="count-groups item-count strong">
+                    <span
+                      {...sx.issueCountValue}
+                      className={`${sx.issueCountValue.className} count-groups item-count strong`}
+                      data-stylex-owner="milestone-detail-issue-count-value"
+                    >
                       {numberField(issue.sharerCount)}
                     </span>
                   </button>
@@ -1311,6 +1353,7 @@ function MilestoneIssueRow({
                     key={stringField(label.id)}
                     {...labelColor}
                     className={`${labelColor.className} label issue-label list-label active`}
+                    data-stylex-owner="milestone-detail-issue-label"
                     data-category-id={stringField(label.categoryId)}
                     data-label-id={stringField(label.id)}
                     onClick={() => {
