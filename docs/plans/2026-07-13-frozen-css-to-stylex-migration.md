@@ -7904,3 +7904,29 @@ same-fixture populated comparison remains a documented gap. Normal adjacent orga
 guards pass 17/17. One unchanged fallback-off pagination guard remains a documented global fallback
 width failure (206px received versus 30px expected), outside these float owners. Approved Yoram
 footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.
+
+## Batch 913
+
+Move the authenticated populated organization-home action floats into the existing route-local
+StyleX boundary. The conditional Create new project wrapper keeps its Link, query, copy, and
+visibility behavior while `styles.createProjectWrapper` owns the exact frozen Bootstrap
+`float: right`; the project-card `stats-wrap` keeps its legacy class and stats DOM while
+`styles.projectCardStatsWrapper` owns the same float; and the member Leave button keeps its
+`ybtn ybtn-minimum ybtn-danger`/`groupLeaveBtn` contract and React modal behavior while the new
+`styles.groupLeaveButton` owns the exact float. Remove only these React-owned `pull-right`
+classes, retain all user-visible legacy classes/copy/order, and add no route-specific geometry
+compensation or legacy plugin attributes.
+
+The focused source/runtime guard passes 2/2 in normal, explicit fallback-off, and restored-normal
+modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile captures under
+`frontend/output/playwright/stylex-organization-home-action-floats/{normal,fallback-off}/` were
+directly inspected. Managed live legacy `/organizations/weblabs` desktop/mobile sweeps pass 1/1
+and captures are under `frontend/output/playwright/legacy-organization-home-action-floats-*.png`.
+The live legacy seed has one project and differs from the local populated two-card/two-panel
+fixture, so same-fixture populated comparison remains a documented gap. Fallback-off global
+modal/shell paint and geometry drift remains outside these owners; the Leave confirmation's
+fallback-off close diagnostic uses a test-only dispatched click because the global modal control
+is outside the viewport, and does not claim modal visual parity. Existing organization-home
+Create-link selectors were updated to stable StyleX owner markers; the remaining exact legacy
+textbox-class assertion is a pre-existing StyleX baseline failure. Approved Yoram footer NAVER
+Labs/provider/developer-contact/upstream-repository differences remain intentional.

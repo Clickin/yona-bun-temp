@@ -340,7 +340,7 @@ function OrganizationHomeScreen({
                 </div>
                 {booleanField(organization.viewerCanCreateProject) ? (
                   <div
-                    className={`${stylex.props(styles.createProjectWrapper).className} pull-right`}
+                    className={stylex.props(styles.createProjectWrapper).className}
                     data-stylex-owner="organization-home-create-project-wrapper"
                   >
                     <Link
@@ -623,7 +623,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
         </div>
       </div>
       <div
-        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap pull-right`}
+        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap`}
         data-stylex-owner="organization-home-project-card-stats"
       >
         <div
@@ -688,6 +688,7 @@ function MemberPanel({
 }) {
   const { t } = useLegacyMessages();
   const panelKey = className.includes("mt10") ? "member" : "manager";
+  const leaveButtonStyleProps = stylex.props(styles.groupLeaveButton);
 
   return (
     <div
@@ -715,9 +716,11 @@ function MemberPanel({
           </h3>
           {showLeave ? (
             <button
+              {...leaveButtonStyleProps}
               type="button"
-              className="ybtn ybtn-minimum ybtn-danger pull-right"
+              className={`ybtn ybtn-minimum ybtn-danger ${leaveButtonStyleProps.className ?? ""}`.trim()}
               id="groupLeaveBtn"
+              data-stylex-owner="organization-home-group-leave-button"
               onClick={onLeaveClick}
             >
               {t("organization.member.leave")}

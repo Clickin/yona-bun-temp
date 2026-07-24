@@ -353,7 +353,9 @@ test("organization home create-project and member profile links preserve legacy 
   await mockOrganizationHomeCreateProjectNavigation(page);
 
   await page.goto(`${basePath}/organizations/weblabs`);
-  const createProjectLink = page.locator(".project-search-wrap .pull-right a.ybtn-primary");
+  const createProjectLink = page.locator(
+    '[data-stylex-owner="organization-home-create-project-wrapper"] a.ybtn-primary',
+  );
   const adminAvatarLink = page.locator(".project-members .member").first().locator("a.avatar-wrap");
   const adminProfileLink = page.locator(".project-members .member").first().locator("a").nth(1);
   const devProfileLink = page.locator(".project-members .member").nth(1).locator("a").nth(1);
@@ -662,7 +664,9 @@ test("organization home filters projects like legacy item-search", async ({ page
   await page.goto(`${basePath}/organizations/weblabs`);
   const filter = page.locator("#mylist-filter");
   const searchButton = page.locator(".project-search-wrap .search-btn");
-  const createProjectLink = page.locator(".project-search-wrap .pull-right a.ybtn-primary");
+  const createProjectLink = page.locator(
+    '[data-stylex-owner="organization-home-create-project-wrapper"] a.ybtn-primary',
+  );
 
   await expect(filter).toHaveAttribute("name", "mylist-filter");
   await expect(filter).toHaveAttribute("class", "textbox full");

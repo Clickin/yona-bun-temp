@@ -170,6 +170,7 @@ export const styles = stylex.create({
   },
   // yona-original/public/bootstrap/css/bootstrap.css .pull-right.
   createProjectWrapper: { float: "right" },
+  groupLeaveButton: { float: "right" },
   // yona-original/app/assets/stylesheets/less/_page.less .all-projects.
   projects: { clear: "both", listStyle: "none", margin: "0 0 20px", minWidth: 0 },
   // organization/view.scala.html + yona-common item-search: an empty query shows every project.
