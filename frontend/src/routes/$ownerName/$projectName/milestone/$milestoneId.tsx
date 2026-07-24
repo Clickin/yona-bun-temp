@@ -37,6 +37,9 @@ const sx = {
   actions: stylex.props(styles.actions),
   listAction: stylex.props(styles.listAction),
   tabs: stylex.props(styles.tabs),
+  tabItem: stylex.props(styles.tabItem),
+  tabLink: stylex.props(styles.tabLink, styles.tabLinkMobile),
+  tabLinkActive: stylex.props(styles.tabLink, styles.tabLinkActive, styles.tabLinkMobile),
   tabBadge: stylex.props(styles.tabBadge),
   issueList: stylex.props(styles.issueList),
   issueRow: stylex.props(styles.issueRow),
@@ -452,15 +455,26 @@ function ProjectMilestoneDetailBody({
           </div>
 
           <div id="issues">
-            <ul {...sx.tabs} data-stylex-owner="milestone-detail-tabs">
+            <ul
+              {...sx.tabs}
+              className={`${sx.tabs.className} nav nav-tabs`}
+              data-stylex-owner="milestone-detail-tabs"
+            >
               {(["open", "closed", "all"] as const).map((tabState) => (
-                <li key={tabState} className={selectedState === tabState ? "active" : undefined}>
+                <li
+                  key={tabState}
+                  {...sx.tabItem}
+                  className={`${sx.tabItem.className} ${selectedState === tabState ? "active" : ""}`.trim()}
+                >
                   <Link
                     to="/$ownerName/$projectName/milestone/$milestoneId"
                     params={{ ownerName, projectName, milestoneId }}
                     search={{ state: tabState }}
                     hash="issues"
                     {...LEGACY_MILESTONE_LINK_PROPS}
+                    className={
+                      selectedState === tabState ? sx.tabLinkActive.className : sx.tabLink.className
+                    }
                   >
                     {t(`issue.state.${tabState}`)}
                     <span {...sx.tabBadge}>
