@@ -8026,6 +8026,12 @@ baseline failures are the SVN empty-state pagination selector and a fallback CSS
 source selector. Approved Yoram footer NAVER Labs, developer-contact, and
 upstream-repository/provider differences remain intentional.
 
+## Batch 919
+
+Move the authenticated populated project milestone-detail issue-row action floats into the existing route-local StyleX boundary. `issue/partial_list.scala.html:91-110`, selected by `milestone/view.scala.html:98-105`, emits the `mt5 pull-right` assignee/empty-avatar rail and the `mr20 mt10 pull-right` due-date rail. Preserve the assignee and due-date DOM, links, empty-avatar branch, `mt5`/`mr20`/`mt10`, overdue/closed state, copy, and responsive visibility; remove only these two React-owned `pull-right` utilities and let `issueAssigneeRail` and `issueDueDateRail` own the exact frozen `float: right`. No route-specific geometry compensation is permitted.
+
+The focused managed external System-Chrome guard passes 1/1 in normal, explicit fallback-off, and restored-normal modes at 1366x900 and 390x844. Normal and fallback-off screenshots were directly inspected under `frontend/output/playwright/stylex-project-milestone-detail-action-floats/{normal,fallback-off}/`; authenticated live legacy desktop/mobile screenshots are under `frontend/output/playwright/legacy-project-milestone-detail/{desktop,mobile}.png`. Managed legacy `/admin/sample/milestone/1` sweeps pass 1/1 at both viewports. The live seeded `Parity launch`/`Review rail parity check` state differs from the local populated `v1`/`Due-date issue` fixture, so same-fixture content parity remains a documented gap. Fallback-off global shell/search/mass-update spacing and asset drift remains outside these two owners and receives no compensation. The selected adjacent milestone-detail guards pass 13/19; six unchanged failures retain project-shell/fixture, duplicate label stylesheet, upstream Feedback copy, mass-update count, or exact source-string assumptions. `pnpm frontend check`, production build, and frozen fallback hash verification pass (`8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6`). Approved Yoram footer NAVER Labs/provider/developer-contact/upstream-repository differences remain intentional.
+
 ## Batch 916
 
 Move the authenticated populated project-home action floats into the existing route-local StyleX

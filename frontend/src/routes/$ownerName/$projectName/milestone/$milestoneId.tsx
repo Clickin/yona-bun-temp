@@ -40,6 +40,8 @@ const sx = {
   issueList: stylex.props(styles.issueList),
   issueRow: stylex.props(styles.issueRow),
   issueMeta: stylex.props(styles.issueMeta),
+  issueAssigneeRail: stylex.props(styles.issueAssigneeRail),
+  issueDueDateRail: stylex.props(styles.issueDueDateRail),
   dueDateIcon: stylex.props(styles.dueDateIcon),
   dueDateClosed: stylex.props(styles.dueDateClosed),
   titleMeta: stylex.props(styles.titleMeta),
@@ -1274,7 +1276,11 @@ function MilestoneIssueRow({
         </div>
       </div>
       <div className="span3 hide-in-mobile">
-        <div className="mt5 pull-right">
+        <div
+          {...sx.issueAssigneeRail}
+          className={`${sx.issueAssigneeRail.className} mt5`}
+          data-stylex-owner="milestone-detail-issue-assignee-rail"
+        >
           {assigneeLoginId ? (
             <Link
               to="/$user"
@@ -1298,9 +1304,11 @@ function MilestoneIssueRow({
         </div>
         {stringField(issue.dueDateLabel) ? (
           <div
-            className={`mr20 mt10 pull-right${
+            {...sx.issueDueDateRail}
+            className={`${sx.issueDueDateRail.className} mr20 mt10${
               booleanField(issue.dueDateOverdue) ? " overdue" : ""
             } ${state === "closed" ? sx.dueDateClosed.className : ""}`}
+            data-stylex-owner="milestone-detail-issue-due-date-rail"
             {...dueDateAttrs}
           >
             <i
