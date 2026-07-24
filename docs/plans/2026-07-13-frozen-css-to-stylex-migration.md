@@ -8188,3 +8188,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Retire only the React-owned `pull-right` utility from the authenticated child issue-comment reply control. Preserve its semantic `add-a-comment` class, Reply copy, hidden/visible state, click/focus behavior, child form, and DOM/order; the existing route-local StyleX owner continues to supply the frozen `float:right` declaration. Parent actions, attachments, board actions, and the known legacy administrator notice/sidebar collapse-button x-axis mismatch remain outside this wave.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and 390px coverage. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
+## Batch 939
+
+Retire only the React-owned `mt10` utility from the unauthorized issue-comment action wrapper. Preserve the outer `write-comment-box mt20` state, inner `right-txt`, disabled Add a comment copy, textarea/form DOM, and geometry; the existing route-local StyleX owner continues to supply frozen `margin-top:10px` and `text-align:right`. The authorized editor, outer unauthorized `mt20`, and known legacy administrator notice/sidebar collapse-button x-axis mismatch remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and mobile coverage. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.

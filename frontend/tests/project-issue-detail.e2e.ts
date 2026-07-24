@@ -5360,8 +5360,10 @@ test("project issue detail renders legacy unauthorized comment form", async ({ p
   const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
 
   expect(legacyView).toContain('<div class="write-comment-box mt20"');
+  expect(legacyView).toContain('<div class="right-txt mt10">');
   expect(legacyView).toContain('data-login="required"');
   expect(legacyCommon).toMatch(/\.mt20\s*\{\s*margin-top:\s*20px;\s*\}/u);
+  expect(legacyCommon).toMatch(/\.mt10\s*\{\s*margin-top:\s*10px;\s*\}/u);
   expect(legacyYobi).toContain('@import "less/_common.less";');
   expect(styleSource).toContain('unauthorizedComment: { marginTop: "20px" }');
   expect(routeSource).toContain("styles.unauthorizedComment");
@@ -5387,9 +5389,26 @@ test("project issue detail renders legacy unauthorized comment form", async ({ p
   await expect(unauthorized.locator("textarea")).toHaveClass(/disabled/);
   await expect(unauthorized.locator("textarea")).toBeDisabled();
   await expect(unauthorized.locator("textarea")).not.toHaveAttribute("style");
-  await expect(
-    unauthorized.locator("[data-stylex-owner='project-issue-detail-disabled-comment-actions']"),
-  ).toHaveClass(/mt10/);
+  const disabledActions = unauthorized.locator(
+    "[data-stylex-owner='project-issue-detail-disabled-comment-actions']",
+  );
+  await expect(disabledActions).toHaveClass(/right-txt/);
+  await expect(disabledActions).not.toHaveClass(/\bmt10\b/);
+  await expect(disabledActions).not.toHaveAttribute("style");
+  const disabledActionsMetrics = await disabledActions.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      marginTop: style.marginTop,
+      textAlign: style.textAlign,
+      top: rect.top,
+      height: rect.height,
+      right: rect.right,
+    };
+  });
+  expect(disabledActionsMetrics.marginTop).toBe("10px");
+  expect(disabledActionsMetrics.textAlign).toBe("right");
+  expect(disabledActionsMetrics.height).toBeGreaterThan(0);
   await expect(unauthorized.locator(".ybtn-disabled")).toHaveText("Add a comment");
 
   const desktopMetrics = await unauthorized.evaluate((element) => {
@@ -5410,6 +5429,24 @@ test("project issue detail renders legacy unauthorized comment form", async ({ p
     }));
   expect(mobileMetrics.marginTop).toBe("20px");
   expect(mobileMetrics.top).toBeGreaterThan(0);
+  const mobileDisabledActions = page.locator(
+    '[data-stylex-owner="project-issue-detail-disabled-comment-actions"]',
+  );
+  const mobileDisabledActionsMetrics = await mobileDisabledActions.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      marginTop: style.marginTop,
+      textAlign: style.textAlign,
+      right: rect.right,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(mobileDisabledActionsMetrics.marginTop).toBe("10px");
+  expect(mobileDisabledActionsMetrics.textAlign).toBe("right");
+  expect(mobileDisabledActionsMetrics.right).toBeLessThanOrEqual(
+    mobileDisabledActionsMetrics.viewportWidth,
+  );
   await expect(
     page.locator(`script[src="${basePath}/assets/javascripts/common/yobi.CommentForm.js"]`),
   ).toHaveCount(0);

@@ -2996,7 +2996,7 @@ function IssueCommentForm({
             ></textarea>
           </div>
           <div
-            className={`${disabledCommentActionsClassName} mt10`}
+            className={`${disabledCommentActionsClassName} right-txt`}
             data-stylex-owner="project-issue-detail-disabled-comment-actions"
           >
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>

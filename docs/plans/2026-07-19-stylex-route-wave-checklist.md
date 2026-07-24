@@ -772,6 +772,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   retention, utility-class absence, computed float, no-inline-style, direct
   child scope, interaction, and desktop/390px geometry.
 
+### 2026-07-25 Batch 939 unauthorized issue-comment action utility retirement
+
+- [x] The unauthorized comment form preserves its outer `write-comment-box`
+  state, inner `right-txt`, disabled Add a comment copy, textarea/form DOM,
+  and geometry while removing only the React-owned `mt10` utility;
+  `styles.disabledCommentActions` continues to own frozen `margin-top:10px`
+  and `text-align:right`. The outer unauthorized `mt20`, authorized editor,
+  and other action consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering legacy source/import provenance, semantic class retention,
+  utility-class absence, computed margin/text alignment, no-inline-style,
+  disabled UX, and desktop/mobile geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
