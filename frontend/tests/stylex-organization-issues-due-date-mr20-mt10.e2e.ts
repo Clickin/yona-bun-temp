@@ -75,10 +75,19 @@ test("organization issue due-date wrapper keeps legacy source and StyleX evidenc
   expect(LEGACY_BOOTSTRAP_RESPONSIVE_SOURCE).toContain(".row-fluid .span2");
   expect(LEGACY_BOOTSTRAP_RESPONSIVE_SOURCE).toContain("@media");
   for (const importPath of [
+    "less/_variables.less",
+    "less/_mixins.less",
     "less/_common.less",
-    "less/_page.less",
-    "less/_responsive.less",
     "less/_sprites.less",
+    "less/_page.less",
+    "less/_tippy.less",
+    "less/_scrollbar.less",
+    "less/_responsive.less",
+    "less/_yobiUI.less",
+    "less/_temporary.less",
+    "less/_markdown.less",
+    "less/_migration.less",
+    "less/_override.less",
   ]) {
     expect(LEGACY_YOBI_SOURCE).toContain(`@import "${importPath}";`);
     expect(
@@ -111,7 +120,10 @@ test("organization issue due-date wrapper keeps legacy source and StyleX evidenc
   expect(issueItemSource).not.toContain('data-toggle="tooltip"');
   expect(issueItemSource).not.toContain('data-placement="top"');
   expect(ORGANIZATION_ISSUES_STYLE_SOURCE).toContain(
-    'dueDateWrapper: {\n    marginRight: "20px",\n    marginTop: "10px",',
+    'dueDateWrapper: {\n    float: "right",\n    marginRight: "20px",\n    marginTop: "10px",',
+  );
+  expect(ORGANIZATION_ISSUES_ROUTE_SOURCE).not.toContain(
+    "className={`mr20 mt10 pull-right${issue.dueDateOverdue",
   );
 });
 
@@ -181,7 +193,8 @@ for (const viewport of viewports) {
       await expect(target).toHaveCount(1);
       await expect(target).toHaveCSS("margin-right", "20px");
       await expect(target).toHaveCSS("margin-top", "10px");
-      await expect(target).toHaveClass(/\bmr20\s+mt10\s+pull-right\b/u);
+      await expect(target).toHaveClass(/\bmr20\s+mt10\b/u);
+      await expect(target).not.toHaveClass(/\bpull-right\b/u);
       await expect(target).toHaveAttribute("data-stylex-owner", "organization-issues-due-date");
       await expect(target).toHaveAttribute("title", dueDateCase.title);
       await expect(target).toHaveText(dueDateCase.copy);
@@ -231,6 +244,9 @@ for (const viewport of viewports) {
             Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
             document.documentElement.clientWidth,
           targetDisplay: targetStyle.display,
+          targetFloat: targetStyle.float,
+          targetMarginRight: targetStyle.marginRight,
+          targetMarginTop: targetStyle.marginTop,
           targetContainedInColumn,
           targetContainedInItem,
           targetHiddenWithColumn,
@@ -239,6 +255,9 @@ for (const viewport of viewports) {
       expect(geometry).not.toBeNull();
       expect(geometry?.targetContainedInColumn).toBe(true);
       expect(geometry?.targetContainedInItem).toBe(true);
+      expect(geometry?.targetFloat).toBe("right");
+      expect(geometry?.targetMarginRight).toBe("20px");
+      expect(geometry?.targetMarginTop).toBe("10px");
       testInfo.attach("due-date-geometry-diagnostic", {
         body: JSON.stringify({ dueDateCase, geometry, viewport }, null, 2),
         contentType: "application/json",

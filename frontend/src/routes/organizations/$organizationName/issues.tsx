@@ -934,7 +934,7 @@ function OrganizationIssueItem({
         {issue.dueDateLabel ? (
           <div
             {...dueDateStyleProps}
-            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
+            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-issues-due-date"
             title={issue.dueDateLabel}
           >

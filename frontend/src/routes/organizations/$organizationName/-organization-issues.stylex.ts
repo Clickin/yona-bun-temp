@@ -19,6 +19,7 @@ export const styles = stylex.create({
   // Keep the runtime paint dynamic while geometry remains owned by frozen legacy CSS.
   issueLabelBackground: (backgroundColor) => ({ backgroundColor }),
   dueDateWrapper: {
+    float: "right",
     marginRight: "20px",
     marginTop: "10px",
   },

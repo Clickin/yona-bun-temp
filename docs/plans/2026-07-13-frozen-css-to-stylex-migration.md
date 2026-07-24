@@ -8207,6 +8207,12 @@ Move the exact legacy `float:right` for the SVN commit-detail `commitId pull-rig
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
 
+## Batch 944
+
+Move the exact legacy `float:right` for the authenticated organization issue-list due-date wrapper into the existing `dueDateWrapper` StyleX owner. Preserve `mr20 mt10`, overdue/open/closed state branches, title, clock icon, copy, DOM/order, and desktop/mobile containment; assignee rails and project issue-list due-date consumers remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 7/7 each across open-overdue, open-upcoming, and closed states at desktop/mobile sizes. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
 ## Batch 942
 
 Move the exact legacy `float:left` for the pathful code-history `Newer`/`Older` pagination links into the existing route-local `paginationLink` StyleX owner. Preserve the `actrow margin-top-20` wrapper, link copy/order, query destinations, pathless conditional state, and desktop/mobile containment; the history table, branch selector, breadcrumbs, and other float consumers remain outside this wave.

@@ -838,6 +838,18 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   semantic class retention, utility absence, computed geometry, fallback
   attributes, no-inline/plugin-only attributes, and desktop/mobile containment.
 
+### 2026-07-25 Batch 944 organization issue due-date float ownership
+
+- [x] The organization issue-list due-date wrapper preserves `mr20 mt10`,
+  overdue/open/closed branches, title, clock icon, copy/order, and responsive
+  containment while removing only React-owned `pull-right`; the existing
+  `dueDateWrapper` StyleX owner now owns frozen `float:right`. Assignee rails
+  and project issue-list due-date consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 7/7 each
+  across open-overdue, open-upcoming, and closed states at desktop/mobile
+  sizes, covering provenance, computed declarations, copy, no-overflow, and
+  plugin-attribute absence.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
