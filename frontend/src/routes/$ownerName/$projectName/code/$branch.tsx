@@ -152,7 +152,7 @@ function ProjectCodeFolderBody({
             data-stylex-owner="project-code-branch-header"
           >
             <div
-              className={`${stylex.props(styles.picker).className} select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              className={`${stylex.props(styles.picker).className} select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               data-stylex-owner="project-code-branch-picker"
             >
               <button
@@ -296,7 +296,10 @@ function ProjectCodeFolderBody({
             </div>
             {isGit ? (
               <>
-                <div className="pull-right">
+                <div
+                  className={stylex.props(styles.downloadAction).className}
+                  data-stylex-owner="project-code-branch-download-action"
+                >
                   <Link
                     activeOptions={{
                       exact: true,
@@ -317,7 +320,10 @@ function ProjectCodeFolderBody({
                   </Link>
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
-                  <div className="pull-right">
+                  <div
+                    className={stylex.props(styles.newFileAction).className}
+                    data-stylex-owner="project-code-branch-new-file-action"
+                  >
                     <Link
                       activeOptions={{
                         exact: true,

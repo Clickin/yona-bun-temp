@@ -18,7 +18,7 @@ export const styles = stylex.create({
     marginBottom: "10px",
     marginTop: "10px",
   },
-  picker: { width: "220px" },
+  picker: { float: "left", width: "220px" },
   pickerDropOpen: { display: "block", width: "220px" },
   pickerChoice: {
     fontFamily: "inherit",
@@ -30,12 +30,15 @@ export const styles = stylex.create({
   breadcrumbs: {
     color: codeBranchTheme.breadcrumbText,
     display: "inline-block",
+    float: "left",
     fontSize: "15px",
     fontWeight: "700",
     lineHeight: "30px",
     marginLeft: "10px",
     padding: "0px 10px 0px 0px",
   },
+  downloadAction: { float: "right" },
+  newFileAction: { float: "right" },
   list: { overflow: "auto", width: "100%" },
   empty: { borderTopStyle: "none", borderTopWidth: "0px", paddingLeft: "23px" },
   listHeader: {
