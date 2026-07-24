@@ -46,7 +46,7 @@ export const styles = stylex.create({
   milestoneProgressCount: { float: "right" },
   quickSearchCount: { float: "right" },
   downloadWrap: { float: "left", padding: "10px" },
-  keymapWrap: { marginLeft: "55px", padding: "10px 0" },
+  keymapWrap: { float: "left", marginLeft: "55px", padding: "10px 0" },
   manageLabel: { marginLeft: "2px" },
   childIssueListVisible: { display: "block" },
   progressBar: (width: string) => ({ width }),

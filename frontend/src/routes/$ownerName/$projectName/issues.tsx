@@ -3296,10 +3296,7 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
 
   return (
     <>
-      <div
-        className={`${stylex.props(styles.keymapWrap).className} pull-left`}
-        data-stylex-owner="project-issues-keymap"
-      >
+      <div {...stylex.props(styles.keymapWrap)} data-stylex-owner="project-issues-keymap">
         <button
           type="button"
           className="ybtn ybtn-inverse ybtn-mini"
