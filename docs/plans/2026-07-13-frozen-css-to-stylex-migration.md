@@ -8158,3 +8158,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Move the authenticated project commit-detail Git/SVN footer Watch/List action floats into route-local StyleX. Preserve the legacy button/link DOM, order, copy, watch mutation, list destinations, and VCS-specific state; remove only the React-owned `.pull-left`/`.pull-right` utilities. Branch controls, metadata, comments, review forms, and other commit-detail float consumers remain outside this wave.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 3/3 each for the Git/SVN footer state at desktop/mobile coverage. Live legacy screenshot parity remains unverified for this state; fallback-off global shell drift and the approved Yoram footer identity differences remain outside the owner without compensation.
+
+## Batch 934
+
+Move the authenticated project issue-detail desktop/mobile header metadata `float:right` consumers into the existing route-local StyleX owners. Preserve the legacy metadata wrappers, visibility classes, `mr10`/`mt10`, state/date copy, and mobile typography; remove only the two React-owned `.pull-right` utilities. Other issue-detail float consumers remain separate waves.
+
+The narrowed external System-Chrome guard passes 1/1 in normal and explicit fallback-off modes at desktop/mobile coverage, with local screenshots inspected under `frontend/output/playwright/stylex-project-issue-detail-header-metadata-floats/{normal,fallback-off}/`. Live legacy screenshot parity remains unverified; fallback-off global shell drift and approved Yoram footer identity differences remain outside the owners without compensation.

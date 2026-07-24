@@ -1,9 +1,106 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test.use({ locale: "ko-KR" });
+
+test("issue detail header metadata floats are StyleX-owned", async ({ page }) => {
+  const route = readFileSync("src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
+  const styles = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyBootstrap = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  expect(legacyView).toContain('<div class="pull-right mr10 mt10 hide-in-mobile">');
+  expect(legacyView).toContain('class="pull-right hide show-in-mobile" style="font-size: 0.7em"');
+  expect(legacyBootstrap).toContain(".pull-right {\n  float: right;\n}");
+  expect(legacyCommon).toContain(".mr10 { margin-right:10px; }");
+  expect(legacyCommon).toContain(".mt10 { margin-top:10px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(legacyPage).toContain(".board-header {");
+  expect(legacyPage).toContain("    .date {");
+  expect(route).not.toMatch(/styles\.desktopMetadata\)\.className\} pull-right/u);
+  expect(route).not.toMatch(/styles\.mobileMetadata\)\.className\} pull-right/u);
+  expect(styles).toMatch(
+    /desktopMetadata:\s*\{[\s\S]*?float:\s*["']right["'][\s\S]*?marginRight:\s*["']10px["'][\s\S]*?marginTop:\s*["']10px["']/u,
+  );
+  expect(styles).toMatch(
+    /mobileMetadata:\s*\{[\s\S]*?float:\s*["']right["'][\s\S]*?fontSize:\s*["']0\.7em["']/u,
+  );
+
+  await mockIssue(page);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`, { waitUntil: "commit" });
+
+  const desktop = page.locator('[data-stylex-owner="project-issue-detail-desktop-metadata"]');
+  const mobile = page.locator('[data-stylex-owner="project-issue-detail-mobile-metadata"]');
+  await expect(desktop).toHaveCSS("float", "right");
+  await expect(desktop).toHaveCSS("margin-right", "10px");
+  await expect(desktop).toHaveCSS("margin-top", "10px");
+  await expect(desktop).toHaveClass(/hide-in-mobile/);
+  await expect(desktop).not.toHaveClass(/pull-right/);
+  await expect(mobile).toHaveCSS("float", "right");
+  await expect(mobile).toHaveCSS("font-size", "12.6px");
+  await expect(mobile).toHaveClass(/hide/);
+  await expect(mobile).toHaveClass(/show-in-mobile/);
+  await expect(mobile).not.toHaveClass(/pull-right/);
+  await expect(desktop).not.toHaveAttribute("style", /float|margin|font-size/);
+  await expect(mobile).not.toHaveAttribute("style", /float|margin|font-size/);
+
+  const screenshotDirectory = resolve(
+    `output/playwright/stylex-project-issue-detail-header-metadata-floats/${
+      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal"
+    }`,
+  );
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.screenshot({ fullPage: true, path: resolve(screenshotDirectory, "desktop.png") });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
+    await expect(mobile).toBeHidden();
+  } else {
+    await expect(mobile).toBeVisible();
+  }
+  await expect(mobile).toHaveCSS("float", "right");
+  const boxes = await page.evaluate(() => {
+    const metadata = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="project-issue-detail-mobile-metadata"]',
+    );
+    const header = document.querySelector<HTMLElement>(".board-header.issue");
+    if (!metadata || !header) return null;
+    const metadataBox = metadata.getBoundingClientRect();
+    const headerBox = header.getBoundingClientRect();
+    return {
+      left: metadataBox.left,
+      right: metadataBox.right,
+      headerRight: headerBox.right,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewport: window.innerWidth,
+    };
+  });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.left).toBeGreaterThanOrEqual(0);
+  expect(boxes!.right).toBeLessThanOrEqual(boxes!.headerRight);
+  expect(boxes!.scrollWidth).toBeLessThanOrEqual(boxes!.viewport);
+  await page.screenshot({ fullPage: true, path: resolve(screenshotDirectory, "mobile.png") });
+});
 
 test("issue detail owns original-message and editor static declarations", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
@@ -17,6 +114,19 @@ test("issue detail owns original-message and editor static declarations", async 
     "../yona-original/app/views/common/tasklistBar.scala.html",
     "utf8",
   );
+  const legacyBootstrap = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const legacySubtasks = readFileSync(
     "../yona-original/app/views/issue/partial_list_subtask.scala.html",
     "utf8",
@@ -24,6 +134,14 @@ test("issue detail owns original-message and editor static declarations", async 
 
   expect(legacyView).toContain("@partial_comments(project, issue)");
   expect(legacyView).toContain('class="pull-right hide show-in-mobile" style="font-size: 0.7em"');
+  expect(legacyView).toContain('<div class="pull-right mr10 mt10 hide-in-mobile">');
+  expect(legacyBootstrap).toContain(".pull-right {\n  float: right;\n}");
+  expect(legacyCommon).toContain(".mr10 { margin-right:10px; }");
+  expect(legacyCommon).toContain(".mt10 { margin-top:10px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(legacyPage).toContain(".board-header {");
+  expect(legacyPage).toContain("    .date {");
   expect(legacyEditor).toContain('style="position:relative;overflow: visible;"');
   expect(legacyView).toContain("@common.tasklistBar()");
   expect(legacyTasklist).toContain('class="bar red" style="width: 0;"');
@@ -40,7 +158,14 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(route).toContain("styles.labelColor(stringField(label.color))");
   expect(styles).toContain("labelColor: (backgroundColor: string) => ({");
   expect(route).toContain('data-stylex-owner="project-issue-detail-mobile-metadata"');
-  expect(styles).toContain('mobileMetadata: {\n    fontSize: "0.7em"');
+  expect(styles).toMatch(
+    /mobileMetadata:\s*\{[\s\S]*?float:\s*["']right["'][\s\S]*?fontSize:\s*["']0\.7em["']/u,
+  );
+  expect(styles).toMatch(
+    /desktopMetadata:\s*\{[\s\S]*?float:\s*["']right["'][\s\S]*?marginRight:\s*["']10px["'][\s\S]*?marginTop:\s*["']10px["']/u,
+  );
+  expect(route).not.toMatch(/styles\.desktopMetadata\)\.className\} pull-right/u);
+  expect(route).not.toMatch(/styles\.mobileMetadata\)\.className\} pull-right/u);
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
   expect(styles).toContain('borderWidth: "0px"');
@@ -48,7 +173,7 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(route).toContain("data-stylex-owner-instance={wrapId}");
   expect(styles).toContain("originalMessageToggle: {");
   expect(styles).toContain("editorTabContent: {");
-  expect(styles).toContain('taskProgressBar: {\n    width: "0px"');
+  expect(styles).toMatch(/taskProgressBar:\s*\{[\s\S]*?width:\s*["']0px["']/u);
   expect(route).toContain('data-stylex-owner="project-issue-detail-task-progress-bar"');
   expect(route).not.toContain('<div className="bar red" style={{ width: 0 }}');
 
@@ -60,6 +185,28 @@ test("issue detail owns original-message and editor static declarations", async 
   await expect(mobileMetadata).toHaveCount(1);
   await expect(mobileMetadata).toHaveCSS("font-size", "12.6px");
   await expect(mobileMetadata).toBeHidden();
+  await expect(mobileMetadata).toHaveCSS("float", "right");
+
+  const desktopMetadata = page.locator(
+    '[data-stylex-owner="project-issue-detail-desktop-metadata"]',
+  );
+  await expect(desktopMetadata).toHaveCSS("float", "right");
+  await expect(desktopMetadata).toHaveClass(/hide-in-mobile/);
+  await expect(desktopMetadata).not.toHaveClass(/pull-right/);
+  await expect(mobileMetadata).toHaveClass(/hide/);
+  await expect(mobileMetadata).toHaveClass(/show-in-mobile/);
+  await expect(mobileMetadata).not.toHaveClass(/pull-right/);
+
+  const screenshotDirectory = resolve(
+    `output/playwright/stylex-project-issue-detail-header-metadata-floats/${
+      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal"
+    }`,
+  );
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(screenshotDirectory, "desktop.png"),
+  });
 
   const taskProgressBar = page.locator(
     '[data-stylex-owner="project-issue-detail-task-progress-bar"]',
@@ -112,6 +259,7 @@ test("issue detail owns original-message and editor static declarations", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(mobileMetadata).toBeVisible();
   await expect(mobileMetadata).toHaveCSS("font-size", "12.6px");
+  await expect(mobileMetadata).toHaveCSS("float", "right");
   const mobileMetadataBox = await mobileMetadata.boundingBox();
   expect(mobileMetadataBox).not.toBeNull();
   expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(0);
@@ -137,6 +285,11 @@ test("issue detail owns original-message and editor static declarations", async 
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);
+
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(screenshotDirectory, "mobile.png"),
+  });
 });
 
 async function mockIssue(page: Page) {

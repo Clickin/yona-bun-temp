@@ -1,5 +1,11 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 authenticated project issue-detail header metadata float ownership
+
+- [x] `yona-original/app/views/issue/view.scala.html:107-130` emits the desktop `pull-right mr10 mt10 hide-in-mobile` and mobile `pull-right hide show-in-mobile` metadata wrappers; frozen Bootstrap `.pull-right` (`bootstrap.css:6093-6100`), `_common.less:207-208`, `_page.less` `.board-header`, the complete `yobi.less` import chain, and the legacy mobile `font-size:0.7em` are recorded as output/cascade evidence.
+- [x] The desktop/mobile metadata DOM, visibility classes, margins, state/date copy, and existing mobile font-size remain unchanged while the existing `desktopMetadata` and `mobileMetadata` StyleX owners add exact `float:right`; only the two React-owned `pull-right` utilities are removed. Other issue-detail float consumers remain excluded.
+- [x] `frontend/tests/stylex-project-issue-detail-inline-residual.e2e.ts` verifies source provenance, computed floats/margins/font-size, class retirement, desktop/mobile containment/no-overflow, and screenshots under `frontend/output/playwright/stylex-project-issue-detail-header-metadata-floats/{normal,fallback-off}/`; the narrowed external Chrome guard passes 1/1 in each mode. Live legacy screenshot parity remains unverified; fallback-off global shell drift and approved Yoram footer identity differences receive no compensation.
+
 ### 2026-07-25 authenticated project commit-detail footer action floats
 
 - [x] `code/diff.scala.html:171-176` and `code/svnDiff.scala.html:144-147` emit the Watch/List footer controls; frozen Bootstrap `.pull-left`/`.pull-right` (`bootstrap.css:6093-6100`), the complete `yobi.less` import chain, relevant `_page.less` action-row cascade, and `conf/messages:68,516` establish the output, float, and copy sources.

@@ -192,6 +192,7 @@ export const styles = stylex.create({
   badgeMerged: { backgroundColor: issueDetailColors.badgeMerged },
   badgeConflict: { backgroundColor: issueDetailColors.badgeConflict },
   mobileMetadata: {
+    float: "right",
     fontSize: "0.7em",
   },
   body: {
@@ -284,6 +285,7 @@ export const styles = stylex.create({
     marginLeft: "4px",
   },
   desktopMetadata: {
+    float: "right",
     marginRight: "10px",
     marginTop: "10px",
   },

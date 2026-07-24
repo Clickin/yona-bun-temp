@@ -833,7 +833,7 @@ function IssueDetailBody({
         >
           <div
             {...stylex.props(styles.desktopMetadata)}
-            className={`${stylex.props(styles.desktopMetadata).className} pull-right hide-in-mobile`}
+            className={`${stylex.props(styles.desktopMetadata).className} hide-in-mobile`}
             data-stylex-owner="project-issue-detail-desktop-metadata"
           >
             <div
@@ -881,7 +881,7 @@ function IssueDetailBody({
               </i>
             </span>
             <div
-              className={`${stylex.props(styles.mobileMetadata).className} pull-right hide show-in-mobile`}
+              className={`${stylex.props(styles.mobileMetadata).className} hide show-in-mobile`}
               data-stylex-owner="project-issue-detail-mobile-metadata"
             >
               <span
