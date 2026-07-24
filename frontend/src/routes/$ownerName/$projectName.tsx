@@ -1687,9 +1687,10 @@ export function ProjectHomeBody({
                 booleanField(project.viewerCanLeave) ? (
                   <button
                     type="button"
-                    className="ybtn ybtn-minimum ybtn-danger pull-right"
+                    className={`${stylex.props(projectHomeStyles.projectLeaveButton).className} ybtn ybtn-minimum ybtn-danger`}
                     id="projectLeaveBtn"
                     onClick={openLeaveModal}
+                    data-stylex-owner="project-home-leave-button"
                   >
                     {t("project.member.leave")}
                   </button>
@@ -1846,7 +1847,10 @@ function ProjectHomeMilestoneStatus({
           ></div>
         </div>
         <div className="progress-info">
-          <span className="pull-right">
+          <span
+            className={stylex.props(projectHomeStyles.milestoneProgressCount).className}
+            data-stylex-owner="project-home-milestone-progress-count"
+          >
             <strong>{`${closedCount} / ${openCount + closedCount}`}</strong>
           </span>
         </div>

@@ -84,6 +84,7 @@ export const styles = stylex.create({
   projectButtonItem: { display: "block", marginTop: "10px" },
   projectButtonItemFirst: { marginTop: "0" },
   projectButtonLink: { display: "block" },
+  projectLeaveButton: { float: "right" },
   memberInner: {
     backgroundColor: "#ffffff",
     borderRadius: "10px",
@@ -131,6 +132,7 @@ export const styles = stylex.create({
     fontSize: "11px",
     overflow: "hidden",
   },
+  milestoneProgressCount: { float: "right" },
   milestoneProgress: { height: "7px", width: "100%" },
   milestoneProgressBar: (width: string) => ({ height: "100%", width }),
   progressBar: (width: string) => ({ width }),

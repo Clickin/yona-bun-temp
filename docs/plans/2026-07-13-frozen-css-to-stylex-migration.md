@@ -7976,3 +7976,27 @@ asset. Selected adjacent guards recorded five passes before the broader command 
 an existing project-route hang, so no aggregate adjacent-suite pass is claimed. Fallback-off global
 shell/asset drift remains outside these float owners. Approved Yoram footer NAVER Labs,
 developer-contact, and upstream-repository/provider differences remain intentional.
+
+## Batch 916
+
+Move the authenticated populated project-home action floats into the existing route-local StyleX
+boundary. The project leave button from `project/home.scala.html:106-115` and the milestone
+progress count from `milestone/partial_status.scala.html:28-53` preserve their button/count DOM,
+copy, order, member/progress structure, and React leave-modal behavior while
+`projectLeaveButton` and `milestoneProgressCount` own the exact frozen Bootstrap `float: right`.
+Remove only these two React-owned `pull-right` utilities; no route-specific geometry compensation
+is permitted.
+
+The focused managed external System-Chrome guard passes 2/2 in normal, explicit fallback-off, and
+restored-normal modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile captures under
+`frontend/output/playwright/stylex-project-home-action-floats/{normal,fallback-off}/` were directly
+inspected. Managed live legacy `/admin/sample` desktop/mobile sweeps pass 1/1 each; captures are
+`output/playwright/visual-sweep/legacy-_admin_sample.png` and
+`output/playwright/visual-sweep/legacy-mobile-_admin_sample.png`. The live seeded copy/background
+and one-milestone state differ from the local populated mock, so same-fixture content parity remains
+a documented gap. Fallback-off captures visibly retain unrelated global legacy-class drift outside
+these two owners; the test-only dispatched modal clicks are diagnostic because the global backdrop
+intercepts pointer clicks and do not claim modal screenshot parity. The selected adjacent project-home
+guards pass 4/5; one unchanged `stylex-project-home-progress.e2e.ts` guard retains an exact source
+assertion for an older dynamic-progress expression. Approved Yoram footer NAVER Labs,
+developer-contact, and upstream-repository/provider differences remain intentional.
