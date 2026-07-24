@@ -8,7 +8,7 @@ export const commitsTheme = stylex.defineVars({
 });
 
 export const styles = stylex.create({
-  branchPicker: { width: "220px" },
+  branchPicker: { float: "right", width: "220px" },
   branchButton: {
     fontFamily: "inherit",
     fontSize: "inherit",
@@ -20,6 +20,7 @@ export const styles = stylex.create({
   // frozen legacy declaration; StyleX owns only the stateful display toggle.
   branchDropdown: { display: "block" },
   tabs: { marginBottom: "20px" },
+  paginationLink: { float: "left" },
   history: { backgroundColor: commitsTheme.historySurface },
   table: { color: commitsTheme.mutedText },
   commitIdCell: {

@@ -188,7 +188,7 @@ export function ProjectCodeHistoryBody({
         <div className="bubble-wrap dark-gray repo-wrap" data-stylex-owner="project-commits-shell">
           <div className="code-browse-wrap">
             <div
-              className={`${stylex.props(styles.branchPicker).className} select2-container pull-right${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              className={`${stylex.props(styles.branchPicker).className} select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               data-stylex-owner="project-commits-branch-picker"
             >
               <button
@@ -442,7 +442,8 @@ export function ProjectCodeHistoryBody({
                 search={{ page: Math.max(0, history.page - 1) }}
                 activeOptions={legacyCodeHistoryLinkActiveOptions}
                 activeProps={legacyCodeHistoryLinkActiveProps}
-                className="ybtn pull-left"
+                className={`${stylex.props(styles.paginationLink).className} ybtn`}
+                data-stylex-owner="project-commits-newer"
               >
                 {t("code.newer")}
               </Link>
@@ -454,7 +455,8 @@ export function ProjectCodeHistoryBody({
                 search={{ page: history.page + 1 }}
                 activeOptions={legacyCodeHistoryLinkActiveOptions}
                 activeProps={legacyCodeHistoryLinkActiveProps}
-                className="ybtn pull-left"
+                className={`${stylex.props(styles.paginationLink).className} ybtn`}
+                data-stylex-owner="project-commits-older"
               >
                 {t("code.older")}
               </Link>
