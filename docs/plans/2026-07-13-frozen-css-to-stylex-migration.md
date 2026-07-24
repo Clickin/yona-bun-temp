@@ -8147,3 +8147,8 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Restore the authenticated root home wrapper hierarchy from `yona-original/app/views/index/notifications.scala.html`: `page-wrap-outer` → `page-wrap` → `page on-fold-intro`. Existing StyleX owners retain the frozen wrapper geometry; no compensating values are introduced.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and mobile sizes. The live root screenshot sweep confirms the remaining GNB search displacement is the intentional Yoram developer-contact omission, not a geometry compensation target; footer identity differences remain intentional.
+## Batch 932
+
+Restore the project milestone detail wrapper hierarchy from `yona-original/app/views/milestone/view.scala.html`: `page-wrap-outer` → `project-page-wrap` → the legacy `milesion-wrap` class. Existing StyleX owners retain the frozen wrapper geometry; no compensating values are introduced.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and mobile sizes. Live milestone content/locale differs from the local fixture, and the intentional Yoram shell identity differences remain documented rather than compensated.

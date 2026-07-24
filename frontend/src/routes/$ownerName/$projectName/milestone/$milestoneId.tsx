@@ -347,9 +347,17 @@ function ProjectMilestoneDetailBody({
   );
 
   return (
-    <div {...sx.page} data-stylex-owner="milestone-detail-page">
-      <div data-stylex-owner="milestone-detail-shell">
-        <div {...sx.wrap} data-stylex-owner="milestone-detail-wrap">
+    <div
+      {...sx.page}
+      className={`${sx.page.className} page-wrap-outer`}
+      data-stylex-owner="milestone-detail-page"
+    >
+      <div className="project-page-wrap" data-stylex-owner="milestone-detail-shell">
+        <div
+          {...sx.wrap}
+          className={`${sx.wrap.className} milesion-wrap`}
+          data-stylex-owner="milestone-detail-wrap"
+        >
           <h4>
             <Link
               to="/$ownerName/$projectName/milestone/$milestoneId"
