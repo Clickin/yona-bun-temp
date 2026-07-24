@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 950 public profile projects-tab avatar rail
+
+- [x] `user/view.scala.html:166-175` and `user/partial_projectlist.scala.html:11-18` are the output DOM source; Bootstrap `.pull-left`, `_page.less:1841-1895`, `_common.less`, `_responsive.less`, and the full `yobi.less` import chain are recorded in the focused test.
+- [x] Only the avatar rail's `pull-left` is migrated to `styles.projectAvatarRail` with exact `float:left`; the `avatar-wrap small` Link/image fallback, project row/header/description/stats, tab interaction, and separate `projectInfo` margin owner remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-project-avatar-rail.e2e.ts` verifies source ownership, no utility/plugin presentation attribute, computed desktop/mobile float, containment/no overflow, and visible project-tab/avatar interaction.
+- [x] Managed outside-sandbox system-Chrome focused checks pass 1/1 normal and 1/1 fallback-off; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 authenticated project issue-detail header metadata float ownership
 
 - [x] `yona-original/app/views/issue/view.scala.html:107-130` emits the desktop `pull-right mr10 mt10 hide-in-mobile` and mobile `pull-right hide show-in-mobile` metadata wrappers; frozen Bootstrap `.pull-right` (`bootstrap.css:6093-6100`), `_common.less:207-208`, `_page.less` `.board-header`, the complete `yobi.less` import chain, and the legacy mobile `font-size:0.7em` are recorded as output/cascade evidence.

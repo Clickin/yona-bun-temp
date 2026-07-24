@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile projects-tab avatar rail
+
+Batch 950 moves only the authenticated public profile project's avatar wrapper
+`pull-left` float from the frozen Bootstrap fallback to the existing user-profile
+StyleX module. The project row, avatar Link/image fallback, project-tab behavior,
+DOM order, and the separate project-info `margin-left:10px` owner remain unchanged.
+Focused external system-Chrome checks pass 1/1 in normal and 1/1 with
+`VITE_DISABLE_LEGACY_FALLBACK=1`; live legacy screenshot parity remains explicitly
+unverified because the legacy rendering instance is unavailable. No compensating
+geometry was added.
+
 Legacy screenshot parity is a required gate, not an optional gap. Before
 running legacy seed/bootstrap or `scripts/visual-parity-sweep.mjs`, verify the
 managed legacy server and install the browser from the `frontend` workspace in

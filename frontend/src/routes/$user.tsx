@@ -1169,7 +1169,10 @@ function ProfileProjectRow({
       data-stylex-owner="user-profile-project-row"
     >
       <div className="info-wrap">
-        <div className="pull-left">
+        <div
+          className={stylex.props(styles.projectAvatarRail).className}
+          data-stylex-owner="user-profile-project-avatar-rail"
+        >
           <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap small">
             <img src={project.logoUrl || "/assets/images/project_default_logo.png"} alt="" />
           </Link>
