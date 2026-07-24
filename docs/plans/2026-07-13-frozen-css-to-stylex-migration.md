@@ -8142,3 +8142,8 @@ The focused external System-Chrome source/desktop/mobile guard passes 3/3. Open/
 Move the populated milestone-detail issue metadata count and label surface into the existing route-local StyleX boundary. Preserve the legacy count partial anchors, icon/value order, colors, counts, milestone link, and copy. Explicit StyleX declarations own the frozen count-group border and spacing; no route-specific compensation is permitted.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. The legacy `:first-child` selector does not match these anchor-wrapped icons, so both modes correctly retain the 1px icon divider. Captures under `frontend/output/playwright/stylex-project-milestone-detail-ml10/{normal,fallback-off}/` were inspected. Live legacy pair, global fallback audit, full fallback-off suite, and production build remain final-profile deferred; approved Yoram footer differences remain intentional.
+## Batch 931
+
+Restore the authenticated root home wrapper hierarchy from `yona-original/app/views/index/notifications.scala.html`: `page-wrap-outer` → `page-wrap` → `page on-fold-intro`. Existing StyleX owners retain the frozen wrapper geometry; no compensating values are introduced.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and mobile sizes. The live root screenshot sweep confirms the remaining GNB search displacement is the intentional Yoram developer-contact omission, not a geometry compensation target; footer identity differences remain intentional.

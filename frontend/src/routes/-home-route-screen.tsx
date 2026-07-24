@@ -337,10 +337,12 @@ function HomeScreen({
         <HomeFlashToast message={flashMessage} />
         <div
           {...stylex.props(authenticatedHomePageWrapStyles.outer)}
+          className={`page-wrap-outer ${stylex.props(authenticatedHomePageWrapStyles.outer).className}`}
           data-stylex-owner="authenticated-home-page-wrap-outer"
         >
           <div
             {...stylex.props(authenticatedHomePageWrapStyles.inner)}
+            className={`page-wrap ${stylex.props(authenticatedHomePageWrapStyles.inner).className}`}
             data-stylex-owner="authenticated-home-page-wrap"
           >
             <div
@@ -423,6 +425,7 @@ function HomeScreen({
             </div>
             <div
               {...stylex.props(authenticatedHomeContentGridStyles.page)}
+              className={`page on-fold-intro ${stylex.props(authenticatedHomeContentGridStyles.page).className}`}
               data-stylex-owner="authenticated-home-content-page"
             >
               <div
