@@ -7838,3 +7838,28 @@ differences remain intentional and no route-specific compensation was added.
 Move the authenticated populated project issue-list action wrappers into the existing route-local StyleX boundary. The legacy New Issue wrapper's `pull-right` becomes `styles.newIssueAction` with exact `float: right`; the populated sort wrapper preserves its `filters` class while `styles.sortFilters` owns exact `float: right`; and the Excel wrapper's `pull-left` plus inline `padding:10px` becomes the existing `styles.downloadWrap` with exact `float: left` and `padding: 10px`. Preserve issue-list DOM/order, Link/download behavior, sort query transitions, visible copy, responsive post-list geometry, and the existing fallback classes and filter cascade. Remove only React-owned target float utilities and legacy JS-only `orderby`/`orderdir` attributes; no route-specific compensation was added.
 
 The focused source/runtime guard passes 2/2 in normal, explicit fallback-off, and restored-normal modes. Normal adjacent residual and existing project-issues owner guards pass 2/2. Normal and fallback-off desktop/mobile screenshots under `frontend/output/playwright/stylex-project-issues-action-floats/{normal,fallback-off}/` were directly inspected with managed external System-Chrome. Seeded legacy `/admin/sample/issues` desktop/mobile baselines under `frontend/output/playwright/legacy-project-issues-action-floats/` were captured and inspected; the legacy seed has one issue and therefore does not render the multi-item sort-filter wrapper, while the local populated parity fixture has two issues. That filter-state live comparison remains a documented fixture gap. Fallback-off global shell paint and approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.
+
+## Batch 910
+
+Move the authenticated populated project board-list action floats into the existing route-local
+StyleX boundary. The `board/list.scala.html` search form's `pull-left` now uses the existing
+`styles.search` with exact `float: left`; the New post `pull-right` wrapper now uses
+`styles.newPostWrap` with exact `float: right`; and the included `help/keymap.scala.html`
+`pull-left` wrapper's exact `padding:10px 0; margin-left:55px` now uses `styles.keymap` with
+exact `float: left` plus the preserved spacing. Preserve the board-list DOM/order, copy,
+search/two-column controls, New post Link, keymap modal state and responsive behavior while
+removing only the React-owned Bootstrap float utility classes and the former inline keymap
+declaration; no route-specific compensation was added.
+
+The focused managed external System-Chrome guard passes 2/2 in normal, explicit fallback-off,
+and restored-normal modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile
+screenshot captures were directly inspected under
+`frontend/output/playwright/stylex-project-posts-action-floats/{normal,fallback-off}/`.
+The managed live legacy `/admin/sample/posts` desktop/mobile sweep passes 1/1 for each viewport
+and its captures were inspected under `output/playwright/visual-sweep/`; the seeded legacy
+state has one `Seed notes` post plus a label select while the local parity fixture has two
+posts and no labels, so full same-fixture populated comparison remains a documented gap.
+Fallback-off global shell/asset drift remains outside these float owners. The adjacent
+project-posts regression guard set passes 8/8 after updating two stale exact source assertions.
+Approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain
+intentional and no route-specific compensation was added.

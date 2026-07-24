@@ -36,11 +36,11 @@ test("project posts owns the board controls' former inline declarations", async 
   expect(source).not.toContain("style={issueLabelStyle(label.color)}");
   expect(source).not.toContain('style={{ position: "relative" }}');
   expect(source).not.toContain('style={{ padding: "10px 0", marginLeft: "55px" }}');
-  expect(styleSource).toContain('twoColumnMode: { position: "relative" }');
+  expect(styleSource).toContain('twoColumnMode: { marginRight: "10px", position: "relative" }');
   expect(styleSource).toContain('display: "inline-block"');
   expect(styleSource).toContain('margin: "2px !important"');
   expect(styleSource).toContain('verticalAlign: "top"');
-  expect(styleSource).toContain('keymap: { marginLeft: "55px", padding: "10px 0" }');
+  expect(styleSource).toContain('keymap: { float: "left", marginLeft: "55px", padding: "10px 0" }');
   expect(styleSource).toContain("labelPaint:");
 
   await mockPosts(page);

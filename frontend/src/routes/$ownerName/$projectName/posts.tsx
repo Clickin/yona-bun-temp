@@ -162,7 +162,7 @@ function ProjectPostsBody({
             id="option_form"
             action={action}
             method="get"
-            className={`${stylex.props(styles.search).className} pull-left`}
+            className={stylex.props(styles.search).className}
             data-stylex-owner="project-posts-search"
           >
             <input type="hidden" name="orderBy" value={search.orderBy} />
@@ -190,7 +190,10 @@ function ProjectPostsBody({
             ) : null}
             <TwoColumnModeCheckbox />
           </form>
-          <div className="pull-right">
+          <div
+            {...stylex.props(styles.newPostWrap)}
+            data-stylex-owner="project-posts-new-post-wrap"
+          >
             <Link
               to="/$ownerName/$projectName/postform"
               params={{ ownerName, projectName }}
@@ -877,10 +880,7 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div
-      className={`${stylex.props(styles.keymap).className} pull-left`}
-      data-stylex-owner="project-posts-keymap"
-    >
+    <div className={stylex.props(styles.keymap).className} data-stylex-owner="project-posts-keymap">
       <button
         type="button"
         className="ybtn ybtn-inverse ybtn-mini"

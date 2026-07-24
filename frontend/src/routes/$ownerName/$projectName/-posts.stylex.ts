@@ -8,7 +8,8 @@ export const postsTheme = stylex.defineVars({
 });
 
 export const styles = stylex.create({
-  search: { backgroundColor: postsTheme.searchSurface },
+  search: { backgroundColor: postsTheme.searchSurface, float: "left" },
+  newPostWrap: { float: "right" },
   // Frozen `_page.less` `.error-wrap` empty-state geometry and typography.
   errorWrap: { padding: "100px 0px", textAlign: "center" },
   errorIcon: {
@@ -90,7 +91,7 @@ export const styles = stylex.create({
     margin: "2px !important",
     verticalAlign: "top",
   },
-  keymap: { marginLeft: "55px", padding: "10px 0" },
+  keymap: { float: "left", marginLeft: "55px", padding: "10px 0" },
   labelPaint: (backgroundColor: string, boxShadow: string, color: string) => ({
     backgroundColor,
     boxShadow,
