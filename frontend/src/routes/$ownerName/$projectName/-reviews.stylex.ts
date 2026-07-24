@@ -11,6 +11,7 @@ export const reviewsColors = stylex.defineVars({
 });
 
 export const reviewsLayout = stylex.create({
+  sidebarCount: { float: "right" },
   filters: {
     float: "right",
   },

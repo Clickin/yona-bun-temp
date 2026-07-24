@@ -8002,6 +8002,30 @@ selector finds no rendered element. `pnpm frontend check`, production build, and
 fallback hash verifier pass. Approved Yoram footer NAVER Labs, developer-contact, and
 upstream-repository/provider differences remain intentional.
 
+## Batch 918
+
+Move the authenticated populated project reviews sidebar counts into the existing route-local
+StyleX boundary. `reviewthread/list.scala.html:37-55` emits the three `num-badge pull-right`
+counts for All reviews, Participated., and Created; preserve the `num-badge` class, labels,
+order, active state, filter buttons, tabs, sort behavior, list links, and responsive layout.
+`reviewsLayout.sidebarCount` owns the exact frozen Bootstrap `float: right` declaration for the
+three React-owned count spans, each with a stable owner marker. Remove only these three
+`pull-right` utilities; no route-specific geometry compensation is permitted.
+
+The focused managed external System-Chrome guard passes 1/1 in normal, explicit fallback-off,
+and restored-normal modes at 1366x900 and 390x844. The normal and fallback-off desktop/mobile
+captures under `frontend/output/playwright/stylex-project-reviews-sidebar-count-floats/` were
+directly inspected; fallback-off retains unrelated global shell/tab/row drift outside these
+owners and receives no compensation. Managed live legacy `/admin/sample/reviews` desktop/mobile
+sweeps pass 1/1 each; inspected captures are
+`frontend/output/playwright/legacy-project-reviews/{desktop,mobile}.png`. The live authenticated
+seed is an empty review state while the local fixture has two populated rows, so same-fixture
+count/list parity remains a documented gap. `pnpm frontend check`, production build, and the
+frozen fallback hash verifier pass. Selected adjacent review guards are 18/20: two unchanged
+baseline failures are the SVN empty-state pagination selector and a fallback CSS title-overflow
+source selector. Approved Yoram footer NAVER Labs, developer-contact, and
+upstream-repository/provider differences remain intentional.
+
 ## Batch 916
 
 Move the authenticated populated project-home action floats into the existing route-local StyleX

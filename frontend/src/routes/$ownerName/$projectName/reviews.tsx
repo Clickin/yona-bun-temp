@@ -173,6 +173,7 @@ function ProjectReviewsBody({
   const sidebarProps = stylex.props(styles.sidebar);
   const searchInputProps = stylex.props(styles.searchInput);
   const tabsProps = stylex.props(styles.tabs);
+  const sidebarCountProps = stylex.props(reviewsLayout.sidebarCount);
   const filtersProps = stylex.props(reviewsLayout.filters);
   const exportActionProps = stylex.props(reviewsLayout.exportAction);
 
@@ -210,19 +211,37 @@ function ProjectReviewsBody({
               <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
                 <button type="button" onClick={() => filterClick({})}>
                   {t("review.allReview")}
-                  <span className="num-badge pull-right">{reviews.allCount}</span>
+                  <span
+                    {...sidebarCountProps}
+                    className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
+                    data-stylex-owner="project-reviews-sidebar-count-all"
+                  >
+                    {reviews.allCount}
+                  </span>
                 </button>
               </li>
               <li className={search.participantId === currentUserId ? "active" : ""}>
                 <button type="button" onClick={() => filterClick({ participantId: currentUserId })}>
                   {t("review.involvingYou")}
-                  <span className="num-badge pull-right">{reviews.participantCount}</span>
+                  <span
+                    {...sidebarCountProps}
+                    className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
+                    data-stylex-owner="project-reviews-sidebar-count-participant"
+                  >
+                    {reviews.participantCount}
+                  </span>
                 </button>
               </li>
               <li className={search.authorId === currentUserId ? "active" : ""}>
                 <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
                   {t("review.createdByYou")}
-                  <span className="num-badge pull-right">{reviews.authorCount}</span>
+                  <span
+                    {...sidebarCountProps}
+                    className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
+                    data-stylex-owner="project-reviews-sidebar-count-author"
+                  >
+                    {reviews.authorCount}
+                  </span>
                 </button>
               </li>
             </ul>
