@@ -191,6 +191,9 @@ function ProjectCodeFileBody({
     projectName,
     "postform",
   )}?path=${newFilePath}&branch=${encodedBranchItemName}`;
+  const branchPickerStyleProps = stylex.props(styles.branchPicker);
+  const downloadActionStyleProps = stylex.props(styles.downloadAction);
+  const newFileActionStyleProps = stylex.props(styles.newFileAction);
 
   return (
     <div className="page-wrap-outer">
@@ -264,10 +267,12 @@ function ProjectCodeFileBody({
           ) : null}
           <div className="code-browse-header">
             <select
+              {...branchPickerStyleProps}
               id="branches"
               data-format="branch"
               data-dropdown-css-class="branches"
-              className={`pull-left${isFolder ? "" : " mb10"}`}
+              className={`${branchPickerStyleProps.className}${isFolder ? "" : " mb10"}`}
+              data-stylex-owner="project-code-file-branch-picker"
               defaultValue={projectHref(
                 runtimeConfig.basePath,
                 ownerName,
@@ -344,13 +349,19 @@ function ProjectCodeFileBody({
             </div>
             {isGit ? (
               <>
-                <div className="pull-right">
+                <div
+                  {...downloadActionStyleProps}
+                  data-stylex-owner="project-code-file-download-action"
+                >
                   <Link to={archivePath} reloadDocument className="ybtn">
                     {t("code.download")}
                   </Link>
                 </div>
                 {!currentUserIsAnonymous ? (
-                  <div className="pull-right">
+                  <div
+                    {...newFileActionStyleProps}
+                    data-stylex-owner="project-code-file-new-file-action"
+                  >
                     <Link
                       id="new-file-link"
                       to={newFilePathWithSearch}

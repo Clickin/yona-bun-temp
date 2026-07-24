@@ -75,7 +75,17 @@ export const styles = stylex.create({
     minWidth: 0,
   },
   breadcrumbs: {
+    float: "left",
     marginLeft: "10px",
+  },
+  branchPicker: {
+    float: "left",
+  },
+  downloadAction: {
+    float: "right",
+  },
+  newFileAction: {
+    float: "right",
   },
   // partial_view_file.scala.html author link; frozen _common.less .ml5.
   authorLink: {

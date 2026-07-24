@@ -1,5 +1,11 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 authenticated project code-file header float ownership
+
+- [x] `code/view.scala.html:78-99`, frozen Bootstrap `.pull-left`/`.pull-right` (`bootstrap.css:6093-6100`), `_page.less:4498-4523`, the complete `yobi.less` import chain, and `conf/messages:122,132` are recorded as output/cascade/copy sources.
+- [x] The file-state branch picker, breadcrumb, Git Download wrapper, and authenticated New file wrapper preserve legacy DOM/order/copy/query behavior while route-local StyleX owns only the proven left/right floats; `mb10` remains conditional and the breadcrumb `pull-left` fallback remains. Lower file actions, breadcrumb margin/popover, and comment-count consumers are excluded.
+- [x] `frontend/tests/stylex-project-code-file-header-floats.e2e.ts` passes normal and explicit fallback-off external Chrome 2/2 each at 1366x900 and 390x844, with screenshots under `frontend/output/playwright/stylex-project-code-file-header-floats/{normal,fallback-off}/`; the four screenshots were directly inspected. Live legacy screenshot parity is unavailable and remains unverified; fallback-off global shell/Bootstrap drift is outside these owners and receives no compensation.
+
 ### 2026-07-25 authenticated project issue-detail keymap wrapper float
 
 - [x] `help/keymap.scala.html:12-17`, frozen Bootstrap `.pull-left` (`bootstrap.css:6097-6099`), `_page.less:5556-5559`, and the complete `yobi.less` import chain are recorded as output/cascade sources.
