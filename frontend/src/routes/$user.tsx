@@ -1161,7 +1161,7 @@ function ProfileProjectRow({
           </Link>
         </div>
         <div
-          className={`${stylex.props(styles.projectInfo).className} pull-left`}
+          className={stylex.props(styles.projectInfo).className}
           data-stylex-owner="user-profile-project-info"
         >
           <div
@@ -1221,7 +1221,7 @@ function ProfileProjectRow({
         </div>
       </div>
       <div
-        className={`${stylex.props(styles.projectStats).className} stats-wrap pull-right`}
+        className={`${stylex.props(styles.projectStats).className} stats-wrap`}
         data-stylex-owner="user-profile-project-stats"
       >
         <div className="stats">

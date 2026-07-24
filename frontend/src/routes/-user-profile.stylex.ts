@@ -31,6 +31,7 @@ export const styles = stylex.create({
   },
   // Legacy user/partial_projectlist.scala.html project info wrapper spacing.
   projectInfo: {
+    float: "left",
     marginLeft: "10px",
   },
   projectRow: {
@@ -58,6 +59,7 @@ export const styles = stylex.create({
     marginLeft: "10px",
   },
   projectStats: {
+    float: "right",
     marginTop: "0px",
     textAlign: "right",
   },

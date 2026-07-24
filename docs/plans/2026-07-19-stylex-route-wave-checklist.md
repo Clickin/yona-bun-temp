@@ -785,6 +785,22 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   utility-class absence, computed margin/text alignment, no-inline-style,
   disabled UX, and desktop/mobile geometry.
 
+### 2026-07-25 Batch 940 public-profile Projects-tab project-row float ownership
+
+- [x] The populated Projects-tab project row preserves the avatar fallback
+  wrapper, semantic `info-wrap`/`stats-wrap`, project content, watch/leave
+  controls, and responsive geometry while moving the legacy info `pull-left`
+  and stats `pull-right` declarations into the existing `projectInfo` and
+  `projectStats` StyleX owners. Other user-profile utility consumers remain
+  excluded.
+- [x] The focused `stylex-user-profile-project-row.e2e.ts` external Chrome
+  check passes 1/1 in normal and 1/1 in fallback-off modes, covering Scala,
+  LESS/Bootstrap/import provenance, absent React utility classes, computed
+  floats/margins/alignment, no-inline-style, controls, desktop/mobile
+  containment, and no overflow. The broader profile spec retains an
+  unrelated pre-existing fallback-off `daysAgo` containment failure and is
+  not the authoritative gate for this row wave.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

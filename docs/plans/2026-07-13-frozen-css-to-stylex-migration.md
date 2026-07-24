@@ -8194,3 +8194,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Retire only the React-owned `mt10` utility from the unauthorized issue-comment action wrapper. Preserve the outer `write-comment-box mt20` state, inner `right-txt`, disabled Add a comment copy, textarea/form DOM, and geometry; the existing route-local StyleX owner continues to supply frozen `margin-top:10px` and `text-align:right`. The authorized editor, outer unauthorized `mt20`, and known legacy administrator notice/sidebar collapse-button x-axis mismatch remain outside this wave.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and mobile coverage. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
+## Batch 940
+
+Move the exact legacy floats for the populated public-profile Projects-tab project row into its existing route-local StyleX owners: `projectInfo` owns `float:left` plus its existing `margin-left:10px`, and `projectStats` owns `float:right` plus its existing `margin-top:0`/`text-align:right`. Preserve the avatar fallback wrapper, semantic `info-wrap`/`stats-wrap`, project content, watch/leave controls, and responsive geometry; other user-profile utility consumers remain outside this wave.
+
+The focused `stylex-user-profile-project-row.e2e.ts` external System-Chrome guard passes 1/1 in normal and explicit fallback-off modes. The broader profile spec still has an unrelated pre-existing fallback-off `daysAgo` containment failure; it is not used as this row wave's authoritative gate. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
