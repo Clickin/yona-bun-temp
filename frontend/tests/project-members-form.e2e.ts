@@ -897,6 +897,99 @@ test("project members enrollment Add posts selected login like legacy member mod
   await expect(page.locator("#loginId")).toHaveValue("bob");
 });
 
+test("project members enrollment rows own legacy floats and width through StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+  const screenshotDirectory = resolve(
+    "output/playwright/stylex-project-members-enrollment-floats",
+    mode,
+  );
+  mkdirSync(screenshotDirectory, { recursive: true });
+  const routeSource = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
+  const legacyView = readFileSync(
+    new URL("../../yona-original/app/views/project/members.scala.html", import.meta.url),
+    "utf8",
+  );
+  const commonLess = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
+    "utf8",
+  );
+  const bootstrap = readFileSync(
+    new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
+    "utf8",
+  );
+
+  expect(legacyView).toContain('<div class="pull-left mr10">');
+  expect(legacyView).toContain('<div class="pull-left" style="width: 60px;">');
+  expect(commonLess).toMatch(/\.mr10\s*\{\s*margin-right:10px;\s*\}/u);
+  expect(bootstrap).toMatch(/\.pull-left\s*\{\s*float:\s*left;\s*\}/u);
+  expect(routeSource).toContain('data-stylex-owner="project-members-enrollment-avatar-wrap"');
+  expect(routeSource).toContain('data-stylex-owner="project-members-enrollment-details"');
+  expect(routeSource).toContain('className={`${avatarWrapProps.className ?? ""} mr10`.trim()}');
+  expect(routeSource).not.toContain(
+    'className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}',
+  );
+  expect(routeSource).not.toContain(
+    "className={`${stylex.props(styles.enrollmentDetails).className} pull-left`}",
+  );
+  expect(routeSource).toContain('enrollmentDetails: {\n    float: "left",\n    width: "60px",');
+
+  const requests = await mockProjectMembers(page);
+  for (const viewport of [
+    { height: 900, name: "desktop", width: 1366 },
+    { height: 844, name: "mobile", width: 390 },
+  ] as const) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/members`, { waitUntil: "commit" });
+
+    const avatar = page.locator('[data-stylex-owner="project-members-enrollment-avatar-wrap"]');
+    const details = page.locator('[data-stylex-owner="project-members-enrollment-details"]');
+    await expect(avatar).toHaveClass(/(?:^|\s)mr10(?:\s|$)/u);
+    await expect(avatar).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
+    await expect(details).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
+    await expect(avatar).toHaveCSS("float", "left");
+    await expect(avatar).toHaveCSS("margin-right", "10px");
+    await expect(details).toHaveCSS("float", "left");
+    await expect(details).toHaveCSS("width", "60px");
+
+    const geometry = await page.evaluate(() => {
+      const row = document.querySelector<HTMLElement>("legend + .row-fluid");
+      const avatar = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-members-enrollment-avatar-wrap"]',
+      );
+      const details = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-members-enrollment-details"]',
+      );
+      if (!row || !avatar || !details) return null;
+      const rowBox = row.getBoundingClientRect();
+      const avatarBox = avatar.getBoundingClientRect();
+      const detailsBox = details.getBoundingClientRect();
+      return {
+        avatarInsideRow: avatarBox.left >= rowBox.left && avatarBox.right <= rowBox.right,
+        detailsInsideRow: detailsBox.left >= rowBox.left && detailsBox.right <= rowBox.right,
+        rowInsideViewport: rowBox.left >= 0 && rowBox.right <= window.innerWidth,
+        enrollmentRowNoOverflow: row.scrollWidth <= row.clientWidth,
+      };
+    });
+    expect(geometry).toMatchObject({
+      avatarInsideRow: true,
+      detailsInsideRow: true,
+      rowInsideViewport: true,
+      enrollmentRowNoOverflow: true,
+    });
+    await page.screenshot({
+      fullPage: true,
+      path: resolve(screenshotDirectory, `enrollment-${viewport.name}.png`),
+    });
+  }
+
+  await page.locator(".enrollAcceptBtn").click();
+  await expect.poll(() => requests.addedLoginIds).toEqual(["bob"]);
+  await expect(page.locator("#loginId")).toHaveValue("bob");
+});
+
 test("project members role dropdown and delete confirm stay route-owned", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await installDocumentDropdownBubbleAudit(page);

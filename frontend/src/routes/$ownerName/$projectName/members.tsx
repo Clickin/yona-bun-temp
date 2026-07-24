@@ -914,6 +914,7 @@ const styles = stylex.create({
   },
   // Legacy project/members.scala.html enrolled-user details column.
   enrollmentDetails: {
+    float: "left",
     width: "60px",
   },
   // Frozen project/members.scala.html enrolled-user avatar wrapper.
@@ -941,7 +942,7 @@ function EnrollmentRequest({
   return (
     <div className="span2">
       <div
-        className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}
+        className={`${avatarWrapProps.className ?? ""} mr10`.trim()}
         data-stylex-owner="project-members-enrollment-avatar-wrap"
       >
         <Link
@@ -960,7 +961,7 @@ function EnrollmentRequest({
         </Link>
       </div>
       <div
-        className={`${stylex.props(styles.enrollmentDetails).className} pull-left`}
+        className={stylex.props(styles.enrollmentDetails).className}
         data-stylex-owner="project-members-enrollment-details"
       >
         <span>
