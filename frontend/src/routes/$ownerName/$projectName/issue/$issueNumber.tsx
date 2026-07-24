@@ -2712,7 +2712,7 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   return (
     <div
       {...stylex.props(styles.keymapWrapper)}
-      className={`${stylex.props(styles.keymapWrapper).className} pull-left`}
+      className={stylex.props(styles.keymapWrapper).className}
       data-stylex-owner="issue-detail-keymap-wrapper"
     >
       <button type="button" className="ybtn ybtn-inverse ybtn-mini" onClick={openKeymap}>

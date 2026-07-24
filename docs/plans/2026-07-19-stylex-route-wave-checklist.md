@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 authenticated project issue-detail keymap wrapper float
+
+- [x] `help/keymap.scala.html:12-17`, frozen Bootstrap `.pull-left` (`bootstrap.css:6097-6099`), `_page.less:5556-5559`, and the complete `yobi.less` import chain are recorded as output/cascade sources.
+- [x] The issue-detail keymap wrapper preserves the legacy DOM, spacing, copy, and React modal/keyboard behavior while its existing StyleX owner carries exact `float:left`; only the React-owned `pull-left` utility is removed.
+- [x] `frontend/tests/stylex-project-issue-detail-keymap-wrapper.e2e.ts` verifies source provenance, stable owner, retired-class absence, computed float/margin/padding, visible modal interaction, desktop/mobile containment/no-overflow, and deterministic screenshots under `output/playwright/stylex-project-issue-detail-keymap-wrapper/{normal,fallback-off}/`.
+- [x] Managed external System-Chrome normal and explicit fallback-off focused runs pass 2/2 each at 1366x900 and 390x844; screenshots were directly inspected under `output/playwright/stylex-project-issue-detail-keymap-wrapper/{normal,fallback-off}/`.
+- [ ] Live legacy rendering is unavailable, so direct screenshot parity is unverified; fallback-off global shell/Bootstrap drift remains outside this owner and receives no compensation.
+
 ### 2026-07-25 authenticated project issues keymap wrapper float
 
 - [x] `help/keymap.scala.html:12-17`, frozen Bootstrap `.pull-left` (`bootstrap.css:6097-6099`), `_page.less:5556-5559`, and the `yobi.less` import chain are recorded as output/cascade sources.

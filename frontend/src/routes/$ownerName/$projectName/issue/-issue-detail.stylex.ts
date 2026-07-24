@@ -88,7 +88,7 @@ export const styles = stylex.create({
     whiteSpace: "nowrap",
   },
   labelSearchInput: { width: "10px" },
-  keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
+  keymapWrapper: { float: "left", marginLeft: 55, padding: "10px 0px" },
   shareLinkHidden: { display: "none" },
   votersModalVisible: { display: "block" },
   keymapModalVisible: { display: "block" },
