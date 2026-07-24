@@ -6780,6 +6780,24 @@ owner; no route-specific compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
 
+## Batch 902
+
+Move the project-create advanced form's remaining exact frozen `.mt10`
+`margin-top:10px` declarations into the existing projectform StyleX owners:
+the share/VCS labels, protected/private scope rows, and the existing scopes
+list owner. Preserve the legacy `span2 right-txt mt10`, `project-scopes mt10`,
+scope radio/copy/order, owner-dependent protected visibility, VCS warning,
+React state/events, and menu-setting label's no-margin state. Managed external
+System-Chrome normal, explicit fallback-off, and restored-normal focused runs
+pass 1/1 each at 1366x900 and 390x844; normal and fallback-off desktop/mobile
+screenshots were directly inspected under
+`frontend/output/playwright/stylex-projectform-mt10/`. Adjacent projectform
+guards pass 7/7 in normal and fallback-off runs. The existing mobile 700px
+project-form/global overflow remains a documented screen-wide gap outside
+these margin owners; no route-specific compensation was added. Approved Yoram
+footer NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
+
 ## Batch 892
 
 Move three remaining populated-screen utility-margin consumers into their existing

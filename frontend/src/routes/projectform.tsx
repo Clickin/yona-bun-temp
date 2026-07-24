@@ -113,9 +113,11 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
-  const protectedScopeStyleProps = isSelectedOwnerGroup
-    ? undefined
-    : stylex.props(projectFormConditionalStyles.hidden);
+  const protectedScopeStyleProps = stylex.props(
+    styles.protectedScope,
+    !isSelectedOwnerGroup && projectFormConditionalStyles.hidden,
+  );
+  const privateScopeStyleProps = stylex.props(styles.privateScope);
   const svnWarningStyleProps = stylex.props(
     projectFormLayout.svnWarning,
     vcs === "GIT" && projectFormConditionalStyles.hidden,
@@ -326,7 +328,10 @@ function ProjectCreateScreen({
               >
                 <div className="row-fluid">
                   <div
-                    className={`${stylex.props(projectFormLayout.fieldLabel).className} span2 mt10`}
+                    className={`${
+                      stylex.props(projectFormLayout.fieldLabel, projectFormLayout.shareOptionLabel)
+                        .className
+                    } span2 mt10`}
                     data-stylex-owner="project-form-share-option-label"
                   >
                     {t("project.shareOption")}
@@ -366,7 +371,7 @@ function ProjectCreateScreen({
                       <li
                         {...protectedScopeStyleProps}
                         id="opt-protected"
-                        className={`mt10 ${protectedScopeStyleProps?.className ?? ""}`.trim()}
+                        className={`mt10 ${protectedScopeStyleProps.className}`}
                         data-stylex-owner="project-form-protected-scope"
                       >
                         <input
@@ -395,7 +400,10 @@ function ProjectCreateScreen({
                         </label>
                       </li>
 
-                      <li className="mt10">
+                      <li
+                        {...privateScopeStyleProps}
+                        className={`mt10 ${privateScopeStyleProps.className}`}
+                      >
                         <input
                           type="radio"
                           id="private"
@@ -429,7 +437,10 @@ function ProjectCreateScreen({
 
                 <div className="row-fluid">
                   <div
-                    className={`${stylex.props(projectFormLayout.fieldLabel).className} span2 mt10`}
+                    className={`${
+                      stylex.props(projectFormLayout.fieldLabel, projectFormLayout.vcsLabel)
+                        .className
+                    } span2 mt10`}
                     data-stylex-owner="project-form-vcs-label"
                   >
                     <label htmlFor="vcs">{t("project.vcs")}</label>
@@ -580,6 +591,12 @@ const styles = stylex.create({
     padding: "10px 0px",
   },
   scopes: {
+    marginTop: "10px",
+  },
+  protectedScope: {
+    marginTop: "10px",
+  },
+  privateScope: {
     marginTop: "10px",
   },
   scopeNote: {

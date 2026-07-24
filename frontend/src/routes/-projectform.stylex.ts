@@ -15,6 +15,12 @@ export const projectFormLayout = stylex.create({
   fieldLabel: {
     textAlign: "right",
   },
+  shareOptionLabel: {
+    marginTop: "10px",
+  },
+  vcsLabel: {
+    marginTop: "10px",
+  },
   visibilityLabel: {
     marginLeft: "5px",
   },
