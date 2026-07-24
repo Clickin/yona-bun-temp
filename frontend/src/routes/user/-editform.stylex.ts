@@ -121,6 +121,9 @@ export const userSettingsAvatarStyles = stylex.create({
   uploadWrap: {
     textAlign: "center",
   },
+  uploadWrapMargin: {
+    marginTop: "10px",
+  },
   uploadInput: {
     cursor: "pointer",
     left: "5px",

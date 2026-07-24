@@ -7682,3 +7682,22 @@ shell paint and the existing default-avatar fixture path remain documented
 fallback/fixture gaps outside this margin owner; no route-specific compensation
 was added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
 repository differences remain intentional.
+
+## Batch 901
+
+Move the user-settings avatar upload wrapper's exact frozen `.mt10`
+`margin-top:10px` declaration into the existing avatar StyleX owner. Preserve
+the legacy `frmAvatar`/`avatar-frm`/`btn-wrap mt10 center-txt` DOM, avatar and
+progress order, Change avatar copy, file input contract, crop-modal behavior,
+responsive containment, and React state/events. Managed external System-Chrome
+normal, explicit fallback-off, and restored-normal focused runs pass 2/2 each
+at 1366x900 and 390x844. Normal and fallback-off desktop/mobile screenshots
+were directly inspected under
+`frontend/output/playwright/stylex-user-editform-avatar-upload-mt10/`.
+Adjacent user-editform profile/avatar guards pass 5/5 in both normal and
+fallback-off runs.
+Fallback-off global shell drift and the existing default-avatar fixture path
+remain documented gaps outside this margin owner; no route-specific
+compensation was added. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
