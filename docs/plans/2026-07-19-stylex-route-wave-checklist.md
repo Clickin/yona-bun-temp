@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 authenticated project new pull-request selector-column floats
+
+- [x] `git/create.scala.html:37-82`, frozen `_page.less:5459-5475`, Bootstrap float utilities, and `conf/messages` are recorded as output/cascade/copy sources.
+- [x] The From and To selector columns preserve legacy DOM/order, labels, select navigation/interaction, arrow, and responsive geometry while route-local StyleX owns exact `float:left`/`float:right`; only the two React-owned utility classes are removed.
+- [x] `frontend/tests/stylex-project-pull-request-create-form-mr5.e2e.ts` verifies stable owners, retired-class absence, computed floats, selector interaction, desktop/mobile containment/no-overflow, and deterministic screenshots under `output/playwright/stylex-project-new-pull-request-selector-floats/{normal,fallback-off}/`.
+- [x] Managed external System-Chrome focused results are normal 1/1 and explicit fallback-off 1/1 at 1366x900 and 390x844; screenshots at the recorded normal/fallback-off paths were directly inspected.
+- [ ] Live legacy rendering is unavailable, so broad screenshot parity is explicitly unverified; fallback-off global shell/Bootstrap drift remains outside these owners and received no compensation.
+
 Status: **active canonical target inventory**  
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)

@@ -4,6 +4,8 @@ export const newPullRequestTheme = stylex.defineVars({ formSurface: "#ffffff" })
 
 export const styles = stylex.create({
   selectors: { display: "block", marginBottom: "20px", minHeight: "55px", position: "relative" },
+  fromColumn: { float: "left" },
+  toColumn: { float: "right" },
   projectSelect: { marginRight: "5px" },
   fieldTitle: { display: "block", fontWeight: "700" },
   arrow: {

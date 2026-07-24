@@ -8,7 +8,9 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const expectedProjectOriginalMargin =
   process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "5px" : "0px";
 const screenshotDirectory = resolve(
-  "output/playwright/stylex-project-pull-request-create-form-mr5",
+  `output/playwright/stylex-project-new-pull-request-selector-floats/${
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal"
+  }`,
 );
 const source = (relativePath: string) =>
   readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
@@ -48,6 +50,8 @@ test("new pull request form owns mr5 only on original project selects", async ({
   expect(pullRequestPageLess).toContain("min-height:55px;");
   expect(pullRequestPageLess).toContain(".field-title {");
   expect(pullRequestPageLess).toContain(".arrow {");
+  expect(bootstrapCss).toContain(".pull-right {\n  float: right;");
+  expect(bootstrapCss).toContain(".pull-left {\n  float: left;");
   expect(responsiveLess).toContain("@media all and (max-width: 720px) {");
   expect(responsiveLess).toContain('input[type="text"],');
   expect(responsiveLess).toContain(".project-selects {");
@@ -99,7 +103,13 @@ test("new pull request form owns mr5 only on original project selects", async ({
   }
 
   expect(styleSource).toContain('projectSelect: { marginRight: "5px" }');
+  expect(styleSource).toContain('fromColumn: { float: "left" }');
+  expect(styleSource).toContain('toColumn: { float: "right" }');
   expect(routeSource).toContain("stylex.props(styles.projectSelect)");
+  expect(routeSource).toContain('data-stylex-owner="new-pull-request-from-column"');
+  expect(routeSource).toContain('data-stylex-owner="new-pull-request-to-column"');
+  expect(routeSource).not.toContain('className="pull-left"');
+  expect(routeSource).not.toContain('className="pull-right"');
   expect(routeSource.match(/\.\.\.stylex\.props\(styles\.projectSelect\)/g)?.length).toBe(2);
   expect(routeSource).toContain(
     "className={`${stylex.props(styles.projectSelect).className} mr5 select2-offscreen`}",
@@ -120,6 +130,22 @@ test("new pull request form owns mr5 only on original project selects", async ({
     const selectors = page.locator('[data-stylex-owner="new-pull-request-selectors"]');
     await expect(form).toBeVisible();
     await expect(selectors).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="new-pull-request-from-column"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="new-pull-request-to-column"]')).toBeVisible();
+    await expect(
+      page.locator('[data-stylex-owner="new-pull-request-from-column"]'),
+    ).not.toHaveClass(/\bpull-left\b/u);
+    await expect(page.locator('[data-stylex-owner="new-pull-request-to-column"]')).not.toHaveClass(
+      /\bpull-right\b/u,
+    );
+    await expect(page.locator('[data-stylex-owner="new-pull-request-from-column"]')).toHaveCSS(
+      "float",
+      "left",
+    );
+    await expect(page.locator('[data-stylex-owner="new-pull-request-to-column"]')).toHaveCSS(
+      "float",
+      "right",
+    );
     await expect(selectors.locator("select")).toHaveCount(4);
     await expect(selectors.locator(".field-title")).toHaveText(["From", "To"]);
     expect(
@@ -185,11 +211,25 @@ test("new pull request form owns mr5 only on original project selects", async ({
       });
       return {
         boxes,
+        columns: [
+          document
+            .querySelector<HTMLElement>('[data-stylex-owner="new-pull-request-from-column"]')
+            ?.getBoundingClientRect(),
+          document
+            .querySelector<HTMLElement>('[data-stylex-owner="new-pull-request-to-column"]')
+            ?.getBoundingClientRect(),
+        ],
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         select2Boxes,
       };
     });
     expect(geometry.overflow).toBeLessThanOrEqual(2);
+    expect(geometry.columns[0]?.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.columns[1]?.right).toBeLessThanOrEqual(viewport.width + 2);
+    expect(geometry.columns[0]?.top).toBeGreaterThanOrEqual(geometry.boxes[2]?.top ?? 0);
+    expect(geometry.columns[1]?.top).toBeGreaterThanOrEqual(geometry.boxes[2]?.top ?? 0);
+    expect(geometry.columns[0]?.bottom).toBeLessThanOrEqual(geometry.boxes[1]?.bottom ?? 0);
+    expect(geometry.columns[1]?.bottom).toBeLessThanOrEqual(geometry.boxes[1]?.bottom ?? 0);
     const expectedSelect2Order = [
       "s2id_fromProjectId",
       "s2id_fromBranch",

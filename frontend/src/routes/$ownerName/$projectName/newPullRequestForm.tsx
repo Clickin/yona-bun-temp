@@ -432,7 +432,10 @@ function PullRequestBranchSelectors({
       className={`${stylex.props(styles.selectors).className} pull-request-wrap`}
       data-stylex-owner="new-pull-request-selectors"
     >
-      <div className="pull-left">
+      <div
+        className={stylex.props(styles.fromColumn).className}
+        data-stylex-owner="new-pull-request-from-column"
+      >
         <label
           htmlFor="fromProjectId"
           className={`${stylex.props(styles.fieldTitle).className} field-title`}
@@ -500,7 +503,10 @@ function PullRequestBranchSelectors({
       >
         <i className="yobicon-right-2"></i>
       </div>
-      <div className="pull-right">
+      <div
+        className={stylex.props(styles.toColumn).className}
+        data-stylex-owner="new-pull-request-to-column"
+      >
         <label
           htmlFor="toProjectId"
           className={`${stylex.props(styles.fieldTitle).className} field-title`}
