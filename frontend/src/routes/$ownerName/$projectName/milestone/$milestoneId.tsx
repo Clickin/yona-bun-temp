@@ -43,6 +43,11 @@ const sx = {
   tabBadge: stylex.props(styles.tabBadge),
   issueList: stylex.props(styles.issueList),
   issueRow: stylex.props(styles.issueRow),
+  issueTitleWrap: stylex.props(styles.titleWrap),
+  issuePostId: stylex.props(styles.postId),
+  issueTitle: stylex.props(styles.issueTitle),
+  issueInfos: stylex.props(styles.infos),
+  issueInfosItem: stylex.props(styles.infosItem),
   issueMeta: stylex.props(styles.issueMeta),
   issueAssigneeRail: stylex.props(styles.issueAssigneeRail),
   issueDueDateRail: stylex.props(styles.issueDueDateRail),
@@ -1145,13 +1150,25 @@ function MilestoneIssueRow({
           className={`${sx.issueMeta.className} issue-item-row`}
           data-stylex-owner="milestone-detail-issue-meta"
         >
-          <div className="title-wrap">
+          <div
+            {...sx.issueTitleWrap}
+            className={`${sx.issueTitleWrap.className} title-wrap`}
+            data-stylex-owner="milestone-detail-issue-title-wrap"
+          >
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={{ ownerName, projectName, issueNumber }}
-              className="title"
+              {...sx.issueTitle}
+              className={`${sx.issueTitle.className} title`}
+              data-stylex-owner="milestone-detail-issue-title-link"
             >
-              <span className="post-id">#{issueNumber}</span>
+              <span
+                {...sx.issuePostId}
+                className={`${sx.issuePostId.className} post-id`}
+                data-stylex-owner="milestone-detail-issue-post-id"
+              >
+                #{issueNumber}
+              </span>
             </Link>
             {issueWeight > 0 ? (
               <span className="weight-up-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
@@ -1180,25 +1197,44 @@ function MilestoneIssueRow({
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={{ ownerName, projectName, issueNumber }}
-              className="title"
+              {...sx.issueTitle}
+              className={`${sx.issueTitle.className} title`}
+              data-stylex-owner="milestone-detail-issue-title-link"
             >
               {titleParts.title}
             </Link>
           </div>
-          <div className="infos">
+          <div
+            {...sx.issueInfos}
+            className={`${sx.issueInfos.className} infos`}
+            data-stylex-owner="milestone-detail-issue-infos"
+          >
             {authorLabel && authorLoginId ? (
               <Link
                 to="/$user"
                 params={{ user: authorLoginId }}
-                className="infos-item infos-link-item"
+                {...sx.issueInfosItem}
+                className={`${sx.issueInfosItem.className} infos-item infos-link-item`}
+                data-stylex-owner="milestone-detail-issue-infos-item"
                 title={authorLoginId}
               >
                 {authorLabel}
               </Link>
             ) : (
-              <span className="infos-item">{t("issue.noAuthor")}</span>
+              <span
+                {...sx.issueInfosItem}
+                className={`${sx.issueInfosItem.className} infos-item`}
+                data-stylex-owner="milestone-detail-issue-infos-item"
+              >
+                {t("issue.noAuthor")}
+              </span>
             )}
-            <span className="infos-item" title={createdTitle}>
+            <span
+              {...sx.issueInfosItem}
+              className={`${sx.issueInfosItem.className} infos-item`}
+              data-stylex-owner="milestone-detail-issue-infos-item"
+              title={createdTitle}
+            >
               {createdDisplayLabel}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
@@ -1217,7 +1253,11 @@ function MilestoneIssueRow({
             {numberField(issue.commentCount) ||
             numberField(issue.voterCount) ||
             numberField(issue.sharerCount) ? (
-              <span className="infos-item item-count-groups">
+              <span
+                {...sx.issueInfosItem}
+                className={`${sx.issueInfosItem.className} infos-item item-count-groups`}
+                data-stylex-owner="milestone-detail-issue-infos-item"
+              >
                 {numberField(issue.commentCount) ? (
                   <Link
                     to="/$ownerName/$projectName/issue/$issueNumber"
