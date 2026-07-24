@@ -7612,3 +7612,25 @@ full live legacy/Yoram shell screenshot parity remain screen-wide or
 fallback-owned gaps outside these owners, so no route-specific compensation
 was added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
 repository differences remain intentional.
+
+## Batch 897
+
+Move the pull-request changes review editor's exact frozen `.mt10`
+`margin-top:10px` declaration into the existing changes StyleX owner. Move
+the pull-request detail populated header state/date wrapper's exact `.mt10`
+declaration into its existing header StyleX owner. Move the code-history file
+table's conditional exact `.mt10` declaration into the existing commit-file
+StyleX owner while preserving the pathless branch table's no-margin state.
+Preserve legacy DOM/classes, state-specific copy/order, responsive geometry,
+editor/upload interactions, pathful/pathless table structure, and
+React/TanStack behavior. Managed external System-Chrome integrated normal,
+explicit fallback-off, and restored-normal focused runs pass 4/4 each at
+1366x900 and 390x844. Desktop/mobile screenshots for the review editor,
+open/closed/conflict PR header states, and commit-file history were directly
+inspected. Adjacent guards pass 12/23; 11 unchanged failures are existing
+code-history route-load/title/path/selector assumptions and PR/commit fixture
+load assumptions. Fallback-off global shell/Bootstrap/asset drift and full
+live legacy/Yoram shell screenshot parity remain screen-wide or fallback-owned
+gaps outside these margin owners, so no route-specific compensation was
+added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
+repository differences remain intentional.

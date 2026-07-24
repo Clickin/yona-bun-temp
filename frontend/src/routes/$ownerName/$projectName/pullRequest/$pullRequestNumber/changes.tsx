@@ -1860,8 +1860,17 @@ function stringField(value: unknown, fallback: string) {
 function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
   const { t } = useLegacyMessages();
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const editorStyleProps = stylex.props(
+    editorMode === "code-review-body" && styles.reviewEditorWrapper,
+  );
   return (
-    <div className="mt10">
+    <div
+      {...editorStyleProps}
+      className={`mt10 ${editorStyleProps.className ?? ""}`.trim()}
+      data-stylex-owner={
+        editorMode === "code-review-body" ? "pull-request-changes-review-editor-wrapper" : undefined
+      }
+    >
       <ul className="nav nav-tabs nm small">
         <li className={mode === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setMode("edit")}>

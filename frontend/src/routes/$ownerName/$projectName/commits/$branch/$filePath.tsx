@@ -15,6 +15,7 @@ const sx = {
   repo: stylex.props(styles.repo),
   breadcrumbs: stylex.props(styles.breadcrumbs),
   history: stylex.props(styles.history),
+  historyTable: stylex.props(styles.historyTable),
   commentCount: stylex.props(styles.commentCount),
 } as const;
 
@@ -164,7 +165,11 @@ function ProjectCodeFileHistoryBody({
             </div>
 
             <div {...sx.history} data-stylex-owner="commit-file-history" id="history">
-              <table className="code-table commits mt10">
+              <table
+                {...sx.historyTable}
+                className={`code-table commits mt10 ${sx.historyTable.className ?? ""}`.trim()}
+                data-stylex-owner="commit-file-history-table"
+              >
                 <thead className="thead">
                   <tr>
                     <td className="commit-id">

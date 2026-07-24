@@ -40,6 +40,7 @@ export const styles = stylex.create({
   commentActions: { textAlign: "right" },
   reviewActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },
+  reviewEditorWrapper: { marginTop: "10px" },
   editorTabContent: { position: "relative", overflow: "visible" },
   originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 },
   diffMeta: { cursor: "pointer" },

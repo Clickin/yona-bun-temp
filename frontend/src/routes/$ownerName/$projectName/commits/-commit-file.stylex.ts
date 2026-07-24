@@ -21,6 +21,7 @@ export const styles = stylex.create({
     padding: "5px 0px",
   },
   history: { overflowX: "auto" },
+  historyTable: { marginTop: "10px" },
   // history.scala.html:152 / _page.less:4824 owns the compact comment marker.
   commentCount: {
     float: "right",
