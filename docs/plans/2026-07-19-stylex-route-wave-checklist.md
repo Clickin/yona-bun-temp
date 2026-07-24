@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 958 public profile issue-title residuals
+
+- [x] `user/view.scala.html:112-167`, `user/partial_issues.scala.html`, `_page.less:7505-7570`, supporting LESS/Bootstrap/responsive/message evidence, and the full `yobi.less` chain are recorded as issue-title output/cascade evidence.
+- [x] `title-cell` owns exact 5px vertical padding/table-cell/middle alignment, the main title owns 14px/500 typography, and the count group owns 10px typography. Existing issue-row/title-wrap/links/copy remain; author/meta/post-id, child rows, nested tabs, sidebar, and admin alignment are excluded.
+- [x] `frontend/tests/stylex-user-profile-issue-title-cell.e2e.ts` verifies owners, computed desktop/mobile declarations, issue link/copy/count, no inline/plugin attributes, containment, and no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 957 public profile projects first row
 
 - [x] `user/view.scala.html:168-180`, `user/partial_projectlist.scala.html:11-42`, `_page.less:1837-1845,1932-1938`, and the full LESS/Bootstrap import chain are recorded as project-list and first-row evidence.

@@ -154,6 +154,16 @@ export const styles = stylex.create({
     overflow: "auto",
     whiteSpace: "normal",
   },
+  // Frozen less/_page.less .my-issues .post-item .title-wrap .title-cell.
+  issueTitleCell: {
+    display: "table-cell",
+    padding: "5px 0px",
+    verticalAlign: "middle",
+  },
+  // Frozen less/_page.less .my-issues .post-item .title-wrap .item-count-groups.
+  issueTitleCountGroups: { fontSize: "10px" },
+  // Frozen less/_page.less .my-issues .post-item .title-wrap .title.
+  issueTitleLink: { fontSize: "14px", fontWeight: "500" },
   // Frozen Bootstrap .pull-right used by user/partial_issues.scala.html.
   issueDueDate: { float: "right" },
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.

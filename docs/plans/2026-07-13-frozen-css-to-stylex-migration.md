@@ -4,6 +4,16 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile issue-title residuals
+
+Batch 958 moves the populated public-profile issue title area's frozen
+`title-cell` padding/table alignment, `item-count-groups` 10px typography,
+and issue title 14px/500 typography to route-local StyleX. Existing row and
+title-wrap owners, links, copy, labels, subtasks, and interaction remain;
+author/meta/post-id and child rows are excluded. Focused external Chrome checks
+pass 1/1 in normal and fallback-off modes. Live legacy screenshot parity
+remains unverified and no geometry compensation was added.
+
 ## 2026-07-25 — Public profile projects first row
 
 Batch 957 moves the frozen `.all-projects.user-streams .project:first-of-type`

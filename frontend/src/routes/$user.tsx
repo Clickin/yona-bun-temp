@@ -788,8 +788,18 @@ function ProfileIssueRow({
           className={`${stylex.props(styles.issueTitleWrap).className} title-wrap span5`}
           data-stylex-owner="user-profile-issue-title-wrap"
         >
-          <span className="title-cell">
-            <Link {...LEGACY_LINK_PROPS} to={issuePath} className="title">
+          <span
+            {...stylex.props(styles.issueTitleCell)}
+            className={`${stylex.props(styles.issueTitleCell).className} title-cell`}
+            data-stylex-owner="user-profile-issue-title-cell"
+          >
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to={issuePath}
+              {...stylex.props(styles.issueTitleLink)}
+              className={`${stylex.props(styles.issueTitleLink).className} title`}
+              data-stylex-owner="user-profile-issue-title-link"
+            >
               {stringField(issue, "title")}
             </Link>
             <ProfileIssueCommentCount issue={issue} issuePath={issuePath} />
@@ -1107,7 +1117,11 @@ function ProfileIssueCommentCount({
   }
 
   return (
-    <span className="item-count-groups">
+    <span
+      {...stylex.props(styles.issueTitleCountGroups)}
+      className={`${stylex.props(styles.issueTitleCountGroups).className} item-count-groups`}
+      data-stylex-owner="user-profile-issue-title-count-groups"
+    >
       <Link {...LEGACY_LINK_PROPS} to={issuePath} hash="comments" className="comments-count">
         <span className="count-groups item-icon">
           <i className="yobicon-comment2"></i>
