@@ -7954,3 +7954,25 @@ asset. The adjacent organization pull-request suite is 12/20: eight unchanged fa
 aggregate legacy-shell/guest-copy, removed PJAX-tab, exact class/href, or exact source-string
 assumptions. Fallback-off global shell/asset drift remains outside these owners. Approved Yoram
 footer NAVER Labs/provider/developer-contact/upstream-repository differences remain intentional.
+
+## Batch 915
+
+Move the authenticated populated project pull-request action floats into the existing route-local
+StyleX boundary. The `git/list.scala.html` New Pull Request wrapper, receiver/avatar rail, and
+state badge now use exact route-local `float: right` owners. Preserve `mt5 hide-in-mobile`,
+receiver/empty-avatar branches and links, `state`/`open`/`conflict`, search/sender/tabs/two-column
+DOM, row order, copy, and Link behavior; remove only these three React-owned `pull-right` utilities.
+No route-specific geometry compensation is permitted.
+
+The focused managed external System-Chrome guard passes 2/2 in normal, explicit fallback-off, and
+restored-normal modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile captures under
+`frontend/output/playwright/stylex-project-pullrequests-action-floats/{normal,fallback-off}/` were
+directly inspected. Managed live legacy `/admin/sample/pullRequests` desktop sweep passes 1/1;
+direct legacy desktop/mobile captures were inspected under
+`frontend/output/playwright/visual-sweep/legacy-project-pullrequests-{desktop,mobile}.png`.
+The live seed is empty while the local fixture has two populated rows, so same-fixture row parity
+remains a gap; the local receiver image also exposes the existing broken default-avatar fixture
+asset. Selected adjacent guards recorded five passes before the broader command was interrupted by
+an existing project-route hang, so no aggregate adjacent-suite pass is claimed. Fallback-off global
+shell/asset drift remains outside these float owners. Approved Yoram footer NAVER Labs,
+developer-contact, and upstream-repository/provider differences remain intentional.

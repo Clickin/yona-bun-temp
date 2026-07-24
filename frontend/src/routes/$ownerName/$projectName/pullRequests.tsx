@@ -31,6 +31,9 @@ const sx = {
   searchButton: stylex.props(styles.searchButton),
   tabs: stylex.props(styles.tabs),
   searchColumnHidden: stylex.props(styles.searchColumnHidden),
+  newPullRequestAction: stylex.props(styles.newPullRequestAction),
+  receiverRail: stylex.props(styles.receiverRail),
+  stateBadge: stylex.props(styles.stateBadge),
   recentlyPushedBranch: stylex.props(styles.recentlyPushedBranch),
   reviewProgressItem: stylex.props(styles.reviewProgressItem),
   reviewProgressBar: (width: string) => stylex.props(styles.reviewProgressBar(width)),
@@ -399,7 +402,7 @@ function ProjectPullRequestsBody({
               })}
               pushedBranches={pullRequests.recentlyPushedBranches}
             />
-            <div className="pull-right">
+            <div {...sx.newPullRequestAction} data-stylex-owner="project-pullrequests-new-action">
               <Link
                 to="/$ownerName/$projectName/newPullRequestForm"
                 params={{ ownerName, projectName }}
@@ -880,7 +883,11 @@ function ProjectPullRequestRow({
         </div>
       </div>
       <div className="span2 hide-in-mobile">
-        <div className="mt5 pull-right hide-in-mobile">
+        <div
+          {...sx.receiverRail}
+          className={`${sx.receiverRail.className} mt5 hide-in-mobile`}
+          data-stylex-owner="project-pullrequests-row-receiver-rail"
+        >
           {pullRequest.receiverLoginId ? (
             <Link
               to="/$user"
@@ -900,7 +907,13 @@ function ProjectPullRequestRow({
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
         </div>
-        <div className={`state ${stateKey} pull-right`}>{t(`pullRequest.state.${stateKey}`)}</div>
+        <div
+          {...sx.stateBadge}
+          className={`${sx.stateBadge.className} state ${stateKey}`}
+          data-stylex-owner="project-pullrequests-row-state"
+        >
+          {t(`pullRequest.state.${stateKey}`)}
+        </div>
       </div>
     </li>
   );

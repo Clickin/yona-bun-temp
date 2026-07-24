@@ -10,6 +10,9 @@ export const pullRequestColors = stylex.defineVars({
 });
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  newPullRequestAction: { float: "right" },
+  receiverRail: { float: "right" },
+  stateBadge: { float: "right" },
   errorWrap: { padding: "100px 0px", textAlign: "center" },
   errorIcon: (backgroundImage: string) => ({
     backgroundImage,
