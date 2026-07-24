@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile guest badge
+
+Batch 954 moves the guest-only `guest-user` and `left-mark` declarations from
+the frozen profile LESS into route-local StyleX while preserving the legacy
+DOM, classes, `OUR GUEST` copy, and conditional state. `WebkitWritingMode` and
+`WebkitTextOrientation` are used only because the dev StyleX collector drops
+the standard property names in fallback-off CSSOM; Chrome computes the same
+`vertical-rl`/`upright` values. Focused external Chrome checks pass 1/1 in
+normal and fallback-off modes. Live legacy screenshot parity remains
+unverified; the known legacy admin-notice/sidebar x-axis mismatch is not
+corrected in this wave.
+
 ## 2026-07-25 — Public profile whoami/since value
 
 Batch 953 moves the public profile identity wrapper `whoami` margin and the

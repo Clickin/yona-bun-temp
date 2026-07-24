@@ -353,8 +353,18 @@ function PublicProfileBody({
                 data-stylex-owner="user-profile-avatar-background"
               >
                 {profile.isGuest ? (
-                  <div className="guest-user">
-                    <span className="left-mark">OUR GUEST</span>
+                  <div
+                    {...stylex.props(styles.guestUser)}
+                    className={`${stylex.props(styles.guestUser).className} guest-user`}
+                    data-stylex-owner="user-profile-guest-badge"
+                  >
+                    <span
+                      {...stylex.props(styles.guestLeftMark)}
+                      className={`${stylex.props(styles.guestLeftMark).className} left-mark`}
+                      data-stylex-owner="user-profile-guest-badge-mark"
+                    >
+                      OUR GUEST
+                    </span>
                   </div>
                 ) : null}
               </div>

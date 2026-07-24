@@ -23,6 +23,23 @@ export const styles = stylex.create({
   },
   // Frozen less/_page.less .user-info-box .whoami.
   whoami: { marginTop: "15px" },
+  // Frozen less/_page.less .user-info-box .guest-user.
+  guestUser: {
+    backgroundColor: "rgba(255, 165, 0, 0.8)",
+    borderRadius: "3px",
+    color: "white",
+    textAlign: "center",
+    width: "20px",
+  },
+  // Frozen less/_page.less .user-info-box .guest-user .left-mark.
+  guestLeftMark: {
+    fontSize: "10px",
+    marginLeft: "10px",
+    paddingTop: "5px",
+    WebkitTextOrientation: "upright",
+    width: "10px",
+    WebkitWritingMode: "vertical-rl",
+  },
   // Frozen less/_page.less .user-info-box .user-since .since.
   since: {
     color: "rgb(243, 108, 34)",

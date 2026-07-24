@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 954 public profile guest badge
+
+- [x] `user/view.scala.html:45-53`, frozen `_page.less:4970-5048`, and the complete LESS/Bootstrap import chain are recorded as guest-badge output and cascade evidence.
+- [x] Guest-only `guest-user` and `left-mark` DOM/classes/copy/order remain unchanged; StyleX owns the exact background, width, radius, color/alignment, vertical writing, and spacing. Vendor-prefixed property names are used solely for the dev collector's fallback-off CSSOM compatibility.
+- [x] `frontend/tests/stylex-user-profile-guest-badge.e2e.ts` verifies owners, computed vertical geometry/paint, no inline/plugin attributes, and desktop/390px containment/no-overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified, and the legacy admin-notice/sidebar x-axis mismatch is intentionally not corrected.
+
 ### 2026-07-25 Batch 953 public profile whoami/since value
 
 - [x] `user/view.scala.html:54-65,69-72`, `_page.less:4983-4995,5050-5060`, `_variables.less` `@primary:@orange`, and the full import chain are recorded as output/declaration/color evidence.
