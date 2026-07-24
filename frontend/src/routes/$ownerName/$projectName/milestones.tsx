@@ -30,6 +30,7 @@ const sx = {
   tab: stylex.props(styles.tab),
   tabLink: stylex.props(styles.tabLink),
   activeTabLink: stylex.props(styles.tabLink, styles.activeTabLink),
+  newWrap: stylex.props(styles.newWrap),
   newButton: stylex.props(styles.newButton),
   filterWrap: stylex.props(styles.filterWrap),
   filters: stylex.props(styles.filters),
@@ -151,7 +152,11 @@ function ProjectMilestonesBody({
           data-stylex-owner="project-milestones-tab-wrap"
         >
           {booleanField(project.viewerCanUpdate) ? (
-            <div className="pull-right btns" data-stylex-owner="project-milestones-new-wrap">
+            <div
+              {...sx.newWrap}
+              className={`${sx.newWrap.className} btns`}
+              data-stylex-owner="project-milestones-new-wrap"
+            >
               <Link
                 {...LEGACY_MILESTONE_LIST_LINK_PROPS}
                 to="/$ownerName/$projectName/newMilestoneForm"
@@ -238,7 +243,7 @@ function ProjectMilestonesBody({
                   </div>
                   <div
                     {...sx.search}
-                    className={`${sx.search.className} pull-left search search-bar`}
+                    className={`${sx.search.className} search search-bar`}
                     data-stylex-owner="project-milestones-search"
                   >
                     <input
@@ -439,7 +444,7 @@ function MilestoneRow({
               </span>
             </>
           ) : null}
-          <div {...sx.completion} className={`${sx.completion.className} pull-right`}>
+          <div {...sx.completion} className={sx.completion.className}>
             <span
               {...sx.completionNumber}
               className={`${sx.completionNumber.className} number completion-rate`}

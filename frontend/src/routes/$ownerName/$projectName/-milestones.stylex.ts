@@ -59,6 +59,7 @@ export const styles = stylex.create({
     color: "#555",
     cursor: "default",
   },
+  newWrap: { float: "right" },
   newButton: {
     backgroundColor: "#51a351",
     borderColor: "#51a351",
@@ -66,7 +67,6 @@ export const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: "1px",
     color: "#fff",
-    float: "right",
     padding: "4px 12px",
     textDecoration: "none",
   },
@@ -89,6 +89,7 @@ export const styles = stylex.create({
     borderRadius: "3px",
     borderStyle: "solid",
     borderWidth: "1px",
+    float: "left",
     height: "20px",
     padding: "4px 25px 4px 5px",
     position: "relative",

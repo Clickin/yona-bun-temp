@@ -7807,6 +7807,32 @@ paint and full live legacy/Yoram screenshot parity remain screen-wide gaps;
 approved Yoram footer NAVER/provider/developer-contact/upstream-repository
 differences remain intentional; no route-specific compensation was added.
 
+## Batch 909
+
+Move the authenticated populated project milestone-list float ownership into
+the existing route-local StyleX boundary. The legacy New milestone wrapper's
+`pull-right btns` now uses `styles.newWrap` with exact `float: right`; the
+`pull-left search search-bar` wrapper now uses the existing `styles.search`
+with exact `float: left`; and each completion wrapper retains the existing
+`styles.completion` exact `float: right`. Preserve the milestone list DOM,
+classes, copy, tab/filter/search order, Link behavior, state branches, and
+React/TanStack behavior while removing only the React-owned Bootstrap float
+utility classes; no route-specific compensation was added.
+
+The focused source/runtime float guard passes 2/2 in normal, explicit
+fallback-off, and restored-normal modes. Normal and fallback-off desktop/mobile
+screenshots under
+`frontend/output/playwright/stylex-project-milestones-action-floats/{normal,fallback-off}/`
+were directly inspected with managed external System-Chrome. Live legacy
+desktop/mobile milestone captures under
+`output/playwright/legacy-project-milestones-action-floats/` were also
+captured and inspected; the seeded legacy state has one milestone and no
+multi-item search/filter row while the local populated fixture has two, so
+full same-fixture populated comparison remains a documented fixture gap.
+Fallback-off global shell/asset paint drift remains outside these float owners;
+approved Yoram footer NAVER/provider/developer-contact/upstream-repository
+differences remain intentional and no route-specific compensation was added.
+
 ## Batch 907
 
 Move the authenticated populated project issue-list action wrappers into the existing route-local StyleX boundary. The legacy New Issue wrapper's `pull-right` becomes `styles.newIssueAction` with exact `float: right`; the populated sort wrapper preserves its `filters` class while `styles.sortFilters` owns exact `float: right`; and the Excel wrapper's `pull-left` plus inline `padding:10px` becomes the existing `styles.downloadWrap` with exact `float: left` and `padding: 10px`. Preserve issue-list DOM/order, Link/download behavior, sort query transitions, visible copy, responsive post-list geometry, and the existing fallback classes and filter cascade. Remove only React-owned target float utilities and legacy JS-only `orderby`/`orderdir` attributes; no route-specific compensation was added.

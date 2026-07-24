@@ -15,7 +15,9 @@ test("records milestone list ownership and populated issue filtering", async ({ 
   expect(template).toContain('class="issue-link"');
   expect(pageLess).toContain(".milestones {");
   expect(route).toContain('data-stylex-owner="project-milestones-list"');
-  expect(route).toContain('data-stylex-owner="project-milestones-issue-link"');
+  expect(route).toMatch(
+    /data-stylex-owner=\{\s*style\s*\?\s*"project-milestones-hidden-issue-link"\s*:\s*"project-milestones-issue-link"\s*\}/u,
+  );
   expect(route).toContain('data-stylex-owner="project-milestones-issue-count"');
   expect(route).toContain('data-stylex-owner="project-milestones-issue-number"');
   expect(theme).toContain("export const milestoneColors");
@@ -48,7 +50,7 @@ test("records milestone list ownership and populated issue filtering", async ({ 
     expect(geometry.scrollWidth).toBe(viewport.width);
   }
   await owner(page, "project-milestones-search-input").fill("missing");
-  await expect(owner(page, "project-milestones-issue-link")).toHaveCSS("display", "none");
+  await expect(owner(page, "project-milestones-hidden-issue-link")).toHaveCSS("display", "none");
 });
 
 async function mockMilestones(page: Page) {
