@@ -91,6 +91,7 @@ export const styles = stylex.create({
   dueDateIcon: { marginRight: "3px" },
   dueDateClosed: { color: milestoneDetailColors.dueDateClosedText },
   massUpdate: { position: "relative", transitionDuration: "0.5s", transitionProperty: "padding" },
+  massUpdateForm: { float: "left" },
   massUpdateButton: {
     display: "block",
     width: "100%",

@@ -47,6 +47,7 @@ const sx = {
   dueDateClosed: stylex.props(styles.dueDateClosed),
   titleMeta: stylex.props(styles.titleMeta),
   massUpdate: stylex.props(styles.massUpdate),
+  massUpdateForm: stylex.props(styles.massUpdateForm),
   search: stylex.props(styles.search),
   deleteModalVisible: stylex.props(styles.deleteModalVisible),
   deleteModalHidden: stylex.props(styles.deleteModalHidden),
@@ -708,9 +709,11 @@ function MassUpdateShell({
     >
       <form
         id="mass-update-form"
-        className="mass-update-form pull-left"
+        {...sx.massUpdateForm}
+        className={`${sx.massUpdateForm.className} mass-update-form`}
         action={prefixBasePath(runtimeConfig.basePath, `${projectPath}/issues`)}
         method="post"
+        data-stylex-owner="milestone-detail-mass-update-form"
       >
         <div className="btn-group check-all">
           <label htmlFor="check-all" aria-label="check-all">
