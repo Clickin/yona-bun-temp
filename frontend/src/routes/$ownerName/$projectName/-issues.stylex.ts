@@ -42,6 +42,8 @@ export const styles = stylex.create({
   },
   newIssueAction: { float: "right" },
   sortFilters: { float: "right" },
+  labelManageAction: { float: "right" },
+  milestoneProgressCount: { float: "right" },
   quickSearchCount: { float: "right" },
   downloadWrap: { float: "left", padding: "10px" },
   keymapWrap: { marginLeft: "55px", padding: "10px 0" },

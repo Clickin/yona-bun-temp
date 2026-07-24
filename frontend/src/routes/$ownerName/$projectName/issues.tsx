@@ -2752,7 +2752,8 @@ function IssueSearchForm({
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/labelsform"
               params={{ ownerName, projectName }}
-              className="ybtn ybtn-default ybtn-mini pull-right"
+              className={`${stylex.props(styles.labelManageAction).className} ybtn ybtn-default ybtn-mini`}
+              data-stylex-owner="project-issues-label-manage-action"
             >
               <i className="yobicon-cog vmiddle"></i>
               {labels.length === 0 ? (
@@ -2870,7 +2871,10 @@ function SearchMilestoneStatus({
           ></div>
         </div>
         <div className="progress-info">
-          <span className="pull-right">
+          <span
+            className={stylex.props(styles.milestoneProgressCount).className}
+            data-stylex-owner="project-issues-milestone-progress-count"
+          >
             <strong>{`${closedCount} / ${openCount + closedCount}`}</strong>
           </span>
         </div>
