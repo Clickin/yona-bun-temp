@@ -876,6 +876,18 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   and desktop/mobile row/upload containment/no-overflow. The pre-existing
   fallback-off document-wide 14px shell overflow remains outside this owner.
 
+### 2026-07-25 Batch 947 public profile issue due-date float ownership
+
+- [x] Populated public-profile issue due-date preserves legacy row DOM/order,
+  overdue/open/closed copy, title, clock icon, `overdue` state, and responsive
+  containment while removing only its React-owned `pull-right`; existing
+  `issueDueDate` StyleX owns exact `float:right`. DaysAgo and pull-request row
+  float consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering Scala/view/LESS/Bootstrap/import/messages provenance, owner/
+  declaration, utility/plugin-attribute absence, computed float, overdue/title/
+  icon/copy, and desktop/mobile containment/no-overflow.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

@@ -8225,6 +8225,12 @@ Move exact legacy `float:right` for the authenticated project issue-form attachm
 
 Focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
 
+## Batch 947
+
+Move exact legacy `float:right` for the public profile populated issue due-date span into the existing route-local StyleX owner. Preserve the issue row DOM/order, overdue/open/closed copy, title, clock icon, `overdue` state, desktop/mobile containment, and other profile float consumers; no geometry compensation is added.
+
+Focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
 ## Batch 942
 
 Move the exact legacy `float:left` for the pathful code-history `Newer`/`Older` pagination links into the existing route-local `paginationLink` StyleX owner. Preserve the `actrow margin-top-20` wrapper, link copy/order, query destinations, pathless conditional state, and desktop/mobile containment; the history table, branch selector, breadcrumbs, and other float consumers remain outside this wave.

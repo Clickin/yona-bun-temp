@@ -79,6 +79,8 @@ export const styles = stylex.create({
     overflow: "auto",
     whiteSpace: "normal",
   },
+  // Frozen Bootstrap .pull-right used by user/partial_issues.scala.html.
+  issueDueDate: { float: "right" },
   // Frozen less/_page.less .error-wrap and its nested message paragraph.
   emptyErrorWrap: { padding: "100px 0px", textAlign: "center" },
   emptyErrorMessage: {
