@@ -2238,6 +2238,7 @@ function QuickSearch({
   const { t } = useLegacyMessages();
   const allLabel = state === "closed" ? t("issue.list.all.closed") : t("issue.list.all.open");
   const allCount = countField(issues, state === "closed" ? "closedIssueCount" : "openIssueCount");
+  const quickSearchCountClassName = stylex.props(styles.quickSearchCount).className;
 
   return (
     <ul className="lst-stacked unstyled">
@@ -2264,7 +2265,12 @@ function QuickSearch({
           }}
         >
           {allLabel}
-          <span className="num-badge pull-right">{allCount}</span>
+          <span
+            className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
+            data-stylex-owner="project-issues-quicksearch-all-count"
+          >
+            {allCount}
+          </span>
         </button>
       </li>
       {!isAnonymous ? (
@@ -2288,7 +2294,10 @@ function QuickSearch({
               }}
             >
               {t("issue.list.assignedToMe")}
-              <span className="num-badge pull-right">
+              <span
+                className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
+                data-stylex-owner="project-issues-quicksearch-assigned-count"
+              >
                 {countField(issues, "assignedToMeCount")}
               </span>
             </button>
@@ -2312,7 +2321,10 @@ function QuickSearch({
               }}
             >
               {t("issue.list.authoredByMe")}
-              <span className="num-badge pull-right">
+              <span
+                className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
+                data-stylex-owner="project-issues-quicksearch-authored-count"
+              >
                 {countField(issues, "authoredByMeCount")}
               </span>
             </button>
@@ -2336,7 +2348,10 @@ function QuickSearch({
               }}
             >
               {t("issue.list.commentedByMe")}
-              <span className="num-badge pull-right">
+              <span
+                className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
+                data-stylex-owner="project-issues-quicksearch-commented-count"
+              >
                 {countField(issues, "commentedByMeCount")}
               </span>
             </button>
