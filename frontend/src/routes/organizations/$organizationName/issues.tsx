@@ -522,10 +522,15 @@ function IssueFilters({
     { field: "createdDate", label: t("common.order.date") },
     { field: "numOfComments", label: t("common.order.comments") },
   ];
+  const filtersStyleProps = stylex.props(styles.filters);
 
   return (
     <div className="filter-wrap small-heights">
-      <div className="filters pull-right">
+      <div
+        {...filtersStyleProps}
+        className={`filters ${filtersStyleProps.className ?? ""}`.trim()}
+        data-stylex-owner="organization-issues-filters"
+      >
         {filters.map((filter) => {
           const active = orderBy === filter.field;
           const nextDir = active && orderDir === "desc" ? "asc" : "desc";
@@ -777,6 +782,7 @@ function OrganizationIssueItem({
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyIssueRowAttrs = { href: issueHref } satisfies LegacyIssueRowAttributes;
   const dueDateStyleProps = stylex.props(styles.dueDateWrapper);
+  const assigneeRailStyleProps = stylex.props(styles.assigneeRail);
 
   return (
     <li
@@ -903,7 +909,11 @@ function OrganizationIssueItem({
         </div>
       </div>
       <div className="span2 hide-in-mobile">
-        <div className="mt5 pull-right">
+        <div
+          {...assigneeRailStyleProps}
+          className={`mt5 ${assigneeRailStyleProps.className ?? ""}`.trim()}
+          data-stylex-owner="organization-issues-assignee-rail"
+        >
           {issue.assigneeLoginId ? (
             <Link
               to={assigneeRoutePath}

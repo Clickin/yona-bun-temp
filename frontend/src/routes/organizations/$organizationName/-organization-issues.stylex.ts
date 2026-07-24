@@ -22,6 +22,8 @@ export const styles = stylex.create({
     marginRight: "20px",
     marginTop: "10px",
   },
+  filters: { float: "right" },
+  assigneeRail: { float: "right" },
   twoColumnAnchor: { marginRight: "10px", position: "relative" },
   twoColumnPopover: {
     display: "block",

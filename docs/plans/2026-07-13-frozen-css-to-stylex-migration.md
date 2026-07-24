@@ -7882,3 +7882,25 @@ state without `postListWrap`, while the local fixture has two posts; that same-f
 comparison remains a documented gap. Adjacent organization-board guards pass 13/13 in normal and
 fallback-off modes. Fallback-off global shell/asset drift remains outside this form owner. Approved
 Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.
+
+## Batch 912
+
+Move the authenticated populated organization issue-list action floats into the existing
+route-local StyleX boundary. The `group_issue_search_partial.scala.html` `.filters pull-right` sort
+wrapper now uses `styles.filters` with exact `float: right`, and the
+`group_issue_list_partial.scala.html` `.mt5 pull-right` assignee/empty-avatar rail now uses
+`styles.assigneeRail` with exact `float: right`. Preserve the legacy filter button order/copy,
+sort query behavior, assigned/empty-avatar branches, `mt5`/mobile visibility, and the already-owned
+due-date `mr20 mt10` boundary; remove only these two React-owned `pull-right` utilities and add no
+route-specific geometry compensation.
+
+The focused managed external System-Chrome guard passes 2/2 in normal, explicit fallback-off, and
+restored-normal modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile screenshots
+under `frontend/output/playwright/stylex-organization-issues-action-floats/{normal,fallback-off}/`
+and live legacy captures under `output/playwright/legacy-organization-issues-{desktop,mobile}.png`
+were directly inspected. The live legacy route passes 1/1 at both viewports but is an authenticated
+empty state without `postListWrap`, while the local fixture has assigned and unassigned rows; that
+same-fixture populated comparison remains a documented gap. Normal adjacent organization-issues
+guards pass 17/17. One unchanged fallback-off pagination guard remains a documented global fallback
+width failure (206px received versus 30px expected), outside these float owners. Approved Yoram
+footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.
