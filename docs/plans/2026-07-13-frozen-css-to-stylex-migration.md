@@ -8212,3 +8212,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Move the exact legacy `float:left` for the pathful code-history `Newer`/`Older` pagination links into the existing route-local `paginationLink` StyleX owner. Preserve the `actrow margin-top-20` wrapper, link copy/order, query destinations, pathless conditional state, and desktop/mobile containment; the history table, branch selector, breadcrumbs, and other float consumers remain outside this wave.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 2/2 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
+## Batch 943
+
+Retire only the React-owned `pull-left mr10` utility classes from the authenticated project-home History activity avatar wrapper. Preserve the legacy `avatar-wrap` anchor, fallback avatar URL, 32x32 image attributes, actor/history DOM and copy, existing `float:left`/`margin-right:10px` StyleX declarations, and desktop/mobile containment; project member avatars and other history consumers remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.

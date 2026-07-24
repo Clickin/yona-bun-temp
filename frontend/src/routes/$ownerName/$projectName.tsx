@@ -1972,7 +1972,7 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                 <HistoryLink
                   basePath={basePath}
                   href={actorUrl}
-                  className={`${stylex.props(projectHistoryStyles.avatarWrap).className} avatar-wrap pull-left mr10`}
+                  className={`${stylex.props(projectHistoryStyles.avatarWrap).className} avatar-wrap`}
                   stylexOwner="project-history-avatar-wrap"
                 >
                   <img

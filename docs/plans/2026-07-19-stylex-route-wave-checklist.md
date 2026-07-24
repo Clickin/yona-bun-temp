@@ -826,6 +826,18 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   utility-class absence, computed float, link interaction, no-inline-style,
   pathless state, and desktop/mobile containment.
 
+### 2026-07-25 Batch 943 project-home History avatar utility retirement
+
+- [x] The History activity avatar preserves the legacy `avatar-wrap` anchor,
+  fallback avatar, 32x32 image, actor/history DOM and copy, and responsive
+  geometry while removing only React-owned `pull-left mr10`; the existing
+  StyleX owner retains exact `float:left` and `margin-right:10px`. Member-card
+  avatars and unrelated history consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering Scala/LESS/Bootstrap/import provenance, owner/declaration,
+  semantic class retention, utility absence, computed geometry, fallback
+  attributes, no-inline/plugin-only attributes, and desktop/mobile containment.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
