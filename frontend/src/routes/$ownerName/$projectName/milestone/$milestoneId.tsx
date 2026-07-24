@@ -486,7 +486,11 @@ function ProjectMilestoneDetailBody({
                   runtimeConfig={runtimeConfig}
                   viewerIsProjectMember={viewerIsProjectMember}
                 />
-                <div {...sx.search} data-stylex-owner="milestone-detail-search">
+                <div
+                  {...sx.search}
+                  className={`${sx.search.className} search search-bar`}
+                  data-stylex-owner="milestone-detail-search"
+                >
                   <input
                     ref={searchInputRef}
                     name="filter"

@@ -120,6 +120,7 @@ export const styles = stylex.create({
     },
   },
   search: {
+    float: "right",
     backgroundColor: "#fff",
     borderColor: milestoneDetailColors.searchBorder,
     borderStyle: "solid",
