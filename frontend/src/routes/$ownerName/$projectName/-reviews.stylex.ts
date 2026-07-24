@@ -11,7 +11,11 @@ export const reviewsColors = stylex.defineVars({
 });
 
 export const reviewsLayout = stylex.create({
+  filters: {
+    float: "right",
+  },
   exportAction: {
+    float: "left",
     padding: "10px",
   },
   reviewTitleWrap: {

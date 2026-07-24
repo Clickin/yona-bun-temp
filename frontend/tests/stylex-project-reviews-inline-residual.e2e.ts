@@ -103,7 +103,6 @@ test("reviews export action owns legacy padding through route StyleX", async ({ 
   await page.goto(`${BASE_PATH}/${OWNER}/${PROJECT}/reviews`);
   const wrapper = page.locator('[data-stylex-owner="project-reviews-export-action"]');
   await expect(wrapper).toBeVisible();
-  await expect(wrapper).toHaveClass(/pull-left/);
   await expect(wrapper.locator('a[href$="format=xls"]')).toHaveText("Download as Excel file");
   await expect(wrapper).not.toHaveAttribute("style", /padding/);
   await expect(wrapper).toHaveCSS("padding-top", "10px");

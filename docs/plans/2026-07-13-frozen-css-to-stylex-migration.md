@@ -7776,3 +7776,9 @@ Seeded legacy `admin/sample/post/1` desktop/mobile baselines were captured; loca
 comparison remains a documented fixture/screen-wide gap. Fallback-off global shell/button paint
 drift remains outside this owner. Approved Yoram footer NAVER/provider/developer-contact/upstream-
 repository differences remain intentional; no route-specific compensation was added.
+
+## Batch 906
+
+Move the authenticated project review-list action wrapper floats into the existing route-local StyleX owners. The legacy `pull-right filters` sort wrapper now uses `reviewsLayout.filters` with exact `float: right`, and the legacy export wrapper's `pull-left` plus inline `padding:10px` now uses `reviewsLayout.exportAction` with exact `float: left` and the existing `padding: 10px`. Preserve the review list partial, button/Link behavior, copy/order, query-state sorting, pagination, responsive geometry, and React/TanStack behavior; remove only the retired Bootstrap float utility classes from these React-owned wrappers.
+
+The focused source/runtime float guard and adjacent export-padding guard pass 3/3 in normal and explicit fallback-off modes; the restored-normal focused run passes 2/2. The existing project-reviews regression suite passes 5/5 in normal mode. Normal and fallback-off desktop/mobile screenshots under `frontend/output/playwright/stylex-project-reviews-action-floats/{normal,fallback-off}/` were directly inspected with managed external System-Chrome. The running legacy `/admin/sample/reviews` desktop/mobile baselines were also captured and inspected; its seeded empty review state versus the local populated mock is a documented same-fixture gap. Fallback-off global shell paint and the full populated live legacy/Yoram comparison remain outside this wrapper owner, so no route-specific compensation was added. Approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.

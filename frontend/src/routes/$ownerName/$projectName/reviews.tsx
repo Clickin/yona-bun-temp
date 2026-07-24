@@ -173,6 +173,8 @@ function ProjectReviewsBody({
   const sidebarProps = stylex.props(styles.sidebar);
   const searchInputProps = stylex.props(styles.searchInput);
   const tabsProps = stylex.props(styles.tabs);
+  const filtersProps = stylex.props(reviewsLayout.filters);
+  const exportActionProps = stylex.props(reviewsLayout.exportAction);
 
   function pushReviews(next: Partial<ProjectReviewsSearch>) {
     router.history.push(
@@ -248,7 +250,11 @@ function ProjectReviewsBody({
           </div>
         </div>
         <div className="span10 span-hard-wrap">
-          <div className="pull-right filters">
+          <div
+            {...filtersProps}
+            className={`filters ${filtersProps.className ?? ""}`.trim()}
+            data-stylex-owner="project-reviews-filters"
+          >
             <button
               type="button"
               className={`${stylex.props(styles.sort).className} ${stylex.props(styles.sideEffectButton).className} filter`}
@@ -301,7 +307,8 @@ function ProjectReviewsBody({
             <ProjectReviewRows ownerName={ownerName} projectName={projectName} reviews={reviews} />
           </div>
           <div
-            className={`${stylex.props(reviewsLayout.exportAction).className} pull-left`}
+            {...exportActionProps}
+            className={exportActionProps.className}
             data-stylex-owner="project-reviews-export-action"
           >
             <Link
