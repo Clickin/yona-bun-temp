@@ -93,6 +93,10 @@ function ProjectImportScreen({
   const initiallyUsesRepoAuth = initialAuthId !== "" || repoAuthError !== undefined;
   const [usesRepoAuth, setUsesRepoAuth] = React.useState(initiallyUsesRepoAuth);
   const repoAuthStyleProps = usesRepoAuth ? stylex.props(styles.repoAuthVisible) : undefined;
+  const protectedScopeStyleProps = stylex.props(
+    styles.scopeOptionWithMargin,
+    !isSelectedOwnerGroup && styles.protectedScopeHidden,
+  );
   const [repoAuthChanged, setRepoAuthChanged] = React.useState(false);
   const [projectScope, setProjectScope] = React.useState(initialProjectScope);
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
@@ -508,14 +512,18 @@ function ProjectImportScreen({
               >
                 <div className="row-fluid">
                   <div
-                    {...stylex.props(styles.rightLabel)}
-                    className={`${stylex.props(styles.rightLabel).className} span2 mt10`}
+                    {...stylex.props(styles.rightLabelWithMargin)}
+                    className={`${stylex.props(styles.rightLabelWithMargin).className} span2 mt10`}
                     data-stylex-owner="project-import-right-label"
                   >
                     {t("project.shareOption")}
                   </div>
                   <div className="span10">
-                    <ul className="unstyled project-scopes mt10">
+                    <ul
+                      {...stylex.props(styles.scopeList)}
+                      className={`${stylex.props(styles.scopeList).className} unstyled project-scopes mt10`}
+                      data-stylex-owner="project-import-scope-list"
+                    >
                       <li>
                         <input
                           type="radio"
@@ -540,8 +548,9 @@ function ProjectImportScreen({
 
                       <li
                         id="opt-protected"
-                        className="mt10"
-                        {...(isSelectedOwnerGroup ? {} : stylex.props(styles.protectedScopeHidden))}
+                        {...protectedScopeStyleProps}
+                        className={`${protectedScopeStyleProps.className ?? ""} mt10`.trim()}
+                        data-stylex-owner="project-import-protected-scope-row"
                       >
                         <input
                           type="radio"
@@ -564,7 +573,11 @@ function ProjectImportScreen({
                         </label>
                       </li>
 
-                      <li className="mt10">
+                      <li
+                        {...stylex.props(styles.scopeOptionWithMargin)}
+                        className={`${stylex.props(styles.scopeOptionWithMargin).className} mt10`}
+                        data-stylex-owner="project-import-private-scope-row"
+                      >
                         <input
                           type="radio"
                           id="private"
@@ -593,8 +606,8 @@ function ProjectImportScreen({
 
                 <div className="row-fluid">
                   <div
-                    {...stylex.props(styles.rightLabel)}
-                    className={`${stylex.props(styles.rightLabel).className} span2 mt10`}
+                    {...stylex.props(styles.rightLabelWithMargin)}
+                    className={`${stylex.props(styles.rightLabelWithMargin).className} span2 mt10`}
                     data-stylex-owner="project-import-right-label"
                   >
                     <label htmlFor="vcs">{t("project.vcs")}</label>

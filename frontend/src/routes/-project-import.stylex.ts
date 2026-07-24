@@ -37,4 +37,10 @@ export const styles = stylex.create({
   selectDropOpen: { display: "block", width: "220px" },
   advanced: { color: projectImportColors.accentText },
   rightLabel: { textAlign: "right" },
+  rightLabelWithMargin: {
+    textAlign: "right",
+    marginTop: "10px",
+  },
+  scopeList: { marginTop: "10px" },
+  scopeOptionWithMargin: { marginTop: "10px" },
 });

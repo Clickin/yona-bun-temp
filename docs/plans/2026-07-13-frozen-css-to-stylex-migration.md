@@ -6798,6 +6798,26 @@ these margin owners; no route-specific compensation was added. Approved Yoram
 footer NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
 
+## Batch 903
+
+Move the project import screen's remaining exact frozen `.mt10`
+`margin-top:10px` declarations into the existing project-import StyleX owners:
+the share/VCS right labels, project scope list, and protected/private scope rows.
+Preserve the legacy `span2 right-txt mt10`, `project-scopes mt10`, scope
+radio/copy/order, owner-dependent protected visibility, VCS warning, React
+state/events, and menu-setting label's no-margin state. Managed external
+System-Chrome normal, explicit fallback-off, and restored-normal focused runs
+pass 1/1 each at 1366x900 and 390x844; normal and fallback-off desktop/mobile
+screenshots were directly inspected under
+`frontend/output/playwright/stylex-project-import-mt10/`. Adjacent import guards
+pass 10/13 in both normal and fallback-off runs; three unchanged guards retain
+pre-existing assumptions about canonical Yoram/StyleX DOM, exact Select2 class
+strings, and repo-auth inline display metadata. Fallback-off global
+shell/Select2/Bootstrap drift and full live legacy/Yoram shell parity remain
+screen-wide gaps outside these owners; no route-specific compensation was
+added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
+repository differences remain intentional.
+
 ## Batch 892
 
 Move three remaining populated-screen utility-margin consumers into their existing
