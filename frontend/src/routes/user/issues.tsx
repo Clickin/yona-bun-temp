@@ -886,7 +886,10 @@ function IssueFilters({
 
   return (
     <div className="filter-wrap small-heights">
-      <div className="filters pull-right">
+      <div
+        className={`${stylex.props(issueStyles.filters).className} filters`}
+        data-stylex-owner="user-issues-filters"
+      >
         {filters.map((filter) => {
           const active = orderBy === filter.field;
           const nextDir = active && orderDir === "desc" ? "asc" : "desc";
@@ -1092,8 +1095,9 @@ function UserIssueItem({
             ) : null}
             {issue.dueDateLabel ? (
               <span
-                className={`pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
+                className={`${stylex.props(issueStyles.dueDate).className}${issue.dueDateOverdue ? " overdue" : ""}`}
                 title={`Due date: ${issue.dueDateLabel}`}
+                data-stylex-owner="user-issues-due-date"
               >
                 <i className="yobicon-clock2"></i>
                 {issue.state === "open" && issue.dueDateOverdue
@@ -1105,7 +1109,10 @@ function UserIssueItem({
         </div>
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
-            <div className="mt5 pull-right hide-in-mobile">
+            <div
+              className={`${stylex.props(issueStyles.assigneeRail).className} mt5 hide-in-mobile`}
+              data-stylex-owner="user-issues-assignee-rail"
+            >
               <Link to={assigneeRoutePath} className="avatar-wrap assinee" title={assigneeTitle}>
                 <img
                   src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}

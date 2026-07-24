@@ -116,6 +116,9 @@ export const styles = stylex.create({
     fontSize: "15px",
     fontWeight: 600,
   },
+  filters: { float: "right" },
+  dueDate: { float: "right" },
+  assigneeRail: { float: "right" },
   page: { margin: "0px auto", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   searchBar: {
     borderColor: userIssuesColors.inputBorder,

@@ -7977,6 +7977,31 @@ an existing project-route hang, so no aggregate adjacent-suite pass is claimed. 
 shell/asset drift remains outside these float owners. Approved Yoram footer NAVER Labs,
 developer-contact, and upstream-repository/provider differences remain intentional.
 
+## Batch 917
+
+Move the authenticated populated `/user/issues` action floats into the existing route-local
+StyleX boundary. `issue/my_partial_search.scala.html` supplies the `.filters pull-right` filter
+wrapper, and `issue/my_partial_list.scala.html` supplies the due-date and assignee `pull-right`
+surfaces. Preserve the legacy filter order/copy, due-date/Overdue state, `mt5 hide-in-mobile`
+assignee rail, links, responsive behavior, and React/TanStack sort interaction; the existing
+`filters`, `dueDate`, and `assigneeRail` StyleX owners carry exact frozen Bootstrap `float: right`.
+Remove only these three React-owned `pull-right` utilities. No route-specific geometry
+compensation is permitted.
+
+The focused managed external System-Chrome guard passes 1/1 in normal, explicit fallback-off,
+and restored-normal modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile captures
+under `frontend/output/playwright/stylex-user-issues-action-floats/{normal,fallback-off}/` were
+directly inspected. Managed live legacy `/user/issues` desktop/mobile sweeps pass 1/1 each, with
+captures at `output/playwright/visual-sweep/legacy-_user_issues.png` and
+`output/playwright/visual-sweep/legacy-mobile-_user_issues.png`; the live authenticated seed is
+empty while the local fixture is populated, so same-fixture row/filter/due-date/assignee parity
+remains a documented gap. Fallback-off captures retain unrelated global shell/tab/row drift
+outside these owners and receive no compensation. Selected adjacent guards pass 7/8; one
+unchanged inline-popover guard still fails because its default anchor `.popover` visibility
+selector finds no rendered element. `pnpm frontend check`, production build, and the frozen
+fallback hash verifier pass. Approved Yoram footer NAVER Labs, developer-contact, and
+upstream-repository/provider differences remain intentional.
+
 ## Batch 916
 
 Move the authenticated populated project-home action floats into the existing route-local StyleX
