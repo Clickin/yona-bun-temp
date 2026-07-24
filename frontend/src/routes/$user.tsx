@@ -782,7 +782,13 @@ function ProfileIssueRow({
               {projectName}
             </Link>
           </span>
-          <span className="infos-item post-id">#{issueNumber}</span>
+          <span
+            {...stylex.props(styles.issuePostId)}
+            className={`${stylex.props(styles.issuePostId).className} infos-item post-id`}
+            data-stylex-owner="user-profile-issue-post-id"
+          >
+            #{issueNumber}
+          </span>
         </div>
         <div
           className={`${stylex.props(styles.issueTitleWrap).className} title-wrap span5`}
@@ -846,20 +852,38 @@ function ProfileIssueRow({
             </div>
           </span>
         </div>
-        <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
+        <div
+          {...stylex.props(styles.issueAuthor)}
+          className={`${stylex.props(styles.issueAuthor).className} span1 hide-in-mobile author fixed-height-my-issues-list`}
+          data-stylex-owner="user-profile-issue-author"
+        >
           <ProfilePersonLink
             label={stringField(issue, "authorLabel")}
             loginId={stringField(issue, "authorLoginId")}
+            applyAuthorCellStyle
           />
         </div>
-        <div className="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list">
+        <div
+          {...stylex.props(styles.issueAuthor)}
+          className={`${stylex.props(styles.issueAuthor).className} span1 hide-in-mobile author fixed-height-my-issues-list`}
+          data-stylex-owner="user-profile-issue-author"
+        >
           <ProfilePersonLink
             label={stringField(issue, "assigneeLabel")}
             loginId={stringField(issue, "assigneeLoginId")}
+            applyAuthorCellStyle
           />
         </div>
-        <div className="infos span3 meta">
-          <span className="meta-cell">
+        <div
+          {...stylex.props(styles.issueInfos, styles.issueMeta)}
+          className={`${stylex.props(styles.issueInfos, styles.issueMeta).className} infos span3 meta`}
+          data-stylex-owner="user-profile-issue-meta"
+        >
+          <span
+            {...stylex.props(styles.issueMetaCell)}
+            className={`${stylex.props(styles.issueMetaCell).className} meta-cell`}
+            data-stylex-owner="user-profile-issue-meta-cell"
+          >
             <span className="hide show-in-mobile">
               <ProfilePersonLink
                 label={stringField(issue, "assigneeLabel")}
@@ -1510,15 +1534,24 @@ function ShowSubtasksCheckbox({
   );
 }
 
-function ProfilePersonLink({ label, loginId }: { label: string; loginId: string }) {
+function ProfilePersonLink({
+  label,
+  loginId,
+  applyAuthorCellStyle = false,
+}: {
+  label: string;
+  loginId: string;
+  applyAuthorCellStyle?: boolean;
+}) {
   if (!loginId) {
     return <span className="infos-item"></span>;
   }
   return (
     <ProfileTextLink
-      className="infos-item infos-link-item author-cell"
+      className={`${applyAuthorCellStyle ? `${stylex.props(styles.issueAuthorCell).className} ` : ""}infos-item infos-link-item author-cell`}
       label={label}
       loginId={loginId}
+      stylexOwner={applyAuthorCellStyle ? "user-profile-issue-author-cell" : undefined}
     />
   );
 }
@@ -1527,10 +1560,12 @@ function ProfileTextLink({
   className,
   label,
   loginId,
+  stylexOwner,
 }: {
   className: string;
   label: string;
   loginId: string;
+  stylexOwner?: string;
 }) {
   if (!loginId) {
     return <span className="infos-item"></span>;
@@ -1542,6 +1577,7 @@ function ProfileTextLink({
       params={{ user: loginId }}
       className={className}
       title={loginId}
+      {...(stylexOwner ? { "data-stylex-owner": stylexOwner } : {})}
     >
       {label || loginId}
     </Link>

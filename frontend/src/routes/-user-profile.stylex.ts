@@ -164,6 +164,29 @@ export const styles = stylex.create({
   issueTitleCountGroups: { fontSize: "10px" },
   // Frozen less/_page.less .my-issues .post-item .title-wrap .title.
   issueTitleLink: { fontSize: "14px", fontWeight: "500" },
+  // Frozen less/_page.less .my-issues .post-item .author.
+  issueAuthor: { display: "table" },
+  // Frozen less/_page.less .my-issues .post-item .author .author-cell.
+  issueAuthorCell: {
+    display: "table-cell",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+  },
+  // Frozen less/_page.less .my-issues .post-item .meta.
+  issueMeta: { display: "table" },
+  // Frozen less/_page.less .my-issues .post-item .meta .meta-cell.
+  issueMetaCell: { display: "table-cell", verticalAlign: "middle" },
+  // Frozen less/_page.less .my-issues .post-item .post-id.
+  issuePostId: {
+    color: "#999",
+    fontSize: "12px",
+    fontWeight: "normal",
+    marginRight: "5px",
+  },
+  // Frozen less/_page.less .my-issues .post-item .infos.
+  issueInfos: { marginTop: "4px" },
   // Frozen Bootstrap .pull-right used by user/partial_issues.scala.html.
   issueDueDate: { float: "right" },
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.

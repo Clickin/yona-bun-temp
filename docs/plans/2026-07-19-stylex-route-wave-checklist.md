@@ -109,6 +109,13 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-25 Batch 959 public profile issue author/meta residuals
+
+- [x] `user/view.scala.html:112-167`, `user/partial_issues.scala.html`, `_page.less:7505-7570`, and the full LESS/Bootstrap/responsive/messages chain are recorded as output/cascade evidence.
+- [x] Author/meta table geometry, author-cell overflow/ellipsis, post-id paint/spacing, and `.infos` top margin are owned by route-local StyleX; DOM/order/copy/links remain unchanged. The unrelated fallback-only `project-name-in-my-issues` display rule is removed from the two author wrappers; structural classes remain.
+- [x] `frontend/tests/stylex-user-profile-issue-author-meta.e2e.ts` verifies source evidence, owners, computed declarations, tooltip/link/copy, and responsive containment/no-overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added. The known legacy admin-notice/sidebar x-axis mismatch remains intentionally out of scope.
+
 ### 2026-07-23 Batch 841 organization-home project-card owner avatar image
 
 - [x] `organization/view.scala.html`, frozen `_page.less:1837-1910`, and the complete `yobi.less` import chain are recorded as output/cascade sources.
