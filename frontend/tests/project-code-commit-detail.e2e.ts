@@ -3483,6 +3483,7 @@ test("project SVN commit detail Batch 757 owns commit metadata with StyleX", asy
   expect(LEGACY_SVN_DIFF_SOURCE).toContain('<p class="commitInfo">');
   expect(LEGACY_SVN_DIFF_SOURCE).toContain('<span class="ago"');
   expect(LEGACY_SVN_DIFF_SOURCE).toContain('<strong class="commitId pull-right">');
+  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-right {\n  float: right;\n}");
   expect(LEGACY_SVN_DIFF_SOURCE).toContain('<pre class="commitMsg">@commit.getMessage</pre>');
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".ago { margin-left:5px; color:#bbb; }");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
@@ -3491,11 +3492,16 @@ test("project SVN commit detail Batch 757 owns commit metadata with StyleX", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-info"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-ago"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-id"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`${sx.commitId.className} commitId`}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
+    "className={`${sx.commitId.className} commitId pull-right`}",
+  );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
     'commitAuthorAgo: { marginLeft: "5px", color: "#bbb" }',
   );
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#51aacc"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('float: "right"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "5px"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
     'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
@@ -3545,6 +3551,8 @@ test("project SVN commit detail Batch 757 owns commit metadata with StyleX", asy
     await expect(info).toHaveCSS("margin", "10px 0px");
     await expect(ago).not.toHaveAttribute("style");
     await expect(id).not.toHaveAttribute("style");
+    await expect(id).not.toHaveClass("pull-right");
+    await expect(id).toHaveCSS("float", "right");
     await expect(ago).toHaveCSS("margin-left", "5px");
     await expect(ago).toHaveCSS("color", "rgb(187, 187, 187)");
     await expect(id).toHaveCSS("color", "rgb(81, 170, 204)");

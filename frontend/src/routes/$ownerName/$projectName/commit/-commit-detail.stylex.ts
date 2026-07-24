@@ -217,6 +217,7 @@ export const styles = stylex.create({
   commitAuthorAvatar: { marginRight: "5px" },
   commitIdWrap: { padding: "10px 5px" },
   commitId: {
+    float: "right",
     color: "#51aacc",
     marginTop: "5px",
     fontFamily: 'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace',

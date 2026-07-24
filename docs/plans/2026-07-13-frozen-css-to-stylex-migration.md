@@ -8200,3 +8200,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Move the exact legacy floats for the populated public-profile Projects-tab project row into its existing route-local StyleX owners: `projectInfo` owns `float:left` plus its existing `margin-left:10px`, and `projectStats` owns `float:right` plus its existing `margin-top:0`/`text-align:right`. Preserve the avatar fallback wrapper, semantic `info-wrap`/`stats-wrap`, project content, watch/leave controls, and responsive geometry; other user-profile utility consumers remain outside this wave.
 
 The focused `stylex-user-profile-project-row.e2e.ts` external System-Chrome guard passes 1/1 in normal and explicit fallback-off modes. The broader profile spec still has an unrelated pre-existing fallback-off `daysAgo` containment failure; it is not used as this row wave's authoritative gate. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
+## Batch 941
+
+Move the exact legacy `float:right` for the SVN commit-detail `commitId pull-right` metadata consumer into the existing route-local `commitId` StyleX owner. Preserve commit id copy/DOM, color, margin, font, author/date siblings, and desktop/mobile containment; Git metadata, branch dropdown, footer, comments/reviews, and other utility consumers remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.

@@ -706,7 +706,7 @@ function SvnCommitDetailBody({
             </span>
             <strong
               {...sx.commitId}
-              className={`${sx.commitId.className} commitId pull-right`}
+              className={`${sx.commitId.className} commitId`}
               data-stylex-owner="commit-detail-svn-id"
             >
               @{commit?.commitId ?? commitId}

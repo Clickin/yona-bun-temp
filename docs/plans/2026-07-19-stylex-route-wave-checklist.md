@@ -801,6 +801,18 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   unrelated pre-existing fallback-off `daysAgo` containment failure and is
   not the authoritative gate for this row wave.
 
+### 2026-07-25 Batch 941 SVN commit-detail metadata float ownership
+
+- [x] The SVN commit metadata preserves `commitId` copy/DOM, color, margin,
+  font, author/date siblings, and desktop/mobile containment while removing
+  only the React-owned `pull-right`; the existing `commitId` StyleX owner now
+  owns frozen `float:right`. Git metadata, branch dropdown, footer,
+  comments/reviews, and other consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering Scala/LESS/Bootstrap provenance, owner/declaration, utility-class
+  absence, computed float, existing declarations, no-inline-style, and
+  desktop/mobile geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
