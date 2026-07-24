@@ -1118,7 +1118,10 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </div>
       </div>
       <div className="span2">
-        <div className="mt5 pull-right">
+        <div
+          className={`${stylex.props(styles.pullRequestReceiverRail).className} mt5`}
+          data-stylex-owner="user-profile-pull-request-receiver-rail"
+        >
           {receiverLoginId ? (
             <Link
               {...LEGACY_LINK_PROPS}
@@ -1133,7 +1136,13 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
         </div>
-        <div className={`state ${state} pull-right`}>{t(`pullRequest.state.${state}`)}</div>
+        <div
+          {...stylex.props(styles.pullRequestState)}
+          className={`${stylex.props(styles.pullRequestState).className} state ${state}`}
+          data-stylex-owner="user-profile-pull-request-state"
+        >
+          {t(`pullRequest.state.${state}`)}
+        </div>
       </div>
     </li>
   );

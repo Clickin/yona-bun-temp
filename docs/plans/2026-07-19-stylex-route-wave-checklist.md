@@ -888,6 +888,18 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   declaration, utility/plugin-attribute absence, computed float, overdue/title/
   icon/copy, and desktop/mobile containment/no-overflow.
 
+### 2026-07-25 Batch 948 public profile pull-request receiver/state floats
+
+- [x] Populated public-profile pull-request rows preserve receiver/empty-avatar
+  DOM, `mt5`, state/conflict/open/closed classes and copy, order, and responsive
+  containment while removing only the two React-owned `pull-right` utilities;
+  `pullRequestReceiverRail` and `pullRequestState` StyleX owners carry exact
+  `float:right`. DaysAgo and issue due-date consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering Scala/view/LESS/Bootstrap/import/messages provenance, both owners/
+  declarations, utility/plugin-attribute absence, computed floats, receiver/state
+  DOM/copy/order, and desktop/mobile containment/no-overflow.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

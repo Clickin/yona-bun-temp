@@ -8225,6 +8225,12 @@ Move exact legacy `float:right` for the authenticated project issue-form attachm
 
 Focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
 
+## Batch 948
+
+Move exact legacy `float:right` for the public profile populated pull-request receiver rail and state badge into existing route-local StyleX owners. Preserve receiver/empty-avatar DOM, `mt5`, state/conflict/open/closed classes and copy, DOM order, desktop/mobile containment, and other profile float consumers; no geometry compensation is added.
+
+Focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
 ## Batch 947
 
 Move exact legacy `float:right` for the public profile populated issue due-date span into the existing route-local StyleX owner. Preserve the issue row DOM/order, overdue/open/closed copy, title, clock icon, `overdue` state, desktop/mobile containment, and other profile float consumers; no geometry compensation is added.
