@@ -35,6 +35,7 @@ const sx = {
   progressBar: (width: string) => stylex.props(styles.progressBar(width)),
   description: stylex.props(styles.description),
   actions: stylex.props(styles.actions),
+  listAction: stylex.props(styles.listAction),
   tabs: stylex.props(styles.tabs),
   tabBadge: stylex.props(styles.tabBadge),
   issueList: stylex.props(styles.issueList),
@@ -399,7 +400,8 @@ function ProjectMilestoneDetailBody({
             <Link
               to="/$ownerName/$projectName/milestones"
               params={{ ownerName, projectName }}
-              className="ybtn pull-left"
+              className={`${sx.listAction.className} ybtn`}
+              data-stylex-owner="milestone-detail-list-action"
             >
               {t("button.list")}
             </Link>

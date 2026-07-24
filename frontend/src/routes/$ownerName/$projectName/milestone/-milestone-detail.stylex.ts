@@ -72,6 +72,7 @@ export const styles = stylex.create({
     padding: "15px 0px",
     textAlign: "right",
   },
+  listAction: { float: "left" },
   tabs: { borderBottom: "1px solid #ddd", listStyle: "none", margin: "0px", padding: "0px" },
   tabBadge: { color: milestoneDetailColors.badge, fontWeight: "700", marginLeft: "4px" },
   issueList: { clear: "both", listStyle: "none", margin: "0px", padding: "0px" },
