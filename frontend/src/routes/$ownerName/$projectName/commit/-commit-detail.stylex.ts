@@ -229,6 +229,8 @@ export const styles = stylex.create({
     padding: "10px",
     whiteSpace: "pre-wrap",
   },
+  footerWatchLeft: { float: "left" },
+  footerListRight: { float: "right" },
   diffBody: {
     fontFamily: '"monospace", Consolas, Tahoma',
     overflowX: "auto",

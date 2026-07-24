@@ -1,5 +1,11 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 authenticated project commit-detail footer action floats
+
+- [x] `code/diff.scala.html:171-176` and `code/svnDiff.scala.html:144-147` emit the Watch/List footer controls; frozen Bootstrap `.pull-left`/`.pull-right` (`bootstrap.css:6093-6100`), the complete `yobi.less` import chain, relevant `_page.less` action-row cascade, and `conf/messages:68,516` establish the output, float, and copy sources.
+- [x] Git and SVN commit-detail footer DOM/order, Watch mutation, List Link destinations, copy, and fallback classes are preserved while `footerWatchLeft`/`footerListRight` own only the exact left/right floats; branch controls, metadata, comments, review forms, and other float consumers are excluded.
+- [x] `frontend/tests/project-code-commit-detail.e2e.ts` verifies source ownership, stable markers, computed floats, class retirement, DOM order, href/copy, watch mutation, and desktop/mobile containment/no-overflow in normal and explicit fallback-off external Chrome (3/3 each for the narrowed Git/SVN guard). Git/SVN desktop/mobile captures are under `frontend/output/playwright/stylex-project-commit-detail-footer-floats/{normal,fallback-off}/` and were directly inspected. Live legacy screenshot parity remains a documented gap; fallback-off global shell drift and approved Yoram footer identity differences receive no compensation.
+
 ### 2026-07-25 authenticated project code-file header float ownership
 
 - [x] `code/view.scala.html:78-99`, frozen Bootstrap `.pull-left`/`.pull-right` (`bootstrap.css:6093-6100`), `_page.less:4498-4523`, the complete `yobi.less` import chain, and `conf/messages:122,132` are recorded as output/cascade/copy sources.

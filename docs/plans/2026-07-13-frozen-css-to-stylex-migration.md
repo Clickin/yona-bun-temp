@@ -8152,3 +8152,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Restore the project milestone detail wrapper hierarchy from `yona-original/app/views/milestone/view.scala.html`: `page-wrap-outer` → `project-page-wrap` → the legacy `milesion-wrap` class. Existing StyleX owners retain the frozen wrapper geometry; no compensating values are introduced.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and mobile sizes. Live milestone content/locale differs from the local fixture, and the intentional Yoram shell identity differences remain documented rather than compensated.
+
+## Batch 933
+
+Move the authenticated project commit-detail Git/SVN footer Watch/List action floats into route-local StyleX. Preserve the legacy button/link DOM, order, copy, watch mutation, list destinations, and VCS-specific state; remove only the React-owned `.pull-left`/`.pull-right` utilities. Branch controls, metadata, comments, review forms, and other commit-detail float consumers remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 3/3 each for the Git/SVN footer state at desktop/mobile coverage. Live legacy screenshot parity remains unverified for this state; fallback-off global shell drift and the approved Yoram footer identity differences remain outside the owner without compensation.

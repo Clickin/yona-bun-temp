@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LEGACY_MARKDOWN_HELP = readFileSync(
@@ -76,6 +77,53 @@ const LEGACY_MESSAGES_SOURCE = readFileSync(
   new URL("../../yona-original/conf/messages", import.meta.url),
   "utf8",
 );
+const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
+  new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
+  "utf8",
+);
+const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+const FOOTER_SCREENSHOT_DIR = resolve(
+  "output/playwright/stylex-project-commit-detail-footer-floats",
+  fallbackOff ? "fallback-off" : "normal",
+);
+
+async function captureCommitFooterScreenshot(page: Page, filename: string) {
+  mkdirSync(FOOTER_SCREENSHOT_DIR, { recursive: true });
+  await page.locator('[data-stylex-owner="commit-detail-footer-watch"]').scrollIntoViewIfNeeded();
+  const clip = await page.evaluate(() => {
+    const elements = [
+      document.querySelector<HTMLElement>('[data-stylex-owner="commit-detail-footer-watch"]'),
+      document.querySelector<HTMLElement>('[data-stylex-owner="commit-detail-footer-list"]'),
+    ];
+    const boxes = elements
+      .filter((element): element is HTMLElement => element !== null)
+      .map((element) => {
+        const box = element.getBoundingClientRect();
+        return { bottom: box.bottom, left: box.left, right: box.right, top: box.top };
+      });
+    if (boxes.length !== 2) return null;
+    const left = Math.max(0, Math.floor(Math.min(...boxes.map((box) => box.left)) - 8));
+    const top = Math.max(0, Math.floor(Math.min(...boxes.map((box) => box.top)) - 8));
+    const right = Math.min(
+      window.innerWidth,
+      Math.ceil(Math.max(...boxes.map((box) => box.right)) + 8),
+    );
+    const bottom = Math.min(
+      window.innerHeight,
+      Math.ceil(Math.max(...boxes.map((box) => box.bottom)) + 8),
+    );
+    return { height: bottom - top, width: right - left, x: left, y: top };
+  });
+  expect(clip).not.toBeNull();
+  expect(clip!.width).toBeGreaterThan(0);
+  expect(clip!.height).toBeGreaterThan(0);
+  const screenshot = await page.screenshot({
+    animations: "disabled",
+    clip: clip!,
+    path: resolve(FOOTER_SCREENSHOT_DIR, filename),
+  });
+  expect(screenshot.byteLength).toBeGreaterThan(0);
+}
 
 function withLegacyMarkdownHelp(html: string) {
   return html.replaceAll(
@@ -305,12 +353,16 @@ test("project commit detail watch buttons are route-owned React controls", async
     "onClick={() => watchMutation.mutate(!detail.isWatching)}",
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={toggleWatch}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-watch"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-list"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}',
+    'className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}',
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'className={`ybtn ${detail.isWatching ? "active" : ""}`}',
+    "className={`${sx.footerListRight.className} ybtn`}",
   );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerWatchLeft: { float: "left" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerListRight: { float: "right" }');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
     /id="watch-button"[\s\S]{0,220}data-toggle="button"/u,
   );
@@ -409,6 +461,7 @@ index 1234567..abcdef1 100644
 
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-type={line.type}");
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".diff-container.show-comments tr[data-type]")).toHaveCount(0);
   await expect(
@@ -1327,10 +1380,93 @@ test("project commit detail submits watch and comment mutations through legacy c
   const mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [];
   await mockProjectCommitDetail(page, detailRequests, {}, {}, mutationRequests);
 
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain(
+    '<button id="watch-button" type="button" class="pull-left ybtn',
+  );
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain(
+    '<a href="@routes.CodeHistoryApp.history(project.owner, project.name, selectedBranch, path)" class="ybtn pull-right">@Messages("button.list")</a>',
+  );
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain(
+    '<button id="watch-button" type="button" class="ybtn @if(commit.getWatchers(project, false)',
+  );
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain(
+    '<a href="@routes.CodeHistoryApp.history(project.owner, project.name, selectedBranch, path)" class="ybtn pull-right">@Messages("button.list")</a>',
+  );
+  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-right {\n  float: right;\n}");
+  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-left {\n  float: left;\n}");
+  expect(LEGACY_MESSAGES_SOURCE).toContain("button.list = List");
+  expect(LEGACY_MESSAGES_SOURCE).toContain("notification.watch = Watch");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerWatchLeft: { float: "left" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerListRight: { float: "right" }');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-watch"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-list"');
+
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
-  await expect(page.locator("#watch-button")).toHaveClass(/^pull-left ybtn\s*$/);
+  await expect(page.locator("#watch-button")).toHaveClass(/ybtn/);
+  await expect(page.locator("#watch-button")).not.toHaveClass(/pull-left/);
   await expect(page.locator("#watch-button")).toHaveText("Watch");
+  const watch = page.locator('[data-stylex-owner="commit-detail-footer-watch"]');
+  const list = page.locator('[data-stylex-owner="commit-detail-footer-list"]');
+  await expect(watch).toHaveCSS("float", "left");
+  await expect(list).toHaveCSS("float", "right");
+  await expect(list).not.toHaveClass(/pull-right/);
+  await expect(list).toHaveText("List");
+  await expect(list).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
+  const footerMetrics = await page.evaluate(() => {
+    const watch = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="commit-detail-footer-watch"]',
+    );
+    const list = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="commit-detail-footer-list"]',
+    );
+    if (!watch || !list || !watch.parentElement) return null;
+    const parent = watch.parentElement;
+    const watchBox = watch.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      listIndex: Array.from(parent.children).indexOf(list),
+      listRight: listBox.right,
+      parentRight: parent.getBoundingClientRect().right,
+      watchIndex: Array.from(parent.children).indexOf(watch),
+      watchLeft: watchBox.left,
+      parentLeft: parent.getBoundingClientRect().left,
+    };
+  });
+  expect(footerMetrics).not.toBeNull();
+  expect(footerMetrics!.watchIndex).toBeLessThan(footerMetrics!.listIndex);
+  expect(footerMetrics!.watchLeft).toBeGreaterThanOrEqual(footerMetrics!.parentLeft);
+  expect(footerMetrics!.listRight).toBeLessThanOrEqual(footerMetrics!.parentRight + 1);
+  expect(footerMetrics!.documentWidth).toBeLessThanOrEqual(1366);
+  await captureCommitFooterScreenshot(page, "git-desktop.png");
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileFooterMetrics = await page.evaluate(() => {
+    const watch = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="commit-detail-footer-watch"]',
+    );
+    const list = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="commit-detail-footer-list"]',
+    );
+    if (!watch || !list) return null;
+    const parentBox = watch.parentElement?.getBoundingClientRect();
+    const watchBox = watch.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    return parentBox
+      ? {
+          documentWidth: document.documentElement.scrollWidth,
+          listRight: listBox.right,
+          parentRight: parentBox.right,
+          watchLeft: watchBox.left,
+          parentLeft: parentBox.left,
+        }
+      : null;
+  });
+  expect(mobileFooterMetrics).not.toBeNull();
+  expect(mobileFooterMetrics!.watchLeft).toBeGreaterThanOrEqual(mobileFooterMetrics!.parentLeft);
+  expect(mobileFooterMetrics!.listRight).toBeLessThanOrEqual(mobileFooterMetrics!.parentRight + 1);
+  expect(mobileFooterMetrics!.documentWidth).toBeLessThanOrEqual(390);
+  await captureCommitFooterScreenshot(page, "git-mobile.png");
   await page.locator("#watch-button").click();
   await page.locator("#editor-contents-comment").fill("Top level note");
   await page.locator("#comment-form button[type=submit]").click();
@@ -1354,6 +1490,9 @@ test("project commit detail submits watch and comment mutations through legacy c
   await expect(page.locator("#watch-button")).toHaveClass(/active/);
   await expect(page.locator("#watch-button")).toHaveClass(/ybtn-watching/);
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
 });
 
 test("project commit detail renders legacy partial_filediff rows", async ({ page }) => {
@@ -3307,6 +3446,10 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     expect(metrics.diffWrapContainedByCodeWrap).toBe(true);
     expect(metrics.diffWrapWidth).toBeGreaterThan(0);
     expect(metrics.diffWrapWidth).toBeLessThanOrEqual(metrics.codeWrapWidth + 0.5);
+    await captureCommitFooterScreenshot(
+      page,
+      `svn-${viewport.width === 1366 ? "desktop" : "mobile"}.png`,
+    );
 
     if (viewport.width === 1366) {
       expect(await canonicalize(page, ".diff-wrap")).toEqual(
@@ -3319,8 +3462,20 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
   }
   expect(detailRequests).toEqual(["branch=trunk"]);
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
-  await expect(page.locator("#watch-button")).toHaveClass(/^ybtn\s*$/);
+  await expect(page.locator("#watch-button")).toHaveClass(/ybtn/);
+  await expect(page.locator("#watch-button")).not.toHaveClass(/pull-left/);
   await expect(page.locator("#watch-button")).toHaveText("Watch");
+  await expect(page.locator('[data-stylex-owner="commit-detail-footer-watch"]')).toHaveCSS(
+    "float",
+    "left",
+  );
+  await expect(page.locator('[data-stylex-owner="commit-detail-footer-list"]')).toHaveCSS(
+    "float",
+    "right",
+  );
+  await expect(page.locator('[data-stylex-owner="commit-detail-footer-list"]')).not.toHaveClass(
+    /pull-right/,
+  );
 });
 
 test("project SVN commit detail Batch 757 owns commit metadata with StyleX", async ({ page }) => {

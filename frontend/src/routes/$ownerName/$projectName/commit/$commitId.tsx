@@ -46,6 +46,8 @@ const sx = {
   commitId: stylex.props(styles.commitId),
   commitMessage: stylex.props(styles.commitMessage),
   commitDescription: stylex.props(styles.commitDescription),
+  footerWatchLeft: stylex.props(styles.footerWatchLeft),
+  footerListRight: stylex.props(styles.footerListRight),
   diffBody: stylex.props(styles.diffBody),
   file: stylex.props(styles.file),
   fileMeta: stylex.props(styles.fileMeta),
@@ -563,9 +565,11 @@ function ProjectCommitDetailBody({
           </div>
 
           <button
+            {...sx.footerWatchLeft}
             id="watch-button"
             type="button"
-            className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
+            className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
+            data-stylex-owner="commit-detail-footer-watch"
             onClick={() => watchMutation.mutate(!detail.isWatching)}
           >
             {t("notification.watch")}
@@ -573,7 +577,9 @@ function ProjectCommitDetailBody({
 
           <Link
             to={projectTo(ownerName, projectName, "commits", encodedBranch, path)}
-            className="ybtn pull-right"
+            {...sx.footerListRight}
+            className={`${sx.footerListRight.className} ybtn`}
+            data-stylex-owner="commit-detail-footer-list"
           >
             {t("button.list")}
           </Link>
@@ -733,9 +739,11 @@ function SvnCommitDetailBody({
         </div>
 
         <button
+          {...sx.footerWatchLeft}
           id="watch-button"
           type="button"
-          className={`ybtn ${detail.isWatching ? "active" : ""}`}
+          className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active" : ""}`}
+          data-stylex-owner="commit-detail-footer-watch"
           onClick={toggleWatch}
         >
           {t("notification.watch")}
@@ -743,7 +751,9 @@ function SvnCommitDetailBody({
 
         <Link
           to={projectTo(ownerName, projectName, "commits", encodedBranch)}
-          className="ybtn pull-right"
+          {...sx.footerListRight}
+          className={`${sx.footerListRight.className} ybtn`}
+          data-stylex-owner="commit-detail-footer-list"
         >
           {t("button.list")}
         </Link>
