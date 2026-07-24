@@ -197,6 +197,7 @@ export const issueFormStyles = stylex.create({
   },
   attachedFileDelete: {
     display: "inline-block",
+    float: "right",
     minHeight: "30px",
   },
   taskListButton: { marginTop: "2px" },
@@ -280,6 +281,7 @@ export const issueFormStyles = stylex.create({
     verticalAlign: "middle",
     width: "100px",
   },
+  uploadProgressWrapper: { float: "right" },
   uploadProgressBar: (width: string) => ({
     backgroundColor: "#f36c22",
     display: "block",

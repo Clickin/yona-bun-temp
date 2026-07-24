@@ -2405,7 +2405,10 @@ function IssuePostFileUploader({
                 ) : null}
               </button>
               {row.status === "uploading" ? (
-                <div className="pull-right">
+                <div
+                  {...stylex.props(issueFormStyles.uploadProgressWrapper)}
+                  data-stylex-owner="project-issue-form-upload-progress-wrapper"
+                >
                   <div
                     {...stylex.props(issueFormStyles.uploadProgress)}
                     className={`progress upload-progress ${stylex.props(issueFormStyles.uploadProgress).className ?? ""}`.trim()}
@@ -2431,7 +2434,7 @@ function IssuePostFileUploader({
               <button
                 type="button"
                 {...stylex.props(issueFormStyles.attachedFileDelete)}
-                className={`btn-transparent btn-delete pull-right ${stylex.props(issueFormStyles.attachedFileDelete).className ?? ""}`.trim()}
+                className={`btn-transparent btn-delete ${stylex.props(issueFormStyles.attachedFileDelete).className ?? ""}`.trim()}
                 data-stylex-owner="project-issue-form-attached-file-delete"
                 aria-label={`${t("button.delete")} ${row.name}`}
                 disabled={row.status === "deleting" || row.status === "uploading"}

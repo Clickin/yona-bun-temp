@@ -863,6 +863,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   semantic class retention, utility absence, computed floats, checkbox/copy/link
   behavior, no-inline/plugin-only attrs, and desktop/mobile geometry.
 
+### 2026-07-25 Batch 946 issue-form attachment progress/delete float ownership
+
+- [x] Authenticated project issue-form attachment rows preserve the legacy
+  `attached-file` DOM/order, progress/delete/insert behavior, disabled uploading
+  state, copy, and semantic classes while removing only React-owned `pull-right`;
+  `attachedFileDelete` and new `uploadProgressWrapper` StyleX owners carry exact
+  `float:right`. Other uploader consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering Scala/LESS/Bootstrap/import/messages provenance, owner/declarations,
+  retired utilities, computed floats, upload/ready/delete/insert interaction,
+  and desktop/mobile row/upload containment/no-overflow. The pre-existing
+  fallback-off document-wide 14px shell overflow remains outside this owner.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
