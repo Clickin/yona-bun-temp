@@ -13,6 +13,12 @@ export const anonymousHomeIntroBackgroundTheme = stylex.createTheme(
   },
 );
 
+export const rootSidebarMotionStyles = stylex.create({
+  shell: {
+    transition: "width 0.5s ease",
+  },
+});
+
 export const homeColors = stylex.defineVars({
   leftSidebarTabText: "lightgray",
   sidenavNoResultText: "mediumvioletred",

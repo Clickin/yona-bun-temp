@@ -8131,6 +8131,12 @@ intercepts pointer clicks and do not claim modal screenshot parity. The selected
 guards pass 4/5; one unchanged `stylex-project-home-progress.e2e.ts` guard retains an exact source
 assertion for an older dynamic-progress expression. Approved Yoram footer NAVER Labs,
 developer-contact, and upstream-repository/provider differences remain intentional.
+## Batch 930
+
+Preserve the authenticated root sidebar’s legacy open/closed geometry and project-overview hover behavior while adding the requested StyleX-owned width transition. Keep plugin-only attributes out of React output and contain the right-positioned hover popover with the legacy hidden horizontal overflow; no route-specific geometry compensation is permitted.
+
+The focused external System-Chrome source/desktop/mobile guard passes 3/3. Open/closed desktop/mobile captures under `output/playwright/stylex-root-sidebar-open-close-popover/` were inspected; document width remains the viewport width. Live legacy pair, global fallback audit, full fallback-off suite, and production build remain final-profile deferred; approved Yoram footer differences remain intentional.
+
 ## Batch 929
 
 Move the populated milestone-detail issue metadata count and label surface into the existing route-local StyleX boundary. Preserve the legacy count partial anchors, icon/value order, colors, counts, milestone link, and copy. Explicit StyleX declarations own the frozen count-group border and spacing; no route-specific compensation is permitted.

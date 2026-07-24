@@ -19,6 +19,7 @@ import {
   anonymousHomeIntroBackgroundTheme,
   anonymousHomeIntroBackgroundVars,
   homeColors,
+  rootSidebarMotionStyles,
 } from "./-home-route-screen.stylex";
 
 type LegacyUserLinkSearch = {
@@ -5002,7 +5003,7 @@ function AuthenticatedSiteUserMenu({
     <>
       <div
         id="mySidenav"
-        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} ${stylex.props(authenticatedSidenavShellStyles.shell, sidenavUsesAdminAffixTop && authenticatedSidenavShellStyles.adminAffixTop, isSidebarOpen && authenticatedSidenavShellStyles.open).className}`}
+        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} ${stylex.props(authenticatedSidenavShellStyles.shell, rootSidebarMotionStyles.shell, sidenavUsesAdminAffixTop && authenticatedSidenavShellStyles.adminAffixTop, isSidebarOpen && authenticatedSidenavShellStyles.open).className}`}
         data-stylex-owner="authenticated-site-sidenav-shell"
       >
         <div
@@ -6957,6 +6958,7 @@ function SidebarProjectItem({
   const ownerName = valueString(project.ownerName ?? project.owner, "");
   const projectName = valueString(project.projectName ?? project.name, "");
   const logoUrl = valueString(project.logoUrl ?? project.projectLogoUrl, "");
+  const overview = valueString(project.overview, "");
   const isPrivate = sidebarProjectIsPrivate(project);
   const isFavorited = sidebarIsFavorited(project);
 
@@ -6973,12 +6975,19 @@ function SidebarProjectItem({
           : "authenticated-sidenav-direct-project-rows"
       }
     >
-      <div
-        className={
+      <SidebarHoverPopover
+        content={isLeftSidebar ? "" : overview}
+        rootClassName={
           isLeftSidebar
             ? stylex.props(leftSidebarDirectProjectRowStyles.list).className
-            : `project-list project-flex-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.list).className}`
+            : `project-list project-flex-container ${
+                stylex.props(
+                  authenticatedSidenavDirectProjectRowStyles.list,
+                  authenticatedSidenavFavoriteProjectRowStyles.list,
+                ).className
+              }`
         }
+        variant={isLeftSidebar ? "legacy" : "authenticated-favorite-project"}
       >
         <div
           className={
@@ -7094,7 +7103,7 @@ function SidebarProjectItem({
                 : "authenticated-direct-project"
           }
         />
-      </div>
+      </SidebarHoverPopover>
     </li>
   );
 }
@@ -7483,10 +7492,12 @@ function SidebarRecentIssueItem({
 function SidebarHoverPopover({
   children,
   content,
+  rootClassName,
   variant = "legacy",
 }: {
   children: React.ReactNode;
   content: string;
+  rootClassName?: string;
   variant?:
     | "authenticated-favorite-project"
     | "authenticated-recent-issue"
@@ -7506,7 +7517,8 @@ function SidebarHoverPopover({
   return (
     <div
       className={
-        isLeftSidebarFavoriteNestedProjectRow
+        rootClassName ??
+        (isLeftSidebarFavoriteNestedProjectRow
           ? stylex.props(leftSidebarFavoriteNestedProjectRowStyles.list).className
           : `project-list project-flex-container ${
               stylex.props(
@@ -7515,7 +7527,7 @@ function SidebarHoverPopover({
                 isAuthenticatedRecentIssueRow && authenticatedSidenavRecentIssueRowStyles.list,
                 isLeftSidebarRecentIssueRow && leftSidebarRecentIssueRowStyles.list,
               ).className
-            }`.trimEnd()
+            }`.trimEnd())
       }
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
