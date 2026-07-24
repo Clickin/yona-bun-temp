@@ -358,7 +358,11 @@ function PublicProfileBody({
                   </div>
                 ) : null}
               </div>
-              <div className="whoami usf-group">
+              <div
+                {...stylex.props(styles.whoami)}
+                className={`${stylex.props(styles.whoami).className} whoami usf-group`}
+                data-stylex-owner="user-profile-whoami"
+              >
                 <span
                   className={`${stylex.props(userProfileStaticStyles.profileName).className} name`}
                 >
@@ -405,7 +409,13 @@ function PublicProfileBody({
                 data-stylex-owner="user-profile-user-since"
               >
                 <strong>{t("userinfo.since")}</strong>
-                <span className="since">{profile.sinceLabel}</span>
+                <span
+                  {...stylex.props(styles.since)}
+                  className={`${stylex.props(styles.since).className} since`}
+                  data-stylex-owner="user-profile-since"
+                >
+                  {profile.sinceLabel}
+                </span>
               </div>
               <div
                 {...stylex.props(styles.userSince)}

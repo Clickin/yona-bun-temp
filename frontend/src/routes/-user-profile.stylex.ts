@@ -21,6 +21,16 @@ export const styles = stylex.create({
     float: "left",
     width: "200px",
   },
+  // Frozen less/_page.less .user-info-box .whoami.
+  whoami: { marginTop: "15px" },
+  // Frozen less/_page.less .user-info-box .user-since .since.
+  since: {
+    color: "rgb(243, 108, 34)",
+    display: "block",
+    fontSize: "14px",
+    fontWeight: "700",
+    marginLeft: "5px",
+  },
   // Frozen less/_page.less .user-info-box .user-status.
   userStatus: { marginTop: "20px" },
   // Frozen less/_page.less .user-info-box .user-since.

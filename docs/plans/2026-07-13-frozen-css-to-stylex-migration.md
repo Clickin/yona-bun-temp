@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile whoami/since value
+
+Batch 953 moves the public profile identity wrapper `whoami` margin and the
+since-value span's exact block/typography/margin/primary-color declarations to
+route-local StyleX. The legacy `@primary` chain resolves to `#F36C22`; the
+StyleX declaration uses equivalent `rgb(243, 108, 34)` syntax because the dev
+StyleX collector omitted the hex color rule, while preserving the same browser
+color. Existing profile name/edit/email/provider behavior and wrapper spacing
+remain unchanged. Normal and fallback-off focused Chrome checks pass 1/1 each;
+live legacy screenshot parity remains explicitly unverified.
+
+
 ## 2026-07-25 — Public profile static sidebar status/since spacing
 
 Batch 952 moves only the authenticated profile sidebar's repeated

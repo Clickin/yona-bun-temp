@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 953 public profile whoami/since value
+
+- [x] `user/view.scala.html:54-65,69-72`, `_page.less:4983-4995,5050-5060`, `_variables.less` `@primary:@orange`, and the full import chain are recorded as output/declaration/color evidence.
+- [x] `whoami` owns only `margin-top:15px`; `.since` owns exact block/14px/700/5px/primary-color declarations. Profile identity/edit/email/since/provider DOM, copy, order, and behavior remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-static-sidebar.e2e.ts` verifies stable owners, computed declarations/color in both modes, identity/edit/since/provider output, no inline/plugin attributes, and desktop/390px containment/no-overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 952 public profile static sidebar status/since spacing
 
 - [x] `user/view.scala.html:67-80` and frozen `_page.less:4970-5068` are recorded as output/cascade evidence, including exact status/since spacing and the full import chain.
