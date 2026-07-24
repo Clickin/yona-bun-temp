@@ -11,6 +11,7 @@ export const pullRequestChangesColors = stylex.defineVars({
 });
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  codediffWrap: { marginTop: "10px" },
   errorWrap: { padding: "100px 0px", textAlign: "center" },
   errorIcon: (backgroundImage: string) => ({
     backgroundImage,

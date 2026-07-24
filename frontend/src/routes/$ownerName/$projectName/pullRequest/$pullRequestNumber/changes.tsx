@@ -35,6 +35,7 @@ import { styles as detailStyles } from "../-pull-request-detail.stylex";
 
 const sx = {
   page: stylex.props(styles.page),
+  codediffWrap: stylex.props(styles.codediffWrap),
   errorWrap: stylex.props(styles.errorWrap),
   errorIcon: (backgroundImage: string) => stylex.props(styles.errorIcon(backgroundImage)),
   errorMessage: stylex.props(styles.errorMessage),
@@ -370,7 +371,11 @@ function ProjectPullRequestChangesBody({
               </div>
             </div>
 
-            <div className={codediffClassName}>
+            <div
+              {...sx.codediffWrap}
+              className={`${codediffClassName} ${sx.codediffWrap.className ?? ""}`.trim()}
+              data-stylex-owner="pull-request-changes-codediff-wrap"
+            >
               {hasReviewCards ? (
                 <button type="button" className="ybtn ybtn-default btn-show-reviewcards">
                   <i className="yobicon-restore"></i>

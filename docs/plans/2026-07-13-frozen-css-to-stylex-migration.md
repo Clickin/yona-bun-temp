@@ -6895,6 +6895,23 @@ focused runs pass 1/1 each with desktop/mobile evidence. Live legacy screenshot
 comparison remains unverified. Approved Yoram footer/provider/developer-contact/
 repository differences remain intentional.
 
+## Batch 898
+
+Move the pull-request changes screen's outer `.codediff-wrap` exact frozen
+`.mt10` `margin-top:10px` declaration into the existing changes StyleX owner.
+Preserve the legacy outer wrapper class, conditional `diffs-only` state,
+review-card visibility, diff/dropdown/comment DOM and behavior, and responsive
+geometry. Managed external System-Chrome integrated normal, explicit
+fallback-off, and restored-normal focused runs pass 2/2 each at 1366x900 and
+390x844. Review-card and diffs-only desktop/mobile screenshots were directly
+inspected. Adjacent PR changes guards pass 7/9; two unchanged residual guards
+retain existing diff fixture and duplicate upload-help owner assumptions.
+Fallback-off global shell/Bootstrap/asset drift and full live legacy/Yoram
+shell screenshot parity remain screen-wide or fallback-owned gaps outside this
+margin owner, so no route-specific compensation was added. Approved Yoram
+footer NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
+
 ## Batch 895
 
 Move the exact frozen `.mt10 { margin-top:10px; }` declaration from the
