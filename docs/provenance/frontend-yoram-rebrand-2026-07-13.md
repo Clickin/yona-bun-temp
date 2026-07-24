@@ -72,7 +72,10 @@ global search form. Yoram intentionally omits that item until a real public
 repository is configured, so the search form starts earlier by the omitted
 item's natural width. Screenshot parity must classify that position difference
 as part of this identity deviation, not restore upstream copy/link targets or
-introduce artificial spacing to imitate an absent item.
+introduce artificial spacing to imitate an absent item. At responsive widths,
+the same omitted item can also change the legacy float-wrap point of the
+authenticated user menu; that downstream row position is intentional for the
+same reason and must not be counteracted with route-specific offsets.
 
 ## Compatibility boundaries retained
 
