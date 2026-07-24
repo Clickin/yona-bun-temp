@@ -735,6 +735,17 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   class, computed float, no-inline-style, attachment content/order/download,
   and desktop/390px geometry.
 
+### 2026-07-25 Batch 936 issue-detail board action utility retirement
+
+- [x] The authenticated issue body board action group preserves its controls,
+  copy/order, and responsive behavior while removing only the React-owned
+  `pull-left` utility; `styles.boardActionGroup` continues to own the frozen
+  `float:left` declaration. Comment rows, child replies, attachments, and
+  sidebar/admin alignment remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering legacy source provenance, owner/declaration, absent utility class,
+  computed float, no-inline-style, control order, and desktop/390px geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

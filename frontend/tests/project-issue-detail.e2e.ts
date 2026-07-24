@@ -1189,7 +1189,7 @@ test("project issue detail owns board action group float with route StyleX", asy
     const group = actions.locator('[data-stylex-owner="project-issue-detail-board-action-group"]');
     await expect(actions).toHaveCount(1);
     await expect(group).toHaveCount(1);
-    await expect(group).toHaveClass(/pull-left/);
+    await expect(group).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
     await expect(group).not.toHaveAttribute("style", /.+/u);
     await expect(group.locator("#watch-button")).toHaveText("Subscribe");
     await expect(group.locator("#issue-share-button")).toHaveText("Issue Sharing");

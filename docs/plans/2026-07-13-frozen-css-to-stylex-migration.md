@@ -8170,3 +8170,9 @@ The narrowed external System-Chrome guard passes 1/1 in normal and explicit fall
 Retire only the React-owned `pull-left` utility from the authenticated parent issue-comment attachment wrapper. Preserve the semantic `attachments` class, payload, AttachedFiles DOM/order, empty/populated behavior, and download link; the existing route-local StyleX owner continues to supply the frozen `float:left` declaration. Issue-level, edit-form, and child-comment attachment consumers remain separate. The legacy administrator notice / sidebar collapse-button x-axis mismatch is a known legacy parity issue and is not a compensation target.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 2/2 each at desktop and 390px coverage. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
+## Batch 936
+
+Retire only the React-owned `pull-left` utility from the authenticated issue-detail body board action group. Preserve its controls, copy/order, and responsive behavior; the existing route-local StyleX owner continues to supply the frozen `float:left` declaration. Comment rows, child replies, attachments, and the known legacy administrator notice/sidebar collapse-button x-axis mismatch remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each at desktop and 390px coverage. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
