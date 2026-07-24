@@ -2894,7 +2894,6 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     await expect(textarea).toHaveClass(/disabled/u);
     await expect(textarea).toBeDisabled();
     await expect(textarea).not.toHaveAttribute("style");
-    await expect(actions).toHaveClass(/right-txt/u);
     await expect(actions).toHaveClass(/mt10/u);
     await expect(button).toHaveClass(/ybtn/u);
     await expect(button).toHaveClass(/ybtn-disabled/u);

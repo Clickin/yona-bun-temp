@@ -1370,7 +1370,7 @@ function PostCommentForm({
             />
           </div>
           <div
-            className={`${sx.disabledCommentActions.className} right-txt mt10`}
+            className={`${sx.disabledCommentActions.className} mt10`}
             data-stylex-owner="post-detail-disabled-comment-actions"
           >
             <span
@@ -1478,7 +1478,7 @@ function PostCommentForm({
           data-stylex-owner="post-detail-comment-create-write-wrap"
         >
           <div
-            className={`${sx.commentActions.className} right-txt`}
+            className={sx.commentActions.className}
             data-stylex-owner="post-detail-comment-actions"
           >
             <button

@@ -7759,3 +7759,20 @@ remain documented gaps outside this margin owner; no route-specific
 compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+
+## Batch 905
+
+Move the project board post detail comment action alignment into the existing route-local StyleX
+owner for both authenticated comment creation and the unauthorized disabled-comment state.
+Preserve the legacy `right-txt`/`mt10` output contract as behavior evidence, retain the
+unauthorized `mt10` class and exact 10px spacing, and let StyleX own the exact right alignment and
+margin declarations. Managed external System-Chrome focused normal, explicit fallback-off, and
+restored-normal runs pass 1/1 each at 1366x900 and 390x844; normal/fallback-off desktop/mobile
+screenshots were directly inspected. The adjacent unauthorized-comment guard now passes after
+removing its stale runtime `right-txt` class assertion; the broader residual guard remains 2/3
+because one unchanged assertion still expects the combined `commentUploadHelp` source shape.
+Seeded legacy `admin/sample/post/1` desktop/mobile baselines were captured; local
+`admin/sample/post/3` uses the mocked unauthorized state, so full live same-fixture screen
+comparison remains a documented fixture/screen-wide gap. Fallback-off global shell/button paint
+drift remains outside this owner. Approved Yoram footer NAVER/provider/developer-contact/upstream-
+repository differences remain intentional; no route-specific compensation was added.
