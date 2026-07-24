@@ -41,6 +41,7 @@ export const styles = stylex.create({
     fontWeight: "bold",
     lineHeight: "20px",
   },
+  stateBadge: { marginLeft: "5px" },
   badgeOpen: { backgroundColor: milestoneDetailColors.badgeOpen },
   badgeClosed: { backgroundColor: milestoneDetailColors.badgeClosed },
   titleMeta: { marginLeft: "10px" },

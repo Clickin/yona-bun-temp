@@ -328,6 +328,7 @@ function ProjectMilestoneDetailBody({
   const milestoneBadgeProps = stylex.props(
     styles.badge,
     isClosed ? styles.badgeClosed : styles.badgeOpen,
+    styles.stateBadge,
   );
 
   return (
