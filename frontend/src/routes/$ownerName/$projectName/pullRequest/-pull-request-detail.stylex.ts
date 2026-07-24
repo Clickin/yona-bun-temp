@@ -76,6 +76,7 @@ export const styles = stylex.create({
   actionWrapper: { display: "inline-block", marginRight: "5px" },
   comments: { minWidth: 0 },
   helpActions: { textAlign: "right" },
+  helpMessages: { marginTop: "10px" },
   reviewers: { display: "inline-block", marginRight: "5px" },
   reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" },
   helpModalVisible: { display: "block" },

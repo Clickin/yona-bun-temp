@@ -7651,3 +7651,17 @@ live legacy/Yoram shell screenshot parity remain screen-wide or fallback-owned
 gaps outside these margin owners, so no route-specific compensation was
 added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
 repository differences remain intentional.
+## Batch 899
+
+Move the pull-request detail help modal text column's exact frozen `.mt10`
+`margin-top:10px` declaration into the existing pull-request detail StyleX
+owner. Preserve the legacy `pull-left help-messages mt10` DOM/class contract,
+three help paragraphs, image column, modal header/body/footer order, Confirm
+behavior, and React state/events. Managed external System-Chrome normal,
+explicit fallback-off, and restored-normal focused runs pass 1/1 each at
+1366x900 and 390x844; normal and fallback-off desktop/mobile screenshots were
+directly inspected. Adjacent help-modal and header state/date guards pass 2/2.
+Fallback-off global image-asset, backdrop, modal overflow, and shell drift are
+documented fallback-owned gaps; no route-specific compensation was added.
+Approved Yoram footer NAVER/provider/developer-contact/upstream-repository
+differences remain intentional.

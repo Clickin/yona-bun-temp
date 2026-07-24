@@ -1207,6 +1207,7 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const isOpen = state === "open";
+  const helpMessagesStyleProps = stylex.props(styles.helpMessages);
   const modalStyleProps =
     state === "initial"
       ? undefined
@@ -1234,7 +1235,11 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
               />
               <br />
             </div>
-            <div className="pull-left help-messages mt10">
+            <div
+              {...helpMessagesStyleProps}
+              className={`${helpMessagesStyleProps.className ?? ""} pull-left help-messages mt10`.trim()}
+              data-stylex-owner="pull-request-detail-help-messages"
+            >
               <p>{t("pullRequest.merge.help.2")}</p>
               <p>{t("pullRequest.merge.help.3")}</p>
               <p>{t("pullRequest.merge.help.4")}</p>
