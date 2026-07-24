@@ -7930,3 +7930,27 @@ is outside the viewport, and does not claim modal visual parity. Existing organi
 Create-link selectors were updated to stable StyleX owner markers; the remaining exact legacy
 textbox-class assertion is a pre-existing StyleX baseline failure. Approved Yoram footer NAVER
 Labs/provider/developer-contact/upstream-repository differences remain intentional.
+
+## Batch 914
+
+Move the authenticated populated organization pull-request row action floats into the existing
+route-local StyleX boundary. The receiver/avatar rail from
+`group_pullrequest_list_partial.scala.html:66-76` keeps `mt5 hide-in-mobile`, receiver and
+empty-avatar branches, and user links while `styles.receiverRail` owns the exact frozen
+Bootstrap `float: right`. The state badge keeps `state`, `open`/`conflict`, and translated copy
+while `styles.state` owns the same float. Remove only these two React-owned `pull-right`
+utilities; preserve all other legacy classes, DOM order, interaction, and no plugin-only
+attributes. No route-specific geometry compensation is permitted.
+
+The focused managed external System-Chrome guard passes 2/2 in normal, explicit fallback-off,
+and restored-normal modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile captures
+under `frontend/output/playwright/stylex-organization-pullrequests-action-floats/{normal,fallback-off}/`
+were directly inspected. Managed live legacy `/organizations/weblabs/pullrequests` desktop/mobile
+sweeps pass 1/1 and direct captures are under
+`frontend/output/playwright/legacy-organization-pullrequests-action-floats-{desktop,mobile}.png`.
+The live seed is empty while the local fixture has two populated rows, so same-fixture row parity
+remains a gap; the local receiver image also exposes the existing broken default-avatar fixture
+asset. The adjacent organization pull-request suite is 12/20: eight unchanged failures retain
+aggregate legacy-shell/guest-copy, removed PJAX-tab, exact class/href, or exact source-string
+assumptions. Fallback-off global shell/asset drift remains outside these owners. Approved Yoram
+footer NAVER Labs/provider/developer-contact/upstream-repository differences remain intentional.

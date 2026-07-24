@@ -29,6 +29,7 @@ const sx = {
   emptyMessage: stylex.props(styles.emptyMessage),
   row: stylex.props(styles.row),
   meta: stylex.props(styles.meta),
+  receiverRail: stylex.props(styles.receiverRail),
   state: stylex.props(styles.state),
   paginationRoot: stylex.props(styles.paginationRoot),
   paginationPageNums: stylex.props(styles.paginationPageNums),
@@ -630,7 +631,11 @@ function OrganizationPullRequestItem({
         </div>
       </div>
       <div className="span2 hide-in-mobile">
-        <div className="mt5 pull-right hide-in-mobile">
+        <div
+          {...sx.receiverRail}
+          className={`${sx.receiverRail.className} mt5 hide-in-mobile`}
+          data-stylex-owner="organization-pullrequests-row-receiver-rail"
+        >
           {pullRequest.receiverLoginId ? (
             <Link
               params={{ user: pullRequest.receiverLoginId }}
@@ -651,7 +656,7 @@ function OrganizationPullRequestItem({
         </div>
         <div
           {...sx.state}
-          className={`${sx.state.className} state ${stateKey} pull-right`}
+          className={`${sx.state.className} state ${stateKey}`}
           data-stylex-owner="organization-pullrequests-row-state"
         >
           {t(`pullRequest.state.${stateKey}`)}

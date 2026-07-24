@@ -79,7 +79,8 @@ export const styles = stylex.create({
   },
   row: { borderBottomColor: organizationPullRequestColors.border },
   meta: { color: organizationPullRequestColors.metaText },
-  state: { color: organizationPullRequestColors.stateText },
+  receiverRail: { float: "right" },
+  state: { color: organizationPullRequestColors.stateText, float: "right" },
   pagination: { color: organizationPullRequestColors.metaText },
   paginationRoot: {
     clear: "both",
