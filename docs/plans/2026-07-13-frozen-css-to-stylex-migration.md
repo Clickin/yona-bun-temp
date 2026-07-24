@@ -454,7 +454,29 @@ isolated from a larger group. The same route commit must contain all of the foll
 Do not land “StyleX code now, selector/test cleanup later.” Do not update selectors without moving
 the owning styles in the same slice.
 
-### 5.1 Default operating mode: three-route worktree batch
+### 5.1 Verification profiles
+
+Migration work uses two explicit verification profiles. This separates fast feedback from the
+expensive final lock without weakening the final product requirement.
+
+| Profile | Run during | Required evidence | Not a completion claim |
+| --- | --- | --- | --- |
+| `fast` | every active route/state wave | focused fallback-off Playwright, Chrome desktop/mobile metrics, interaction/source ownership, Scala audit row | live legacy screenshot pair, global consumer audit, full fallback-off suite, production build |
+| `final` | final visual-lock and fallback retirement | fast checks plus live legacy screenshot pair, exact pixel/geometry review, global fallback consumer audit, full fallback-off suite, production build and StyleX verifier | none |
+
+Fast invocation:
+
+```bash
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir frontend \
+  test:e2e:stylex-fast -- tests/<focused-route>.e2e.ts
+```
+
+The harness sets `VITE_DISABLE_LEGACY_FALLBACK=1`, `YONA_E2E_FALLBACK_MODE=fallback-off`, and
+`PW_CHANNEL=chrome`. The final profile is selected with `test:e2e:stylex-final`; it does not
+silently claim the legacy/global/build evidence—the final-lock checklist must record those
+separate commands and artifacts.
+
+### 5.2 Default operating mode: three-route worktree batch
 
 The default execution unit is now a batch of three independent route/state slices, totaling
 12–18 owner types. Two routes are acceptable when one state is unusually heavy; a single-route
@@ -482,22 +504,22 @@ counts.
    before implementation and records a deterministic RED. The RED may be a fast source/ownership
    contract without starting the managed browser; browser RED is required only when the defect or
    interaction itself must be demonstrated. Browser GREEN remains mandatory.
-4. Workers implement in parallel and run only cheap route-scoped checks: source ownership, focused
-   static contract, TypeScript diagnostics for touched code when available, oxlint, oxfmt check,
-   and `git diff --check`. They do not independently run the production build, full Vitest, or the
-   full focused browser matrix by default.
+4. Workers implement in parallel and run only cheap route-scoped checks plus the `fast` profile:
+   source ownership, focused static contract, TypeScript diagnostics for touched code when
+   available, focused fallback-off Chrome E2E at desktop/mobile, oxlint, oxfmt check, and
+   `git diff --check`. They do not independently run the production build, full Vitest, live
+   legacy screenshot sweep, or global fallback audit by default.
 5. The main agent runs the mandatory turn-commit hook in each worktree so each branch has a
    self-contained route commit. Subagents do not request approval and then exit; approval-bearing
    commit commands remain owned by the main agent.
 6. Recreate a disposable integration worktree from the batch base and cherry-pick the three route
    commits. Resolve only mechanical append conflicts in the audit file; any implementation,
    selector, or ownership conflict disqualifies the affected route from that batch.
-7. Start the managed runtime once and pass all focused E2E files to one Playwright invocation.
-   Use the runner's route-level parallelism up to the three available worker slots unless a shared
-   mutable fixture requires serialization. That invocation owns the batch's desktop/mobile
-   geometry, interaction, fallback-equivalence, and screenshot gate. Run frontend typecheck,
-   Vitest, production build, StyleX verifier, frozen hash check, and `git diff --check` once for the
-   assembled batch.
+7. Start the managed runtime once and pass all focused E2E files to one `fast` Playwright
+   invocation. Use the runner's route-level parallelism up to the three available worker slots
+   unless a shared mutable fixture requires serialization. That invocation owns the batch's
+   fallback-off desktop/mobile geometry, interaction, and target screenshot evidence. Run the
+   expensive final profile only at the visual-lock checkpoint, not once per wave.
 8. If a route fails, rerun only its focused spec to diagnose it, amend that worker's route commit,
    recreate the disposable integration worktree, and rerun the assembled batch gate. Never weaken
    an assertion to keep the other routes green. Routes proven independent may land without a
@@ -512,11 +534,13 @@ selectors, audit row, route commit, rollback boundary, and focused test. A batch
 two states of the same route, shared component edits, backend contract edits, or consumers whose
 legacy selector dependency is unresolved.
 
-### 5.2 Batch acceptance and progress accounting
+### 5.3 Batch acceptance and progress accounting
 
-A batch is accepted only when every included route passes its focused assertions in the combined
-Playwright invocation and the single assembled static/build gate is green. Report both route/state
-results and the aggregate command result; a green route must not conceal a failed sibling.
+A batch is accepted for continued migration when every included route passes its focused `fast`
+assertions and the assembled static/provenance gate is green. This is an implementation-progress
+acceptance, not final visual completion. Report both route/state results and the aggregate command
+result; a green route must not conceal a failed sibling. The final visual-lock checkpoint remains
+the only completion gate for exact legacy screenshot parity and fallback retirement.
 
 After each batch, record these progress counters instead of deriving completion from the slice
 ordinal:
@@ -3435,19 +3459,19 @@ supported viewport/state matrix.
 
 | 2026-07-17 | Authenticated populated `/admin/sample/statistics` Under Construction body-shell StyleX wave | `yona-original/app/views/project/statistics.scala.html` supplies the exact `page-wrap-outer > project-page-wrap > h1` skeleton; included project shell templates, frozen `_page.less`, max-720 and final `@media all` `_responsive.less`, Bootstrap h1 rules, and fresh live Java Edge measurements supply the final output. Legacy Scala HTML/JS remains output DOM/UX evidence while React/TanStack own project loading, nested shell reuse, metadata, and search scope. | `frontend/src/routes/$ownerName/$projectName/statistics.tsx` adds exactly two stable StyleX owners for the outer and project-page wrappers, plus direct child h1 type declarations needed to preserve live Bootstrap output against the stale app bridge. Desktop/mobile final cascade is 10px outer top, desktop 10px inset/mobile zero inset, desktop min-width 0/mobile 10px, and project-page 5px/100% at both sizes. Geometry/type values stay inline; no paint/theme vars/file are added. Only this route’s wrapper classes retire. | `frontend/tests/project-statistics.e2e.ts` keeps live-derived 1366×900/390×844 owner-local sizes/x/type, containment, mobile no-overflow, and fallback equivalence. Live absolute y130 remains provenance; local shared header ancestry yields y173 desktop/y196 mobile, so the executable gate uses the exact 10px outer-to-header-bottom gap and equal project-page/H1/outer tops without weakening this route’s contract. The complete route suite is GREEN 14/14; static/format/lint/diff, typecheck, and production build/StyleX verification are green. |
 
-## 8. Verification matrix per route slice and assembled batch
+## 8. Verification matrix per route slice and final visual lock
 
 | Gate       | Required check                                                                      |
 | ---------- | ----------------------------------------------------------------------------------- |
-| Static     | `pnpm --dir frontend check`, lint/source guards, `git diff --check`                 |
-| Build      | production Vite build and generated CSS layer inspection                            |
-| Functional | focused Playwright interaction tests for the migrated states                        |
-| Selector   | no test selector references the removed presentation class or StyleX hash           |
-| Visual     | desktop and 390 px geometry/computed-style parity against the pre-slice baseline    |
-| Cascade    | migrated StyleX declaration wins with fallback enabled                              |
-| Fallback   | disabling the migrated StyleX declaration reveals the legacy value until retirement |
-| Delivery   | `/`, configured base path, and Rust embedded assets resolve identical CSS/assets    |
-| Provenance | ledger row names legacy file, selector, values, React owner, and tests              |
+| Gate       | `fast` wave requirement                                      | `final` visual-lock requirement |
+| ---------- | ------------------------------------------------------------- | -------------------------------- |
+| Static     | focused source/ownership guard, `git diff --check`           | frontend check, lint, build, StyleX verifier |
+| Functional | focused fallback-off Playwright interaction tests            | full fallback-off suite |
+| Selector   | no focused selector uses a StyleX hash                       | no selector uses a retired presentation class or hash |
+| Visual     | target desktop and 390 px geometry/computed-style metrics    | live legacy pair plus exact pixel/geometry review |
+| Cascade    | migrated StyleX declaration wins with fallback-off runtime  | fallback deletion produces no computed-style or screenshot change |
+| Delivery   | focused route assets resolve                                  | `/`, base path, and Rust embedded assets resolve identically |
+| Provenance | Scala audit row and focused test recorded                     | ledger, global consumer audit, and retirement report recorded |
 
 A slice is reverted if it requires unexplained numeric compensation, weakens a visible assertion,
 or cannot identify the legacy source of a declaration.
@@ -8031,6 +8055,12 @@ upstream-repository/provider differences remain intentional.
 Move the authenticated populated project milestone-detail issue-row action floats into the existing route-local StyleX boundary. `issue/partial_list.scala.html:91-110`, selected by `milestone/view.scala.html:98-105`, emits the `mt5 pull-right` assignee/empty-avatar rail and the `mr20 mt10 pull-right` due-date rail. Preserve the assignee and due-date DOM, links, empty-avatar branch, `mt5`/`mr20`/`mt10`, overdue/closed state, copy, and responsive visibility; remove only these two React-owned `pull-right` utilities and let `issueAssigneeRail` and `issueDueDateRail` own the exact frozen `float: right`. No route-specific geometry compensation is permitted.
 
 The focused managed external System-Chrome guard passes 1/1 in normal, explicit fallback-off, and restored-normal modes at 1366x900 and 390x844. Normal and fallback-off screenshots were directly inspected under `frontend/output/playwright/stylex-project-milestone-detail-action-floats/{normal,fallback-off}/`; authenticated live legacy desktop/mobile screenshots are under `frontend/output/playwright/legacy-project-milestone-detail/{desktop,mobile}.png`. Managed legacy `/admin/sample/milestone/1` sweeps pass 1/1 at both viewports. The live seeded `Parity launch`/`Review rail parity check` state differs from the local populated `v1`/`Due-date issue` fixture, so same-fixture content parity remains a documented gap. Fallback-off global shell/search/mass-update spacing and asset drift remains outside these two owners and receives no compensation. The selected adjacent milestone-detail guards pass 13/19; six unchanged failures retain project-shell/fixture, duplicate label stylesheet, upstream Feedback copy, mass-update count, or exact source-string assumptions. `pnpm frontend check`, production build, and frozen fallback hash verification pass (`8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6`). Approved Yoram footer NAVER Labs/provider/developer-contact/upstream-repository differences remain intentional.
+
+## Batch 922
+
+Move the authenticated selected-milestone project issue-list mass-update form into the existing route-local StyleX boundary. `yona-original/app/views/issue/list.scala.html` includes `yona-original/app/views/issue/partial_list_wrap.scala.html`, which includes `yona-original/app/views/issue/partial_massupdate.scala.html`; the form emits `id="mass-update-form" class="mass-update-form pull-left"` and preserves the legacy state/assignee/milestone/label controls. Keep the form method/action, control order/copy, `hide-in-mobile`, React checkbox/dropdown state, and mutation behavior. `massUpdateForm` owns the exact frozen Bootstrap `float: left`; remove only this React-owned `pull-left` utility. No route-specific geometry compensation is permitted.
+
+The focused managed external System-Chrome guard passes 2/2 in normal and explicit fallback-off modes at 1366x900 and 390x844. Normal/fallback-off desktop/mobile captures under `frontend/output/playwright/stylex-project-issues-mass-update-float/{normal,fallback-off}/` were directly inspected. The existing global `frontend/src/app.css` `hide-in-mobile`/shell cascade drift can suppress wrapper visibility outside the owner; the test records this baseline without adding CSS compensation. Managed live legacy `/admin/sample/issues?milestoneId=5` desktop/mobile sweeps pass 1/1 each; captures under `output/playwright/visual-sweep/legacy-_admin_sample_issues_milestoneId_5.png` and `legacy-mobile-_admin_sample_issues_milestoneId_5.png` were inspected. The live Korean seed is empty and does not select milestone 5 while the local fixture is English and populated, so same-fixture state/copy parity remains a documented gap. Approved Yoram footer NAVER Labs, developer-contact, and upstream-repository/provider differences remain intentional.
 
 ## Batch 921
 

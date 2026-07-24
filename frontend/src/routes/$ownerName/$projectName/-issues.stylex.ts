@@ -55,6 +55,7 @@ export const styles = stylex.create({
   labelsWrap: { position: "relative" },
   searchAdvanced: { marginTop: "10px" },
   results: { backgroundColor: issuesTheme.resultsSurface },
+  massUpdateForm: { float: "left" },
   massUpdateOptionButton: {
     background: "transparent",
     border: 0,

@@ -772,18 +772,20 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
 - [x] Serial managed Playwright checks pass 3/3 in normal and 3/3 with
   `VITE_DISABLE_LEGACY_FALLBACK=1`, covering desktop/mobile geometry.
 
-이 문서는 매 turn의 대상 화면 재탐색을 없애는 실행 source of truth다. 다음 작업은 아래 ID 중 미완료 항목에서만 고른다. route 전체 검색은 `Refresh trigger`가 발생할 때만 수행한다.
+이 문서는 매 turn의 대상 화면 재탐색을 없애는 실행 source of truth다. 다음 작업은 아래 ID 중 미완료 항목에서만 고른다. route 전체 검색은 `Refresh trigger`가 발생할 때만 수행한다. 검증은 `fast`와 `final`을 분리한다. 활성 wave의 체크는 fallback-off focused Chrome target 검증으로 빠르게 기록하고, live legacy screenshot pair와 global C/R 및 build 검증은 final visual-lock에서 기록한다. `fast` 완료는 pixel-perfect 최종 완료를 의미하지 않는다.
 
 ## Completion model
 
-각 화면은 아래 여섯 gate를 순서대로 통과한다. `StyleX` 파일이 있거나 route-local 후보가 없다는 이유만으로 완료 처리하지 않는다.
+각 화면은 `fast` 진행 gate와 `final` 완료 gate를 구분한다. `StyleX` 파일이 있거나 route-local 후보가 없다는 이유만으로 완료 처리하지 않는다.
 
 - `L`: legacy root/partials/LESS와 visible-state matrix 확인
 - `O`: 모든 frozen-backed visual owner를 StyleX로 이전
 - `E`: desktop/mobile 및 interaction focused E2E 통과
+- `F`: fallback-off focused Chrome target 검증 통과; active wave의 빠른 진행 gate
 - `C`: exact source/DOM search로 해당 fallback 소비자 0 확인
 - `R`: 소비자 0인 fallback declaration/block 삭제
-- `✓`: L/O/E/C/R 모두 완료
+- `V`: live legacy screenshot pair와 exact pixel/geometry review 완료
+- `✓`: L/O/E/F/C/R/V 모두 완료; final visual-lock만 완료로 집계
 
 상태값은 `NEXT`, `READY`, `DEPENDENCY`, `DEFERRED`, `INVALID`, `COMPLETE`만 사용한다. `className`은 legacy DOM 계약일 수 있으므로 완료 판정 근거가 아니라 조사 우선순위 proxy다.
 
@@ -793,9 +795,9 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | FALLBACK-OFF-01 | unlink only the React-served fallback asset, run global desktop/mobile E2E, and record a dated classification report | Batch 532 runtime toggle; default fallback stays enabled |
-| 2 | StyleX owner / global bridge / parity defect | repair the classified failure in the owning lane; use one focused fallback-off E2E per assembled 2–6-owner wave | frozen `yona-original` CSS/LESS stays immutable |
-| 3 | C/R selector families | retire only after a green global fallback-off run plus exact multi-route consumer proof | shared fallback retirement, not new screen ownership |
+| 1 | StyleX owner / route wave | implement one focused owner lane and run `F` with the fast harness | frozen `yona-original` CSS/LESS stays immutable |
+| 2 | Final visual-lock | capture live legacy pair, inspect exact pixel/geometry parity, then run global fallback/build checks | run after the active migration queue, not per wave |
+| 3 | C/R selector families | retire only after final-lock global fallback-off run plus exact multi-route consumer proof | shared fallback retirement, not new screen ownership |
 | 4 | SITE-04 / ROOT-01 / PROJECT-01 | last-consumer lanes after all shared-family proof | no isolated route owner remains |
 
 ## Canonical screen checklist
@@ -2295,3 +2297,7 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 921: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 2/2 each at 1366x900 and 390x844; source/runtime guards cover the full Scala roots/partials, frozen Bootstrap/LESS/import/message/JS evidence, both owners, computed floats, interaction, containment/no-overflow, and no plugin-only attributes.
 - [x] Batch 921: normal/fallback-off desktop/mobile screenshots were directly inspected under `frontend/output/playwright/stylex-project-issues-selected-milestone-floats/{normal,fallback-off}/`; managed live legacy `/admin/sample/issues?milestoneId=5` desktop/mobile sweeps pass 1/1 each and captures were inspected under `output/playwright/visual-sweep/legacy-_admin_sample_issues_milestoneId_5.png` and `legacy-mobile-_admin_sample_issues_milestoneId_5.png`. The live Korean seed does not visibly select milestone 5 and shows an empty issue state with `[수정]`, while the local fixture uses English selected-milestone content, one issue, and empty labels; this is a documented same-fixture state/copy gap. Fallback-off global shell/nav/tab/search drift remains outside these owners without compensation.
 - [x] Batch 921: selected adjacent project-issues guards pass 22/22 after excluding two unchanged baseline failures: the static-owner generated `app.css` `.search-box-wrap {` assertion and the progress-inline residual 15px-versus-30px width assertion. Approved Yoram footer NAVER Labs/provider/developer-contact/upstream-repository differences remain intentional and are not restored.
+- [x] Batch 922: authenticated selected-milestone project issue-list mass-update form preserves the legacy `mass-update-form` method/action, control order/copy, `hide-in-mobile`, React selection/dropdown behavior, and DOM while route-local `massUpdateForm` owns exact `float: left`; only the React-owned `pull-left` utility is removed.
+- [x] Batch 922: focused managed external System-Chrome normal and explicit fallback-off runs pass 2/2 each at 1366x900 and 390x844; source/runtime guards cover the full Scala roots/partials, frozen Bootstrap/LESS/import/message/JS evidence, owner/declaration, computed float, containment/no-overflow, and screenshots.
+- [x] Batch 922: normal/fallback-off desktop/mobile screenshots were directly inspected under `frontend/output/playwright/stylex-project-issues-mass-update-float/{normal,fallback-off}/`; managed live legacy `/admin/sample/issues?milestoneId=5` desktop/mobile sweeps pass 1/1 each and captures were inspected under `output/playwright/visual-sweep/legacy-_admin_sample_issues_milestoneId_5.png` and `legacy-mobile-_admin_sample_issues_milestoneId_5.png`. The current live Korean seed is empty and does not select milestone 5 while the local fixture is English and populated, so same-fixture state/copy parity is a documented gap. Existing global `frontend/src/app.css` `hide-in-mobile`/shell cascade drift remains outside this owner without compensation.
+- [x] Batch 922: approved Yoram footer NAVER Labs/provider/developer-contact/upstream-repository differences remain intentional and are not restored.

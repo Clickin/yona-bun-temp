@@ -246,6 +246,7 @@ async function runPlaywright(forwardedArgs, env) {
 async function main() {
   const runtime = await createRuntime();
   const env = createRuntimeEnv(runtime);
+  const verificationProfile = env.YONA_STYLEX_PROFILE || "unspecified";
   const forwardedArgs = normalizePlaywrightArgs(process.argv.slice(2));
   const serverStates = [
     spawnManagedServer("backend", ["../scripts/run-dev-backend-once.mjs"], env),
@@ -270,6 +271,7 @@ async function main() {
     console.log(`[playwright-e2e] backend: ${runtime.backendSessionUrl}`);
     console.log(`[playwright-e2e] frontend: ${runtime.frontendUrl}`);
     console.log(`[playwright-e2e] frontend session: ${runtime.frontendSessionUrl}`);
+    console.log(`[playwright-e2e] StyleX verification profile: ${verificationProfile}`);
     await waitForReady("backend", runtime.backendSessionUrl, serverStates);
     await waitForReady("frontend", runtime.frontendUrl, serverStates);
     await waitForReady("frontend session", runtime.frontendSessionUrl, serverStates);

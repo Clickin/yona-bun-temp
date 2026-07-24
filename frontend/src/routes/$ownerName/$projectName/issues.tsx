@@ -1184,10 +1184,11 @@ function MassUpdateToolbar({
     >
       <form
         id="mass-update-form"
-        className="mass-update-form pull-left"
+        className={`${stylex.props(styles.massUpdateForm).className} mass-update-form`}
         action={massUpdateAction}
         method="post"
         onSubmit={(event) => event.preventDefault()}
+        data-stylex-owner="project-issues-mass-update-form"
       >
         <div className="btn-group check-all">
           {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
