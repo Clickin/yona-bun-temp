@@ -37,6 +37,7 @@ const passwordInputClassName = stylex.props(loginFormStyles.passwordInput).class
 const buttonRowClassName = stylex.props(loginFormStyles.buttonRow).className;
 const submitClassName = stylex.props(loginFormStyles.submit).className;
 const rememberMeClassName = stylex.props(loginFormStyles.rememberMe).className;
+const linksWrapClassName = stylex.props(loginFormStyles.linksWrap).className;
 const checkboxClassName = stylex.props(loginFormStyles.checkbox).className;
 const actionRowClassName = stylex.props(loginFormStyles.actionRow).className;
 const verificationHelpClassName = stylex.props(loginFormStyles.verificationHelp).className;
@@ -235,7 +236,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   className={`act-row mt5 ${actionRowClassName}`}
                   data-stylex-part="standalone-login-actions"
                 >
-                  <div className={`remember-me-wrap pull-left ${rememberMeClassName}`}>
+                  <div className={`remember-me-wrap ${rememberMeClassName}`}>
                     <input
                       id="remember-me"
                       type="checkbox"
@@ -249,7 +250,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     </label>
                   </div>
 
-                  <div className="links-wrap pull-right">
+                  <div className={`links-wrap ${linksWrapClassName}`}>
                     <Link to="/lostPassword">{t("title.forgotpassword")}</Link>
                   </div>
                 </div>

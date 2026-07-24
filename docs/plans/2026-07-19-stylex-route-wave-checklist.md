@@ -850,6 +850,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   sizes, covering provenance, computed declarations, copy, no-overflow, and
   plugin-attribute absence.
 
+### 2026-07-25 Batch 945 standalone login action-row float ownership
+
+- [x] Normal anonymous login action row preserves `act-row mt5`, remember
+  checkbox/label, forgot-password Link/copy/href, semantic wrappers,
+  line-height/overflow, and responsive containment while removing only
+  React-owned `pull-left`/`pull-right`; existing `rememberMe` owns `float:left`
+  and new `linksWrap` owns `float:right`. Social-login-only and root login
+  dialog remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 3/3 each,
+  covering Scala/LESS/Bootstrap/import/messages provenance, owner/declarations,
+  semantic class retention, utility absence, computed floats, checkbox/copy/link
+  behavior, no-inline/plugin-only attrs, and desktop/mobile geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

@@ -73,7 +73,11 @@ export const loginFormStyles = stylex.create({
     width: "100%",
   },
   rememberMe: {
+    float: "left",
     marginTop: "0px",
+  },
+  linksWrap: {
+    float: "right",
   },
   checkbox: {
     marginLeft: "0px",

@@ -8213,6 +8213,12 @@ Move the exact legacy `float:right` for the authenticated organization issue-lis
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 7/7 each across open-overdue, open-upcoming, and closed states at desktop/mobile sizes. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
 
+## Batch 945
+
+Move exact legacy `float:left`/`float:right` for the standalone anonymous login normal action row into existing route-local StyleX owners. Preserve `act-row mt5`, remember checkbox/label, forgot-password Link/copy/href, semantic wrappers, line-height/overflow, desktop/mobile containment; social-login-only and root login dialog remain outside.
+
+Focused external System-Chrome normal/fallback-off guard passes 3/3 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
 ## Batch 942
 
 Move the exact legacy `float:left` for the pathful code-history `Newer`/`Older` pagination links into the existing route-local `paginationLink` StyleX owner. Preserve the `actrow margin-top-20` wrapper, link copy/order, query destinations, pathless conditional state, and desktop/mobile containment; the history table, branch selector, breadcrumbs, and other float consumers remain outside this wave.
