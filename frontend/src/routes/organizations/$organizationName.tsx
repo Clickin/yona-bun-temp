@@ -691,8 +691,8 @@ function MemberPanel({
 
   return (
     <div
-      {...stylex.props(styles.memberPanel)}
-      className={`${className} ${stylex.props(styles.memberPanel).className ?? ""}`.trim()}
+      {...stylex.props(styles.memberPanel, panelKey === "member" ? styles.memberPanelMember : null)}
+      className={`${className} ${stylex.props(styles.memberPanel, panelKey === "member" ? styles.memberPanelMember : null).className ?? ""}`.trim()}
       data-stylex-owner={`organization-home-members-panel-${panelKey}`}
     >
       <div

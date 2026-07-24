@@ -221,6 +221,7 @@ export const styles = stylex.create({
   members: { backgroundColor: organizationHomeColors.panelSurface },
   // yona-original/app/assets/stylesheets/less/_page.less .project-home/.inner.
   memberPanel: { padding: "10px" },
+  memberPanelMember: { marginTop: "10px" },
   memberPanelInner: {
     backgroundColor: "#ffffff",
     borderRadius: "10px",

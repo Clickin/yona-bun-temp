@@ -7665,3 +7665,20 @@ Fallback-off global image-asset, backdrop, modal overflow, and shell drift are
 documented fallback-owned gaps; no route-specific compensation was added.
 Approved Yoram footer NAVER/provider/developer-contact/upstream-repository
 differences remain intentional.
+## Batch 900
+
+Move the populated organization member panel's exact frozen `.mt10`
+`margin-top:10px` declaration into the existing organization-home member-panel
+StyleX owner. Preserve the legacy manager/member outer panel DOM and classes,
+panel order, titles, member links, leave interaction, responsive geometry, and
+React/TanStack behavior; keep the manager panel without the conditional margin
+and retain the shared fallback. Managed external System-Chrome normal,
+explicit fallback-off, and restored-normal focused runs pass 2/2 each at
+1366x900 and 390x844. Normal and fallback-off desktop/mobile screenshots were
+directly inspected under
+`frontend/output/playwright/stylex-organization-member-panel-mt10/`. Adjacent
+organization member-panel inner/avatar guards pass 6/6. Fallback-off global
+shell paint and the existing default-avatar fixture path remain documented
+fallback/fixture gaps outside this margin owner; no route-specific compensation
+was added. Approved Yoram footer NAVER/provider/developer-contact/upstream-
+repository differences remain intentional.
