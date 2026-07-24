@@ -720,6 +720,21 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   no-inline-style, direct parent scope, attachment content/order/download, and
   desktop/390px geometry.
 
+### 2026-07-25 Batch 935 parent issue-comment attachment utility retirement
+
+- [x] The authenticated parent comment attachment wrapper retains the
+  semantic `attachments` class, payload, AttachedFiles DOM/order, empty and
+  populated behavior, and download link while removing only the React-owned
+  legacy `pull-left` utility; `styles.commentAttachments` continues to own
+  the frozen `float:left` declaration. Issue-level, edit-form, and
+  child-comment consumers remain excluded. The legacy administrator notice /
+  sidebar collapse-button x-axis mismatch is a known legacy parity issue and
+  is explicitly outside this wave.
+- [x] Focused normal and fallback-off external Chrome checks pass 2/2 each,
+  covering legacy source provenance, retained semantic class, absent utility
+  class, computed float, no-inline-style, attachment content/order/download,
+  and desktop/390px geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

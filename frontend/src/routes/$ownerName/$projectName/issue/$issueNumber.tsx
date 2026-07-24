@@ -3774,7 +3774,7 @@ function IssueCommentRow({
           </div>
           <div
             {...stylex.props(styles.commentAttachments)}
-            className={`${stylex.props(styles.commentAttachments).className} attachments pull-left`}
+            className={`${stylex.props(styles.commentAttachments).className} attachments`}
             data-stylex-owner="project-issue-detail-comment-attachments"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
           >

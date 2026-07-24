@@ -8164,3 +8164,9 @@ The focused external System-Chrome normal and explicit fallback-off guard passes
 Move the authenticated project issue-detail desktop/mobile header metadata `float:right` consumers into the existing route-local StyleX owners. Preserve the legacy metadata wrappers, visibility classes, `mr10`/`mt10`, state/date copy, and mobile typography; remove only the two React-owned `.pull-right` utilities. Other issue-detail float consumers remain separate waves.
 
 The narrowed external System-Chrome guard passes 1/1 in normal and explicit fallback-off modes at desktop/mobile coverage, with local screenshots inspected under `frontend/output/playwright/stylex-project-issue-detail-header-metadata-floats/{normal,fallback-off}/`. Live legacy screenshot parity remains unverified; fallback-off global shell drift and approved Yoram footer identity differences remain outside the owners without compensation.
+
+## Batch 935
+
+Retire only the React-owned `pull-left` utility from the authenticated parent issue-comment attachment wrapper. Preserve the semantic `attachments` class, payload, AttachedFiles DOM/order, empty/populated behavior, and download link; the existing route-local StyleX owner continues to supply the frozen `float:left` declaration. Issue-level, edit-form, and child-comment attachment consumers remain separate. The legacy administrator notice / sidebar collapse-button x-axis mismatch is a known legacy parity issue and is not a compensation target.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 2/2 each at desktop and 390px coverage. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.

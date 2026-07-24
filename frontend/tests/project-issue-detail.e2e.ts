@@ -4882,7 +4882,7 @@ test("project issue detail owns the authenticated parent comment attachment floa
   );
   await expect(emptyAttachments).toHaveCount(1);
   await expect(emptyAttachments).toHaveClass(/(?:^|\s)attachments(?:\s|$)/u);
-  await expect(emptyAttachments).toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
+  await expect(emptyAttachments).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
   await expect(emptyAttachments).toHaveCSS("float", "left");
   await expect(emptyAttachments).not.toHaveAttribute("style", /.+/u);
   await expect(emptyAttachments.locator(".attach")).toHaveCount(0);
@@ -4991,7 +4991,7 @@ test("project issue detail preserves parent comment attachment DOM and download 
   );
   await expect(commentAttachmentsOwner).toHaveCount(1);
   await expect(commentAttachmentsOwner).toHaveClass(/(?:^|\s)attachments(?:\s|$)/u);
-  await expect(commentAttachmentsOwner).toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
+  await expect(commentAttachmentsOwner).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
   await expect(commentAttachmentsOwner).toHaveAttribute(
     "data-attachments",
     JSON.stringify(commentAttachments),
