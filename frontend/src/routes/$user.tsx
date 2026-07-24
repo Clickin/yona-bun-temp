@@ -502,15 +502,28 @@ function PublicProfileBody({
 
                 <div className="tab-content" data-stylex-owner="user-profile-tab-content">
                   <div id="issues" className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}>
-                    <ul className="nav nav-tabs nm">
+                    <ul
+                      className={`${stylex.props(styles.issueTabs).className} nav nav-tabs nm`}
+                      data-stylex-owner="user-profile-issue-tabs"
+                    >
                       <li className={activeIssueTab === "openIssues" ? "active" : ""}>
-                        <button type="button" onClick={() => setActiveIssueTab("openIssues")}>
+                        <button
+                          className={stylex.props(styles.issueTabButton).className}
+                          data-stylex-owner="user-profile-issue-tab-button-open"
+                          type="button"
+                          onClick={() => setActiveIssueTab("openIssues")}
+                        >
                           {t("issue.state.open")}
                           <span className="num-badge">{openIssues.length}</span>
                         </button>
                       </li>
                       <li className={activeIssueTab === "closedIssues" ? "active" : ""}>
-                        <button type="button" onClick={() => setActiveIssueTab("closedIssues")}>
+                        <button
+                          className={stylex.props(styles.issueTabButton).className}
+                          data-stylex-owner="user-profile-issue-tab-button-closed"
+                          type="button"
+                          onClick={() => setActiveIssueTab("closedIssues")}
+                        >
                           {t("issue.state.closed")}
                           <span className="num-badge">{closedIssues.length}</span>
                         </button>

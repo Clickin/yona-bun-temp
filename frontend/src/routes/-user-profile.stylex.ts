@@ -70,6 +70,24 @@ export const styles = stylex.create({
       paddingRight: "5px",
     },
   },
+  // Frozen less/_common.less .nm reset on the nested issue-tab wrapper.
+  issueTabs: { margin: "0 !important" },
+  // Frozen less/_yobiUI.less .nav-tabs li a and _responsive.less mobile override.
+  issueTabButton: {
+    marginRight: "2px",
+    paddingLeft: "30px",
+    paddingRight: "30px",
+    color: "#3592b5",
+    fontWeight: "bold",
+    ":hover": {
+      textDecoration: "none",
+      backgroundColor: "#F2F2F2",
+    },
+    "@media (max-width: 720px)": {
+      paddingLeft: "5px",
+      paddingRight: "5px",
+    },
+  },
   // Legacy user/view.scala.html daysAgoBtn inline declaration.
   daysAgoInput: {
     margin: "0px 5px",

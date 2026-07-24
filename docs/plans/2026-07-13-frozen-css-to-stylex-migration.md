@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile nested issue tabs
+
+Batch 956 moves the authenticated public profile's nested open/closed issue
+tabs to route-local StyleX. The wrapper owns the frozen `.nm` `margin:0
+!important` reset; buttons own Bootstrap `margin-right:2px`, frozen 30px
+desktop/5px mobile padding, `#3592b5`, bold weight, and hover
+`#F2F2F2`/no-decoration. Counts, active interaction, and ShowSubtasks remain
+unchanged. Top-level tabs, sidebar tabs, and admin alignment are excluded.
+Focused external Chrome checks pass 1/1 in normal and fallback-off modes. Live
+legacy screenshot parity remains unverified; no geometry compensation was
+added.
+
 ## 2026-07-25 — Public profile top-level tabs
 
 Batch 955 moves the authenticated public profile's top-level tab-button

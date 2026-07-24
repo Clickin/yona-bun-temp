@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 956 public profile nested issue tabs
+
+- [x] `user/view.scala.html:112-167`, `_common.less:32`, `_yobiUI.less:470-487`, `_responsive.less:445-448`, Bootstrap nav-tabs including `margin-right:2px`, and the complete `yobi.less` import chain are recorded as nested issue-tab evidence.
+- [x] The nested issue-tab wrapper owns `.nm` `margin:0 !important`; buttons own exact Bootstrap/legacy spacing and nav-tab paint with desktop/mobile responsive values. DOM/order/counts/active interaction/ShowSubtasks remain unchanged; top-level/sidebar tabs and admin alignment are excluded.
+- [x] `frontend/tests/stylex-user-profile-issue-tabs.e2e.ts` verifies owners, computed desktop/mobile declarations, open/closed interaction, counts/checkbox, no inline/plugin attributes, and no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 955 public profile top-level tabs
 
 - [x] `user/view.scala.html:87-112`, frozen `_yobiUI.less:470-487`, `_responsive.less:445-448`, `_variables.less`, Bootstrap nav-tabs rules, and the complete `yobi.less` import chain are recorded as tab output/cascade evidence.
