@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 955 public profile top-level tabs
+
+- [x] `user/view.scala.html:87-112`, frozen `_yobiUI.less:470-487`, `_responsive.less:445-448`, `_variables.less`, Bootstrap nav-tabs rules, and the complete `yobi.less` import chain are recorded as tab output/cascade evidence.
+- [x] Top-level tab buttons own exact 30px desktop/5px mobile horizontal padding, `#3592b5`, bold weight, and hover `#F2F2F2`/no-decoration; DOM/order/copy/active behavior and the two-column checkbox remain unchanged. Nested issue tabs/sidebar/admin alignment are excluded.
+- [x] `frontend/tests/stylex-user-profile-top-tabs.e2e.ts` verifies owners, computed desktop/mobile declarations, active interaction, checkbox, no inline/plugin attributes, and no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 954 public profile guest badge
 
 - [x] `user/view.scala.html:45-53`, frozen `_page.less:4970-5048`, and the complete LESS/Bootstrap import chain are recorded as guest-badge output and cascade evidence.

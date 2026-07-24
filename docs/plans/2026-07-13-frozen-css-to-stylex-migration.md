@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile top-level tabs
+
+Batch 955 moves the authenticated public profile's top-level tab-button
+presentation to route-local StyleX: frozen 30px desktop horizontal padding,
+`#3592b5` color, bold weight, hover `#F2F2F2`/no-decoration, and the frozen
+responsive 5px horizontal padding. Tab order, copy, active interaction, and
+the two-column checkbox remain unchanged; nested issue tabs and sidebar/admin
+alignment are excluded. Focused external Chrome checks pass 1/1 in normal and
+fallback-off modes. Live legacy screenshot parity remains unverified and no
+geometry compensation was added.
+
 ## 2026-07-25 — Public profile guest badge
 
 Batch 954 moves the guest-only `guest-user` and `left-mark` declarations from

@@ -55,6 +55,21 @@ export const styles = stylex.create({
   // Legacy less/_page.less .user-stream-box.
   stream: { minWidth: 0, overflow: "hidden", paddingLeft: "20px" },
   tabs: { color: userProfileColors.accentText },
+  // Frozen less/_yobiUI.less .nav-tabs li a and _responsive.less mobile override.
+  profileTabButton: {
+    paddingLeft: "30px",
+    paddingRight: "30px",
+    color: "#3592b5",
+    fontWeight: "bold",
+    ":hover": {
+      textDecoration: "none",
+      backgroundColor: "#F2F2F2",
+    },
+    "@media (max-width: 720px)": {
+      paddingLeft: "5px",
+      paddingRight: "5px",
+    },
+  },
   // Legacy user/view.scala.html daysAgoBtn inline declaration.
   daysAgoInput: {
     margin: "0px 5px",

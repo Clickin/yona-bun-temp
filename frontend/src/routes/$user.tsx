@@ -662,7 +662,12 @@ function ProfileTab({
 }) {
   return (
     <li className={active ? "active" : ""}>
-      <button type="button" onClick={onSelect}>
+      <button
+        className={stylex.props(styles.profileTabButton).className}
+        data-stylex-owner="user-profile-tab-button"
+        type="button"
+        onClick={onSelect}
+      >
         {label} {badge > 0 ? <span className="num-badge">{badge}</span> : null}
       </button>
     </li>
