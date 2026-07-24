@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 951 public profile projects-tab all-projects shell
+
+- [x] `user/view.scala.html:166-175` and `user/partial_projectlist.scala.html:11-42` are the output DOM source; frozen `_page.less:1837-1845`, `_common.less`, `_responsive.less`, Bootstrap/responsive CSS, and the full `yobi.less` import chain are recorded in the focused test.
+- [x] Only the `all-projects` list shell owns exact `margin:0 0 20px`, `list-style:none`, and `clear:both`; project rows, avatar rail/stats owners, classes, links, copy/order, and tab behavior remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-projects-list.e2e.ts` verifies source ownership, no inline/plugin-only attributes, list semantics/order, project-tab interaction, computed desktop/mobile declarations, containment, and no overflow.
+- [x] Managed outside-sandbox system-Chrome focused checks pass 1/1 normal and 1/1 fallback-off; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 950 public profile projects-tab avatar rail
 
 - [x] `user/view.scala.html:166-175` and `user/partial_projectlist.scala.html:11-18` are the output DOM source; Bootstrap `.pull-left`, `_page.less:1841-1895`, `_common.less`, `_responsive.less`, and the full `yobi.less` import chain are recorded in the focused test.

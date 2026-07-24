@@ -31,6 +31,12 @@ export const styles = stylex.create({
   },
   // Frozen Bootstrap .pull-right from user/view.scala.html daysAgo controls.
   daysAgoControls: { float: "right" },
+  // Frozen less/_page.less .all-projects list shell.
+  projectsList: {
+    margin: "0px 0px 20px",
+    listStyle: "none",
+    clear: "both",
+  },
   // Legacy user/partial_projectlist.scala.html project info wrapper spacing.
   projectAvatarRail: { float: "left" },
   projectInfo: {

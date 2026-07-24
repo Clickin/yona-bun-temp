@@ -588,7 +588,10 @@ function PublicProfileBody({
                         </p>
                       </div>
                     ) : null}
-                    <ul className="user-streams all-projects">
+                    <ul
+                      className={`${stylex.props(styles.projectsList).className} user-streams all-projects`}
+                      data-stylex-owner="user-profile-projects-list"
+                    >
                       {profileResponse.memberProjects.map((project) => (
                         <ProfileProjectRow
                           key={`${project.ownerName}/${project.projectName}`}

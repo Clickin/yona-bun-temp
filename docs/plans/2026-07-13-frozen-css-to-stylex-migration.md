@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile projects-tab all-projects shell
+
+Batch 951 moves the authenticated projects-tab `all-projects` list shell's
+`margin: 0 0 20px`, `list-style: none`, and `clear: both` declarations into
+the colocated user-profile StyleX module. Project rows, avatar/stats owners,
+links, order, copy, tab behavior, and responsive behavior remain unchanged.
+Focused external system-Chrome checks pass 1/1 in normal and 1/1 with
+`VITE_DISABLE_LEGACY_FALLBACK=1`; live legacy screenshot parity remains
+explicitly unverified because the legacy rendering instance is unavailable.
+
+
 ## 2026-07-25 — Public profile projects-tab avatar rail
 
 Batch 950 moves only the authenticated public profile project's avatar wrapper
