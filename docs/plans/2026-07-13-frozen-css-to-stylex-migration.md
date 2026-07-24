@@ -6798,6 +6798,26 @@ these margin owners; no route-specific compensation was added. Approved Yoram
 footer NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
 
+## Batch 904
+
+Move the issue-detail unauthorized comment action row's exact frozen `.mt10`
+`margin-top:10px` declaration into the existing `disabledCommentActions`
+StyleX owner while retaining the existing `textAlign: "right"` declaration.
+The route TSX keeps the same rendered action-row DOM/classes while extracting
+the route-owned StyleX class composition.
+Preserve the legacy `write-comment-box mt20` wrapper, disabled textarea, action
+row DOM/order/copy, retained `mt10` class, React permission state, and the
+existing wrapper/cursor owners. Managed external System-Chrome normal, explicit
+fallback-off, and restored-normal focused runs pass 1/1 each at 1366x900 and
+390x844; normal and fallback-off desktop/mobile screenshots were directly
+inspected under
+`frontend/output/playwright/stylex-project-issue-detail-disabled-comment-actions-mt10/`.
+The adjacent unauthorized-comment guard passes 1/1 in normal and fallback-off
+runs. Fallback-off global issue shell and disabled-button paint drift remain
+outside this owner; no route-specific compensation was added. Approved Yoram
+footer NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
+
 ## Batch 903
 
 Move the project import screen's remaining exact frozen `.mt10`

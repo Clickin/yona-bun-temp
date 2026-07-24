@@ -337,7 +337,7 @@ export const styles = stylex.create({
   childCommentReplyVisible: {
     display: "block",
   },
-  disabledCommentActions: { textAlign: "right" },
+  disabledCommentActions: { textAlign: "right", marginTop: "10px" },
   unauthorizedComment: { marginTop: "20px" },
   commentFormActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },

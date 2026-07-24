@@ -53,6 +53,7 @@ const issueInlineOwners = stylex.create({
   disabledComment: { cursor: "text" },
 });
 
+const disabledCommentActionsClassName = stylex.props(styles.disabledCommentActions).className;
 const disabledVoteStyleProps = stylex.props(styles.disabledVote);
 const issueVoteIconStyleProps = stylex.props(styles.issueVoteIcon);
 
@@ -2996,7 +2997,7 @@ function IssueCommentForm({
             ></textarea>
           </div>
           <div
-            className={`${stylex.props(styles.disabledCommentActions).className} mt10`}
+            className={`${disabledCommentActionsClassName} mt10`}
             data-stylex-owner="project-issue-detail-disabled-comment-actions"
           >
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
