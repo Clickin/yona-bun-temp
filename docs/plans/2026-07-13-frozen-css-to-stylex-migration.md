@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile static sidebar status/since spacing
+
+Batch 952 moves only the authenticated profile sidebar's repeated
+`user-status` and `user-since` wrapper spacing into route-local StyleX:
+`margin-top:20px` for status, and `margin-top:10px; padding:0 10px` for
+since/provider sections. Badges, provider rendering, copy, inner `.since`
+typography, and DOM order remain unchanged. Focused external Chrome checks
+pass 1/1 normal and 1/1 fallback-off; live legacy screenshot parity remains
+explicitly unverified and no compensating geometry was added.
+
+
 ## 2026-07-25 — Public profile projects-tab all-projects shell
 
 Batch 951 moves the authenticated projects-tab `all-projects` list shell's

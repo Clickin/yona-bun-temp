@@ -21,6 +21,10 @@ export const styles = stylex.create({
     float: "left",
     width: "200px",
   },
+  // Frozen less/_page.less .user-info-box .user-status.
+  userStatus: { marginTop: "20px" },
+  // Frozen less/_page.less .user-info-box .user-since.
+  userSince: { marginTop: "10px", padding: "0px 10px" },
   // Legacy less/_page.less .user-stream-box.
   stream: { minWidth: 0, overflow: "hidden", paddingLeft: "20px" },
   tabs: { color: userProfileColors.accentText },

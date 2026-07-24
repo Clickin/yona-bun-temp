@@ -383,19 +383,35 @@ function PublicProfileBody({
                 ) : null}
               </div>
 
-              <div className="user-status">
+              <div
+                {...stylex.props(styles.userStatus)}
+                className={`${stylex.props(styles.userStatus).className} user-status`}
+                data-stylex-owner="user-profile-user-status"
+              >
                 {profile.isSiteAdmin ? (
                   <span className="badge label-success">SITE ADMIN</span>
                 ) : null}
               </div>
-              <div className="user-status">
+              <div
+                {...stylex.props(styles.userStatus)}
+                className={`${stylex.props(styles.userStatus).className} user-status`}
+                data-stylex-owner="user-profile-user-status"
+              >
                 {profile.isBlocked ? <span className="badge label-important">BLOCKED</span> : null}
               </div>
-              <div className="user-since">
+              <div
+                {...stylex.props(styles.userSince)}
+                className={`${stylex.props(styles.userSince).className} user-since`}
+                data-stylex-owner="user-profile-user-since"
+              >
                 <strong>{t("userinfo.since")}</strong>
                 <span className="since">{profile.sinceLabel}</span>
               </div>
-              <div className="user-since">
+              <div
+                {...stylex.props(styles.userSince)}
+                className={`${stylex.props(styles.userSince).className} user-since`}
+                data-stylex-owner="user-profile-user-since"
+              >
                 <div>
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>

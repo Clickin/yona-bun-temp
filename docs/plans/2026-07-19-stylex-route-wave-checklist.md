@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 952 public profile static sidebar status/since spacing
+
+- [x] `user/view.scala.html:67-80` and frozen `_page.less:4970-5068` are recorded as output/cascade evidence, including exact status/since spacing and the full import chain.
+- [x] Both `user-status` wrappers own only `margin-top:20px`; both `user-since` wrappers own only `margin-top:10px` and `padding:0 10px`. Badge/provider/inner typography, DOM order, and conditional output remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-sidebar-state.e2e.ts` verifies all repeated owners, computed declarations, conditional badges/provider/copy, no inline/plugin attrs, and desktop/390px containment/no-overflow.
+- [x] Managed outside-sandbox system-Chrome focused checks pass 1/1 normal and 1/1 fallback-off; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 951 public profile projects-tab all-projects shell
 
 - [x] `user/view.scala.html:166-175` and `user/partial_projectlist.scala.html:11-42` are the output DOM source; frozen `_page.less:1837-1845`, `_common.less`, `_responsive.less`, Bootstrap/responsive CSS, and the full `yobi.less` import chain are recorded in the focused test.
