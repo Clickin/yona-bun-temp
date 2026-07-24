@@ -7525,6 +7525,25 @@ and full live legacy/Yoram shell screenshot parity remains a screen-wide gap;
 no route-specific compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+
+## Batch 896
+
+Move the issue-detail, board-post-detail comment, and commit-detail review
+markdown-editor wrappers' exact frozen `.mt10` `margin-top:10px` declaration
+into their existing route-local StyleX boundaries. Preserve the legacy
+`common.editor` wrapper/class/DOM, comment create/update and review editor
+instances, IDs/names, tab/copy order, upload/action structure, responsive
+geometry, and React state/events. Managed external System-Chrome integrated
+normal, explicit fallback-off, and restored-normal focused runs pass 4/4
+each at 1366x900 and 390x844. Normal/fallback-off desktop/mobile screenshots
+were directly inspected for all three editors. Adjacent guards pass 64/117;
+the 53 unchanged failures are existing metadata/select2, legacy fixture,
+stale source/selector, route-shell-load, and residual-guard assumptions.
+Fallback-off global shell/Bootstrap/asset drift and full
+live legacy/Yoram shell screenshot parity remain screen-wide or fallback-owned
+gaps outside these margin owners; no route-specific compensation was added.
+Approved Yoram footer NAVER/provider/developer-contact/upstream-repository
+differences remain intentional.
 ## Batch 886
 
 Move the project code branch index breadcrumb wrapper's exact frozen `.ml10`

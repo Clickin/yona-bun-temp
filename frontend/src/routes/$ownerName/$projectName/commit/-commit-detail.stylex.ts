@@ -19,6 +19,7 @@ export const styles = stylex.create({
   commentUpdateFormVisible: { display: "block" },
   browseTabs: { marginBottom: "20px" },
   reviewTabs: { marginBottom: "10px" },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
   reviewTextarea: { height: "100px" },
   reviewFormHidden: { display: "none" },

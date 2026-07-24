@@ -4240,7 +4240,12 @@ function MarkdownEditor({
   };
 
   return (
-    <div className="mt10 markdown-editor">
+    <div
+      {...stylex.props(styles.markdownEditorWrapper)}
+      className={`mt10 markdown-editor ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
+      data-stylex-owner="project-issue-detail-markdown-editor-wrapper"
+      data-stylex-owner-instance={wrapId}
+    >
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={(event) => switchTab(event, "edit")}>

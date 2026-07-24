@@ -53,6 +53,7 @@ const sx = {
   diffPartialTable: stylex.props(styles.diffPartialTable),
   browseTabs: stylex.props(styles.browseTabs),
   reviewTabs: stylex.props(styles.reviewTabs),
+  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
   editorTabContent: stylex.props(styles.editorTabContent),
   reviewTextarea: stylex.props(styles.reviewTextarea),
   reviewFormShell: stylex.props(styles.reviewFormShell),
@@ -1995,7 +1996,12 @@ function Editor({
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
-    <div className="mt10">
+    <div
+      {...sx.markdownEditorWrapper}
+      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
+      data-stylex-owner="commit-detail-markdown-editor-wrapper"
+      data-stylex-owner-instance={wrapId}
+    >
       <ul className="nav nav-tabs nm small" data-stylex-owner="commit-detail-editor-tabs">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>

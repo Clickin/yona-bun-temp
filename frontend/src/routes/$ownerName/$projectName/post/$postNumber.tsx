@@ -152,6 +152,7 @@ const sx = {
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
   watchWrapper: stylex.props(styles.watchWrapper),
+  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
   editorTabContent: stylex.props(styles.editorTabContent),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
   tasklist: stylex.props(styles.tasklist),
@@ -2785,9 +2786,19 @@ function MarkdownEditor({
     isCommentUpdateEditor || isCommentCreateEditor
       ? stylex.props(styles.commentCreateNotificationReceiverTitle)
       : undefined;
+  const editorWrapperOwner = isCommentUpdateEditor
+    ? "post-detail-comment-update-editor-wrapper"
+    : isCommentCreateEditor
+      ? "post-detail-comment-create-editor-wrapper"
+      : undefined;
 
   return (
-    <div className="mt10">
+    <div
+      {...sx.markdownEditorWrapper}
+      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
+      data-stylex-owner={editorWrapperOwner}
+      data-stylex-owner-instance={wrapId}
+    >
       <ul
         {...editorNavStyle}
         className={`${editorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim()}

@@ -829,6 +829,7 @@ export const styles = stylex.create({
     ":hover": { backgroundColor: "#e0dad4" },
     ":focus": { backgroundColor: "#e0dad4" },
   },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
   editorPane: { display: "none" },
   editorPaneActive: { display: "block" },

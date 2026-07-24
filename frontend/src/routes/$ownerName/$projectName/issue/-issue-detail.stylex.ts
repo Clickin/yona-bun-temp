@@ -451,6 +451,7 @@ export const styles = stylex.create({
   childCommentNotificationReceiverTitle: {
     color: "#999",
   },
+  markdownEditorWrapper: { marginTop: "10px" },
   markdownEditorNotificationReceiverTitle: {
     color: "#999",
   },
