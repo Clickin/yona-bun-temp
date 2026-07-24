@@ -2407,6 +2407,10 @@ test("project issue detail owns the child reply float across desktop and mobile"
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
+  const legacyBootstrap = readFileSync(
+    new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
+    "utf8",
+  );
   const legacyYobi = readFileSync(
     new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
     "utf8",
@@ -2423,6 +2427,7 @@ test("project issue detail owns the child reply float across desktop and mobile"
   expect(legacyChildComments).toContain(
     '<div class="add-a-comment pull-right">@Messages("comment.oneline.comment.placeholder")</div>',
   );
+  expect(legacyBootstrap).toContain(".pull-right {\n  float: right;\n}");
   expect(legacyYobi).toContain('@import "less/_page.less";');
   expect(legacyPage).toContain(".comment {");
   expect(legacyPage).toContain("            .add-a-comment {");
@@ -2446,6 +2451,7 @@ test("project issue detail owns the child reply float across desktop and mobile"
   }
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-child-comment-reply"');
   expect(routeSource).toContain("styles.childCommentReply");
+  expect(routeSource).not.toContain("add-a-comment pull-right");
   expect(styleSource).toMatch(
     /childCommentReply:\s*\{[\s\S]*fontSize:\s*["']12px["'][\s\S]*backgroundColor:\s*["']#fff["'][\s\S]*position:\s*["']relative["'][\s\S]*right:\s*["']10px["'][\s\S]*color:\s*["']#00b0e8["'][\s\S]*border:\s*["']1px solid #00b0e8["'][\s\S]*marginTop:\s*["']-32px["'][\s\S]*padding:\s*["']0 5px["'][\s\S]*borderRadius:\s*["']3px["'][\s\S]*float:\s*["']right["'][\s\S]*zIndex:\s*2[\s\S]*["']?:hover["']?:[\s\S]*boxShadow:\s*["']1px 1px 2px #e0e0e0["'][\s\S]*cursor:\s*["']pointer["'][\s\S]*display:\s*["']block["']/u,
   );
@@ -2462,7 +2468,7 @@ test("project issue detail owns the child reply float across desktop and mobile"
   await expect(reply).toHaveCount(1);
   await expect(reply).toHaveText("Reply");
   await expect(reply).toHaveClass(/add-a-comment/);
-  await expect(reply).toHaveClass(/pull-right/);
+  await expect(reply).not.toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
   await expect(reply).toHaveAttribute(
     "data-stylex-owner",
     "project-issue-detail-child-comment-reply",

@@ -3916,7 +3916,7 @@ function ChildComments({
             requestAnimationFrame(() => textareaRef.current?.focus());
           }
         }}
-        className={`${stylex.props(styles.childCommentReply).className} ${stylex.props(replyVisible ? styles.childCommentReplyVisible : styles.childCommentReplyHidden).className} add-a-comment pull-right`}
+        className={`${stylex.props(styles.childCommentReply).className} ${stylex.props(replyVisible ? styles.childCommentReplyVisible : styles.childCommentReplyHidden).className} add-a-comment`}
       >
         Reply
       </div>

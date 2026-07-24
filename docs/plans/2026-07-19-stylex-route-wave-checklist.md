@@ -759,6 +759,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   retention, utility-class absence, computed float, no-inline-style, control
   order, and desktop/390px containment.
 
+### 2026-07-25 Batch 938 child issue-comment reply utility retirement
+
+- [x] The child reply control preserves its semantic `add-a-comment` class,
+  Reply copy, hidden/visible state, click/focus behavior, child form, and
+  DOM/order while removing only the React-owned `pull-right` utility;
+  `styles.childCommentReply` continues to own frozen `float:right`.
+  Parent actions, attachments, board actions, and sidebar/admin alignment
+  remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering legacy source/import provenance, owner/declaration, semantic class
+  retention, utility-class absence, computed float, no-inline-style, direct
+  child scope, interaction, and desktop/390px geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
