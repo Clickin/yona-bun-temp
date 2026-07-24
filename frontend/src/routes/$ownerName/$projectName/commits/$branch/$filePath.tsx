@@ -16,6 +16,7 @@ const sx = {
   breadcrumbs: stylex.props(styles.breadcrumbs),
   history: stylex.props(styles.history),
   historyTable: stylex.props(styles.historyTable),
+  paginationLink: stylex.props(styles.paginationLink),
   commentCount: stylex.props(styles.commentCount),
 } as const;
 
@@ -295,7 +296,9 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: Math.max(0, history.page - 1) }}
-                className="ybtn pull-left"
+                {...sx.paginationLink}
+                className={`ybtn ${sx.paginationLink.className ?? ""}`.trim()}
+                data-stylex-owner="commit-file-history-pagination-newer"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
               >
@@ -306,7 +309,9 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: history.page + 1 }}
-                className="ybtn pull-left"
+                {...sx.paginationLink}
+                className={`ybtn ${sx.paginationLink.className ?? ""}`.trim()}
+                data-stylex-owner="commit-file-history-pagination-older"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
               >

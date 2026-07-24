@@ -813,6 +813,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   absence, computed float, existing declarations, no-inline-style, and
   desktop/mobile geometry.
 
+### 2026-07-25 Batch 942 pathful code-history pagination float ownership
+
+- [x] The pathful code-history `Newer`/`Older` links preserve `actrow
+  margin-top-20`, copy/order, query destinations, and responsive containment
+  while removing only the React-owned `pull-left`; the existing
+  `paginationLink` StyleX owner now owns frozen `float:left`. The pathless
+  conditional state, history table, branch selector, breadcrumbs, and other
+  float consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 2/2 each,
+  covering Scala/LESS/Bootstrap/messages provenance, owner/declaration,
+  utility-class absence, computed float, link interaction, no-inline-style,
+  pathless state, and desktop/mobile containment.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

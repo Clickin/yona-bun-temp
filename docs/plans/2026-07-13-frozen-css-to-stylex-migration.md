@@ -8206,3 +8206,9 @@ The focused `stylex-user-profile-project-row.e2e.ts` external System-Chrome guar
 Move the exact legacy `float:right` for the SVN commit-detail `commitId pull-right` metadata consumer into the existing route-local `commitId` StyleX owner. Preserve commit id copy/DOM, color, margin, font, author/date siblings, and desktop/mobile containment; Git metadata, branch dropdown, footer, comments/reviews, and other utility consumers remain outside this wave.
 
 The focused external System-Chrome normal and explicit fallback-off guard passes 1/1 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.
+
+## Batch 942
+
+Move the exact legacy `float:left` for the pathful code-history `Newer`/`Older` pagination links into the existing route-local `paginationLink` StyleX owner. Preserve the `actrow margin-top-20` wrapper, link copy/order, query destinations, pathless conditional state, and desktop/mobile containment; the history table, branch selector, breadcrumbs, and other float consumers remain outside this wave.
+
+The focused external System-Chrome normal and explicit fallback-off guard passes 2/2 each. Live legacy screenshot parity remains unverified; no frozen source or geometry compensation was added.

@@ -60,18 +60,33 @@ test("path history table owns legacy mt10 on the table and keeps interactions", 
   expect(legacyPageSource).toContain(".commit-wrap {");
   expect(legacyResponsiveSource).toContain("@media all and (max-width: 720px)");
   expect(legacyResponsiveSource).toContain(".page-wrap-outer");
+  expect(legacyCommonSource).toContain(".margin-top-20   { margin-top:20px;   }");
+  expect(legacyPageSource).toContain(".actrow {");
+  expect(legacyPageSource).toContain("margin-top:20px;");
   expect(bootstrapSource).toContain("table {");
+  expect(bootstrapSource).toContain(".pull-left {");
+  expect(bootstrapSource).toContain("float: left;");
   expect(bootstrapSource).toContain("max-width: 100%;");
   expect(bootstrapSource).toContain("border-collapse: collapse;");
   expect(bootstrapResponsiveSource).toContain("@media");
   expect(bootstrapResponsiveSource).toContain(".row-fluid");
   expect(messagesSource).toContain("code.commitMsg = Commit message");
+  expect(messagesSource).toContain("code.newer = Newer");
+  expect(messagesSource).toContain("code.older = Older");
   expect(messagesSource).toContain("code.copyCommitId.copied = Commit ID is copied");
+  expect(legacyHistorySource).toContain('<div class="actrow margin-top-20">');
+  expect(legacyHistorySource).toContain('class="ybtn pull-left"');
+  expect(legacyHistorySource).toContain('@Messages("code.newer")');
+  expect(legacyHistorySource).toContain('@Messages("code.older")');
 
   expect(legacyYobiSource).toContain('@import "less/_common.less";');
   expect(legacyYobiSource).toContain('@import "less/_page.less";');
   expect(legacyYobiSource).toContain('@import "less/_responsive.less";');
   expect(styleSource).toContain('historyTable: { marginTop: "10px" }');
+  expect(styleSource).toContain('paginationLink: { float: "left" }');
+  expect(routeSource).toContain("paginationLink: stylex.props(styles.paginationLink)");
+  expect(routeSource).toContain('data-stylex-owner="commit-file-history-pagination-newer"');
+  expect(routeSource).toContain('data-stylex-owner="commit-file-history-pagination-older"');
   expect(routeSource).toContain('data-stylex-owner="commit-file-history-table"');
   expect(routeSource).toContain("sx.historyTable.className");
   expect(routeSource).toContain("className={`code-table commits mt10 ");
@@ -100,6 +115,30 @@ test("path history table owns legacy mt10 on the table and keeps interactions", 
   await expect(
     table.locator("[data-toggle], [data-placement], [data-url], [data-action]"),
   ).toHaveCount(0);
+
+  const newer = page.getByRole("link", { name: "Newer" });
+  const older = page.getByRole("link", { name: "Older" });
+  await expect(newer).toHaveCount(1);
+  await expect(older).toHaveCount(1);
+  await expect(newer).toHaveClass(/\bybtn\b/u);
+  await expect(older).toHaveClass(/\bybtn\b/u);
+  await expect(newer).not.toHaveClass(/\bpull-left\b/u);
+  await expect(older).not.toHaveClass(/\bpull-left\b/u);
+  await expect(newer).toHaveCSS("float", "left");
+  await expect(older).toHaveCSS("float", "left");
+  await expect(page.locator(".actrow a")).toHaveText(["Newer", "Older"]);
+  await expect(newer).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/demo/commits/main/src/app.ts?page=1`,
+  );
+  await expect(older).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/demo/commits/main/src/app.ts?page=3`,
+  );
+  await expect(newer).not.toHaveAttribute("style", /.+/u);
+  await expect(older).not.toHaveAttribute("style", /.+/u);
+  await expect(newer).not.toHaveAttribute("data-toggle");
+  await expect(older).not.toHaveAttribute("data-toggle");
 
   await assertContained(page, table);
   mkdirSync(screenshotDirectory, { recursive: true });
@@ -190,6 +229,7 @@ test("pathless history keeps the conditional table class and empty state", async
   await expect(table.locator(".browse")).toHaveCount(0);
   await expect(table.locator("tbody tr")).toHaveCount(1);
   await expect(table.locator(".warning-none")).toHaveText("No commit exists");
+  await expect(page.locator(".actrow a")).toHaveCount(0);
   await assertContained(page, table);
 });
 

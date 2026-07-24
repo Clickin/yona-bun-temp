@@ -22,6 +22,8 @@ export const styles = stylex.create({
   },
   history: { overflowX: "auto" },
   historyTable: { marginTop: "10px" },
+  // history.scala.html pagination links / bootstrap.css .pull-left own float:left.
+  paginationLink: { float: "left" },
   // history.scala.html:152 / _page.less:4824 owns the compact comment marker.
   commentCount: {
     float: "right",
