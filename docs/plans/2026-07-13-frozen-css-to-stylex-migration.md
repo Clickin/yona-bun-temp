@@ -4,6 +4,15 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile projects first row
+
+Batch 957 moves the frozen `.all-projects.user-streams .project:first-of-type`
+`padding-top:5px` rule to a conditional route-local StyleX owner. The
+Projects tab, row/link DOM, order, copy, and behavior remain unchanged; later
+rows retain the base `padding-top:15px`. Focused external Chrome checks pass
+1/1 in normal and fallback-off modes. Live legacy screenshot parity remains
+unverified and no geometry compensation was added.
+
 ## 2026-07-25 — Public profile nested issue tabs
 
 Batch 956 moves the authenticated public profile's nested open/closed issue

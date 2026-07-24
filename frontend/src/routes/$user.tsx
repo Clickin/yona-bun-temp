@@ -641,11 +641,12 @@ function PublicProfileBody({
                       className={`${stylex.props(styles.projectsList).className} user-streams all-projects`}
                       data-stylex-owner="user-profile-projects-list"
                     >
-                      {profileResponse.memberProjects.map((project) => (
+                      {profileResponse.memberProjects.map((project, index) => (
                         <ProfileProjectRow
                           key={`${project.ownerName}/${project.projectName}`}
                           project={project}
                           subject={profile}
+                          isFirst={index === 0}
                         />
                       ))}
                     </ul>
@@ -1211,9 +1212,11 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
 function ProfileProjectRow({
   project,
   subject,
+  isFirst,
 }: {
   project: WorkspaceMemberProjectItem;
   subject: WorkspaceProfile;
+  isFirst: boolean;
 }) {
   const { t } = useLegacyMessages();
   const projectPath = `/${project.ownerName}/${project.projectName}`;
@@ -1222,7 +1225,7 @@ function ProfileProjectRow({
 
   return (
     <li
-      className={`${stylex.props(styles.projectRow).className} project`}
+      className={`${stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className} project`}
       data-stylex-owner="user-profile-project-row"
     >
       <div className="info-wrap">

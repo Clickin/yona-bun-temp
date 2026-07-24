@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 957 public profile projects first row
+
+- [x] `user/view.scala.html:168-180`, `user/partial_projectlist.scala.html:11-42`, `_page.less:1837-1845,1932-1938`, and the full LESS/Bootstrap import chain are recorded as project-list and first-row evidence.
+- [x] Only the first `user-streams all-projects` row owns frozen `padding-top:5px`; later rows retain the base 15px padding. Project DOM/classes/links/copy/order and Projects tab behavior remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-project-first-row.e2e.ts` verifies first/second computed padding, source ownership, order/links, desktop/mobile containment, no overflow, and no inline/plugin attributes.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 956 public profile nested issue tabs
 
 - [x] `user/view.scala.html:112-167`, `_common.less:32`, `_yobiUI.less:470-487`, `_responsive.less:445-448`, Bootstrap nav-tabs including `margin-right:2px`, and the complete `yobi.less` import chain are recorded as nested issue-tab evidence.

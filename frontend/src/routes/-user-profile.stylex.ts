@@ -112,6 +112,8 @@ export const styles = stylex.create({
     overflow: "hidden",
     padding: "15px 0px 10px",
   },
+  // Frozen less/_page.less .all-projects.user-streams .project:first-of-type.
+  firstProjectRow: { paddingTop: "5px" },
   projectHeader: {
     fontSize: "20px",
     fontWeight: "700",
