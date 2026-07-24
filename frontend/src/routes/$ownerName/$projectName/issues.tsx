@@ -84,10 +84,6 @@ type LegacyIssueRowListAttributes = HTMLAttributes<HTMLLIElement> & {
 type LegacyIssueRowForAttributes = HTMLAttributes<HTMLDivElement> & {
   htmlFor: string;
 };
-type LegacyOrderAttributes = HTMLAttributes<HTMLButtonElement> & {
-  orderby: string;
-  orderdir: string;
-};
 const legacyRouteLocalActiveOptions = {
   exact: true,
   explicitUndefined: true,
@@ -509,7 +505,10 @@ function ProjectIssuesBody({
             id="span10"
             data-stylex-owner="project-issues-results"
           >
-            <div className="pull-right">
+            <div
+              {...stylex.props(styles.newIssueAction)}
+              data-stylex-owner="project-issues-new-issue-action"
+            >
               <Link
                 activeProps={legacyRouteLocalActiveProps}
                 to="/$ownerName/$projectName/issueform"
@@ -689,8 +688,8 @@ function ProjectIssuesBody({
                   ))}
                 </ul>
                 <div
-                  className={`${stylex.props(styles.downloadWrap).className} pull-left`}
-                  data-stylex-owner="project-issues-download"
+                  {...stylex.props(styles.downloadWrap)}
+                  data-stylex-owner="project-issues-excel-download"
                 >
                   <Link
                     activeProps={{ className: "ybtn small" }}
@@ -911,7 +910,11 @@ function IssueFilters({
   ];
 
   return (
-    <div className="filters pull-right">
+    <div
+      {...stylex.props(styles.sortFilters)}
+      className={`${stylex.props(styles.sortFilters).className} filters`}
+      data-stylex-owner="project-issues-sort-filters"
+    >
       {filters.map((filter) => {
         const active = orderBy === filter.field;
         return (
@@ -946,10 +949,6 @@ function IssueSortFilter({
   onSortChange: (orderBy: string, orderDir: string) => void;
   orderDir: string;
 }) {
-  const legacyOrderAttributes = {
-    orderby: field,
-    orderdir: orderDir,
-  } satisfies LegacyOrderAttributes;
   const selectIssueSortFilter = (event: ReactMouseEvent) => {
     event.preventDefault();
     onSortChange(field, orderDir);
@@ -960,7 +959,6 @@ function IssueSortFilter({
       type="button"
       className={active ? "filter active" : "filter"}
       onClick={selectIssueSortFilter}
-      {...legacyOrderAttributes}
     >
       {children}
       {label}
