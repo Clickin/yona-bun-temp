@@ -78,8 +78,8 @@ test("project issue due-date port keeps the legacy source and StyleX evidence", 
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-stylex-owner="project-issues-due-date"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-placement="top"');
-  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain(
-    'dueDateWrapper: {\n    marginRight: "20px",\n    marginTop: "10px",',
+  expect(PROJECT_ISSUES_STYLE_SOURCE).toMatch(
+    /dueDateWrapper:\s*\{\s*(?=[^}]*\bfloat:\s*"right")(?=[^}]*\bmarginRight:\s*"20px")(?=[^}]*\bmarginTop:\s*"10px")[^}]*\}/u,
   );
 });
 
@@ -140,7 +140,8 @@ for (const viewport of viewports) {
       await expect(target).toHaveCount(1);
       await expect(target).toHaveCSS("margin-right", "20px");
       await expect(target).toHaveCSS("margin-top", "10px");
-      await expect(target).toHaveClass(/\bmr20\s+mt10\s+pull-right\b/u);
+      await expect(target).toHaveClass(/\bmr20\s+mt10\b/u);
+      await expect(target).toHaveCSS("float", "right");
       await expect(target.locator(".vmiddle").last()).toHaveText(dueDateCase.text);
 
       if (dueDateCase.title) {

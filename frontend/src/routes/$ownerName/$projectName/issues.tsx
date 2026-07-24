@@ -1881,7 +1881,10 @@ function ProjectIssueItem({
         </div>
       </div>
       <div className="span3 hide-in-mobile">
-        <div className="mt5 pull-right">
+        <div
+          className={`mt5 ${stylex.props(styles.issueAssigneeRail).className}`}
+          data-stylex-owner="project-issues-assignee-rail"
+        >
           {assigneeLoginId && assigneeLabel ? (
             <Link
               activeProps={legacyRouteLocalActiveProps}
@@ -1913,7 +1916,7 @@ function ProjectIssueItem({
         {issue.dueDateLabel ? (
           <div
             {...dueDateStyleProps}
-            className={`mr20 mt10 pull-right${
+            className={`mr20 mt10${
               issue.dueDateOverdue ? " overdue" : ""
             } ${dueDateStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="project-issues-due-date"

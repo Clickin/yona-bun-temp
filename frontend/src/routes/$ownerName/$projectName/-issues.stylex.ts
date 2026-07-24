@@ -90,6 +90,7 @@ export const styles = stylex.create({
   issueRowHoverBackground: (backgroundColor: string) => ({ backgroundColor }),
   childLabelBackground: (backgroundColor: string) => ({ background: backgroundColor }),
   emptyAvatar: { height: "32px", width: "32px" },
+  issueAssigneeRail: { float: "right" },
   milestoneTag: {
     borderRadius: "6px",
     color: issuesTheme.milestoneTag,
@@ -109,6 +110,7 @@ export const styles = stylex.create({
   },
   issuePostItemActive: { backgroundColor: issuesTheme.postActiveSurface },
   dueDateWrapper: {
+    float: "right",
     marginRight: "20px",
     marginTop: "10px",
   },

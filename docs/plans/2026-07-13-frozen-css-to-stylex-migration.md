@@ -7783,6 +7783,30 @@ Move the authenticated project review-list action wrapper floats into the existi
 
 The focused source/runtime float guard and adjacent export-padding guard pass 3/3 in normal and explicit fallback-off modes; the restored-normal focused run passes 2/2. The existing project-reviews regression suite passes 5/5 in normal mode. Normal and fallback-off desktop/mobile screenshots under `frontend/output/playwright/stylex-project-reviews-action-floats/{normal,fallback-off}/` were directly inspected with managed external System-Chrome. The running legacy `/admin/sample/reviews` desktop/mobile baselines were also captured and inspected; its seeded empty review state versus the local populated mock is a documented same-fixture gap. Fallback-off global shell paint and the full populated live legacy/Yoram comparison remain outside this wrapper owner, so no route-specific compensation was added. Approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.
 
+## Batch 908
+
+Move the authenticated populated project issue-list row right rails into the
+existing route-local StyleX boundary. The legacy assignee/empty-avatar wrapper
+`mt5 pull-right` now uses `styles.issueAssigneeRail` with exact `float: right`,
+and the due-date wrapper's `mr20 mt10 pull-right` now keeps `mr20 mt10` while
+`styles.dueDateWrapper` owns exact `float: right`, `margin-right:20px`, and
+`margin-top:10px`. Preserve assignee/empty-avatar and due-date DOM/order,
+copy, state branches, responsive visibility, and React behavior; remove only
+the React-owned `pull-right` utilities and add no route-specific compensation.
+
+The focused row-rail and due-date source/runtime guards pass 8/8 in normal,
+explicit fallback-off, and restored-normal modes. Normal and fallback-off
+desktop/mobile screenshots under
+`frontend/output/playwright/stylex-project-issues-row-action-floats/{normal,fallback-off}/`
+and due-date open-overdue captures were directly inspected with managed
+external System-Chrome. Adjacent project-issues guards pass 4/4 in normal
+mode. The local fixture renders assigned and empty-avatar rows, while the
+seeded legacy state remains a one-issue state, so full same-fixture populated
+row comparison remains a documented fixture gap. Fallback-off global shell
+paint and full live legacy/Yoram screenshot parity remain screen-wide gaps;
+approved Yoram footer NAVER/provider/developer-contact/upstream-repository
+differences remain intentional; no route-specific compensation was added.
+
 ## Batch 907
 
 Move the authenticated populated project issue-list action wrappers into the existing route-local StyleX boundary. The legacy New Issue wrapper's `pull-right` becomes `styles.newIssueAction` with exact `float: right`; the populated sort wrapper preserves its `filters` class while `styles.sortFilters` owns exact `float: right`; and the Excel wrapper's `pull-left` plus inline `padding:10px` becomes the existing `styles.downloadWrap` with exact `float: left` and `padding: 10px`. Preserve issue-list DOM/order, Link/download behavior, sort query transitions, visible copy, responsive post-list geometry, and the existing fallback classes and filter cascade. Remove only React-owned target float utilities and legacy JS-only `orderby`/`orderdir` attributes; no route-specific compensation was added.
