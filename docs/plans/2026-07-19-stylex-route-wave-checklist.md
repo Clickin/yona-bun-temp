@@ -746,6 +746,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   covering legacy source provenance, owner/declaration, absent utility class,
   computed float, no-inline-style, control order, and desktop/390px geometry.
 
+### 2026-07-25 Batch 937 parent issue-comment action-row utility retirement
+
+- [x] The authenticated parent comment action row retains its semantic
+  `act-row`, edit/delete/translation/voter controls, copy/order, and
+  interactions while removing only the React-owned `pull-right` utility;
+  `styles.commentActionRow` continues to own frozen `float:right`.
+  Child replies, attachments, board actions, and sidebar/admin alignment
+  remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering legacy source provenance, owner/declaration, semantic class
+  retention, utility-class absence, computed float, no-inline-style, control
+  order, and desktop/390px containment.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

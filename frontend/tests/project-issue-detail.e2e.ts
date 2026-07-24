@@ -2798,6 +2798,7 @@ test("project issue detail owns the parent comment action-row float with StyleX"
   expect(legacyYobi).toContain('@import "less/_common.less";');
   expect(routeSource).toContain("styles.commentActionRow");
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-comment-action-row"');
+  expect(routeSource).not.toContain("styles.commentActionRow).className} act-row pull-right");
   expect(styleSource).toMatch(/commentActionRow:\s*\{[\s\S]*?float:\s*["']right["']/u);
   expect(styleSource).not.toContain("pull-right");
 
@@ -2815,7 +2816,7 @@ test("project issue detail owns the parent comment action-row float with StyleX"
     "project-issue-detail-comment-action-row",
   );
   await expect(parentActionRow).toHaveClass(/(?:^|\s)act-row(?:\s|$)/u);
-  await expect(parentActionRow).toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
+  await expect(parentActionRow).not.toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
   await expect(parentActionRow).toHaveCSS("float", "right");
   await expect(parentActionRow).not.toHaveAttribute("style", /.+/u);
   await expect(childActionRows).toHaveCount(0);

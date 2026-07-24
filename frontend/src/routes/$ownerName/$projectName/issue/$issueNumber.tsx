@@ -3658,7 +3658,7 @@ function IssueCommentRow({
           </span>
           <span
             {...stylex.props(styles.commentActionRow)}
-            className={`${stylex.props(styles.commentActionRow).className} act-row pull-right`}
+            className={`${stylex.props(styles.commentActionRow).className} act-row`}
             data-stylex-owner="project-issue-detail-comment-action-row"
           >
             <span className="new-issue-by">
