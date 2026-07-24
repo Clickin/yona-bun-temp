@@ -419,7 +419,10 @@ function PublicProfileBody({
                 className={`${stylex.props(styles.stream).className} user-stream-box`}
                 data-stylex-owner="user-profile-stream"
               >
-                <div className="pull-right">
+                <div
+                  className={`${stylex.props(styles.daysAgoControls).className}`}
+                  data-stylex-owner="user-profile-days-ago-controls"
+                >
                   {t("userinfo.daysAgo.prefix")}
                   <input
                     id="daysAgoBtn"

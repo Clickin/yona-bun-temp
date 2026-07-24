@@ -29,6 +29,8 @@ export const styles = stylex.create({
     margin: "0px 5px",
     verticalAlign: "bottom",
   },
+  // Frozen Bootstrap .pull-right from user/view.scala.html daysAgo controls.
+  daysAgoControls: { float: "right" },
   // Legacy user/partial_projectlist.scala.html project info wrapper spacing.
   projectInfo: {
     float: "left",

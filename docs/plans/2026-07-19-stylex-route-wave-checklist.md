@@ -900,6 +900,18 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   declarations, utility/plugin-attribute absence, computed floats, receiver/state
   DOM/copy/order, and desktop/mobile containment/no-overflow.
 
+### 2026-07-25 Batch 949 public profile daysAgo wrapper float ownership
+
+- [x] Authenticated public-profile daysAgo controls preserve the non-guest
+  wrapper DOM/order, input id/name/type/min/max/default value, existing input
+  owner/margins, copy, query behavior, and responsive containment while removing
+  only the wrapper React-owned `pull-right`; `daysAgoControls` StyleX owns exact
+  `float:right`. Issue due-date and pull-request consumers remain excluded.
+- [x] Focused normal and fallback-off external Chrome checks pass 1/1 each,
+  covering Scala/LESS/Bootstrap/import/messages provenance, owner/declaration,
+  utility/plugin-attribute absence, computed float, input attrs/copy/order/query,
+  and desktop/mobile containment/no-overflow.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,
