@@ -66,6 +66,13 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
 - [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
 
+### 2026-07-25 organization enrollment-request wrapper utility retirement
+
+- [x] `organization/members.scala.html:89-103`, frozen Bootstrap `.pull-left` (`bootstrap.css:6097-6099`), and frozen `_common.less:207` `.mr10` establish the enrollment avatar/details output and exact float, margin, and 60px width.
+- [x] `members.tsx` keeps the enrolled-user DOM order, `mr10`, Link/copy/accept behavior, and responsive span wrapper while StyleX owns both wrapper floats, avatar margin, and details width; only the two React-owned `pull-left` runtime classes are retired.
+- [x] `frontend/tests/stylex-organization-members-list.e2e.ts` verifies Scala/LESS/Bootstrap provenance, stable owner markers, retired classes, exact computed declarations, accept interaction, desktop/mobile containment, and no document overflow.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+
 ### 2026-07-23 Batch 848 organization enrollment-request accept type boundary
 
 - [x] `organization/members.scala.html:89-103` and the legacy enrollment accept contract are recorded as the numeric user-id interaction source.

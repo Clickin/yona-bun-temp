@@ -13,6 +13,7 @@ const owners = {
   avatar: "organization-member-avatar",
   avatarImage: "organization-member-avatar-image",
   enrollmentAvatarWrap: "organization-enrollment-avatar-wrap",
+  enrollmentDetails: "organization-members-enrollment-details",
   id: "organization-member-id",
   meta: "organization-member-meta",
   list: "organization-members-list",
@@ -297,9 +298,12 @@ test("organization enrollment avatar owner follows the frozen legacy float bound
   );
 
   expect(route).toContain('data-stylex-owner="organization-enrollment-avatar-wrap"');
+  expect(route).toContain('data-stylex-owner="organization-members-enrollment-details"');
   expect(route).toContain('float: "left"');
   expect(route).toContain('marginRight: "10px"');
+  expect(route).toContain('width: "60px"');
   expect(legacyTemplate).toContain('<div class="pull-left mr10">');
+  expect(legacyTemplate).toContain('<div class="pull-left" style="width: 60px;">');
   expect(legacyTemplate).toContain(
     '<img src="@user.avatarUrl" height="65" width="65" class="img-circle"/>',
   );
@@ -333,7 +337,8 @@ test("organization enrollment request preserves avatar geometry, order, copy, an
 
   await expect(request).toBeVisible();
   await expect(avatarWrap).toHaveCount(1);
-  await expect(avatarWrap).toHaveClass(/\bpull-left\b.*\bmr10\b/u);
+  await expect(avatarWrap).toHaveClass(/\bmr10\b/u);
+  await expect(avatarWrap).not.toHaveClass(/\bpull-left\b/u);
   await expect(avatar).toHaveAttribute("width", "65");
   await expect(avatar).toHaveAttribute("height", "65");
   await expect(request.locator("a")).toHaveCount(2);
@@ -343,6 +348,9 @@ test("organization enrollment request preserves avatar geometry, order, copy, an
   await expect(accept).toHaveAttribute("data-loginid", "pending");
   await expect(avatarWrap).toHaveCSS("float", "left");
   await expect(avatarWrap).toHaveCSS("margin-right", "10px");
+  await expect(details).not.toHaveClass(/\bpull-left\b/u);
+  await expect(details).toHaveCSS("float", "left");
+  await expect(details).toHaveCSS("width", "60px");
 
   await expect(request.locator(":scope > div").nth(0)).toHaveAttribute(
     "data-stylex-owner",
@@ -410,15 +418,18 @@ test("organization enrollment request preserves avatar geometry, order, copy, an
       .querySelector<HTMLElement>('[data-stylex-owner="organization-enrollment-avatar-wrap"]')
       ?.getBoundingClientRect();
     const image = element.querySelector<HTMLImageElement>("img")?.getBoundingClientRect();
+    const details = element
+      .querySelector<HTMLElement>('[data-stylex-owner="organization-members-enrollment-details"]')
+      ?.getBoundingClientRect();
     return wrap && image && container
-      ? { container, image, row, wrap, scrollWidth: document.documentElement.scrollWidth }
+      ? { container, details, image, row, wrap, scrollWidth: document.documentElement.scrollWidth }
       : null;
   });
   expect(mobileGeometry).not.toBeNull();
   expect(mobileGeometry!.scrollWidth).toBeLessThanOrEqual(398);
   expect(mobileGeometry!.wrap.left).toBeGreaterThanOrEqual(mobileGeometry!.container.left);
-  expect(mobileGeometry!.image.right).toBeGreaterThan(mobileGeometry!.row.right);
   expect(mobileGeometry!.image.right).toBeLessThanOrEqual(mobileGeometry!.container.right);
+  expect(mobileGeometry!.details?.right).toBeLessThanOrEqual(mobileGeometry!.container.right);
 });
 
 for (const viewport of [
