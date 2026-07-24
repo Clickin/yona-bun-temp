@@ -7863,3 +7863,22 @@ Fallback-off global shell/asset drift remains outside these float owners. The ad
 project-posts regression guard set passes 8/8 after updating two stale exact source assertions.
 Approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain
 intentional and no route-specific compensation was added.
+
+## Batch 911
+
+Move the authenticated organization board-list search-form float into the existing route-local
+StyleX boundary. The `organization/group_board_list.scala.html` `pull-left` form now uses
+`styles.searchForm` with exact `float: left`; the organization board search/project selector,
+keyword filter, two-column control, populated-row DOM, query submit, and responsive behavior stay
+unchanged. Remove only the React-owned Bootstrap float utility and add no route-specific geometry
+compensation.
+
+The focused managed external System-Chrome guard passes 1/1 in normal, explicit fallback-off, and
+restored-normal modes at 1366x900 and 390x844. Normal/fallback-off local captures under
+`output/playwright/stylex-organization-boards-search-float/{normal,fallback-off}/` and live legacy
+captures under `output/playwright/legacy-organization-boards-{desktop,mobile}.png` were inspected.
+The managed live legacy route passes 1/1 for desktop/mobile but is an authenticated empty board
+state without `postListWrap`, while the local fixture has two posts; that same-fixture populated
+comparison remains a documented gap. Adjacent organization-board guards pass 13/13 in normal and
+fallback-off modes. Fallback-off global shell/asset drift remains outside this form owner. Approved
+Yoram footer NAVER/provider/developer-contact/upstream-repository differences remain intentional.

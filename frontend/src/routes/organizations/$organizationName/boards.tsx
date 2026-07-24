@@ -24,6 +24,7 @@ const errorIconSpriteStyles = stylex.create({
 });
 
 const styles = stylex.create({
+  searchForm: { float: "left" },
   search: {
     borderBottomColor: organizationBoardsColors.border,
     borderBottomStyle: "solid",
@@ -131,6 +132,7 @@ function OrganizationBoardsBody({
   const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
   const hasPosts = hasNotices || boards.items.length > 0;
   const searchStyleProps = stylex.props(styles.search);
+  const searchFormStyleProps = stylex.props(styles.searchForm);
   const filterInputStyleProps = stylex.props(styles.filterInput);
   const listStyleProps = stylex.props(styles.list);
 
@@ -144,7 +146,13 @@ function OrganizationBoardsBody({
             className={`search-wrap underline ${searchStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-boards-search"
           >
-            <form id="option_form" method="get" className="pull-left">
+            <form
+              {...searchFormStyleProps}
+              id="option_form"
+              method="get"
+              className={searchFormStyleProps.className}
+              data-stylex-owner="organization-boards-search-form"
+            >
               <input type="hidden" name="orderBy" value={search.orderBy} />
               <input type="hidden" name="orderDir" value={search.orderDir} />
               <div className="project-selects span7">

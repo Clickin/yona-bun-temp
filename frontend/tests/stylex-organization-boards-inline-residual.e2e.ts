@@ -33,7 +33,7 @@ test("organization boards owns the two-column anchor position with route-local S
   expect(pageLess).toContain(".two-column-icon, .show-subtasks");
   expect(twoColumnJs).toContain("delay: { show: 100, hide: 100 }");
   expect(route).toContain('data-stylex-owner="organization-boards-two-column-anchor"');
-  expect(route).toContain('twoColumnAnchor: { position: "relative" }');
+  expect(route).toContain('twoColumnAnchor: { marginRight: "10px", position: "relative" }');
   expect(route).not.toContain('style={{ position: "relative" }}');
 
   await mockOrganizationBoards(page);
