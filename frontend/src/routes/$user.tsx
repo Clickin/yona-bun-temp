@@ -771,8 +771,16 @@ function ProfileIssueRow({
       data-stylex-owner="user-profile-issue-row"
     >
       <div className="span12 span-hard-wrap">
-        <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
-          <span className="infos-item project-name">
+        <div
+          {...stylex.props(styles.issueProjectNameWrapper)}
+          className={`${stylex.props(styles.issueProjectNameWrapper).className} span2 fixed-height-my-issues-list`}
+          data-stylex-owner="user-profile-issue-project-name-wrapper"
+        >
+          <span
+            {...stylex.props(styles.issueProjectName)}
+            className={`${stylex.props(styles.issueProjectName).className} infos-item project-name`}
+            data-stylex-owner="user-profile-issue-project-name"
+          >
             <Link
               {...LEGACY_LINK_PROPS}
               to={projectPath}

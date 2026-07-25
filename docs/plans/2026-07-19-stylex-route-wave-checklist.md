@@ -109,6 +109,13 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-25 Batch 960 public profile issue project-name residuals
+
+- [x] `user/view.scala.html:112-167`, `user/partial_issues.scala.html`, `_page.less:7643-7654`, `_common.less:305-307`, and the full LESS/Bootstrap/responsive/messages chain are recorded as output/cascade evidence.
+- [x] The project column wrapper owns exact flex direction/wrap/grow/justification/alignment and nested project-name ellipsis/overflow/nowrap; `span2`, fixed-height structure, Link/copy/order, and the surrounding issue DOM remain unchanged. The migrated wrapper no longer carries the fallback-only `project-name-in-my-issues` selector.
+- [x] `frontend/tests/stylex-user-profile-issue-project-name.e2e.ts` verifies source evidence, owners, computed desktop/mobile declarations, project navigation/copy/order, no inline/plugin attributes, containment, and no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added. The known legacy admin-notice/sidebar x-axis mismatch remains intentionally out of scope.
+
 ### 2026-07-25 Batch 959 public profile issue author/meta residuals
 
 - [x] `user/view.scala.html:112-167`, `user/partial_issues.scala.html`, `_page.less:7505-7570`, and the full LESS/Bootstrap/responsive/messages chain are recorded as output/cascade evidence.

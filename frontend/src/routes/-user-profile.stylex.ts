@@ -164,6 +164,21 @@ export const styles = stylex.create({
   issueTitleCountGroups: { fontSize: "10px" },
   // Frozen less/_page.less .my-issues .post-item .title-wrap .title.
   issueTitleLink: { fontSize: "14px", fontWeight: "500" },
+  // Frozen less/_page.less .project-name-in-my-issues.
+  issueProjectNameWrapper: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+  },
+  // Frozen less/_page.less .project-name-in-my-issues .project-name.
+  issueProjectName: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
   // Frozen less/_page.less .my-issues .post-item .author.
   issueAuthor: { display: "table" },
   // Frozen less/_page.less .my-issues .post-item .author .author-cell.
