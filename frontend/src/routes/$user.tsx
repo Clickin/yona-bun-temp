@@ -1056,7 +1056,11 @@ function ProfileIssueChildRow({
       </span>
       <Link {...LEGACY_LINK_PROPS} className="twoColumeModeTarget" to={issuePath}>
         <span className="item-name">
-          <span className="subtask-number">
+          <span
+            {...stylex.props(styles.issueSubtaskNumber)}
+            className={`${stylex.props(styles.issueSubtaskNumber).className} subtask-number`}
+            data-stylex-owner="user-profile-child-subtask-number"
+          >
             {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
           </span>
           <span>{stringField(issue, "title")}</span>
@@ -1065,7 +1069,7 @@ function ProfileIssueChildRow({
           </span>
         </span>
       </Link>
-      <span className="font12 no-border-at-child">
+      <span className="font12">
         <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => (
@@ -1111,7 +1115,11 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
   }
 
   return (
-    <span className="item-count-groups">
+    <span
+      {...stylex.props(styles.issueChildCountGroups)}
+      className={`${stylex.props(styles.issueChildCountGroups).className} item-count-groups`}
+      data-stylex-owner="user-profile-child-count-groups"
+    >
       {commentCount > 0 ? (
         <Link
           {...LEGACY_LINK_PROPS}

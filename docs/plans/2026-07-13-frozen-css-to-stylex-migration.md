@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-25 — Public profile child issue residuals
+
+Batch 963 moves the frozen `.subtask-number` declarations and the nested
+child count-group border reset to the shared public-profile StyleX owner. The
+legacy child DOM, order, links, labels, counts, state, and ShowSubtasks
+interaction remain unchanged; only `no-border-at-child` is removed while
+`font12` and `item-count-groups` remain. Focused external Chrome checks pass
+1/1 in normal and fallback-off modes. Live legacy screenshot parity remains
+unverified and no geometry compensation was added; the known admin notice /
+sidebar x-axis mismatch remains out of scope.
+
 ## 2026-07-25 — Public profile issue-title residuals
 
 Batch 958 moves the populated public-profile issue title area's frozen

@@ -192,6 +192,16 @@ export const styles = stylex.create({
   issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
   // Frozen less/_page.less .for-subtask-progressbar .subtask.
   issueSubtaskParent: { fontSize: "0.8em !important" },
+  // Frozen less/_page.less .subtask-number.
+  issueSubtaskNumber: {
+    display: "inline-block",
+    fontFamily: 'Monaco, Menlo, Consolas, "Courier New", monospace',
+    fontSize: "12px",
+    marginRight: "5px",
+    minWidth: "22px",
+  },
+  // Frozen less/_page.less .no-border-at-child .item-count-groups.
+  issueChildCountGroups: { borderStyle: "none !important" },
   // Frozen less/_page.less .my-issues .post-item .author.
   issueAuthor: { display: "table", lineHeight: "36px" },
   // Frozen less/_page.less .my-issues .post-item .author .author-cell.

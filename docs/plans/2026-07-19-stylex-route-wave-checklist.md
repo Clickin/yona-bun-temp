@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-25 Batch 963 public profile child issue residuals
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_issues.scala.html`, `issue/partial_view_childIssueListOnly.scala.html`, `issue/partial_view_child.scala.html`, and frozen `_page.less:7573-7581,7592-7596` are recorded as child-row evidence.
+- [x] Shared StyleX owns `.subtask-number` typography/geometry and the child count-group border reset; `no-border-at-child` is retired while `font12`, `item-count-groups`, child DOM/order, and ShowSubtasks behavior remain.
+- [x] `frontend/tests/stylex-user-profile-child-row.e2e.ts` verifies provenance, owners, child order/copy/links, interaction, computed geometry, and no plugin attributes.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 958 public profile issue-title residuals
 
 - [x] `user/view.scala.html:112-167`, `user/partial_issues.scala.html`, `_page.less:7505-7570`, supporting LESS/Bootstrap/responsive/message evidence, and the full `yobi.less` chain are recorded as issue-title output/cascade evidence.
