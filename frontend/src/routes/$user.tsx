@@ -72,6 +72,8 @@ const userProfileStaticStyles = stylex.create({
   },
   issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
   issueSubtaskParent: { fontSize: "0.8em !important" },
+  issueProjectNameWrapperLineHeight: { lineHeight: "36px" },
+  issueAuthorLineHeight: { lineHeight: "36px" },
 });
 
 export const Route = createFileRoute("/$user")({
@@ -774,8 +776,11 @@ function ProfileIssueRow({
     >
       <div className="span12 span-hard-wrap">
         <div
-          {...stylex.props(styles.issueProjectNameWrapper)}
-          className={`${stylex.props(styles.issueProjectNameWrapper).className} span2 fixed-height-my-issues-list`}
+          {...stylex.props(
+            styles.issueProjectNameWrapper,
+            userProfileStaticStyles.issueProjectNameWrapperLineHeight,
+          )}
+          className={`${stylex.props(styles.issueProjectNameWrapper).className} span2`}
           data-stylex-owner="user-profile-issue-project-name-wrapper"
         >
           <span
@@ -867,8 +872,8 @@ function ProfileIssueRow({
           </span>
         </div>
         <div
-          {...stylex.props(styles.issueAuthor)}
-          className={`${stylex.props(styles.issueAuthor).className} span1 hide-in-mobile author fixed-height-my-issues-list`}
+          {...stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight)}
+          className={`${stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight).className} span1 hide-in-mobile author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -878,8 +883,8 @@ function ProfileIssueRow({
           />
         </div>
         <div
-          {...stylex.props(styles.issueAuthor)}
-          className={`${stylex.props(styles.issueAuthor).className} span1 hide-in-mobile author fixed-height-my-issues-list`}
+          {...stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight)}
+          className={`${stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight).className} span1 hide-in-mobile author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink

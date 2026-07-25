@@ -172,6 +172,7 @@ export const styles = stylex.create({
     flexGrow: 1,
     flexWrap: "nowrap",
     justifyContent: "space-between",
+    lineHeight: "36px",
   },
   // Frozen less/_page.less .project-name-in-my-issues .project-name.
   issueProjectName: {
@@ -192,7 +193,7 @@ export const styles = stylex.create({
   // Frozen less/_page.less .for-subtask-progressbar .subtask.
   issueSubtaskParent: { fontSize: "0.8em !important" },
   // Frozen less/_page.less .my-issues .post-item .author.
-  issueAuthor: { display: "table" },
+  issueAuthor: { display: "table", lineHeight: "36px" },
   // Frozen less/_page.less .my-issues .post-item .author .author-cell.
   issueAuthorCell: {
     display: "table-cell",
