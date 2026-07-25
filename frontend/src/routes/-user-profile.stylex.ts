@@ -179,6 +179,18 @@ export const styles = stylex.create({
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
+  // Frozen less/_page.less .for-subtask-progressbar.
+  issueSubtaskProgressWrapper: { paddingLeft: "5px" },
+  // Frozen less/_page.less .for-subtask-progressbar .subtask-progress.
+  issueSubtaskProgressShell: {
+    display: "inline-block",
+    verticalAlign: "bottom",
+    width: "30px",
+  },
+  // Frozen less/_page.less .for-subtask-progressbar .completion-ratio.
+  issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
+  // Frozen less/_page.less .for-subtask-progressbar .subtask.
+  issueSubtaskParent: { fontSize: "0.8em !important" },
   // Frozen less/_page.less .my-issues .post-item .author.
   issueAuthor: { display: "table" },
   // Frozen less/_page.less .my-issues .post-item .author .author-cell.

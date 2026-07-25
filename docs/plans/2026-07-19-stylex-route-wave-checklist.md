@@ -109,6 +109,13 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-25 Batch 961 public profile issue subtask layout residuals
+
+- [x] `user/view.scala.html:112-167`, `issue/partial_list_subtask.scala.html:17-29`, frozen `_page.less:7487-7502` and non-migrated `_page.less:7228-7332`, plus the full LESS/Bootstrap/responsive/messages chain are recorded as output/cascade evidence.
+- [x] Wrapper padding, progress-shell display/width/vertical-align, and ratio/parent `0.8em` typography are StyleX-owned; dynamic percentage width, DOM/copy/link behavior, and non-migrated `.completion-ratio`/`.subtask` classes remain. `!important` is limited to the two typography owners to overcome the frozen nested selector specificity.
+- [x] `frontend/tests/stylex-user-profile-issue-subtask-layout.e2e.ts` verifies source evidence, all owners, computed desktop/mobile declarations, dynamic bar width, ratio/parent output and navigation, retained classes, no inline/plugin attributes, containment, and no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added. The known legacy admin-notice/sidebar x-axis mismatch remains intentionally out of scope.
+
 ### 2026-07-25 Batch 960 public profile issue project-name residuals
 
 - [x] `user/view.scala.html:112-167`, `user/partial_issues.scala.html`, `_page.less:7643-7654`, `_common.less:305-307`, and the full LESS/Bootstrap/responsive/messages chain are recorded as output/cascade evidence.
