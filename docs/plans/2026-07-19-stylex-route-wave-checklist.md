@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 973 public profile project title and owner links
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_projectlist.scala.html`, frozen Bootstrap generic anchor rules, later `_common.less` generic anchor override, `_page.less:1842-1890,5072-5076`, and the complete `yobi.less`/Bootstrap/responsive import chain are recorded as title/owner Link evidence.
+- [x] Route-local StyleX owns exact inherited base color/no-decoration/no-outline and `#005580` underlined no-outline hover/focus states; removing the legacy-unproven parent `#777` paint restores title body `#333` and owner `.name-tag` `#999`/11px inheritance.
+- [x] The unmatched `.header .owner-name-small` 19px rule, origin/watch/leave/other anchors, project DOM/classes/destinations/copy/order, existing child owners, other tabs, and the known legacy admin-notice/sidebar mismatch remain excluded or unchanged.
+- [x] `frontend/tests/stylex-user-profile-project-links.e2e.ts` verifies provenance, parent-color absence, both owners, exact desktop/mobile base/hover/focus declarations, inheritance, DOM/order/links/classes, no inline/plugin attributes, containment, and no document overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off check passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 972 public profile project avatar image and fork icon
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_projectlist.scala.html`, frozen `_common.less:173`, later `_yobiUI.less:439-466`, the complete `yobi.less`/Bootstrap/responsive import chain, and `conf/messages` are recorded as avatar-image/fork-icon evidence.

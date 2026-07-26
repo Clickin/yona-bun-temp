@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile project title and owner links
+
+Batch 973 moves the populated Projects title and owner Links' final generic
+anchor cascade into route-local StyleX. Both Links inherit their base color,
+then use frozen Bootstrap's `#005580` hover/focus paint and the later
+`_common.less` underline/no-outline behavior. Removing the legacy-unproven
+`.user-box` `#777` StyleX paint restores the title's body `#333` inheritance;
+the owner continues to inherit `.name-tag` `#999` at 11px. The unmatched
+`.header .owner-name-small` 19px rule remains excluded. Focused external Chrome
+fallback-off passes 1/1 at desktop and 390px mobile. Live legacy screenshot
+parity remains final visual-lock work; no geometry compensation was added.
+
 ## 2026-07-26 — Public profile project avatar image and fork icon
 
 Batch 972 moves two populated public-profile Projects leaf declarations into

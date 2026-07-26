@@ -1453,7 +1453,13 @@ function ProfileProjectRow({
             className={`${stylex.props(styles.projectHeader).className} header`}
             data-stylex-owner="user-profile-project-header"
           >
-            <Link {...LEGACY_LINK_PROPS} to={projectPath} className="project-name">
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to={projectPath}
+              {...stylex.props(styles.projectTitleLink)}
+              className={`${stylex.props(styles.projectTitleLink).className} project-name`}
+              data-stylex-owner="user-profile-project-title-link"
+            >
               {project.projectName}
             </Link>
             {project.projectScope === "private" ? (
@@ -1500,7 +1506,13 @@ function ProfileProjectRow({
               className={`${stylex.props(userProfileStaticStyles.iconMiddle).className} yobicon-friends`}
             ></i>
             <strong>{project.memberCount}</strong>{" "}
-            <Link {...LEGACY_LINK_PROPS} to={ownerPath} className="owner-name-small">
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to={ownerPath}
+              {...stylex.props(styles.projectOwnerLink)}
+              className={`${stylex.props(styles.projectOwnerLink).className} owner-name-small`}
+              data-stylex-owner="user-profile-project-owner-link"
+            >
               {project.ownerName}
             </Link>{" "}
             <span title={project.createdLabel}>{project.createdLabel}</span>

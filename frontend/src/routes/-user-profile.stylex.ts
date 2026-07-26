@@ -1,7 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const userProfileColors = stylex.defineVars({
-  mutedText: "#777777",
   accentText: "#337581",
   statusText: "#ffffff",
 });
@@ -11,7 +10,6 @@ export const styles = stylex.create({
   avatarBackground: (backgroundImage: string) => ({ backgroundImage }),
   // Legacy less/_page.less .user-box.
   profile: {
-    color: userProfileColors.mutedText,
     margin: "15px 0px 0px",
     overflow: "hidden",
   },
@@ -120,6 +118,22 @@ export const styles = stylex.create({
     marginBottom: "5px",
     marginLeft: "10px",
   },
+  // Frozen Bootstrap generic anchor rules followed by less/_common.less a.
+  projectTitleLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
   // Frozen less/_page.less .all-projects .project .info-wrap .header .yobicon-lock.
   projectPrivateIcon: { color: "#7F8C8D" },
   // Frozen less/_common.less then later less/_yobiUI.less .avatar-wrap.small cascade.
@@ -151,6 +165,22 @@ export const styles = stylex.create({
     color: "#999999",
     fontSize: "11px",
     marginLeft: "10px",
+  },
+  // The owner link is under .name-tag, so the unmatched .header rule does not apply.
+  projectOwnerLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
   },
   projectStats: {
     float: "right",
