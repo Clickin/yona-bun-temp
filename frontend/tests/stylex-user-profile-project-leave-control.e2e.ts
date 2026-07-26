@@ -300,7 +300,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
       )!;
       const icon = leave.querySelector<HTMLElement>(":scope > i")!;
       const watch = leave.previousElementSibling as HTMLElement;
-      const stats = leave.closest<HTMLElement>(".stats-wrap")!;
+      const stats = leave.closest<HTMLElement>('[data-stylex-owner="user-profile-project-stats"]')!;
       const row = leave.closest<HTMLElement>(".project")!;
       const nextRow = row.nextElementSibling as HTMLElement;
       const rect = leave.getBoundingClientRect();

@@ -87,7 +87,7 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
   expect(source).toContain('data-stylex-owner="user-profile-project-info"');
   expect(source).not.toContain("styles.projectInfo).className} pull-left");
   expect(source).toContain('data-stylex-owner="user-profile-project-stats"');
-  expect(source).toContain("stats-wrap");
+  expect(source).not.toContain("styles.projectStats).className} stats-wrap");
   expect(source).not.toContain("styles.projectStats).className} stats-wrap pull-right");
   expect(styleSource).toContain('float: "left"');
   expect(styleSource).toContain('float: "right"');
@@ -105,7 +105,7 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
   await expect(projectRow).toHaveCount(1);
   await expect(projectRow).toContainText("A sample project");
   await expect(projectInfo).not.toHaveClass(/pull-left/u);
-  await expect(projectStats).toHaveClass(/stats-wrap/u);
+  await expect(projectStats).not.toHaveClass(/stats-wrap/u);
   await expect(projectStats).not.toHaveClass(/pull-right/u);
   await expect(projectRow.locator(".info-wrap > .pull-left")).toHaveCount(1);
   await expect(projectRow.getByRole("link", { name: "sample", exact: true })).toBeVisible();

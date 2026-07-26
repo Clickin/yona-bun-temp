@@ -1598,10 +1598,7 @@ function ProfileProjectRow({
           </div>
         </div>
       </div>
-      <div
-        className={`${stylex.props(styles.projectStats).className} stats-wrap`}
-        data-stylex-owner="user-profile-project-stats"
-      >
+      <div {...stylex.props(styles.projectStats)} data-stylex-owner="user-profile-project-stats">
         <div className="stats">
           {project.viewerCanWatch ? (
             <Link
