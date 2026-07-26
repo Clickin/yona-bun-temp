@@ -140,7 +140,7 @@ test("authenticated public-profile sidebar identity follows the final frozen pai
     "user-profile-identity-loginid",
     "user-profile-identity-email",
   ]) {
-    expect(routeSource).toContain(`data-stylex-owner=\"${identityOwner}\"`);
+    expect(routeSource).toContain(`data-stylex-owner="${identityOwner}"`);
   }
 
   await page.setViewportSize({ width: 1366, height: 900 });

@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 977 public profile edit control
+
+- [x] `yona-original/app/views/user/view.scala.html`, frozen `_yobiUI.less .ybtn`/`.ybtn-mini`/nested icon rules, the complete ordered `yobi.less` chain through `_override.less`, and Korean messages are recorded.
+- [x] Route-local StyleX owns exact button base/hover/focus/active geometry and paint plus icon 20px line height; no unrelated `ybtn` consumer or variant is migrated.
+- [x] Owner/non-owner branch, TanStack `/user/editform` destination, reload behavior, legacy classes, icon, Korean copy/order, parent edit alignment, surrounding profile output, and intentional footer deviations remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-edit-control.e2e.ts` verifies RED→GREEN provenance, branches, copy/classes/href/order, no plugin attrs, exact desktop/mobile declarations, containment, icon line height, and zero overflow; the adjacent identity test receives only lint cleanup.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes 1/1. The known legacy admin-notice/sidebar x-axis mismatch is intentionally deprioritized; live legacy screenshot parity remains final visual-lock work and no compensation was added.
+
 ### 2026-07-26 Batch 976 public profile sidebar identity paint
 
 - [x] `yona-original/app/views/user/view.scala.html`, frozen `_page.less:4970-5058`, later `_yobiUI.less .usf-group .loginid`, `_common.less`, `_override.less`, the complete ordered `yobi.less`/Bootstrap/responsive chain, messages, and runtime email configuration are recorded.

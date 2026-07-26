@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile edit control
+
+Batch 977 moves the authenticated profile owner's conditional “프로필 수정”
+Link and nested icon into route-local StyleX using the exact final frozen
+`.ybtn.ybtn-mini` and `.ybtn i` cascade. The TanStack destination, reload
+behavior, legacy classes, Korean copy, owner/non-owner branch, parent edit
+alignment, and surrounding identity output remain unchanged. Focused external
+Chrome fallback-off passes 1/1 at desktop and 390px mobile. The known legacy
+admin-notice/sidebar x-axis mismatch remains intentionally deprioritized in
+favor of other parity work; live legacy screenshot parity remains final
+visual-lock work.
+
 ## 2026-07-26 — Public profile sidebar identity paint
 
 Batch 976 removes the legacy-unproven `#337581` paint from the

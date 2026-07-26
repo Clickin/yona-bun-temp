@@ -22,6 +22,52 @@ export const styles = stylex.create({
   whoami: { marginTop: "15px" },
   // Frozen less/_yobiUI.less .usf-group .loginid.
   loginId: { color: "#999999" },
+  // Frozen less/_yobiUI.less .ybtn final cascade plus .ybtn-mini overrides.
+  profileEditButton: {
+    backgroundColor: "#ffffff",
+    borderColor: "rgba(0, 0, 0, 0.15)",
+    borderRadius: "3px !important",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 1px 0 rgba(0, 0, 0, 0.05)",
+    color: "#333333",
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "10.5px !important",
+    lineHeight: "20px",
+    marginBottom: 0,
+    marginLeft: ".3em",
+    outline: "0 none",
+    padding: "0 6px !important",
+    position: "relative",
+    textAlign: "center",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: 2,
+    ":first-child": { marginLeft: 0 },
+    ":hover": {
+      backgroundColor: "#f1f1f1",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "#292929",
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: "#f1f1f1",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "#292929",
+      textDecoration: "none",
+    },
+    ":active": {
+      backgroundColor: "#f1f1f1",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "#292929",
+      textDecoration: "none",
+    },
+  },
+  // Frozen less/_yobiUI.less .ybtn i.
+  profileEditIcon: { lineHeight: "20px" },
   // Frozen less/_page.less .user-info-box .guest-user.
   guestUser: {
     backgroundColor: "rgba(255, 165, 0, 0.8)",

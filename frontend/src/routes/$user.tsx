@@ -402,9 +402,16 @@ function PublicProfileBody({
                     <Link
                       to="/user/editform"
                       reloadDocument
-                      className="ybtn ybtn-default ybtn-mini"
+                      {...stylex.props(styles.profileEditButton)}
+                      className={`${stylex.props(styles.profileEditButton).className} ybtn ybtn-default ybtn-mini`}
+                      data-stylex-owner="user-profile-edit-control"
                     >
-                      <i className="yobicon-edit"></i> {t("userinfo.editProfile")}
+                      <i
+                        {...stylex.props(styles.profileEditIcon)}
+                        className={`${stylex.props(styles.profileEditIcon).className} yobicon-edit`}
+                        data-stylex-owner="user-profile-edit-control-icon"
+                      ></i>{" "}
+                      {t("userinfo.editProfile")}
                     </Link>
                   </div>
                 ) : null}
