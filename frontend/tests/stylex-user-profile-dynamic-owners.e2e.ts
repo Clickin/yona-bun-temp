@@ -16,7 +16,7 @@ test("public profile owns API avatar and issue label paints with Dynamic StyleX"
   );
   expect(partial).toContain('style="background:@label.color"');
   expect(source).toContain('data-stylex-owner="user-profile-avatar-background"');
-  expect(source).toContain('data-stylex-owner="user-profile-issue-label-background"');
+  expect(source).toContain('data-stylex-owner="user-profile-parent-issue-label"');
   expect(source).not.toContain("style={{ backgroundImage:");
   expect(source).not.toContain("style={{ background: label.color }}");
   expect(styleSource).toContain("avatarBackground: (backgroundImage: string)");
@@ -30,7 +30,7 @@ test("public profile owns API avatar and issue label paints with Dynamic StyleX"
   await expect(avatar).toHaveCSS("background-image", /avatar-profile\.png/);
   await expect(avatar).toHaveAttribute("style", /--x-backgroundImage:\s*url\('/u);
 
-  const label = page.locator('[data-stylex-owner="user-profile-issue-label-background"]');
+  const label = page.locator('[data-stylex-owner="user-profile-parent-issue-label"]');
   await expect(label).toHaveCount(1);
   await expect(label).toHaveCSS("background-color", "rgb(244, 67, 54)");
   await expect(label).toHaveAttribute("style", /--x-backgroundColor:\s*rgb\(244,67,54\)/u);

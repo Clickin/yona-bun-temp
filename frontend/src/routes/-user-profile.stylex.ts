@@ -544,6 +544,36 @@ export const styles = stylex.create({
   progressBar: (width: string) => ({ width }),
   // Legacy user/partial_issues.scala.html paints each API-provided label color.
   issueLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
+  issueLabelPresentation: {
+    borderRadius: "1px",
+    color: "#ffffff",
+    display: "inline-block",
+    fontSize: "11px",
+    fontWeight: "normal",
+    lineHeight: "12px",
+    outline: "none",
+    padding: "2px 3px",
+    textDecoration: "none",
+    textShadow: "none",
+    verticalAlign: "baseline",
+    whiteSpace: "nowrap",
+    WebkitTransitionDuration: "0.25s",
+    ":empty": { display: "none" },
+    ":focus": {
+      color: "#ffffff",
+      cursor: "pointer",
+      outline: "none !important",
+      textDecoration: "none",
+    },
+    ":hover": {
+      color: "#ffffff",
+      cursor: "pointer",
+      opacity: 0.7,
+      outline: "none !important",
+      textDecoration: "none",
+    },
+    ":last-of-type": { margin: 0 },
+  },
   // Frozen less/_common.less .mr10 plus the positioned anchor required by the
   // React-owned popovers for the legacy two-column and show-subtasks wrappers.
   popoverAnchor: { marginRight: "10px", position: "relative" },

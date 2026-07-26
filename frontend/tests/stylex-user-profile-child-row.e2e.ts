@@ -236,7 +236,7 @@ test("authenticated public profile owns child issue residuals", async ({ page })
   });
 
   for (const element of await children
-    .locator('*:not([data-stylex-owner="user-profile-issue-label-background"])')
+    .locator('*:not([data-stylex-owner="user-profile-child-issue-label"])')
     .all()) {
     await expect(element).not.toHaveAttribute("style");
     for (const attribute of [

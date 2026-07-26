@@ -906,33 +906,39 @@ function ProfileIssueRow({
                 projectName={projectName}
               />
             </span>
-            {labels.map((label) => (
-              <Link
-                {...LEGACY_LINK_PROPS}
-                to="/$ownerName/$projectName/issues"
-                params={{ ownerName, projectName }}
-                search={{
-                  assigneeId: "",
-                  authorId: "",
-                  commenterId: "",
-                  dueDate: "",
-                  filter: "",
-                  labelIds: [String(label.id)],
-                  milestoneId: "",
-                  orderBy: "updatedDate",
-                  orderDir: "desc",
-                  pageNum: 1,
-                  state: "open",
-                }}
-                className="label issue-label list-label"
-                data-label-id={String(label.id)}
-                key={String(label.id)}
-                {...stylex.props(styles.issueLabelBackground(label.color))}
-                data-stylex-owner="user-profile-issue-label-background"
-              >
-                {label.name}
-              </Link>
-            ))}
+            {labels.map((label) => {
+              const labelStyleProps = stylex.props(
+                styles.issueLabelPresentation,
+                styles.issueLabelBackground(label.color),
+              );
+
+              return (
+                <Link
+                  {...LEGACY_LINK_PROPS}
+                  {...labelStyleProps}
+                  to="/$ownerName/$projectName/issues"
+                  params={{ ownerName, projectName }}
+                  search={{
+                    assigneeId: "",
+                    authorId: "",
+                    commenterId: "",
+                    dueDate: "",
+                    filter: "",
+                    labelIds: [String(label.id)],
+                    milestoneId: "",
+                    orderBy: "updatedDate",
+                    orderDir: "desc",
+                    pageNum: 1,
+                    state: "open",
+                  }}
+                  data-label-id={String(label.id)}
+                  key={String(label.id)}
+                  data-stylex-owner="user-profile-parent-issue-label"
+                >
+                  {label.name}
+                </Link>
+              );
+            })}
             <div
               {...stylex.props(styles.issueChildList)}
               className={`${stylex.props(styles.issueChildList).className} child-issue-list${
@@ -1206,34 +1212,41 @@ function ProfileIssueChildRow({
       >
         <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
       </span>
-      {labels.map((label) => (
-        <Link
-          {...LEGACY_LINK_PROPS}
-          to="/$ownerName/$projectName/issues"
-          params={{ ownerName, projectName }}
-          search={{
-            assigneeId: "",
-            authorId: "",
-            commenterId: "",
-            dueDate: "",
-            filter: "",
-            labelIds: [String(label.id)],
-            milestoneId: "",
-            orderBy: "updatedDate",
-            orderDir: "desc",
-            pageNum: 1,
-            state: "open",
-          }}
-          className="label issue-label list-label active twoColumeModeTarget"
-          data-category-id={String(label.categoryId ?? "")}
-          data-label-id={String(label.id)}
-          key={String(label.id)}
-          {...stylex.props(styles.issueLabelBackground(label.color))}
-          data-stylex-owner="user-profile-issue-label-background"
-        >
-          {label.name}
-        </Link>
-      ))}
+      {labels.map((label) => {
+        const labelStyleProps = stylex.props(
+          styles.issueLabelPresentation,
+          styles.issueLabelBackground(label.color),
+        );
+
+        return (
+          <Link
+            {...LEGACY_LINK_PROPS}
+            {...labelStyleProps}
+            className={`${labelStyleProps.className ?? ""} twoColumeModeTarget`.trim()}
+            to="/$ownerName/$projectName/issues"
+            params={{ ownerName, projectName }}
+            search={{
+              assigneeId: "",
+              authorId: "",
+              commenterId: "",
+              dueDate: "",
+              filter: "",
+              labelIds: [String(label.id)],
+              milestoneId: "",
+              orderBy: "updatedDate",
+              orderDir: "desc",
+              pageNum: 1,
+              state: "open",
+            }}
+            data-category-id={String(label.categoryId ?? "")}
+            data-label-id={String(label.id)}
+            key={String(label.id)}
+            data-stylex-owner="user-profile-child-issue-label"
+          >
+            {label.name}
+          </Link>
+        );
+      })}
       <span
         {...stylex.props(styles.issueChildDate)}
         className={`${stylex.props(styles.issueChildDate).className} child-issue-date`}
