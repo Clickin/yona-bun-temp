@@ -4,6 +4,19 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile project avatar image and fork icon
+
+Batch 972 moves two populated public-profile Projects leaf declarations into
+route-local StyleX: repeated project-avatar images own the later frozen
+`.avatar-wrap img` `width:100%` and `vertical-align:top`, and the conditional
+fork split icon owns the frozen important `vertical-align:middle`. No image
+height is added because the generic legacy rule does not define one. Existing
+avatar Link/wrapper ownership, image source/alt, fork branch, origin Link/copy,
+DOM order, semantic classes, and icon font/glyph/color fallback remain
+unchanged. The focused external Chrome fast profile passes 1/1 at desktop and
+390px mobile; live legacy screenshot parity remains final visual-lock work and
+no geometry compensation was added.
+
 ## 2026-07-26 — Public profile project avatar and private lock
 
 Batch 971 moves two actually applied populated public-profile Projects child

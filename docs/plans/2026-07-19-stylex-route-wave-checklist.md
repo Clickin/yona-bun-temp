@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 972 public profile project avatar image and fork icon
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_projectlist.scala.html`, frozen `_common.less:173`, later `_yobiUI.less:439-466`, the complete `yobi.less`/Bootstrap/responsive import chain, and `conf/messages` are recorded as avatar-image/fork-icon evidence.
+- [x] Route-local StyleX owns exact repeated image `width:100%`/`vertical-align:top` and conditional fork-icon `vertical-align:middle !important`; no legacy-unproven image height or additional icon declaration is added.
+- [x] Avatar Link/wrapper/image source/alt, fork present/absent branch, split-icon classes, origin Link/copy, DOM order, Batch 971 owners, and generic icon font/glyph/color fallback remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-project-avatar-image-fork-icon.e2e.ts` verifies source provenance/owners, repeated images, fork branches, exact desktop/mobile declarations, DOM/order/links/copy/classes, no inline/plugin attributes, containment, and no document overflow.
+- [x] Managed outside-sandbox System-Chrome fast check passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 971 public profile project avatar and private lock
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_projectlist.scala.html`, frozen `_page.less:1842-1890`, `_common.less`, `_yobiUI.less:439-466`, the complete `yobi.less`/Bootstrap/responsive import chain, and `conf/messages` are recorded as populated Projects child evidence.

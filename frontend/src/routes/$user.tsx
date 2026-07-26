@@ -1437,7 +1437,12 @@ function ProfileProjectRow({
             className={`${stylex.props(styles.projectAvatarLink).className} avatar-wrap small`}
             data-stylex-owner="user-profile-project-avatar-link"
           >
-            <img src={project.logoUrl || "/assets/images/project_default_logo.png"} alt="" />
+            <img
+              {...stylex.props(styles.projectAvatarImage)}
+              src={project.logoUrl || "/assets/images/project_default_logo.png"}
+              alt=""
+              data-stylex-owner="user-profile-project-avatar-image"
+            />
           </Link>
         </div>
         <div
@@ -1460,7 +1465,11 @@ function ProfileProjectRow({
             ) : null}
             {project.originOwnerName && project.originProjectName ? (
               <>
-                <i className="yobicon-split yobicon-white vmiddle"></i>
+                <i
+                  {...stylex.props(styles.projectForkIcon)}
+                  className={`${stylex.props(styles.projectForkIcon).className} yobicon-split yobicon-white vmiddle`}
+                  data-stylex-owner="user-profile-project-fork-icon"
+                ></i>
                 <span>
                   {" "}
                   <Link

@@ -132,6 +132,13 @@ export const styles = stylex.create({
     backgroundColor: "#ddd",
     borderRadius: "3px !important",
   },
+  // Frozen later less/_yobiUI.less generic .avatar-wrap img.
+  projectAvatarImage: {
+    width: "100%",
+    verticalAlign: "top",
+  },
+  // Frozen less/_common.less .vmiddle.
+  projectForkIcon: { verticalAlign: "middle !important" },
   projectDescription: {
     color: "#bababa",
     marginLeft: "10px",
