@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 965 public profile pull-request state shell and empty avatar
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:4060-4078`, `_variables.less`, `_responsive.less`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request badge/empty-avatar evidence.
+- [x] Shared StyleX owns the exact `.state` badge shell, finite state background colors, and `empty-avatar-wrap` `32px` dimensions; pull-request DOM/order/copy/links/receiver behavior, existing row/title/avatar/infos owners, and legacy `state ${displayState}` / `empty-avatar-wrap` classes remain.
+- [x] `frontend/tests/stylex-user-profile-pull-request-state-shell.e2e.ts` verifies provenance, owners, populated conflict/open output, badge shell desktop/mobile computed declarations, finite state colors, empty-avatar dimensions, no plugin attrs, and containment/no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-26 Batch 964 public profile pull-request row residuals
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:3851-4085`, `_responsive.less`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request row evidence.

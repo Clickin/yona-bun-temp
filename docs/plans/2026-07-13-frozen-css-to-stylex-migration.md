@@ -4,6 +4,16 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile pull-request state shell and empty avatar
+
+Batch 965 moves the populated public-profile pull-request row's frozen
+`.state` badge shell and `empty-avatar-wrap` placeholder dimensions into shared
+public-profile StyleX ownership. The pull-request row DOM, order, conflict/open
+copy, links, receiver rail, existing row/title/avatar/infos owners, and legacy
+`state ${displayState}` / `empty-avatar-wrap` classes remain unchanged. Focused
+external Chrome checks pass 1/1 in normal and fallback-off modes. Live legacy
+screenshot parity remains unverified and no geometry compensation was added.
+
 ## 2026-07-26 — Public profile pull-request row residuals
 
 Batch 964 moves the populated public-profile pull-request row's frozen

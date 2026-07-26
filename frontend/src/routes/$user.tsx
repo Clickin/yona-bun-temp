@@ -1199,6 +1199,18 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   const state = stringField(pullRequest, "state", "open").toLowerCase();
   const isConflict = Boolean(pullRequest.conflict);
   const displayState = isConflict ? "conflict" : state;
+  const pullRequestStateStyle = stylex.props(
+    styles.pullRequestState,
+    displayState === "open"
+      ? styles.pullRequestStateOpen
+      : displayState === "closed"
+        ? styles.pullRequestStateClosed
+        : displayState === "rejected"
+          ? styles.pullRequestStateRejected
+          : displayState === "merged"
+            ? styles.pullRequestStateMerged
+            : styles.pullRequestStateConflict,
+  );
   const pullRequestTitleStyle = isConflict
     ? stylex.props(styles.pullRequestTitleLink, styles.pullRequestConflictLink)
     : stylex.props(styles.pullRequestTitleLink);
@@ -1306,12 +1318,18 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               <img src={receiverAvatarUrl} width="32" height="32" alt={receiverLabel} />
             </Link>
           ) : (
-            <div className="empty-avatar-wrap">&nbsp;</div>
+            <div
+              {...stylex.props(styles.pullRequestEmptyAvatarWrap)}
+              className={`${stylex.props(styles.pullRequestEmptyAvatarWrap).className} empty-avatar-wrap`}
+              data-stylex-owner="user-profile-pull-request-empty-avatar-wrap"
+            >
+              &nbsp;
+            </div>
           )}
         </div>
         <div
-          {...stylex.props(styles.pullRequestState)}
-          className={`${stylex.props(styles.pullRequestState).className} state ${displayState}`}
+          {...pullRequestStateStyle}
+          className={`${pullRequestStateStyle.className} state ${displayState}`}
           data-stylex-owner="user-profile-pull-request-state"
         >
           {t(`pullRequest.state.${displayState}`)}

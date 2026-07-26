@@ -229,7 +229,21 @@ export const styles = stylex.create({
   issueDueDate: { float: "right" },
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.
   pullRequestReceiverRail: { float: "right" },
-  pullRequestState: { float: "right" },
+  pullRequestState: {
+    borderRadius: "15px",
+    color: "#FFF",
+    float: "right",
+    fontWeight: "bold",
+    marginRight: "16px",
+    marginTop: "7px",
+    padding: "5px 12px",
+  },
+  pullRequestStateClosed: { backgroundColor: "#fd6956" },
+  pullRequestStateConflict: { backgroundColor: "#c0392b" },
+  pullRequestStateMerged: { backgroundColor: "#65c9df" },
+  pullRequestStateOpen: { backgroundColor: "#b6da54" },
+  pullRequestStateRejected: { backgroundColor: "#fd8658" },
+  pullRequestEmptyAvatarWrap: { height: "32px", width: "32px" },
   // Frozen less/_page.less .post-item.
   pullRequestRow: {
     borderBottom: "1px solid #ddd",
