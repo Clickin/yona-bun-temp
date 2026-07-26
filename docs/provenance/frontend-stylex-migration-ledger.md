@@ -2773,3 +2773,28 @@ Batch 1016 retires only the React `span10` literal from the populated `/$user?se
 ## 2026-07-27 — Batch 1014 public profile issue-row post-item class retirement
 
 Batch 1014 retires only the React `post-item` literal from the populated `/$user?selected=issues` issue row. `yona-original/app/views/user/view.scala.html` includes `user/partial_issues.scala.html`, whose `<li class="post-item title">` is the output DOM evidence; frozen `_page.less` generic `.post-item` and `.my-issues .post-item` declarations, `_responsive.less` max-767 padding, `_common.less`, Bootstrap/responsive CSS, the complete ordered `yobi.less` import chain, and `conf/messages` establish the cascade and copy. `issueRow` owns the exact border-bottom color/style/width longhands, block display, auto overflow, clear, color/padding, and responsive padding. The route preserves the `title` class, `li`/href/id, owner marker, children/order, branches, copy, links, and other `post-item` consumers. Focused external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366×900 and 390×844; source/runtime class absence, computed declarations, row viewport containment, no document overflow, plugin-attribute absence, and screenshots were inspected. Live legacy same-fixture screenshot parity remains unverified; no numeric compensation is added. The inherited administrator/sidebar x-axis mismatch and approved Yoram footer differences remain intentional exclusions.
+
+
+## Final-lock evidence after Batch 1016 — 2026-07-27
+
+Scala goal automation passed with 933 commits audited. The complete fallback-off
+consumer graph passed under external System Chrome with 81 passing tests and one
+intentional skip for a generated-fallback dead-selector case. The managed legacy
+instance at 127.0.0.1:9000 was prepared, running, and login-probed successfully.
+
+Authenticated legacy/local public-profile Pull Requests empty states were paired
+and visually inspected at desktop and 390px. Both current APIs return an empty
+pullRequestItems collection, while profile/sidebar/tab/empty-message geometry
+aligns. A separately served fallback-off local instance at 127.0.0.1:3105
+rendered the same state and requested no legacy-fallback.css; the inspected
+captures are output/playwright/visual-sweep/live-yoram-fallback-off-admin-pullrequests.png
+and output/playwright/visual-sweep/live-yoram-fallback-off-admin-pullrequests-mobile.png.
+
+This does not close populated Batch 1016 live parity: the current legacy and
+local fixtures have no populated Pull Request row, so the span10 content column
+remains covered by the focused normal/fallback-off populated-state test but not
+by a same-fixture legacy screenshot pair. The stale visual-sweep
+.user-profile-page presence assertion is a harness gap against the current
+owner-based React DOM, not a blank-page rendering failure. The inherited
+administrator/sidebar x-axis mismatch and approved NAVER/provider/developer-
+contact/upstream-repository footer differences remain intentional exclusions.
