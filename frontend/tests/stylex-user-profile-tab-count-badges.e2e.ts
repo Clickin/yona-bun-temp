@@ -159,7 +159,13 @@ async function assertPopulated(page: Page, viewportWidth: number) {
   const topButtonBox = await topButtons.first().evaluate((node) => node.getBoundingClientRect());
   await topButtons.nth(1).click();
   await expect(topTabs.locator("li").nth(1)).toHaveClass(/active/u);
-  await expect(page.locator("#pullRequests")).toHaveClass(/active/u);
+  const pullRequestsPane = page.locator("#pullRequests");
+  await expect(pullRequestsPane).toHaveAttribute(
+    "data-stylex-owner",
+    "user-profile-pane-pull-requests",
+  );
+  await expect(pullRequestsPane).toHaveCSS("display", "block");
+  await expect(pullRequestsPane).not.toHaveClass(/(?:^|\s)(?:active|tab-pane)(?:\s|$)/u);
   const topButtonBoxAfter = await topButtons
     .first()
     .evaluate((node) => node.getBoundingClientRect());
@@ -171,7 +177,13 @@ async function assertPopulated(page: Page, viewportWidth: number) {
     .evaluate((node) => node.getBoundingClientRect());
   await issueButtons.nth(1).click();
   await expect(issueTabs.locator("li").nth(1)).toHaveClass(/active/u);
-  await expect(page.locator("#closedIssues")).toHaveClass(/active/u);
+  const closedIssuesPane = page.locator("#closedIssues");
+  await expect(closedIssuesPane).toHaveAttribute(
+    "data-stylex-owner",
+    "user-profile-pane-closed-issues",
+  );
+  await expect(closedIssuesPane).toHaveCSS("display", "block");
+  await expect(closedIssuesPane).not.toHaveClass(/(?:^|\s)(?:active|tab-pane)(?:\s|$)/u);
   const issueButtonBoxAfter = await issueButtons
     .first()
     .evaluate((node) => node.getBoundingClientRect());

@@ -209,7 +209,13 @@ test("authenticated public profile owns nested issue tabs", async ({ page }) => 
 
   await buttons.nth(1).click();
   await expect(tabs.locator("li").nth(1)).toHaveClass(/active/);
-  await expect(page.locator("#closedIssues")).toHaveClass(/active/);
+  const closedIssuesPane = page.locator("#closedIssues");
+  await expect(closedIssuesPane).toHaveAttribute(
+    "data-stylex-owner",
+    "user-profile-pane-closed-issues",
+  );
+  await expect(closedIssuesPane).toHaveCSS("display", "block");
+  await expect(closedIssuesPane).not.toHaveClass(/(?:^|\s)(?:active|tab-pane)(?:\s|$)/u);
   await expect(tabs.locator("li").nth(0)).not.toHaveClass(/active/);
 
   await page.setViewportSize({ width: 390, height: 844 });

@@ -4,6 +4,19 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile tab-content visibility ownership
+
+Batch 981 moves the authenticated non-guest public-profile outer and nested
+tab-content visibility boundary into route-local StyleX. Two wrappers own
+Bootstrap's exact `overflow:hidden`; the five issues/open/closed/pull-request/
+projects panes own the exact inactive `display:none` and React-state-selected
+`display:block` variants. Only these profile nodes retire `tab-content`,
+`tab-pane`, and pane `active`; tab-button `li.active`, ids, copy/order,
+interactions, lists, and the separate usermenu tab-content consumer remain.
+Focused external Chrome fallback-off passes 2/2 at desktop and 390px mobile,
+and the six selected adjacent tests bring the combined run to 7/7. Live legacy
+screenshot parity remains final visual-lock work.
+
 ## 2026-07-26 — Public profile daysAgo input complete ownership
 
 Batch 980 completes the authenticated non-guest public-profile daysAgo number

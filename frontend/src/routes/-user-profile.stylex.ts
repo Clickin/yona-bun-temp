@@ -118,6 +118,10 @@ export const styles = stylex.create({
   // Legacy less/_page.less .user-stream-box.
   stream: { minWidth: 0, overflow: "hidden", paddingLeft: "20px" },
   tabs: { color: userProfileColors.accentText },
+  // Frozen Bootstrap .tab-content and direct pane/active child rules.
+  tabContent: { overflow: "hidden" },
+  tabPane: { display: "none" },
+  tabPaneActive: { display: "block" },
   // Frozen less/_yobiUI.less .nav-tabs li a and _responsive.less mobile override.
   profileTabButton: {
     paddingLeft: "30px",

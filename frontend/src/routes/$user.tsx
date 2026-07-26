@@ -534,8 +534,18 @@ function PublicProfileBody({
                   </li>
                 </ul>
 
-                <div className="tab-content" data-stylex-owner="user-profile-tab-content">
-                  <div id="issues" className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}>
+                <div
+                  className={stylex.props(styles.tabContent).className}
+                  data-stylex-owner="user-profile-tab-content"
+                >
+                  <div
+                    id="issues"
+                    className={
+                      stylex.props(styles.tabPane, activeTab === "issues" && styles.tabPaneActive)
+                        .className
+                    }
+                    data-stylex-owner="user-profile-pane-issues"
+                  >
                     <ul
                       className={`${stylex.props(styles.issueTabs).className} nav nav-tabs nm`}
                       data-stylex-owner="user-profile-issue-tabs"
@@ -581,10 +591,19 @@ function PublicProfileBody({
                         />
                       </li>
                     </ul>
-                    <div className="tab-content">
+                    <div
+                      className={stylex.props(styles.tabContent).className}
+                      data-stylex-owner="user-profile-issue-tab-content"
+                    >
                       <div
                         id="openIssues"
-                        className={`tab-pane ${activeIssueTab === "openIssues" ? "active" : ""}`}
+                        className={
+                          stylex.props(
+                            styles.tabPane,
+                            activeIssueTab === "openIssues" && styles.tabPaneActive,
+                          ).className
+                        }
+                        data-stylex-owner="user-profile-pane-open-issues"
                       >
                         {issues.length === 0 ? (
                           <div
@@ -612,7 +631,13 @@ function PublicProfileBody({
                       </div>
                       <div
                         id="closedIssues"
-                        className={`tab-pane ${activeIssueTab === "closedIssues" ? "active" : ""}`}
+                        className={
+                          stylex.props(
+                            styles.tabPane,
+                            activeIssueTab === "closedIssues" && styles.tabPaneActive,
+                          ).className
+                        }
+                        data-stylex-owner="user-profile-pane-closed-issues"
                       >
                         {issues.length === 0 ? (
                           <div
@@ -642,7 +667,13 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="pullRequests"
-                    className={`tab-pane ${activeTab === "pullRequests" ? "active" : ""}`}
+                    className={
+                      stylex.props(
+                        styles.tabPane,
+                        activeTab === "pullRequests" && styles.tabPaneActive,
+                      ).className
+                    }
+                    data-stylex-owner="user-profile-pane-pull-requests"
                   >
                     {profileResponse.pullRequestItems.length === 0 ? (
                       <div
@@ -668,7 +699,11 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="projects"
-                    className={`tab-pane ${activeTab === "projects" ? "active" : ""}`}
+                    className={
+                      stylex.props(styles.tabPane, activeTab === "projects" && styles.tabPaneActive)
+                        .className
+                    }
+                    data-stylex-owner="user-profile-pane-projects"
                   >
                     {profileResponse.memberProjects.length === 0 ? (
                       <div

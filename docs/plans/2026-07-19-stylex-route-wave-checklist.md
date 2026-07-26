@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 981 public profile tab-content visibility ownership
+
+- [x] `yona-original/app/views/user/view.scala.html`, Bootstrap `.tab-content` and direct pane/active-child rules, `bootstrap-responsive.css`, and the complete `yobi.less` import chain establish the exact two-wrapper/five-pane output and absence of later matching overrides.
+- [x] Route-local StyleX owns `overflow:hidden` and inactive/active `display:none/block` only for the profile body; the unrelated usermenu tab-content consumer and tab-button `li.active` states remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-tab-content-visibility.e2e.ts` verifies RED→GREEN source/import evidence, desktop/mobile outer and nested interaction matrices, ids/order/copy, complete computed visibility, containment/hidden geometry, guest absence, class retirement, retained usermenu fallback, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes focused 2/2 and selected adjacent 7/7; live legacy screenshot parity remains final visual-lock work and no compensation was added.
+
 ### 2026-07-26 Batch 980 public profile daysAgo input complete ownership
 
 - [x] `yona-original/app/views/user/view.scala.html`, Bootstrap number-input base/focus rules, the complete ordered `yobi.less` chain, `_page.less .input-mini-min`, `_responsive.less`, `_yobiUI.less`, variables/messages, and nonmatching later imports are recorded.

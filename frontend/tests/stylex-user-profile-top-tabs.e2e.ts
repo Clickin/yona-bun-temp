@@ -207,7 +207,13 @@ test("authenticated public profile owns top-level tab-button parity", async ({ p
 
   await buttons.nth(1).click();
   await expect(tabs.locator("li").nth(1)).toHaveClass(/active/);
-  await expect(page.locator("#pullRequests")).toHaveClass(/active/);
+  const pullRequestsPane = page.locator("#pullRequests");
+  await expect(pullRequestsPane).toHaveAttribute(
+    "data-stylex-owner",
+    "user-profile-pane-pull-requests",
+  );
+  await expect(pullRequestsPane).toHaveCSS("display", "block");
+  await expect(pullRequestsPane).not.toHaveClass(/(?:^|\s)(?:active|tab-pane)(?:\s|$)/u);
   await expect(tabs.locator("li").nth(0)).not.toHaveClass(/active/);
 
   await page.setViewportSize({ width: 390, height: 844 });
