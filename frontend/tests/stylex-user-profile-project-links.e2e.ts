@@ -179,8 +179,8 @@ test("profile project title and owner links own the final frozen generic anchor 
     for (const [index, project] of projects.entries()) {
       const title = titles.nth(index);
       const owner = owners.nth(index);
-      await expect(title).toHaveClass(/project-name/u);
-      await expect(owner).toHaveClass(/owner-name-small/u);
+      await expect(title).not.toHaveClass(/(?:^|\s)project-name(?:\s|$)/u);
+      await expect(owner).not.toHaveClass(/(?:^|\s)owner-name-small(?:\s|$)/u);
       await expect(title).toHaveAttribute(
         "href",
         `/yona/${project.ownerName}/${project.projectName}`,
@@ -193,12 +193,16 @@ test("profile project title and owner links own the final frozen generic anchor 
       await expect(
         rows
           .nth(index)
-          .locator('[data-stylex-owner="user-profile-project-header"] > .project-name'),
+          .locator(
+            '[data-stylex-owner="user-profile-project-header"] > [data-stylex-owner="user-profile-project-title-link"]',
+          ),
       ).toHaveCount(1);
       await expect(
         rows
           .nth(index)
-          .locator('[data-stylex-owner="user-profile-project-name-tag"] > .owner-name-small'),
+          .locator(
+            '[data-stylex-owner="user-profile-project-name-tag"] > [data-stylex-owner="user-profile-project-owner-link"]',
+          ),
       ).toHaveCount(1);
     }
 

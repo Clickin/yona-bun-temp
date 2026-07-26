@@ -1528,7 +1528,6 @@ function ProfileProjectRow({
               {...LEGACY_LINK_PROPS}
               to={projectPath}
               {...stylex.props(styles.projectTitleLink)}
-              className={`${stylex.props(styles.projectTitleLink).className} project-name`}
               data-stylex-owner="user-profile-project-title-link"
             >
               {project.projectName}
@@ -1583,7 +1582,6 @@ function ProfileProjectRow({
               {...LEGACY_LINK_PROPS}
               to={ownerPath}
               {...stylex.props(styles.projectOwnerLink)}
-              className={`${stylex.props(styles.projectOwnerLink).className} owner-name-small`}
               data-stylex-owner="user-profile-project-owner-link"
             >
               {project.ownerName}

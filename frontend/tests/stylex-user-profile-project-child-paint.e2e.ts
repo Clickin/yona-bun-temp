@@ -199,16 +199,20 @@ test("Projects tab owns only the applied private icon and project avatar paint",
   await expect(privateIcon).toHaveClass(/yobicon-lock/u);
   await expect(privateIcon).toHaveClass(/yobicon-small/u);
   await expect(
-    privateRow.locator('[data-stylex-owner="user-profile-project-header"] > .project-name + i'),
+    privateRow.locator(
+      '[data-stylex-owner="user-profile-project-header"] > [data-stylex-owner="user-profile-project-title-link"] + i',
+    ),
   ).toBeAttached();
   await expect(
     privateRow.locator('[data-stylex-owner="user-profile-project-name-tag"]'),
   ).toContainText("3 private-owner today, Latest code update an hour ago");
   await expect(
-    privateRow.locator('[data-stylex-owner="user-profile-project-name-tag"] .owner-name-small'),
+    privateRow.locator(
+      '[data-stylex-owner="user-profile-project-name-tag"] [data-stylex-owner="user-profile-project-owner-link"]',
+    ),
   ).toHaveText("private-owner");
   await expect(
-    privateRow.locator('a.owner-name-small[data-stylex-owner="user-profile-project-owner-link"]'),
+    privateRow.locator('a[data-stylex-owner="user-profile-project-owner-link"]'),
   ).toHaveCount(1);
 
   const forbiddenAttributes = [
@@ -265,13 +269,13 @@ test("Projects tab owns only the applied private icon and project avatar paint",
         '[data-stylex-owner="user-profile-project-avatar-link"]',
       )!;
       const projectNameLink = element.querySelector(
-        '[data-stylex-owner="user-profile-project-header"] > .project-name',
+        '[data-stylex-owner="user-profile-project-header"] > [data-stylex-owner="user-profile-project-title-link"]',
       )!;
       const privateIcon = element.querySelector(
         '[data-stylex-owner="user-profile-project-private-icon"]',
       );
       const nameTag = element.querySelector('[data-stylex-owner="user-profile-project-name-tag"]')!;
-      const owner = nameTag.querySelector(".owner-name-small")!;
+      const owner = nameTag.querySelector('[data-stylex-owner="user-profile-project-owner-link"]')!;
       const date = owner.nextElementSibling!;
       return {
         avatarRailBeforeInfo: Boolean(

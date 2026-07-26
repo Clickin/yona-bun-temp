@@ -187,7 +187,6 @@ test("profile project avatar images and conditional fork icon own the final lega
   expect(headerChildren).toEqual([
     expect.objectContaining({
       tag: "A",
-      className: expect.stringContaining("project-name"),
       text: "forked",
     }),
     expect.objectContaining({
