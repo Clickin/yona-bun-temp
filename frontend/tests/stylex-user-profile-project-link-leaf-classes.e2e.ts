@@ -255,8 +255,9 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
   expect(projectRowSource).not.toContain(
     "className={`${stylex.props(styles.projectOwnerLink).className} owner-name-small`}",
   );
-  expect(projectRowSource).toContain("yobicon-lock yobicon-small");
-  expect(projectRowSource).toContain("avatar-wrap small");
+  expect(projectRowSource).not.toContain("yobicon-lock yobicon-small");
+  expect(projectRowSource).not.toContain("avatar-wrap small");
+  expect(projectRowSource).not.toContain("yobicon-white vmiddle");
   expect(projectRowSource).toContain('className="stats"');
   expect(projectRowSource).toContain("nbtn black medium last leaveProject");
   expect(route).toContain("infos-item project-name");
@@ -280,11 +281,12 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
     await expect(rows.locator(":scope .project-name, :scope .owner-name-small")).toHaveCount(0);
     await expect(
       rows.locator('[data-stylex-owner="user-profile-project-avatar-link"]'),
-    ).toHaveClass([
-      /avatar-wrap.*small|small.*avatar-wrap/u,
-      /avatar-wrap.*small|small.*avatar-wrap/u,
-      /avatar-wrap.*small|small.*avatar-wrap/u,
-    ]);
+    ).toHaveClass([/.+/u, /.+/u, /.+/u]);
+    await expect(
+      rows.locator(
+        '[data-stylex-owner="user-profile-project-avatar-link"].avatar-wrap, [data-stylex-owner="user-profile-project-avatar-link"].small',
+      ),
+    ).toHaveCount(0);
     await expect(
       rows.locator(":scope > [data-stylex-owner='user-profile-project-stats'] > .stats"),
     ).toHaveCount(3);
@@ -317,10 +319,16 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
 
     await expect(
       rows.nth(0).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
-    ).toHaveClass(/yobicon-lock.*yobicon-small|yobicon-small.*yobicon-lock/u);
+    ).toHaveClass(/yobicon-lock/u);
+    await expect(
+      rows.nth(0).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
+    ).not.toHaveClass(/yobicon-small/u);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-fork-icon"]'),
-    ).toHaveClass(/yobicon-split.*yobicon-white.*vmiddle/u);
+    ).toHaveClass(/yobicon-split.*yobicon-white/u);
+    await expect(
+      rows.nth(1).locator('[data-stylex-owner="user-profile-project-fork-icon"]'),
+    ).not.toHaveClass(/vmiddle/u);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-origin-link"]'),
     ).toHaveText("origin-owner/origin-project");

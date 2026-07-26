@@ -134,7 +134,8 @@ test("profile project avatar images and conditional fork icon own the final lega
     'projectAvatarImage: {\n    width: "100%",\n    verticalAlign: "top",\n  }',
   );
   expect(styleSource).not.toContain('projectAvatarImage: {\n    height: "100%"');
-  expect(styleSource).toContain('projectForkIcon: { verticalAlign: "middle !important" }');
+  expect(styleSource).toContain("projectForkIcon: {");
+  expect(styleSource).toContain('verticalAlign: "middle !important"');
   expect(routeSource).toContain('data-stylex-owner="user-profile-project-avatar-image"');
   expect(routeSource).toContain('data-stylex-owner="user-profile-project-fork-icon"');
 
@@ -156,7 +157,7 @@ test("profile project avatar images and conditional fork icon own the final lega
   ).toHaveCount(0);
   await expect(forkIcon).toHaveClass(/yobicon-split/u);
   await expect(forkIcon).toHaveClass(/yobicon-white/u);
-  await expect(forkIcon).toHaveClass(/vmiddle/u);
+  await expect(forkIcon).not.toHaveClass(/vmiddle/u);
   await expect(forkIcon).not.toHaveAttribute("style");
   await expect(forkIcon).not.toHaveAttribute("data-toggle");
   await expect(forkIcon).not.toHaveAttribute("data-action");
@@ -165,8 +166,8 @@ test("profile project avatar images and conditional fork icon own the final lega
     const row = rows.nth(index);
     const wrapper = row.locator('[data-stylex-owner="user-profile-project-avatar-link"]');
     const image = row.locator('[data-stylex-owner="user-profile-project-avatar-image"]');
-    await expect(wrapper).toHaveClass(/avatar-wrap/u);
-    await expect(wrapper).toHaveClass(/small/u);
+    await expect(wrapper).not.toHaveClass(/avatar-wrap/u);
+    await expect(wrapper).not.toHaveClass(/small/u);
     await expect(wrapper).toHaveAttribute("href", `/yona/other/${name}`);
     await expect(image).toHaveAttribute("src", `/assets/images/${name}.png`);
     await expect(image).toHaveAttribute("alt", "");

@@ -197,7 +197,7 @@ test("Projects tab owns only the applied private icon and project avatar paint",
     publicRow.locator('[data-stylex-owner="user-profile-project-private-icon"]'),
   ).toHaveCount(0);
   await expect(privateIcon).toHaveClass(/yobicon-lock/u);
-  await expect(privateIcon).toHaveClass(/yobicon-small/u);
+  await expect(privateIcon).not.toHaveClass(/yobicon-small/u);
   await expect(
     privateRow.locator(
       '[data-stylex-owner="user-profile-project-header"] > [data-stylex-owner="user-profile-project-title-link"] + i',
@@ -253,8 +253,8 @@ test("Projects tab owns only the applied private icon and project avatar paint",
     [publicRow, "public-owner", "public-project"],
   ] as const) {
     const avatar = row.locator('[data-stylex-owner="user-profile-project-avatar-link"]');
-    await expect(avatar).toHaveClass(/avatar-wrap/u);
-    await expect(avatar).toHaveClass(/small/u);
+    await expect(avatar).not.toHaveClass(/avatar-wrap/u);
+    await expect(avatar).not.toHaveClass(/small/u);
     await expect(avatar).toHaveAttribute("href", `/yona/${ownerName}/${projectName}`);
     await expect(avatar.locator("img")).toHaveCount(1);
     const structure = await row.evaluate((element) => {

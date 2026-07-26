@@ -304,8 +304,24 @@ export const styles = stylex.create({
       textDecoration: "underline",
     },
   },
-  // Frozen less/_page.less .all-projects .project .info-wrap .header .yobicon-lock.
-  projectPrivateIcon: { color: "#7F8C8D" },
+  // Frozen public/stylesheets/yobicon/style.css generic base, .yobicon-lock pseudo,
+  // and .yobicon-small fontSize; less/_page.less supplies the lock color.
+  projectPrivateIcon: {
+    backgroundImage: "none",
+    color: "#7F8C8D",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontSize: "0.7em",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e21e"' },
+  },
   // Frozen less/_common.less then later less/_yobiUI.less .avatar-wrap.small cascade.
   projectAvatarLink: {
     width: "24px",
@@ -321,8 +337,22 @@ export const styles = stylex.create({
     width: "100%",
     verticalAlign: "top",
   },
-  // Frozen less/_common.less .vmiddle.
-  projectForkIcon: { verticalAlign: "middle !important" },
+  // Frozen public/stylesheets/yobicon/style.css generic base and .yobicon-split
+  // pseudo, with less/_common.less .vmiddle final alignment.
+  projectForkIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "middle !important",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e450"' },
+  },
   // Frozen Bootstrap generic anchor rules followed by less/_common.less a.
   projectOriginLink: {
     color: "inherit",

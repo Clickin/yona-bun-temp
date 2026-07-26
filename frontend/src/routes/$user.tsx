@@ -1505,7 +1505,6 @@ function ProfileProjectRow({
             {...LEGACY_LINK_PROPS}
             to={projectPath}
             {...stylex.props(styles.projectAvatarLink)}
-            className={`${stylex.props(styles.projectAvatarLink).className} avatar-wrap small`}
             data-stylex-owner="user-profile-project-avatar-link"
           >
             <img
@@ -1535,7 +1534,7 @@ function ProfileProjectRow({
             {project.projectScope === "private" ? (
               <i
                 {...stylex.props(styles.projectPrivateIcon)}
-                className={`${stylex.props(styles.projectPrivateIcon).className} yobicon-lock yobicon-small`}
+                className={`${stylex.props(styles.projectPrivateIcon).className} yobicon-lock`}
                 data-stylex-owner="user-profile-project-private-icon"
               ></i>
             ) : null}
@@ -1543,7 +1542,7 @@ function ProfileProjectRow({
               <>
                 <i
                   {...stylex.props(styles.projectForkIcon)}
-                  className={`${stylex.props(styles.projectForkIcon).className} yobicon-split yobicon-white vmiddle`}
+                  className={`${stylex.props(styles.projectForkIcon).className} yobicon-split yobicon-white`}
                   data-stylex-owner="user-profile-project-fork-icon"
                 ></i>
                 <span>

@@ -109,7 +109,9 @@ test("authenticated profile project avatar rail owns the legacy left float", asy
   await expect(rail).not.toHaveClass(/pull-left/u);
   await expect(rail).not.toHaveAttribute("style");
   await expect(rail).not.toHaveAttribute("data-toggle");
-  await expect(rail.locator("a.avatar-wrap.small")).toHaveAttribute("href", "/yona/other/sample");
+  await expect(
+    rail.locator('a[data-stylex-owner="user-profile-project-avatar-link"]'),
+  ).toHaveAttribute("href", "/yona/other/sample");
   await expect(rail.locator("img")).toHaveAttribute("alt", "");
   await expect(rail.locator("img")).toHaveAttribute("src", /project_default_logo\.png/u);
   await expect(row).toContainText("A sample project");
