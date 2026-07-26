@@ -60,6 +60,7 @@ test("populated public profile pull-request row owns receiver and state floats",
   ]);
 
   expect(legacyView).toContain("partial_pullRequests");
+  expect(legacyPartial).toContain('<div class="span2">');
   expect(legacyPartial).toContain('<div class="mt5 pull-right">');
   expect(legacyPartial).toContain('<div class="state @if(req.isConflict == true)');
   expect(legacyPartial).toContain('class="empty-avatar-wrap"');
@@ -70,16 +71,44 @@ test("populated public profile pull-request row owns receiver and state floats",
   expect(responsiveLess).toContain("@media");
   expect(yobiLess).toContain('@import "less/_common.less";');
   expect(yobiLess).toContain('@import "less/_page.less";');
+  expect(source).toContain(
+    'import { styles, userProfileNotFoundStyles } from "./-user-profile.stylex";',
+  );
+  expect(bootstrap).toContain('.row-fluid [class*="span"]');
+  expect(bootstrap).toContain("margin-left: 2.127659574468085%;");
+  expect(bootstrap).toContain("box-sizing: border-box;");
+  expect(bootstrap).toContain(".row-fluid .span2");
+  expect(bootstrap).toContain("width: 14.893617021276595%;");
+  expect(bootstrapResponsive).toContain("@media (max-width: 767px)");
+  expect(bootstrapResponsive).toContain("float: none;");
+  expect(bootstrapResponsive).toContain("margin-left: 0;");
+  expect(bootstrapResponsive).toContain("width: 100%;");
   expect(bootstrap).toContain(".pull-right {\n  float: right;");
   expect(bootstrapResponsive).toContain("@media");
   expect(messages).toContain("pullRequest.state.open");
 
   expect(source).toContain('data-stylex-owner="user-profile-pull-request-receiver-rail"');
+  expect(source).toContain('data-stylex-owner="user-profile-pull-request-receiver-column"');
   expect(source).toContain('data-stylex-owner="user-profile-pull-request-state"');
   expect(source).not.toContain("mt5 pull-right");
   expect(source).not.toContain("state ${state} pull-right");
-  expect(styleSource).toContain('pullRequestReceiverRail: { float: "right" }');
-  expect(styleSource).toContain('pullRequestState: { float: "right" }');
+  expect(source).not.toContain('className="span2"');
+  expect(styleSource).toContain("pullRequestReceiverColumn: {");
+  for (const declaration of [
+    'boxSizing: "border-box"',
+    'display: "block"',
+    'float: "left"',
+    'marginLeft: "2.127659574468085%"',
+    'minHeight: "30px"',
+    'width: "14.893617021276595%"',
+    '"@media (max-width: 767px)": {',
+    'marginLeft: "0px"',
+    'width: "100%"',
+    'pullRequestReceiverRail: { float: "right", marginTop: "5px" }',
+    "pullRequestState: {",
+  ]) {
+    expect(styleSource).toContain(declaration);
+  }
 
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
@@ -139,13 +168,21 @@ test("populated public profile pull-request row owns receiver and state floats",
   await page.goto(`${basePath}/door`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Pull request/i }).click();
 
-  const row = page.locator("#pullRequests > ul > li.post-item");
+  const row = page.locator('[data-stylex-owner="user-profile-pull-request-row"]');
+  const receiverColumn = page.locator(
+    '[data-stylex-owner="user-profile-pull-request-receiver-column"]',
+  );
   const receiver = page.locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"]');
   const state = page.locator('[data-stylex-owner="user-profile-pull-request-state"]');
   await expect(row).toHaveCount(1);
+  await expect(row.locator(".post-item")).toHaveCount(0);
+  await expect(row.locator(".span2")).toHaveCount(0);
   await expect(row).toContainText("Profile pull request");
+  await expect(receiverColumn).toHaveCount(1);
   await expect(receiver).toHaveCount(1);
-  await expect(receiver.locator('a.avatar-wrap.assinee img[alt="Receiver User"]')).toHaveCount(1);
+  const receiverLink = receiver.locator("a.avatar-wrap.assinee");
+  await expect(receiverLink).toHaveCount(1);
+  await expect(receiverLink.locator('img[alt="Receiver User"]')).toHaveCount(1);
   await expect(state).toHaveText("Open");
   await expect(state).toHaveClass(/state open/u);
   await expect(receiver).not.toHaveClass(/pull-right/u);
@@ -154,11 +191,21 @@ test("populated public profile pull-request row owns receiver and state floats",
   await expect(receiver).not.toHaveAttribute("data-placement");
   await expect(state).not.toHaveAttribute("data-toggle");
   await expect(state).not.toHaveAttribute("data-placement");
+  await expect(receiverColumn).not.toHaveAttribute("data-toggle");
+  await expect(receiverColumn).not.toHaveAttribute("data-placement");
+  await expect(receiverLink).not.toHaveAttribute("data-toggle");
+  await expect(receiverLink).not.toHaveAttribute("data-placement");
+
+  await expect(receiverColumn).toHaveCSS("display", "block");
+  await expect(receiverColumn).toHaveCSS("float", "left");
+  await expect(receiverColumn).toHaveCSS("box-sizing", "border-box");
 
   for (const locator of [receiver, state]) {
     await expect(locator).toHaveCSS("float", "right");
     const geometry = await locator.evaluate((node) => {
-      const rowBox = node.closest("li.post-item")?.getBoundingClientRect();
+      const rowBox = node
+        .closest('[data-stylex-owner="user-profile-pull-request-row"]')
+        ?.getBoundingClientRect();
       const box = node.getBoundingClientRect();
       const computed = getComputedStyle(node);
       return {
@@ -179,24 +226,57 @@ test("populated public profile pull-request row owns receiver and state floats",
     expect(geometry.documentWidth).toBe(geometry.viewportWidth);
   }
 
-  const order = await row
-    .locator(".span2")
-    .evaluate((node) => Array.from(node.children).map((child) => child.className));
-  expect(order).toEqual([expect.stringContaining("mt5"), expect.stringContaining("state")]);
+  const order = await receiverColumn.evaluate((node) =>
+    Array.from(node.children).map((child) => child.getAttribute("data-stylex-owner")),
+  );
+  expect(order).toEqual([
+    "user-profile-pull-request-receiver-rail",
+    "user-profile-pull-request-state",
+  ]);
+
+  await page.setViewportSize({ width: 767, height: 844 });
+  await expect(receiverColumn).toHaveCSS("float", "none");
+  await expect(receiverColumn).toHaveCSS("margin-left", "0px");
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(receiverColumn).toHaveCSS("float", "none");
+  await expect(receiverColumn).toHaveCSS("margin-left", "0px");
+  const mobileColumnGeometry = await receiverColumn.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    const parent = node.parentElement;
+    if (!parent) return null;
+    const parentStyle = getComputedStyle(parent);
+    const parentContentWidth =
+      parent.clientWidth -
+      Number.parseFloat(parentStyle.paddingLeft) -
+      Number.parseFloat(parentStyle.paddingRight);
+    return {
+      columnWidth: box.width,
+      parentContentWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(mobileColumnGeometry).not.toBeNull();
+  expect(mobileColumnGeometry!.columnWidth).toBeCloseTo(
+    mobileColumnGeometry!.parentContentWidth,
+    3,
+  );
+  expect(mobileColumnGeometry!.documentWidth).toBe(mobileColumnGeometry!.viewportWidth);
   for (const locator of [receiver, state]) {
     const mobileGeometry = await locator.evaluate((node) => {
       const box = node.getBoundingClientRect();
-      const span2 = node.closest(".span2")?.getBoundingClientRect();
+      const receiverColumn = node
+        .closest('[data-stylex-owner="user-profile-pull-request-receiver-column"]')
+        ?.getBoundingClientRect();
       return {
         right: box.right,
-        span2Right: span2?.right ?? -1,
+        receiverColumnRight: receiverColumn?.right ?? -1,
         documentWidth: document.documentElement.scrollWidth,
         viewportWidth: window.innerWidth,
       };
     });
     expect(mobileGeometry.documentWidth).toBe(mobileGeometry.viewportWidth);
-    expect(mobileGeometry.right).toBeLessThanOrEqual(mobileGeometry.span2Right + 1);
+    expect(mobileGeometry.right).toBeLessThanOrEqual(mobileGeometry.receiverColumnRight + 1);
   }
 });

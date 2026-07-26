@@ -1533,7 +1533,10 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           ) : null}
         </div>
       </div>
-      <div className="span2">
+      <div
+        {...stylex.props(styles.pullRequestReceiverColumn)}
+        data-stylex-owner="user-profile-pull-request-receiver-column"
+      >
         <div
           {...stylex.props(styles.pullRequestReceiverRail)}
           className={stylex.props(styles.pullRequestReceiverRail).className}

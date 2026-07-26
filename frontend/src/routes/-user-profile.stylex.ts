@@ -848,6 +848,20 @@ export const styles = stylex.create({
     "::before": { content: '"\\e356"' },
   },
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.
+  pullRequestReceiverColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "14.893617021276595%",
+    "@media (max-width: 767px)": {
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+  },
   pullRequestReceiverRail: { float: "right", marginTop: "5px" },
   pullRequestReceiverAvatarLink: { marginRight: "0px" },
   pullRequestState: {
