@@ -204,6 +204,15 @@ export const styles = stylex.create({
   issueChildCountGroups: { borderStyle: "none !important" },
   // Frozen less/_page.less .my-issues .post-item .author.
   issueAuthor: { display: "table", lineHeight: "36px" },
+  // Frozen less/_responsive.less .hide-in-mobile.
+  issueDesktopPersonVisibility: {
+    "@media all and (max-width: 720px)": { display: "none !important" },
+  },
+  // Frozen Bootstrap .hide plus less/_responsive.less .show-in-mobile.
+  issueMobileAssigneeVisibility: {
+    display: "none",
+    "@media all and (max-width: 720px)": { display: "block !important" },
+  },
   // Frozen less/_page.less .my-issues .post-item .author .author-cell.
   issueAuthorCell: {
     display: "table-cell",

@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile issue author visibility
+
+Batch 969 moves the populated public-profile issue row's desktop author and
+assignee mobile hiding plus mobile assignee showing into route-local StyleX.
+The exact frozen 720px visibility declarations are preserved while only these
+three React-owned `hide-in-mobile` / `hide show-in-mobile` utility classes are
+retired. Wrapper elements, order, `span1`/`author`, person links, no-person
+branches, metadata, milestone, and due-date output remain unchanged. The
+focused external Chrome fast profile passes 1/1; live legacy screenshot parity
+remains unverified and no geometry compensation was added.
+
 ## 2026-07-26 — Public profile pull-request empty author branch
 
 Batch 968 restores the populated public-profile pull-request empty-author

@@ -116,12 +116,11 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
   expect(source).toContain('issueAuthorLineHeight: { lineHeight: "36px" }');
   expect(source).toContain('data-stylex-owner="user-profile-issue-project-name-wrapper"');
   expect(source).toContain('data-stylex-owner="user-profile-issue-author"');
+  expect(source).toContain("styles.issueDesktopPersonVisibility");
   expect(source).toContain(
     "className={`${stylex.props(styles.issueProjectNameWrapper).className} span2`}",
   );
-  expect(source).not.toContain(
-    "className={`${stylex.props(styles.issueAuthor).className} span1 hide-in-mobile author fixed-height-my-issues-list`}",
-  );
+  expect(source.match(/span1 hide-in-mobile author/g)).toBeNull();
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin?selected=issues`, { waitUntil: "domcontentloaded" });
@@ -133,6 +132,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
   await expect(project).not.toHaveClass(/fixed-height-my-issues-list/);
   for (const author of [authors.nth(0), authors.nth(1)]) {
     await expect(author).toHaveClass(/span1/);
+    await expect(author).not.toHaveClass(/hide-in-mobile/);
     await expect(author).not.toHaveClass(/fixed-height-my-issues-list/);
   }
   await expect(project).toContainText("sample");
@@ -160,6 +160,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
       const ownerBoxes = [project, ...authors].map((owner) => owner.getBoundingClientRect());
       return {
         projectLineHeight: getComputedStyle(project).lineHeight,
+        authorDisplays: authors.map((item) => getComputedStyle(item).display),
         authorLineHeights: authors.map((item) => getComputedStyle(item).lineHeight),
         contained: ownerBoxes.every((box) => box.left >= 0 && box.right <= window.innerWidth + 1),
         scrollWidth: document.documentElement.scrollWidth,
@@ -167,6 +168,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
     });
   expect(await measure()).toEqual({
     projectLineHeight: "36px",
+    authorDisplays: ["table", "table"],
     authorLineHeights: ["36px", "36px"],
     contained: true,
     scrollWidth: 1366,
@@ -175,6 +177,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await measure()).toEqual({
     projectLineHeight: "36px",
+    authorDisplays: ["none", "none"],
     authorLineHeights: ["36px", "36px"],
     contained: true,
     scrollWidth: 390,

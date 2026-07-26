@@ -872,8 +872,18 @@ function ProfileIssueRow({
           </span>
         </div>
         <div
-          {...stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight)}
-          className={`${stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight).className} span1 hide-in-mobile author`}
+          {...stylex.props(
+            styles.issueAuthor,
+            styles.issueDesktopPersonVisibility,
+            userProfileStaticStyles.issueAuthorLineHeight,
+          )}
+          className={`${
+            stylex.props(
+              styles.issueAuthor,
+              styles.issueDesktopPersonVisibility,
+              userProfileStaticStyles.issueAuthorLineHeight,
+            ).className
+          } span1 author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -883,8 +893,18 @@ function ProfileIssueRow({
           />
         </div>
         <div
-          {...stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight)}
-          className={`${stylex.props(styles.issueAuthor, userProfileStaticStyles.issueAuthorLineHeight).className} span1 hide-in-mobile author`}
+          {...stylex.props(
+            styles.issueAuthor,
+            styles.issueDesktopPersonVisibility,
+            userProfileStaticStyles.issueAuthorLineHeight,
+          )}
+          className={`${
+            stylex.props(
+              styles.issueAuthor,
+              styles.issueDesktopPersonVisibility,
+              userProfileStaticStyles.issueAuthorLineHeight,
+            ).className
+          } span1 author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -903,7 +923,10 @@ function ProfileIssueRow({
             className={`${stylex.props(styles.issueMetaCell).className} meta-cell`}
             data-stylex-owner="user-profile-issue-meta-cell"
           >
-            <span className="hide show-in-mobile">
+            <span
+              {...stylex.props(styles.issueMobileAssigneeVisibility)}
+              data-stylex-owner="user-profile-issue-mobile-assignee"
+            >
               <ProfilePersonLink
                 label={stringField(issue, "assigneeLabel")}
                 loginId={stringField(issue, "assigneeLoginId")}

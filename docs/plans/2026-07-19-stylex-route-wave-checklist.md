@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 969 public profile issue author visibility
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_issues.scala.html`, frozen `_responsive.less:1,290-303`, Bootstrap `.hide`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as issue author/assignee visibility evidence.
+- [x] Route-local StyleX owns exact desktop author/assignee `display:none !important` at `max-width:720px` and mobile assignee default `display:none` / mobile `display:block !important`; only the three target `hide-in-mobile` / `hide show-in-mobile` utility compositions are retired.
+- [x] Wrapper elements/order, `span1`/`author`, person links/no-person behavior, metadata/date/milestone/due-date output, existing author/meta owners, and unrelated responsive utility consumers remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-issue-author-visibility.e2e.ts` and adjacent `stylex-user-profile-issue-fixed-height.e2e.ts` verify provenance, source ownership, class retirement, desktop/mobile display and geometry, copy/links/order, no plugin attrs, and no overflow.
+- [x] Managed outside-sandbox System-Chrome fast checks pass 1/1 each; live legacy screenshot parity remains final visual-lock work and no compensating geometry was added.
+
 ### 2026-07-26 Batch 968 public profile pull-request empty author branch
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:3946-3950`, `_responsive.less`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request empty-author evidence.
