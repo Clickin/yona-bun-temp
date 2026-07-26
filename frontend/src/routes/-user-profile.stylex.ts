@@ -943,7 +943,21 @@ export const styles = stylex.create({
     MozOsxFontSmoothing: "grayscale",
     "::before": { content: '"\\e356"' },
   },
-  // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.
+  // Frozen Bootstrap .row-fluid [class*="span"]/.span10 used by user/partial_pullRequests.scala.html.
+  pullRequestContentColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "0px",
+    minHeight: "30px",
+    width: "82.97872340425532%",
+    "@media (max-width: 767px)": {
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+  },
   pullRequestReceiverColumn: {
     boxSizing: "border-box",
     display: "block",

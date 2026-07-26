@@ -193,7 +193,8 @@ test("authenticated public profile owns populated pull-request row residuals", a
   expect(source).not.toContain(
     "className={`${stylex.props(styles.pullRequestRow).className} post-item`}",
   );
-  expect(source).toContain('className: "post-item title"');
+  expect(source).not.toContain('className="span10"');
+  expect(source).toContain('data-stylex-owner="user-profile-pull-request-content-column"');
   for (const declaration of [
     'borderBottomColor: "#ddd"',
     'borderBottomStyle: "solid"',
@@ -207,6 +208,15 @@ test("authenticated public profile owns populated pull-request row residuals", a
     'lineHeight: "20px"',
     "pullRequestPostId:",
     "pullRequestInfos:",
+    "pullRequestContentColumn:",
+    'boxSizing: "border-box"',
+    'float: "left"',
+    'marginLeft: "0px"',
+    'minHeight: "30px"',
+    'width: "82.97872340425532%"',
+    '"@media (max-width: 767px)"',
+    'float: "none"',
+    'width: "100%"',
   ]) {
     expect(styleSource).toContain(declaration);
   }
@@ -254,10 +264,13 @@ test("authenticated public profile owns populated pull-request row residuals", a
         (child) => child.getAttribute("data-stylex-owner") ?? child.getAttribute("class"),
       ),
     );
-  expect(rowChildOrder).toEqual(["span10", "user-profile-pull-request-receiver-column"]);
+  expect(rowChildOrder).toEqual([
+    "user-profile-pull-request-content-column",
+    "user-profile-pull-request-receiver-column",
+  ]);
   const contentChildOrder = await rows
     .nth(0)
-    .locator(":scope > .span10")
+    .locator(':scope > [data-stylex-owner="user-profile-pull-request-content-column"]')
     .evaluate((node) =>
       Array.from(node.children).map((child) => child.getAttribute("data-stylex-owner")),
     );
@@ -282,6 +295,12 @@ test("authenticated public profile owns populated pull-request row residuals", a
       const row =
         node.querySelector<HTMLElement>('[data-stylex-owner="user-profile-pull-request-row"]') ??
         node;
+      const content = node.querySelector<HTMLElement>(
+        '[data-stylex-owner="user-profile-pull-request-content-column"]',
+      );
+      const receiver = node.querySelector<HTMLElement>(
+        '[data-stylex-owner="user-profile-pull-request-receiver-column"]',
+      );
       const avatar = node.querySelector<HTMLElement>(
         '[data-stylex-owner="user-profile-pull-request-project-avatar-rail"]',
       );
@@ -297,19 +316,36 @@ test("authenticated public profile owns populated pull-request row residuals", a
       const infos = node.querySelector<HTMLElement>(
         '[data-stylex-owner="user-profile-pull-request-infos"]',
       );
-      if (!avatar || !titleWrap || !postId || !title || !infos)
+      if (!content || !receiver || !avatar || !titleWrap || !postId || !title || !infos)
         throw new Error("Batch 964 owners missing");
-      const visibleBoxes = [avatar, titleWrap, infos].map((element) =>
+      const rowStyle = getComputedStyle(row);
+      const rowContentWidth =
+        row.clientWidth -
+        Number.parseFloat(rowStyle.paddingLeft) -
+        Number.parseFloat(rowStyle.paddingRight);
+      const contentBox = content.getBoundingClientRect();
+      const receiverBox = receiver.getBoundingClientRect();
+      const visibleBoxes = [content, receiver, avatar, titleWrap, infos].map((element) =>
         element.getBoundingClientRect(),
       );
       return {
-        rowPadding: getComputedStyle(row).padding,
-        rowBorderColor: getComputedStyle(row).borderBottomColor,
-        rowBorderWidth: getComputedStyle(row).borderBottomWidth,
-        rowBorder: getComputedStyle(row).borderBottomStyle,
-        rowClear: getComputedStyle(row).clear,
-        rowDisplay: getComputedStyle(row).display,
-        rowOverflow: getComputedStyle(row).overflow,
+        rowPadding: rowStyle.padding,
+        rowBorderColor: rowStyle.borderBottomColor,
+        rowBorderWidth: rowStyle.borderBottomWidth,
+        rowBorder: rowStyle.borderBottomStyle,
+        rowClear: rowStyle.clear,
+        rowDisplay: rowStyle.display,
+        rowOverflow: rowStyle.overflow,
+        contentDisplay: getComputedStyle(content).display,
+        contentFloat: getComputedStyle(content).float,
+        contentBoxSizing: getComputedStyle(content).boxSizing,
+        contentMarginLeft: getComputedStyle(content).marginLeft,
+        contentMinHeight: getComputedStyle(content).minHeight,
+        contentWidthRatio: contentBox.width / rowContentWidth,
+        contentLeft: contentBox.left,
+        contentRight: contentBox.right,
+        receiverLeft: receiverBox.left,
+        receiverRight: receiverBox.right,
         avatarFloat: getComputedStyle(avatar).float,
         avatarMarginRight: getComputedStyle(avatar).marginRight,
         titleDisplay: getComputedStyle(titleWrap).display,
@@ -323,10 +359,14 @@ test("authenticated public profile owns populated pull-request row residuals", a
         infosFontSize: getComputedStyle(infos).fontSize,
         infosColor: getComputedStyle(infos).color,
         contained: visibleBoxes.every((box) => box.left >= 0 && box.right <= window.innerWidth + 1),
+        columnsContained:
+          contentBox.left >= row.getBoundingClientRect().left &&
+          receiverBox.right <= row.getBoundingClientRect().right + 1,
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
-  expect(await measure()).toEqual({
+  const desktopMeasure = await measure();
+  expect(desktopMeasure).toMatchObject({
     rowPadding: "10px",
     rowBorderColor: "rgb(221, 221, 221)",
     rowBorderWidth: "1px",
@@ -334,6 +374,15 @@ test("authenticated public profile owns populated pull-request row residuals", a
     rowClear: "both",
     rowDisplay: "block",
     rowOverflow: "auto",
+    contentDisplay: "block",
+    contentFloat: "left",
+    contentBoxSizing: "border-box",
+    contentMarginLeft: "0px",
+    contentMinHeight: "30px",
+    contentLeft: expect.any(Number),
+    contentRight: expect.any(Number),
+    receiverLeft: expect.any(Number),
+    receiverRight: expect.any(Number),
     avatarFloat: "left",
     avatarMarginRight: "10px",
     titleDisplay: "block",
@@ -347,8 +396,10 @@ test("authenticated public profile owns populated pull-request row residuals", a
     infosFontSize: "12px",
     infosColor: "rgb(153, 153, 153)",
     contained: true,
+    columnsContained: true,
     scrollWidth: 1366,
   });
+  expect(desktopMeasure.contentWidthRatio).toBeCloseTo(0.8297872340425532, 4);
 
   for (const element of [...(await rows.all()), ...(await rows.locator("*").all())]) {
     await expect(element).not.toHaveAttribute("style");
@@ -371,13 +422,33 @@ test("authenticated public profile owns populated pull-request row residuals", a
     expect(pluginAttributes).toEqual([]);
   }
 
+  await page.setViewportSize({ width: 767, height: 900 });
+  const tabletMeasure = await measure();
+  expect(tabletMeasure).toMatchObject({
+    contentDisplay: "block",
+    contentFloat: "none",
+    contentBoxSizing: "border-box",
+    contentMarginLeft: "0px",
+    contentMinHeight: "30px",
+    contained: true,
+    columnsContained: true,
+    scrollWidth: 767,
+  });
+  expect(tabletMeasure.contentWidthRatio).toBeCloseTo(1, 4);
+
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await measure()).toMatchObject({
+  const mobileMeasure = await measure();
+  expect(mobileMeasure).toMatchObject({
     rowPadding: "10px 0px",
     rowBorderColor: "rgb(221, 221, 221)",
     rowBorderWidth: "1px",
     rowDisplay: "block",
     rowClear: "both",
+    contentDisplay: "block",
+    contentFloat: "none",
+    contentBoxSizing: "border-box",
+    contentMarginLeft: "0px",
+    contentMinHeight: "30px",
     avatarFloat: "left",
     avatarMarginRight: "10px",
     titleDisplay: "block",
@@ -386,6 +457,8 @@ test("authenticated public profile owns populated pull-request row residuals", a
     infosLineHeight: "20px",
     infosFontSize: "12px",
     contained: true,
+    columnsContained: true,
     scrollWidth: 390,
   });
+  expect(mobileMeasure.contentWidthRatio).toBeCloseTo(1, 4);
 });
