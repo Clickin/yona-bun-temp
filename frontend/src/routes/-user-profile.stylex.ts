@@ -6,6 +6,30 @@ export const userProfileColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  // Frozen less/_responsive.less .site-breadcrumb-outer. Keep the legacy
+  // outer class until its shared app.css consumers are retired.
+  breadcrumbOuter: {
+    minWidth: {
+      default: null,
+      "@media (max-width: 900px)": "10px !important",
+    },
+    boxSizing: {
+      default: null,
+      "@media (max-width: 720px)": "border-box",
+    },
+    padding: {
+      default: null,
+      "@media (max-width: 720px)": "0px 10px",
+    },
+    width: {
+      default: null,
+      "@media (max-width: 720px)": "100%",
+    },
+  },
+  // Frozen less/_page.less .site-breadcrumb-inner.
+  breadcrumbInner: { margin: "0px auto" },
+  // Frozen less/_page.less .site-breadcrumb-inner h3.
+  breadcrumbHeading: { lineHeight: "30px", padding: "10px 10px 5px" },
   // Legacy user/view.scala.html renders the API-provided avatar as a background image.
   avatarBackground: (backgroundImage: string) => ({ backgroundImage }),
   // Legacy less/_page.less .user-box.

@@ -337,9 +337,21 @@ function PublicProfileBody({
   return (
     <>
       <title>{profile.loginId}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{profile.displayName}</h3>
+      <div
+        {...stylex.props(styles.breadcrumbOuter)}
+        className={`${stylex.props(styles.breadcrumbOuter).className ?? ""} site-breadcrumb-outer`.trim()}
+        data-stylex-owner="user-profile-breadcrumb-outer"
+      >
+        <div
+          {...stylex.props(styles.breadcrumbInner)}
+          data-stylex-owner="user-profile-breadcrumb-inner"
+        >
+          <h3
+            {...stylex.props(styles.breadcrumbHeading)}
+            data-stylex-owner="user-profile-breadcrumb-heading"
+          >
+            {profile.displayName}
+          </h3>
         </div>
       </div>
       <div className="page-wrap-outer">

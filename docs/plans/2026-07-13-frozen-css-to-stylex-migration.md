@@ -8617,3 +8617,7 @@ Batch 961 completes the selected populated public-profile issue subtask layout r
 ## 2026-07-25 — Batch 962 public profile issue fixed-height wrappers
 
 Batch 962 completes the selected public-profile issue-row fixed-height residual: exact `line-height:36px` on the project column and both desktop author wrappers. Evidence is `user/view.scala.html`, `user/partial_issues.scala.html`, frozen `_common.less:305-307`, the full LESS/Bootstrap/responsive/messages chain, and `stylex-user-profile-issue-fixed-height.e2e.ts`. Normal and explicit fallback-off external Chrome checks pass 1/1 each. Only the migrated utility class is retired; all structural/behavioral output remains intact and live legacy screenshot comparison is still unavailable/unverified.
+
+## 2026-07-26 — Batch 984 public profile breadcrumb
+
+Batch 984 moves the populated `/$user` breadcrumb's exact frozen outer responsive box model, inner auto margin, and heading padding/line-height into three route-local StyleX owners. The shared `site-breadcrumb-outer` class remains because global page ancestry and non-frozen bridge consumers still depend on it; only `site-breadcrumb-inner` retires. The known legacy administrator-notice/sidebar collapse-button x-axis mismatch is intentionally excluded and receives no Yoram-only correction while higher-priority parity work remains. Focused external System-Chrome fallback-off coverage passes 4/4 at 1366×900 and 390×844; live legacy screenshot comparison remains final visual-lock work.
