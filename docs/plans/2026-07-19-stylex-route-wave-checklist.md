@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 982 public profile Google provider image ownership
+
+- [x] `user/view.scala.html`, `TemplateHelper.GoogleLogo`, Bootstrap's generic image rule, `bootstrap-responsive.css`, and the complete `yobi.less` chain establish the Google span/image output and prove markdown/avatar image overrides do not match.
+- [x] The byte-identical legacy Google SVG is imported from `frontend/src/assets/legacy/**` through Vite; the image owns exact final height/max-width/alignment/border while only this declaration-free `.google` token retires.
+- [x] `frontend/tests/stylex-user-profile-google-provider-logo.e2e.ts` verifies RED→GREEN provenance, imported asset loading/identity, provider order/branches, desktop/mobile computed declarations, intrinsic 30px geometry, containment/non-overlap, empty/guest states, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes focused 2/2 plus provider-specific adjacent checks; live legacy screenshot parity remains final visual-lock work and no compensation was added.
+
 ### 2026-07-26 Batch 981 public profile tab-content visibility ownership
 
 - [x] `yona-original/app/views/user/view.scala.html`, Bootstrap `.tab-content` and direct pane/active-child rules, `bootstrap-responsive.css`, and the complete `yobi.less` import chain establish the exact two-wrapper/five-pane output and absence of later matching overrides.

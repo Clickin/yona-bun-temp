@@ -115,6 +115,17 @@ export const styles = stylex.create({
   blockedBadge: { backgroundColor: "#b94a48" },
   // Frozen less/_page.less .user-info-box .user-since.
   userSince: { marginTop: "10px", padding: "0px 10px" },
+  // Frozen Bootstrap generic img rule. The IE-only width/interpolation
+  // declarations are not representable modern browser cascade values.
+  // _responsive.less targets only .markdown-wrap img, while
+  // _yobiUI.less targets only .avatar-wrap img, so neither matches here.
+  providerGoogleImage: {
+    borderStyle: "none",
+    borderWidth: 0,
+    height: "auto",
+    maxWidth: "100%",
+    verticalAlign: "middle",
+  },
   // Legacy less/_page.less .user-stream-box.
   stream: { minWidth: 0, overflow: "hidden", paddingLeft: "20px" },
   tabs: { color: userProfileColors.accentText },

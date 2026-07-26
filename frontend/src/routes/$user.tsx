@@ -7,6 +7,7 @@ import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
+import googleProviderLogoUrl from "../assets/legacy/provider-logo/btn_google_light_normal_ios.svg?no-inline";
 import type {
   WorkspaceIssueItem,
   WorkspaceMemberProjectItem,
@@ -474,11 +475,7 @@ function PublicProfileBody({
                   data-stylex-owner="user-profile-provider-logo"
                 >
                   {profile.connectedSocialProviders.map((provider) => (
-                    <ConnectedSocialProviderLogo
-                      basePath={runtimeConfig.basePath}
-                      key={provider}
-                      provider={provider}
-                    />
+                    <ConnectedSocialProviderLogo key={provider} provider={provider} />
                   ))}
                 </div>
               </div>
@@ -778,13 +775,7 @@ function ProfileTab({
   );
 }
 
-function ConnectedSocialProviderLogo({
-  basePath,
-  provider,
-}: {
-  basePath: string;
-  provider: string;
-}) {
+function ConnectedSocialProviderLogo({ provider }: { provider: string }) {
   const normalized = provider.trim().toLowerCase();
 
   if (normalized === "github") {
@@ -809,13 +800,12 @@ function ConnectedSocialProviderLogo({
 
   if (normalized === "google") {
     return (
-      <span className="google">
+      <span data-stylex-owner="user-profile-provider-google">
         {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy TemplateHelper.GoogleLogo renders this provider image without an alt attribute. */}
         <img
-          src={prefixBasePath(
-            basePath,
-            "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
-          )}
+          {...stylex.props(styles.providerGoogleImage)}
+          data-stylex-owner="user-profile-provider-google-image"
+          src={googleProviderLogoUrl}
         />
       </span>
     );

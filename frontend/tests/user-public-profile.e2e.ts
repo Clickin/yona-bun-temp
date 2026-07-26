@@ -162,7 +162,11 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain("function ConnectedSocialProviderLogo({");
   expect(source).toContain('normalized === "github"');
   expect(source).toContain('normalized === "google"');
-  expect(source).toContain("/assets/images/provider-logo/btn_google_light_normal_ios.svg");
+  expect(source).toContain(
+    'import googleProviderLogoUrl from "../assets/legacy/provider-logo/btn_google_light_normal_ios.svg?no-inline";',
+  );
+  expect(source).toContain("src={googleProviderLogoUrl}");
+  expect(source).not.toContain('"/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
   expect(source).not.toContain('data-toggle="tooltip"');
   expect(source).not.toContain("data-placement");
   expect(source).toContain("const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {");
@@ -371,16 +375,19 @@ test("public user profile renders legacy connected social provider logos", async
 
   const providerLogo = page.locator(".user-since .auth-provider-logo");
   await expect(providerLogo.locator(":scope > .github")).toHaveCount(1);
-  await expect(providerLogo.locator(":scope > .google")).toHaveCount(1);
+  await expect(
+    providerLogo.locator(':scope > [data-stylex-owner="user-profile-provider-google"]'),
+  ).toHaveCount(1);
   await expect(providerLogo.locator(":scope > *")).toHaveCount(2);
   await expect(providerLogo.locator(".github svg")).toHaveAttribute("viewBox", "0 0 16 16");
   await expect(providerLogo.locator(".github svg")).toHaveAttribute("height", "24");
   await expect(providerLogo.locator(".github svg")).toHaveAttribute("width", "19");
   await expect(providerLogo.locator(".github svg path")).toHaveCount(1);
-  await expect(providerLogo.locator(".google img")).toHaveAttribute(
-    "src",
-    `${basePath}/assets/images/provider-logo/btn_google_light_normal_ios.svg`,
+  const googleImage = providerLogo.locator(
+    '[data-stylex-owner="user-profile-provider-google-image"]',
   );
+  await expect(googleImage).toHaveAttribute("src", /btn_google_light_normal_ios\.svg/u);
+  expect(await googleImage.getAttribute("src")).not.toContain("/assets/images/provider-logo/");
   await expect(page.locator(".provider-name")).toHaveCount(0);
 
   expect(await readConnectedSocialProviderMetrics(page)).toEqual({

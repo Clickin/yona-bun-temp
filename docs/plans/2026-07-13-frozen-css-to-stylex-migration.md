@@ -4,6 +4,19 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile Google provider image ownership
+
+Batch 982 moves the connected Google-provider image on authenticated public
+profiles into route-local StyleX and Vite asset ownership. The image preserves
+TemplateHelper's span/image order and intentional absent alt text while owning
+the modern-browser output of Bootstrap's generic image rule: automatic height,
+100% maximum width, middle alignment, and zero border. The copied SVG is
+byte-identical to the existing legacy public asset and is imported with
+`?no-inline`; the declaration-free `.google` token retires only here.
+GitHub, provider order, unsupported omission, and root/login provider consumers
+remain unchanged. Focused external Chrome fallback-off passes 2/2 at desktop
+and 390px mobile; live legacy screenshot parity remains final visual-lock work.
+
 ## 2026-07-26 — Public profile tab-content visibility ownership
 
 Batch 981 moves the authenticated non-guest public-profile outer and nested
