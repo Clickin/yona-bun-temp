@@ -8625,3 +8625,7 @@ Batch 984 moves the populated `/$user` breadcrumb's exact frozen outer responsiv
 ## 2026-07-26 — Batch 985 public profile page wrappers
 
 Batch 985 moves the populated `/$user` `page-wrap-outer > page-wrap` declarations into two route-local StyleX owners: the frozen outer minimum height/top margin, `@media all` width/padding/box sizing, max-720 minimum width/important zero padding, and the inner white surface/auto margin. Both legacy classes remain because shared app.css ancestry and width consumers still depend on them. The retained desktop `min-width:1100px` bridge is explicitly not claimed as frozen StyleX ownership. Focused external System-Chrome fallback-off coverage passes 4/4 at 1366×900 and 390×844; live legacy screenshot comparison remains final visual-lock work.
+
+## 2026-07-26 — Batch 986 public profile status/since wrapper retirement
+
+Batch 986 retires `user-status` from the two populated profile status wrappers and `user-since` from the member-since and connected-provider wrappers. Their exact margin/padding declarations were already owned by route-local StyleX; emitted badge, since, and provider children are direct owners, while the frozen nested `p/.nbtn` branches are not emitted by `user/view.scala.html`. No new declaration or numeric compensation is added. Focused external System-Chrome fallback-off coverage passes 4/4 across badge branches, desktop/mobile geometry, and missing-profile absence. The affected provider regression passes; unrelated stale whole-profile canonicalizer failures remain outside this class-retirement wave.

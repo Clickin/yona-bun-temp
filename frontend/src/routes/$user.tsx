@@ -440,7 +440,6 @@ function PublicProfileBody({
 
               <div
                 {...stylex.props(styles.userStatus)}
-                className={`${stylex.props(styles.userStatus).className} user-status`}
                 data-stylex-owner="user-profile-user-status"
               >
                 {profile.isSiteAdmin ? (
@@ -455,7 +454,6 @@ function PublicProfileBody({
               </div>
               <div
                 {...stylex.props(styles.userStatus)}
-                className={`${stylex.props(styles.userStatus).className} user-status`}
                 data-stylex-owner="user-profile-user-status"
               >
                 {profile.isBlocked ? (
@@ -468,11 +466,7 @@ function PublicProfileBody({
                   </span>
                 ) : null}
               </div>
-              <div
-                {...stylex.props(styles.userSince)}
-                className={`${stylex.props(styles.userSince).className} user-since`}
-                data-stylex-owner="user-profile-user-since"
-              >
+              <div {...stylex.props(styles.userSince)} data-stylex-owner="user-profile-user-since">
                 <strong>{t("userinfo.since")}</strong>
                 <span
                   {...stylex.props(styles.since)}
@@ -482,11 +476,7 @@ function PublicProfileBody({
                   {profile.sinceLabel}
                 </span>
               </div>
-              <div
-                {...stylex.props(styles.userSince)}
-                className={`${stylex.props(styles.userSince).className} user-since`}
-                data-stylex-owner="user-profile-user-since"
-              >
+              <div {...stylex.props(styles.userSince)} data-stylex-owner="user-profile-user-since">
                 <div>
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>

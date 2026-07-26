@@ -15,10 +15,10 @@ const EXPECTED_PROFILE_SCREEN = `
           <span class="loginid">@door</span>
           <span class="email">door@example.com</span>
         </div>
-        <div class="user-status"><span class="badge label-success">SITE ADMIN</span></div>
-        <div class="user-status"></div>
-        <div class="user-since"><strong>Member since</strong><span class="since">2026-06-30</span></div>
-        <div class="user-since"><div><strong>Connected Social Login</strong></div><div class="auth-provider-logo"></div></div>
+        <div><span class="badge label-success">SITE ADMIN</span></div>
+        <div></div>
+        <div><strong>Member since</strong><span class="since">2026-06-30</span></div>
+        <div><div><strong>Connected Social Login</strong></div><div class="auth-provider-logo"></div></div>
       </div>
       <div class="user-stream-box">
         <div class="pull-right">recently<input id="daysAgoBtn" name="daysAgo" type="number" min="1" max="99" class="input-mini-min" value="14" style="margin:0px 5px; vertical-align:bottom;">days ago</div>
@@ -373,7 +373,9 @@ test("public user profile renders legacy connected social provider logos", async
   await page.goto(`${basePath}/door`);
   await expect(page.locator(".user-box")).toBeVisible();
 
-  const providerLogo = page.locator(".user-since .auth-provider-logo");
+  const providerLogo = page.locator(
+    '[data-stylex-owner="user-profile-user-since"] [data-stylex-owner="user-profile-provider-logo"]',
+  );
   await expect(providerLogo.locator(":scope > .github")).toHaveCount(1);
   await expect(
     providerLogo.locator(':scope > [data-stylex-owner="user-profile-provider-google"]'),
@@ -870,9 +872,11 @@ async function readProfileMetrics(page: Page) {
 
 async function readConnectedSocialProviderMetrics(page: Page) {
   return page.evaluate(() => {
-    const providerLogo = document.querySelector<HTMLElement>(".user-since .auth-provider-logo");
-    const github = document.querySelector<HTMLElement>(".user-since .auth-provider-logo .github");
-    const svg = document.querySelector<SVGElement>(".user-since .auth-provider-logo .github svg");
+    const providerLogo = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-profile-user-since"] [data-stylex-owner="user-profile-provider-logo"]',
+    );
+    const github = providerLogo?.querySelector<HTMLElement>(".github");
+    const svg = github?.querySelector<SVGElement>("svg");
     if (!providerLogo || !github || !svg) {
       throw new Error("Expected connected social provider metric targets are missing.");
     }
