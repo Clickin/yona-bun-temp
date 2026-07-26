@@ -4,6 +4,19 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile tab count badges
+
+Batch 979 moves the repeated top-level profile-tab and nested issue-tab
+`.num-badge` spans into one reused route-local StyleX declaration with distinct
+stable ownership boundaries. The exact frozen generic font, alignment, shadow,
+radius, margin, size, and padding cascade is preserved without adding paint.
+Top-level counts remain positive-only while nested open/closed counts always
+render, including zero. Tab copy/order/interaction, responsive button geometry,
+two-column and show-subtasks controls, project-watch badge, and unrelated
+consumers remain unchanged. Focused external Chrome fallback-off passes 1/1 at
+desktop and 390px mobile; live legacy screenshot parity remains final
+visual-lock work.
+
 ## 2026-07-26 — Public profile status badges
 
 Batch 978 moves the conditional `SITE ADMIN` and `BLOCKED` profile-sidebar

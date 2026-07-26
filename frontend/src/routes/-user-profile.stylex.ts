@@ -133,6 +133,19 @@ export const styles = stylex.create({
       paddingRight: "5px",
     },
   },
+  // Frozen less/_yobiUI.less .num-badge. The later .lst-stacked and
+  // .ybtn.blue descendant rules do not match either profile-tab ancestry.
+  tabCountBadge: {
+    borderRadius: "2px",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "13px",
+    fontWeight: "bold",
+    marginLeft: "3px",
+    padding: "2px 4px",
+    textShadow: "none",
+    verticalAlign: "top",
+  },
   // Frozen less/_common.less .nm reset on the nested issue-tab wrapper.
   issueTabs: { margin: "0 !important" },
   // Frozen less/_yobiUI.less .nav-tabs li a and _responsive.less mobile override.

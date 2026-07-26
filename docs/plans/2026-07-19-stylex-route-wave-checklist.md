@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 979 public profile tab count badges
+
+- [x] `yona-original/app/views/user/view.scala.html` including `showBadgeNumberIfExist`, the complete ordered `yobi.less` chain, frozen `_yobiUI.less .num-badge`, and nonmatching `.lst-stacked` / `.ybtn.blue` descendant variants are recorded.
+- [x] One route-local `tabCountBadge` declaration carries the exact eight generic declarations and is reused through distinct repeated top-level/nested stable owner boundaries; no paint or duplicate style object is added.
+- [x] Top-level positive-only and nested always-present zero output, spans/classes/copy/order, tab interactions, responsive button geometry, two-column/show-subtasks controls, and unrelated badge consumers remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-tab-count-badges.e2e.ts` verifies RED→GREEN source/import/selector evidence, single-style reuse, populated/zero branches, exact desktop/mobile declarations, no inline/plugin attrs, interaction/geometry, containment/non-overlap, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes 1/1; live legacy screenshot parity remains final visual-lock work and no compensation was added.
+
 ### 2026-07-26 Batch 978 public profile status badges
 
 - [x] `yona-original/app/views/user/view.scala.html`, frozen Bootstrap `.label,.badge`/`.badge`/success/important rules, the complete ordered `yobi.less` chain, later `_page.less .badge`, and nonmatching `_override.less .label` are recorded.

@@ -548,7 +548,13 @@ function PublicProfileBody({
                           onClick={() => setActiveIssueTab("openIssues")}
                         >
                           {t("issue.state.open")}
-                          <span className="num-badge">{openIssues.length}</span>
+                          <span
+                            {...stylex.props(styles.tabCountBadge)}
+                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
+                            data-stylex-owner="user-profile-nested-issue-count-badge"
+                          >
+                            {openIssues.length}
+                          </span>
                         </button>
                       </li>
                       <li className={activeIssueTab === "closedIssues" ? "active" : ""}>
@@ -559,7 +565,13 @@ function PublicProfileBody({
                           onClick={() => setActiveIssueTab("closedIssues")}
                         >
                           {t("issue.state.closed")}
-                          <span className="num-badge">{closedIssues.length}</span>
+                          <span
+                            {...stylex.props(styles.tabCountBadge)}
+                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
+                            data-stylex-owner="user-profile-nested-issue-count-badge"
+                          >
+                            {closedIssues.length}
+                          </span>
                         </button>
                       </li>
                       <li>
@@ -716,7 +728,16 @@ function ProfileTab({
         type="button"
         onClick={onSelect}
       >
-        {label} {badge > 0 ? <span className="num-badge">{badge}</span> : null}
+        {label}{" "}
+        {badge > 0 ? (
+          <span
+            {...stylex.props(styles.tabCountBadge)}
+            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
+            data-stylex-owner="user-profile-top-tab-count-badge"
+          >
+            {badge}
+          </span>
+        ) : null}
       </button>
     </li>
   );
