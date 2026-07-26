@@ -41,8 +41,13 @@ test("public profile overdue open issue due date owns the legacy right float", a
   expect(bootstrapResponsive).toContain("@media");
   expect(messages).toContain("issue.dueDate.overdue");
   expect(source).toContain('data-stylex-owner="user-profile-issue-due-date"');
+  expect(source).toContain('data-stylex-owner="user-profile-issue-due-date-clock"');
   expect(source).not.toContain("className={`pull-right ${dueDateOverdue");
+  expect(source).not.toContain('dueDateOverdue ? "overdue" : ""');
+  expect(source).not.toContain('className="yobicon-clock2"');
   expect(styleSource).toContain('issueDueDate: { float: "right" }');
+  expect(styleSource).toContain('issueDueDateOverdue: { color: "#c93426" }');
+  expect(styleSource).toContain("issueDueDateClock:");
 
   await mockProfile(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -51,12 +56,14 @@ test("public profile overdue open issue due date owns the legacy right float", a
   const dueDate = page.locator('[data-stylex-owner="user-profile-issue-due-date"]');
   await expect(dueDate).toHaveCount(1);
   await expect(dueDate).toHaveCSS("float", "right");
-  await expect(dueDate).toHaveClass(/overdue/);
+  await expect(dueDate).not.toHaveClass(/overdue/);
   await expect(dueDate).not.toHaveClass(/pull-right/);
   await expect(dueDate).not.toHaveAttribute("data-toggle");
   await expect(dueDate).not.toHaveAttribute("data-placement");
   await expect(dueDate).toHaveAttribute("title", "Due date: Jul 5, 2026");
-  await expect(dueDate.locator("i.yobicon-clock2")).toHaveCount(1);
+  const clock = dueDate.locator('[data-stylex-owner="user-profile-issue-due-date-clock"]');
+  await expect(clock).toHaveCount(1);
+  await expect(clock).not.toHaveClass(/yobicon-clock2/);
   await expect(dueDate).toContainText("Overdue");
 
   const desktop = await page.evaluate(() => {

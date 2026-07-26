@@ -800,6 +800,23 @@ export const styles = stylex.create({
   issueInfos: { marginTop: "4px" },
   // Frozen Bootstrap .pull-right used by user/partial_issues.scala.html.
   issueDueDate: { float: "right" },
+  // Frozen less/_page.less .overdue and less/_variables.less @yobi-red.
+  issueDueDateOverdue: { color: "#c93426" },
+  // Frozen public/stylesheets/yobicon/style.css generic base and clock2 pseudo.
+  issueDueDateClock: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e356"' },
+  },
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.
   pullRequestReceiverRail: { float: "right", marginTop: "5px" },
   pullRequestReceiverAvatarLink: { marginRight: "0px" },

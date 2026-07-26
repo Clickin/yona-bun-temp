@@ -1036,12 +1036,14 @@ function ProfileIssueRow({
             ) : null}
             {dueDateLabel ? (
               <span
-                {...stylex.props(styles.issueDueDate)}
-                className={`${stylex.props(styles.issueDueDate).className} ${dueDateOverdue ? "overdue" : ""}`}
+                {...stylex.props(styles.issueDueDate, dueDateOverdue && styles.issueDueDateOverdue)}
                 data-stylex-owner="user-profile-issue-due-date"
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
-                <i className="yobicon-clock2"></i>
+                <i
+                  {...stylex.props(styles.issueDueDateClock)}
+                  data-stylex-owner="user-profile-issue-due-date-clock"
+                ></i>
                 {issueState === "open" && dueDateOverdue
                   ? t("issue.dueDate.overdue")
                   : issueState === "open"
