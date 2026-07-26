@@ -1169,6 +1169,53 @@ export const styles = stylex.create({
 });
 
 export const userProfileNotFoundStyles = stylex.create({
+  // Frozen less/_yobiUI.less .ybtn plus its final .ybtn-info cascade.
+  homeButton: {
+    backgroundColor: "#3A7EE5 !important",
+    borderColor: "#206EE5",
+    borderRadius: "3px !important",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 1px 0 rgba(0, 0, 0, 0.05)",
+    color: "#FFF",
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginBottom: 0,
+    marginLeft: "0.3em",
+    outline: "0 none",
+    padding: "4px 12px !important",
+    position: "relative",
+    textAlign: "center",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: 2,
+    ":hover": {
+      backgroundColor: "#206EE5 !important",
+      // The later .ybtn-info base border wins over generic .ybtn:hover.
+      borderColor: "#206EE5",
+      color: "#FFF",
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: "#206EE5 !important",
+      // The later .ybtn-info base border wins over generic .ybtn:focus.
+      borderColor: "#206EE5",
+      color: "#FFF",
+      textDecoration: "none",
+    },
+    ":active": {
+      // .ybtn-info has no active override, so its later base background wins.
+      backgroundColor: "#3A7EE5 !important",
+      // The later .ybtn-info base border wins over generic .ybtn:active.
+      borderColor: "#206EE5",
+      color: "#FFF",
+      textDecoration: "none",
+    },
+  },
   errorWrap: { padding: "100px 0px", textAlign: "center" },
   errorIcon: (spriteUrl: string) => ({
     backgroundImage: `url(${spriteUrl})`,

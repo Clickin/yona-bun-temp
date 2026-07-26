@@ -2,6 +2,35 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Public profile missing-user Home CTA ownership
+
+Batch 1021 moves the missing-user public-profile `Home` CTA to a route-local
+StyleX owner. The output source is
+`yona-original/app/views/user/view.scala.html`, which includes
+`yona-original/app/views/error/notfound_default.scala.html`; the latter emits
+the `error-wrap`, error icon, message paragraph, and `a.ybtn.ybtn-info` in
+that order. The complete frozen `yobi.less` import chain, `_variables.less`,
+`_yobiUI.less`, Bootstrap CSS/responsive CSS, and `conf/messages` establish
+the copied base/info/hover/focus/active cascade.
+
+`frontend/src/routes/$user.tsx` preserves the anchor, destination, `Home`
+copy, wrapper order, icon/message, and SPA navigation while retiring only the
+`ybtn ybtn-info` class from this CTA. `frontend/src/routes/-user-profile.stylex.ts`
+owns the exact traced button geometry/paint and interaction states. No frozen
+CSS, shared fallback, route-compensation geometry, admin-notice/sidebar
+alignment, or approved Yoram footer identity difference changed.
+
+The focused external System-Chrome test passes normal 1/1 and fallback-off
+1/1 at desktop and 390px mobile; screenshots under
+`frontend/output/playwright/stylex-user-profile-notfound-home-button/` were
+inspected. Live legacy `/ghost` desktop/mobile captures were inspected. The
+available long-running local sweep exposed a stale/unmatched `/ghost` shell
+and its generic comparator reported missing `pageWrap`/`projectPageWrap`, so
+no same-fixture live legacy/local screenshot claim is made; managed focused
+captures remain the route visual evidence. The inherited administrator
+notice/sidebar collapse-button x-axis mismatch remains an intentional parity
+exclusion.
+
 ## 2026-07-27 — Public profile Issues static control ownership
 
 Batch 1020 moves the public-profile Issues two-column and show-subtasks

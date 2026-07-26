@@ -1,5 +1,15 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-27 Batch 1021 public-profile missing-user Home CTA
+
+- [x] `yona-original/app/views/user/view.scala.html` and included `error/notfound_default.scala.html` are the output DOM/UX sources; the complete frozen `yobi.less` chain, `_variables.less`, `_yobiUI.less`, Bootstrap CSS/responsive CSS, and `conf/messages` are recorded as cascade evidence.
+- [x] `PublicProfileNotFoundPage` preserves `error-wrap` child order, icon/message, anchor semantics, Home copy, `/` destination, and SPA navigation; only the CTA `ybtn ybtn-info` class is retired.
+- [x] Route-local StyleX owns the exact frozen `.ybtn` + `.ybtn-info` base, hover, focus, and active declarations without changing frozen CSS or adding geometry compensation.
+- [x] `frontend/tests/stylex-user-profile-notfound-home-button.e2e.ts` verifies source ownership, class/plugin-attribute retirement, computed declarations, interaction states, desktop/390px containment, navigation, and screenshots.
+- [x] External System-Chrome managed dynamic-port focused runs pass normal 1/1 and fallback-off 1/1; local captures were inspected under `frontend/output/playwright/stylex-user-profile-notfound-home-button/{fallback-on,fallback-off}/`.
+- [x] Live legacy `/ghost` desktop/mobile captures were inspected. The available local sweep was stale/unmatched and its generic comparator reported `pageWrap`/`projectPageWrap` gaps, so no same-fixture live legacy/local screenshot claim is made.
+- [x] The inherited admin-notice/collapsed-sidebar x-axis mismatch remains an intentional legacy parity exclusion; approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+
 ### 2026-07-27 Batch 1020 public-profile Issues static control ownership
 
 - [x] `user/view.scala.html` plus the two common checkbox partials establish the wrapper/label/input/border/text DOM, IDs, copy/order, and legacy JS behavior evidence; frozen `_page.less`, `_responsive.less`, Bootstrap CSS, and the complete styling chain establish the final declarations.

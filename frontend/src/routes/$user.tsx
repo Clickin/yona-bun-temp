@@ -261,9 +261,9 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
               {t("user.notExists.name")}
             </p>
             <Link
+              {...stylex.props(userProfileNotFoundStyles.homeButton)}
               {...LEGACY_LINK_PROPS}
               to="/"
-              className="ybtn ybtn-info"
               data-stylex-owner="user-profile-notfound-home"
             >
               {t("menu.home")}
