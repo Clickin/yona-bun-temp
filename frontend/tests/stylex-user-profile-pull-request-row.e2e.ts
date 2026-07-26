@@ -281,8 +281,12 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await expect(rows.nth(0).locator('a[href$="/admin/sample/pullRequest/12"]')).toHaveCount(1);
   await expect(rows.nth(1).locator('a[href$="/admin/sample/pullRequest/13"]')).toHaveCount(1);
   await expect(titleLinks.nth(1)).toHaveText("Conflict pull request");
-  await expect(rows.nth(0).locator(".state.conflict")).toHaveText("Conflict");
-  await expect(rows.nth(1).locator(".state.open")).toHaveText("Open");
+  await expect(
+    rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-state"]'),
+  ).toHaveText("Conflict");
+  await expect(
+    rows.nth(1).locator('[data-stylex-owner="user-profile-pull-request-state"]'),
+  ).toHaveText("Open");
   await expect(
     rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
   ).toHaveAttribute("href", `${basePath}/receiver`);
@@ -295,7 +299,9 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await expect(
     rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
   ).toHaveCount(1);
-  await expect(rows.nth(1).locator(".empty-avatar-wrap")).toHaveCount(1);
+  await expect(
+    rows.nth(1).locator('[data-stylex-owner="user-profile-pull-request-empty-avatar-wrap"]'),
+  ).toHaveCount(1);
   await expect(
     rows.nth(1).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
   ).toHaveCount(0);

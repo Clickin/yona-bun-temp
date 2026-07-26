@@ -188,9 +188,11 @@ test("authenticated public profile owns pull-request state badge shell and empty
 
   await expect(conflictState).toHaveText("Conflict");
   await expect(openState).toHaveText("Open");
-  await expect(conflictState).toHaveClass(/state conflict/);
-  await expect(openState).toHaveClass(/state open/);
-  await expect(emptyAvatar).toHaveClass(/empty-avatar-wrap/);
+  await expect(conflictState).not.toHaveClass(
+    /\b(?:state|open|closed|rejected|merged|conflict)\b/u,
+  );
+  await expect(openState).not.toHaveClass(/\b(?:state|open|closed|rejected|merged|conflict)\b/u);
+  await expect(emptyAvatar).not.toHaveClass(/\bempty-avatar-wrap\b/u);
 
   const desktop = await rows.evaluateAll((nodes) =>
     nodes.map((node) => {

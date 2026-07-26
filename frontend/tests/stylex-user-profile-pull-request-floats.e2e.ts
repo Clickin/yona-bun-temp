@@ -91,7 +91,9 @@ test("populated public profile pull-request row owns receiver and state floats",
   expect(source).toContain('data-stylex-owner="user-profile-pull-request-receiver-column"');
   expect(source).toContain('data-stylex-owner="user-profile-pull-request-state"');
   expect(source).not.toContain("mt5 pull-right");
-  expect(source).not.toContain("state ${state} pull-right");
+  expect(source).not.toContain(
+    "className={`${pullRequestStateStyle.className} state ${displayState}`}",
+  );
   expect(source).not.toContain('className="span2"');
   expect(styleSource).toContain("pullRequestReceiverColumn: {");
   for (const declaration of [
@@ -191,7 +193,7 @@ test("populated public profile pull-request row owns receiver and state floats",
   await expect(receiverImage).toHaveAttribute("alt", "Receiver User");
   await expect(receiverLink).not.toHaveClass(/\b(?:avatar-wrap|assinee)\b/u);
   await expect(state).toHaveText("Open");
-  await expect(state).toHaveClass(/state open/u);
+  await expect(state).not.toHaveClass(/\b(?:state|open|closed|rejected|merged|conflict)\b/u);
   await expect(receiver).not.toHaveClass(/pull-right/u);
   await expect(state).not.toHaveClass(/pull-right/u);
   await expect(receiver).not.toHaveAttribute("data-toggle");

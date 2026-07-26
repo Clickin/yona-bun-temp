@@ -176,7 +176,7 @@ test("authenticated public profile owns pull-request receiver spacing shell", as
   await expect(receiverImage).toHaveCount(1);
   await expect(receiverImage).toHaveAttribute("width", "32");
   await expect(receiverImage).toHaveAttribute("height", "32");
-  await expect(emptyAvatar).toHaveClass(/empty-avatar-wrap/);
+  await expect(emptyAvatar).not.toHaveClass(/\bempty-avatar-wrap\b/u);
 
   const desktop = await rows.evaluateAll((nodes) =>
     nodes.map((node) => {

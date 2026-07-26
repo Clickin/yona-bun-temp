@@ -1586,7 +1586,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           ) : (
             <div
               {...stylex.props(styles.pullRequestEmptyAvatarWrap)}
-              className={`${stylex.props(styles.pullRequestEmptyAvatarWrap).className} empty-avatar-wrap`}
+              className={stylex.props(styles.pullRequestEmptyAvatarWrap).className}
               data-stylex-owner="user-profile-pull-request-empty-avatar-wrap"
             >
               &nbsp;
@@ -1595,7 +1595,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </div>
         <div
           {...pullRequestStateStyle}
-          className={`${pullRequestStateStyle.className} state ${displayState}`}
+          className={pullRequestStateStyle.className}
           data-stylex-owner="user-profile-pull-request-state"
         >
           {t(`pullRequest.state.${displayState}`)}
