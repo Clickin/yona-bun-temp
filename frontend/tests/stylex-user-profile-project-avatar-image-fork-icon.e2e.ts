@@ -175,13 +175,15 @@ test("profile project avatar images and conditional fork icon own the final lega
     await expect(wrapper.locator(":scope > img")).toHaveCount(1);
   }
 
-  const headerChildren = await forkedRow.locator(".header").evaluate((node) =>
-    [...node.children].map((child) => ({
-      tag: child.tagName,
-      className: child.className,
-      text: child.textContent?.trim() ?? "",
-    })),
-  );
+  const headerChildren = await forkedRow
+    .locator('[data-stylex-owner="user-profile-project-header"]')
+    .evaluate((node) =>
+      [...node.children].map((child) => ({
+        tag: child.tagName,
+        className: child.className,
+        text: child.textContent?.trim() ?? "",
+      })),
+    );
   expect(headerChildren).toEqual([
     expect.objectContaining({
       tag: "A",
@@ -195,12 +197,15 @@ test("profile project avatar images and conditional fork icon own the final lega
     }),
     expect.objectContaining({ tag: "SPAN", text: "upstream/source" }),
   ]);
-  await expect(forkedRow.locator(".header span a")).toHaveAttribute(
-    "href",
-    "/yona/upstream/source",
+  await expect(
+    forkedRow.locator('[data-stylex-owner="user-profile-project-header"] span a'),
+  ).toHaveAttribute("href", "/yona/upstream/source");
+  await expect(
+    forkedRow.locator('[data-stylex-owner="user-profile-project-header"] span'),
+  ).toHaveText(" upstream/source");
+  await expect(plainRow.locator('[data-stylex-owner="user-profile-project-header"]')).toHaveText(
+    "plain",
   );
-  await expect(forkedRow.locator(".header span")).toHaveText(" upstream/source");
-  await expect(plainRow.locator(".header")).toHaveText("plain");
 
   const assertMetrics = async (viewportWidth: number) => {
     const metrics = await rows.evaluateAll((nodes) =>

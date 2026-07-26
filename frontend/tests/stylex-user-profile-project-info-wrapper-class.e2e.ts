@@ -236,10 +236,16 @@ test("profile project info wrapper retires only its declaration-free legacy clas
     await expect(wrappers).toHaveCount(2);
     await expect(wrappers.nth(0)).not.toHaveClass(/(?:^|\s)info-wrap(?:\s|$)/u);
     await expect(
-      wrappers.locator(".owner-avatar-wrap, .forked, .header .owner-name-small"),
+      wrappers.locator(
+        '.owner-avatar-wrap, .forked, [data-stylex-owner="user-profile-project-header"] .owner-name-small',
+      ),
     ).toHaveCount(0);
-    await expect(rows.nth(0).locator(".header > .yobicon-lock")).toHaveCount(1);
-    await expect(rows.nth(1).locator(".header > .yobicon-lock")).toHaveCount(0);
+    await expect(
+      rows.nth(0).locator('[data-stylex-owner="user-profile-project-header"] > .yobicon-lock'),
+    ).toHaveCount(1);
+    await expect(
+      rows.nth(1).locator('[data-stylex-owner="user-profile-project-header"] > .yobicon-lock'),
+    ).toHaveCount(0);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-origin-link"]'),
     ).toHaveText("origin-owner/origin-project");
@@ -266,7 +272,9 @@ test("profile project info wrapper retires only its declaration-free legacy clas
           avatar: boxes[2],
           info: boxes[3],
           headerOwners: [
-            ...wrapper.querySelectorAll(":scope .header, :scope .desc, :scope .name-tag"),
+            ...wrapper.querySelectorAll(
+              ':scope [data-stylex-owner="user-profile-project-header"], :scope [data-stylex-owner="user-profile-project-description"], :scope [data-stylex-owner="user-profile-project-name-tag"]',
+            ),
           ].map((child) => child.getAttribute("data-stylex-owner")),
         };
       }),

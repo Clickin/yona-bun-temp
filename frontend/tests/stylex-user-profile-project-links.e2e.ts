@@ -190,8 +190,16 @@ test("profile project title and owner links own the final frozen generic anchor 
         await expect(title).not.toHaveAttribute(attribute);
         await expect(owner).not.toHaveAttribute(attribute);
       }
-      await expect(rows.nth(index).locator(".header > .project-name")).toHaveCount(1);
-      await expect(rows.nth(index).locator(".name-tag > .owner-name-small")).toHaveCount(1);
+      await expect(
+        rows
+          .nth(index)
+          .locator('[data-stylex-owner="user-profile-project-header"] > .project-name'),
+      ).toHaveCount(1);
+      await expect(
+        rows
+          .nth(index)
+          .locator('[data-stylex-owner="user-profile-project-name-tag"] > .owner-name-small'),
+      ).toHaveCount(1);
     }
 
     const base = await page.evaluate(() => {

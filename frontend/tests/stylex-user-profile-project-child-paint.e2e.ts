@@ -198,11 +198,15 @@ test("Projects tab owns only the applied private icon and project avatar paint",
   ).toHaveCount(0);
   await expect(privateIcon).toHaveClass(/yobicon-lock/u);
   await expect(privateIcon).toHaveClass(/yobicon-small/u);
-  await expect(privateRow.locator(".header > .project-name + i")).toBeAttached();
-  await expect(privateRow.locator(".name-tag")).toContainText(
-    "3 private-owner today, Latest code update an hour ago",
-  );
-  await expect(privateRow.locator(".name-tag .owner-name-small")).toHaveText("private-owner");
+  await expect(
+    privateRow.locator('[data-stylex-owner="user-profile-project-header"] > .project-name + i'),
+  ).toBeAttached();
+  await expect(
+    privateRow.locator('[data-stylex-owner="user-profile-project-name-tag"]'),
+  ).toContainText("3 private-owner today, Latest code update an hour ago");
+  await expect(
+    privateRow.locator('[data-stylex-owner="user-profile-project-name-tag"] .owner-name-small'),
+  ).toHaveText("private-owner");
   await expect(
     privateRow.locator('a.owner-name-small[data-stylex-owner="user-profile-project-owner-link"]'),
   ).toHaveCount(1);
@@ -260,11 +264,13 @@ test("Projects tab owns only the applied private icon and project avatar paint",
       const avatarLink = element.querySelector(
         '[data-stylex-owner="user-profile-project-avatar-link"]',
       )!;
-      const projectNameLink = element.querySelector(".header > .project-name")!;
+      const projectNameLink = element.querySelector(
+        '[data-stylex-owner="user-profile-project-header"] > .project-name',
+      )!;
       const privateIcon = element.querySelector(
         '[data-stylex-owner="user-profile-project-private-icon"]',
       );
-      const nameTag = element.querySelector(".name-tag")!;
+      const nameTag = element.querySelector('[data-stylex-owner="user-profile-project-name-tag"]')!;
       const owner = nameTag.querySelector(".owner-name-small")!;
       const date = owner.nextElementSibling!;
       return {
@@ -312,7 +318,7 @@ test("Projects tab owns only the applied private icon and project avatar paint",
         icon: {
           color: iconStyle.color,
           inline: icon.hasAttribute("style"),
-          parentClass: icon.parentElement?.className ?? "",
+          parentOwner: icon.parentElement?.getAttribute("data-stylex-owner") ?? "",
         },
         avatar: {
           width: avatarStyle.width,
@@ -334,7 +340,7 @@ test("Projects tab owns only the applied private icon and project avatar paint",
     expect(values.icon).toEqual({
       color: "rgb(127, 140, 141)",
       inline: false,
-      parentClass: expect.stringContaining("header"),
+      parentOwner: "user-profile-project-header",
     });
     expect(values.avatar).toMatchObject({
       width: "24px",

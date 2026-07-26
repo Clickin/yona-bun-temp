@@ -1521,7 +1521,7 @@ function ProfileProjectRow({
           data-stylex-owner="user-profile-project-info"
         >
           <div
-            className={`${stylex.props(styles.projectHeader).className} header`}
+            className={stylex.props(styles.projectHeader).className}
             data-stylex-owner="user-profile-project-header"
           >
             <Link
@@ -1566,13 +1566,13 @@ function ProfileProjectRow({
             ) : null}
           </div>
           <div
-            className={`${stylex.props(styles.projectDescription).className} desc`}
+            className={stylex.props(styles.projectDescription).className}
             data-stylex-owner="user-profile-project-description"
           >
             {project.overview}
           </div>
           <div
-            className={`${stylex.props(styles.projectNameTag).className} name-tag`}
+            className={stylex.props(styles.projectNameTag).className}
             data-stylex-owner="user-profile-project-name-tag"
           >
             <i
