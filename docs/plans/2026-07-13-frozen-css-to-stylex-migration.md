@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile project origin and watch controls
+
+Batch 974 moves four populated Projects surfaces into route-local StyleX: the
+conditional fork-origin Link's final generic anchor cascade, the watch/unwatch
+`.ybtn`, its eye icon line height, and nested numeric badge. Exact frozen
+base/hover/focus/active button declarations and both watch branches remain
+intact with their legacy classes, copy, routes, and order. The leave-project
+`nbtn` remains wholly fallback-owned. At 390px, long origin/watch content keeps
+the frozen project-row clipping behavior without document overflow or
+compensation. Focused external Chrome fallback-off passes 1/1. Live legacy
+screenshot parity remains final visual-lock work.
+
 ## 2026-07-26 — Public profile project title and owner links
 
 Batch 973 moves the populated Projects title and owner Links' final generic

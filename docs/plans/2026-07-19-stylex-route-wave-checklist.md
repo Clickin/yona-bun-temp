@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 974 public profile project origin and watch controls
+
+- [x] `yona-original/app/views/user/view.scala.html`, included `user/partial_projectlist.scala.html`, frozen Bootstrap anchors, the complete ordered `yobi.less` import chain through `_override.less`, Bootstrap/responsive CSS, messages, and `yobi.user.View.js` behavior evidence are recorded.
+- [x] Route-local StyleX owns four exact surfaces: conditional origin generic anchor states, complete final watch `.ybtn` base/hover/focus/active cascade, nested icon 20px line height, and generic numeric badge typography/spacing/radius/alignment.
+- [x] Origin present/absent and watch/unwatch branches, Links/routes/reload behavior, legacy classes, icon variants, count/copy/order, `yobicon-middle` alignment, and existing project owners remain; leave-project `nbtn` and unrelated ybtn/badge consumers are excluded.
+- [x] `frontend/tests/stylex-user-profile-project-origin-watch.e2e.ts` verifies RED→GREEN provenance, all owners/states/branches, exact desktop/mobile declarations, DOM/order/links/classes/copy, no inline/plugin attributes, containment/non-overlap, frozen mobile clipping, and zero document overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off check passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 973 public profile project title and owner links
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_projectlist.scala.html`, frozen Bootstrap generic anchor rules, later `_common.less` generic anchor override, `_page.less:1842-1890,5072-5076`, and the complete `yobi.less`/Bootstrap/responsive import chain are recorded as title/owner Link evidence.

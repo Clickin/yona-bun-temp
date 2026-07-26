@@ -1485,6 +1485,8 @@ function ProfileProjectRow({
                       ownerName: project.originOwnerName,
                       projectName: project.originProjectName,
                     }}
+                    {...stylex.props(styles.projectOriginLink)}
+                    data-stylex-owner="user-profile-project-origin-link"
                   >
                     {project.originOwnerName}/{project.originProjectName}
                   </Link>
@@ -1531,12 +1533,26 @@ function ProfileProjectRow({
       >
         <div className="stats">
           {project.viewerCanWatch ? (
-            <Link to={watchPath} reloadDocument className="ybtn watchBtn">
+            <Link
+              to={watchPath}
+              reloadDocument
+              {...stylex.props(styles.projectWatchButton)}
+              className={`${stylex.props(styles.projectWatchButton).className} ybtn watchBtn`}
+              data-stylex-owner="user-profile-project-watch-button"
+            >
               <i
-                className={`${stylex.props(userProfileStaticStyles.iconMiddle).className} yobicon-eye-${project.isWatching ? "open" : "close"} yobicon-white`}
+                {...stylex.props(userProfileStaticStyles.iconMiddle, styles.projectWatchIcon)}
+                className={`${stylex.props(userProfileStaticStyles.iconMiddle, styles.projectWatchIcon).className} yobicon-eye-${project.isWatching ? "open" : "close"} yobicon-middle yobicon-white`}
+                data-stylex-owner="user-profile-project-watch-icon"
               ></i>
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
-              <span className="num-badge">{project.watchCount}</span>
+              <span
+                {...stylex.props(styles.projectWatchBadge)}
+                className={`${stylex.props(styles.projectWatchBadge).className} num-badge`}
+                data-stylex-owner="user-profile-project-watch-badge"
+              >
+                {project.watchCount}
+              </span>
             </Link>
           ) : null}
           {project.viewerCanLeave ? (

@@ -153,6 +153,22 @@ export const styles = stylex.create({
   },
   // Frozen less/_common.less .vmiddle.
   projectForkIcon: { verticalAlign: "middle !important" },
+  // Frozen Bootstrap generic anchor rules followed by less/_common.less a.
+  projectOriginLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
   projectDescription: {
     color: "#bababa",
     marginLeft: "10px",
@@ -186,6 +202,64 @@ export const styles = stylex.create({
     float: "right",
     marginTop: "0px",
     textAlign: "right",
+  },
+  // Frozen less/_yobiUI.less .ybtn final cascade.
+  projectWatchButton: {
+    backgroundColor: "#ffffff",
+    borderColor: "rgba(0, 0, 0, 0.15)",
+    borderRadius: "3px !important",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 1px 0 rgba(0, 0, 0, 0.05)",
+    color: "#333333",
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginBottom: 0,
+    marginLeft: ".3em",
+    outline: "0 none",
+    padding: "4px 12px !important",
+    position: "relative",
+    textAlign: "center",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: 2,
+    ":first-child": { marginLeft: 0 },
+    ":hover": {
+      backgroundColor: "#f1f1f1",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "#292929",
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: "#f1f1f1",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "#292929",
+      textDecoration: "none",
+    },
+    ":active": {
+      backgroundColor: "#f1f1f1",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "#292929",
+      textDecoration: "none",
+    },
+  },
+  // Frozen less/_yobiUI.less .ybtn i.
+  projectWatchIcon: { lineHeight: "20px" },
+  // Frozen less/_yobiUI.less .num-badge.
+  projectWatchBadge: {
+    borderRadius: "2px",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "13px",
+    fontWeight: "bold",
+    marginLeft: "3px",
+    padding: "2px 4px",
+    textShadow: "none",
+    verticalAlign: "top",
   },
   // Legacy user/view.scala.html partial_issues subtask progress width.
   progressBar: (width: string) => ({ width }),
