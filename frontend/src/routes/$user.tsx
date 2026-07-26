@@ -1279,14 +1279,30 @@ function ProfileIssueCommentCount({
   return (
     <span
       {...stylex.props(styles.issueTitleCountGroups)}
-      className={`${stylex.props(styles.issueTitleCountGroups).className} item-count-groups`}
       data-stylex-owner="user-profile-issue-title-count-groups"
     >
-      <Link {...LEGACY_LINK_PROPS} to={issuePath} hash="comments" className="comments-count">
-        <span className="count-groups item-icon">
-          <i className="yobicon-comment2"></i>
+      <Link
+        {...LEGACY_LINK_PROPS}
+        to={issuePath}
+        hash="comments"
+        {...stylex.props(styles.issueCommentCountLink)}
+        data-stylex-owner="user-profile-issue-comment-count-link"
+      >
+        <span
+          {...stylex.props(styles.issueCommentCountIconGroup)}
+          data-stylex-owner="user-profile-issue-comment-count-icon-group"
+        >
+          <i
+            {...stylex.props(styles.issueCommentCountGlyph)}
+            data-stylex-owner="user-profile-issue-comment-count-glyph"
+          ></i>
         </span>
-        <span className="count-groups item-count">{commentCount}</span>
+        <span
+          {...stylex.props(styles.issueCommentCountValue)}
+          data-stylex-owner="user-profile-issue-comment-count-value"
+        >
+          {commentCount}
+        </span>
       </Link>
     </span>
   );

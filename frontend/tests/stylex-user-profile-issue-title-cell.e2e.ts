@@ -70,7 +70,7 @@ test("authenticated public profile issue title area owns residual legacy declara
   expect(source).toContain('data-stylex-owner="user-profile-issue-title-count-groups"');
   expect(styleSource).toContain('padding: "5px 0px"');
   expect(styleSource).toContain('verticalAlign: "middle"');
-  expect(styleSource).toContain('issueTitleCountGroups: { fontSize: "10px" }');
+  expect(styleSource).toMatch(/issueTitleCountGroups:\s*\{[\s\S]*?fontSize: "10px"/u);
   expect(styleSource).toContain('issueTitleLink: { fontSize: "14px", fontWeight: "500" }');
 
   await mockProfile(page);

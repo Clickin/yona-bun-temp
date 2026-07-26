@@ -562,8 +562,66 @@ export const styles = stylex.create({
     padding: "5px 0px",
     verticalAlign: "middle",
   },
-  // Frozen less/_page.less .my-issues .post-item .title-wrap .item-count-groups.
-  issueTitleCountGroups: { fontSize: "10px" },
+  // Frozen less/_page.less generic .item-count-groups plus the profile title
+  // cell's nested font-size override.
+  issueTitleCountGroups: {
+    borderColor: "#eeeeee",
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    fontSize: "10px",
+    lineHeight: "14px",
+    marginTop: "2px",
+  },
+  // Frozen Bootstrap/common generic anchor cascade plus the later
+  // .item-count-groups .comments-count:hover color.
+  issueCommentCountLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      color: "#be00be",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
+  // Frozen less/_page.less .count-groups.item-icon:first-child.
+  issueCommentCountIconGroup: {
+    borderLeft: 0,
+    display: "inline-block",
+    fontSize: "9px",
+    lineHeight: "12px",
+    margin: "0 auto",
+    padding: "2px 5px 0px",
+    textAlign: "center",
+  },
+  // Frozen public/stylesheets/yobicon/style.css generic base and comment2 glyph.
+  issueCommentCountGlyph: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e274"' },
+  },
+  // Frozen less/_page.less .count-groups.item-count.
+  issueCommentCountValue: {
+    display: "inline-block",
+    margin: "0 auto",
+    padding: "0px 5px 0px 0px",
+    textAlign: "center",
+  },
   // Frozen less/_page.less .my-issues .post-item .title-wrap .title.
   issueTitleLink: { fontSize: "14px", fontWeight: "500" },
   // Frozen less/_page.less .project-name-in-my-issues.
