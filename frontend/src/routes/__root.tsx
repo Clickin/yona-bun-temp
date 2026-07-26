@@ -857,7 +857,6 @@ function RootLoginDialog({
               <Link to="/lostPassword">{t("title.resetPassword")}</Link>
               <span
                 {...rootLoginDialogSeparatorStyleProps}
-                className={`${rootLoginDialogSeparatorStyleProps.className ?? ""} gray-txt ml10 mr10`.trim()}
                 data-stylex-owner="root-login-dialog-separator"
               >
                 |

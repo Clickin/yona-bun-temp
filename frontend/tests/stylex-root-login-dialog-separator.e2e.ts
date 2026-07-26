@@ -91,7 +91,7 @@ test("root login dialog owns reset/signup separator margins", async ({ page }) =
   );
   expect(routeSource).toContain("rootLoginDialogSeparatorStyleProps");
   expect(routeSource).toContain('data-stylex-owner="root-login-dialog-separator"');
-  expect(routeSource).toContain("gray-txt ml10 mr10");
+  expect(routeSource).not.toContain("gray-txt ml10 mr10");
   expect(routeSource).toContain('to="/lostPassword"');
   expect(routeSource).toContain('to="/users/signupform"');
   expect(routeSource).not.toContain('data-toggle="modal"');
@@ -116,9 +116,9 @@ test("root login dialog owns reset/signup separator margins", async ({ page }) =
     await expect(dialog).toBeVisible();
     await expect(actionRow).toBeVisible();
     await expect(separator).toHaveText("|");
-    await expect(separator).toHaveClass(/gray-txt/u);
-    await expect(separator).toHaveClass(/ml10/u);
-    await expect(separator).toHaveClass(/mr10/u);
+    await expect(separator).not.toHaveClass(/gray-txt/u);
+    await expect(separator).not.toHaveClass(/ml10/u);
+    await expect(separator).not.toHaveClass(/mr10/u);
     await expect(separator).toHaveCSS("margin-left", "10px");
     await expect(separator).toHaveCSS("margin-right", "10px");
     await expect(separator).not.toHaveAttribute("style");
