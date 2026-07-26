@@ -1172,7 +1172,10 @@ function ProfileIssueChildRow({
           </span>
         </span>
       </Link>
-      <span className="font12">
+      <span
+        {...stylex.props(styles.issueChildCountPair)}
+        data-stylex-owner="user-profile-child-count-pair"
+      >
         <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => (
@@ -1220,7 +1223,6 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
   return (
     <span
       {...stylex.props(styles.issueChildCountGroups)}
-      className={`${stylex.props(styles.issueChildCountGroups).className} item-count-groups`}
       data-stylex-owner="user-profile-child-count-groups"
     >
       {commentCount > 0 ? (
@@ -1228,20 +1230,53 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
           {...LEGACY_LINK_PROPS}
           to={issuePath}
           hash="comments"
-          className="comments-count comments-count-color"
+          {...stylex.props(styles.issueChildCountLink, styles.issueChildCommentLink)}
+          data-stylex-owner="user-profile-child-comment-count-link"
         >
-          <span className="count-groups item-icon">
-            <i className="yobicon-comment2"></i>
+          <span
+            {...stylex.props(styles.issueChildCountIcon)}
+            data-stylex-owner="user-profile-child-comment-count-icon"
+          >
+            <i
+              {...stylex.props(styles.issueChildCountGlyph, styles.issueChildCommentGlyph)}
+              data-stylex-owner="user-profile-child-comment-count-glyph"
+            ></i>
           </span>
-          <span className="count-groups item-count">{commentCount}</span>
+          <span
+            {...stylex.props(styles.issueChildCountValue)}
+            data-stylex-owner="user-profile-child-comment-count-value"
+          >
+            {commentCount}
+          </span>
         </Link>
       ) : null}
       {voterCount > 0 ? (
-        <Link {...LEGACY_LINK_PROPS} to={issuePath} hash="vote" className="vote-count vote-color">
-          <span className="count-groups item-icon">
-            <i className="yobicon-hearts"></i>
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={issuePath}
+          hash="vote"
+          {...stylex.props(
+            styles.issueChildCountLink,
+            styles.issueChildVoteLink,
+            commentCount > 0 ? styles.issueChildCountLinkOffset : undefined,
+          )}
+          data-stylex-owner="user-profile-child-vote-count-link"
+        >
+          <span
+            {...stylex.props(styles.issueChildCountIcon)}
+            data-stylex-owner="user-profile-child-vote-count-icon"
+          >
+            <i
+              {...stylex.props(styles.issueChildCountGlyph, styles.issueChildVoteGlyph)}
+              data-stylex-owner="user-profile-child-vote-count-glyph"
+            ></i>
           </span>
-          <span className="count-groups item-count strong">{voterCount}</span>
+          <span
+            {...stylex.props(styles.issueChildCountValue, styles.issueChildVoteCountValue)}
+            data-stylex-owner="user-profile-child-vote-count-value"
+          >
+            {voterCount}
+          </span>
         </Link>
       ) : null}
     </span>

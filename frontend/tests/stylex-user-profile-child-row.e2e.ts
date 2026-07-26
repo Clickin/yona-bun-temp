@@ -168,7 +168,7 @@ test("authenticated public profile owns child issue residuals", async ({ page })
     "fontFamily: 'Monaco, Menlo, Consolas, \"Courier New\", monospace'",
   );
   expect(styleSource).toContain('minWidth: "22px"');
-  expect(styleSource).toContain('issueChildCountGroups: { borderStyle: "none !important" }');
+  expect(styleSource).toMatch(/issueChildCountGroups:\s*\{[\s\S]*?borderStyle: "none !important"/u);
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin?selected=issues`, { waitUntil: "domcontentloaded" });
@@ -192,8 +192,12 @@ test("authenticated public profile owns child issue residuals", async ({ page })
   await expect(countGroups).toHaveCount(1);
   await expect(numbers.nth(0)).toHaveText("#8");
   await expect(numbers.nth(1)).toHaveText("#9");
-  await expect(countGroups.locator(".comments-count")).toHaveCount(1);
-  await expect(countGroups.locator(".vote-count")).toHaveCount(1);
+  await expect(
+    countGroups.locator('[data-stylex-owner="user-profile-child-comment-count-link"]'),
+  ).toHaveCount(1);
+  await expect(
+    countGroups.locator('[data-stylex-owner="user-profile-child-vote-count-link"]'),
+  ).toHaveCount(1);
   await expect(countGroups.locator('a[href$="/admin/sample/issue/8#comments"]')).toHaveCount(1);
   await expect(countGroups.locator('a[href$="/admin/sample/issue/8#vote"]')).toHaveCount(1);
 

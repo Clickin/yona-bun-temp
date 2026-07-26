@@ -660,8 +660,77 @@ export const styles = stylex.create({
     marginRight: "5px",
     minWidth: "22px",
   },
-  // Frozen less/_page.less .no-border-at-child .item-count-groups.
-  issueChildCountGroups: { borderStyle: "none !important" },
+  // Frozen less/_common.less .font12 around the child count pair.
+  issueChildCountPair: { fontSize: "12px" },
+  // Frozen less/_page.less generic .item-count-groups followed by
+  // .no-border-at-child .item-count-groups.
+  issueChildCountGroups: {
+    borderColor: "#eeeeee",
+    borderRadius: "3px",
+    borderStyle: "none !important",
+    borderWidth: "1px",
+    lineHeight: "14px",
+    marginTop: "2px",
+  },
+  // Frozen Bootstrap/common generic anchor cascade.
+  issueChildCountLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+    ":focus": {
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
+  // Frozen less/_page.less always-colored child comment/vote links.
+  issueChildCommentLink: {
+    color: "#8b008b",
+    ":hover": { color: "#be00be" },
+  },
+  issueChildVoteLink: {
+    color: "#f36c22",
+    ":hover": { color: "#f58c52" },
+  },
+  // Frozen less/_page.less .item-count-groups a:nth-child(2).
+  issueChildCountLinkOffset: { marginLeft: "-5px" },
+  // Frozen less/_page.less .count-groups.item-icon:first-child.
+  issueChildCountIcon: {
+    borderLeft: 0,
+    display: "inline-block",
+    fontSize: "9px",
+    lineHeight: "12px",
+    margin: "0 auto",
+    padding: "2px 5px 0px",
+    textAlign: "center",
+  },
+  // Frozen public/stylesheets/yobicon/style.css generic base.
+  issueChildCountGlyph: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+  },
+  issueChildCommentGlyph: { "::before": { content: '"\\e274"' } },
+  issueChildVoteGlyph: { "::before": { content: '"\\e4b0"' } },
+  // Frozen less/_page.less .count-groups.item-count and .strong.
+  issueChildCountValue: {
+    display: "inline-block",
+    margin: "0 auto",
+    padding: "0px 5px 0px 0px",
+    textAlign: "center",
+  },
+  issueChildVoteCountValue: { fontWeight: "bold" },
   // Frozen less/_page.less .my-issues .post-item .author.
   issueAuthor: { display: "table", lineHeight: "36px" },
   // Frozen less/_responsive.less .hide-in-mobile.

@@ -229,8 +229,9 @@ test("authenticated profile top-level issue comment count owns its exact present
   ]) {
     expect(topLevelSource).not.toContain(literal);
   }
-  expect(route).toContain('className="comments-count comments-count-color"');
   expect(route).toContain('data-stylex-owner="user-profile-child-count-groups"');
+  expect(route).toContain('data-stylex-owner="user-profile-child-comment-count-link"');
+  expect(route).not.toContain('className="comments-count comments-count-color"');
   for (const owner of [
     "issueTitleCountGroups:",
     "issueCommentCountLink:",
@@ -368,18 +369,10 @@ test("authenticated profile top-level issue comment count owns its exact present
 
     await page.locator("#toggle-show-subtasks").check();
     const child = page.locator('[data-stylex-owner="user-profile-child-count-groups"]');
-    await expect(child).toHaveClass(/(?:^|\s)item-count-groups(?:\s|$)/u);
-    await expect(child.locator(".comments-count.comments-count-color")).toHaveCount(1);
-    const childPresentation = await child.evaluate((element) => ({
-      border: getComputedStyle(element).borderTopStyle,
-      color: getComputedStyle(element.querySelector(".comments-count")!).color,
-      fontSize: getComputedStyle(element.parentElement!).fontSize,
-    }));
-    expect(childPresentation).toEqual(
-      mode === "normal"
-        ? { border: "none", color: "rgb(139, 0, 139)", fontSize: "12px" }
-        : { border: "none", color: "rgb(153, 153, 153)", fontSize: "13px" },
-    );
+    await expect(child).not.toHaveClass(/(?:^|\s)item-count-groups(?:\s|$)/u);
+    await expect(
+      child.locator('[data-stylex-owner="user-profile-child-comment-count-link"]'),
+    ).not.toHaveClass(/(?:^|\s)(?:comments-count|comments-count-color)(?:\s|$)/u);
 
     await page.mouse.move(0, 0);
     await link.evaluate((element) => element.blur());
