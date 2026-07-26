@@ -170,6 +170,7 @@ test("authenticated public profile owns populated issue date and milestone metad
   expect(source).toContain('data-stylex-owner="user-profile-issue-metadata-milestone"');
   expect(source).toContain("styles.issueMetadataItem");
   expect(source).toContain("styles.issueMilestoneTag");
+  expect(source).not.toContain("mileston-tag");
   expect(styleSource).toContain('issueMetadataItem: { float: "left", marginRight: "6px" }');
   for (const declaration of [
     'borderRadius: "6px"',
@@ -200,7 +201,7 @@ test("authenticated public profile owns populated issue date and milestone metad
   await expect(date).toHaveCSS("float", "left");
   await expect(date).toHaveCSS("margin-right", "6px");
   await expect(milestone).toHaveCount(1);
-  await expect(milestone).toHaveClass(/\bmileston-tag\b/);
+  await expect(milestone).not.toHaveClass(/\bmileston-tag\b/);
   await expect(milestone).toHaveCSS("max-width", "135px");
   await expect(milestone).toHaveCSS("text-overflow", "ellipsis");
   await expect(milestone).toHaveCSS("overflow", "hidden");

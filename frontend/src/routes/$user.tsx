@@ -1026,7 +1026,6 @@ function ProfileIssueRow({
             {milestoneId > 0 && milestoneTitle ? (
               <span
                 {...stylex.props(styles.issueMilestoneTag)}
-                className={`${stylex.props(styles.issueMilestoneTag).className} mileston-tag`}
                 data-stylex-owner="user-profile-issue-metadata-milestone"
               >
                 <Link
