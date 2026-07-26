@@ -15,12 +15,13 @@ export const styles = stylex.create({
   },
   // Legacy less/_page.less .user-info-box.
   info: {
-    color: userProfileColors.accentText,
     float: "left",
     width: "200px",
   },
   // Frozen less/_page.less .user-info-box .whoami.
   whoami: { marginTop: "15px" },
+  // Frozen less/_yobiUI.less .usf-group .loginid.
+  loginId: { color: "#999999" },
   // Frozen less/_page.less .user-info-box .guest-user.
   guestUser: {
     backgroundColor: "rgba(255, 165, 0, 0.8)",

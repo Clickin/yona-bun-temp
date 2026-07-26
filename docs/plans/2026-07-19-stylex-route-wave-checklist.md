@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 976 public profile sidebar identity paint
+
+- [x] `yona-original/app/views/user/view.scala.html`, frozen `_page.less:4970-5058`, later `_yobiUI.less .usf-group .loginid`, `_common.less`, `_override.less`, the complete ordered `yobi.less`/Bootstrap/responsive chain, messages, and runtime email configuration are recorded.
+- [x] The legacy-unproven `.user-info-box` `#337581` parent paint is removed; name and optional email inherit body `#333`, login ID owns exact `#999`, and existing name 18px/700 typography remains.
+- [x] Identity span types/classes/order/copy, legacy whitespace, email shown/hidden branch, since orange, provider/status/edit/tabs/guest/project states remain; nonmatching dropdown/select2 white login-ID selectors are excluded.
+- [x] `frontend/tests/stylex-user-profile-sidebar-identity-paint.e2e.ts` verifies RED→GREEN source absence/ancestry, owners, exact desktop/mobile paint/type, email branches, DOM/order/whitespace geometry, containment/non-overlap, retained neighbors, no plugin attrs, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 975 public profile project leave control
 
 - [x] `yona-original/app/views/user/view.scala.html`, included `user/partial_projectlist.scala.html`, frozen Bootstrap anchors, the complete ordered `yobi.less` chain through `_override.less`, Bootstrap/responsive CSS, messages, and `yobi.user.View.js` confirm behavior are recorded.

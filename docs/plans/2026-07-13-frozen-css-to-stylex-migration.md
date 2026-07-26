@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile sidebar identity paint
+
+Batch 976 removes the legacy-unproven `#337581` paint from the
+`.user-info-box` StyleX owner and restores the identity text's final frozen
+cascade. Name and optional email inherit body `#333`; login ID owns
+`.usf-group .loginid` `#999`; existing 18px/bold name typography and legacy
+inline whitespace remain. Email shown/hidden branches, since orange, provider
+logos, tabs, badges, edit control, and guest state are unchanged. Dropdown and
+select2 white login-ID rules are excluded by ancestry. Focused external Chrome
+fallback-off passes 1/1; live legacy screenshot parity remains final visual-lock
+work.
+
 ## 2026-07-26 — Public profile project leave control
 
 Batch 975 moves the conditional leave-project Link's actually matching

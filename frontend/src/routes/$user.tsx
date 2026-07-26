@@ -379,12 +379,21 @@ function PublicProfileBody({
               >
                 <span
                   className={`${stylex.props(userProfileStaticStyles.profileName).className} name`}
+                  data-stylex-owner="user-profile-identity-name"
                 >
                   {profile.englishName}
-                </span>
-                <span className="loginid">@{profile.loginId}</span>
+                </span>{" "}
+                <span
+                  {...stylex.props(styles.loginId)}
+                  className={`${stylex.props(styles.loginId).className} loginid`}
+                  data-stylex-owner="user-profile-identity-loginid"
+                >
+                  @{profile.loginId}
+                </span>{" "}
                 {runtimeConfig.showUserEmail && profile.primaryEmailAddress ? (
-                  <span className="email">{profile.primaryEmailAddress}</span>
+                  <span className="email" data-stylex-owner="user-profile-identity-email">
+                    {profile.primaryEmailAddress}
+                  </span>
                 ) : null}
                 {profileResponse.viewerCanEditProfile ? (
                   <div
