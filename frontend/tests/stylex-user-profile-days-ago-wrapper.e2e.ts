@@ -61,7 +61,8 @@ test("authenticated public profile owns the daysAgo wrapper float", async ({ pag
   await expect(input).toHaveAttribute("min", "1");
   await expect(input).toHaveAttribute("max", "99");
   await expect(input).toHaveValue("14");
-  await expect(input).toHaveClass(/input-mini-min/);
+  await expect(input).toHaveAttribute("data-stylex-owner", "user-profile-days-ago-input");
+  await expect(input).not.toHaveClass(/(?:^|\s)input-mini-min(?:\s|$)/u);
 
   expect(profileRequestUrl).toContain("daysAgo=14");
   expect(profileRequestUrl).toContain("selected=issues");

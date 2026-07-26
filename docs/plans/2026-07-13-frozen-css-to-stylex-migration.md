@@ -4,6 +4,19 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile daysAgo input complete ownership
+
+Batch 980 completes the authenticated non-guest public-profile daysAgo number
+input through one route-local StyleX owner. The final cascade combines frozen
+Bootstrap number-input defaults, `_page.less .input-mini-min`,
+`_responsive.less` mobile 16px text, later `_yobiUI.less` 12px/default radius
+and focus treatment, and the Scala inline margin/alignment. The now-fully-owned
+`input-mini-min` class is retired only from this input. Field attributes,
+prefix/input/suffix order, query behavior, editable value, wrapper float, tabs,
+and guest absence remain unchanged. Focused external Chrome fallback-off passes
+1/1 at desktop and 390px mobile; live legacy screenshot parity remains final
+visual-lock work.
+
 ## 2026-07-26 — Public profile tab count badges
 
 Batch 979 moves the repeated top-level profile-tab and nested issue-tab

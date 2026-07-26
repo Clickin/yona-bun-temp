@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 980 public profile daysAgo input complete ownership
+
+- [x] `yona-original/app/views/user/view.scala.html`, Bootstrap number-input base/focus rules, the complete ordered `yobi.less` chain, `_page.less .input-mini-min`, `_responsive.less`, `_yobiUI.less`, variables/messages, and nonmatching later imports are recorded.
+- [x] Existing `daysAgoInput` owns the complete final desktop/mobile base and focus cascade plus Scala inline margin/alignment; only this fully-owned consumer retires `input-mini-min`.
+- [x] Field attributes/default, prefix/input/suffix order, query behavior, editable value, non-guest/guest branches, wrapper float, tabs, and unrelated inputs remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-days-ago-input-complete.e2e.ts` verifies RED→GREEN source/import/specificity, class/inline/plugin absence, complete computed declarations, field/query/edit behavior, exact geometry, containment/non-overlap, guest absence, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes 1/1; live legacy screenshot parity remains final visual-lock work and no compensation was added.
+
 ### 2026-07-26 Batch 979 public profile tab count badges
 
 - [x] `yona-original/app/views/user/view.scala.html` including `showBadgeNumberIfExist`, the complete ordered `yobi.less` chain, frozen `_yobiUI.less .num-badge`, and nonmatching `.lst-stacked` / `.ybtn.blue` descendant variants are recorded.

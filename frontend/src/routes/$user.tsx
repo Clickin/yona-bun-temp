@@ -500,7 +500,7 @@ function PublicProfileBody({
                     type="number"
                     min="1"
                     max="99"
-                    className={`${stylex.props(styles.daysAgoInput).className} input-mini-min`}
+                    className={stylex.props(styles.daysAgoInput).className}
                     defaultValue={daysAgo}
                     data-stylex-owner="user-profile-days-ago-input"
                   />
