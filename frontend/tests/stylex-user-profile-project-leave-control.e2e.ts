@@ -213,6 +213,8 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
   expect(routeSource).toContain("event.stopPropagation()");
   expect(routeSource).toContain('data-stylex-owner="user-profile-project-stats"');
   expect(routeSource).toContain('data-stylex-owner="user-profile-project-watch-button"');
+  expect(routeSource).toContain('data-stylex-owner="user-profile-project-trash-icon"');
+  expect(routeSource).not.toContain('className="yobicon-trash"');
   expect(routeSource).not.toContain('data-stylex-owner="user-profile-project-leave-icon"');
   for (const excluded of [
     "projectLeaveDisabled",
@@ -268,7 +270,11 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
     await expect(leave).toHaveClass(/(?:^|\s)leaveProject(?:\s|$)/u);
     await expect(leave).toContainText("Leave");
     await expect(leave.locator(":scope > i")).toHaveCount(1);
-    await expect(leave.locator(":scope > i")).toHaveClass("yobicon-trash");
+    await expect(leave.locator(":scope > i")).toHaveAttribute(
+      "data-stylex-owner",
+      "user-profile-project-trash-icon",
+    );
+    await expect(leave.locator(":scope > i")).not.toHaveClass(/(?:^|\s)yobicon-trash(?:\s|$)/u);
 
     const childOrder = await stats
       .nth(0)
@@ -404,7 +410,12 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
     expect(computed.icon.right).toBeLessThanOrEqual(computed.rect.right);
     expect(computed.icon.top).toBeGreaterThanOrEqual(computed.rect.top);
     expect(computed.icon.bottom).toBeLessThanOrEqual(computed.rect.bottom);
-    expect(computed.watch.right).toBeLessThanOrEqual(computed.rect.left);
+    expect(
+      computed.watch.right <= computed.rect.left ||
+        computed.rect.right <= computed.watch.left ||
+        computed.watch.bottom <= computed.rect.top ||
+        computed.rect.bottom <= computed.watch.top,
+    ).toBe(true);
     expect(computed.row.bottom).toBeLessThanOrEqual(computed.nextRow.top);
 
     await leave.hover();

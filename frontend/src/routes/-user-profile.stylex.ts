@@ -382,6 +382,23 @@ export const styles = stylex.create({
     fontSize: "11px",
     marginLeft: "10px",
   },
+  // Frozen public/stylesheets/yobicon/style.css generic base and .yobicon-friends
+  // pseudo, with less/_common.less .yobicon-middle final alignment.
+  projectMemberIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    marginBottom: "3px",
+    textDecoration: "none",
+    verticalAlign: "bottom",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e27b"' },
+  },
   // The owner link is under .name-tag, so the unmatched .header rule does not apply.
   projectOwnerLink: {
     color: "inherit",
@@ -447,8 +464,23 @@ export const styles = stylex.create({
       textDecoration: "none",
     },
   },
-  // Frozen less/_yobiUI.less .ybtn i.
-  projectWatchIcon: { lineHeight: "20px" },
+  // Frozen public/stylesheets/yobicon/style.css generic base and
+  // less/_common.less .yobicon-middle, followed by less/_yobiUI.less .ybtn i.
+  // Legacy eye-open/eye-close have no Yobicon pseudo mapping.
+  projectWatchIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: "20px",
+    marginBottom: "3px",
+    textDecoration: "none",
+    verticalAlign: "bottom",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+  },
   // Frozen less/_yobiUI.less .num-badge.
   projectWatchBadge: {
     borderRadius: "2px",
@@ -460,6 +492,22 @@ export const styles = stylex.create({
     padding: "2px 4px",
     textShadow: "none",
     verticalAlign: "top",
+  },
+  // Frozen public/stylesheets/yobicon/style.css generic base and
+  // .yobicon-trash pseudo.
+  projectTrashIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e838"' },
   },
   // Frozen less/_yobiUI.less .nbtn, .nbtn.black, .nbtn.last, and a.nbtn.medium,
   // with the final generic anchor hover/focus cascade.

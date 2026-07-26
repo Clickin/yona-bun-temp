@@ -299,10 +299,11 @@ test("profile project origin and watch controls own their exact final frozen cas
     await expect(buttons.nth(1)).toContainText("Watch");
     await expect(buttons.nth(0)).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
     await expect(buttons.nth(0)).not.toHaveClass(/(?:^|\s)watchBtn(?:\s|$)/u);
-    await expect(icons.nth(0)).toHaveClass(/yobicon-eye-open/u);
-    await expect(icons.nth(1)).toHaveClass(/yobicon-eye-close/u);
-    await expect(icons.nth(0)).toHaveClass(/yobicon-middle/u);
-    await expect(icons.nth(0)).toHaveClass(/yobicon-white/u);
+    for (const icon of await icons.all()) {
+      await expect(icon).not.toHaveClass(
+        /(?:^|\s)yobicon-(?:eye-open|eye-close|middle|white)(?:\s|$)/u,
+      );
+    }
     await expect(badges).toHaveText(["4", "2"]);
     await expect(badges.nth(0)).not.toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
     await expect(badges.nth(1)).not.toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
@@ -315,7 +316,10 @@ test("profile project origin and watch controls own their exact final frozen cas
       })),
     );
     expect(firstChildren).toEqual([
-      expect.objectContaining({ tag: "I", className: expect.stringContaining("yobicon-eye-open") }),
+      expect.objectContaining({
+        tag: "I",
+        className: expect.not.stringMatching(/(?:^|\s)yobicon-/u),
+      }),
       expect.objectContaining({
         tag: "SPAN",
         className: expect.not.stringMatching(/(?:^|\s)num-badge(?:\s|$)/u),
@@ -426,6 +430,8 @@ test("profile project origin and watch controls own their exact final frozen cas
     expect(computed.button.borderColor).toBe("rgba(0, 0, 0, 0.15)");
     expect(computed.button.boxShadow).toContain("rgba(0, 0, 0, 0.05)");
     expect(computed.icon).toMatchObject({
+      display: "inline-block",
+      fontFamily: "yobicon",
       lineHeight: "20px",
       marginBottom: "3px",
       verticalAlign: "bottom",

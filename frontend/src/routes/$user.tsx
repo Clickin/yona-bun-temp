@@ -1576,7 +1576,8 @@ function ProfileProjectRow({
             data-stylex-owner="user-profile-project-name-tag"
           >
             <i
-              className={`${stylex.props(userProfileStaticStyles.iconMiddle).className} yobicon-friends`}
+              {...stylex.props(styles.projectMemberIcon)}
+              data-stylex-owner="user-profile-project-member-icon"
             ></i>
             <strong>{project.memberCount}</strong>{" "}
             <Link
@@ -1607,8 +1608,7 @@ function ProfileProjectRow({
               data-stylex-owner="user-profile-project-watch-button"
             >
               <i
-                {...stylex.props(userProfileStaticStyles.iconMiddle, styles.projectWatchIcon)}
-                className={`${stylex.props(userProfileStaticStyles.iconMiddle, styles.projectWatchIcon).className} yobicon-eye-${project.isWatching ? "open" : "close"} yobicon-middle yobicon-white`}
+                {...stylex.props(styles.projectWatchIcon)}
                 data-stylex-owner="user-profile-project-watch-icon"
               ></i>
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
@@ -1639,7 +1639,11 @@ function ProfileProjectRow({
                 }
               }}
             >
-              <i className="yobicon-trash"></i> {t("userinfo.leaveProject")}
+              <i
+                {...stylex.props(styles.projectTrashIcon)}
+                data-stylex-owner="user-profile-project-trash-icon"
+              ></i>{" "}
+              {t("userinfo.leaveProject")}
             </Link>
           ) : null}
           {subject.loginId === project.ownerName ? null : null}

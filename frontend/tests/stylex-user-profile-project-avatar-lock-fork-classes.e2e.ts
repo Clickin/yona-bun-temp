@@ -308,7 +308,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
   expect(projectRowSource).toContain("yobicon-split yobicon-white");
   expect(projectRowSource).not.toContain('className="stats"');
   expect(projectRowSource).toContain("nbtn black medium last leaveProject");
-  expect(projectRowSource).toContain("yobicon-middle yobicon-white");
+  expect(projectRowSource).not.toMatch(/\byobicon-(?:friends|eye-open|eye-close|middle|trash)\b/u);
 
   const output = "output/playwright/stylex-user-profile-project-avatar-lock-fork-classes";
   await mkdir(output, { recursive: true });
