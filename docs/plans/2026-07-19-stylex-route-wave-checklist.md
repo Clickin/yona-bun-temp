@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 971 public profile project avatar and private lock
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_projectlist.scala.html`, frozen `_page.less:1842-1890`, `_common.less`, `_yobiUI.less:439-466`, the complete `yobi.less`/Bootstrap/responsive import chain, and `conf/messages` are recorded as populated Projects child evidence.
+- [x] Route-local StyleX owns the exact `avatar-wrap small` 24px box/display/alignment/clipping/surface/radius declarations and conditional private-lock `#7F8C8D` paint; legacy classes, element types, branches, order, links, copy, and existing parent owners remain.
+- [x] The frozen `.header .owner-name-small` rule is explicitly excluded because the Scala DOM places that Link under `.name-tag`; no style is migrated from a class-name-only false match. Generic avatar image and icon font/glyph fallback remain retained.
+- [x] `frontend/tests/stylex-user-profile-project-child-paint.e2e.ts` verifies source provenance and selector ancestry, source owners, private/public branches, exact desktop/mobile declarations, DOM order/copy/links/classes, no inline/plugin attributes, containment, and no document overflow.
+- [x] Managed outside-sandbox System-Chrome fast check passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 970 public profile issue metadata items
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_issues.scala.html`, frozen `_page.less:3946-3950,4080-4087`, the complete `yobi.less`/Bootstrap/responsive import chain, and `conf/messages` are recorded as date/milestone metadata evidence.

@@ -120,6 +120,18 @@ export const styles = stylex.create({
     marginBottom: "5px",
     marginLeft: "10px",
   },
+  // Frozen less/_page.less .all-projects .project .info-wrap .header .yobicon-lock.
+  projectPrivateIcon: { color: "#7F8C8D" },
+  // Frozen less/_common.less then later less/_yobiUI.less .avatar-wrap.small cascade.
+  projectAvatarLink: {
+    width: "24px",
+    height: "24px",
+    display: "inline-block",
+    verticalAlign: "middle",
+    overflow: "hidden",
+    backgroundColor: "#ddd",
+    borderRadius: "3px !important",
+  },
   projectDescription: {
     color: "#bababa",
     marginLeft: "10px",

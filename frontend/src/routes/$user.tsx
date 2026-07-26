@@ -1430,7 +1430,13 @@ function ProfileProjectRow({
           className={stylex.props(styles.projectAvatarRail).className}
           data-stylex-owner="user-profile-project-avatar-rail"
         >
-          <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap small">
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={projectPath}
+            {...stylex.props(styles.projectAvatarLink)}
+            className={`${stylex.props(styles.projectAvatarLink).className} avatar-wrap small`}
+            data-stylex-owner="user-profile-project-avatar-link"
+          >
             <img src={project.logoUrl || "/assets/images/project_default_logo.png"} alt="" />
           </Link>
         </div>
@@ -1446,7 +1452,11 @@ function ProfileProjectRow({
               {project.projectName}
             </Link>
             {project.projectScope === "private" ? (
-              <i className="yobicon-lock yobicon-small"></i>
+              <i
+                {...stylex.props(styles.projectPrivateIcon)}
+                className={`${stylex.props(styles.projectPrivateIcon).className} yobicon-lock yobicon-small`}
+                data-stylex-owner="user-profile-project-private-icon"
+              ></i>
             ) : null}
             {project.originOwnerName && project.originProjectName ? (
               <>

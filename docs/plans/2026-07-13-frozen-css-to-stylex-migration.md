@@ -4,6 +4,22 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile project avatar and private lock
+
+Batch 971 moves two actually applied populated public-profile Projects child
+surfaces into route-local StyleX: the `avatar-wrap small` project Link's exact
+24px box/display/alignment/clipping/surface/radius declarations and the
+conditional private-lock `#7F8C8D` paint. The legacy
+`.header .owner-name-small` 19px rule is deliberately not migrated because the
+Scala partial emits that Link under `.name-tag`, outside `.header`; treating
+the shared class name alone as evidence would create a non-legacy style.
+Project rows, Links/images, private/public branching, order, copy, existing
+row/rail/info/header/description/name-tag/stats owners, generic avatar image
+fallback, and icon glyph/font fallback remain unchanged. The focused external
+Chrome fast profile passes 1/1 at desktop and 390px mobile; live legacy
+screenshot parity remains final visual-lock work and no geometry compensation
+was added.
+
 ## 2026-07-26 — Public profile issue metadata items
 
 Batch 970 moves the populated public-profile issue row's updated/created date
