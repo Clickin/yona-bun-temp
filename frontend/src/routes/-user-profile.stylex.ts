@@ -1050,11 +1050,31 @@ export const styles = stylex.create({
     color: "#333",
     fontSize: "15px",
     fontWeight: "600",
+    ":hover": {
+      color: "#3592b5",
+      textDecoration: "none",
+    },
+    "@media (max-width: 720px)": { fontSize: "16px" },
   },
-  // Frozen less/_page.less .post-item .title-wrap .title.project.
-  pullRequestProjectLink: { color: "#3592b5", marginRight: "10px" },
+  // Frozen less/_page.less .post-item .title-wrap .title.project and the
+  // responsive .post-list-wrap .post-item .title.project rule.
+  pullRequestProjectLink: {
+    color: "#3592b5",
+    marginRight: "10px",
+    ":hover": {
+      color: "#3592b5",
+      textDecoration: "none",
+    },
+    "@media (max-width: 720px)": { fontSize: "12px" },
+  },
   // Frozen less/_page.less .post-item .title-wrap .title.conflict.
-  pullRequestConflictLink: { color: "#b94a48" },
+  pullRequestConflictLink: {
+    color: "#b94a48",
+    ":hover": {
+      color: "#b94a48",
+      textDecoration: "none",
+    },
+  },
   // Frozen less/_page.less .post-item .infos.
   pullRequestInfos: {
     color: "#999",

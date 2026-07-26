@@ -251,6 +251,9 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await page.goto(`${basePath}/admin?selected=pullRequests`, { waitUntil: "domcontentloaded" });
   const rows = page.locator('[data-stylex-owner="user-profile-pull-request-row"]');
   await expect(rows).toHaveCount(2);
+  const titleLinks = rows
+    .nth(0)
+    .locator('[data-stylex-owner="user-profile-pull-request-title-link"]');
   await expect(rows.nth(0)).not.toHaveClass(/\bpost-item\b/);
   await expect(rows.nth(1)).not.toHaveClass(/\bpost-item\b/);
   for (const owner of [
@@ -277,7 +280,7 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await expect(rows.nth(0).locator('a[href$="/admin/sample"]')).toHaveCount(2);
   await expect(rows.nth(0).locator('a[href$="/admin/sample/pullRequest/12"]')).toHaveCount(1);
   await expect(rows.nth(1).locator('a[href$="/admin/sample/pullRequest/13"]')).toHaveCount(1);
-  await expect(rows.nth(0).locator(".title.conflict")).toHaveText("Conflict pull request");
+  await expect(titleLinks.nth(1)).toHaveText("Conflict pull request");
   await expect(rows.nth(0).locator(".state.conflict")).toHaveText("Conflict");
   await expect(rows.nth(1).locator(".state.open")).toHaveText("Open");
   await expect(
@@ -319,16 +322,34 @@ test("authenticated public profile owns populated pull-request row residuals", a
     "user-profile-pull-request-title-wrap",
     "user-profile-pull-request-infos",
   ]);
-  const titleLinks = await rows
-    .nth(0)
-    .locator('[data-stylex-owner="user-profile-pull-request-title-link"]')
-    .evaluateAll((links) =>
-      links.map((link) => ({ href: link.getAttribute("href"), text: link.textContent })),
-    );
-  expect(titleLinks).toEqual([
+  const titleLinkData = await titleLinks.evaluateAll((links) =>
+    links.map((link) => ({ href: link.getAttribute("href"), text: link.textContent })),
+  );
+  expect(titleLinkData).toEqual([
     { href: `${basePath}/admin/sample`, text: "sample" },
     { href: `${basePath}/admin/sample/pullRequest/12`, text: "Conflict pull request" },
   ]);
+
+  const retiredPullRequestClassPattern =
+    /\b(?:title-wrap|post-id|title|project|conflict|infos|infos-item|infos-link-item|infos-icon-link|size)\b/u;
+  for (const row of await rows.all()) {
+    for (const owner of [
+      "user-profile-pull-request-title-wrap",
+      "user-profile-pull-request-post-id",
+      "user-profile-pull-request-title-link",
+      "user-profile-pull-request-infos",
+      "user-profile-pull-request-infos-author-link",
+      "user-profile-pull-request-infos-empty-author",
+      "user-profile-pull-request-infos-date",
+      "user-profile-pull-request-infos-comment-link",
+      "user-profile-pull-request-infos-comment-icon",
+      "user-profile-pull-request-infos-comment-size",
+    ]) {
+      for (const element of await row.locator(`[data-stylex-owner="${owner}"]`).all()) {
+        await expect(element).not.toHaveClass(retiredPullRequestClassPattern);
+      }
+    }
+  }
 
   const measure = async () =>
     rows.nth(0).evaluate((node) => {
@@ -350,13 +371,25 @@ test("authenticated public profile owns populated pull-request row residuals", a
       const postId = node.querySelector<HTMLElement>(
         '[data-stylex-owner="user-profile-pull-request-post-id"]',
       );
-      const title = node.querySelector<HTMLElement>(
-        'a[data-stylex-owner="user-profile-pull-request-title-link"].title:not(.project)',
+      const titleLinks = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          '[data-stylex-owner="user-profile-pull-request-title-link"]',
+        ),
       );
+      const title = titleLinks[1];
       const infos = node.querySelector<HTMLElement>(
         '[data-stylex-owner="user-profile-pull-request-infos"]',
       );
-      if (!content || !receiver || !avatar || !titleWrap || !postId || !title || !infos)
+      if (
+        !content ||
+        !receiver ||
+        !avatar ||
+        !titleWrap ||
+        !postId ||
+        titleLinks.length !== 2 ||
+        !title ||
+        !infos
+      )
         throw new Error("Batch 964 owners missing");
       const rowStyle = getComputedStyle(row);
       const rowContentWidth =

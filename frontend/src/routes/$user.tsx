@@ -1464,21 +1464,23 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </Link>
         <div
           {...stylex.props(styles.pullRequestTitleWrap)}
-          className={`${stylex.props(styles.pullRequestTitleWrap).className} title-wrap`}
+          className={stylex.props(styles.pullRequestTitleWrap).className}
           data-stylex-owner="user-profile-pull-request-title-wrap"
         >
           <Link
             {...LEGACY_LINK_PROPS}
             to={projectPath}
             {...stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink)}
-            className={`${stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink).className} title project`}
+            className={
+              stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink).className
+            }
             data-stylex-owner="user-profile-pull-request-title-link"
           >
             {projectName}
           </Link>
           <span
             {...stylex.props(styles.pullRequestPostId)}
-            className={`${stylex.props(styles.pullRequestPostId).className} post-id`}
+            className={stylex.props(styles.pullRequestPostId).className}
             data-stylex-owner="user-profile-pull-request-post-id"
           >
             {number}
@@ -1487,7 +1489,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             {...LEGACY_LINK_PROPS}
             to={pullRequestPath}
             {...pullRequestTitleStyle}
-            className={`${pullRequestTitleStyle.className} title${isConflict ? " conflict" : ""}`}
+            className={pullRequestTitleStyle.className}
             data-stylex-owner="user-profile-pull-request-title-link"
           >
             {stringField(pullRequest, "title")}
@@ -1495,14 +1497,15 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </div>
         <div
           {...stylex.props(styles.pullRequestInfos)}
-          className={`${stylex.props(styles.pullRequestInfos).className} infos`}
+          className={stylex.props(styles.pullRequestInfos).className}
           data-stylex-owner="user-profile-pull-request-infos"
         >
           {stringField(pullRequest, "contributorLoginId") ? (
             <ProfileTextLink
-              className={`${
-                stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem).className
-              } infos-item infos-link-item`}
+              className={
+                stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem)
+                  .className ?? ""
+              }
               label={stringField(pullRequest, "contributorLabel")}
               loginId={stringField(pullRequest, "contributorLoginId")}
               stylexOwner="user-profile-pull-request-infos-author-link"
@@ -1510,7 +1513,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           ) : (
             <span
               {...stylex.props(styles.pullRequestInfosItem)}
-              className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
+              className={stylex.props(styles.pullRequestInfosItem).className}
               data-stylex-owner="user-profile-pull-request-infos-empty-author"
             >
               {t("issue.noAuthor")}
@@ -1518,7 +1521,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           )}
           <span
             {...stylex.props(styles.pullRequestInfosItem)}
-            className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
+            className={stylex.props(styles.pullRequestInfosItem).className}
             data-stylex-owner="user-profile-pull-request-infos-date"
             title={stringField(pullRequest, "updatedLabel")}
           >
@@ -1530,9 +1533,9 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               to={pullRequestPath}
               hash="comments"
               {...stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink)}
-              className={`${
+              className={
                 stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink).className
-              } infos-item infos-icon-link`}
+              }
               data-stylex-owner="user-profile-pull-request-infos-comment-link"
             >
               <i
@@ -1542,7 +1545,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               ></i>
               <span
                 {...stylex.props(styles.pullRequestInfosCount)}
-                className={`${stylex.props(styles.pullRequestInfosCount).className} size`}
+                className={stylex.props(styles.pullRequestInfosCount).className}
                 data-stylex-owner="user-profile-pull-request-infos-comment-size"
               >
                 {numberField(pullRequest, "commentCount")}

@@ -180,9 +180,16 @@ test("populated public profile pull-request row owns receiver and state floats",
   await expect(row).toContainText("Profile pull request");
   await expect(receiverColumn).toHaveCount(1);
   await expect(receiver).toHaveCount(1);
-  const receiverLink = receiver.locator("a.avatar-wrap.assinee");
+  const receiverLink = receiver.locator(
+    '[data-stylex-owner="user-profile-pull-request-receiver-avatar-link"]',
+  );
+  const receiverImage = receiver.locator(
+    '[data-stylex-owner="user-profile-pull-request-receiver-avatar-image"]',
+  );
   await expect(receiverLink).toHaveCount(1);
-  await expect(receiverLink.locator('img[alt="Receiver User"]')).toHaveCount(1);
+  await expect(receiverImage).toHaveCount(1);
+  await expect(receiverImage).toHaveAttribute("alt", "Receiver User");
+  await expect(receiverLink).not.toHaveClass(/\b(?:avatar-wrap|assinee)\b/u);
   await expect(state).toHaveText("Open");
   await expect(state).toHaveClass(/state open/u);
   await expect(receiver).not.toHaveClass(/pull-right/u);
