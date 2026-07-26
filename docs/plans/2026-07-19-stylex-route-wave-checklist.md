@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 970 public profile issue metadata items
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_issues.scala.html`, frozen `_page.less:3946-3950,4080-4087`, the complete `yobi.less`/Bootstrap/responsive import chain, and `conf/messages` are recorded as date/milestone metadata evidence.
+- [x] Route-local StyleX owns exact date infos-item `float:left`/`margin-right:6px` and milestone tag 135px maximum width, ellipsis/hidden overflow, `#2196f3`, 11px font, and 6px radius; no legacy-unproven display or compensating declaration was added.
+- [x] Element types, metadata order, date title/copy, conditional milestone Link/title/copy, `infos-item`/`mileston-tag` classes, existing meta/due-date owners, and unrelated issue/pull-request/responsive consumers remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-issue-metadata-items.e2e.ts` verifies source provenance and ownership, exact desktop/mobile declarations, milestone present/absent branches, copy/links/order, retained classes, no inline/plugin attributes, containment, and no document overflow.
+- [x] Managed outside-sandbox System-Chrome fast check passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 969 public profile issue author visibility
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_issues.scala.html`, frozen `_responsive.less:1,290-303`, Bootstrap `.hide`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as issue author/assignee visibility evidence.

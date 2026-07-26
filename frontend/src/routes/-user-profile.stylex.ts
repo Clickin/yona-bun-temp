@@ -225,6 +225,17 @@ export const styles = stylex.create({
   issueMeta: { display: "table" },
   // Frozen less/_page.less .my-issues .post-item .meta .meta-cell.
   issueMetaCell: { display: "table-cell", verticalAlign: "middle" },
+  // Frozen less/_page.less .post-item .infos .infos-item.
+  issueMetadataItem: { float: "left", marginRight: "6px" },
+  // Frozen less/_page.less .mileston-tag.
+  issueMilestoneTag: {
+    borderRadius: "6px",
+    color: "#2196f3",
+    fontSize: "11px",
+    maxWidth: "135px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
   // Frozen less/_page.less .my-issues .post-item .post-id.
   issuePostId: {
     color: "#999",

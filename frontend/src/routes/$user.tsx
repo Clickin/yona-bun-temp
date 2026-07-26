@@ -932,11 +932,20 @@ function ProfileIssueRow({
                 loginId={stringField(issue, "assigneeLoginId")}
               />
             </span>
-            <span className="infos-item" title={stringField(issue, "updatedLabel")}>
+            <span
+              {...stylex.props(styles.issueMetadataItem)}
+              className={`${stylex.props(styles.issueMetadataItem).className} infos-item`}
+              data-stylex-owner="user-profile-issue-metadata-date"
+              title={stringField(issue, "updatedLabel")}
+            >
               {stringField(issue, "updatedLabel")}
             </span>
             {milestoneId > 0 && milestoneTitle ? (
-              <span className="mileston-tag">
+              <span
+                {...stylex.props(styles.issueMilestoneTag)}
+                className={`${stylex.props(styles.issueMilestoneTag).className} mileston-tag`}
+                data-stylex-owner="user-profile-issue-metadata-milestone"
+              >
                 <Link
                   {...LEGACY_LINK_PROPS}
                   to="/$ownerName/$projectName/milestone/$milestoneId"

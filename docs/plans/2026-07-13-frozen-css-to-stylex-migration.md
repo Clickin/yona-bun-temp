@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile issue metadata items
+
+Batch 970 moves the populated public-profile issue row's updated/created date
+infos-item float and spacing plus the conditional milestone tag declarations
+into route-local StyleX. The exact frozen `float:left`, `margin-right:6px`,
+135px maximum width, ellipsis/overflow, blue paint, 11px typography, and 6px
+radius are preserved. Element types, legacy classes, metadata order, date
+title/copy, milestone Link/title/copy, conditional milestone branch, and the
+existing meta/due-date owners remain unchanged. The focused external Chrome
+fast profile passes 1/1 at desktop and 390px mobile; live legacy screenshot
+parity remains final visual-lock work and no geometry compensation was added.
+
 ## 2026-07-26 — Public profile issue author visibility
 
 Batch 969 moves the populated public-profile issue row's desktop author and
