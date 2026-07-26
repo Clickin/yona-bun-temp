@@ -732,7 +732,10 @@ function PublicProfileBody({
                 </div>
               </div>
             ) : (
-              <div className="user-stream-box"></div>
+              <div
+                {...stylex.props(styles.guestStreamShell)}
+                data-stylex-owner="user-profile-guest-stream-shell"
+              ></div>
             )}
           </section>
         </div>

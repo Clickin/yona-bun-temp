@@ -141,7 +141,8 @@ test("empty providers and guest viewer preserve the bounded provider behavior", 
   await expect(
     page.locator('[data-stylex-owner="user-profile-provider-google-image"]'),
   ).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="user-profile-stream"]')).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="user-profile-guest-stream-shell"]')).toBeEmpty();
+  await expect(page.locator("#daysAgoBtn")).toHaveCount(0);
 });
 
 async function assertSourceEvidence() {

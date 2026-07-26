@@ -128,6 +128,9 @@ export const styles = stylex.create({
   },
   // Legacy less/_page.less .user-stream-box.
   stream: { minWidth: 0, overflow: "hidden", paddingLeft: "20px" },
+  // Frozen less/_page.less .user-stream-box declarations that apply to the
+  // legacy always-rendered, empty stream root for a guest viewer.
+  guestStreamShell: { overflow: "hidden", paddingLeft: "20px" },
   tabs: { color: userProfileColors.accentText },
   // Frozen Bootstrap .tab-content and direct pane/active child rules.
   tabContent: { overflow: "hidden" },

@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 983 public profile guest empty stream-shell ownership
+
+- [x] `user/view.scala.html` proves `user-stream-box` is always emitted outside the current-viewer guest guard, while `_page.less` and the complete import chain establish exact root padding/overflow and no later override.
+- [x] The childless guest root owns only `padding-left:20px` and `overflow:hidden` and retires `user-stream-box`; the authenticated stream class, owner, controls/tabs, descendant fallback, and existing min-width remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-guest-stream-shell.e2e.ts` verifies RED→GREEN branch/source evidence, desktop/mobile declarations, emptiness, class/plugin absence, profile/info-rail geometry, authenticated exclusion, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome normal passes 2/2 and fallback-off selected coverage passes 6/6 plus anonymous branch 1/1; live legacy screenshot parity remains final visual-lock work.
+
 ### 2026-07-26 Batch 982 public profile Google provider image ownership
 
 - [x] `user/view.scala.html`, `TemplateHelper.GoogleLogo`, Bootstrap's generic image rule, `bootstrap-responsive.css`, and the complete `yobi.less` chain establish the Google span/image output and prove markdown/avatar image overrides do not match.

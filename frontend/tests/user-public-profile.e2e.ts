@@ -407,8 +407,9 @@ test("anonymous public user profile hides legacy activity stream controls", asyn
 
   await page.goto(`${basePath}/door`);
   await expect(page.locator(".user-box")).toBeVisible();
-  await expect(page.locator(".user-stream-box")).toHaveCount(1);
-  await expect(page.locator(".user-stream-box > .nav-tabs")).toHaveCount(0);
+  const guestStream = page.locator('[data-stylex-owner="user-profile-guest-stream-shell"]');
+  await expect(guestStream).toHaveCount(1);
+  await expect(guestStream).toBeEmpty();
   await expect(page.locator("#daysAgoBtn")).toHaveCount(0);
   await expect(page.locator("#issues")).toHaveCount(0);
   await expect(page.locator("#pullRequests")).toHaveCount(0);

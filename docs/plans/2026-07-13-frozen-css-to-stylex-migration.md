@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile guest empty stream-shell ownership
+
+Batch 983 moves the guest-viewer public-profile empty stream root into a
+route-local StyleX owner. Legacy always emits `user-stream-box` outside its
+non-guest child condition, so the empty root owns the exact frozen
+`padding-left:20px` and `overflow:hidden` declarations while remaining
+childless. Only this guest root retires `user-stream-box`; the authenticated
+stream keeps its class, owner, controls/tabs, descendant fallback, and existing
+min-width behavior. Desktop/mobile external Chrome normal and fallback-off
+checks pass without overlap or horizontal overflow. Live legacy screenshot
+parity remains final visual-lock work.
+
 ## 2026-07-26 — Public profile Google provider image ownership
 
 Batch 982 moves the connected Google-provider image on authenticated public
