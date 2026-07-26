@@ -577,8 +577,19 @@ export const styles = stylex.create({
   // Frozen less/_common.less .mr10 plus the positioned anchor required by the
   // React-owned popovers for the legacy two-column and show-subtasks wrappers.
   popoverAnchor: { marginRight: "10px", position: "relative" },
-  // Legacy less/_page.less .my-issues .post-item.
-  issueRow: { color: "#999999", padding: "0px 10px" },
+  // Frozen less/_page.less generic .post-item and .my-issues .post-item.
+  issueRow: {
+    borderBottomColor: "#ddd",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    clear: "both",
+    color: "#999999",
+    display: "block",
+    overflow: "auto",
+    padding: "0px 10px",
+    // Frozen less/_responsive.less .post-list-wrap .post-item responsive rule.
+    "@media (max-width: 767px)": { padding: "10px 0px !important" },
+  },
   // Legacy less/_page.less .my-issues .post-item .title-wrap.
   issueTitleWrap: {
     display: "table",

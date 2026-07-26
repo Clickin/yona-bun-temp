@@ -834,7 +834,7 @@ function ProfileIssueRow({
   const dueDateText = stringField(issue, "dueDateText");
   const issueState = stringField(issue, "state");
   const legacyIssueRowAttrs = {
-    className: "post-item title",
+    className: "title",
     href: issueHref,
     id: `issue-item-${issueId}`,
   } satisfies LegacyIssueRowAttributes;
@@ -843,6 +843,7 @@ function ProfileIssueRow({
     <li
       {...legacyIssueRowAttrs}
       {...stylex.props(styles.issueRow)}
+      className={`${stylex.props(styles.issueRow).className} title`}
       data-stylex-owner="user-profile-issue-row"
     >
       <div className="span12 span-hard-wrap">
