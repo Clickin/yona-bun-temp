@@ -1364,7 +1364,10 @@ async function inspectPage(page, baseUrl, path, label) {
       siteHeading: selectorState(".site-heading"),
       signupButton: selectorState(".signup-btn"),
       footer: selectorState("footer.page-footer-outer, [data-stylex-owner='site-footer']"),
-      userProfile: selectorState(".user-profile-page"),
+      // The local route retires the legacy wrapper class after its StyleX
+      // boundary is complete; keep the legacy selector for the live target
+      // and accept the stable owner marker for the React target.
+      userProfile: selectorState(".user-profile-page, [data-stylex-owner='user-profile-page']"),
       isErrorPage: [document.title, body.innerText].some(
         (text) =>
           text.includes("페이지를 찾을 수 없습니다") ||

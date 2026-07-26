@@ -10,6 +10,13 @@
 - [x] Live legacy `/ghost` desktop/mobile captures were inspected. The available local sweep was stale/unmatched and its generic comparator reported `pageWrap`/`projectPageWrap` gaps, so no same-fixture live legacy/local screenshot claim is made.
 - [x] The inherited admin-notice/collapsed-sidebar x-axis mismatch remains an intentional legacy parity exclusion; approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
 
+### Final-lock harness evidence — 2026-07-27
+
+- [x] `scripts/visual-parity-sweep.mjs` now recognizes the local StyleX owner marker `data-stylex-owner="user-profile-page"` while retaining the legacy `.user-profile-page` selector for the live target; React output and frozen CSS remain unchanged.
+- [x] External System-Chrome owner-aware `/admin` sweeps at desktop and 390px load both targets with HTTP 200 and no local runtime errors. The stale local profile-surface absence is cleared; remaining comparator differences are the documented search/user-menu geometry and empty post-list fixture (`gnbSearchForm`/`gnbUsermenu`, `postListWrap`, `postItemTitle`).
+- [x] The full fallback-off consumer graph remains 81 passed with one intentional generated-fallback skip. Live legacy `/alice?selected=pullRequests` is still an empty state, so populated Pull Request same-fixture screenshot parity remains open and the goal is not complete.
+- [x] The inherited administrator-notice/sidebar collapse-button x-axis mismatch is intentionally not corrected. The user-approved NAVER/provider/developer-contact/upstream-repository Yoram footer differences remain intentional and are not restored.
+
 ### 2026-07-27 Batch 1020 public-profile Issues static control ownership
 
 - [x] `user/view.scala.html` plus the two common checkbox partials establish the wrapper/label/input/border/text DOM, IDs, copy/order, and legacy JS behavior evidence; frozen `_page.less`, `_responsive.less`, Bootstrap CSS, and the complete styling chain establish the final declarations.

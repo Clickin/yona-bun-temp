@@ -2,6 +2,25 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Final-lock visual-sweep harness ownership repair
+
+The visual parity sweep now accepts the stable `data-stylex-owner="user-profile-page"`
+marker for the local profile surface while retaining `.user-profile-page` for the
+live legacy target. This is a harness-only correction for the retired wrapper class;
+it does not restore the class to React output and does not alter route geometry.
+
+The external System-Chrome fallback-off consumer graph remains 81 passed with one
+intentional generated-fallback skip. Owner-aware `/admin` sweeps at desktop and
+390px both load legacy/local with HTTP 200 and no local runtime errors; the stale
+profile-surface absence is gone. Remaining comparator output is the documented
+fixture/search and inherited user-menu drift (`gnbSearchForm`/`gnbUsermenu`, empty
+`postListWrap`/`postItemTitle`), not a missing local profile surface. Live
+`/alice?selected=pullRequests` still renders an empty legacy state, so populated
+Pull Request same-fixture screenshot parity remains open. The inherited
+administrator-notice/sidebar collapse-button x-axis mismatch and approved Yoram
+footer/provider/developer-contact/upstream-repository differences remain
+intentional exclusions.
+
 ## 2026-07-27 — Public profile missing-user Home CTA ownership
 
 Batch 1021 moves the missing-user public-profile `Home` CTA to a route-local
