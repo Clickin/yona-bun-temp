@@ -10,10 +10,10 @@ const EXPECTED_PROFILE_SCREEN = `
     <section class="user-box">
       <div class="user-info-box">
         <div class="whoami-wrap" style="background-image:url('/assets/images/default-avatar-256.png')"></div>
-        <div class="whoami usf-group">
-          <span class="name">Door English</span>
-          <span class="loginid">@door</span>
-          <span class="email">door@example.com</span>
+        <div>
+          <span>Door English</span>
+          <span>@door</span>
+          <span>door@example.com</span>
         </div>
         <div><span class="badge label-success">SITE ADMIN</span></div>
         <div></div>
@@ -1102,10 +1102,10 @@ function expectedProfileScreen({
   return EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)
     .replace('value="14"', `value="${daysAgo}"`)
     .replace(
-      '<span class="email">door@example.com</span>',
+      "<span>door@example.com</span>",
       currentUser
-        ? `<span class="email">door@example.com</span><div class="edit"><a href="${basePath}/user/editform" class="ybtn ybtn-default ybtn-mini"><i class="yobicon-edit"></i> Edit profile</a></div>`
-        : '<span class="email">door@example.com</span>',
+        ? `<span>door@example.com</span><div><a href="${basePath}/user/editform" class="ybtn ybtn-default ybtn-mini"><i class="yobicon-edit"></i> Edit profile</a></div>`
+        : "<span>door@example.com</span>",
     )
     .replace(
       `<a href="${basePath}/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a>`,

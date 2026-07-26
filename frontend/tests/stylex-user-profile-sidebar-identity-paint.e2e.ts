@@ -152,10 +152,10 @@ test("authenticated public-profile sidebar identity follows the final frozen pai
   const loginId = page.locator('[data-stylex-owner="user-profile-identity-loginid"]');
   const email = page.locator('[data-stylex-owner="user-profile-identity-email"]');
   await expect(info).toHaveClass(/user-info-box/u);
-  await expect(whoami).toHaveClass(/whoami usf-group/u);
-  await expect(name).toHaveClass(/name/u);
-  await expect(loginId).toHaveClass(/loginid/u);
-  await expect(email).toHaveClass(/email/u);
+  await expect(whoami).not.toHaveClass(/(?:^|\s)(?:whoami|usf-group)(?:\s|$)/u);
+  await expect(name).not.toHaveClass(/(?:^|\s)name(?:\s|$)/u);
+  await expect(loginId).not.toHaveClass(/(?:^|\s)loginid(?:\s|$)/u);
+  await expect(email).not.toHaveClass(/(?:^|\s)email(?:\s|$)/u);
   await expect(whoami.locator(":scope > span")).toHaveCount(3);
   await expect(whoami.locator(":scope > span").nth(0)).toHaveText("Paint");
   await expect(whoami.locator(":scope > span").nth(1)).toHaveText("@paint");

@@ -111,7 +111,11 @@ test("authenticated public profile owns static whoami and since declarations", a
   await expect(whoami).toContainText("admin@example.com");
   await expect(since).toContainText("2026-06-30");
   await expect(page.locator('[data-stylex-owner="user-profile-provider-github"]')).toBeVisible();
-  await expect(whoami.locator(".edit a")).toBeVisible();
+  await expect(
+    whoami.locator(
+      ':scope > [data-stylex-owner="user-profile-identity-edit"] [data-stylex-owner="user-profile-edit-control"]',
+    ),
+  ).toBeVisible();
 
   for (const node of [whoami, since]) {
     await expect(node).not.toHaveAttribute("style");

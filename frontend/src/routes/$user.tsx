@@ -59,7 +59,7 @@ const userProfileStaticStyles = stylex.create({
     position: "relative",
     width: "200px",
   },
-  profileName: { fontSize: "18px", fontWeight: "bold" },
+  profileName: { fontSize: "18px", fontWeight: "bold", marginRight: "2px" },
   profileEdit: { marginTop: "5px", textAlign: "right" },
   faqPopover: {
     bottom: "100%",
@@ -393,32 +393,28 @@ function PublicProfileBody({
                   </div>
                 ) : null}
               </div>
-              <div
-                {...stylex.props(styles.whoami)}
-                className={`${stylex.props(styles.whoami).className} whoami usf-group`}
-                data-stylex-owner="user-profile-whoami"
-              >
+              <div {...stylex.props(styles.whoami)} data-stylex-owner="user-profile-whoami">
                 <span
-                  className={`${stylex.props(userProfileStaticStyles.profileName).className} name`}
+                  {...stylex.props(userProfileStaticStyles.profileName)}
                   data-stylex-owner="user-profile-identity-name"
                 >
                   {profile.englishName}
                 </span>{" "}
                 <span
                   {...stylex.props(styles.loginId)}
-                  className={`${stylex.props(styles.loginId).className} loginid`}
                   data-stylex-owner="user-profile-identity-loginid"
                 >
                   @{profile.loginId}
                 </span>{" "}
                 {runtimeConfig.showUserEmail && profile.primaryEmailAddress ? (
-                  <span className="email" data-stylex-owner="user-profile-identity-email">
+                  <span data-stylex-owner="user-profile-identity-email">
                     {profile.primaryEmailAddress}
                   </span>
                 ) : null}
                 {profileResponse.viewerCanEditProfile ? (
                   <div
-                    className={`${stylex.props(userProfileStaticStyles.profileEdit).className} edit`}
+                    {...stylex.props(userProfileStaticStyles.profileEdit)}
+                    data-stylex-owner="user-profile-identity-edit"
                   >
                     <Link
                       to="/user/editform"

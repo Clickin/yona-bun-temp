@@ -112,7 +112,7 @@ test("profile owner edit control follows the final frozen ybtn mini cascade", as
     await page.goto(`${basePath}/owner`, { waitUntil: "domcontentloaded" });
 
     const whoami = page.locator('[data-stylex-owner="user-profile-whoami"]');
-    const edit = page.locator(".whoami > .edit");
+    const edit = page.locator('[data-stylex-owner="user-profile-identity-edit"]');
     const control = page.locator('[data-stylex-owner="user-profile-edit-control"]');
     const icon = page.locator('[data-stylex-owner="user-profile-edit-control-icon"]');
 
@@ -124,11 +124,13 @@ test("profile owner edit control follows the final frozen ybtn mini cascade", as
     await expect(control).toHaveAttribute("href", `${basePath}/user/editform`);
     await expect(icon).toHaveClass(/yobicon-edit/u);
     await expect(edit.locator(":scope > a")).toHaveCount(1);
-    await expect(whoami.locator(":scope > .edit")).toHaveCount(1);
+    await expect(
+      whoami.locator(':scope > [data-stylex-owner="user-profile-identity-edit"]'),
+    ).toHaveCount(1);
     const previousClassName = await whoami
-      .locator(":scope > .edit")
-      .evaluate((node) => node.previousElementSibling?.className);
-    expect(previousClassName).toContain("email");
+      .locator(':scope > [data-stylex-owner="user-profile-identity-edit"]')
+      .evaluate((node) => node.previousElementSibling?.getAttribute("data-stylex-owner"));
+    expect(previousClassName).toBe("user-profile-identity-email");
 
     for (const attr of [
       "data-toggle",
@@ -164,14 +166,16 @@ test("profile owner edit control follows the final frozen ybtn mini cascade", as
 
     await page.goto(`${basePath}/other`, { waitUntil: "domcontentloaded" });
     await expect(page.locator('[data-stylex-owner="user-profile-edit-control"]')).toHaveCount(0);
-    await expect(page.locator(".whoami > .edit")).toHaveCount(0);
+    await expect(page.locator('[data-stylex-owner="user-profile-identity-edit"]')).toHaveCount(0);
   }
 });
 
 async function assertBasePaintAndGeometry(page: Page, viewportWidth: number) {
   const result = await page.evaluate(() => {
     const whoami = document.querySelector<HTMLElement>('[data-stylex-owner="user-profile-whoami"]');
-    const edit = document.querySelector<HTMLElement>(".whoami > .edit");
+    const edit = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-profile-identity-edit"]',
+    );
     const control = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-profile-edit-control"]',
     );
