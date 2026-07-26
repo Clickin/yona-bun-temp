@@ -38,9 +38,11 @@ test("OAuth provider logos use route-local StyleX owners", async () => {
   expect(legacyLogin).toContain("providerWithLogo");
   expect(legacyDialog).toContain("providerWithLogo");
 
-  for (const source of [rootSource, loginSource, userSource]) {
+  for (const source of [rootSource, loginSource]) {
     expect(source).toContain("auth-provider-logo");
   }
+  expect(userSource).not.toContain("} auth-provider-logo`}");
+  expect(userSource).not.toContain("} github`}");
   expect(rootSource).toContain('data-stylex-owner="root-provider-logo"');
   expect(rootSource).toContain('data-stylex-owner="root-provider-github"');
   expect(loginSource).toContain('data-stylex-owner="standalone-login-provider-logo"');

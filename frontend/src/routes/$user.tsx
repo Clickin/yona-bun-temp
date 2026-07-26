@@ -460,11 +460,7 @@ function PublicProfileBody({
               </div>
               <div {...stylex.props(styles.userSince)} data-stylex-owner="user-profile-user-since">
                 <strong>{t("userinfo.since")}</strong>
-                <span
-                  {...stylex.props(styles.since)}
-                  className={`${stylex.props(styles.since).className} since`}
-                  data-stylex-owner="user-profile-since"
-                >
+                <span {...stylex.props(styles.since)} data-stylex-owner="user-profile-since">
                   {profile.sinceLabel}
                 </span>
               </div>
@@ -473,7 +469,7 @@ function PublicProfileBody({
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>
                 <div
-                  className={`${stylex.props(userProfileStaticStyles.providerLogo).className} auth-provider-logo`}
+                  {...stylex.props(userProfileStaticStyles.providerLogo)}
                   data-stylex-owner="user-profile-provider-logo"
                 >
                   {profile.connectedSocialProviders.map((provider) => (
@@ -786,7 +782,7 @@ function ConnectedSocialProviderLogo({ provider }: { provider: string }) {
   if (normalized === "github") {
     return (
       <span
-        className={`${stylex.props(userProfileStaticStyles.providerGithub).className} github`}
+        {...stylex.props(userProfileStaticStyles.providerGithub)}
         data-stylex-owner="user-profile-provider-github"
       >
         <svg

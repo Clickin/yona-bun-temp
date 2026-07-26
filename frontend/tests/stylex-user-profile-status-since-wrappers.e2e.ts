@@ -66,8 +66,8 @@ test("status and since wrapper retirement records the exact Scala and frozen own
   );
   expect(route).toContain("badge label-success");
   expect(route).toContain("badge label-important");
-  expect(route).toContain("} since`}");
-  expect(route).toContain("} auth-provider-logo`}");
+  expect(route).not.toContain("} since`}");
+  expect(route).not.toContain("} auth-provider-logo`}");
 });
 
 for (const viewport of [
@@ -138,12 +138,12 @@ async function assertIdentityWrappers(
   await expect(statuses.nth(0).locator(":scope > span")).toHaveCount(state.isSiteAdmin ? 1 : 0);
   await expect(statuses.nth(1).locator(":scope > span")).toHaveCount(state.isBlocked ? 1 : 0);
   await expect(sinceWrappers.nth(0).locator(":scope > strong")).toHaveText("Member since");
-  await expect(since).toHaveClass(/(?:^|\s)since(?:\s|$)/u);
+  await expect(since).not.toHaveClass(/(?:^|\s)since(?:\s|$)/u);
   await expect(since).toHaveText("2026-06-30");
   await expect(sinceWrappers.nth(1).locator(":scope > div:first-child > strong")).toHaveText(
     "Connected Social Login",
   );
-  await expect(providerLogo).toHaveClass(/(?:^|\s)auth-provider-logo(?:\s|$)/u);
+  await expect(providerLogo).not.toHaveClass(/(?:^|\s)auth-provider-logo(?:\s|$)/u);
   await expect(providerLogo.locator(":scope > *")).toHaveCount(2);
   await expect(providerLogo.locator(":scope > *").nth(0)).toHaveAttribute(
     "data-stylex-owner",

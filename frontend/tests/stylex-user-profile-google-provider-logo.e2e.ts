@@ -46,7 +46,7 @@ test("public-profile Google provider logo owns its imported legacy asset and fin
       "data-stylex-owner",
       "user-profile-provider-google",
     );
-    await expect(github).toHaveClass(/(?:^|\s)github(?:\s|$)/u);
+    await expect(github).not.toHaveClass(/(?:^|\s)github(?:\s|$)/u);
     await expect(google).not.toHaveClass(/(?:^|\s)google(?:\s|$)/u);
     await expect(google.locator(":scope > img")).toHaveCount(1);
     await expect(image).not.toHaveAttribute("alt");
