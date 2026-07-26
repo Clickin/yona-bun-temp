@@ -423,7 +423,13 @@ function PublicProfileBody({
                 data-stylex-owner="user-profile-user-status"
               >
                 {profile.isSiteAdmin ? (
-                  <span className="badge label-success">SITE ADMIN</span>
+                  <span
+                    {...stylex.props(styles.statusBadge, styles.siteAdminBadge)}
+                    className={`${stylex.props(styles.statusBadge, styles.siteAdminBadge).className} badge label-success`}
+                    data-stylex-owner="user-profile-site-admin-badge"
+                  >
+                    SITE ADMIN
+                  </span>
                 ) : null}
               </div>
               <div
@@ -431,7 +437,15 @@ function PublicProfileBody({
                 className={`${stylex.props(styles.userStatus).className} user-status`}
                 data-stylex-owner="user-profile-user-status"
               >
-                {profile.isBlocked ? <span className="badge label-important">BLOCKED</span> : null}
+                {profile.isBlocked ? (
+                  <span
+                    {...stylex.props(styles.statusBadge, styles.blockedBadge)}
+                    className={`${stylex.props(styles.statusBadge, styles.blockedBadge).className} badge label-important`}
+                    data-stylex-owner="user-profile-blocked-badge"
+                  >
+                    BLOCKED
+                  </span>
+                ) : null}
               </div>
               <div
                 {...stylex.props(styles.userSince)}

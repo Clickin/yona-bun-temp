@@ -95,6 +95,24 @@ export const styles = stylex.create({
   },
   // Frozen less/_page.less .user-info-box .user-status.
   userStatus: { marginTop: "20px" },
+  // Frozen Bootstrap .label,.badge base with the later less/_page.less .badge overrides.
+  statusBadge: {
+    borderRadius: "15px",
+    color: userProfileColors.statusText,
+    display: "inline-block",
+    fontSize: "11.844px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginRight: "25px",
+    padding: "5px 15px",
+    textShadow: "0 -1px 0 rgba(0, 0, 0, 0.25)",
+    verticalAlign: "baseline",
+    whiteSpace: "nowrap",
+  },
+  // Frozen Bootstrap .label-success.
+  siteAdminBadge: { backgroundColor: "#468847" },
+  // Frozen Bootstrap .label-important.
+  blockedBadge: { backgroundColor: "#b94a48" },
   // Frozen less/_page.less .user-info-box .user-since.
   userSince: { marginTop: "10px", padding: "0px 10px" },
   // Legacy less/_page.less .user-stream-box.

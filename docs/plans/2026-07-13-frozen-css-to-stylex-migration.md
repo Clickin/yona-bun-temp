@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile status badges
+
+Batch 978 moves the conditional `SITE ADMIN` and `BLOCKED` profile-sidebar
+badges into route-local StyleX. The exact Bootstrap `.label,.badge` base,
+`label-success`/`label-important` backgrounds, and later frozen `_page.less`
+generic `.badge` spacing, line-height, and radius cascade are preserved.
+Element types, classes, copy/order, four independent condition combinations,
+parent status spacing, since/provider output, and all unrelated badge consumers
+remain unchanged. Focused external Chrome fallback-off passes 1/1 at desktop
+and 390px mobile. The known legacy admin-notice/sidebar x-axis mismatch remains
+deprioritized; live legacy screenshot parity remains final visual-lock work.
+
 ## 2026-07-26 — Public profile edit control
 
 Batch 977 moves the authenticated profile owner's conditional “프로필 수정”

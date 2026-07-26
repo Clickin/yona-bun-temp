@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 978 public profile status badges
+
+- [x] `yona-original/app/views/user/view.scala.html`, frozen Bootstrap `.label,.badge`/`.badge`/success/important rules, the complete ordered `yobi.less` chain, later `_page.less .badge`, and nonmatching `_override.less .label` are recorded.
+- [x] Route-local StyleX owns exact shared final badge geometry/typography/paint and the green/red variant backgrounds only; generic badge consumers and the generic unused `#999` background remain fallback-owned.
+- [x] Both status wrappers, span elements, `badge label-success` / `badge label-important`, copy/order, all four condition combinations, parent spacing, since/provider output, and unrelated profile states remain unchanged.
+- [x] `frontend/tests/stylex-user-profile-status-badges.e2e.ts` verifies RED→GREEN provenance/import order, owners, branches, exact desktop/mobile declarations, no inline/plugin attrs, containment/non-overlap, retained neighbors, and zero overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes 1/1. The known legacy admin-notice/sidebar x-axis mismatch remains deprioritized; live legacy screenshot parity remains final visual-lock work and no compensation was added.
+
 ### 2026-07-26 Batch 977 public profile edit control
 
 - [x] `yona-original/app/views/user/view.scala.html`, frozen `_yobiUI.less .ybtn`/`.ybtn-mini`/nested icon rules, the complete ordered `yobi.less` chain through `_override.less`, and Korean messages are recorded.
