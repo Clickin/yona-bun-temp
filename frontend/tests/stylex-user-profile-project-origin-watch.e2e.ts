@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 
 const projects = [
   {
@@ -89,6 +89,7 @@ test("profile project origin and watch controls own their exact final frozen cas
     override,
     bootstrap,
     bootstrapResponsive,
+    appCss,
     defaultMessages,
     messages,
   ] = await Promise.all([
@@ -146,6 +147,7 @@ test("profile project origin and watch controls own their exact final frozen cas
       new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
       "utf8",
     ),
+    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
     readFile(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
     readFile(new URL("../../yona-original/conf/messages.ko-KR", import.meta.url), "utf8"),
   ]);
@@ -199,14 +201,20 @@ test("profile project origin and watch controls own their exact final frozen cas
   expect(pageLess).toContain("margin-top: 0px;");
   expect(responsive).toContain("@media all and (max-width: 720px)");
   expect(yobiUi).toContain(".num-badge {");
+  expect(yobiUi).toContain(".num-badge { background-color:#fff; color:@blue2; }");
   expect(yobiUi).toContain(".ybtn, .flat > li > .ybtn");
   expect(yobiUi).toContain("i { line-height:20px;}");
   expect(temporary).toContain(".lst-stacked");
+  expect(temporary).toContain(".num-badge { padding:0 2px; }");
   expect(override).toContain("/** override bootstrap.css **/");
   expect(bootstrap).toContain(
     "a:hover,\na:focus {\n  color: #005580;\n  text-decoration: underline;\n}",
   );
   expect(bootstrapResponsive).toContain("@media (max-width: 767px)");
+  expect(bootstrap).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
+  expect(bootstrapResponsive).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
+  expect(appCss).toContain(".lst-stacked li .num-badge {");
+  expect(appCss).toContain(".lst-stacked li.active .num-badge {");
   expect(defaultMessages).toContain("notification.unwatch = Unwatch");
   expect(defaultMessages).toContain("notification.watch = Watch");
   expect(messages).toContain("notification.unwatch = 그만 지켜보기");
@@ -228,8 +236,10 @@ test("profile project origin and watch controls own their exact final frozen cas
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
-  expect(routeSource).toContain('className="nbtn black medium last leaveProject"');
-  expect(routeSource).not.toContain('data-stylex-owner="user-profile-project-leave');
+  expect(routeSource).toContain('data-stylex-owner="user-profile-project-leave-link"');
+  expect(routeSource).not.toContain(
+    "className={`${stylex.props(styles.projectWatchBadge).className} num-badge`}",
+  );
 
   const forbiddenAttributes = [
     "style",
@@ -280,6 +290,8 @@ test("profile project origin and watch controls own their exact final frozen cas
     await expect(icons.nth(0)).toHaveClass(/yobicon-middle/u);
     await expect(icons.nth(0)).toHaveClass(/yobicon-white/u);
     await expect(badges).toHaveText(["4", "2"]);
+    await expect(badges.nth(0)).not.toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
+    await expect(badges.nth(1)).not.toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
 
     const firstChildren = await buttons.nth(0).evaluate((node) =>
       [...node.children].map((child) => ({
@@ -292,7 +304,7 @@ test("profile project origin and watch controls own their exact final frozen cas
       expect.objectContaining({ tag: "I", className: expect.stringContaining("yobicon-eye-open") }),
       expect.objectContaining({
         tag: "SPAN",
-        className: expect.stringContaining("num-badge"),
+        className: expect.not.stringMatching(/(?:^|\s)num-badge(?:\s|$)/u),
         text: "4",
       }),
     ]);
@@ -427,6 +439,19 @@ test("profile project origin and watch controls own their exact final frozen cas
       expect(item.rect.top).toBeGreaterThanOrEqual(item.row.top);
       expect(item.rect.bottom).toBeLessThanOrEqual(item.row.bottom);
     }
+
+    const screenshotDirectory = new URL(
+      "../output/playwright/stylex-user-profile-project-watch-badge-class/",
+      import.meta.url,
+    );
+    await mkdir(screenshotDirectory, { recursive: true });
+    await page.screenshot({
+      fullPage: true,
+      path: new URL(
+        width === 1366 ? "desktop-1366x900.png" : "mobile-390x844.png",
+        screenshotDirectory,
+      ).pathname,
+    });
 
     await origin.hover();
     await expect(origin).toHaveCSS("color", "rgb(0, 85, 128)");

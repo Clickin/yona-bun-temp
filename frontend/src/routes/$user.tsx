@@ -1619,7 +1619,6 @@ function ProfileProjectRow({
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
               <span
                 {...stylex.props(styles.projectWatchBadge)}
-                className={`${stylex.props(styles.projectWatchBadge).className} num-badge`}
                 data-stylex-owner="user-profile-project-watch-badge"
               >
                 {project.watchCount}
