@@ -109,7 +109,9 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
   await expect(projectStats).not.toHaveClass(/pull-right/u);
   await expect(projectRow.locator(".info-wrap > .pull-left")).toHaveCount(1);
   await expect(projectRow.getByRole("link", { name: "sample", exact: true })).toBeVisible();
-  await expect(projectRow.locator("a.watchBtn")).toBeVisible();
+  await expect(
+    projectRow.locator('[data-stylex-owner="user-profile-project-watch-button"]'),
+  ).toBeVisible();
   await expect(projectRow.locator("a.leaveProject")).toBeVisible();
 
   for (const [locator, expected] of [

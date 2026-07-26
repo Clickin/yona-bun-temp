@@ -56,7 +56,7 @@ const EXPECTED_PROFILE_SCREEN = `
             <ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="__BASE_PATH__/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="__BASE_PATH__/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="__BASE_PATH__/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="__BASE_PATH__/door" class="infos-item infos-link-item" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="__BASE_PATH__/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="__BASE_PATH__/alice" class="avatar-wrap assinee" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>
           </div>
           <div id="projects" class="tab-pane ">
-            <ul class="user-streams all-projects"><li class="project"><div class="info-wrap"><div class="pull-left"><a href="__BASE_PATH__/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a></div><div class="pull-left" style="margin-left: 10px;"><div class="header"><a href="__BASE_PATH__/door/sample" class="project-name">sample</a></div><div class="desc">Profile project</div><div class="name-tag"><i class="yobicon-friends yobicon-middle"></i><strong>3</strong> <a href="__BASE_PATH__/door" class="owner-name-small">door</a> <span title="2026-06-01">2026-06-01</span>,Latest code update<span title="2026-06-30">2026-06-30</span></div></div></div><div class="stats-wrap pull-right"><div class="stats"><a href="__BASE_PATH__/door/sample/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a></div></div></li></ul>
+            <ul class="user-streams all-projects"><li class="project"><div class="info-wrap"><div class="pull-left"><a href="__BASE_PATH__/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a></div><div class="pull-left" style="margin-left: 10px;"><div class="header"><a href="__BASE_PATH__/door/sample" class="project-name">sample</a></div><div class="desc">Profile project</div><div class="name-tag"><i class="yobicon-friends yobicon-middle"></i><strong>3</strong> <a href="__BASE_PATH__/door" class="owner-name-small">door</a> <span title="2026-06-01">2026-06-01</span>,Latest code update<span title="2026-06-30">2026-06-30</span></div></div></div><div class="stats-wrap pull-right"><div class="stats"><a href="__BASE_PATH__/door/sample/watch"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a></div></div></li></ul>
           </div>
         </div>
       </div>
@@ -1113,7 +1113,7 @@ function expectedProfileScreen({
   const stats = viewerCanLeave
     ? `<a href="${basePath}/info/leave/${memberProjectOwnerName}/sample" class="nbtn black medium last leaveProject" data-projectname="sample"><i class="yobicon-trash"></i> Leave</a>`
     : viewerCanWatch
-      ? `<a href="${projectHref}/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a>`
+      ? `<a href="${projectHref}/watch"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a>`
       : "";
   return EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)
     .replace('value="14"', `value="${daysAgo}"`)
@@ -1136,7 +1136,7 @@ function expectedProfileScreen({
       `<a href="${basePath}/${memberProjectOwnerName}" class="owner-name-small">${memberProjectOwnerName}</a>`,
     )
     .replace(
-      `<a href="${basePath}/door/sample/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a>`,
+      `<a href="${basePath}/door/sample/watch"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a>`,
       stats,
     )
     .replace(

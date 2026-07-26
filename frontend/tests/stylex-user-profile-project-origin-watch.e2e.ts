@@ -90,6 +90,7 @@ test("profile project origin and watch controls own their exact final frozen cas
     bootstrap,
     bootstrapResponsive,
     appCss,
+    legacyViewJs,
     defaultMessages,
     messages,
   ] = await Promise.all([
@@ -148,6 +149,10 @@ test("profile project origin and watch controls own their exact final frozen cas
       "utf8",
     ),
     readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    readFile(
+      new URL("../../yona-original/public/javascripts/service/yobi.user.View.js", import.meta.url),
+      "utf8",
+    ),
     readFile(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
     readFile(new URL("../../yona-original/conf/messages.ko-KR", import.meta.url), "utf8"),
   ]);
@@ -215,6 +220,12 @@ test("profile project origin and watch controls own their exact final frozen cas
   expect(bootstrapResponsive).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
   expect(appCss).toContain(".lst-stacked li .num-badge {");
   expect(appCss).toContain(".lst-stacked li.active .num-badge {");
+  expect(appCss).toContain(".ybtn {");
+  expect(appCss).toContain(".keymap-help .ybtn {");
+  expect(appCss).toContain("#searchInnerForm .ybtn {");
+  expect(appCss).not.toContain('[data-stylex-owner="user-profile-project-watch-button"]');
+  expect(legacyViewJs).toContain('htElement.waBtnWatch   = $(".watchBtn");');
+  expect(legacyViewJs).toContain('htElement.waBtnWatch.on("click",_onClickBtnWatch);');
   expect(defaultMessages).toContain("notification.unwatch = Unwatch");
   expect(defaultMessages).toContain("notification.watch = Watch");
   expect(messages).toContain("notification.unwatch = 그만 지켜보기");
@@ -239,6 +250,9 @@ test("profile project origin and watch controls own their exact final frozen cas
   expect(routeSource).toContain('data-stylex-owner="user-profile-project-leave-link"');
   expect(routeSource).not.toContain(
     "className={`${stylex.props(styles.projectWatchBadge).className} num-badge`}",
+  );
+  expect(routeSource).not.toContain(
+    "className={`${stylex.props(styles.projectWatchButton).className} ybtn watchBtn`}",
   );
 
   const forbiddenAttributes = [
@@ -283,8 +297,8 @@ test("profile project origin and watch controls own their exact final frozen cas
     await expect(buttons.nth(1)).toHaveAttribute("href", "/yona/other/plain/watch");
     await expect(buttons.nth(0)).toContainText("Unwatch");
     await expect(buttons.nth(1)).toContainText("Watch");
-    await expect(buttons.nth(0)).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
-    await expect(buttons.nth(0)).toHaveClass(/(?:^|\s)watchBtn(?:\s|$)/u);
+    await expect(buttons.nth(0)).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+    await expect(buttons.nth(0)).not.toHaveClass(/(?:^|\s)watchBtn(?:\s|$)/u);
     await expect(icons.nth(0)).toHaveClass(/yobicon-eye-open/u);
     await expect(icons.nth(1)).toHaveClass(/yobicon-eye-close/u);
     await expect(icons.nth(0)).toHaveClass(/yobicon-middle/u);
@@ -324,7 +338,10 @@ test("profile project origin and watch controls own their exact final frozen cas
         const style = getComputedStyle(node);
         const rect = node.getBoundingClientRect();
         const row = node.closest(".project")!.getBoundingClientRect();
-        const button = node.closest(".watchBtn")?.getBoundingClientRect() ?? null;
+        const button =
+          node
+            .closest('[data-stylex-owner="user-profile-project-watch-button"]')
+            ?.getBoundingClientRect() ?? null;
         return {
           color: style.color,
           backgroundColor: style.backgroundColor,
@@ -441,7 +458,7 @@ test("profile project origin and watch controls own their exact final frozen cas
     }
 
     const screenshotDirectory = new URL(
-      "../output/playwright/stylex-user-profile-project-watch-badge-class/",
+      "../output/playwright/stylex-user-profile-project-watch-control-classes/",
       import.meta.url,
     );
     await mkdir(screenshotDirectory, { recursive: true });

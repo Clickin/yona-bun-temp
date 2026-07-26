@@ -118,7 +118,9 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   await expect(projectInfo).toBeVisible();
   await expect(projectInfo.getByRole("link", { name: "sample", exact: true })).toBeVisible();
   const projectRow = projectInfo.locator("xpath=ancestor::li[contains(@class, 'project')]");
-  await expect(projectRow.locator("a.watchBtn")).toBeVisible();
+  await expect(
+    projectRow.locator('[data-stylex-owner="user-profile-project-watch-button"]'),
+  ).toBeVisible();
   await expect(projectRow.locator("a.leaveProject")).toBeVisible();
   const projectGeometry = await projectInfo.evaluate((node) => {
     const rect = node.getBoundingClientRect();

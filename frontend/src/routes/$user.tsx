@@ -1608,7 +1608,6 @@ function ProfileProjectRow({
               to={watchPath}
               reloadDocument
               {...stylex.props(styles.projectWatchButton)}
-              className={`${stylex.props(styles.projectWatchButton).className} ybtn watchBtn`}
               data-stylex-owner="user-profile-project-watch-button"
             >
               <i
