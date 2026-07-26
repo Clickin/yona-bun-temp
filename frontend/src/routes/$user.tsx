@@ -1496,7 +1496,7 @@ function ProfileProjectRow({
       className={`${stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className} project`}
       data-stylex-owner="user-profile-project-row"
     >
-      <div className="info-wrap">
+      <div data-stylex-owner="user-profile-project-info-wrap">
         <div
           className={stylex.props(styles.projectAvatarRail).className}
           data-stylex-owner="user-profile-project-avatar-rail"

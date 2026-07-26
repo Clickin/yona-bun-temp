@@ -203,7 +203,9 @@ test("Projects tab owns only the applied private icon and project avatar paint",
     "3 private-owner today, Latest code update an hour ago",
   );
   await expect(privateRow.locator(".name-tag .owner-name-small")).toHaveText("private-owner");
-  await expect(privateRow.locator(".owner-name-small[data-stylex-owner]")).toHaveCount(0);
+  await expect(
+    privateRow.locator('a.owner-name-small[data-stylex-owner="user-profile-project-owner-link"]'),
+  ).toHaveCount(1);
 
   const forbiddenAttributes = [
     "data-toggle",
@@ -248,7 +250,9 @@ test("Projects tab owns only the applied private icon and project avatar paint",
     await expect(avatar).toHaveAttribute("href", `/yona/${ownerName}/${projectName}`);
     await expect(avatar.locator("img")).toHaveCount(1);
     const structure = await row.evaluate((element) => {
-      const infoWrap = element.querySelector(".info-wrap")!;
+      const infoWrap = element.querySelector(
+        '[data-stylex-owner="user-profile-project-info-wrap"]',
+      )!;
       const avatarRail = element.querySelector(
         '[data-stylex-owner="user-profile-project-avatar-rail"]',
       )!;
