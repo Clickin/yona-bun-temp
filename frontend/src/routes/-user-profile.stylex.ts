@@ -228,7 +228,8 @@ export const styles = stylex.create({
   // Frozen Bootstrap .pull-right used by user/partial_issues.scala.html.
   issueDueDate: { float: "right" },
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.
-  pullRequestReceiverRail: { float: "right" },
+  pullRequestReceiverRail: { float: "right", marginTop: "5px" },
+  pullRequestReceiverAvatarLink: { marginRight: "0px" },
   pullRequestState: {
     borderRadius: "15px",
     color: "#FFF",
