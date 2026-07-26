@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile pull-request row residuals
+
+Batch 964 moves the populated public-profile pull-request row's frozen
+`.post-item`, project avatar rail, title-wrap, post-id, title/project/conflict
+paint, infos, and responsive mobile row padding into shared public-profile
+StyleX ownership. The pull-request row DOM, order, conflict/open copy, links,
+comment count, avatar/empty receiver branch, and existing receiver/state float
+owners remain unchanged. The broader mobile public-profile shell/stream column
+baseline remains excluded from this wave. Focused external Chrome checks pass
+1/1 in normal and fallback-off modes. Live legacy screenshot parity remains
+unverified and no geometry compensation was added.
+
 ## 2026-07-25 — Public profile child issue residuals
 
 Batch 963 moves the frozen `.subtask-number` declarations and the nested

@@ -230,6 +230,51 @@ export const styles = stylex.create({
   // Frozen Bootstrap .pull-right used by user/partial_pullRequests.scala.html.
   pullRequestReceiverRail: { float: "right" },
   pullRequestState: { float: "right" },
+  // Frozen less/_page.less .post-item.
+  pullRequestRow: {
+    borderBottom: "1px solid #ddd",
+    clear: "both",
+    display: "block",
+    overflow: "auto",
+    padding: "10px",
+    "@media (max-width: 767px)": { padding: "10px 0px !important" },
+  },
+  // Frozen less/_page.less .post-item .avatar-wrap.
+  pullRequestProjectAvatarRail: { float: "left", marginRight: "10px" },
+  // Frozen less/_page.less .post-item .title-wrap.
+  pullRequestTitleWrap: {
+    display: "block",
+    lineHeight: "20px",
+    overflow: "hidden",
+    position: "relative",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  // Frozen less/_page.less .post-item .title-wrap .post-id.
+  pullRequestPostId: {
+    color: "#999",
+    fontSize: "13px",
+    fontWeight: "bold",
+    marginRight: "5px",
+  },
+  // Frozen less/_page.less .post-item .title-wrap .title.
+  pullRequestTitleLink: {
+    color: "#333",
+    fontSize: "15px",
+    fontWeight: "600",
+  },
+  // Frozen less/_page.less .post-item .title-wrap .title.project.
+  pullRequestProjectLink: { color: "#3592b5", marginRight: "10px" },
+  // Frozen less/_page.less .post-item .title-wrap .title.conflict.
+  pullRequestConflictLink: { color: "#b94a48" },
+  // Frozen less/_page.less .post-item .infos.
+  pullRequestInfos: {
+    color: "#999",
+    display: "block",
+    fontSize: "12px",
+    lineHeight: "20px",
+    overflow: "hidden",
+  },
   // Frozen less/_page.less .error-wrap and its nested message paragraph.
   emptyErrorWrap: { padding: "100px 0px", textAlign: "center" },
   emptyErrorMessage: {

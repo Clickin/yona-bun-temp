@@ -1197,6 +1197,11 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   const projectPath = `/${ownerName}/${projectName}`;
   const pullRequestPath = `${projectPath}/pullRequest/${number}`;
   const state = stringField(pullRequest, "state", "open").toLowerCase();
+  const isConflict = Boolean(pullRequest.conflict);
+  const displayState = isConflict ? "conflict" : state;
+  const pullRequestTitleStyle = isConflict
+    ? stylex.props(styles.pullRequestTitleLink, styles.pullRequestConflictLink)
+    : stylex.props(styles.pullRequestTitleLink);
   const receiverLoginId = stringField(pullRequest, "receiverLoginId");
   const receiverLabel = stringField(pullRequest, "receiverLabel");
   const receiverAvatarUrl = stringField(
@@ -1206,9 +1211,19 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   );
 
   return (
-    <li className="post-item">
+    <li
+      {...stylex.props(styles.pullRequestRow)}
+      className={`${stylex.props(styles.pullRequestRow).className} post-item`}
+      data-stylex-owner="user-profile-pull-request-row"
+    >
       <div className="span10">
-        <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap mlarge">
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={projectPath}
+          {...stylex.props(styles.pullRequestProjectAvatarRail)}
+          className={`${stylex.props(styles.pullRequestProjectAvatarRail).className} avatar-wrap mlarge`}
+          data-stylex-owner="user-profile-pull-request-project-avatar-rail"
+        >
           <img
             src={stringField(
               pullRequest,
@@ -1218,16 +1233,42 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             alt={`${ownerName} / ${projectName}`}
           />
         </Link>
-        <div className="title-wrap">
-          <Link {...LEGACY_LINK_PROPS} to={projectPath} className="title project">
+        <div
+          {...stylex.props(styles.pullRequestTitleWrap)}
+          className={`${stylex.props(styles.pullRequestTitleWrap).className} title-wrap`}
+          data-stylex-owner="user-profile-pull-request-title-wrap"
+        >
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={projectPath}
+            {...stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink)}
+            className={`${stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink).className} title project`}
+            data-stylex-owner="user-profile-pull-request-title-link"
+          >
             {projectName}
           </Link>
-          <span className="post-id">{number}</span>
-          <Link {...LEGACY_LINK_PROPS} to={pullRequestPath} className="title ">
+          <span
+            {...stylex.props(styles.pullRequestPostId)}
+            className={`${stylex.props(styles.pullRequestPostId).className} post-id`}
+            data-stylex-owner="user-profile-pull-request-post-id"
+          >
+            {number}
+          </span>
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={pullRequestPath}
+            {...pullRequestTitleStyle}
+            className={`${pullRequestTitleStyle.className} title${isConflict ? " conflict" : ""}`}
+            data-stylex-owner="user-profile-pull-request-title-link"
+          >
             {stringField(pullRequest, "title")}
           </Link>
         </div>
-        <div className="infos">
+        <div
+          {...stylex.props(styles.pullRequestInfos)}
+          className={`${stylex.props(styles.pullRequestInfos).className} infos`}
+          data-stylex-owner="user-profile-pull-request-infos"
+        >
           <ProfileTextLink
             className="infos-item infos-link-item"
             label={stringField(pullRequest, "contributorLabel")}
@@ -1270,10 +1311,10 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </div>
         <div
           {...stylex.props(styles.pullRequestState)}
-          className={`${stylex.props(styles.pullRequestState).className} state ${state}`}
+          className={`${stylex.props(styles.pullRequestState).className} state ${displayState}`}
           data-stylex-owner="user-profile-pull-request-state"
         >
-          {t(`pullRequest.state.${state}`)}
+          {t(`pullRequest.state.${displayState}`)}
         </div>
       </div>
     </li>

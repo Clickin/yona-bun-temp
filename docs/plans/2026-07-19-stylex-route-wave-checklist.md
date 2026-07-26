@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 964 public profile pull-request row residuals
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:3851-4085`, `_responsive.less`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request row evidence.
+- [x] Shared StyleX owns the populated pull-request row shell, project avatar rail, title-wrap, post-id, title/project/conflict paint, infos, and responsive mobile `padding:10px 0 !important`; pull-request DOM/order/copy/links/comment/receiver behavior and the existing receiver/state float owners remain.
+- [x] `frontend/tests/stylex-user-profile-pull-request-row.e2e.ts` verifies provenance, owners, populated conflict/open output, links, receiver/empty branch, desktop/mobile declarations, responsive padding, no plugin attrs, scoped owner containment, and `scrollWidth` 390.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-25 Batch 963 public profile child issue residuals
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_issues.scala.html`, `issue/partial_view_childIssueListOnly.scala.html`, `issue/partial_view_child.scala.html`, and frozen `_page.less:7573-7581,7592-7596` are recorded as child-row evidence.
