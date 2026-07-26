@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -46,7 +46,18 @@ test("public-profile tab count badges own the frozen generic num-badge cascade",
   page,
 }) => {
   test.setTimeout(60_000);
-  const [routeSource, styleSource, scala, yobiLess, yobiUi, temporary] = await Promise.all([
+  const [
+    routeSource,
+    styleSource,
+    scala,
+    yobiLess,
+    yobiUi,
+    temporary,
+    appCss,
+    bootstrap,
+    bootstrapResponsive,
+    messages,
+  ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/routes/-user-profile.stylex.ts", import.meta.url), "utf8"),
     readFile(
@@ -65,6 +76,16 @@ test("public-profile tab count badges own the frozen generic num-badge cascade",
       new URL("../../yona-original/app/assets/stylesheets/less/_temporary.less", import.meta.url),
       "utf8",
     ),
+    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    readFile(
+      new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../../yona-original/conf/messages.ko-KR", import.meta.url), "utf8"),
   ]);
 
   expect(scala).toContain(
@@ -109,12 +130,28 @@ test("public-profile tab count badges own the frozen generic num-badge cascade",
   expect(temporary).toContain(".num-badge { padding:0 2px; }");
   expect(yobiUi).toContain("&.blue {");
   expect(yobiUi).toContain(".num-badge { background-color:#fff; color:@blue2; }");
+  expect(appCss).toContain(".lst-stacked li .num-badge {");
+  expect(appCss).toContain(".lst-stacked li.active .num-badge {");
+  expect(bootstrap).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
+  expect(bootstrapResponsive).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
+  for (const message of [
+    "menu.issue = 이슈",
+    "menu.pullRequest = 코드 주고받기",
+    "project.projects = 프로젝트",
+    "issue.state.open = 열림",
+    "issue.state.closed = 닫힘",
+  ]) {
+    expect(messages).toContain(message);
+  }
   expect(routeSource).toContain('data-stylex-owner="user-profile-top-tab-count-badge"');
   expect(routeSource).toContain('data-stylex-owner="user-profile-nested-issue-count-badge"');
   expect(styleSource).toContain("tabCountBadge:");
   expect(styleSource).not.toContain("topTabCountBadge:");
   expect(styleSource).not.toContain("nestedIssueCountBadge:");
-  expect(routeSource.match(/styles\.tabCountBadge/gmu)).toHaveLength(6);
+  expect(routeSource.match(/styles\.tabCountBadge/gmu)).toHaveLength(3);
+  expect(routeSource).not.toContain(
+    "className={`${stylex.props(styles.tabCountBadge).className} num-badge`}",
+  );
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -124,6 +161,18 @@ test("public-profile tab count badges own the frozen generic num-badge cascade",
     populated = true;
     await page.goto(`${basePath}/admin?selected=issues`, { waitUntil: "domcontentloaded" });
     await assertPopulated(page, viewport.width);
+    const screenshotDirectory = new URL(
+      "../output/playwright/stylex-user-profile-tab-count-badges/",
+      import.meta.url,
+    );
+    await mkdir(screenshotDirectory, { recursive: true });
+    await page.screenshot({
+      fullPage: true,
+      path: new URL(
+        viewport.width === 1366 ? "desktop-1366x900.png" : "mobile-390x844.png",
+        screenshotDirectory,
+      ).pathname,
+    });
 
     populated = false;
     await page.goto(`${basePath}/admin?selected=issues`, { waitUntil: "domcontentloaded" });
@@ -146,9 +195,11 @@ async function assertPopulated(page: Page, viewportWidth: number) {
   await expect(topButtons).toHaveText(["이슈 2", "코드 주고받기 1", "프로젝트 1"]);
   await expect(topBadges).toHaveCount(3);
   await expect(topBadges).toHaveText(["2", "1", "1"]);
+  await expect(topBadges.first()).toHaveJSProperty("tagName", "SPAN");
   await expect(issueButtons).toHaveText(["열림1", "닫힘1"]);
   await expect(nestedBadges).toHaveCount(2);
   await expect(nestedBadges).toHaveText(["1", "1"]);
+  await expect(nestedBadges.first()).toHaveJSProperty("tagName", "SPAN");
   await expect(topTabs.locator("li").nth(3).locator("input")).toHaveCount(1);
   await expect(issueTabs.locator("#toggle-show-subtasks")).toHaveCount(1);
 
@@ -212,7 +263,7 @@ async function assertZero(page: Page, viewportWidth: number) {
 
 async function assertBadgeCollection(badges: Locator) {
   for (const badge of await badges.all()) {
-    await expect(badge).toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
+    await expect(badge).not.toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
     for (const attr of [
       "style",
       "data-toggle",

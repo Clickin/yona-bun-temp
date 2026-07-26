@@ -552,7 +552,6 @@ function PublicProfileBody({
                           {t("issue.state.open")}
                           <span
                             {...stylex.props(styles.tabCountBadge)}
-                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
                             data-stylex-owner="user-profile-nested-issue-count-badge"
                           >
                             {openIssues.length}
@@ -569,7 +568,6 @@ function PublicProfileBody({
                           {t("issue.state.closed")}
                           <span
                             {...stylex.props(styles.tabCountBadge)}
-                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
                             data-stylex-owner="user-profile-nested-issue-count-badge"
                           >
                             {closedIssues.length}
@@ -762,7 +760,6 @@ function ProfileTab({
         {badge > 0 ? (
           <span
             {...stylex.props(styles.tabCountBadge)}
-            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
             data-stylex-owner="user-profile-top-tab-count-badge"
           >
             {badge}

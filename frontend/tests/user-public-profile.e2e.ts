@@ -23,16 +23,16 @@ const EXPECTED_PROFILE_SCREEN = `
       <div class="user-stream-box">
         <div class="pull-right">recently<input id="daysAgoBtn" name="daysAgo" type="number" min="1" max="99" class="input-mini-min" value="14" style="margin:0px 5px; vertical-align:bottom;">days ago</div>
         <ul class="nav nav-tabs">
-          <li class="active"><button type="button">Issue <span class="num-badge">2</span></button></li>
-          <li class=""><button type="button">Pull request <span class="num-badge">1</span></button></li>
-          <li class=""><button type="button">projects <span class="num-badge">1</span></button></li>
+          <li class="active"><button type="button">Issue <span>2</span></button></li>
+          <li class=""><button type="button">Pull request <span>1</span></button></li>
+          <li class=""><button type="button">projects <span>1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
         </ul>
         <div class="tab-content">
           <div id="issues" class="tab-pane active">
             <ul class="nav nav-tabs nm">
-              <li class="active"><button type="button">Open<span class="num-badge">1</span></button></li>
-              <li class=""><button type="button">Closed<span class="num-badge">1</span></button></li>
+              <li class="active"><button type="button">Open<span>1</span></button></li>
+              <li class=""><button type="button">Closed<span>1</span></button></li>
               <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask" style="position:relative"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
             </ul>
             <div class="tab-content">
@@ -1137,10 +1137,8 @@ function expectedProfileScreen({
       `<li class="${selected === "pullRequests" ? "active" : ""}"><button type="button">Pull request`,
     )
     .replace(
-      'Pull request <span class="num-badge">1</span></button>',
-      pullRequestsEmpty
-        ? "Pull request </button>"
-        : 'Pull request <span class="num-badge">1</span></button>',
+      "Pull request <span>1</span></button>",
+      pullRequestsEmpty ? "Pull request </button>" : "Pull request <span>1</span></button>",
     )
     .replace(
       '<li class=""><button type="button">projects',
