@@ -660,6 +660,30 @@ export const styles = stylex.create({
     marginRight: "5px",
     minWidth: "22px",
   },
+  // Frozen less/_page.less .child-issue-list matching subtree.
+  issueChildList: { color: "#666666" },
+  issueChildClosedState: { backgroundColor: "transparent !important" },
+  // Frozen public/stylesheets/yobicon/style.css generic base/checkmark pseudo,
+  // plus less/_page.less .child-issue-list .yobicon-checkmark color.
+  issueChildCheckmark: {
+    backgroundImage: "none",
+    color: "#fd6956",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e017"' },
+  },
+  // Frozen less/_page.less .child-issue .child-issue-date.
+  issueChildDate: { color: "lightgrey", display: "none" },
+  // Frozen less/_page.less .draft-number.
+  issueChildDraftNumber: { color: "#0bb53c" },
   // Frozen less/_common.less .font12 around the child count pair.
   issueChildCountPair: { fontSize: "12px" },
   // Frozen less/_page.less generic .item-count-groups followed by

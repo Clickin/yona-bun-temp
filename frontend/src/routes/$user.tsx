@@ -933,7 +933,13 @@ function ProfileIssueRow({
                 {label.name}
               </Link>
             ))}
-            <div className={`child-issue-list${showSubtasks ? "" : " hide"}`}>
+            <div
+              {...stylex.props(styles.issueChildList)}
+              className={`${stylex.props(styles.issueChildList).className} child-issue-list${
+                showSubtasks ? "" : " hide"
+              }`}
+              data-stylex-owner="user-profile-child-issue-list"
+            >
               <ProfileIssueChildRows
                 issues={issue.childIssues ?? []}
                 ownerName={ownerName}
@@ -1154,8 +1160,19 @@ function ProfileIssueChildRow({
 
   return (
     <div className="issue-item  child-issue">
-      <span className={`state-label ${isClosed ? "closed" : "open"}`}>
-        {isClosed ? <i className=" yobicon-checkmark"></i> : null}
+      <span
+        {...stylex.props(isClosed && styles.issueChildClosedState)}
+        className={`${stylex.props(isClosed && styles.issueChildClosedState).className ?? ""} state-label ${
+          isClosed ? "closed" : "open"
+        }`.trim()}
+        {...(isClosed ? { "data-stylex-owner": "user-profile-child-closed-state" } : {})}
+      >
+        {isClosed ? (
+          <i
+            {...stylex.props(styles.issueChildCheckmark)}
+            data-stylex-owner="user-profile-child-checkmark"
+          ></i>
+        ) : null}
       </span>
       <Link {...LEGACY_LINK_PROPS} className="twoColumeModeTarget" to={issuePath}>
         <span className="item-name">
@@ -1164,7 +1181,16 @@ function ProfileIssueChildRow({
             className={`${stylex.props(styles.issueSubtaskNumber).className} subtask-number`}
             data-stylex-owner="user-profile-child-subtask-number"
           >
-            {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
+            {issue.isDraft ? (
+              <span
+                {...stylex.props(styles.issueChildDraftNumber)}
+                data-stylex-owner="user-profile-child-draft-number"
+              >
+                #Draft
+              </span>
+            ) : (
+              `#${issueNumber}`
+            )}
           </span>
           <span>{stringField(issue, "title")}</span>
           <span>
@@ -1206,7 +1232,12 @@ function ProfileIssueChildRow({
           {label.name}
         </Link>
       ))}
-      <span className="child-issue-date" title={stringField(issue, "createdLabel")}>
+      <span
+        {...stylex.props(styles.issueChildDate)}
+        className={`${stylex.props(styles.issueChildDate).className} child-issue-date`}
+        data-stylex-owner="user-profile-child-date"
+        title={stringField(issue, "createdLabel")}
+      >
         {stringField(issue, "createdLabel")}
       </span>
     </div>
