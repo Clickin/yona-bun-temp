@@ -149,14 +149,14 @@ async function assertBranch(page: Page, state: { isBlocked: boolean; isSiteAdmin
 
   if (state.isSiteAdmin) {
     await expect(adminBadge).toHaveText("SITE ADMIN");
-    await expect(adminBadge).toHaveClass(/(?:^|\s)badge(?:\s|$)/u);
-    await expect(adminBadge).toHaveClass(/(?:^|\s)label-success(?:\s|$)/u);
+    await expect(adminBadge).not.toHaveClass(/(?:^|\s)badge(?:\s|$)/u);
+    await expect(adminBadge).not.toHaveClass(/(?:^|\s)label-success(?:\s|$)/u);
     await assertBadgeStyle(adminBadge, "rgb(70, 136, 71)");
   }
   if (state.isBlocked) {
     await expect(blockedBadge).toHaveText("BLOCKED");
-    await expect(blockedBadge).toHaveClass(/(?:^|\s)badge(?:\s|$)/u);
-    await expect(blockedBadge).toHaveClass(/(?:^|\s)label-important(?:\s|$)/u);
+    await expect(blockedBadge).not.toHaveClass(/(?:^|\s)badge(?:\s|$)/u);
+    await expect(blockedBadge).not.toHaveClass(/(?:^|\s)label-important(?:\s|$)/u);
     await assertBadgeStyle(blockedBadge, "rgb(185, 74, 72)");
   }
 

@@ -437,7 +437,6 @@ function PublicProfileBody({
                 {profile.isSiteAdmin ? (
                   <span
                     {...stylex.props(styles.statusBadge, styles.siteAdminBadge)}
-                    className={`${stylex.props(styles.statusBadge, styles.siteAdminBadge).className} badge label-success`}
                     data-stylex-owner="user-profile-site-admin-badge"
                   >
                     SITE ADMIN
@@ -451,7 +450,6 @@ function PublicProfileBody({
                 {profile.isBlocked ? (
                   <span
                     {...stylex.props(styles.statusBadge, styles.blockedBadge)}
-                    className={`${stylex.props(styles.statusBadge, styles.blockedBadge).className} badge label-important`}
                     data-stylex-owner="user-profile-blocked-badge"
                   >
                     BLOCKED

@@ -64,8 +64,8 @@ test("status and since wrapper retirement records the exact Scala and frozen own
   expect(route).not.toContain(
     "className={`${stylex.props(styles.userSince).className} user-since`}",
   );
-  expect(route).toContain("badge label-success");
-  expect(route).toContain("badge label-important");
+  expect(route).not.toContain("} badge label-success`}");
+  expect(route).not.toContain("} badge label-important`}");
   expect(route).not.toContain("} since`}");
   expect(route).not.toContain("} auth-provider-logo`}");
 });
