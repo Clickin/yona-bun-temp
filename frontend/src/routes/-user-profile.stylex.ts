@@ -261,6 +261,37 @@ export const styles = stylex.create({
     textShadow: "none",
     verticalAlign: "top",
   },
+  // Frozen less/_yobiUI.less .nbtn, .nbtn.black, .nbtn.last, and a.nbtn.medium,
+  // with the final generic anchor hover/focus cascade.
+  projectLeaveLink: {
+    backgroundColor: "#222222",
+    border: 0,
+    borderRadius: "2px",
+    boxShadow: "inset 0px -1px 1px rgba(0, 0, 0, 0.3)",
+    color: "#ffffff",
+    display: "inline-block",
+    fontSize: "11px",
+    fontWeight: "bold",
+    lineHeight: "18px",
+    marginRight: 0,
+    outline: "none",
+    padding: "6px 20px",
+    textAlign: "center",
+    textDecoration: "none",
+    textShadow: "none",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    ":hover": {
+      backgroundColor: "#000000",
+      color: "#005580",
+      textDecoration: "none",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
   // Legacy user/view.scala.html partial_issues subtask progress width.
   progressBar: (width: string) => ({ width }),
   // Legacy user/partial_issues.scala.html paints each API-provided label color.

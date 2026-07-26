@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 975 public profile project leave control
+
+- [x] `yona-original/app/views/user/view.scala.html`, included `user/partial_projectlist.scala.html`, frozen Bootstrap anchors, the complete ordered `yobi.less` chain through `_override.less`, Bootstrap/responsive CSS, messages, and `yobi.user.View.js` confirm behavior are recorded.
+- [x] Route-local StyleX owns only the leave Link's actually matching `.nbtn`, `.black`, `.last`, and `a.nbtn.medium` final base/hover/focus cascade; `.dbtn-group`, `> i.ico`, button-only, disabled/active, other variants, icon glyph/font, and unrelated consumers are excluded.
+- [x] TanStack route/params, `data-projectname`, legacy classes, trash icon, copy/order, conditional branch, stats/watch owners, and frozen clipping remain. React now shows the localized project-name confirmation, blocks cancel navigation, and keeps accepted leave navigation.
+- [x] `frontend/tests/stylex-user-profile-project-leave-control.e2e.ts` verifies RED→GREEN provenance/exclusions, conditional output, exact desktop/mobile declarations, href/data/classes/icon/copy/order, confirmation copy, cancel/accept behavior, containment/non-overlap, and zero document overflow.
+- [x] Managed outside-sandbox System-Chrome fallback-off passes 1/1; live legacy screenshot parity remains final visual-lock work and no geometry compensation was added.
+
 ### 2026-07-26 Batch 974 public profile project origin and watch controls
 
 - [x] `yona-original/app/views/user/view.scala.html`, included `user/partial_projectlist.scala.html`, frozen Bootstrap anchors, the complete ordered `yobi.less` import chain through `_override.less`, Bootstrap/responsive CSS, messages, and `yobi.user.View.js` behavior evidence are recorded.

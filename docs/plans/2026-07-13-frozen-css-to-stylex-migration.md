@@ -4,6 +4,18 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile project leave control
+
+Batch 975 moves the conditional leave-project Link's actually matching
+`.nbtn.black.medium.last` cascade into route-local StyleX and restores the
+legacy localized project-name confirmation in a React click handler. Cancel
+prevents navigation; confirm preserves the existing TanStack leave route.
+`.dbtn-group .nbtn.last`, `> i.ico`, button-only, disabled/active, and unrelated
+variant rules are proven inapplicable and remain excluded. The Link, data
+attribute, trash icon, copy/order, conditional branch, stats/watch owners, and
+frozen mobile clipping remain unchanged. Focused external Chrome fallback-off
+passes 1/1; live legacy screenshot parity remains final visual-lock work.
+
 ## 2026-07-26 — Public profile project origin and watch controls
 
 Batch 974 moves four populated Projects surfaces into route-local StyleX: the

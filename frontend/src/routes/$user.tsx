@@ -1560,7 +1560,19 @@ function ProfileProjectRow({
               to="/info/leave/$ownerName/$projectName"
               params={{ ownerName: project.ownerName, projectName: project.projectName }}
               data-projectname={project.projectName}
-              className="nbtn black medium last leaveProject"
+              {...stylex.props(styles.projectLeaveLink)}
+              className={`${stylex.props(styles.projectLeaveLink).className} nbtn black medium last leaveProject`}
+              data-stylex-owner="user-profile-project-leave-link"
+              onClick={(event) => {
+                if (
+                  !window.confirm(
+                    t("userinfo.leaveProject.confirm", { args: [project.projectName] }),
+                  )
+                ) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+              }}
             >
               <i className="yobicon-trash"></i> {t("userinfo.leaveProject")}
             </Link>
