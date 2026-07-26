@@ -205,7 +205,7 @@ test("profile project stats wrapper retires only its literal legacy class", asyn
   expect(routeSource).not.toContain(
     "className={`${stylex.props(styles.projectStats).className} stats-wrap`}",
   );
-  expect(routeSource).toContain('className="stats"');
+  expect(routeSource).not.toContain('className="stats"');
 
   const verifyViewport = async (width: number, height: number) => {
     await page.setViewportSize({ width, height });
@@ -213,7 +213,7 @@ test("profile project stats wrapper retires only its literal legacy class", asyn
 
     const rows = page.locator('[data-stylex-owner="user-profile-project-row"]');
     const wrappers = page.locator('[data-stylex-owner="user-profile-project-stats"]');
-    const stats = wrappers.locator(":scope > .stats");
+    const stats = wrappers.locator(":scope > div");
     const watches = page.locator('[data-stylex-owner="user-profile-project-watch-button"]');
     const leave = page.locator('[data-stylex-owner="user-profile-project-leave-link"]');
 
@@ -253,8 +253,10 @@ test("profile project stats wrapper retires only its literal legacy class", asyn
         const element = node as HTMLElement;
         const style = getComputedStyle(element);
         const rect = element.getBoundingClientRect();
-        const rowRect = element.closest(".project")!.getBoundingClientRect();
-        const statsRect = element.querySelector(":scope > .stats")!.getBoundingClientRect();
+        const rowRect = element
+          .closest('[data-stylex-owner="user-profile-project-row"]')!
+          .getBoundingClientRect();
+        const statsRect = element.querySelector(":scope > div")!.getBoundingClientRect();
         return {
           tag: element.tagName,
           float: style.float,

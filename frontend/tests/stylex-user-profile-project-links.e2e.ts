@@ -137,12 +137,22 @@ test("profile project title and owner links own the final frozen generic anchor 
   for (const owner of ["projectTitleLink", "projectOwnerLink"]) {
     expect(style).toContain(`${owner}: {`);
   }
+  const titleOwner = style.slice(
+    style.indexOf("projectTitleLink:"),
+    style.indexOf("projectPrivateIcon:"),
+  );
+  const projectOwner = style.slice(
+    style.indexOf("projectOwnerLink:"),
+    style.indexOf("projectStats:"),
+  );
   const profileOwner = style.slice(style.indexOf("profile: {"), style.indexOf("info: {"));
   expect(profileOwner).not.toMatch(/\bcolor\s*:/u);
   expect(style).not.toContain("mutedText");
   expect(style).not.toContain("#777777");
-  expect(style.match(/color: "#005580"/gu)).toHaveLength(4);
-  expect(style.match(/outline: "none !important"/gu)).toHaveLength(4);
+  for (const owner of [titleOwner, projectOwner]) {
+    expect(owner.match(/color: "#005580"/gu)).toHaveLength(2);
+    expect(owner.match(/outline: "none !important"/gu)).toHaveLength(2);
+  }
   expect(route).toContain('data-stylex-owner="user-profile-project-title-link"');
   expect(route).toContain('data-stylex-owner="user-profile-project-owner-link"');
 
@@ -211,7 +221,9 @@ test("profile project title and owner links own the final frozen generic anchor 
         const node = document.querySelector<HTMLElement>(selector)!;
         const style = getComputedStyle(node);
         const rect = node.getBoundingClientRect();
-        const row = node.closest(".project")!.getBoundingClientRect();
+        const row = node
+          .closest('[data-stylex-owner="user-profile-project-row"]')!
+          .getBoundingClientRect();
         const stream = node.closest(".user-streams")!.getBoundingClientRect();
         return {
           color: style.color,

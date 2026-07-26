@@ -130,7 +130,7 @@ test("authenticated profile first Projects row owns the legacy top padding", asy
   await page.getByRole("button", { name: /Projects/i }).click();
 
   const list = page.locator('[data-stylex-owner="user-profile-projects-list"]');
-  const rows = list.locator(":scope > li.project");
+  const rows = list.locator(':scope > li[data-stylex-owner="user-profile-project-row"]');
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText("sample");
   await expect(rows.nth(1)).toContainText("second");
@@ -149,7 +149,9 @@ test("authenticated profile first Projects row owns the legacy top padding", asy
     if (width === 390) await page.setViewportSize({ width, height: 844 });
     const geometry = await list.evaluate((node) => {
       const rect = node.getBoundingClientRect();
-      const pane = node.closest(".tab-pane")?.getBoundingClientRect();
+      const pane = node
+        .closest('[data-stylex-owner="user-profile-pane-projects"]')
+        ?.getBoundingClientRect();
       return {
         left: rect.left,
         right: rect.right,

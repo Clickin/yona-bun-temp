@@ -272,7 +272,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
 
     const childOrder = await stats
       .nth(0)
-      .locator(".stats")
+      .locator(":scope > div")
       .evaluate((node) =>
         [...node.children].map((child) => ({
           owner: child.getAttribute("data-stylex-owner"),
@@ -301,7 +301,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
       const icon = leave.querySelector<HTMLElement>(":scope > i")!;
       const watch = leave.previousElementSibling as HTMLElement;
       const stats = leave.closest<HTMLElement>('[data-stylex-owner="user-profile-project-stats"]')!;
-      const row = leave.closest<HTMLElement>(".project")!;
+      const row = leave.closest<HTMLElement>('[data-stylex-owner="user-profile-project-row"]')!;
       const nextRow = row.nextElementSibling as HTMLElement;
       const rect = leave.getBoundingClientRect();
       const iconRect = icon.getBoundingClientRect();

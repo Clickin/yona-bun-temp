@@ -104,7 +104,7 @@ test("authenticated profile project avatar rail owns the legacy left float", asy
   await page.getByRole("button", { name: /Projects/i }).click();
 
   const rail = page.locator('[data-stylex-owner="user-profile-project-avatar-rail"]');
-  const row = rail.locator("xpath=ancestor::li[contains(@class, 'project')]");
+  const row = rail.locator("xpath=ancestor::li[@data-stylex-owner='user-profile-project-row']");
   await expect(rail).toBeVisible();
   await expect(rail).not.toHaveClass(/pull-left/u);
   await expect(rail).not.toHaveAttribute("style");

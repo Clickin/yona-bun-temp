@@ -259,7 +259,7 @@ test("profile project info wrapper retires only its declaration-free legacy clas
     const metrics = await wrappers.evaluateAll((nodes) => ({
       wrappers: nodes.map((node) => {
         const wrapper = node as HTMLElement;
-        const row = wrapper.closest(".project")!;
+        const row = wrapper.closest('[data-stylex-owner="user-profile-project-row"]')!;
         const children = [...wrapper.children] as HTMLElement[];
         const boxes = [wrapper, row, ...children].map((element) => {
           const rect = element.getBoundingClientRect();

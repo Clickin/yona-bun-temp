@@ -1493,7 +1493,9 @@ function ProfileProjectRow({
 
   return (
     <li
-      className={`${stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className} project`}
+      className={
+        stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className
+      }
       data-stylex-owner="user-profile-project-row"
     >
       <div data-stylex-owner="user-profile-project-info-wrap">
@@ -1596,7 +1598,7 @@ function ProfileProjectRow({
         </div>
       </div>
       <div {...stylex.props(styles.projectStats)} data-stylex-owner="user-profile-project-stats">
-        <div className="stats">
+        <div>
           {project.viewerCanWatch ? (
             <Link
               to={watchPath}

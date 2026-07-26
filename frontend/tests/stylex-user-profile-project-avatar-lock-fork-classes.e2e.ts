@@ -306,7 +306,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
   expect(projectRowSource).not.toMatch(/\bavatar-wrap\b|\byobicon-small\b|\bvmiddle\b/u);
   expect(projectRowSource).toContain("yobicon-lock");
   expect(projectRowSource).toContain("yobicon-split yobicon-white");
-  expect(projectRowSource).toContain('className="stats"');
+  expect(projectRowSource).not.toContain('className="stats"');
   expect(projectRowSource).toContain("nbtn black medium last leaveProject");
   expect(projectRowSource).toContain("yobicon-middle yobicon-white");
 
@@ -343,7 +343,9 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
       .locator('[data-stylex-owner="user-profile-project-private-icon"]');
     const forkIcon = rows.nth(1).locator('[data-stylex-owner="user-profile-project-fork-icon"]');
     await expect(rows).toHaveCount(3);
-    await expect(rows).toHaveClass([/project/u, /project/u, /project/u]);
+    for (const row of await rows.all()) {
+      await expect(row).not.toHaveClass(/(?:^|\s)project(?:\s|$)/u);
+    }
     await expect(avatars).toHaveCount(3);
     for (let index = 0; index < projects.length; index += 1) {
       const project = projects[index];
@@ -357,7 +359,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
       await expect(avatar.locator(":scope > img")).toHaveAttribute("src", project.logoUrl);
       await expect(avatar.locator(":scope > img")).toHaveAttribute("alt", "");
       await expect(
-        row.locator(":scope > [data-stylex-owner='user-profile-project-stats'] > .stats"),
+        row.locator(":scope > [data-stylex-owner='user-profile-project-stats'] > div"),
       ).toHaveCount(1);
       await expect(
         row.locator('[data-stylex-owner="user-profile-project-name-tag"]'),

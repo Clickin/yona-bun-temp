@@ -258,7 +258,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
   expect(projectRowSource).not.toContain("yobicon-lock yobicon-small");
   expect(projectRowSource).not.toContain("avatar-wrap small");
   expect(projectRowSource).not.toContain("yobicon-white vmiddle");
-  expect(projectRowSource).toContain('className="stats"');
+  expect(projectRowSource).not.toContain('className="stats"');
   expect(projectRowSource).toContain("nbtn black medium last leaveProject");
   expect(route).toContain("infos-item project-name");
 
@@ -275,7 +275,9 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
     const titles = page.locator('[data-stylex-owner="user-profile-project-title-link"]');
     const owners = page.locator('[data-stylex-owner="user-profile-project-owner-link"]');
     await expect(rows).toHaveCount(3);
-    await expect(rows).toHaveClass([/project/u, /project/u, /project/u]);
+    for (const row of await rows.all()) {
+      await expect(row).not.toHaveClass(/(?:^|\s)project(?:\s|$)/u);
+    }
     await expect(titles).toHaveText(["private-project", "forked-project", "public-project"]);
     await expect(owners).toHaveText(["private-owner", "fork-owner", "public-owner"]);
     await expect(rows.locator(":scope .project-name, :scope .owner-name-small")).toHaveCount(0);
@@ -288,7 +290,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
       ),
     ).toHaveCount(0);
     await expect(
-      rows.locator(":scope > [data-stylex-owner='user-profile-project-stats'] > .stats"),
+      rows.locator(":scope > [data-stylex-owner='user-profile-project-stats'] > div"),
     ).toHaveCount(3);
 
     for (const [index, project] of projects.entries()) {

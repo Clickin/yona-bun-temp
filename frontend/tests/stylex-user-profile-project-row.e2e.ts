@@ -101,7 +101,9 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
 
   const projectInfo = page.locator('[data-stylex-owner="user-profile-project-info"]');
   const projectStats = page.locator('[data-stylex-owner="user-profile-project-stats"]');
-  const projectRow = projectInfo.locator("xpath=ancestor::li[contains(@class, 'project')]");
+  const projectRow = projectInfo.locator(
+    "xpath=ancestor::li[@data-stylex-owner='user-profile-project-row']",
+  );
   await expect(projectRow).toHaveCount(1);
   await expect(projectRow).toContainText("A sample project");
   await expect(projectInfo).not.toHaveClass(/pull-left/u);

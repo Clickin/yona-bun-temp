@@ -337,7 +337,9 @@ test("profile project origin and watch controls own their exact final frozen cas
         const node = document.querySelector<HTMLElement>(selector)!;
         const style = getComputedStyle(node);
         const rect = node.getBoundingClientRect();
-        const row = node.closest(".project")!.getBoundingClientRect();
+        const row = node
+          .closest('[data-stylex-owner="user-profile-project-row"]')!
+          .getBoundingClientRect();
         const button =
           node
             .closest('[data-stylex-owner="user-profile-project-watch-button"]')
@@ -372,7 +374,9 @@ test("profile project origin and watch controls own their exact final frozen cas
           button: button
             ? { left: button.left, right: button.right, top: button.top, bottom: button.bottom }
             : null,
-          rowOverflow: getComputedStyle(node.closest<HTMLElement>(".project")!).overflow,
+          rowOverflow: getComputedStyle(
+            node.closest<HTMLElement>('[data-stylex-owner="user-profile-project-row"]')!,
+          ).overflow,
         };
       };
       return {
