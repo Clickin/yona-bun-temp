@@ -1422,11 +1422,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   );
 
   return (
-    <li
-      {...stylex.props(styles.pullRequestRow)}
-      className={`${stylex.props(styles.pullRequestRow).className} post-item`}
-      data-stylex-owner="user-profile-pull-request-row"
-    >
+    <li {...stylex.props(styles.pullRequestRow)} data-stylex-owner="user-profile-pull-request-row">
       <div className="span10">
         <Link
           {...LEGACY_LINK_PROPS}

@@ -154,7 +154,21 @@ test("authenticated public profile owns populated pull-request row residuals", a
   expect(responsive).toContain(".hide-in-mobile");
   expect(bootstrap).toContain('.row-fluid [class*="span"]');
   expect(bootstrapResponsive).toContain("@media (max-width: 767px)");
-  for (const importPath of ["less/_common.less", "less/_page.less", "less/_responsive.less"]) {
+  for (const importPath of [
+    "less/_variables.less",
+    "less/_mixins.less",
+    "less/_common.less",
+    "less/_sprites.less",
+    "less/_page.less",
+    "less/_tippy.less",
+    "less/_scrollbar.less",
+    "less/_responsive.less",
+    "less/_yobiUI.less",
+    "less/_temporary.less",
+    "less/_markdown.less",
+    "less/_migration.less",
+    "less/_override.less",
+  ]) {
     expect(yobiLess).toContain(`@import "${importPath}";`);
   }
   for (const messageKey of [
@@ -176,9 +190,19 @@ test("authenticated public profile owns populated pull-request row residuals", a
   ]) {
     expect(source).toContain(`data-stylex-owner="${owner}"`);
   }
+  expect(source).not.toContain(
+    "className={`${stylex.props(styles.pullRequestRow).className} post-item`}",
+  );
+  expect(source).toContain('className: "post-item title"');
   for (const declaration of [
-    'borderBottom: "1px solid #ddd"',
+    'borderBottomColor: "#ddd"',
+    'borderBottomStyle: "solid"',
+    'borderBottomWidth: "1px"',
+    'clear: "both"',
+    'display: "block"',
+    'overflow: "auto"',
     'padding: "10px"',
+    '"@media (max-width: 767px)": { padding: "10px 0px !important" }',
     'pullRequestProjectAvatarRail: { float: "left", marginRight: "10px" }',
     'lineHeight: "20px"',
     "pullRequestPostId:",
@@ -191,16 +215,27 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await page.goto(`${basePath}/admin?selected=pullRequests`, { waitUntil: "domcontentloaded" });
   const rows = page.locator('[data-stylex-owner="user-profile-pull-request-row"]');
   await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).not.toHaveClass(/\bpost-item\b/);
+  await expect(rows.nth(1)).not.toHaveClass(/\bpost-item\b/);
   await expect(rows.nth(0)).toContainText(
     "sample12Conflict pull requestContributor User2 days ago3Conflict",
   );
-  await expect(rows.nth(1)).toContainText("sample13Open pull requestYesterday");
+  await expect(rows.nth(1)).toContainText("sample13Open pull request");
+  await expect(rows.nth(1)).toContainText("No author");
+  await expect(rows.nth(1)).toContainText("Yesterday");
+  await expect(rows.nth(1)).toContainText("Open");
   await expect(rows.nth(0).locator('a[href$="/admin/sample"]')).toHaveCount(2);
   await expect(rows.nth(0).locator('a[href$="/admin/sample/pullRequest/12"]')).toHaveCount(1);
   await expect(rows.nth(1).locator('a[href$="/admin/sample/pullRequest/13"]')).toHaveCount(1);
   await expect(rows.nth(0).locator(".title.conflict")).toHaveText("Conflict pull request");
   await expect(rows.nth(0).locator(".state.conflict")).toHaveText("Conflict");
   await expect(rows.nth(1).locator(".state.open")).toHaveText("Open");
+  await expect(
+    rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
+  ).toHaveAttribute("href", `${basePath}/receiver`);
+  await expect(
+    rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
+  ).toHaveAttribute("title", "Receiver User");
   await expect(rows.nth(0).locator('a[href$="/admin/sample/pullRequest/12#comments"]')).toHaveCount(
     1,
   );
@@ -208,6 +243,39 @@ test("authenticated public profile owns populated pull-request row residuals", a
     rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
   ).toHaveCount(1);
   await expect(rows.nth(1).locator(".empty-avatar-wrap")).toHaveCount(1);
+  await expect(
+    rows.nth(1).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
+  ).toHaveCount(0);
+
+  const rowChildOrder = await rows
+    .nth(0)
+    .evaluate((node) =>
+      Array.from(node.children).map(
+        (child) => child.getAttribute("data-stylex-owner") ?? child.getAttribute("class"),
+      ),
+    );
+  expect(rowChildOrder).toEqual(["span10", "user-profile-pull-request-receiver-column"]);
+  const contentChildOrder = await rows
+    .nth(0)
+    .locator(":scope > .span10")
+    .evaluate((node) =>
+      Array.from(node.children).map((child) => child.getAttribute("data-stylex-owner")),
+    );
+  expect(contentChildOrder).toEqual([
+    "user-profile-pull-request-project-avatar-rail",
+    "user-profile-pull-request-title-wrap",
+    "user-profile-pull-request-infos",
+  ]);
+  const titleLinks = await rows
+    .nth(0)
+    .locator('[data-stylex-owner="user-profile-pull-request-title-link"]')
+    .evaluateAll((links) =>
+      links.map((link) => ({ href: link.getAttribute("href"), text: link.textContent })),
+    );
+  expect(titleLinks).toEqual([
+    { href: `${basePath}/admin/sample`, text: "sample" },
+    { href: `${basePath}/admin/sample/pullRequest/12`, text: "Conflict pull request" },
+  ]);
 
   const measure = async () =>
     rows.nth(0).evaluate((node) => {
@@ -236,7 +304,10 @@ test("authenticated public profile owns populated pull-request row residuals", a
       );
       return {
         rowPadding: getComputedStyle(row).padding,
+        rowBorderColor: getComputedStyle(row).borderBottomColor,
+        rowBorderWidth: getComputedStyle(row).borderBottomWidth,
         rowBorder: getComputedStyle(row).borderBottomStyle,
+        rowClear: getComputedStyle(row).clear,
         rowDisplay: getComputedStyle(row).display,
         rowOverflow: getComputedStyle(row).overflow,
         avatarFloat: getComputedStyle(avatar).float,
@@ -257,7 +328,10 @@ test("authenticated public profile owns populated pull-request row residuals", a
     });
   expect(await measure()).toEqual({
     rowPadding: "10px",
+    rowBorderColor: "rgb(221, 221, 221)",
+    rowBorderWidth: "1px",
     rowBorder: "solid",
+    rowClear: "both",
     rowDisplay: "block",
     rowOverflow: "auto",
     avatarFloat: "left",
@@ -276,7 +350,7 @@ test("authenticated public profile owns populated pull-request row residuals", a
     scrollWidth: 1366,
   });
 
-  for (const element of await rows.locator("*").all()) {
+  for (const element of [...(await rows.all()), ...(await rows.locator("*").all())]) {
     await expect(element).not.toHaveAttribute("style");
     for (const attribute of [
       "data-toggle",
@@ -289,12 +363,21 @@ test("authenticated public profile owns populated pull-request row residuals", a
     ]) {
       await expect(element).not.toHaveAttribute(attribute);
     }
+    const pluginAttributes = await element.evaluate((node) =>
+      Array.from(node.attributes)
+        .map((attribute) => attribute.name)
+        .filter((name) => name.startsWith("data-request-")),
+    );
+    expect(pluginAttributes).toEqual([]);
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await measure()).toMatchObject({
     rowPadding: "10px 0px",
+    rowBorderColor: "rgb(221, 221, 221)",
+    rowBorderWidth: "1px",
     rowDisplay: "block",
+    rowClear: "both",
     avatarFloat: "left",
     avatarMarginRight: "10px",
     titleDisplay: "block",

@@ -881,7 +881,9 @@ export const styles = stylex.create({
   pullRequestEmptyAvatarWrap: { height: "32px", width: "32px" },
   // Frozen less/_page.less .post-item.
   pullRequestRow: {
-    borderBottom: "1px solid #ddd",
+    borderBottomColor: "#ddd",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
     clear: "both",
     display: "block",
     overflow: "auto",
