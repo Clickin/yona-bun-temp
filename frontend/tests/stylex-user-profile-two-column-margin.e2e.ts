@@ -7,7 +7,7 @@ const screenshotDirectory = resolve("output/playwright/stylex-user-profile-two-c
 
 test.use({ locale: "en-US" });
 
-test("public user profile owns legacy mr10 on both mode controls", async ({ page }) => {
+test("public user profile owns legacy spacing on both mode controls", async ({ page }) => {
   const routeSource = readFileSync("src/routes/$user.tsx", "utf8");
   const styleSource = readFileSync("src/routes/-user-profile.stylex.ts", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
@@ -108,12 +108,10 @@ test("public user profile owns legacy mr10 on both mode controls", async ({ page
   expect(userViewJs).toContain("_initShowChildList");
   expect(userViewJs).toContain("_initTwoColumnMode");
   expect(styleSource).toContain('popoverAnchor: { marginRight: "10px", position: "relative" }');
-  expect(routeSource).toContain(
-    'className={`${popoverAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`',
-  );
-  expect(routeSource).toContain(
-    'className={`${popoverAnchorStyleProps.className ?? ""} show-subtasks mr10`',
-  );
+  expect(routeSource).toContain("styles.checkboxControl");
+  expect(routeSource).toContain("styles.twoColumnModeControl");
+  expect(routeSource).not.toContain("two-column-icon mr10 hide-in-mobile");
+  expect(routeSource).not.toContain("show-subtasks mr10");
   expect(routeSource).toContain('data-stylex-owner="user-profile-two-column-popover-anchor"');
   expect(routeSource).toContain('data-stylex-owner="user-profile-show-subtasks-popover-anchor"');
   expect(routeSource).toContain('localStorage?.setItem("showSubtasksAlways"');
@@ -144,14 +142,13 @@ test("public user profile owns legacy mr10 on both mode controls", async ({ page
     );
     const modeToggle = mode.locator("#two-column-mode");
     const subtasksToggle = subtasks.locator("#toggle-show-subtasks");
-    for (const [control, className, id] of [
-      [mode, "two-column-icon mr10 hide-in-mobile", "two-column-mode-checkbox"],
-      [subtasks, "show-subtasks mr10", "two-column-mode-checkbox"],
+    for (const [control, id] of [
+      [mode, "two-column-mode-checkbox"],
+      [subtasks, "two-column-mode-checkbox"],
     ] as const) {
       await expect(control).toHaveCount(1);
-      for (const token of className.split(" "))
-        await expect(control).toHaveClass(new RegExp(token, "u"));
       await expect(control).toHaveAttribute("id", id);
+      await expect(control).toHaveCSS("margin-left", "10px");
       await expect(control).toHaveCSS("margin-right", "10px");
       await expect(control).toHaveCSS("position", "relative");
       await expect(control).not.toHaveAttribute("style");
@@ -161,7 +158,6 @@ test("public user profile owns legacy mr10 on both mode controls", async ({ page
     await expect(subtasks.locator(".show-subtasks-button-border")).toContainText("Show subtask");
     await expect(modeToggle).toHaveAttribute("id", "two-column-mode");
     await expect(subtasksToggle).toHaveAttribute("id", "toggle-show-subtasks");
-    expect(await page.locator('[data-stylex-owner="user-profile-stream"] .mr10').count()).toBe(2);
     expect(await mode.getAttribute("data-toggle")).toBeNull();
     expect(await subtasks.getAttribute("data-toggle")).toBeNull();
 

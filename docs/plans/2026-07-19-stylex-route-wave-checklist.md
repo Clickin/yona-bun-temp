@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-27 Batch 1020 public-profile Issues static control ownership
+
+- [x] `user/view.scala.html` plus the two common checkbox partials establish the wrapper/label/input/border/text DOM, IDs, copy/order, and legacy JS behavior evidence; frozen `_page.less`, `_responsive.less`, Bootstrap CSS, and the complete styling chain establish the final declarations.
+- [x] React preserves inner legacy output and translates popover, hover, checkbox, localStorage, and show-subtasks behavior; only the two outer presentation compositions retire. `checkboxControlInput` includes the traced Bootstrap and frozen nested-input normalization required for fallback-off parity.
+- [x] `frontend/tests/stylex-user-profile-static-controls.e2e.ts` verifies source provenance, StyleX owners, plugin-attribute absence, desktop/390px geometry, hover/focus and state transitions, containment/no-overflow, and screenshots under `frontend/output/playwright/stylex-user-profile-static-controls/`. The adjacent spacing test uses stable owners rather than retired outer classes.
+- [x] Managed outside-sandbox `PW_CHANNEL=chrome` normal and fallback-off focused runs pass 2/2 each; TypeScript check, Vitest 14/14, formatter, production build/StyleX verifier, and diff check pass.
+- [x] No frozen CSS or geometry compensation was added. The inherited administrator-notice/sidebar x-axis mismatch and approved Yoram footer/provider/developer-contact/repository differences remain intentional exclusions; live legacy screenshot pairing remains final-lock work.
+
 ### 2026-07-26 Batch 983 public profile guest empty stream-shell ownership
 
 - [x] `user/view.scala.html` proves `user-stream-box` is always emitted outside the current-viewer guest guard, while `_page.less` and the complete import chain establish exact root padding/overflow and no later override.

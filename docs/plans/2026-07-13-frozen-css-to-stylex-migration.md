@@ -2,6 +2,31 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Public profile Issues static control ownership
+
+Batch 1020 moves the public-profile Issues two-column and show-subtasks
+controls to route-local StyleX. The legacy Scala view and common partials remain
+the DOM source of truth: wrapper IDs, inner classes, input IDs, copy/order, and
+branches are preserved. Only the two outer presentation class compositions
+retire. React state/events translate the legacy delayed popover, hover, checkbox,
+localStorage, and show-subtasks behavior.
+
+The frozen `_page.less` / `_responsive.less` declarations and Bootstrap label,
+checkbox, and input rules are copied only at the owned boundaries. The input
+normalization is required because generic app/fallback input width and checkbox
+rules otherwise leak into the control when fallback CSS is disabled. No frozen
+CSS, global app CSS, route-compensation geometry, sidebar alignment, or footer
+identity change is included. The inherited administrator-notice/sidebar x-axis
+mismatch remains an intentional parity exclusion.
+
+`frontend/tests/stylex-user-profile-static-controls.e2e.ts` is the focused
+source/runtime/screenshot gate; the spacing regression uses stable owner and
+computed-margin checks. External System Chrome with dynamic managed ports passes
+normal 2/2 and fallback-off 2/2 at desktop and 390px. Frontend TypeScript,
+Vitest (14/14), formatter, production build, StyleX verifier, and diff checks
+pass. The generated desktop/mobile captures were inspected; live legacy
+screenshot pairing remains final-lock work.
+
 ## Screenshot parity environment prerequisite
 
 ## 2026-07-26 — Public profile guest empty stream-shell ownership

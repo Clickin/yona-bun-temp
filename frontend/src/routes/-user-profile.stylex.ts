@@ -577,6 +577,65 @@ export const styles = stylex.create({
   // Frozen less/_common.less .mr10 plus the positioned anchor required by the
   // React-owned popovers for the legacy two-column and show-subtasks wrappers.
   popoverAnchor: { marginRight: "10px", position: "relative" },
+  // Frozen less/_page.less .two-column-icon, .show-subtasks presentation.
+  // The legacy outer classes are retired only for these two React-owned
+  // profile controls; inner semantic/fallback classes remain in the DOM.
+  checkboxControl: {
+    display: "inline-block",
+    lineHeight: "37px",
+    marginLeft: "10px",
+  },
+  // Frozen less/_responsive.less .hide-in-mobile at max-width: 720px.
+  twoColumnModeControl: {
+    "@media (max-width: 720px)": { display: "none !important" },
+  },
+  // Frozen Bootstrap label/.checkbox rules plus less/_page.less .checkbox and
+  // the nested profile-control label override.
+  checkboxControlLabel: {
+    display: "inline-block",
+    fontSize: "14px",
+    fontWeight: "normal",
+    lineHeight: "20px",
+    margin: "2px !important",
+    minHeight: "20px",
+    paddingLeft: "0px",
+    paddingTop: "4px",
+    verticalAlign: "top",
+  },
+  // Frozen Bootstrap checkbox normalization plus the matching frozen
+  // .two-column-icon/.show-subtasks input override.
+  checkboxControlInput: {
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    float: "none",
+    lineHeight: "normal",
+    margin: "4px 4px 0px 2px",
+    minHeight: "0px",
+    padding: "0px",
+    verticalAlign: "top",
+    width: "auto",
+  },
+  // Frozen less/_page.less nested checkbox-border declarations.
+  checkboxControlBorder: {
+    borderColor: "#03a9f4",
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: "#03a9f4",
+    padding: "3px 3px 0px 3px",
+  },
+  checkboxControlBorderHover: {
+    backgroundColor: "#03afff",
+    color: "#fff0ff",
+  },
+  // Frozen less/_page.less checkbox text and hover color.
+  checkboxControlText: {
+    lineHeight: "20px",
+    padding: "0px 4px 0px 0px",
+    verticalAlign: "text-bottom",
+  },
+  checkboxControlTextHover: { color: "#fff0ff" },
   // Frozen less/_page.less generic .post-item and .my-issues .post-item.
   issueRow: {
     borderBottomColor: "#ddd",
