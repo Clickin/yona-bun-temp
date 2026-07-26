@@ -2,10 +2,31 @@ import * as stylex from "@stylexjs/stylex";
 
 export const userProfileColors = stylex.defineVars({
   accentText: "#337581",
+  pageBackground: "#ffffff",
   statusText: "#ffffff",
 });
 
 export const styles = stylex.create({
+  // Frozen less/_page.less and less/_responsive.less .page-wrap-outer cascade.
+  pageOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      default: null,
+      "@media (max-width: 720px)": "10px !important",
+    },
+    padding: {
+      default: "0px 10px",
+      "@media (max-width: 720px)": "0px !important",
+    },
+    width: "100%",
+  },
+  // Frozen less/_page.less .page-wrap.
+  page: {
+    backgroundColor: userProfileColors.pageBackground,
+    margin: "0px auto",
+  },
   // Frozen less/_responsive.less .site-breadcrumb-outer. Keep the legacy
   // outer class until its shared app.css consumers are retired.
   breadcrumbOuter: {

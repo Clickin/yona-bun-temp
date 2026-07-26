@@ -8621,3 +8621,7 @@ Batch 962 completes the selected public-profile issue-row fixed-height residual:
 ## 2026-07-26 — Batch 984 public profile breadcrumb
 
 Batch 984 moves the populated `/$user` breadcrumb's exact frozen outer responsive box model, inner auto margin, and heading padding/line-height into three route-local StyleX owners. The shared `site-breadcrumb-outer` class remains because global page ancestry and non-frozen bridge consumers still depend on it; only `site-breadcrumb-inner` retires. The known legacy administrator-notice/sidebar collapse-button x-axis mismatch is intentionally excluded and receives no Yoram-only correction while higher-priority parity work remains. Focused external System-Chrome fallback-off coverage passes 4/4 at 1366×900 and 390×844; live legacy screenshot comparison remains final visual-lock work.
+
+## 2026-07-26 — Batch 985 public profile page wrappers
+
+Batch 985 moves the populated `/$user` `page-wrap-outer > page-wrap` declarations into two route-local StyleX owners: the frozen outer minimum height/top margin, `@media all` width/padding/box sizing, max-720 minimum width/important zero padding, and the inner white surface/auto margin. Both legacy classes remain because shared app.css ancestry and width consumers still depend on them. The retained desktop `min-width:1100px` bridge is explicitly not claimed as frozen StyleX ownership. Focused external System-Chrome fallback-off coverage passes 4/4 at 1366×900 and 390×844; live legacy screenshot comparison remains final visual-lock work.

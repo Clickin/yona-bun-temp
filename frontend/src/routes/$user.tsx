@@ -354,8 +354,16 @@ function PublicProfileBody({
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
+      <div
+        {...stylex.props(styles.pageOuter)}
+        className={`${stylex.props(styles.pageOuter).className} page-wrap-outer`}
+        data-stylex-owner="user-profile-page-outer"
+      >
+        <div
+          {...stylex.props(styles.page)}
+          className={`${stylex.props(styles.page).className} page-wrap`}
+          data-stylex-owner="user-profile-page"
+        >
           <section
             className={`${stylex.props(styles.profile).className} user-box`}
             data-stylex-owner="user-profile-box"
