@@ -973,7 +973,21 @@ export const styles = stylex.create({
     },
   },
   pullRequestReceiverRail: { float: "right", marginTop: "5px" },
-  pullRequestReceiverAvatarLink: { marginRight: "0px" },
+  // Frozen less/_common.less then later less/_yobiUI.less .avatar-wrap, and
+  // less/_yobiUI.less .avatar-wrap.medium plus .post-item .avatar-wrap.assinee.
+  pullRequestReceiverAvatarLink: {
+    width: "32px",
+    height: "32px",
+    display: "inline-block",
+    verticalAlign: "middle",
+    overflow: "hidden",
+    backgroundColor: "#ddd",
+    borderRadius: "3px !important",
+    float: "left",
+    marginRight: "0px",
+  },
+  // Frozen less/_yobiUI.less .avatar-wrap img.
+  pullRequestReceiverAvatarImage: { width: "100%", verticalAlign: "top" },
   pullRequestState: {
     borderRadius: "15px",
     color: "#FFF",
@@ -1000,8 +1014,21 @@ export const styles = stylex.create({
     padding: "10px",
     "@media (max-width: 767px)": { padding: "10px 0px !important" },
   },
-  // Frozen less/_page.less .post-item .avatar-wrap.
-  pullRequestProjectAvatarRail: { float: "left", marginRight: "10px" },
+  // Frozen less/_common.less then later less/_yobiUI.less .avatar-wrap, the
+  // .mlarge size, and less/_page.less .post-item .avatar-wrap.
+  pullRequestProjectAvatarLink: {
+    width: "40px",
+    height: "40px",
+    display: "inline-block",
+    verticalAlign: "middle",
+    overflow: "hidden",
+    backgroundColor: "#ddd",
+    borderRadius: "3px !important",
+    float: "left",
+    marginRight: "10px",
+  },
+  // Frozen less/_yobiUI.less .avatar-wrap img.
+  pullRequestProjectAvatarImage: { width: "100%", verticalAlign: "top" },
   // Frozen less/_page.less .post-item .title-wrap.
   pullRequestTitleWrap: {
     display: "block",

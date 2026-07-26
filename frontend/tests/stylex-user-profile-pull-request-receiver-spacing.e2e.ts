@@ -137,7 +137,21 @@ test("authenticated public profile owns pull-request receiver spacing shell", as
     'data-stylex-owner="user-profile-pull-request-receiver-avatar-link"',
   );
   expect(styleSource).toContain('pullRequestReceiverRail: { float: "right", marginTop: "5px" }');
-  expect(styleSource).toContain('pullRequestReceiverAvatarLink: { marginRight: "0px" }');
+  for (const declaration of [
+    "pullRequestReceiverAvatarLink:",
+    'width: "32px"',
+    'height: "32px"',
+    'display: "inline-block"',
+    'verticalAlign: "middle"',
+    'overflow: "hidden"',
+    'backgroundColor: "#ddd"',
+    'borderRadius: "3px !important"',
+    'float: "left"',
+    'marginRight: "0px"',
+    'pullRequestReceiverAvatarImage: { width: "100%", verticalAlign: "top" }',
+  ]) {
+    expect(styleSource).toContain(declaration);
+  }
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin?selected=pullRequests`, { waitUntil: "domcontentloaded" });
@@ -148,6 +162,9 @@ test("authenticated public profile owns pull-request receiver spacing shell", as
   const receiverLink = rows
     .nth(0)
     .locator('[data-stylex-owner="user-profile-pull-request-receiver-avatar-link"]');
+  const receiverImage = receiverLink.locator(
+    '[data-stylex-owner="user-profile-pull-request-receiver-avatar-image"]',
+  );
   const receiverRail = rows
     .nth(0)
     .locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"]');
@@ -155,7 +172,10 @@ test("authenticated public profile owns pull-request receiver spacing shell", as
     .nth(1)
     .locator('[data-stylex-owner="user-profile-pull-request-empty-avatar-wrap"]');
 
-  await expect(receiverLink).toHaveClass(/avatar-wrap assinee/);
+  await expect(receiverLink).not.toHaveClass(/\b(?:avatar-wrap|mlarge|assinee)\b/u);
+  await expect(receiverImage).toHaveCount(1);
+  await expect(receiverImage).toHaveAttribute("width", "32");
+  await expect(receiverImage).toHaveAttribute("height", "32");
   await expect(emptyAvatar).toHaveClass(/empty-avatar-wrap/);
 
   const desktop = await rows.evaluateAll((nodes) =>

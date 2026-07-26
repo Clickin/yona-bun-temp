@@ -1446,11 +1446,14 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         <Link
           {...LEGACY_LINK_PROPS}
           to={projectPath}
-          {...stylex.props(styles.pullRequestProjectAvatarRail)}
-          className={`${stylex.props(styles.pullRequestProjectAvatarRail).className} avatar-wrap mlarge`}
+          {...stylex.props(styles.pullRequestProjectAvatarLink)}
+          className={stylex.props(styles.pullRequestProjectAvatarLink).className}
           data-stylex-owner="user-profile-pull-request-project-avatar-rail"
         >
           <img
+            {...stylex.props(styles.pullRequestProjectAvatarImage)}
+            className={stylex.props(styles.pullRequestProjectAvatarImage).className}
+            data-stylex-owner="user-profile-pull-request-project-avatar-image"
             src={stringField(
               pullRequest,
               "projectLogoUrl",
@@ -1563,11 +1566,19 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               to="/$user"
               params={{ user: receiverLoginId }}
               {...stylex.props(styles.pullRequestReceiverAvatarLink)}
-              className={`${stylex.props(styles.pullRequestReceiverAvatarLink).className} avatar-wrap assinee`}
+              className={stylex.props(styles.pullRequestReceiverAvatarLink).className}
               data-stylex-owner="user-profile-pull-request-receiver-avatar-link"
               title={receiverLabel}
             >
-              <img src={receiverAvatarUrl} width="32" height="32" alt={receiverLabel} />
+              <img
+                {...stylex.props(styles.pullRequestReceiverAvatarImage)}
+                className={stylex.props(styles.pullRequestReceiverAvatarImage).className}
+                data-stylex-owner="user-profile-pull-request-receiver-avatar-image"
+                src={receiverAvatarUrl}
+                width="32"
+                height="32"
+                alt={receiverLabel}
+              />
             </Link>
           ) : (
             <div

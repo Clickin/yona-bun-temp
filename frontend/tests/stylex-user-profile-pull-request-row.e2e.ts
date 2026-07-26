@@ -126,11 +126,20 @@ test("authenticated public profile owns populated pull-request row residuals", a
   expect(viewScala).toContain("@partial_pullRequests(pull, pull.toProject)");
   expect(partial).toContain('<li class="post-item">');
   expect(partial).toContain('<div class="span10">');
+  expect(partial).toContain(
+    '<a href="@routes.ProjectApp.project(project.owner, project.name)" class="avatar-wrap mlarge">',
+  );
+  expect(partial).toContain(
+    '<img src="@urlToProjectLogo(project)" alt="@project.owner / @project.name">',
+  );
   expect(partial).toContain('<div class="title-wrap">');
   expect(partial).toContain('<span class="post-id">@req.number</span>');
   expect(partial).toContain('class="title @if(req.isConflict == true) {conflict}"');
   expect(partial).toContain('<div class="infos">');
   expect(partial).toContain('class="avatar-wrap assinee"');
+  expect(partial).toContain(
+    '<img src="@req.receiver.avatarUrl" width="32" height="32" alt="@req.receiver.name">',
+  );
   expect(partial).toContain('class="state @if(req.isConflict == true) {conflict}');
   expect(pageLess).toContain(".post-item {");
   for (const declaration of [
@@ -181,11 +190,14 @@ test("authenticated public profile owns populated pull-request row residuals", a
   for (const owner of [
     "user-profile-pull-request-row",
     "user-profile-pull-request-project-avatar-rail",
+    "user-profile-pull-request-project-avatar-image",
     "user-profile-pull-request-title-wrap",
     "user-profile-pull-request-post-id",
     "user-profile-pull-request-title-link",
     "user-profile-pull-request-infos",
     "user-profile-pull-request-receiver-rail",
+    "user-profile-pull-request-receiver-avatar-link",
+    "user-profile-pull-request-receiver-avatar-image",
     "user-profile-pull-request-state",
   ]) {
     expect(source).toContain(`data-stylex-owner="${owner}"`);
@@ -194,6 +206,8 @@ test("authenticated public profile owns populated pull-request row residuals", a
     "className={`${stylex.props(styles.pullRequestRow).className} post-item`}",
   );
   expect(source).not.toContain('className="span10"');
+  expect(source).not.toContain("avatar-wrap mlarge");
+  expect(source).not.toContain("avatar-wrap assinee");
   expect(source).toContain('data-stylex-owner="user-profile-pull-request-content-column"');
   for (const declaration of [
     'borderBottomColor: "#ddd"',
@@ -204,7 +218,19 @@ test("authenticated public profile owns populated pull-request row residuals", a
     'overflow: "auto"',
     'padding: "10px"',
     '"@media (max-width: 767px)": { padding: "10px 0px !important" }',
-    'pullRequestProjectAvatarRail: { float: "left", marginRight: "10px" }',
+    "pullRequestProjectAvatarLink:",
+    'width: "40px"',
+    'height: "40px"',
+    'display: "inline-block"',
+    'verticalAlign: "middle"',
+    'overflow: "hidden"',
+    'backgroundColor: "#ddd"',
+    'borderRadius: "3px !important"',
+    'float: "left"',
+    'marginRight: "10px"',
+    'pullRequestProjectAvatarImage: { width: "100%", verticalAlign: "top" }',
+    "pullRequestReceiverAvatarLink:",
+    'pullRequestReceiverAvatarImage: { width: "100%", verticalAlign: "top" }',
     'lineHeight: "20px"',
     "pullRequestPostId:",
     "pullRequestInfos:",
@@ -227,6 +253,20 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).not.toHaveClass(/\bpost-item\b/);
   await expect(rows.nth(1)).not.toHaveClass(/\bpost-item\b/);
+  for (const owner of [
+    "user-profile-pull-request-project-avatar-rail",
+    "user-profile-pull-request-receiver-avatar-link",
+  ]) {
+    await expect(rows.nth(0).locator(`[data-stylex-owner="${owner}"]`)).not.toHaveClass(
+      /\b(?:avatar-wrap|mlarge|assinee)\b/u,
+    );
+  }
+  await expect(
+    rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-project-avatar-image"]'),
+  ).toHaveCount(1);
+  await expect(
+    rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-avatar-image"]'),
+  ).toHaveCount(1);
   await expect(rows.nth(0)).toContainText(
     "sample12Conflict pull requestContributor User2 days ago3Conflict",
   );
