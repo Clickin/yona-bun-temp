@@ -416,7 +416,6 @@ function PublicProfileBody({
                       to="/user/editform"
                       reloadDocument
                       {...stylex.props(styles.profileEditButton)}
-                      className={`${stylex.props(styles.profileEditButton).className} ybtn ybtn-default ybtn-mini`}
                       data-stylex-owner="user-profile-edit-control"
                     >
                       <i

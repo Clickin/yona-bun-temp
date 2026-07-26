@@ -118,9 +118,9 @@ test("profile owner edit control follows the final frozen ybtn mini cascade", as
 
     await expect(edit).toHaveCount(1);
     await expect(control).toHaveText("프로필 수정");
-    await expect(control).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
-    await expect(control).toHaveClass(/(?:^|\s)ybtn-default(?:\s|$)/u);
-    await expect(control).toHaveClass(/(?:^|\s)ybtn-mini(?:\s|$)/u);
+    await expect(control).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+    await expect(control).not.toHaveClass(/(?:^|\s)ybtn-default(?:\s|$)/u);
+    await expect(control).not.toHaveClass(/(?:^|\s)ybtn-mini(?:\s|$)/u);
     await expect(control).toHaveAttribute("href", `${basePath}/user/editform`);
     await expect(icon).toHaveClass(/yobicon-edit/u);
     await expect(edit.locator(":scope > a")).toHaveCount(1);
