@@ -290,6 +290,22 @@ export const styles = stylex.create({
     lineHeight: "20px",
     overflow: "hidden",
   },
+  pullRequestInfosItem: { float: "left", marginRight: "6px" },
+  pullRequestInfosLinkItem: {
+    ":hover": {
+      color: "#3592b5",
+      textDecoration: "none",
+    },
+  },
+  pullRequestInfosIconLink: {
+    color: "#3592b5",
+    ":hover": {
+      color: "#3592b5",
+      textDecoration: "none",
+    },
+  },
+  pullRequestInfosIcon: { verticalAlign: "middle" },
+  pullRequestInfosCount: { marginRight: "3px" },
   // Frozen less/_page.less .error-wrap and its nested message paragraph.
   emptyErrorWrap: { padding: "100px 0px", textAlign: "center" },
   emptyErrorMessage: {

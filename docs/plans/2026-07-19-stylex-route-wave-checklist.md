@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 967 public profile pull-request infos items
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:3881-3895`, `_responsive.less`, Bootstrap `.pull-left`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request infos-item evidence.
+- [x] Shared StyleX owns exact infos-item `float:left` and `margin-right:6px`, contributor hover paint/no-underline, comment-link paint/no-underline, comment icon `vertical-align:middle`, and count `margin-right:3px`; pull-request DOM/order/copy/links and existing row/title/receiver/state owners remain.
+- [x] `frontend/tests/stylex-user-profile-pull-request-infos-items.e2e.ts` verifies provenance, source-owner contracts including the contributor `stylexOwner` passthrough, populated contributor/date/comment output, desktop/mobile computed declarations, hover paint, no plugin attrs, and containment/no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-26 Batch 966 public profile pull-request receiver spacing
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_common.less:219`, frozen `_page.less:3873-3879`, `_responsive.less`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as receiver-spacing evidence.

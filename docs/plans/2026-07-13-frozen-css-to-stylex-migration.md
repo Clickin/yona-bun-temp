@@ -4,6 +4,17 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile pull-request infos items
+
+Batch 967 moves the populated public-profile pull-request infos-item residuals
+into shared public-profile StyleX ownership: contributor link float/spacing and
+hover paint, date float/spacing, comment-link paint/hover, comment icon
+vertical alignment, and count spacing. The pull-request row DOM, order,
+conflict/open copy, links, and existing row/title/receiver/state owners remain
+unchanged. Focused external Chrome checks pass 1/1 in normal and fallback-off
+modes. Live legacy screenshot parity remains unverified and no geometry
+compensation was added.
+
 ## 2026-07-26 — Public profile pull-request receiver spacing
 
 Batch 966 moves the populated public-profile pull-request row's receiver rail

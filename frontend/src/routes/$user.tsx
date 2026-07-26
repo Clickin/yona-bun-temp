@@ -1282,11 +1282,19 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           data-stylex-owner="user-profile-pull-request-infos"
         >
           <ProfileTextLink
-            className="infos-item infos-link-item"
+            className={`${
+              stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem).className
+            } infos-item infos-link-item`}
             label={stringField(pullRequest, "contributorLabel")}
             loginId={stringField(pullRequest, "contributorLoginId")}
+            stylexOwner="user-profile-pull-request-infos-author-link"
           />
-          <span className="infos-item" title={stringField(pullRequest, "updatedLabel")}>
+          <span
+            {...stylex.props(styles.pullRequestInfosItem)}
+            className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
+            data-stylex-owner="user-profile-pull-request-infos-date"
+            title={stringField(pullRequest, "updatedLabel")}
+          >
             {stringField(pullRequest, "updatedLabel")}
           </span>
           {numberField(pullRequest, "commentCount") > 0 ? (
@@ -1294,10 +1302,24 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               {...LEGACY_LINK_PROPS}
               to={pullRequestPath}
               hash="comments"
-              className="infos-item infos-icon-link"
+              {...stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink)}
+              className={`${
+                stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink).className
+              } infos-item infos-icon-link`}
+              data-stylex-owner="user-profile-pull-request-infos-comment-link"
             >
-              <i className="yobicon-comments"></i>
-              <span className="size">{numberField(pullRequest, "commentCount")}</span>
+              <i
+                {...stylex.props(styles.pullRequestInfosIcon)}
+                className={`${stylex.props(styles.pullRequestInfosIcon).className} yobicon-comments`}
+                data-stylex-owner="user-profile-pull-request-infos-comment-icon"
+              ></i>
+              <span
+                {...stylex.props(styles.pullRequestInfosCount)}
+                className={`${stylex.props(styles.pullRequestInfosCount).className} size`}
+                data-stylex-owner="user-profile-pull-request-infos-comment-size"
+              >
+                {numberField(pullRequest, "commentCount")}
+              </span>
             </Link>
           ) : null}
         </div>
