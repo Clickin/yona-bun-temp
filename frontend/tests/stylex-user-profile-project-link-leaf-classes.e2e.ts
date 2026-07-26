@@ -259,7 +259,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
   expect(projectRowSource).not.toContain("avatar-wrap small");
   expect(projectRowSource).not.toContain("yobicon-white vmiddle");
   expect(projectRowSource).not.toContain('className="stats"');
-  expect(projectRowSource).toContain("nbtn black medium last leaveProject");
+  expect(projectRowSource).not.toContain("nbtn black medium last leaveProject");
   expect(route).toContain("infos-item project-name");
 
   const output = "output/playwright/stylex-user-profile-project-link-leaf-classes";
@@ -321,13 +321,13 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
 
     await expect(
       rows.nth(0).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
-    ).toHaveClass(/yobicon-lock/u);
+    ).not.toHaveClass(/yobicon-lock/u);
     await expect(
       rows.nth(0).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
     ).not.toHaveClass(/yobicon-small/u);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-fork-icon"]'),
-    ).toHaveClass(/yobicon-split.*yobicon-white/u);
+    ).not.toHaveClass(/yobicon-split.*yobicon-white/u);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-fork-icon"]'),
     ).not.toHaveClass(/vmiddle/u);

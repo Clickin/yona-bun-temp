@@ -118,7 +118,9 @@ test("authenticated profile project avatar rail owns the legacy left float", asy
 
   const desktop = await rail.evaluate((node) => {
     const rect = node.getBoundingClientRect();
-    const stream = node.closest(".user-streams")?.getBoundingClientRect();
+    const stream = node
+      .closest<HTMLElement>('[data-stylex-owner="user-profile-projects-list"]')
+      ?.getBoundingClientRect();
     return {
       float: getComputedStyle(node).float,
       left: rect.left,
@@ -136,7 +138,9 @@ test("authenticated profile project avatar rail owns the legacy left float", asy
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await rail.evaluate((node) => {
     const rect = node.getBoundingClientRect();
-    const stream = node.closest(".user-streams")?.getBoundingClientRect();
+    const stream = node
+      .closest<HTMLElement>('[data-stylex-owner="user-profile-projects-list"]')
+      ?.getBoundingClientRect();
     return {
       float: getComputedStyle(node).float,
       left: rect.left,

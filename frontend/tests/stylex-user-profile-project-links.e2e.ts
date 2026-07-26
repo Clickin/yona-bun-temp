@@ -224,7 +224,9 @@ test("profile project title and owner links own the final frozen generic anchor 
         const row = node
           .closest('[data-stylex-owner="user-profile-project-row"]')!
           .getBoundingClientRect();
-        const stream = node.closest(".user-streams")!.getBoundingClientRect();
+        const stream = node
+          .closest<HTMLElement>('[data-stylex-owner="user-profile-projects-list"]')!
+          .getBoundingClientRect();
         return {
           color: style.color,
           decoration: style.textDecorationLine,

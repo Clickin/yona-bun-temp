@@ -144,9 +144,9 @@ test("Projects rows retire only project and stats literals under fallback-off", 
     /className=\{`\$\{stylex\.props\(styles\.projectRow,[^}]+\.className\}\s+project`\}/u,
   );
   expect(projectRowSource).not.toContain('className="stats"');
-  expect(projectRowSource).toContain("yobicon-lock");
-  expect(projectRowSource).toContain("yobicon-split yobicon-white");
-  expect(projectRowSource).toContain("nbtn black medium last leaveProject");
+  expect(projectRowSource).not.toContain("yobicon-lock");
+  expect(projectRowSource).not.toContain("yobicon-split yobicon-white");
+  expect(projectRowSource).not.toContain("nbtn black medium last leaveProject");
   expect(projectRowSource).not.toMatch(/\byobicon-(?:friends|eye-open|eye-close|middle|trash)\b/u);
 
   const output = "output/playwright/stylex-user-profile-project-row-stats-classes";

@@ -118,7 +118,9 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
   await expect(
     projectRow.locator('[data-stylex-owner="user-profile-project-watch-button"]'),
   ).toBeVisible();
-  await expect(projectRow.locator("a.leaveProject")).toBeVisible();
+  await expect(
+    projectRow.locator('[data-stylex-owner="user-profile-project-leave-link"]'),
+  ).toBeVisible();
 
   for (const [locator, expected] of [
     [projectInfo, { float: "left", marginLeft: "10px" }],
@@ -126,7 +128,9 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
   ] as const) {
     const geometry = await locator.evaluate((node) => {
       const rect = node.getBoundingClientRect();
-      const stream = node.closest(".user-streams")?.getBoundingClientRect();
+      const stream = node
+        .closest<HTMLElement>('[data-stylex-owner="user-profile-projects-list"]')
+        ?.getBoundingClientRect();
       const computed = getComputedStyle(node);
       return {
         hasInlineStyle: node.hasAttribute("style"),
@@ -159,7 +163,9 @@ test("populated Projects tab project row owns legacy float geometry", async ({ p
   for (const locator of [projectInfo, projectStats]) {
     const geometry = await locator.evaluate((node) => {
       const rect = node.getBoundingClientRect();
-      const stream = node.closest(".user-streams")?.getBoundingClientRect();
+      const stream = node
+        .closest<HTMLElement>('[data-stylex-owner="user-profile-projects-list"]')
+        ?.getBoundingClientRect();
       const computed = getComputedStyle(node);
       return {
         hasInlineStyle: node.hasAttribute("style"),

@@ -156,9 +156,9 @@ test("Projects residual member, watch, and trash icons are direct StyleX owners"
     expect(projectRowSource).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(projectRowSource).not.toMatch(/\byobicon-(?:friends|eye-open|eye-close|middle|trash)\b/u);
-  expect(projectRowSource.match(/\byobicon-white\b/gu)).toHaveLength(1);
-  expect(projectRowSource).toContain("yobicon-split yobicon-white");
-  expect(projectRowSource).toContain("nbtn black medium last leaveProject");
+  expect(projectRowSource).not.toMatch(/\byobicon-white\b/u);
+  expect(projectRowSource).not.toContain("yobicon-split yobicon-white");
+  expect(projectRowSource).not.toContain("nbtn black medium last leaveProject");
   expect(projectRowSource).toContain("project.viewerCanWatch ? (");
   expect(projectRowSource).toContain("project.viewerCanLeave ? (");
   expect(projectRowSource).toContain(
@@ -253,11 +253,11 @@ test("Projects residual member, watch, and trash icons are direct StyleX owners"
       rows.nth(2).locator('[data-stylex-owner="user-profile-project-watch-button"]'),
     ).toContainText("Watch1");
     const leave = rows.nth(1).locator('[data-stylex-owner="user-profile-project-leave-link"]');
-    await expect(leave).toHaveClass(/(?:^|\s)nbtn(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)black(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)medium(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)last(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)leaveProject(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)nbtn(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)black(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)medium(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)last(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)leaveProject(?:\s|$)/u);
     await expect(leave).toContainText("Leave");
 
     const metrics = await page.evaluate(() => {

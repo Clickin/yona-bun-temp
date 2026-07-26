@@ -155,8 +155,8 @@ test("profile project avatar images and conditional fork icon own the final lega
   await expect(
     plainRow.locator('[data-stylex-owner="user-profile-project-fork-icon"]'),
   ).toHaveCount(0);
-  await expect(forkIcon).toHaveClass(/yobicon-split/u);
-  await expect(forkIcon).toHaveClass(/yobicon-white/u);
+  await expect(forkIcon).not.toHaveClass(/yobicon-split/u);
+  await expect(forkIcon).not.toHaveClass(/yobicon-white/u);
   await expect(forkIcon).not.toHaveClass(/vmiddle/u);
   await expect(forkIcon).not.toHaveAttribute("style");
   await expect(forkIcon).not.toHaveAttribute("data-toggle");
@@ -192,7 +192,7 @@ test("profile project avatar images and conditional fork icon own the final lega
     }),
     expect.objectContaining({
       tag: "I",
-      className: expect.stringContaining("yobicon-split"),
+      className: expect.not.stringContaining("yobicon-split"),
       text: "",
     }),
     expect.objectContaining({ tag: "SPAN", text: "upstream/source" }),
@@ -219,7 +219,9 @@ test("profile project avatar images and conditional fork icon own the final lega
         const icon = row.querySelector<HTMLElement>(
           '[data-stylex-owner="user-profile-project-fork-icon"]',
         );
-        const stream = row.closest(".user-streams")!.getBoundingClientRect();
+        const stream = row
+          .closest<HTMLElement>('[data-stylex-owner="user-profile-projects-list"]')!
+          .getBoundingClientRect();
         const imageRect = image.getBoundingClientRect();
         const wrapperRect = wrapper.getBoundingClientRect();
         return {

@@ -196,7 +196,7 @@ test("Projects tab owns only the applied private icon and project avatar paint",
   await expect(
     publicRow.locator('[data-stylex-owner="user-profile-project-private-icon"]'),
   ).toHaveCount(0);
-  await expect(privateIcon).toHaveClass(/yobicon-lock/u);
+  await expect(privateIcon).not.toHaveClass(/yobicon-lock/u);
   await expect(privateIcon).not.toHaveClass(/yobicon-small/u);
   await expect(
     privateRow.locator(

@@ -304,10 +304,10 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
   expect(projectRowSource).toContain('data-stylex-owner="user-profile-project-private-icon"');
   expect(projectRowSource).toContain('data-stylex-owner="user-profile-project-fork-icon"');
   expect(projectRowSource).not.toMatch(/\bavatar-wrap\b|\byobicon-small\b|\bvmiddle\b/u);
-  expect(projectRowSource).toContain("yobicon-lock");
-  expect(projectRowSource).toContain("yobicon-split yobicon-white");
+  expect(projectRowSource).not.toContain("yobicon-lock");
+  expect(projectRowSource).not.toContain("yobicon-split yobicon-white");
   expect(projectRowSource).not.toContain('className="stats"');
-  expect(projectRowSource).toContain("nbtn black medium last leaveProject");
+  expect(projectRowSource).not.toContain("nbtn black medium last leaveProject");
   expect(projectRowSource).not.toMatch(/\byobicon-(?:friends|eye-open|eye-close|middle|trash)\b/u);
 
   const output = "output/playwright/stylex-user-profile-project-avatar-lock-fork-classes";
@@ -366,7 +366,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
       ).toContainText(`${project.memberCount} ${project.ownerName} ${project.createdLabel}`);
     }
 
-    await expect(privateIcon).toHaveClass(/(?:^|\s)yobicon-lock(?:\s|$)/u);
+    await expect(privateIcon).not.toHaveClass(/(?:^|\s)yobicon-lock(?:\s|$)/u);
     await expect(privateIcon).not.toHaveClass(/(?:^|\s)yobicon-small(?:\s|$)/u);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
@@ -374,8 +374,8 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
     await expect(
       rows.nth(2).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
     ).toHaveCount(0);
-    await expect(forkIcon).toHaveClass(/(?:^|\s)yobicon-split(?:\s|$)/u);
-    await expect(forkIcon).toHaveClass(/(?:^|\s)yobicon-white(?:\s|$)/u);
+    await expect(forkIcon).not.toHaveClass(/(?:^|\s)yobicon-split(?:\s|$)/u);
+    await expect(forkIcon).not.toHaveClass(/(?:^|\s)yobicon-white(?:\s|$)/u);
     await expect(forkIcon).not.toHaveClass(/(?:^|\s)vmiddle(?:\s|$)/u);
     await expect(
       rows.nth(0).locator('[data-stylex-owner="user-profile-project-fork-icon"]'),

@@ -241,10 +241,10 @@ test("profile project info wrapper retires only its declaration-free legacy clas
       ),
     ).toHaveCount(0);
     await expect(
-      rows.nth(0).locator('[data-stylex-owner="user-profile-project-header"] > .yobicon-lock'),
+      rows.nth(0).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
     ).toHaveCount(1);
     await expect(
-      rows.nth(1).locator('[data-stylex-owner="user-profile-project-header"] > .yobicon-lock'),
+      rows.nth(1).locator('[data-stylex-owner="user-profile-project-private-icon"]'),
     ).toHaveCount(0);
     await expect(
       rows.nth(1).locator('[data-stylex-owner="user-profile-project-origin-link"]'),

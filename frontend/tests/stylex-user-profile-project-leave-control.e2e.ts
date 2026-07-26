@@ -204,7 +204,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
   expect(routeSource).toContain('data-stylex-owner="user-profile-project-leave-link"');
   expect(routeSource).toContain('to="/info/leave/$ownerName/$projectName"');
   expect(routeSource).toContain("data-projectname={project.projectName}");
-  expect(routeSource).toContain("nbtn black medium last leaveProject");
+  expect(routeSource).not.toContain("nbtn black medium last leaveProject");
   expect(routeSource).toContain("project.viewerCanLeave ? (");
   expect(routeSource).toContain(
     't("userinfo.leaveProject.confirm", { args: [project.projectName] })',
@@ -263,11 +263,11 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
     ).toHaveCount(0);
     await expect(leave).toHaveAttribute("href", "/yona/info/leave/other/member-project");
     await expect(leave).toHaveAttribute("data-projectname", "member-project");
-    await expect(leave).toHaveClass(/(?:^|\s)nbtn(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)black(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)medium(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)last(?:\s|$)/u);
-    await expect(leave).toHaveClass(/(?:^|\s)leaveProject(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)nbtn(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)black(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)medium(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)last(?:\s|$)/u);
+    await expect(leave).not.toHaveClass(/(?:^|\s)leaveProject(?:\s|$)/u);
     await expect(leave).toContainText("Leave");
     await expect(leave.locator(":scope > i")).toHaveCount(1);
     await expect(leave.locator(":scope > i")).toHaveAttribute(
@@ -289,7 +289,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
       expect.objectContaining({ owner: "user-profile-project-watch-button" }),
       expect.objectContaining({
         owner: "user-profile-project-leave-link",
-        className: expect.stringContaining("leaveProject"),
+        className: expect.not.stringContaining("leaveProject"),
       }),
     ]);
 

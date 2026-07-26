@@ -709,7 +709,7 @@ function PublicProfileBody({
                       </div>
                     ) : null}
                     <ul
-                      className={`${stylex.props(styles.projectsList).className} user-streams all-projects`}
+                      className={stylex.props(styles.projectsList).className}
                       data-stylex-owner="user-profile-projects-list"
                     >
                       {profileResponse.memberProjects.map((project, index) => (
@@ -1536,7 +1536,6 @@ function ProfileProjectRow({
             {project.projectScope === "private" ? (
               <i
                 {...stylex.props(styles.projectPrivateIcon)}
-                className={`${stylex.props(styles.projectPrivateIcon).className} yobicon-lock`}
                 data-stylex-owner="user-profile-project-private-icon"
               ></i>
             ) : null}
@@ -1544,7 +1543,6 @@ function ProfileProjectRow({
               <>
                 <i
                   {...stylex.props(styles.projectForkIcon)}
-                  className={`${stylex.props(styles.projectForkIcon).className} yobicon-split yobicon-white`}
                   data-stylex-owner="user-profile-project-fork-icon"
                 ></i>
                 <span>
@@ -1626,7 +1624,6 @@ function ProfileProjectRow({
               params={{ ownerName: project.ownerName, projectName: project.projectName }}
               data-projectname={project.projectName}
               {...stylex.props(styles.projectLeaveLink)}
-              className={`${stylex.props(styles.projectLeaveLink).className} nbtn black medium last leaveProject`}
               data-stylex-owner="user-profile-project-leave-link"
               onClick={(event) => {
                 if (
