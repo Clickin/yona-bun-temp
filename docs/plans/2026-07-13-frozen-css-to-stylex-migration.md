@@ -4,6 +4,16 @@ Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-b
 
 ## Screenshot parity environment prerequisite
 
+## 2026-07-26 — Public profile pull-request empty author branch
+
+Batch 968 restores the populated public-profile pull-request empty-author
+branch to legacy output: a non-link `infos-item` span with the `issue.noAuthor`
+copy and the same infos-item float/spacing geometry as authored rows. Existing
+date, comment, receiver, state, and authored-link behavior remain unchanged.
+Focused external Chrome checks pass 1/1 in normal and fallback-off modes. Live
+legacy screenshot parity remains unverified and no geometry compensation was
+added.
+
 ## 2026-07-26 — Public profile pull-request infos items
 
 Batch 967 moves the populated public-profile pull-request infos-item residuals

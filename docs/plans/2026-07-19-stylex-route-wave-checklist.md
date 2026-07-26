@@ -1,5 +1,12 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-26 Batch 968 public profile pull-request empty author branch
+
+- [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:3946-3950`, `_responsive.less`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request empty-author evidence.
+- [x] The route restores the legacy no-author branch as a non-link `infos-item` span with `issue.noAuthor` copy and the existing exact infos-item float/margin owner; authored-link/date/comment/receiver/state behavior remains unchanged and `-user-profile.stylex.ts` stays unchanged.
+- [x] `frontend/tests/stylex-user-profile-pull-request-empty-author.e2e.ts` verifies provenance, source-owner contract, legacy copy, author-link absence, desktop/mobile computed geometry, no plugin attrs, and containment/no overflow.
+- [x] Managed outside-sandbox System-Chrome normal and fallback-off checks pass 1/1 each; live legacy screenshot parity remains unverified and no compensating geometry was added.
+
 ### 2026-07-26 Batch 967 public profile pull-request infos items
 
 - [x] `yona-original/app/views/user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less:3881-3895`, `_responsive.less`, Bootstrap `.pull-left`, the full LESS/Bootstrap/responsive import chain, and `conf/messages` are recorded as pull-request infos-item evidence.

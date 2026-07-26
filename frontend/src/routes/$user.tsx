@@ -1281,14 +1281,24 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           className={`${stylex.props(styles.pullRequestInfos).className} infos`}
           data-stylex-owner="user-profile-pull-request-infos"
         >
-          <ProfileTextLink
-            className={`${
-              stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem).className
-            } infos-item infos-link-item`}
-            label={stringField(pullRequest, "contributorLabel")}
-            loginId={stringField(pullRequest, "contributorLoginId")}
-            stylexOwner="user-profile-pull-request-infos-author-link"
-          />
+          {stringField(pullRequest, "contributorLoginId") ? (
+            <ProfileTextLink
+              className={`${
+                stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem).className
+              } infos-item infos-link-item`}
+              label={stringField(pullRequest, "contributorLabel")}
+              loginId={stringField(pullRequest, "contributorLoginId")}
+              stylexOwner="user-profile-pull-request-infos-author-link"
+            />
+          ) : (
+            <span
+              {...stylex.props(styles.pullRequestInfosItem)}
+              className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
+              data-stylex-owner="user-profile-pull-request-infos-empty-author"
+            >
+              {t("issue.noAuthor")}
+            </span>
+          )}
           <span
             {...stylex.props(styles.pullRequestInfosItem)}
             className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
