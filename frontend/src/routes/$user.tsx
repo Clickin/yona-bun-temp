@@ -53,6 +53,7 @@ const userProfileStaticStyles = stylex.create({
   avatarWrap: {
     backgroundColor: "#ccc",
     backgroundPosition: "center",
+    backgroundSize: "cover",
     borderRadius: "4px",
     height: "200px",
     overflow: "hidden",
@@ -368,13 +369,10 @@ function PublicProfileBody({
             className={`${stylex.props(styles.profile).className} user-box`}
             data-stylex-owner="user-profile-box"
           >
-            <div
-              className={`${stylex.props(styles.info).className} user-info-box`}
-              data-stylex-owner="user-profile-info"
-            >
+            <div {...stylex.props(styles.info)} data-stylex-owner="user-profile-info">
               <div
                 {...avatarBackgroundStyle}
-                className={`${stylex.props(userProfileStaticStyles.avatarWrap).className} whoami-wrap ${avatarBackgroundStyle.className ?? ""}`.trim()}
+                className={`${stylex.props(userProfileStaticStyles.avatarWrap).className} ${avatarBackgroundStyle.className ?? ""}`.trim()}
                 data-stylex-owner="user-profile-avatar-background"
               >
                 {profile.isGuest ? (

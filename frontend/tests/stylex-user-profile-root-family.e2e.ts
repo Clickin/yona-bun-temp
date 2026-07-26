@@ -165,7 +165,7 @@ test("public profile root family moves active legacy geometry into route-local S
 
   const desktop = await page.evaluate(() => {
     const box = document.querySelector<HTMLElement>(".user-box");
-    const info = document.querySelector<HTMLElement>(".user-info-box");
+    const info = document.querySelector<HTMLElement>('[data-stylex-owner="user-profile-info"]');
     const stream = document.querySelector<HTMLElement>(".user-stream-box");
     if (!box || !info || !stream) throw new Error("profile geometry targets are missing");
     const outer = box.getBoundingClientRect();

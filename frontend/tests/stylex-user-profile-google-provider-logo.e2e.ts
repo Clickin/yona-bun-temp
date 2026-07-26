@@ -288,7 +288,7 @@ async function readGeometry(page: Page) {
     const image = document.querySelector<HTMLImageElement>(
       '[data-stylex-owner="user-profile-provider-google-image"]',
     );
-    const sidebar = document.querySelector<HTMLElement>(".user-info-box");
+    const sidebar = document.querySelector<HTMLElement>('[data-stylex-owner="user-profile-info"]');
     if (!parent || !github || !google || !image || !sidebar)
       throw new Error("provider logo missing");
     const parentBox = parent.getBoundingClientRect();

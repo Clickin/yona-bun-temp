@@ -8,8 +8,8 @@ const EXPECTED_PROFILE_SCREEN = `
 <div class="page-wrap-outer">
   <div class="page-wrap">
     <section class="user-box">
-      <div class="user-info-box">
-        <div class="whoami-wrap" style="background-image:url('/assets/images/default-avatar-256.png')"></div>
+      <div>
+        <div style="background-image:url('/assets/images/default-avatar-256.png')"></div>
         <div>
           <span>Door English</span>
           <span>@door</span>
@@ -854,7 +854,7 @@ async function readProfileMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const userBox = document.querySelector<HTMLElement>(".user-box");
-    const userInfo = document.querySelector<HTMLElement>(".user-info-box");
+    const userInfo = document.querySelector<HTMLElement>('[data-stylex-owner="user-profile-info"]');
     const userStream = document.querySelector<HTMLElement>(".user-stream-box");
     const issueList = document.querySelector<HTMLElement>(".post-list-wrap.my-issues");
     if (!pageWrapOuter || !userBox || !userInfo || !userStream || !issueList) {

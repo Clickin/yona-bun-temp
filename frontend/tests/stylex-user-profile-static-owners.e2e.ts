@@ -11,6 +11,9 @@ test("user profile static avatar/name/edit owners use route-local StyleX", () =>
   expect(less).toContain("font-size:18px;");
   expect(less).toContain("text-align:right;");
   expect(route).toContain("avatarWrap: {");
-  expect(route).toContain('profileName: { fontSize: "18px", fontWeight: "bold" }');
+  expect(route).toContain('backgroundSize: "cover"');
+  expect(route).toContain(
+    'profileName: { fontSize: "18px", fontWeight: "bold", marginRight: "2px" }',
+  );
   expect(route).toContain('profileEdit: { marginTop: "5px", textAlign: "right" }');
 });

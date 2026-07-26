@@ -134,7 +134,7 @@ test("public-profile identity ownership comes only from the matching frozen sele
   expect(routeSource).toContain(
     'profileName: { fontSize: "18px", fontWeight: "bold", marginRight: "2px" }',
   );
-  expect(routeSource).toContain("whoami-wrap");
+  expect(routeSource).not.toMatch(/className=\{[^}\n]*(?:user-info-box|whoami-wrap)/u);
 });
 
 test("public-profile identity keeps exact conditional DOM, paint, and geometry", async ({
