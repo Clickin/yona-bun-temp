@@ -590,6 +590,91 @@ export const styles = stylex.create({
     // Frozen less/_responsive.less .post-list-wrap .post-item responsive rule.
     "@media (max-width: 767px)": { padding: "10px 0px !important" },
   },
+  // Frozen Bootstrap .row-fluid [class*="span"]/.span12:first-child plus
+  // less/_responsive.less .span-hard-wrap.
+  issueGridContent: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "0px",
+    minHeight: "30px",
+    width: "100%",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+    "@media (max-width: 720px)": {
+      minWidth: "95%",
+      width: "100vw",
+    },
+  },
+  // Frozen Bootstrap .row-fluid [class*="span"]/.span2:first-child.
+  issueGridProjectColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "0px",
+    minHeight: "30px",
+    width: "14.893617021276595%",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+  },
+  // Frozen Bootstrap .row-fluid [class*="span"]/.span5.
+  issueGridTitleColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "40.42553191489362%",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+  },
+  // Frozen Bootstrap .row-fluid [class*="span"]/.span1.
+  issueGridAuthorColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "6.382978723404255%",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+  },
+  // Frozen Bootstrap .row-fluid [class*="span"]/.span3.
+  issueGridMetaColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "23.404255319148934%",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      float: "none",
+      marginLeft: "0px",
+      width: "100%",
+    },
+  },
   // Legacy less/_page.less .my-issues .post-item .title-wrap.
   issueTitleWrap: {
     display: "table",

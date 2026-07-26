@@ -846,13 +846,23 @@ function ProfileIssueRow({
       className={`${stylex.props(styles.issueRow).className} title`}
       data-stylex-owner="user-profile-issue-row"
     >
-      <div className="span12 span-hard-wrap">
+      <div
+        {...stylex.props(styles.issueGridContent)}
+        data-stylex-owner="user-profile-issue-grid-content"
+      >
         <div
           {...stylex.props(
             styles.issueProjectNameWrapper,
             userProfileStaticStyles.issueProjectNameWrapperLineHeight,
+            styles.issueGridProjectColumn,
           )}
-          className={`${stylex.props(styles.issueProjectNameWrapper).className} span2`}
+          className={
+            stylex.props(
+              styles.issueProjectNameWrapper,
+              userProfileStaticStyles.issueProjectNameWrapperLineHeight,
+              styles.issueGridProjectColumn,
+            ).className
+          }
           data-stylex-owner="user-profile-issue-project-name-wrapper"
         >
           <span
@@ -878,7 +888,8 @@ function ProfileIssueRow({
           </span>
         </div>
         <div
-          className={`${stylex.props(styles.issueTitleWrap).className} title-wrap span5`}
+          {...stylex.props(styles.issueTitleWrap, styles.issueGridTitleColumn)}
+          className={`${stylex.props(styles.issueTitleWrap, styles.issueGridTitleColumn).className} title-wrap`}
           data-stylex-owner="user-profile-issue-title-wrap"
         >
           <span
@@ -958,16 +969,18 @@ function ProfileIssueRow({
         <div
           {...stylex.props(
             styles.issueAuthor,
+            styles.issueGridAuthorColumn,
             styles.issueDesktopPersonVisibility,
             userProfileStaticStyles.issueAuthorLineHeight,
           )}
           className={`${
             stylex.props(
               styles.issueAuthor,
+              styles.issueGridAuthorColumn,
               styles.issueDesktopPersonVisibility,
               userProfileStaticStyles.issueAuthorLineHeight,
             ).className
-          } span1 author`}
+          } author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -979,16 +992,18 @@ function ProfileIssueRow({
         <div
           {...stylex.props(
             styles.issueAuthor,
+            styles.issueGridAuthorColumn,
             styles.issueDesktopPersonVisibility,
             userProfileStaticStyles.issueAuthorLineHeight,
           )}
           className={`${
             stylex.props(
               styles.issueAuthor,
+              styles.issueGridAuthorColumn,
               styles.issueDesktopPersonVisibility,
               userProfileStaticStyles.issueAuthorLineHeight,
             ).className
-          } span1 author`}
+          } author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -998,8 +1013,8 @@ function ProfileIssueRow({
           />
         </div>
         <div
-          {...stylex.props(styles.issueInfos, styles.issueMeta)}
-          className={`${stylex.props(styles.issueInfos, styles.issueMeta).className} infos span3 meta`}
+          {...stylex.props(styles.issueInfos, styles.issueMeta, styles.issueGridMetaColumn)}
+          className={`${stylex.props(styles.issueInfos, styles.issueMeta, styles.issueGridMetaColumn).className} infos meta`}
           data-stylex-owner="user-profile-issue-meta"
         >
           <span
