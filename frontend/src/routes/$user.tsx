@@ -539,7 +539,7 @@ function PublicProfileBody({
                     data-stylex-owner="user-profile-pane-issues"
                   >
                     <ul
-                      className={`${stylex.props(styles.issueTabs).className} nav nav-tabs nm`}
+                      className={`${stylex.props(styles.issueTabs).className} nav nav-tabs`}
                       data-stylex-owner="user-profile-issue-tabs"
                     >
                       <li className={activeIssueTab === "openIssues" ? "active" : ""}>

@@ -66,7 +66,9 @@ test("public profile empty panels own frozen error-wrap paint, order, and geomet
   await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
   await assertPanel(page, "open-issues", "recently No issue found");
 
-  await page.locator("#issues > .nav-tabs.nm button", { hasText: "Closed" }).click();
+  await page
+    .locator('[data-stylex-owner="user-profile-issue-tabs"] button', { hasText: "Closed" })
+    .click();
   await assertPanel(page, "closed-issues", "recently No issue found");
 
   for (const state of states.slice(1)) {
@@ -78,7 +80,9 @@ test("public profile empty panels own frozen error-wrap paint, order, and geomet
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${basePath}/empty`, { waitUntil: "networkidle" });
   await assertPanel(page, "open-issues", "recently No issue found");
-  await page.locator("#issues > .nav-tabs.nm button", { hasText: "Closed" }).click();
+  await page
+    .locator('[data-stylex-owner="user-profile-issue-tabs"] button', { hasText: "Closed" })
+    .click();
   await assertPanel(page, "closed-issues", "recently No issue found");
   for (const state of states.slice(1)) {
     await page.locator(".user-stream-box > .nav-tabs button", { hasText: state.button }).click();

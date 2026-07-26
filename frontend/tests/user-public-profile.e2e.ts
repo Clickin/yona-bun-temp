@@ -30,7 +30,7 @@ const EXPECTED_PROFILE_SCREEN = `
         </ul>
         <div class="tab-content">
           <div id="issues" class="tab-pane active">
-            <ul class="nav nav-tabs nm">
+            <ul class="nav nav-tabs">
               <li class="active"><button type="button">Open<span>1</span></button></li>
               <li class=""><button type="button">Closed<span>1</span></button></li>
               <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask" style="position:relative"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
@@ -194,7 +194,9 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   await expect(page).toHaveTitle("door");
   await expect(page.locator("#openIssues .post-item")).toHaveCount(1);
   await expect(page.locator('.user-stream-box > .nav-tabs a[href^="#"]')).toHaveCount(0);
-  await expect(page.locator('#issues > .nav-tabs.nm a[href^="#"]')).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="user-profile-issue-tabs"] a[href^="#"]'),
+  ).toHaveCount(0);
   await expect(page.locator("#issue-item-11 .title-cell > a.title")).toHaveAttribute(
     "href",
     `${basePath}/door/sample/issue/7`,
@@ -249,14 +251,15 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     "Pull request 1",
     "projects 1",
   ]);
-  await expect(page.locator('#issues > .nav-tabs.nm button[type="button"]')).toHaveText([
-    "Open1",
-    "Closed1",
-  ]);
+  await expect(
+    page.locator('[data-stylex-owner="user-profile-issue-tabs"] button[type="button"]'),
+  ).toHaveText(["Open1", "Closed1"]);
   await expect(page.locator('.user-stream-box > .nav-tabs button[data-toggle="tab"]')).toHaveCount(
     0,
   );
-  await expect(page.locator('#issues > .nav-tabs.nm button[data-toggle="tab"]')).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="user-profile-issue-tabs"] button[data-toggle="tab"]'),
+  ).toHaveCount(0);
   const showSubtasks = page.locator(".show-subtasks");
   await expect(showSubtasks).toHaveAttribute("title", "Show subtask");
   await expect(showSubtasks).not.toHaveAttribute("data-toggle", /.+/u);
@@ -461,14 +464,22 @@ test("public user profile matches legacy selected projects tab and click switchi
   await expect(page.locator("#issues")).toHaveClass(/active/u);
   expect(page.url()).toBe(beforeTabClickUrl);
 
-  await page.locator("#issues > .nav-tabs.nm button", { hasText: "Closed" }).click();
-  await expect(page.locator("#issues > .nav-tabs.nm > li").nth(1)).toHaveClass("active");
+  await page
+    .locator('[data-stylex-owner="user-profile-issue-tabs"] button', { hasText: "Closed" })
+    .click();
+  await expect(
+    page.locator('[data-stylex-owner="user-profile-issue-tabs"] > li').nth(1),
+  ).toHaveClass("active");
   await expect(page.locator("#closedIssues")).toHaveClass(/active/u);
   await expect(page.locator("#openIssues")).not.toHaveClass(/active/u);
   expect(page.url()).toBe(beforeTabClickUrl);
 
-  await page.locator("#issues > .nav-tabs.nm button", { hasText: "Open" }).click();
-  await expect(page.locator("#issues > .nav-tabs.nm > li").first()).toHaveClass("active");
+  await page
+    .locator('[data-stylex-owner="user-profile-issue-tabs"] button', { hasText: "Open" })
+    .click();
+  await expect(
+    page.locator('[data-stylex-owner="user-profile-issue-tabs"] > li').first(),
+  ).toHaveClass("active");
   await expect(page.locator("#openIssues")).toHaveClass(/active/u);
   await expect(page.locator("#closedIssues")).not.toHaveClass(/active/u);
   expect(page.url()).toBe(beforeTabClickUrl);
