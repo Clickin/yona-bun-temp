@@ -46,6 +46,7 @@ type LegacyLoginFormLinkSearch = {
   redirectUrl: string;
 };
 type SidebarTab = "favorite" | "project" | "recent";
+type LeftSidebarMotion = "closed" | "opening" | "open" | "closing";
 
 const LEGACY_USER_LINK_SEARCH = {
   daysAgo: undefined!,
@@ -1597,8 +1598,13 @@ export function SiteLayoutShell({
   );
   const [isSearchScopeMenuOpen, setIsSearchScopeMenuOpen] = React.useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = React.useState(readStoredLeftSidebarOpen);
+  const [leftSidebarMotion, setLeftSidebarMotion] = React.useState<LeftSidebarMotion>(() =>
+    isLeftSidebarOpen ? "open" : "closed",
+  );
   const [activeLeftSidebarTab, setActiveLeftSidebarTab] =
     React.useState<SidebarTab>(readStoredLeftSidebarTab);
+  const globalSidebarOpenPinRef = React.useRef<HTMLButtonElement>(null);
+  const shouldRestoreSidebarOpenPinFocus = React.useRef(false);
   React.useEffect(() => {
     setSelectedSearchScope(initialSearchScope);
     setIsSearchScopeMenuOpen(false);
@@ -1633,14 +1639,52 @@ export function SiteLayoutShell({
       setSelectedSearchScope(scope);
       setIsSearchScopeMenuOpen(false);
     };
-  const showLeftSidebar = session?.isAnonymous === false && isLeftSidebarOpen;
+  const isLeftSidebarAvailable = session?.isAnonymous === false;
+  const showLeftSidebar = isLeftSidebarAvailable && isLeftSidebarOpen;
+  const renderLeftSidebar = isLeftSidebarAvailable && leftSidebarMotion !== "closed";
+  React.useEffect(() => {
+    if (leftSidebarMotion !== "opening") {
+      return;
+    }
+    const frameId = window.requestAnimationFrame(() => setLeftSidebarMotion("open"));
+    return () => window.cancelAnimationFrame(frameId);
+  }, [leftSidebarMotion]);
+  React.useEffect(() => {
+    if (leftSidebarMotion !== "closed" || !shouldRestoreSidebarOpenPinFocus.current) {
+      return;
+    }
+    shouldRestoreSidebarOpenPinFocus.current = false;
+    window.requestAnimationFrame(() => globalSidebarOpenPinRef.current?.focus());
+  }, [leftSidebarMotion]);
   const handleLeftSidebarOpen = () => {
     setIsLeftSidebarOpen(true);
+    setLeftSidebarMotion((motion) =>
+      motion === "closed" || motion === "closing" ? "opening" : motion,
+    );
     writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "true");
   };
   const handleLeftSidebarClose = () => {
     setIsLeftSidebarOpen(false);
+    shouldRestoreSidebarOpenPinFocus.current = true;
+    setLeftSidebarMotion((motion) => (motion === "closed" ? "closed" : "closing"));
     writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "false");
+  };
+  const handleLeftSidebarTransitionEnd = (event: React.TransitionEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (!new Set(["flex-basis", "max-width", "width"]).has(event.propertyName)) {
+      return;
+    }
+    setLeftSidebarMotion((motion) => {
+      if (motion === "opening") {
+        return "open";
+      }
+      if (motion === "closing") {
+        return "closed";
+      }
+      return motion;
+    });
   };
   const handleLeftSidebarTabChange = (tab: SidebarTab) => {
     setActiveLeftSidebarTab(tab);
@@ -1652,11 +1696,14 @@ export function SiteLayoutShell({
 
   return (
     <div
-      {...stylex.props(framedSiteShellStyles.shell, showLeftSidebar && framedSiteShellStyles.open)}
+      {...stylex.props(
+        framedSiteShellStyles.shell,
+        renderLeftSidebar && framedSiteShellStyles.open,
+      )}
       data-sidebar-open={showLeftSidebar ? "true" : "false"}
       data-stylex-owner="framed-site-shell"
     >
-      {showLeftSidebar ? (
+      {renderLeftSidebar ? (
         <LegacyFramedSidebar
           activeTab={activeLeftSidebarTab}
           basePath={runtimeConfig.basePath}
@@ -1665,13 +1712,15 @@ export function SiteLayoutShell({
           onTabChange={handleLeftSidebarTabChange}
           runtimeConfig={runtimeConfig}
           session={session ?? {}}
+          motion={leftSidebarMotion}
+          onTransitionEnd={handleLeftSidebarTransitionEnd}
           workspace={navbarWorkspaceQuery.data}
         />
       ) : null}
       <div
         {...stylex.props(
           framedSiteShellStyles.main,
-          showLeftSidebar && framedSiteShellStyles.mainOpen,
+          renderLeftSidebar && framedSiteShellStyles.mainOpen,
         )}
         data-stylex-owner="framed-site-main"
       >
@@ -1703,6 +1752,7 @@ export function SiteLayoutShell({
                 aria-expanded="false"
                 data-stylex-owner="global-sidebar-open-pin"
                 onClick={handleLeftSidebarOpen}
+                ref={globalSidebarOpenPinRef}
                 title="Sidebar"
                 type="button"
               >
@@ -2843,6 +2893,25 @@ const leftSidebarOuterShellStyles = stylex.create({
       "@media (max-width: 720px)": 1001,
     },
   },
+  motion: {
+    overflowX: "hidden",
+    transitionDuration: "0.5s",
+    transitionProperty: "border-right-width, flex-basis, max-width, width",
+    transitionTimingFunction: "ease",
+  },
+  closed: {
+    borderRightWidth: "0px",
+    flexBasis: "0px",
+    pointerEvents: "none",
+    width: {
+      default: "0px",
+      "@media (max-width: 720px)": "auto",
+    },
+    maxWidth: {
+      default: "none",
+      "@media (max-width: 720px)": "0px",
+    },
+  },
 });
 
 const leftSidebarAccountActionStyles = stylex.create({
@@ -2990,18 +3059,22 @@ const leftSidebarFooterStyles = stylex.create({
 function LegacyFramedSidebar({
   activeTab,
   basePath,
+  motion,
   onClose,
   onRefresh,
   onTabChange,
+  onTransitionEnd,
   runtimeConfig,
   session,
   workspace,
 }: {
   activeTab: SidebarTab;
   basePath: string;
+  motion: LeftSidebarMotion;
   onClose: () => void;
   onRefresh: () => void;
   onTabChange: (tab: SidebarTab) => void;
+  onTransitionEnd: (event: React.TransitionEvent<HTMLElement>) => void;
   runtimeConfig: RuntimeConfig;
   session: YoramRecord;
   workspace: YoramRecord | undefined;
@@ -3027,9 +3100,19 @@ function LegacyFramedSidebar({
   return (
     <aside
       aria-label="Sidebar"
-      className={`sidebar ${stylex.props(leftSidebarOuterShellStyles.shell).className}`}
+      aria-hidden={motion === "closing" ? true : undefined}
+      className={`sidebar ${
+        stylex.props(
+          leftSidebarOuterShellStyles.shell,
+          leftSidebarOuterShellStyles.motion,
+          motion !== "open" && leftSidebarOuterShellStyles.closed,
+        ).className
+      }`}
       data-stylex-owner="left-sidebar-outer-shell"
+      data-sidebar-motion={motion}
+      inert={motion !== "open"}
       id="sidebar"
+      onTransitionEnd={onTransitionEnd}
     >
       <div
         {...stylex.props(leftSidebarAccountActionStyles.row)}

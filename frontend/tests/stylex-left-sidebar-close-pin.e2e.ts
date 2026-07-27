@@ -18,6 +18,7 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     const sidebar = page.getByRole("complementary", { name: "Sidebar" });
+    const sidebarShell = page.locator('[data-stylex-owner="left-sidebar-outer-shell"]');
     const pin = sidebar.getByRole("button", { name: "Sidebar" });
     const icon = pin.locator(":scope > .yobicon-arrow-left");
     await expect(pin).toHaveAttribute("data-stylex-owner", "left-sidebar-close-pin");
@@ -91,7 +92,7 @@ for (const viewport of [
     await expect(pin).toBeFocused();
 
     await pin.click();
-    await expect(sidebar).toHaveCount(0);
+    await expect(sidebarShell).toHaveCount(0);
     expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe(
       "false",
     );

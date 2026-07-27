@@ -38,6 +38,7 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     const sidebar = page.getByRole("complementary", { name: "Sidebar" });
+    const sidebarShell = page.locator('[data-stylex-owner="left-sidebar-outer-shell"]');
     await expect(sidebar).toBeVisible();
     const initial = await readEvidence(sidebar);
     expect(initial).toEqual({
@@ -117,7 +118,7 @@ for (const viewport of [
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
 
     await sidebar.getByRole("button", { name: "Sidebar" }).click();
-    await expect(sidebar).toHaveCount(0);
+    await expect(sidebarShell).toHaveCount(0);
     await expect(frame).toBeVisible();
     expect(
       await frame.evaluate((element) => {

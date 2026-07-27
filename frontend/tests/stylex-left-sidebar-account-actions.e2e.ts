@@ -36,6 +36,7 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     const sidebar = page.getByRole("complementary", { name: "Sidebar" });
+    const sidebarShell = page.locator('[data-stylex-owner="left-sidebar-outer-shell"]');
     const owner = sidebar.locator(':scope > [data-stylex-owner="left-sidebar-account-actions"]');
     await expect(owner).toBeVisible();
     const profile = owner.getByRole("link").first();
@@ -136,7 +137,7 @@ for (const viewport of [
     await expect(logoutLabel).toHaveCSS("background-color", "rgb(156, 39, 176)");
 
     await pin.click();
-    await expect(sidebar).toHaveCount(0);
+    await expect(sidebarShell).toHaveCount(0);
   });
 }
 
