@@ -2986,3 +2986,9 @@ desktop/mobile geometry, and filtering.
 - [x] Project-home visual evidence: `/admin/sample/` shell geometry matches legacy except 1px project-wrap height; `/sample/sample/` error-shell geometry matches. The legacy 403 forbidden copy versus local 404 not-found copy remains an explicit parity gap.
 - [x] Harness responsiveness: remove the page-global `Loading...` absence condition that forced a 5-second timeout for persistent sidebar placeholders. Preserve route-specific settled selectors, session, font/image, animation, paint, metric, and screenshot gates. Focused warm local timings are 563ms/327ms versus legacy 122ms/90ms.
 - [x] Fresh production build and StyleX verifier pass in 21.38s with frozen fallback hash `8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6`; standalone Vite preview is not accepted as nested-route production evidence because runtime asset rewriting belongs to the Rust server.
+### 2026-07-27 Batch 1023 public-profile Pull Request list/glyph ownership
+
+- [x] `user/view.scala.html`, `user/partial_pullRequests.scala.html`, frozen `_page.less`, max-720 `_responsive.less`, Bootstrap/responsive CSS, Yobicon `style.css`, and messages establish the populated list root and comment glyph output.
+- [x] Direct StyleX owns the exact list style/width/clearfix/mobile margin and generic Yobicon/`\e4b7` declarations; only `post-list-wrap`, `row-fluid`, and `yobicon-comments` retire in this pane.
+- [x] Focused external System-Chrome normal and fallback-off runs pass 1/1 each at 1366×900 and 390×844 with computed declarations, pseudo glyph, hash navigation, containment, zero overflow, and four inspected screenshots.
+- [ ] Current live legacy data has no populated Pull Request row. Keep same-fixture legacy screenshot pairing, global fallback audit, and the overall final lock open.

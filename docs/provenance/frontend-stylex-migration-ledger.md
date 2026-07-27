@@ -1,5 +1,7 @@
 # Frontend StyleX Migration Ledger
 
+| 2026-07-27 | Batch 1023 populated public-profile Pull Request list root and comments glyph ownership | `yona-original/app/views/user/view.scala.html` includes `user/partial_pullRequests.scala.html`; frozen `_page.less`, max-720 `_responsive.less`, Bootstrap/bootstrap-responsive CSS, Yobicon `style.css`, and messages establish the list and icon output. | `frontend/src/routes/$user.tsx` and `-user-profile.stylex.ts` retire only this pane's `post-list-wrap row-fluid` and `yobicon-comments`, replacing them with exact direct list/clearfix/mobile and generic Yobicon/`\e4b7` owners. Existing row/grid/title/infos/receiver/state owners and other consumers remain unchanged. | `frontend/tests/stylex-user-profile-pull-request-list-glyph-ownership.e2e.ts` passes external System-Chrome normal and fallback-off 1/1 each at desktop/390px with exact computed declarations, pseudo output, copy/order/hash navigation, containment, zero overflow, and inspected screenshots. Live populated same-fixture pairing remains open because current legacy data has no PR row. |
+
 ### Production full-sweep responsiveness — 2026-07-27
 
 Fresh frontend/Rust production builds completed a full external System-Chrome

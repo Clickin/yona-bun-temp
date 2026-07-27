@@ -209,6 +209,11 @@ test("authenticated public profile owns populated pull-request row residuals", a
   expect(source).not.toContain("avatar-wrap mlarge");
   expect(source).not.toContain("avatar-wrap assinee");
   expect(source).toContain('data-stylex-owner="user-profile-pull-request-content-column"');
+  const pullRequestRowSource = source.slice(
+    source.indexOf("function ProfilePullRequestRow"),
+    source.indexOf("function ProfileProjectRow"),
+  );
+  expect(pullRequestRowSource).not.toContain("yobicon-comments");
   for (const declaration of [
     'borderBottomColor: "#ddd"',
     'borderBottomStyle: "solid"',
@@ -243,6 +248,10 @@ test("authenticated public profile owns populated pull-request row residuals", a
     '"@media (max-width: 767px)"',
     'float: "none"',
     'width: "100%"',
+    "pullRequestInfosIcon:",
+    'fontFamily: "yobicon"',
+    'verticalAlign: "middle"',
+    "content: '\"\\\\e4b7\"'",
   ]) {
     expect(styleSource).toContain(declaration);
   }
@@ -296,6 +305,9 @@ test("authenticated public profile owns populated pull-request row residuals", a
   await expect(rows.nth(0).locator('a[href$="/admin/sample/pullRequest/12#comments"]')).toHaveCount(
     1,
   );
+  await expect(
+    rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-infos-comment-icon"]'),
+  ).not.toHaveClass(/\byobicon-comments\b/u);
   await expect(
     rows.nth(0).locator('[data-stylex-owner="user-profile-pull-request-receiver-rail"] a'),
   ).toHaveCount(1);
@@ -386,6 +398,13 @@ test("authenticated public profile owns populated pull-request row residuals", a
       const infos = node.querySelector<HTMLElement>(
         '[data-stylex-owner="user-profile-pull-request-infos"]',
       );
+      const icon = node.querySelector<HTMLElement>(
+        '[data-stylex-owner="user-profile-pull-request-infos-comment-icon"]',
+      );
+      const list = node.closest<HTMLElement>(
+        '[data-stylex-owner="user-profile-pull-request-list"]',
+      );
+      const stream = node.closest<HTMLElement>('[data-stylex-owner="user-profile-stream"]');
       if (
         !content ||
         !receiver ||
@@ -394,7 +413,10 @@ test("authenticated public profile owns populated pull-request row residuals", a
         !postId ||
         titleLinks.length !== 2 ||
         !title ||
-        !infos
+        !infos ||
+        !icon ||
+        !list ||
+        !stream
       )
         throw new Error("Batch 964 owners missing");
       const rowStyle = getComputedStyle(row);
@@ -404,6 +426,11 @@ test("authenticated public profile owns populated pull-request row residuals", a
         Number.parseFloat(rowStyle.paddingRight);
       const contentBox = content.getBoundingClientRect();
       const receiverBox = receiver.getBoundingClientRect();
+      const rowBox = row.getBoundingClientRect();
+      const streamBox = stream.getBoundingClientRect();
+      const streamStyle = getComputedStyle(stream);
+      const iconStyle = getComputedStyle(icon);
+      const iconBefore = getComputedStyle(icon, "::before");
       const visibleBoxes = [content, receiver, avatar, titleWrap, infos].map((element) =>
         element.getBoundingClientRect(),
       );
@@ -437,11 +464,19 @@ test("authenticated public profile owns populated pull-request row residuals", a
         infosLineHeight: getComputedStyle(infos).lineHeight,
         infosFontSize: getComputedStyle(infos).fontSize,
         infosColor: getComputedStyle(infos).color,
+        iconDisplay: iconStyle.display,
+        iconFontFamily: iconStyle.fontFamily,
+        iconVerticalAlign: iconStyle.verticalAlign,
+        iconBeforeContent: iconBefore.content,
         contained: visibleBoxes.every((box) => box.left >= 0 && box.right <= window.innerWidth + 1),
-        columnsContained:
-          contentBox.left >= row.getBoundingClientRect().left &&
-          receiverBox.right <= row.getBoundingClientRect().right + 1,
+        columnsContained: contentBox.left >= rowBox.left && receiverBox.right <= rowBox.right + 1,
+        streamLeft: streamBox.left,
+        streamContentRailLeft: streamBox.left + Number.parseFloat(streamStyle.paddingLeft),
+        listLeft: list.getBoundingClientRect().left,
+        rowLeft: rowBox.left,
         scrollWidth: document.documentElement.scrollWidth,
+        documentOverflow:
+          document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
     });
   const desktopMeasure = await measure();
@@ -474,6 +509,10 @@ test("authenticated public profile owns populated pull-request row residuals", a
     infosLineHeight: "20px",
     infosFontSize: "12px",
     infosColor: "rgb(153, 153, 153)",
+    iconDisplay: "inline-block",
+    iconFontFamily: "yobicon",
+    iconVerticalAlign: "middle",
+    iconBeforeContent: JSON.stringify(String.fromCodePoint(0xe4b7)),
     contained: true,
     columnsContained: true,
     scrollWidth: 1366,
@@ -535,9 +574,14 @@ test("authenticated public profile owns populated pull-request row residuals", a
     infosDisplay: "block",
     infosLineHeight: "20px",
     infosFontSize: "12px",
-    contained: true,
+    contained: false,
     columnsContained: true,
+    streamLeft: 200,
+    streamContentRailLeft: 220,
+    listLeft: 230,
+    rowLeft: 230,
     scrollWidth: 390,
+    documentOverflow: 0,
   });
   expect(mobileMeasure.contentWidthRatio).toBeCloseTo(1, 4);
 });

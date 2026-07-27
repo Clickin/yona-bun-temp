@@ -245,9 +245,17 @@ test("populated public-profile pull-request title and infos owners retire legacy
     'fontSize: "16px"',
     'fontSize: "12px"',
     'textDecoration: "none"',
+    'fontFamily: "yobicon"',
+    'verticalAlign: "middle"',
+    "content: '\"\\\\e4b7\"'",
   ]) {
     expect(styleSource).toContain(declaration);
   }
+  const pullRequestRowSource = routeSource.slice(
+    routeSource.indexOf("function ProfilePullRequestRow"),
+    routeSource.indexOf("function ProfileProjectRow"),
+  );
+  expect(pullRequestRowSource).not.toContain("yobicon-comments");
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin?selected=pullRequests`, { waitUntil: "domcontentloaded" });
@@ -288,7 +296,7 @@ test("populated public-profile pull-request title and infos owners retire legacy
   await expect(date).toHaveAttribute("title", "2 days ago");
   await expect(comment).toContainText("3");
   await expect(comment).toHaveAttribute("href", `${basePath}/admin/sample/pullRequest/12#comments`);
-  await expect(icon).toHaveClass(/yobicon-comments/);
+  await expect(icon).not.toHaveClass(/\byobicon-comments\b/u);
   await expect(size).toHaveText("3");
   await expect(
     openRow.locator('[data-stylex-owner="user-profile-pull-request-infos-empty-author"]'),
@@ -374,6 +382,10 @@ test("populated public-profile pull-request title and infos owners retire legacy
     const iconStyle = getComputedStyle(
       find<HTMLElement>("user-profile-pull-request-infos-comment-icon"),
     );
+    const iconBefore = getComputedStyle(
+      find<HTMLElement>("user-profile-pull-request-infos-comment-icon"),
+      "::before",
+    );
     const countStyle = getComputedStyle(
       find<HTMLElement>("user-profile-pull-request-infos-comment-size"),
     );
@@ -411,7 +423,11 @@ test("populated public-profile pull-request title and infos owners retire legacy
       commentFloat: commentStyle.float,
       commentMarginRight: commentStyle.marginRight,
       commentColor: commentStyle.color,
+      iconDisplay: iconStyle.display,
+      iconFontFamily: iconStyle.fontFamily,
       iconVerticalAlign: iconStyle.verticalAlign,
+      iconBeforeContent: iconBefore.content,
+      iconBeforeFontFamily: iconBefore.fontFamily,
       countMarginRight: countStyle.marginRight,
       contained:
         titleBox.left >= rowBox.left - 1 &&
@@ -449,7 +465,11 @@ test("populated public-profile pull-request title and infos owners retire legacy
     commentFloat: "left",
     commentMarginRight: "6px",
     commentColor: "rgb(53, 146, 181)",
+    iconDisplay: "inline-block",
+    iconFontFamily: "yobicon",
     iconVerticalAlign: "middle",
+    iconBeforeContent: JSON.stringify(String.fromCodePoint(0xe4b7)),
+    iconBeforeFontFamily: "yobicon",
     countMarginRight: "3px",
     contained: true,
   });

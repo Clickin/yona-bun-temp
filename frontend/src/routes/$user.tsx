@@ -678,7 +678,10 @@ function PublicProfileBody({
                         </p>
                       </div>
                     ) : null}
-                    <ul className="post-list-wrap  row-fluid">
+                    <ul
+                      {...stylex.props(styles.pullRequestList)}
+                      data-stylex-owner="user-profile-pull-request-list"
+                    >
                       {profileResponse.pullRequestItems.map((pullRequest) => (
                         <ProfilePullRequestRow
                           key={pullRequestKey(pullRequest)}
@@ -1540,7 +1543,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             >
               <i
                 {...stylex.props(styles.pullRequestInfosIcon)}
-                className={`${stylex.props(styles.pullRequestInfosIcon).className} yobicon-comments`}
+                className={stylex.props(styles.pullRequestInfosIcon).className}
                 data-stylex-owner="user-profile-pull-request-infos-comment-icon"
               ></i>
               <span

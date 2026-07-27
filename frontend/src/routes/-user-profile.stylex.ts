@@ -1062,6 +1062,24 @@ export const styles = stylex.create({
   pullRequestStateOpen: { backgroundColor: "#b6da54" },
   pullRequestStateRejected: { backgroundColor: "#fd8658" },
   pullRequestEmptyAvatarWrap: { height: "32px", width: "32px" },
+  // Frozen less/_page.less .post-list-wrap, Bootstrap .row-fluid width/clearfix,
+  // and less/_responsive.less max-720 .post-list-wrap margin.
+  pullRequestList: {
+    listStyle: "none",
+    width: "100%",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: 0,
+    },
+    "@media (max-width: 720px)": { marginLeft: "10px" },
+  },
   // Frozen less/_page.less .post-item.
   pullRequestRow: {
     borderBottomColor: "#ddd",
@@ -1156,7 +1174,22 @@ export const styles = stylex.create({
       textDecoration: "none",
     },
   },
-  pullRequestInfosIcon: { verticalAlign: "middle" },
+  // Frozen public/stylesheets/yobicon/style.css generic icon base/comments
+  // pseudo plus the final less/_page.less infos-icon-link middle alignment.
+  pullRequestInfosIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "middle",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e4b7"' },
+  },
   pullRequestInfosCount: { marginRight: "3px" },
   // Frozen less/_page.less .error-wrap and its nested message paragraph.
   emptyErrorWrap: { padding: "100px 0px", textAlign: "center" },

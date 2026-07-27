@@ -2,6 +2,25 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Public-profile Pull Request list/glyph ownership
+
+Batch 1023 closes two residual presentation boundaries in the populated
+`/$user?selected=pullRequests` pane. `user/view.scala.html` and
+`user/partial_pullRequests.scala.html` emit the `post-list-wrap row-fluid` list
+root and `yobicon-comments` icon. Frozen `_page.less`, max-720
+`_responsive.less`, Bootstrap/responsive CSS, and Yobicon `style.css` establish
+the exact list reset/width/clearfix/mobile margin and generic icon/`\e4b7`
+glyph cascade.
+
+The route retires only those three fully owned presentation classes. Direct
+StyleX owners preserve the list and icon output, including the existing final
+middle alignment; row, grid, title, metadata, receiver, state, and all other
+pane consumers remain unchanged. External System-Chrome normal and
+fallback-off focused runs pass 1/1 each at desktop and 390px with zero
+document overflow. Four screenshots were directly inspected. Current live
+legacy data has no populated Pull Request row, so same-fixture legacy pairing
+remains final-lock work rather than an inferred parity claim.
+
 ## 2026-07-27 — Production full-sweep responsiveness repair
 
 The frontend and Rust server were rebuilt and the full System-Chrome sweep

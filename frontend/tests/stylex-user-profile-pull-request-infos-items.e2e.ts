@@ -136,11 +136,26 @@ test("authenticated public profile owns pull-request infos item residuals", asyn
     'pullRequestInfosItem: { float: "left", marginRight: "6px" }',
     "pullRequestInfosLinkItem:",
     "pullRequestInfosIconLink:",
-    'pullRequestInfosIcon: { verticalAlign: "middle" }',
+    "pullRequestInfosIcon:",
+    'backgroundImage: "none"',
+    'display: "inline-block"',
+    'fontFamily: "yobicon"',
+    'fontStyle: "normal"',
+    'fontVariant: "normal"',
+    'fontWeight: "normal"',
+    "lineHeight: 1",
+    'textDecoration: "none"',
+    'verticalAlign: "middle"',
+    "content: '\"\\\\e4b7\"'",
     'pullRequestInfosCount: { marginRight: "3px" }',
   ]) {
     expect(styleSource).toContain(declaration);
   }
+  const pullRequestRowSource = routeSource.slice(
+    routeSource.indexOf("function ProfilePullRequestRow"),
+    routeSource.indexOf("function ProfileProjectRow"),
+  );
+  expect(pullRequestRowSource).not.toContain("yobicon-comments");
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin?selected=pullRequests`, { waitUntil: "domcontentloaded" });
@@ -155,6 +170,7 @@ test("authenticated public profile owns pull-request infos item residuals", asyn
   await expect(author).toHaveText("Contributor User");
   await expect(date).toHaveText("2 days ago");
   await expect(comment).toContainText("3");
+  await expect(icon).not.toHaveClass(/\byobicon-comments\b/u);
 
   const desktop = await row.evaluate((node) => {
     const authorEl = node.querySelector<HTMLElement>(
@@ -175,6 +191,8 @@ test("authenticated public profile owns pull-request infos item residuals", asyn
     if (!authorEl || !dateEl || !commentEl || !iconEl || !sizeEl) {
       throw new Error("missing infos owners");
     }
+    const iconStyle = getComputedStyle(iconEl);
+    const iconBefore = getComputedStyle(iconEl, "::before");
     return {
       authorFloat: getComputedStyle(authorEl).float,
       authorMarginRight: getComputedStyle(authorEl).marginRight,
@@ -183,7 +201,16 @@ test("authenticated public profile owns pull-request infos item residuals", asyn
       commentFloat: getComputedStyle(commentEl).float,
       commentMarginRight: getComputedStyle(commentEl).marginRight,
       commentColor: getComputedStyle(commentEl).color,
-      iconVerticalAlign: getComputedStyle(iconEl).verticalAlign,
+      iconBackgroundImage: iconStyle.backgroundImage,
+      iconDisplay: iconStyle.display,
+      iconFontFamily: iconStyle.fontFamily,
+      iconFontStyle: iconStyle.fontStyle,
+      iconFontVariant: iconStyle.fontVariant,
+      iconFontWeight: iconStyle.fontWeight,
+      iconTextDecoration: iconStyle.textDecorationLine,
+      iconVerticalAlign: iconStyle.verticalAlign,
+      iconBeforeContent: iconBefore.content,
+      iconBeforeFontFamily: iconBefore.fontFamily,
       sizeMarginRight: getComputedStyle(sizeEl).marginRight,
       noOverflow: document.documentElement.scrollWidth <= window.innerWidth,
     };
@@ -197,7 +224,16 @@ test("authenticated public profile owns pull-request infos item residuals", asyn
     commentFloat: "left",
     commentMarginRight: "6px",
     commentColor: "rgb(53, 146, 181)",
+    iconBackgroundImage: "none",
+    iconDisplay: "inline-block",
+    iconFontFamily: "yobicon",
+    iconFontStyle: "normal",
+    iconFontVariant: "normal",
+    iconFontWeight: "400",
+    iconTextDecoration: "none",
     iconVerticalAlign: "middle",
+    iconBeforeContent: JSON.stringify(String.fromCodePoint(0xe4b7)),
+    iconBeforeFontFamily: "yobicon",
     sizeMarginRight: "3px",
     noOverflow: true,
   });
