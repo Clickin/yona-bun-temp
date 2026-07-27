@@ -49,7 +49,18 @@ export const styles = stylex.create({
     },
   },
   breadcrumb: { margin: "0px auto" },
-  page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  // Frozen `_page.less` `.page-wrap-outer` and `_responsive.less` mobile cascade.
+  page: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    padding: 0,
+    width: "100%",
+    "@media (max-width: 900px)": {
+      minWidth: "10px",
+      padding: "0px !important",
+    },
+  },
   category: {
     borderRightColor: searchColors.border,
     borderRightStyle: "solid",
@@ -76,6 +87,7 @@ export const styles = stylex.create({
     padding: "5px",
   },
   searchInput: {
+    boxSizing: "border-box",
     borderStyle: "none",
     borderWidth: "0px",
     color: searchColors.inputText,

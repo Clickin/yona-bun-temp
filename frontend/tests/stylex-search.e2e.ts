@@ -9,14 +9,22 @@ test.use({ locale: "ko-KR" });
 test("records global search owners and responsive containment", async ({ page }) => {
   const route = readFileSync("src/routes/search.tsx", "utf8");
   const theme = readFileSync("src/routes/-search.stylex.ts", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/search/result.scala.html", "utf8");
+  const partial = readFileSync(
+    "../yona-original/app/views/search/partial_search.scala.html",
+    "utf8",
+  );
   expect(template).toContain("partial_search");
-  expect(appCss).not.toContain(".search-layout");
-  expect(appCss).toContain(".search-category-wrap {");
-  expect(appCss).toContain("#searchInnerForm {");
+  expect(partial).toContain('class="page-wrap-outer"');
+  expect(partial).toContain('class="project-page-wrap"');
+  expect(partial).toContain("search-category-wrap");
+  expect(partial).toContain('id="searchInnerForm"');
+  expect(partial).toContain('class="span11"');
   expect(route).toContain('data-stylex-owner="global-search-input"');
   expect(route).toContain('data-stylex-owner="global-search-result-wrap"');
+  expect(route).toContain('className="project-page-wrap"');
+  expect(theme).toContain('minHeight: "450px"');
+  expect(theme).toContain('boxSizing: "border-box"');
   expect(theme).toContain("searchColors");
   await mockSearch(page);
   for (const viewport of [
@@ -27,12 +35,27 @@ test("records global search owners and responsive containment", async ({ page })
     await page.goto(`${basePath}/search?keyword=bug&searchType=issue`);
     await expect(owner(page, "global-search-input")).toHaveValue("bug");
     await expect(owner(page, "global-search-result-wrap")).toBeVisible();
-    const geometry = await owner(page, "global-search-page").evaluate((element) => ({
-      width: element.getBoundingClientRect().width,
-      scrollWidth: document.documentElement.scrollWidth,
-    }));
-    expect(geometry.width).toBeGreaterThan(0);
-    expect(geometry.scrollWidth).toBe(viewport.width);
+    const geometry = await owner(page, "global-search-page").evaluate((element) => {
+      const projectPageWrap = element.querySelector<HTMLElement>(".project-page-wrap");
+      const pageRect = element.getBoundingClientRect();
+      const projectRect = projectPageWrap?.getBoundingClientRect();
+      return {
+        pageLeft: pageRect.left,
+        pageRight: pageRect.right,
+        pageScrollWidth: element.scrollWidth,
+        projectLeft: projectRect?.left ?? null,
+        projectRight: projectRect?.right ?? null,
+        projectScrollWidth: projectPageWrap?.scrollWidth ?? null,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(viewport.width + 16);
+    expect(geometry.pageLeft).toBe(0);
+    expect(geometry.pageRight).toBe(viewport.width);
+    expect(geometry.pageScrollWidth).toBe(viewport.width);
+    expect(geometry.projectLeft).toBe(0);
+    expect(geometry.projectRight).toBe(viewport.width);
+    expect(geometry.projectScrollWidth).toBe(viewport.width);
   }
 });
 

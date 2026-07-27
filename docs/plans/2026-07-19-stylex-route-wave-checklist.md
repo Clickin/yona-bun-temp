@@ -3301,3 +3301,19 @@ desktop/mobile geometry, and filtering.
   local pilot `yona`/`browser-safe route tree` seed copy.
 - [ ] The `/projects` seed/content drift remains open; it is not treated as a
   route CSS fix or screenshot-gate relaxation.
+### 2026-07-28 — Batch 1065 release-dist batch 1 and stabilization timing audit
+
+- [x] Rebuilt `frontend/dist` and reran mobile batch 1 in external System
+  Chrome; 7/10 routes were diff-free, with 3 confirmed visual gaps after the
+  rebuild.
+- [x] Measured route metrics settle at 83–425ms legacy and 200–595ms local;
+  the long wait is runner page/browser teardown contention, not React page
+  responsiveness.
+- [ ] Delegate and verify `/search` mobile overflow and both direct issue-form
+  mobile geometry gaps; preserve strict screenshot parity.
+### 2026-07-28 — Batch 1066 release-dist batch 1 post-worker verification
+
+- [x] Search mobile overflow is closed by fresh production-dist paired sweep.
+- [ ] Direct issue-form live production parity remains open despite a 2/2
+  managed fixture test; reproduce against the live seeded route before further
+  implementation changes.

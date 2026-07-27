@@ -3250,3 +3250,26 @@ local safety check because the local seed exposes the pilot `yona` project
 with `browser-safe route tree` copy, which the legacy fixture does not expose.
 The paired screenshots confirm seed/content drift; no route CSS, geometry
 compensation, or screenshot assertion was relaxed.
+### Batch 1065 — release-dist batch 1 and stabilization timing audit — 2026-07-28
+
+- [x] Fresh production build served by release Yoram; mobile batch 1 compared
+  all 10 routes with external System Chrome. Seven routes were diff-free; all
+  ten had `200 -> 200` and zero local failures.
+- [x] Confirmed three real gaps after rebuilding: search `pageWrap`/
+  `projectPageWrap` overflow and 30px upward `markdownEditor`/`uploadWrap`
+  geometry on both direct issue routes.
+- [x] Timing trace separated app settle from teardown: legacy 83–425ms and
+  local 200–595ms through metrics. Per-route page close (5s bound) and browser
+  close (5s bound), amplified by stale long-lived Chrome/Playwright processes,
+  are the stabilization-wait source.
+- [ ] Search overflow and direct issue form geometry remain delegated route
+  fixes; full corpus pixel lock remains open.
+### Batch 1066 — release-dist batch 1 post-worker verification — 2026-07-28
+
+- [x] Fresh production build and external System Chrome batch 1 confirm the
+  search wrapper/overflow fix; search now has no diff failure.
+- [x] Managed focused issue-form test passes 2/2, but this is fixture-only
+  evidence and does not close the live gap.
+- [ ] Live release-dist `/user/issues/new` and `/user/issues/new/mine` still
+  report the 30px upward editor/uploader drift; derive the production-state
+  source before changing the implementation again.

@@ -9352,3 +9352,28 @@ Unit tests pass 26/26; focused live legacy/local desktop and mobile sweeps each
 pass 2/2 with zero diff failures and zero local failures. No route CSS, frozen
 source, or numeric compensation changed. Full fallback-off/global audit and
 overall final pixel lock remain open.
+### Batch 1065 — release-dist batch 1 and stabilization timing audit — 2026-07-28
+
+The rebuilt `frontend/dist` was served by the release Rust binary and batch 1
+was rerun in external System Chrome at 390×844. Three failures remain after
+the rebuild: `/search?keyword=yona&searchType=auto` has local
+`pageWrap`/`projectPageWrap` horizontal overflow, while both direct issue
+forms place `markdownEditor` and `uploadWrap` 30px above the legacy geometry.
+The other seven routes have zero diff/local failures and all ten retain HTTP
+200 parity.
+
+The stabilization delay is not page rendering: a focused timing trace measured
+legacy routes at 83–425ms and local routes at 200–595ms through metrics. The
+batch runner creates and closes a fresh Playwright page for every route and
+can spend up to 5s per page close plus 5s on browser close; long-lived
+Playwright/Chrome processes can amplify that teardown contention. Selector,
+load, and paint waits remain bounded and were not relaxed. This is a harness
+lifecycle follow-up, separate from the three real visual gaps.
+### Batch 1066 — release-dist batch 1 post-worker verification — 2026-07-28
+
+The search overflow fix is confirmed in a fresh production build: the mobile
+`/search?keyword=yona&searchType=auto` comparison is now diff-free. The direct
+issue-form worker's managed mock test passes, but the live release-dist batch
+still reports the original 30px upward `markdownEditor`/`uploadWrap` drift on
+both `/user/issues/new` and `/user/issues/new/mine`. The mock result is not
+accepted as live parity evidence; the issue-form gap remains open.

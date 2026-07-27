@@ -69,19 +69,9 @@ const globalSearchCategoryStyles = stylex.create({
     padding: "8px",
   },
   link: {
-    alignItems: "center",
-    appearance: "none",
-    backgroundColor: "transparent",
-    border: "0px",
-    borderRadius: "0px",
-    boxShadow: "none",
-    color: "#333",
-    display: "flex",
-    font: "inherit",
-    gap: "8px",
-    justifyContent: "space-between",
-    padding: "9px 8px",
-    textAlign: "left",
+    boxSizing: "border-box",
+    display: "block",
+    padding: 0,
     textDecoration: "none",
     width: "100%",
   },
@@ -258,9 +248,13 @@ function GlobalSearchSuccessBody({
           <h3>{t("title.search")}</h3>
         </div>
       </div>
-      <div {...stylex.props(styles.page)} data-stylex-owner="global-search-page">
-        <div data-stylex-owner="global-search-shell">
-          <div className="project-page-wrap">
+      <div
+        {...stylex.props(styles.page)}
+        className={`page-wrap-outer ${stylex.props(styles.page).className}`}
+        data-stylex-owner="global-search-page"
+      >
+        <div className="project-page-wrap">
+          <div className="project-page-wrap" data-stylex-owner="global-search-shell">
             <div
               className={`row-fluid ${stylex.props(styles.globalSearchGridRow).className}`}
               data-stylex-owner="global-search-grid-row"

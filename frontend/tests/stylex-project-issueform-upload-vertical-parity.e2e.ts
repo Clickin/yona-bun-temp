@@ -10,20 +10,37 @@ const bootstrapSource = new URL(
   "../../yona-original/public/bootstrap/css/bootstrap.css",
   import.meta.url,
 );
+const legacyCreateSource = new URL(
+  "../../yona-original/app/views/issue/create.scala.html",
+  import.meta.url,
+);
+const legacyPageSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_page.less",
+  import.meta.url,
+);
 
 test("issueform editor owns legacy border-box geometry before the upload shell", async () => {
-  const [route, styles, bootstrap] = await Promise.all([
+  const [route, styles, bootstrap, legacyCreate, legacyPage] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(bootstrapSource, "utf8"),
+    readFile(legacyCreateSource, "utf8"),
+    readFile(legacyPageSource, "utf8"),
   ]);
 
   expect(route).toContain('data-stylex-owner="project-issue-form-editor-textarea"');
   expect(route).toContain('data-stylex-owner="project-issue-form-textarea-box"');
+  expect(route).toContain("issueFormStyles.issueTitleInput");
   expect(route).toContain("issueFormStyles.editorTextareaHeight");
+  expect(styles).toContain('issueTitleInput: { marginTop: "15px", marginBottom: "15px" }');
   expect(styles).toContain('boxSizing: "border-box"');
   expect(styles).toContain("editorTextarea:");
   expect(bootstrap).toContain("box-sizing: border-box;");
+  expect(legacyCreate).toContain('@common.editor("body"');
+  expect(legacyCreate).toContain("@common.fileUploader(ResourceType.ISSUE_POST");
+  expect(legacyPage).toContain(".title {");
+  expect(legacyPage).toContain("margin-top: 15px;");
+  expect(legacyPage).toContain("margin-bottom: 15px;");
   expect(route).toContain('data-stylex-owner="project-issue-form-upload-shell"');
 });
 
@@ -54,17 +71,26 @@ test("issueform upload shell stays immediately after the border-box editor on bo
         const textarea = document.querySelector<HTMLElement>(
           '[data-stylex-owner="project-issue-form-editor-textarea"]',
         );
+        const title = document.querySelector<HTMLInputElement>("#title");
         const upload = document.querySelector<HTMLElement>(
           '[data-stylex-owner="project-issue-form-upload-shell"]',
         );
-        if (!editor || !textarea || !upload) throw new Error("Missing issueform geometry");
+        if (!editor || !textarea || !title || !upload)
+          throw new Error("Missing issueform geometry");
         const editorBox = editor.getBoundingClientRect();
         const textareaBox = textarea.getBoundingClientRect();
+        const titleBox = title.getBoundingClientRect();
+        const titleStyle = getComputedStyle(title);
         const uploadBox = upload.getBoundingClientRect();
         return {
           editorHeight: editorBox.height,
+          editorTop: editorBox.top,
           editorBottom: editorBox.bottom,
           textareaHeight: textareaBox.height,
+          titleBottom: titleBox.bottom,
+          titleMarginBottom: titleStyle.marginBottom,
+          titleMarginTop: titleStyle.marginTop,
+          titleTop: titleBox.top,
           uploadTop: uploadBox.top,
           uploadHeight: uploadBox.height,
           uploadMinHeight: Number.parseFloat(getComputedStyle(upload).minHeight),
@@ -73,8 +99,19 @@ test("issueform upload shell stays immediately after the border-box editor on bo
 
       expect(geometry.editorHeight).toBeGreaterThanOrEqual(geometry.textareaHeight);
       expect(geometry.textareaHeight).toBeCloseTo(300, 0);
+      expect(geometry.titleMarginTop).toBe("15px");
+      expect(geometry.titleMarginBottom).toBe("15px");
       expect(geometry.uploadTop).toBeCloseTo(geometry.editorBottom, 0);
       expect(geometry.uploadHeight).toBeGreaterThanOrEqual(geometry.uploadMinHeight);
+      console.log(
+        JSON.stringify({
+          path,
+          viewport,
+          title: geometry.titleTop,
+          editor: geometry.editorTop,
+          upload: geometry.uploadTop,
+        }),
+      );
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         viewport.width,
       );

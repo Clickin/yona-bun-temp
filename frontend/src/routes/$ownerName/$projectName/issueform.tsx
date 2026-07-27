@@ -1388,11 +1388,12 @@ function TitleInput({
     >
       <input
         ref={titleRef}
+        {...stylex.props(issueFormStyles.issueTitleInput)}
         type="text"
         id="title"
         name="title"
         value={title}
-        className="text title"
+        className={`text title ${stylex.props(issueFormStyles.issueTitleInput).className ?? ""}`.trim()}
         maxLength={250}
         tabIndex={1}
         placeholder={t("title")}
