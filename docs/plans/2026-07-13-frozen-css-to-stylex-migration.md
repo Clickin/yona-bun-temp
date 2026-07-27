@@ -2,6 +2,27 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Focused/full visual evidence lifecycle separation
+
+`scripts/visual-parity-sweep.mjs` now writes runs with explicit
+`YORAM_SWEEP_PATHS` to `latest-focused.json` or
+`latest-focused-mobile.json`, while only a complete corpus run may replace
+`latest.json` or `latest-mobile.json`. Every summary also records
+`scope: "focused" | "full"`. Route selection, browser comparison, screenshot
+capture, failure conditions, and the final pixel/geometry gate are unchanged.
+
+This fixes the harness lifecycle rather than weakening its assertions. A
+focused route check can no longer erase the full-corpus evidence consumed by
+the RC UX contracts and force another expensive full sweep before every
+commit. External System Chrome verified `/user/editform` in 17 seconds:
+legacy/local both rendered successfully, the focused artifact was written,
+and the canonical desktop artifact's mtime stayed unchanged. The existing
+canonical artifact had already been replaced by the preceding four-route
+focused run, so its two full-corpus RC coverage contracts remain red until a
+healthy full sweep regenerates it. A regeneration attempt was stopped after
+more than twenty minutes without new captures or output; this remains a
+final-lock harness/runtime residual, not a reason to relax the final gate.
+
 ## 2026-07-27 — Final-lock directory/settings sweep ownership repair
 
 The visual parity sweep now recognizes the stable local StyleX owners for the

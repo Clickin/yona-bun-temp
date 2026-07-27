@@ -1,5 +1,23 @@
 # Frontend StyleX Migration Ledger
 
+### Focused/full visual evidence lifecycle — 2026-07-27
+
+This is a harness-only final-lock correction. Explicit
+`YORAM_SWEEP_PATHS` runs now write `latest-focused.json` or
+`latest-focused-mobile.json`; only full-corpus runs may replace the canonical
+`latest.json` or `latest-mobile.json`. Each result records
+`scope: "focused" | "full"`. No route, DOM, StyleX declaration, frozen source,
+comparison tolerance, failure condition, screenshot behavior, or final
+pixel-parity requirement changed.
+
+An external System-Chrome `/user/editform` run completed in 17 seconds with
+both targets rendered, wrote the focused artifact, and preserved the canonical
+desktop artifact mtime. The canonical file had already been narrowed by the
+previous four-route run, so two RC full-corpus coverage contracts remain red
+until full regeneration succeeds. The attempted regeneration produced no new
+capture or output for more than twenty minutes and was stopped. This residual
+stays explicit; focused evidence is not promoted to final evidence.
+
 ### Final-lock directory/settings visual-sweep evidence — 2026-07-27
 
 This is harness evidence, not a route ownership row.

@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### Focused/full visual evidence lifecycle — 2026-07-27
+
+- [x] A sweep with explicit `YORAM_SWEEP_PATHS` writes `latest-focused.json` or `latest-focused-mobile.json`; only a full corpus run writes the canonical `latest.json` or `latest-mobile.json`.
+- [x] Machine-readable output records `scope: "focused" | "full"` without changing route comparison, screenshot capture, failure conditions, or final pixel/geometry acceptance.
+- [x] External System-Chrome `/user/editform` focused verification completed in 17 seconds with successful legacy/local renders, created the focused artifact, and left the canonical desktop artifact mtime unchanged.
+- [ ] The canonical desktop artifact was already narrowed by an earlier four-route focused run. Its two RC full-corpus coverage contracts remain red until a healthy full sweep regenerates it; a regeneration attempt stopped after more than twenty minutes without new captures/output.
+- [x] Final screenshot parity remains mandatory. This change removes repeated full-corpus regeneration from the development loop; it does not convert focused evidence into final evidence.
+
 ### Final-lock directory/settings harness evidence — 2026-07-27
 
 - [x] `scripts/visual-parity-sweep.mjs` maps the local projects directory, organization directory, site user list, and user settings page/shell StyleX owners to the generic `pageWrap`/`projectPageWrap` metrics while retaining the legacy class selectors.

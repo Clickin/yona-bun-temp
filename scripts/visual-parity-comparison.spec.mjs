@@ -509,7 +509,13 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /process\.env\.YORAM_SWEEP_PATHS/u);
   assert.match(source, /const viewportProfile = parseViewportProfile/u);
   assert.match(source, /process\.env\.YORAM_SWEEP_VIEWPORT/u);
-  assert.match(source, /latest-\$\{viewportProfile\.name\}\.json/u);
+  assert.match(
+    source,
+    /const sweepScope = requestedSweepPaths\.length > 0 \? "focused" : "full";/u,
+  );
+  assert.match(source, /const outputPrefix = sweepScope === "focused" \? "latest-focused" : "latest";/u);
+  assert.match(source, /`\$\{outputPrefix\}-\$\{viewportProfile\.name\}\.json`/u);
+  assert.match(source, /scope: sweepScope/u);
   assert.match(source, /name: "mobile", width: 390, height: 844/u);
   assert.match(
     source,

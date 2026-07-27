@@ -24,8 +24,12 @@ const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
 const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
 const sweepLocale = "ko-KR";
+const sweepScope = requestedSweepPaths.length > 0 ? "focused" : "full";
+const outputPrefix = sweepScope === "focused" ? "latest-focused" : "latest";
 const latestOutputName =
-  viewportProfile.name === "desktop" ? "latest.json" : `latest-${viewportProfile.name}.json`;
+  viewportProfile.name === "desktop"
+    ? `${outputPrefix}.json`
+    : `${outputPrefix}-${viewportProfile.name}.json`;
 
 mkdirSync(outputDir, { recursive: true });
 
@@ -1754,6 +1758,7 @@ const comparison = buildVisualComparison({
 });
 const summary = {
   checkedAt: new Date().toISOString(),
+  scope: sweepScope,
   viewportProfile,
   legacy,
   local,
