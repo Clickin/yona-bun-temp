@@ -74,7 +74,6 @@ const userProfileStaticStyles = stylex.create({
   },
   issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
   issueSubtaskParent: { fontSize: "0.8em !important" },
-  issueProjectNameWrapperLineHeight: { lineHeight: "36px" },
   issueAuthorLineHeight: { lineHeight: "36px" },
 });
 
@@ -854,57 +853,45 @@ function ProfileIssueRow({
         data-stylex-owner="user-profile-issue-grid-content"
       >
         <div
-          {...stylex.props(
-            styles.issueProjectNameWrapper,
-            userProfileStaticStyles.issueProjectNameWrapperLineHeight,
-            styles.issueGridProjectColumn,
-          )}
+          {...stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper)}
           className={
-            stylex.props(
-              styles.issueProjectNameWrapper,
-              userProfileStaticStyles.issueProjectNameWrapperLineHeight,
-              styles.issueGridProjectColumn,
-            ).className
+            stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper).className
           }
           data-stylex-owner="user-profile-issue-project-name-wrapper"
         >
           <span
             {...stylex.props(styles.issueProjectName)}
-            className={`${stylex.props(styles.issueProjectName).className} infos-item project-name`}
             data-stylex-owner="user-profile-issue-project-name"
           >
             <Link
               {...LEGACY_LINK_PROPS}
               to={projectPath}
-              className="title project"
+              {...stylex.props(styles.issueProjectLink)}
               title={t("project.name")}
+              data-stylex-owner="user-profile-issue-project-link"
             >
               {projectName}
             </Link>
           </span>
           <span
             {...stylex.props(styles.issuePostId)}
-            className={`${stylex.props(styles.issuePostId).className} infos-item post-id`}
             data-stylex-owner="user-profile-issue-post-id"
           >
             #{issueNumber}
           </span>
         </div>
         <div
-          {...stylex.props(styles.issueTitleWrap, styles.issueGridTitleColumn)}
-          className={`${stylex.props(styles.issueTitleWrap, styles.issueGridTitleColumn).className} title-wrap`}
+          {...stylex.props(styles.issueGridTitleColumn, styles.issueTitleWrap)}
           data-stylex-owner="user-profile-issue-title-wrap"
         >
           <span
             {...stylex.props(styles.issueTitleCell)}
-            className={`${stylex.props(styles.issueTitleCell).className} title-cell`}
             data-stylex-owner="user-profile-issue-title-cell"
           >
             <Link
               {...LEGACY_LINK_PROPS}
               to={issuePath}
               {...stylex.props(styles.issueTitleLink)}
-              className={`${stylex.props(styles.issueTitleLink).className} title`}
               data-stylex-owner="user-profile-issue-title-link"
             >
               {stringField(issue, "title")}

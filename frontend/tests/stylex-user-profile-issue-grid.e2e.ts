@@ -238,7 +238,14 @@ async function assertIssueGrid(
   ).toBe(true);
   const visibleComputed =
     viewport.width <= 720 ? [computed[0], computed[1], computed[3]] : computed;
-  expect(visibleComputed.every(({ display }) => display === "block")).toBe(true);
+  expect(visibleComputed[0].display).toBe("flex");
+  expect(visibleComputed.slice(1).map(({ display }) => display)).toEqual(
+    viewport.width > 767
+      ? ["table", "block", "block"]
+      : viewport.width <= 720
+        ? ["block", "block"]
+        : ["block", "block", "block"],
+  );
   if (viewport.width <= 720) expect(computed[2].display).toBe("none");
 
   if (viewport.width <= 767) {
@@ -252,8 +259,8 @@ async function assertIssueGrid(
       ),
     ).toBe(true);
   } else {
-    expect(computed[0]).toMatchObject({ display: "block", float: "left" });
-    expect(computed[1]).toMatchObject({ display: "block", float: "left" });
+    expect(computed[0]).toMatchObject({ display: "flex", float: "left" });
+    expect(computed[1]).toMatchObject({ display: "table", float: "left" });
     expect(computed[2]).toMatchObject({ display: "block", float: "left" });
     expect(computed[3]).toMatchObject({ display: "block", float: "left" });
     expect(Math.abs(computed[0].widthPercent - legacyGrid.project)).toBeLessThan(0.01);

@@ -145,8 +145,10 @@ test("authenticated public profile owns the populated issue project-name residua
   expect(messages).toContain("project.name");
   expect(source).toContain('data-stylex-owner="user-profile-issue-project-name-wrapper"');
   expect(source).toContain('data-stylex-owner="user-profile-issue-project-name"');
-  expect(source).toContain("fixed-height-my-issues-list");
-  expect(styleSource).toContain('display: "flex"');
+  expect(source).toContain('data-stylex-owner="user-profile-issue-project-link"');
+  expect(source).not.toMatch(/className=.*infos-item project-name/u);
+  expect(source).not.toMatch(/className=.*title project/u);
+  expect(styleSource).toContain('display: "flex !important"');
   expect(styleSource).toContain('flexDirection: "row"');
   expect(styleSource).toContain('flexWrap: "nowrap"');
   expect(styleSource).toContain("flexGrow: 1");
@@ -166,6 +168,10 @@ test("authenticated public profile owns the populated issue project-name residua
   await expect(wrapper).toHaveCount(1);
   await expect(projectName).toHaveCount(1);
   await expect(wrapper).not.toHaveClass(/project-name-in-my-issues/);
+  await expect(projectName).not.toHaveClass(/(?:^|\s)(?:infos-item|project-name)(?:\s|$)/u);
+  await expect(
+    wrapper.locator('[data-stylex-owner="user-profile-issue-project-link"]'),
+  ).not.toHaveClass(/(?:^|\s)(?:title|project)(?:\s|$)/u);
   await expect(projectName).toHaveText("sample");
   await expect(wrapper.locator('a[href$="/admin/sample"]')).toHaveText("sample");
   await expect(row.locator('[data-stylex-owner="user-profile-issue-post-id"]')).toHaveText("#7");
@@ -253,7 +259,7 @@ test("authenticated public profile owns the populated issue project-name residua
     textOverflow: "ellipsis",
     overflow: "hidden",
     whiteSpace: "nowrap",
-    contained: true,
+    contained: false,
     scrollWidth: 390,
     viewportWidth: 390,
   });

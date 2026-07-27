@@ -807,12 +807,32 @@ export const styles = stylex.create({
     padding: "0px 5px 0px 0px",
     textAlign: "center",
   },
-  // Frozen less/_page.less .my-issues .post-item .title-wrap .title.
-  issueTitleLink: { fontSize: "14px", fontWeight: "500" },
+  // Frozen less/_page.less .post-item .title-wrap .title followed by the
+  // .my-issues override and less/_responsive.less mobile title size.
+  issueTitleLink: {
+    color: "#333333",
+    fontSize: {
+      default: "14px",
+      "@media (max-width: 767px)": "16px",
+    },
+    fontWeight: "500",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      color: "#3592b5",
+      outline: "none !important",
+      textDecoration: "none",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
   // Frozen less/_page.less .project-name-in-my-issues.
   issueProjectNameWrapper: {
     alignItems: "center",
-    display: "flex",
+    display: "flex !important",
     flexDirection: "row",
     flexGrow: 1,
     flexWrap: "nowrap",
@@ -824,6 +844,27 @@ export const styles = stylex.create({
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
+  },
+  // Frozen Bootstrap/common anchor cascade and the responsive
+  // .post-list-wrap .post-item .title.project font-size rule.
+  issueProjectLink: {
+    color: "inherit",
+    fontSize: {
+      default: null,
+      "@media (max-width: 767px)": "12px",
+    },
+    outline: "none",
+    textDecoration: "none",
+    ":hover": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
   },
   // Frozen less/_page.less .for-subtask-progressbar.
   issueSubtaskProgressWrapper: { paddingLeft: "5px" },

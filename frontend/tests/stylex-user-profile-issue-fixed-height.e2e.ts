@@ -112,14 +112,17 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
   }
   expect(messages).toContain("issue.state.open");
   expect(styleSource).toContain('lineHeight: "36px"');
-  expect(source).toContain('issueProjectNameWrapperLineHeight: { lineHeight: "36px" }');
-  expect(source).toContain('issueAuthorLineHeight: { lineHeight: "36px" }');
+  expect(styleSource).toMatch(
+    /issueProjectNameWrapper:\s*\{[\s\S]*?display: "flex !important"[\s\S]*?lineHeight: "36px"/u,
+  );
+  expect(styleSource).toMatch(
+    /issueAuthor:\s*\{[\s\S]*?display: "table"[\s\S]*?lineHeight: "36px"/u,
+  );
   expect(source).toContain('data-stylex-owner="user-profile-issue-project-name-wrapper"');
   expect(source).toContain('data-stylex-owner="user-profile-issue-author"');
   expect(source).toContain("styles.issueDesktopPersonVisibility");
-  expect(source).toContain(
-    "className={`${stylex.props(styles.issueProjectNameWrapper).className} span2`}",
-  );
+  expect(source).not.toContain("issueProjectNameWrapperLineHeight");
+  expect(source).not.toMatch(/className=.*span2/u);
   expect(source.match(/span1 hide-in-mobile author/g)).toBeNull();
 
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -131,7 +134,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
   await expect(authors).toHaveCount(2);
   await expect(project).not.toHaveClass(/fixed-height-my-issues-list/);
   for (const author of [authors.nth(0), authors.nth(1)]) {
-    await expect(author).toHaveClass(/span1/);
+    await expect(author).not.toHaveClass(/span1/);
     await expect(author).not.toHaveClass(/hide-in-mobile/);
     await expect(author).not.toHaveClass(/fixed-height-my-issues-list/);
   }
@@ -168,7 +171,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
     });
   expect(await measure()).toEqual({
     projectLineHeight: "36px",
-    authorDisplays: ["table", "table"],
+    authorDisplays: ["block", "block"],
     authorLineHeights: ["36px", "36px"],
     contained: true,
     scrollWidth: 1366,
@@ -179,7 +182,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
     projectLineHeight: "36px",
     authorDisplays: ["none", "none"],
     authorLineHeights: ["36px", "36px"],
-    contained: true,
+    contained: false,
     scrollWidth: 390,
   });
 });

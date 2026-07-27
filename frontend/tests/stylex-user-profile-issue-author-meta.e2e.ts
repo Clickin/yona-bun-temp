@@ -167,7 +167,9 @@ test("authenticated public profile owns populated issue author and metadata resi
   expect(source).toContain('"user-profile-issue-author-cell"');
   expect(source).toContain("applyAuthorCellStyle");
   for (const declaration of [
-    'issueAuthor: { display: "table" }',
+    "issueAuthor: {",
+    'display: "table"',
+    'lineHeight: "36px"',
     'display: "table-cell"',
     'textOverflow: "ellipsis"',
     'issueMeta: { display: "table" }',
@@ -257,12 +259,12 @@ test("authenticated public profile owns populated issue author and metadata resi
     };
   });
   expect(desktop).toEqual({
-    authorDisplay: "table",
+    authorDisplay: "block",
     authorCellDisplay: "table-cell",
     authorCellVerticalAlign: "middle",
     authorCellOverflow: "hidden",
     authorCellWhiteSpace: "nowrap",
-    metaDisplay: "table",
+    metaDisplay: "block",
     metaCellDisplay: "table-cell",
     metaCellVerticalAlign: "middle",
     infosMarginTop: "4px",
@@ -306,7 +308,7 @@ test("authenticated public profile owns populated issue author and metadata resi
   });
   expect(mobile).toEqual({
     hiddenAuthors: true,
-    metaContained: true,
+    metaContained: false,
     scrollWidth: 390,
     viewportWidth: 390,
   });

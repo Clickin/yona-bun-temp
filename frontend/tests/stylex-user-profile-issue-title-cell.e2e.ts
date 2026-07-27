@@ -71,7 +71,13 @@ test("authenticated public profile issue title area owns residual legacy declara
   expect(styleSource).toContain('padding: "5px 0px"');
   expect(styleSource).toContain('verticalAlign: "middle"');
   expect(styleSource).toMatch(/issueTitleCountGroups:\s*\{[\s\S]*?fontSize: "10px"/u);
-  expect(styleSource).toContain('issueTitleLink: { fontSize: "14px", fontWeight: "500" }');
+  expect(styleSource).toMatch(
+    /issueTitleLink:\s*\{[\s\S]*?color: "#333333"[\s\S]*?fontSize:\s*\{[\s\S]*?default: "14px"[\s\S]*?"@media \(max-width: 767px\)": "16px"[\s\S]*?fontWeight: "500"/u,
+  );
+  expect(source).not.toMatch(/className=.*title-cell/u);
+  expect(source).not.toMatch(
+    /data-stylex-owner="user-profile-issue-title-link"[\s\S]{0,120}className=.*title/u,
+  );
 
   await mockProfile(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -102,7 +108,7 @@ test("authenticated public profile issue title area owns residual legacy declara
     const counts = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-profile-issue-title-count-groups"]',
     );
-    const wrap = cell?.closest<HTMLElement>(".title-wrap");
+    const wrap = cell?.closest<HTMLElement>('[data-stylex-owner="user-profile-issue-title-wrap"]');
     if (!cell || !title || !counts || !wrap) throw new Error("issue title owners are missing");
     const cellStyle = getComputedStyle(cell);
     const titleStyle = getComputedStyle(title);

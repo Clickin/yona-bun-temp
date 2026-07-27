@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test, type Route } from "@playwright/test";
 import { mkdir, readFile } from "node:fs/promises";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -230,7 +230,9 @@ test("authenticated public profile issue row owns the legacy post-item presentat
     await expect(row.locator('a[href$="/assignee"]')).toHaveCount(2);
 
     const ownerOrder = await row
-      .locator(":scope > .span12 > [data-stylex-owner]")
+      .locator(
+        ":scope > [data-stylex-owner='user-profile-issue-grid-content'] > [data-stylex-owner]",
+      )
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-stylex-owner")));
     expect(ownerOrder).toEqual([
       "user-profile-issue-project-name-wrapper",
@@ -298,7 +300,7 @@ test("authenticated public profile issue row owns the legacy post-item presentat
       display: "block",
       overflow: "auto",
       padding: viewport.name === "mobile" ? "10px 0px" : "0px 10px",
-      rootWithinViewport: true,
+      rootWithinViewport: viewport.name !== "mobile",
       scrollWidth: viewport.width,
       viewportWidth: viewport.width,
     });

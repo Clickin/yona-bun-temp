@@ -2992,3 +2992,10 @@ desktop/mobile geometry, and filtering.
 - [x] Direct StyleX owns the exact list style/width/clearfix/mobile margin and generic Yobicon/`\e4b7` declarations; only `post-list-wrap`, `row-fluid`, and `yobicon-comments` retire in this pane.
 - [x] Focused external System-Chrome normal and fallback-off runs pass 1/1 each at 1366×900 and 390×844 with computed declarations, pseudo glyph, hash navigation, containment, zero overflow, and four inspected screenshots.
 - [ ] Current live legacy data has no populated Pull Request row. Keep same-fixture legacy screenshot pairing, global fallback audit, and the overall final lock open.
+
+### 2026-07-27 Batch 1024 public-profile Issues title-rail ownership
+
+- [x] `user/view.scala.html`, `user/partial_issues.scala.html`, the full frozen LESS import chain, Bootstrap/responsive CSS, and messages establish the populated project/post-id/title rail.
+- [x] Direct route-local StyleX owns the exact project wrapper/link, post-id, title wrapper/cell/link declarations; only `infos-item project-name`, `title project`, `infos-item post-id`, `title-wrap`, `title-cell`, and the issue-link `title` retire.
+- [x] External System-Chrome normal and fallback-off focused runs pass 1/1 each at 1366×900 and 390×844 with exact computed declarations, DOM/copy/order/navigation, plugin-attribute absence, zero overflow, and four inspected screenshots.
+- [ ] Keep labels/subtasks/author/meta and unrelated fallback consumers outside this batch. Live same-fixture legacy pairing, global fallback audit, full fallback-off suite, and overall final lock remain open.
