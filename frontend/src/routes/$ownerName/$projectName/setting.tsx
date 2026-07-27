@@ -29,7 +29,7 @@ const sx = {
   frame: stylex.props(styles.frame),
   topBox: stylex.props(styles.topBox),
   bottomBox: stylex.props(styles.bottomBox),
-  settingFields: stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields),
+  settingFields: stylex.props(styles.settingBox, styles.settingFields, styles.settingBoxRight),
   settingFieldTerm: stylex.props(styles.settingFieldTerm),
   settingFieldDescription: stylex.props(styles.settingFieldDescription),
   settingFieldLabel: stylex.props(styles.settingFieldLabel),
@@ -177,6 +177,7 @@ type ProjectSettingRouteScreenProps = {
   ownerName: string;
   projectName: string;
   renderProjectShell?: boolean;
+  renderProjectPage?: boolean;
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
 };
@@ -204,6 +205,7 @@ export function ProjectSettingRouteScreen({
   ownerName,
   projectName,
   renderProjectShell = true,
+  renderProjectPage = true,
   runtimeConfig,
   selfRoutePath,
 }: ProjectSettingRouteScreenProps) {
@@ -212,6 +214,7 @@ export function ProjectSettingRouteScreen({
       ownerName={ownerName}
       projectName={projectName}
       renderProjectShell={renderProjectShell}
+      renderProjectPage={renderProjectPage}
       runtimeConfig={runtimeConfig}
       selfRoutePath={selfRoutePath}
     />
@@ -234,6 +237,7 @@ function ProjectSettingRouteShell({
   ownerName,
   projectName,
   renderProjectShell = true,
+  renderProjectPage = true,
   runtimeConfig,
   selfRoutePath,
 }: ProjectSettingRouteScreenProps) {
@@ -265,6 +269,7 @@ function ProjectSettingRouteShell({
       project={project}
       projectName={projectName}
       renderProjectShell={renderProjectShell}
+      renderProjectPage={renderProjectPage}
       runtimeConfig={runtimeConfig}
       selfRoutePath={selfRoutePath}
     />
@@ -298,6 +303,7 @@ function ProjectSettingScreen({
   project,
   projectName,
   renderProjectShell,
+  renderProjectPage,
   runtimeConfig,
   selfRoutePath,
 }: {
@@ -307,6 +313,7 @@ function ProjectSettingScreen({
   project: ProjectContainer;
   projectName: string;
   renderProjectShell: boolean;
+  renderProjectPage: boolean;
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
 }) {
@@ -319,6 +326,7 @@ function ProjectSettingScreen({
       ownerName={ownerName}
       projectName={projectName}
       project={project}
+      renderProjectPage={renderProjectPage}
       runtimeConfig={runtimeConfig}
       selfRoutePath={selfRoutePath}
     />
@@ -342,6 +350,7 @@ function ProjectSettingBody({
   ownerName,
   projectName,
   project,
+  renderProjectPage,
   runtimeConfig,
   selfRoutePath,
 }: {
@@ -350,6 +359,7 @@ function ProjectSettingBody({
   ownerName: string;
   projectName: string;
   project: ProjectContainer;
+  renderProjectPage: boolean;
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
 }) {
@@ -396,6 +406,7 @@ function ProjectSettingBody({
     "textarea",
     sx.textarea.className,
     stylex.props(styles.textareaHeight(`${overviewHeight}px`)).className,
+    stylex.props(styles.legacyTextareaHeight).className,
     stylex.props(textareaStaticStyles.overflow).className,
   ]
     .filter(Boolean)
@@ -485,627 +496,633 @@ function ProjectSettingBody({
     }
   }
 
-  return (
-    <div {...sx.page} data-stylex-owner="project-setting-page">
-      <div data-stylex-owner="project-setting-shell">
-        <ProjectSettingMenu
-          active="setting"
-          showCode={menuCodeChecked}
-          ownerName={ownerName}
-          project={project}
-          projectName={projectName}
-          selfRoutePath={selfRoutePath}
-        />
+  const settingContent = (
+    <>
+      <ProjectSettingMenu
+        active="setting"
+        showCode={menuCodeChecked}
+        ownerName={ownerName}
+        project={project}
+        projectName={projectName}
+        selfRoutePath={selfRoutePath}
+      />
 
-        <form
-          id="saveSetting"
-          method="post"
-          action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/setting`)}
-          encType="multipart/form-data"
-          {...sx.form}
-          className={`${sx.form.className} nm`}
-          data-stylex-owner="project-setting-form"
-          onSubmit={onSubmit}
+      <form
+        id="saveSetting"
+        method="post"
+        action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/setting`)}
+        encType="multipart/form-data"
+        {...sx.form}
+        className={`${sx.form.className} nm`}
+        data-stylex-owner="project-setting-form"
+        onSubmit={onSubmit}
+      >
+        <div
+          {...sx.frame}
+          className={`${sx.frame.className} bubble-wrap gray`}
+          data-stylex-owner="project-setting-frame"
         >
+          <input type="hidden" name="id" value={projectId(project)} />
+          <input
+            type="hidden"
+            name="watchingCount"
+            value={numberField(recordField(project).watchCount)}
+          />
           <div
-            {...sx.frame}
-            className={`${sx.frame.className} bubble-wrap gray`}
-            data-stylex-owner="project-setting-frame"
+            {...sx.topBox}
+            className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}
+            data-stylex-owner="project-setting-top-box"
           >
-            <input type="hidden" name="id" value={projectId(project)} />
-            <input
-              type="hidden"
-              name="watchingCount"
-              value={numberField(recordField(project).watchCount)}
-            />
             <div
-              {...sx.topBox}
-              className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}
-              data-stylex-owner="project-setting-top-box"
+              className={`${sx.settingBox.className} ${sx.settingBoxLeft.className} setting-box left`}
+              data-stylex-owner="project-setting-setting-box-left"
             >
               <div
-                className={`${sx.settingBox.className} ${sx.settingBoxLeft.className} setting-box left`}
-                data-stylex-owner="project-setting-setting-box-left"
+                {...sx.logo}
+                {...stylex.props(
+                  styles.logoBackground(
+                    `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
+                  ),
+                )}
+                className={`${sx.logo.className} ${stylex.props(styles.logoBackground(`url('${projectLogoUrl(project, runtimeConfig.basePath)}')`)).className ?? ""}`.trim()}
+                data-stylex-owner="project-setting-logo"
+              ></div>
+              <div
+                className={`${sx.logoDesc.className} logo-desc`}
+                data-stylex-owner="project-setting-logo-desc"
               >
-                <div
-                  {...sx.logo}
-                  {...stylex.props(
-                    styles.logoBackground(
-                      `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
-                    ),
-                  )}
-                  className={`${sx.logo.className} ${stylex.props(styles.logoBackground(`url('${projectLogoUrl(project, runtimeConfig.basePath)}')`)).className ?? ""}`.trim()}
-                  data-stylex-owner="project-setting-logo"
-                ></div>
-                <div
-                  className={`${sx.logoDesc.className} logo-desc`}
-                  data-stylex-owner="project-setting-logo-desc"
+                <ul
+                  {...sx.descsList}
+                  className={`${sx.descsList.className} unstyled descs`}
+                  data-stylex-owner="project-setting-descs-list"
                 >
-                  <ul
-                    {...sx.descsList}
-                    className={`${sx.descsList.className} unstyled descs`}
-                    data-stylex-owner="project-setting-descs-list"
+                  <li
+                    className={sx.descsItem.className}
+                    data-stylex-owner="project-setting-descs-item"
                   >
-                    <li
-                      className={sx.descsItem.className}
-                      data-stylex-owner="project-setting-descs-item"
+                    <strong>{t("project.logo")}</strong>
+                  </li>
+                  <li
+                    className={sx.descsItem.className}
+                    data-stylex-owner="project-setting-descs-item"
+                  >
+                    {t("project.logo.type")}{" "}
+                    <span
+                      {...stylex.props(styles.point)}
+                      className={`${stylex.props(styles.point).className} point`}
+                      data-stylex-owner="project-setting-point"
                     >
-                      <strong>{t("project.logo")}</strong>
-                    </li>
-                    <li
-                      className={sx.descsItem.className}
-                      data-stylex-owner="project-setting-descs-item"
+                      bmp, jpg, gif, png
+                    </span>
+                  </li>
+                  <li
+                    className={sx.descsItem.className}
+                    data-stylex-owner="project-setting-descs-item"
+                  >
+                    {t("project.logo.maxFileSize")}{" "}
+                    <span
+                      {...stylex.props(styles.point)}
+                      className={`${stylex.props(styles.point).className} point`}
+                      data-stylex-owner="project-setting-point"
                     >
-                      {t("project.logo.type")}{" "}
-                      <span
-                        {...stylex.props(styles.point)}
-                        className={`${stylex.props(styles.point).className} point`}
-                        data-stylex-owner="project-setting-point"
+                      5MB
+                    </span>
+                  </li>
+                  <li
+                    className={sx.descsLast.className}
+                    data-stylex-owner="project-setting-descs-last"
+                  >
+                    <div className="btn-wrap">
+                      <div
+                        {...sx.logoUploadButton}
+                        className={`${sx.logoUploadButton.className} nbtn medium white fake-file-wrap`}
+                        data-stylex-owner="project-setting-logo-upload-button"
                       >
-                        bmp, jpg, gif, png
-                      </span>
-                    </li>
-                    <li
-                      className={sx.descsItem.className}
-                      data-stylex-owner="project-setting-descs-item"
-                    >
-                      {t("project.logo.maxFileSize")}{" "}
-                      <span
-                        {...stylex.props(styles.point)}
-                        className={`${stylex.props(styles.point).className} point`}
-                        data-stylex-owner="project-setting-point"
-                      >
-                        5MB
-                      </span>
-                    </li>
-                    <li
-                      className={sx.descsLast.className}
-                      data-stylex-owner="project-setting-descs-last"
-                    >
-                      <div className="btn-wrap">
-                        <div
-                          {...sx.logoUploadButton}
-                          className={`${sx.logoUploadButton.className} nbtn medium white fake-file-wrap`}
-                          data-stylex-owner="project-setting-logo-upload-button"
-                        >
-                          <i className="yobicon-upload"></i> {t("button.upload")}
-                          <input
-                            key={logoInputResetKey}
-                            {...sx.logoUploadInput}
-                            id="logoPath"
-                            type="file"
-                            className={`${sx.logoUploadInput.className} file`}
-                            name="logoPath"
-                            accept="image/*"
-                            data-stylex-owner="project-setting-logo-upload-input"
-                            onChange={onChangeLogoPath}
-                          />
-                        </div>
+                        <i className="yobicon-upload"></i> {t("button.upload")}
+                        <input
+                          key={logoInputResetKey}
+                          {...sx.logoUploadInput}
+                          id="logoPath"
+                          type="file"
+                          className={`${sx.logoUploadInput.className} file`}
+                          name="logoPath"
+                          accept="image/*"
+                          data-stylex-owner="project-setting-logo-upload-input"
+                          onChange={onChangeLogoPath}
+                        />
                       </div>
-                    </li>
-                  </ul>
-                </div>
+                    </div>
+                  </li>
+                </ul>
               </div>
-              <dl
-                {...sx.settingFields}
-                className={`${sx.settingFields.className} setting-box right`}
-                data-stylex-owner="project-setting-setting-box-right"
-              >
-                <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
-                  <label
-                    {...sx.settingFieldLabel}
-                    data-stylex-owner="project-setting-name-label"
-                    htmlFor="project-name"
-                  >
-                    {t("project.name.placeholder")}
-                  </label>
-                </dt>
-                <dd
-                  {...sx.nameField}
-                  className={`${sx.nameField.className} ${sx.settingFieldDescription.className}`}
-                  data-stylex-owner="project-setting-name-field"
-                >
-                  <input
-                    {...sx.input}
-                    data-stylex-owner="project-setting-name-input"
-                    id="project-name"
-                    type="text"
-                    name="name"
-                    maxLength={250}
-                    defaultValue={projectName}
-                    onBlur={() => setProjectNamePopoverFocused(false)}
-                    onFocus={() => setProjectNamePopoverFocused(true)}
-                    onMouseEnter={() => setProjectNamePopoverHovered(true)}
-                    onMouseLeave={() => setProjectNamePopoverHovered(false)}
-                  />
-                  {isProjectNamePopoverVisible ? (
-                    <div
-                      className="popover left in"
-                      {...sx.namePopover}
-                      data-stylex-owner="project-setting-name-popover"
-                    >
-                      <div className="arrow"></div>
-                      <div className="popover-title" aria-hidden="true"></div>
-                      <div className="popover-content">{t("project.transfer.description6")}</div>
-                    </div>
-                  ) : null}
-                  {oldPlace ? (
-                    <div>
-                      {t("project.previous.place", { args: [""] })}
-                      <span {...sx.oldPlace} data-stylex-owner="project-setting-old-place">
-                        {oldPlace}
-                      </span>
-                    </div>
-                  ) : null}
-                  <br />
-                </dd>
-                <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-description-term">
-                  <label
-                    {...sx.settingFieldLabel}
-                    data-stylex-owner="project-setting-description-label"
-                    htmlFor="project-desc"
-                  >
-                    {t("project.description.placeholder")}
-                  </label>
-                </dt>
-                <dd
-                  {...sx.settingFieldDescription}
-                  data-stylex-owner="project-setting-description-field"
-                >
-                  <textarea
-                    ref={overviewRef}
-                    id="project-desc"
-                    name="overview"
-                    maxLength={250}
-                    data-stylex-owner="project-setting-description"
-                    className={textareaClassName}
-                    value={overview}
-                    onChange={(event) => setOverview(event.currentTarget.value)}
-                  ></textarea>
-                </dd>
-              </dl>
             </div>
+            <dl
+              {...sx.settingFields}
+              className={`${sx.settingFields.className} setting-box right`}
+              data-stylex-owner="project-setting-setting-box-right"
+            >
+              <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
+                <label
+                  {...sx.settingFieldLabel}
+                  data-stylex-owner="project-setting-name-label"
+                  htmlFor="project-name"
+                >
+                  {t("project.name.placeholder")}
+                </label>
+              </dt>
+              <dd
+                {...sx.nameField}
+                className={`${sx.nameField.className} ${sx.settingFieldDescription.className}`}
+                data-stylex-owner="project-setting-name-field"
+              >
+                <input
+                  {...sx.input}
+                  data-stylex-owner="project-setting-name-input"
+                  id="project-name"
+                  type="text"
+                  name="name"
+                  maxLength={250}
+                  defaultValue={projectName}
+                  onBlur={() => setProjectNamePopoverFocused(false)}
+                  onFocus={() => setProjectNamePopoverFocused(true)}
+                  onMouseEnter={() => setProjectNamePopoverHovered(true)}
+                  onMouseLeave={() => setProjectNamePopoverHovered(false)}
+                />
+                {isProjectNamePopoverVisible ? (
+                  <div
+                    className="popover left in"
+                    {...sx.namePopover}
+                    data-stylex-owner="project-setting-name-popover"
+                  >
+                    <div className="arrow"></div>
+                    <div className="popover-title" aria-hidden="true"></div>
+                    <div className="popover-content">{t("project.transfer.description6")}</div>
+                  </div>
+                ) : null}
+                {oldPlace ? (
+                  <div>
+                    {t("project.previous.place", { args: [""] })}
+                    <span {...sx.oldPlace} data-stylex-owner="project-setting-old-place">
+                      {oldPlace}
+                    </span>
+                  </div>
+                ) : null}
+                <br />
+              </dd>
+              <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-description-term">
+                <label
+                  {...sx.settingFieldLabel}
+                  data-stylex-owner="project-setting-description-label"
+                  htmlFor="project-desc"
+                >
+                  {t("project.description.placeholder")}
+                </label>
+              </dt>
+              <dd
+                {...sx.settingFieldDescription}
+                data-stylex-owner="project-setting-description-field"
+              >
+                <textarea
+                  ref={overviewRef}
+                  id="project-desc"
+                  name="overview"
+                  maxLength={250}
+                  data-stylex-owner="project-setting-description"
+                  className={textareaClassName}
+                  value={overview}
+                  onChange={(event) => setOverview(event.currentTarget.value)}
+                ></textarea>
+              </dd>
+            </dl>
+          </div>
 
+          <div
+            {...sx.middleBox}
+            className={`${sx.middleBox.className} box-wrap middle`}
+            data-stylex-owner="project-setting-middle-share"
+          >
+            <div
+              {...sx.cuLabel}
+              className={`${sx.cuLabel.className} cu-label`}
+              data-stylex-owner="project-setting-cu-label-share"
+            >
+              {t("project.shareOption")}
+            </div>{" "}
+            <div
+              {...sx.cuDesc}
+              className={`${sx.cuDesc.className} cu-desc`}
+              data-stylex-owner="project-setting-cu-desc-share"
+            >
+              <input
+                name="projectScope"
+                type="radio"
+                className={`${sx.radioInput.className} radio-btn`}
+                id="public"
+                value="PUBLIC"
+                defaultChecked={projectScope === "PUBLIC"}
+                data-stylex-owner="project-setting-radio-public"
+              />
+              <label htmlFor="public" className="bg-radiobtn label-public">
+                {t("project.public")}
+              </label>{" "}
+              {stringField(project.organizationName, "") ? (
+                <>
+                  <input
+                    name="projectScope"
+                    type="radio"
+                    className="radio-btn"
+                    id="protected"
+                    value="PROTECTED"
+                    defaultChecked={projectScope === "PROTECTED"}
+                  />
+                  <label htmlFor="protected" className="bg-radiobtn label-protected">
+                    {t("project.protected")}
+                  </label>{" "}
+                </>
+              ) : null}
+              <input
+                name="projectScope"
+                type="radio"
+                className={`${sx.radioInput.className} radio-btn`}
+                id="private"
+                value="PRIVATE"
+                defaultChecked={projectScope === "PRIVATE"}
+                data-stylex-owner="project-setting-radio-private"
+              />
+              <label htmlFor="private" className="bg-radiobtn label-private">
+                {t("project.private")}
+              </label>{" "}
+              <span
+                {...sx.cuNote}
+                className={`${sx.cuNote.className} note`}
+                data-stylex-owner="project-setting-cu-note-share"
+              >
+                {t("project.private.notice")}
+              </span>
+            </div>
+          </div>
+
+          {isGit ? (
             <div
               {...sx.middleBox}
               className={`${sx.middleBox.className} box-wrap middle`}
-              data-stylex-owner="project-setting-middle-share"
+              data-stylex-owner="project-setting-middle-issue-template"
             >
               <div
                 {...sx.cuLabel}
                 className={`${sx.cuLabel.className} cu-label`}
-                data-stylex-owner="project-setting-cu-label-share"
+                data-stylex-owner="project-setting-cu-label-issue-template"
               >
-                {t("project.shareOption")}
+                {t("issue.template")}
               </div>{" "}
               <div
                 {...sx.cuDesc}
                 className={`${sx.cuDesc.className} cu-desc`}
-                data-stylex-owner="project-setting-cu-desc-share"
+                data-stylex-owner="project-setting-cu-desc-issue-template"
               >
-                <input
-                  name="projectScope"
-                  type="radio"
-                  className={`${sx.radioInput.className} radio-btn`}
-                  id="public"
-                  value="PUBLIC"
-                  defaultChecked={projectScope === "PUBLIC"}
-                  data-stylex-owner="project-setting-radio-public"
-                />
-                <label htmlFor="public" className="bg-radiobtn label-public">
-                  {t("project.public")}
-                </label>{" "}
-                {stringField(project.organizationName, "") ? (
-                  <>
-                    <input
-                      name="projectScope"
-                      type="radio"
-                      className="radio-btn"
-                      id="protected"
-                      value="PROTECTED"
-                      defaultChecked={projectScope === "PROTECTED"}
-                    />
-                    <label htmlFor="protected" className="bg-radiobtn label-protected">
-                      {t("project.protected")}
-                    </label>{" "}
-                  </>
-                ) : null}
-                <input
-                  name="projectScope"
-                  type="radio"
-                  className={`${sx.radioInput.className} radio-btn`}
-                  id="private"
-                  value="PRIVATE"
-                  defaultChecked={projectScope === "PRIVATE"}
-                  data-stylex-owner="project-setting-radio-private"
-                />
-                <label htmlFor="private" className="bg-radiobtn label-private">
-                  {t("project.private")}
-                </label>{" "}
-                <span
-                  {...sx.cuNote}
-                  className={`${sx.cuNote.className} note`}
-                  data-stylex-owner="project-setting-cu-note-share"
+                <Link
+                  activeOptions={legacyProjectSettingsLinkActiveOptions}
+                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+                  to="/$ownerName/$projectName/postform"
+                  params={{ ownerName, projectName }}
+                  search={{ issueTemplate: true }}
+                  className={`${sx.issueTemplateEdit.className} ybtn`}
+                  data-stylex-owner="project-setting-issue-template-edit"
+                  target="_blank"
                 >
-                  {t("project.private.notice")}
-                </span>
+                  {t("issue.template.edit")}
+                </Link>
               </div>
             </div>
+          ) : null}
 
-            {isGit ? (
+          <div
+            {...sx.middleBox}
+            className={`${sx.middleBox.className} box-wrap middle`}
+            data-stylex-owner="project-setting-middle-code-accessible"
+          >
+            <div
+              {...sx.cuLabel}
+              className={`${sx.cuLabel.className} cu-label`}
+              data-stylex-owner="project-setting-cu-label-code-accessible"
+            >
+              {t("project.codeAccessible")}
+            </div>{" "}
+            <div
+              {...sx.cuDesc}
+              className={`${sx.cuDesc.className} cu-desc`}
+              data-stylex-owner="project-setting-cu-desc-code-accessible"
+            >
+              <input
+                name="isCodeAccessibleMemberOnly"
+                type="radio"
+                id="codeAccessibleMemberOnly"
+                className={`${sx.radioInput.className} radio-btn`}
+                value="true"
+                defaultChecked={booleanField(recordField(project).codeMemberOnly)}
+                data-stylex-owner="project-setting-radio-code-members"
+              />
+              <label htmlFor="codeAccessibleMemberOnly" className="bg-radiobtn label-public">
+                {t("button.yes")}
+              </label>{" "}
+              <input
+                name="isCodeAccessibleMemberOnly"
+                type="radio"
+                id="codeAccessibleAnyone"
+                className={`${sx.radioInput.className} radio-btn`}
+                value="false"
+                defaultChecked={!booleanField(recordField(project).codeMemberOnly)}
+                data-stylex-owner="project-setting-radio-code-anyone"
+              />
+              <label htmlFor="codeAccessibleAnyone" className="bg-radiobtn label-private">
+                {t("button.no")}
+              </label>
+              <span
+                {...sx.cuNote}
+                className={`${sx.cuNote.className} note`}
+                data-stylex-owner="project-setting-cu-note-code-accessible"
+              ></span>
+            </div>
+          </div>
+
+          {isGit ? (
+            <>
               <div
-                {...sx.middleBox}
-                className={`${sx.middleBox.className} box-wrap middle`}
-                data-stylex-owner="project-setting-middle-issue-template"
+                className={`${sx.middleBox.className} box-wrap middle reviewer-count-wrap ${
+                  stylex.props(
+                    reviewerCountPanelVisible
+                      ? styles.reviewerCountPanelVisible
+                      : styles.reviewerCountPanelHidden,
+                  ).className
+                }`}
+                id="reviewerCountSettingPanel"
+                data-stylex-owner="project-setting-middle-reviewer"
               >
                 <div
                   {...sx.cuLabel}
-                  className={`${sx.cuLabel.className} cu-label`}
-                  data-stylex-owner="project-setting-cu-label-issue-template"
+                  className={`${sx.cuLabel.className} cu-label vmiddle`}
+                  data-stylex-owner="project-setting-cu-label-reviewer"
                 >
-                  {t("issue.template")}
+                  {t("project.reviewer.count")}
                 </div>{" "}
                 <div
                   {...sx.cuDesc}
                   className={`${sx.cuDesc.className} cu-desc`}
-                  data-stylex-owner="project-setting-cu-desc-issue-template"
+                  data-stylex-owner="project-setting-cu-desc-reviewer"
                 >
-                  <Link
-                    activeOptions={legacyProjectSettingsLinkActiveOptions}
-                    activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-                    to="/$ownerName/$projectName/postform"
-                    params={{ ownerName, projectName }}
-                    search={{ issueTemplate: true }}
-                    className={`${sx.issueTemplateEdit.className} ybtn`}
-                    data-stylex-owner="project-setting-issue-template-edit"
-                    target="_blank"
-                  >
-                    {t("issue.template.edit")}
-                  </Link>
-                </div>
-              </div>
-            ) : null}
-
-            <div
-              {...sx.middleBox}
-              className={`${sx.middleBox.className} box-wrap middle`}
-              data-stylex-owner="project-setting-middle-code-accessible"
-            >
-              <div
-                {...sx.cuLabel}
-                className={`${sx.cuLabel.className} cu-label`}
-                data-stylex-owner="project-setting-cu-label-code-accessible"
-              >
-                {t("project.codeAccessible")}
-              </div>{" "}
-              <div
-                {...sx.cuDesc}
-                className={`${sx.cuDesc.className} cu-desc`}
-                data-stylex-owner="project-setting-cu-desc-code-accessible"
-              >
-                <input
-                  name="isCodeAccessibleMemberOnly"
-                  type="radio"
-                  id="codeAccessibleMemberOnly"
-                  className={`${sx.radioInput.className} radio-btn`}
-                  value="true"
-                  defaultChecked={booleanField(recordField(project).codeMemberOnly)}
-                  data-stylex-owner="project-setting-radio-code-members"
-                />
-                <label htmlFor="codeAccessibleMemberOnly" className="bg-radiobtn label-public">
-                  {t("button.yes")}
-                </label>{" "}
-                <input
-                  name="isCodeAccessibleMemberOnly"
-                  type="radio"
-                  id="codeAccessibleAnyone"
-                  className={`${sx.radioInput.className} radio-btn`}
-                  value="false"
-                  defaultChecked={!booleanField(recordField(project).codeMemberOnly)}
-                  data-stylex-owner="project-setting-radio-code-anyone"
-                />
-                <label htmlFor="codeAccessibleAnyone" className="bg-radiobtn label-private">
-                  {t("button.no")}
-                </label>
-                <span
-                  {...sx.cuNote}
-                  className={`${sx.cuNote.className} note`}
-                  data-stylex-owner="project-setting-cu-note-code-accessible"
-                ></span>
-              </div>
-            </div>
-
-            {isGit ? (
-              <>
-                <div
-                  className={`${sx.middleBox.className} box-wrap middle reviewer-count-wrap ${
-                    stylex.props(
-                      reviewerCountPanelVisible
-                        ? styles.reviewerCountPanelVisible
-                        : styles.reviewerCountPanelHidden,
-                    ).className
-                  }`}
-                  id="reviewerCountSettingPanel"
-                  data-stylex-owner="project-setting-middle-reviewer"
-                >
+                  <input
+                    name="isUsingReviewerCount"
+                    type="radio"
+                    className={`${sx.radioInput.className} radio-btn`}
+                    id="reviewerCountEnable"
+                    value="true"
+                    checked={reviewerCountEnabled}
+                    onChange={() => setReviewerCountEnabled(true)}
+                    data-stylex-owner="project-setting-radio-reviewer-enable"
+                  />
+                  <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
+                    {t("project.reviewer.count.enable")}
+                  </label>{" "}
+                  <input
+                    name="isUsingReviewerCount"
+                    type="radio"
+                    className={`${sx.radioInput.className} radio-btn`}
+                    id="reviewerCountDisable"
+                    value="false"
+                    checked={!reviewerCountEnabled}
+                    onChange={() => setReviewerCountEnabled(false)}
+                    data-stylex-owner="project-setting-radio-reviewer-disable"
+                  />
+                  <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
+                    {t("project.reviewer.count.disable")}
+                  </label>
                   <div
-                    {...sx.cuLabel}
-                    className={`${sx.cuLabel.className} cu-label vmiddle`}
-                    data-stylex-owner="project-setting-cu-label-reviewer"
-                  >
-                    {t("project.reviewer.count")}
-                  </div>{" "}
-                  <div
-                    {...sx.cuDesc}
-                    className={`${sx.cuDesc.className} cu-desc`}
-                    data-stylex-owner="project-setting-cu-desc-reviewer"
+                    id="welReviewerCount"
+                    className={`hide ${
+                      stylex.props(
+                        reviewerCountEnabled
+                          ? styles.reviewerCountControlsVisible
+                          : styles.reviewerCountControlsHidden,
+                      ).className
+                    }`}
                   >
                     <input
-                      name="isUsingReviewerCount"
-                      type="radio"
-                      className={`${sx.radioInput.className} radio-btn`}
-                      id="reviewerCountEnable"
-                      value="true"
-                      checked={reviewerCountEnabled}
-                      onChange={() => setReviewerCountEnabled(true)}
-                      data-stylex-owner="project-setting-radio-reviewer-enable"
+                      type="hidden"
+                      name="defaultReviewerCount"
+                      value={selectedDefaultReviewerCount}
                     />
-                    <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
-                      {t("project.reviewer.count.enable")}
-                    </label>{" "}
-                    <input
-                      name="isUsingReviewerCount"
-                      type="radio"
-                      className={`${sx.radioInput.className} radio-btn`}
-                      id="reviewerCountDisable"
-                      value="false"
-                      checked={!reviewerCountEnabled}
-                      onChange={() => setReviewerCountEnabled(false)}
-                      data-stylex-owner="project-setting-radio-reviewer-disable"
-                    />
-                    <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
-                      {t("project.reviewer.count.disable")}
-                    </label>
                     <div
-                      id="welReviewerCount"
-                      className={`hide ${
-                        stylex.props(
-                          reviewerCountEnabled
-                            ? styles.reviewerCountControlsVisible
-                            : styles.reviewerCountControlsHidden,
-                        ).className
-                      }`}
+                      className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""} ${stylex.props(reviewerDropdownStyles.group).className}`}
+                      data-stylex-owner="project-reviewer-count-dropdown"
                     >
-                      <input
-                        type="hidden"
-                        name="defaultReviewerCount"
-                        value={selectedDefaultReviewerCount}
-                      />
-                      <div
-                        className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""} ${stylex.props(reviewerDropdownStyles.group).className}`}
-                        data-stylex-owner="project-reviewer-count-dropdown"
+                      <button
+                        className={`btn dropdown-toggle large ${
+                          stylex.props(
+                            reviewerDropdownStyles.toggle,
+                            reviewerCountDropdownOpen ? reviewerDropdownStyles.toggleOpen : null,
+                          ).className
+                        }`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setReviewerCountDropdownOpen((open) => !open);
+                        }}
                       >
-                        <button
-                          className={`btn dropdown-toggle large ${
-                            stylex.props(
-                              reviewerDropdownStyles.toggle,
-                              reviewerCountDropdownOpen ? reviewerDropdownStyles.toggleOpen : null,
-                            ).className
-                          }`}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setReviewerCountDropdownOpen((open) => !open);
-                          }}
+                        <span
+                          className={`d-label ${stylex.props(reviewerDropdownStyles.label).className}`}
+                        >
+                          {selectedDefaultReviewerCount}
+                        </span>
+                        <span
+                          className={`d-caret ${stylex.props(reviewerDropdownStyles.caretWrap).className}`}
                         >
                           <span
-                            className={`d-label ${stylex.props(reviewerDropdownStyles.label).className}`}
+                            className={`caret ${stylex.props(reviewerDropdownStyles.caret).className}`}
+                          ></span>
+                        </span>
+                      </button>
+                      <ul
+                        className={`dropdown-menu ${
+                          stylex.props(
+                            reviewerDropdownStyles.menu,
+                            reviewerCountDropdownOpen
+                              ? reviewerDropdownStyles.menuVisible
+                              : reviewerDropdownStyles.menuHidden,
+                          ).className
+                        }`}
+                      >
+                        {reviewerPoints.map((point) => (
+                          <li
+                            className={stylex.props(reviewerDropdownStyles.item).className}
+                            data-value={point}
+                            key={point}
                           >
-                            {selectedDefaultReviewerCount}
-                          </span>
-                          <span
-                            className={`d-caret ${stylex.props(reviewerDropdownStyles.caretWrap).className}`}
-                          >
-                            <span
-                              className={`caret ${stylex.props(reviewerDropdownStyles.caret).className}`}
-                            ></span>
-                          </span>
-                        </button>
-                        <ul
-                          className={`dropdown-menu ${
-                            stylex.props(
-                              reviewerDropdownStyles.menu,
-                              reviewerCountDropdownOpen
-                                ? reviewerDropdownStyles.menuVisible
-                                : reviewerDropdownStyles.menuHidden,
-                            ).className
-                          }`}
-                        >
-                          {reviewerPoints.map((point) => (
-                            <li
-                              className={stylex.props(reviewerDropdownStyles.item).className}
-                              data-value={point}
-                              key={point}
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setSelectedDefaultReviewerCount(point);
+                                setReviewerCountDropdownOpen(false);
+                              }}
                             >
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  setSelectedDefaultReviewerCount(point);
-                                  setReviewerCountDropdownOpen(false);
-                                }}
-                              >
-                                {point}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <span
-                        {...sx.reviewerNote}
-                        className={`${sx.reviewerNote.className} note ml10`}
-                        data-stylex-owner="project-setting-cu-note-reviewer"
-                      >
-                        {t("project.reviewer.count.description")}
-                      </span>
+                              {point}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
+                    <span
+                      {...sx.reviewerNote}
+                      className={`${sx.reviewerNote.className} note ml10`}
+                      data-stylex-owner="project-setting-cu-note-reviewer"
+                    >
+                      {t("project.reviewer.count.description")}
+                    </span>
                   </div>
                 </div>
-
-                <div
-                  className={`${sx.middleBox.className} box-wrap middle ${
-                    stylex.props(
-                      menuCodeChecked
-                        ? styles.defaultBranchPanelVisible
-                        : styles.defaultBranchPanelHidden,
-                    ).className
-                  }`}
-                  id="defaultBranceSettingPanel"
-                  data-stylex-owner="project-setting-middle-default-branch"
-                >
-                  <div
-                    {...sx.cuLabel}
-                    className={`${sx.cuLabel.className} cu-label vmiddle`}
-                    data-stylex-owner="project-setting-cu-label-default-branch"
-                  >
-                    {t("code.branches.defaultBranch")}
-                  </div>{" "}
-                  <div
-                    {...sx.cuDesc}
-                    className={`${sx.cuDesc.className} cu-desc`}
-                    data-stylex-owner="project-setting-cu-desc-default-branch"
-                  >
-                    <DefaultBranchSelect2 branches={branches} defaultBranch={defaultBranch} />
-                  </div>
-                </div>
-              </>
-            ) : null}
-
-            <div
-              {...sx.middleBox}
-              className={`${sx.middleBox.className} box-wrap middle`}
-              data-stylex-owner="project-setting-middle-menu"
-            >
-              <div
-                {...sx.cuLabel}
-                className={`${sx.cuLabel.className} cu-label vmiddle`}
-                data-stylex-owner="project-setting-cu-label-menu"
-              >
-                {t("project.menu.setting")}
-              </div>{" "}
-              <div
-                {...sx.cuDesc}
-                className={`${sx.cuDesc.className} cu-desc`}
-                data-stylex-owner="project-setting-cu-desc-menu"
-              >
-                <MenuCheckbox
-                  id="menuSettingCode"
-                  name="code"
-                  first
-                  checked={menuCodeChecked}
-                  label={t("menu.code")}
-                  onChange={(checked) => {
-                    setMenuCodeChecked(checked);
-                    if (!checked) {
-                      setMenuPullRequestChecked(false);
-                      setMenuReviewChecked(false);
-                      setReviewerCountEnabled(false);
-                      setReviewerCountPanelVisible(false);
-                    }
-                  }}
-                />{" "}
-                <MenuCheckbox
-                  id="menuSettingIssue"
-                  name="issue"
-                  defaultChecked={booleanField(menuSetting.issue)}
-                  label={t("menu.issue")}
-                />{" "}
-                {isGit ? (
-                  <>
-                    <MenuCheckbox
-                      id="menuSettingPullRequest"
-                      name="pullRequest"
-                      checked={menuPullRequestChecked}
-                      label={t("menu.pullRequest")}
-                      onChange={(checked) => {
-                        setMenuPullRequestChecked(checked);
-                        if (checked) {
-                          setMenuCodeChecked(true);
-                          setReviewerCountPanelVisible(true);
-                        } else {
-                          setReviewerCountEnabled(false);
-                          setReviewerCountPanelVisible(false);
-                        }
-                      }}
-                    />{" "}
-                  </>
-                ) : null}
-                <MenuCheckbox
-                  id="menuSettingReview"
-                  name="review"
-                  checked={menuReviewChecked}
-                  label={t("menu.review")}
-                  onChange={(checked) => {
-                    setMenuReviewChecked(checked);
-                    if (checked) {
-                      setMenuCodeChecked(true);
-                    }
-                  }}
-                />{" "}
-                <MenuCheckbox
-                  id="menuSettingMilestone"
-                  name="milestone"
-                  defaultChecked={booleanField(menuSetting.milestone)}
-                  label={t("milestone")}
-                />{" "}
-                <MenuCheckbox
-                  id="menuSettingBoard"
-                  name="board"
-                  defaultChecked={booleanField(menuSetting.board)}
-                  label={t("menu.board")}
-                />
               </div>
-            </div>
-          </div>
+
+              <div
+                className={`${sx.middleBox.className} box-wrap middle ${
+                  stylex.props(
+                    menuCodeChecked
+                      ? styles.defaultBranchPanelVisible
+                      : styles.defaultBranchPanelHidden,
+                  ).className
+                }`}
+                id="defaultBranceSettingPanel"
+                data-stylex-owner="project-setting-middle-default-branch"
+              >
+                <div
+                  {...sx.cuLabel}
+                  className={`${sx.cuLabel.className} cu-label vmiddle`}
+                  data-stylex-owner="project-setting-cu-label-default-branch"
+                >
+                  {t("code.branches.defaultBranch")}
+                </div>{" "}
+                <div
+                  {...sx.cuDesc}
+                  className={`${sx.cuDesc.className} cu-desc`}
+                  data-stylex-owner="project-setting-cu-desc-default-branch"
+                >
+                  <DefaultBranchSelect2 branches={branches} defaultBranch={defaultBranch} />
+                </div>
+              </div>
+            </>
+          ) : null}
 
           <div
-            {...sx.bottomBox}
-            className={`${sx.bottomBox.className} box-wrap bottom`}
-            data-stylex-owner="project-setting-bottom-box"
+            {...sx.middleBox}
+            className={`${sx.middleBox.className} box-wrap middle`}
+            data-stylex-owner="project-setting-middle-menu"
           >
-            <button
-              className={`${stylex.props(styles.save).className} ybtn ybtn-success`}
-              data-stylex-owner="project-setting-save"
-              id="save"
-              type="submit"
+            <div
+              {...sx.cuLabel}
+              className={`${sx.cuLabel.className} cu-label vmiddle`}
+              data-stylex-owner="project-setting-cu-label-menu"
             >
-              {t("button.save")}
-            </button>
+              {t("project.menu.setting")}
+            </div>{" "}
+            <div
+              {...sx.cuDesc}
+              className={`${sx.cuDesc.className} cu-desc`}
+              data-stylex-owner="project-setting-cu-desc-menu"
+            >
+              <MenuCheckbox
+                id="menuSettingCode"
+                name="code"
+                first
+                checked={menuCodeChecked}
+                label={t("menu.code")}
+                onChange={(checked) => {
+                  setMenuCodeChecked(checked);
+                  if (!checked) {
+                    setMenuPullRequestChecked(false);
+                    setMenuReviewChecked(false);
+                    setReviewerCountEnabled(false);
+                    setReviewerCountPanelVisible(false);
+                  }
+                }}
+              />{" "}
+              <MenuCheckbox
+                id="menuSettingIssue"
+                name="issue"
+                defaultChecked={booleanField(menuSetting.issue)}
+                label={t("menu.issue")}
+              />{" "}
+              {isGit ? (
+                <>
+                  <MenuCheckbox
+                    id="menuSettingPullRequest"
+                    name="pullRequest"
+                    checked={menuPullRequestChecked}
+                    label={t("menu.pullRequest")}
+                    onChange={(checked) => {
+                      setMenuPullRequestChecked(checked);
+                      if (checked) {
+                        setMenuCodeChecked(true);
+                        setReviewerCountPanelVisible(true);
+                      } else {
+                        setReviewerCountEnabled(false);
+                        setReviewerCountPanelVisible(false);
+                      }
+                    }}
+                  />{" "}
+                </>
+              ) : null}
+              <MenuCheckbox
+                id="menuSettingReview"
+                name="review"
+                checked={menuReviewChecked}
+                label={t("menu.review")}
+                onChange={(checked) => {
+                  setMenuReviewChecked(checked);
+                  if (checked) {
+                    setMenuCodeChecked(true);
+                  }
+                }}
+              />{" "}
+              <MenuCheckbox
+                id="menuSettingMilestone"
+                name="milestone"
+                defaultChecked={booleanField(menuSetting.milestone)}
+                label={t("milestone")}
+              />{" "}
+              <MenuCheckbox
+                id="menuSettingBoard"
+                name="board"
+                defaultChecked={booleanField(menuSetting.board)}
+                label={t("menu.board")}
+              />
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div
+          {...sx.bottomBox}
+          className={`${sx.bottomBox.className} box-wrap bottom`}
+          data-stylex-owner="project-setting-bottom-box"
+        >
+          <button
+            className={`${stylex.props(styles.save).className} ybtn ybtn-success`}
+            data-stylex-owner="project-setting-save"
+            id="save"
+            type="submit"
+          >
+            {t("button.save")}
+          </button>
+        </div>
+      </form>
+    </>
+  );
+
+  return renderProjectPage ? (
+    <div {...sx.page} data-stylex-owner="project-setting-page">
+      <div data-stylex-owner="project-setting-shell">{settingContent}</div>
     </div>
+  ) : (
+    settingContent
   );
 }
 

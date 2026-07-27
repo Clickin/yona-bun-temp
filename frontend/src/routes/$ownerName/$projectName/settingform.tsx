@@ -12,12 +12,21 @@ function ProjectSettingFormRoute() {
   const { ownerName, projectName } = Route.useParams();
 
   return (
-    <div {...stylex.props(styles.page)} data-stylex-owner="project-settingform-page">
-      <div {...stylex.props(styles.shell)} data-stylex-owner="project-settingform-shell">
+    <div
+      {...stylex.props(styles.pageWrapOuter)}
+      className={`${stylex.props(styles.pageWrapOuter).className} page-wrap-outer`}
+      data-stylex-owner="project-settingform-page-wrap-outer"
+    >
+      <div
+        {...stylex.props(styles.projectPageWrap)}
+        className={`${stylex.props(styles.projectPageWrap).className} project-page-wrap`}
+        data-stylex-owner="project-settingform-project-page-wrap"
+      >
         <ProjectSettingRouteScreen
           ownerName={ownerName}
           projectName={projectName}
           renderProjectShell={false}
+          renderProjectPage={false}
           runtimeConfig={runtimeConfig}
           selfRoutePath="/$ownerName/$projectName/settingform"
         />

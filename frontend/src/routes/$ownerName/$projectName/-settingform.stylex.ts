@@ -6,6 +6,20 @@ export const settingFormColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
-  page: { minHeight: "100%" },
-  shell: { minWidth: 0, color: settingFormColors.mutedText },
+  pageWrapOuter: {
+    minHeight: "450px",
+    marginTop: "10px",
+    minWidth: "1100px",
+    padding: "0px !important",
+  },
+  projectPageWrap: {
+    marginLeft: "auto",
+    marginRight: "auto",
+    marginTop: "20px !important",
+    width: "100% !important",
+    "@media (max-width: 900px)": {
+      marginTop: "5px !important",
+      width: "100% !important",
+    },
+  },
 });

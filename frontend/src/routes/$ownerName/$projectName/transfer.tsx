@@ -502,8 +502,8 @@ function ProjectTransferBody({
           </div>
           <div
             {...actionBoxStyleProps}
-            className={actionBoxStyleProps.className}
-            data-stylex-owner="project-transfer-action"
+            className={`${actionBoxStyleProps.className ?? ""} box-wrap bottom`.trim()}
+            data-stylex-owner="project-transfer-action-box"
           >
             <button
               {...dangerActionStyleProps}

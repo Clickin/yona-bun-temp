@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { type FormEvent } from "react";
-import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import { use, type FormEvent } from "react";
 import {
   projectReviewsQueryOptions,
   type ReviewThread,
@@ -14,6 +13,7 @@ import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SitePagination } from "../../sites/-pagination";
+import { ProjectLayoutContext } from "../$projectName";
 import { reviewsColors, reviewsDynamicStyles, reviewsLayout } from "./-reviews.stylex";
 
 const styles = stylex.create({
@@ -102,6 +102,7 @@ function ProjectReviewsRoute() {
 
 function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  const project = use(ProjectLayoutContext);
   const routeSearch = Route.useSearch();
   const search: ProjectReviewsSearch = {
     authorId: routeSearch.authorId ?? 0,
@@ -112,9 +113,6 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     participantId: routeSearch.participantId ?? 0,
     state: routeSearch.state ?? "open",
   };
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
   const reviewsQuery = useQuery(
     projectReviewsQueryOptions(runtimeConfig, {
       authorId: search.authorId,
@@ -129,14 +127,14 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     }),
   );
 
-  if (!projectQuery.data || !reviewsQuery.data) {
+  if (!project || !reviewsQuery.data) {
     return null;
   }
 
   return (
     <>
       <ProjectReviewsBody
-        project={projectQuery.data}
+        project={project}
         reviews={reviewsQuery.data}
         runtimeConfig={runtimeConfig}
         search={search}
@@ -176,6 +174,8 @@ function ProjectReviewsBody({
   const sidebarCountProps = stylex.props(reviewsLayout.sidebarCount);
   const filtersProps = stylex.props(reviewsLayout.filters);
   const exportActionProps = stylex.props(reviewsLayout.exportAction);
+  const pageWrapOuterProps = stylex.props(reviewsLayout.pageWrapOuter);
+  const projectPageWrapProps = stylex.props(reviewsLayout.projectPageWrap);
 
   function pushReviews(next: Partial<ProjectReviewsSearch>) {
     router.history.push(
@@ -199,152 +199,169 @@ function ProjectReviewsBody({
   }
 
   return (
-    <div className="project-page-wrap">
-      <div className="row-fluid issue-list-wrap">
-        <div
-          {...sidebarProps}
-          className={`span2 search-wrap span-hard-wrap ${sidebarProps.className ?? ""}`.trim()}
-          data-stylex-owner="project-reviews-sidebar"
-        >
-          <div className="inner advanced">
-            <ul className="lst-stacked unstyled">
-              <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
-                <button type="button" onClick={() => filterClick({})}>
-                  {t("review.allReview")}
-                  <span
-                    {...sidebarCountProps}
-                    className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
-                    data-stylex-owner="project-reviews-sidebar-count-all"
+    <div
+      {...pageWrapOuterProps}
+      className={`page-wrap-outer ${pageWrapOuterProps.className ?? ""}`.trim()}
+      data-stylex-owner="project-reviews-page-wrap-outer"
+    >
+      <div
+        {...projectPageWrapProps}
+        className={`project-page-wrap ${projectPageWrapProps.className ?? ""}`.trim()}
+        data-stylex-owner="project-reviews-page-wrap"
+      >
+        <div className="row-fluid issue-list-wrap">
+          <div
+            {...sidebarProps}
+            className={`span2 search-wrap span-hard-wrap ${sidebarProps.className ?? ""}`.trim()}
+            data-stylex-owner="project-reviews-sidebar"
+          >
+            <div className="inner advanced">
+              <ul className="lst-stacked unstyled">
+                <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
+                  <button type="button" onClick={() => filterClick({})}>
+                    {t("review.allReview")}
+                    <span
+                      {...sidebarCountProps}
+                      className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
+                      data-stylex-owner="project-reviews-sidebar-count-all"
+                    >
+                      {reviews.allCount}
+                    </span>
+                  </button>
+                </li>
+                <li className={search.participantId === currentUserId ? "active" : ""}>
+                  <button
+                    type="button"
+                    onClick={() => filterClick({ participantId: currentUserId })}
                   >
-                    {reviews.allCount}
-                  </span>
+                    {t("review.involvingYou")}
+                    <span
+                      {...sidebarCountProps}
+                      className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
+                      data-stylex-owner="project-reviews-sidebar-count-participant"
+                    >
+                      {reviews.participantCount}
+                    </span>
+                  </button>
+                </li>
+                <li className={search.authorId === currentUserId ? "active" : ""}>
+                  <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
+                    {t("review.createdByYou")}
+                    <span
+                      {...sidebarCountProps}
+                      className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
+                      data-stylex-owner="project-reviews-sidebar-count-author"
+                    >
+                      {reviews.authorCount}
+                    </span>
+                  </button>
+                </li>
+              </ul>
+              <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
+                <input type="hidden" name="authorId" value={search.authorId || ""} />
+                <input type="hidden" name="participantId" value={search.participantId || ""} />
+                <input type="hidden" name="orderDir" value={activeOrderDir} />
+                <input type="hidden" name="orderBy" value={activeOrderBy} />
+                <input type="hidden" name="state" value={activeState} />
+                <hr className="hide-in-mobile" />
+                <div className="search-bar span-hard-wrap">
+                  <input
+                    name="filter"
+                    {...searchInputProps}
+                    className={`textbox full ${searchInputProps.className ?? ""}`.trim()}
+                    data-stylex-owner="project-reviews-search-input"
+                    type="text"
+                    defaultValue={search.filter}
+                  />
+                  <button type="submit" className="search-btn">
+                    <i className="yobicon-search"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div className="span10 span-hard-wrap">
+            <div
+              {...filtersProps}
+              className={`filters ${filtersProps.className ?? ""}`.trim()}
+              data-stylex-owner="project-reviews-filters"
+            >
+              <button
+                type="button"
+                className={`${stylex.props(styles.sort).className} ${stylex.props(styles.sideEffectButton).className} filter`}
+                data-stylex-owner="project-reviews-sort"
+                onClick={() => {
+                  pushReviews({
+                    orderBy: "createdDate",
+                    orderDir: nextCreatedDateOrderDir,
+                    pageNum: 1,
+                  });
+                }}
+              >
+                <i
+                  className={`ico btn-gray-arrow ${
+                    activeOrderBy === "createdDate" && activeOrderDir !== "desc" ? "" : "down"
+                  }`}
+                ></i>
+                {t("common.order.date")}
+              </button>
+            </div>
+            <ul
+              {...tabsProps}
+              className={`nav nav-tabs nm ${tabsProps.className ?? ""}`.trim()}
+              data-stylex-owner="project-reviews-tabs"
+            >
+              <li className={activeState === "open" ? "active" : ""}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    pushReviews({ pageNum: 1, state: "open" });
+                  }}
+                >
+                  {t("issue.state.open")}
+                  <span className="num-badge">{reviews.openCount}</span>
                 </button>
               </li>
-              <li className={search.participantId === currentUserId ? "active" : ""}>
-                <button type="button" onClick={() => filterClick({ participantId: currentUserId })}>
-                  {t("review.involvingYou")}
-                  <span
-                    {...sidebarCountProps}
-                    className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
-                    data-stylex-owner="project-reviews-sidebar-count-participant"
-                  >
-                    {reviews.participantCount}
-                  </span>
-                </button>
-              </li>
-              <li className={search.authorId === currentUserId ? "active" : ""}>
-                <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
-                  {t("review.createdByYou")}
-                  <span
-                    {...sidebarCountProps}
-                    className={`num-badge ${sidebarCountProps.className ?? ""}`.trim()}
-                    data-stylex-owner="project-reviews-sidebar-count-author"
-                  >
-                    {reviews.authorCount}
-                  </span>
+              <li className={activeState === "closed" ? "active" : ""}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    pushReviews({ pageNum: 1, state: "closed" });
+                  }}
+                >
+                  {t("issue.state.closed")}
+                  <span className="num-badge">{reviews.closedCount}</span>
                 </button>
               </li>
             </ul>
-            <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
-              <input type="hidden" name="authorId" value={search.authorId || ""} />
-              <input type="hidden" name="participantId" value={search.participantId || ""} />
-              <input type="hidden" name="orderDir" value={activeOrderDir} />
-              <input type="hidden" name="orderBy" value={activeOrderBy} />
-              <input type="hidden" name="state" value={activeState} />
-              <hr className="hide-in-mobile" />
-              <div className="search-bar span-hard-wrap">
-                <input
-                  name="filter"
-                  {...searchInputProps}
-                  className={`textbox full ${searchInputProps.className ?? ""}`.trim()}
-                  data-stylex-owner="project-reviews-search-input"
-                  type="text"
-                  defaultValue={search.filter}
-                />
-                <button type="submit" className="search-btn">
-                  <i className="yobicon-search"></i>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div className="span10 span-hard-wrap">
-          <div
-            {...filtersProps}
-            className={`filters ${filtersProps.className ?? ""}`.trim()}
-            data-stylex-owner="project-reviews-filters"
-          >
-            <button
-              type="button"
-              className={`${stylex.props(styles.sort).className} ${stylex.props(styles.sideEffectButton).className} filter`}
-              data-stylex-owner="project-reviews-sort"
-              onClick={() => {
-                pushReviews({
-                  orderBy: "createdDate",
-                  orderDir: nextCreatedDateOrderDir,
-                  pageNum: 1,
-                });
-              }}
+            <div className="review-list-wrap" data-stylex-owner="project-reviews-list-wrap">
+              <ProjectReviewRows
+                ownerName={ownerName}
+                projectName={projectName}
+                reviews={reviews}
+              />
+            </div>
+            <div
+              {...exportActionProps}
+              className={exportActionProps.className}
+              data-stylex-owner="project-reviews-export-action"
             >
-              <i
-                className={`ico btn-gray-arrow ${
-                  activeOrderBy === "createdDate" && activeOrderDir !== "desc" ? "" : "down"
-                }`}
-              ></i>
-              {t("common.order.date")}
-            </button>
-          </div>
-          <ul
-            {...tabsProps}
-            className={`nav nav-tabs nm ${tabsProps.className ?? ""}`.trim()}
-            data-stylex-owner="project-reviews-tabs"
-          >
-            <li className={activeState === "open" ? "active" : ""}>
-              <button
-                type="button"
-                onClick={() => {
-                  pushReviews({ pageNum: 1, state: "open" });
-                }}
+              <Link
+                href={`${action}${exportQuery}`}
+                to={`${baseRoute}${exportQuery}`}
+                reloadDocument
+                className="ybtn small"
               >
-                {t("issue.state.open")}
-                <span className="num-badge">{reviews.openCount}</span>
-              </button>
-            </li>
-            <li className={activeState === "closed" ? "active" : ""}>
-              <button
-                type="button"
-                onClick={() => {
-                  pushReviews({ pageNum: 1, state: "closed" });
-                }}
-              >
-                {t("issue.state.closed")}
-                <span className="num-badge">{reviews.closedCount}</span>
-              </button>
-            </li>
-          </ul>
-          <div className="review-list-wrap" data-stylex-owner="project-reviews-list-wrap">
-            <ProjectReviewRows ownerName={ownerName} projectName={projectName} reviews={reviews} />
+                <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
+              </Link>
+            </div>
+            <ProjectReviewPagination
+              action={action}
+              basePath={runtimeConfig.basePath}
+              reviews={reviews}
+              search={search}
+            />
           </div>
-          <div
-            {...exportActionProps}
-            className={exportActionProps.className}
-            data-stylex-owner="project-reviews-export-action"
-          >
-            <Link
-              href={`${action}${exportQuery}`}
-              to={`${baseRoute}${exportQuery}`}
-              reloadDocument
-              className="ybtn small"
-            >
-              <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
-            </Link>
-          </div>
-          <ProjectReviewPagination
-            action={action}
-            basePath={runtimeConfig.basePath}
-            reviews={reviews}
-            search={search}
-          />
         </div>
       </div>
     </div>

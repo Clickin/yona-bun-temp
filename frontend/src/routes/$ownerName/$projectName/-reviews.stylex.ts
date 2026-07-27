@@ -11,6 +11,15 @@ export const reviewsColors = stylex.defineVars({
 });
 
 export const reviewsLayout = stylex.create({
+  // reviewthread/list.scala.html emits page-wrap-outer > project-page-wrap;
+  // these values mirror the frozen _page.less shell declarations.
+  pageWrapOuter: {
+    marginTop: "10px",
+    minHeight: "450px",
+  },
+  projectPageWrap: {
+    margin: "20px auto 0px",
+  },
   sidebarCount: { float: "right" },
   filters: {
     float: "right",

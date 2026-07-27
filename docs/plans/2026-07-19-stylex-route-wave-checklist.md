@@ -3224,3 +3224,10 @@ desktop/mobile geometry, and filtering.
   local failures.
 - [ ] Remaining route batches, full fallback-off/global fallback audit,
   same-fixture screenshot pairing, and final pixel lock remain open.
+
+### 2026-07-28 — Batch 1052 reviews/settingform/transfer shell parity
+
+- [x] Legacy review, project-setting, transfer, setting-menu, frozen LESS/Bootstrap, and import-chain evidence was identified before implementation.
+- [x] Reviews renders the legacy `project-page-wrap > row-fluid issue-list-wrap` shell for empty responses; settingform restores the legacy shell cascade, content-box right panel, textarea height, and page boundary; transfer restores the legacy `box-wrap bottom` action shell.
+- [x] External System-Chrome production-dist batch 6 passes 10/10 with diff failures 0, local failures 0, and no status deltas. Focused normal/fallback-off evidence covers the three route states; fallback-off settingform passes 1/1.
+- [ ] Remaining corpus batches, global fallback-consumer audit, full fallback-off suite, same-fixture screenshot pairing, and overall final pixel lock remain open.

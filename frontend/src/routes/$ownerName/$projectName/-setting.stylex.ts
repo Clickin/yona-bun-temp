@@ -201,7 +201,10 @@ export const styles = stylex.create({
       [globalBreakpoints.mobile]: "none",
     },
     margin: "0px",
+    minHeight: "190px",
     paddingLeft: { default: "20px", [globalBreakpoints.mobile]: "0px" },
+    boxSizing: { default: "content-box", [globalBreakpoints.mobile]: "border-box" },
+    width: { default: "399px", [globalBreakpoints.mobile]: "100%" },
   },
   settingFields: { margin: "0px", padding: "0px", paddingLeft: "0px" },
   logo: {
@@ -292,6 +295,7 @@ export const styles = stylex.create({
     resize: "vertical",
     width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },
   },
+  legacyTextareaHeight: { height: "80px !important" },
   textareaHeight: (height: string) => ({ height }),
   oldPlace: { color: "red" },
   menuCheckboxInput: {
