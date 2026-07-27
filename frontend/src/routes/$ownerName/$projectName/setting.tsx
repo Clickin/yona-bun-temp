@@ -29,7 +29,7 @@ const sx = {
   frame: stylex.props(styles.frame),
   topBox: stylex.props(styles.topBox),
   bottomBox: stylex.props(styles.bottomBox),
-  settingFields: stylex.props(styles.settingBox, styles.settingFields, styles.settingBoxRight),
+  settingFields: stylex.props(styles.settingFields),
   settingFieldTerm: stylex.props(styles.settingFieldTerm),
   settingFieldDescription: stylex.props(styles.settingFieldDescription),
   settingFieldLabel: stylex.props(styles.settingFieldLabel),
@@ -617,8 +617,10 @@ function ProjectSettingBody({
               </div>
             </div>
             <dl
+              {...sx.settingBox}
+              {...sx.settingBoxRight}
               {...sx.settingFields}
-              className={`${sx.settingFields.className} setting-box right`}
+              className={`${sx.settingBox.className} ${sx.settingBoxRight.className} ${sx.settingFields.className} setting-box right`}
               data-stylex-owner="project-setting-setting-box-right"
             >
               <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
