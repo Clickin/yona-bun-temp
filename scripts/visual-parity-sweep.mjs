@@ -387,7 +387,7 @@ function localSettledSelectorForPath(path) {
   ) {
     return ".project-page-wrap";
   }
-  if (/^\/[^/?#]+\/[^/?#]+\/?$/u.test(pathname) && alwaysScreenshotPaths.has(pathname)) {
+  if (/^\/[^/?#]+\/[^/?#]+\/?$/u.test(pathname)) {
     return ".project-page-wrap";
   }
   return null;

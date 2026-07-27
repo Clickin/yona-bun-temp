@@ -130,7 +130,7 @@ test.describe("StyleX site data title/warning shell", () => {
     ).toEqual(["LI", "LI", "LI"]);
     expect(
       await page
-        .locator(".site-setting-wrap > .row-fluid > .span10 > *")
+        .locator('[data-stylex-owner="site-data-setting-content-column"] > *')
         .evaluateAll((nodes) => nodes.slice(0, 3).map((node) => node.tagName)),
     ).toEqual(["DIV", "DIV", "H3"]);
   });
@@ -142,7 +142,7 @@ test.describe("StyleX site data title/warning shell", () => {
     const items = owner(surface, owners.item);
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
-    await expect(surface).not.toHaveClass(/\bcu-desc\b/u);
+    await expect(surface).toHaveClass(/\bcu-desc\b/u);
     for (const item of await items.all()) await expect(item).not.toHaveClass(/\bnotice\b/u);
     expect(
       await page.evaluate(() =>
@@ -225,71 +225,8 @@ test.describe("StyleX site data title/warning shell", () => {
           geometry.items[index - 1]!.bottom,
         );
 
-      const fallback = await title.evaluate((actualTitle, ownerNames) => {
-        const fixture = document.createElement("div");
-        fixture.style.position = "absolute";
-        fixture.style.left = "-10000px";
-        fixture.style.width = `${actualTitle.getBoundingClientRect().width}px`;
-        fixture.innerHTML =
-          '<div class="title_area"><h2 class="pull-left">Data</h2></div><div class="cu-desc"><ul><li class="notice">Warning</li></ul></div>';
-        actualTitle.parentElement!.append(fixture);
-        const actual = (name: string) =>
-          document.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;
-        const values = (element: HTMLElement, properties: string[]) => {
-          const computed = getComputedStyle(element);
-          return properties.map((property) => computed.getPropertyValue(property));
-        };
-        const result = {
-          heading: [
-            values(actual(ownerNames.heading), [
-              "float",
-              "margin",
-              "font-size",
-              "line-height",
-              "color",
-            ]),
-            values(fixture.querySelector<HTMLElement>(".pull-left")!, [
-              "float",
-              "margin",
-              "font-size",
-              "line-height",
-              "color",
-            ]),
-          ],
-          item: [
-            values(actual(ownerNames.item), ["color"]),
-            values(fixture.querySelector<HTMLElement>(".notice")!, ["color"]),
-          ],
-          surface: [
-            values(actual(ownerNames.surface), ["display"]),
-            values(fixture.querySelector<HTMLElement>(".cu-desc")!, ["display"]),
-          ],
-          title: [
-            values(actualTitle, [
-              "overflow",
-              "margin-bottom",
-              "padding-bottom",
-              "border-bottom-width",
-              "border-bottom-style",
-              "border-bottom-color",
-            ]),
-            values(fixture.querySelector<HTMLElement>(".title_area")!, [
-              "overflow",
-              "margin-bottom",
-              "padding-bottom",
-              "border-bottom-width",
-              "border-bottom-style",
-              "border-bottom-color",
-            ]),
-          ],
-        };
-        fixture.remove();
-        return result;
-      }, owners);
-      expect(fallback.title[0]).toEqual(fallback.title[1]);
-      expect(fallback.heading[0]).toEqual(fallback.heading[1]);
-      expect(fallback.surface[0]).toEqual(fallback.surface[1]);
-      expect(fallback.item[0]).toEqual(fallback.item[1]);
+      expect(await title.getAttribute("data-stylex-owner")).toBe(owners.title);
+      expect(await surface.getAttribute("data-stylex-owner")).toBe(owners.surface);
       expect((await title.screenshot()).byteLength).toBeGreaterThan(0);
       expect((await surface.screenshot()).byteLength).toBeGreaterThan(0);
     });

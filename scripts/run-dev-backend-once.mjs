@@ -31,6 +31,14 @@ const parityProjectSeed = Object.freeze({
     commentBody: "Board seed confirmed from the fork contributor side.",
     title: "Seed notes",
   },
+  pullRequest: {
+    body: "",
+    fromBranch: "feature/ui",
+    number: 1,
+    state: 1,
+    title: "Add feature branch change",
+    toBranch: "main",
+  },
   repositories: [
     {
       branches: [
@@ -56,6 +64,32 @@ const parityProjectSeed = Object.freeze({
         },
       ],
       owner: "admin",
+      projectName: "sample",
+    },
+    {
+      branches: [
+        {
+          files: {
+            "README.md":
+              "# Sample parity repository\n\nThis repository powers localhost parity checks.\n",
+            "docs/parity-checklist.md":
+              "- verify project header and menu\n- verify issue, board, and code shells\n",
+            "src/main.rs": 'fn main() {\n    println!("sample parity");\n}\n',
+          },
+          message: "Seed sample parity repository",
+          name: "main",
+        },
+        {
+          files: {
+            "docs/parity-checklist.md":
+              "- verify project header and menu\n- verify issue, board, and code shells\n- verify pull request compare state\n",
+            "src/ui.rs": 'pub fn feature_flag() -> &\'static str {\n    "feature/ui"\n}\n',
+          },
+          message: "Add feature branch parity fixture",
+          name: "feature/ui",
+        },
+      ],
+      owner: "alice",
       projectName: "sample",
     },
     {
@@ -252,6 +286,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
       "posting",
       "posting_comment",
       "project",
+      "pull_request",
       "watch",
     ];
     if (requiredTables.some((tableName) => !hasTable(database, tableName))) {
@@ -281,6 +316,9 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
     const portalProject = database
       .prepare("select id from project where owner = ? and name = ? limit 1")
       .get("weblabs", "portal");
+    const aliceProject = database
+      .prepare("select id from project where owner = ? and name = ? limit 1")
+      .get("alice", "sample");
     const timestamp = currentTimestampSql();
     const report = {
       issue: "unchanged",
@@ -670,6 +708,73 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         .run(parityCreatedAt, postComment.id);
       postComment.created_date = parityCreatedAt;
 
+      if (aliceProject?.id) {
+        let pullRequest = database
+          .prepare(
+            `select id, title, body, to_branch, from_branch, contributor_id, state, number
+               from pull_request
+              where to_project_id = ? and from_project_id = ? and number = ?
+              limit 1`,
+          )
+          .get(aliceProject.id, aliceProject.id, parityProjectSeed.pullRequest.number);
+        if (!pullRequest?.id) {
+          const inserted = database
+            .prepare(
+              `insert into pull_request
+                (title, to_project_id, from_project_id, to_branch, from_branch, contributor_id,
+                 receiver_id, created, updated, received, state, is_conflict, is_merging,
+                 last_commit_id, merged_commit_id_from, merged_commit_id_to, number, body)
+               values (?, ?, ?, ?, ?, ?, null, ?, ?, null, ?, 0, 0, null, null, null, ?, ?)`,
+            )
+            .run(
+              parityProjectSeed.pullRequest.title,
+              aliceProject.id,
+              aliceProject.id,
+              parityProjectSeed.pullRequest.toBranch,
+              parityProjectSeed.pullRequest.fromBranch,
+              aliceUser.id,
+              parityCreatedAt,
+              parityCreatedAt,
+              parityProjectSeed.pullRequest.state,
+              parityProjectSeed.pullRequest.number,
+              parityProjectSeed.pullRequest.body,
+            );
+          pullRequest = { id: Number(inserted.lastInsertRowid) };
+          report.pullRequest = "inserted";
+        } else if (
+          pullRequest.title !== parityProjectSeed.pullRequest.title ||
+          (pullRequest.body ?? "") !== parityProjectSeed.pullRequest.body ||
+          pullRequest.to_branch !== parityProjectSeed.pullRequest.toBranch ||
+          pullRequest.from_branch !== parityProjectSeed.pullRequest.fromBranch ||
+          Number(pullRequest.contributor_id ?? 0) !== Number(aliceUser.id) ||
+          Number(pullRequest.state ?? 0) !== parityProjectSeed.pullRequest.state
+        ) {
+          database
+            .prepare(
+              `update pull_request
+                  set title = ?, body = ?, to_branch = ?, from_branch = ?, contributor_id = ?,
+                      receiver_id = null, created = ?, updated = ?, received = null, state = ?,
+                      is_conflict = 0, is_merging = 0, last_commit_id = null,
+                      merged_commit_id_from = null, merged_commit_id_to = ?, number = ?
+                where id = ?`,
+            )
+            .run(
+              parityProjectSeed.pullRequest.title,
+              parityProjectSeed.pullRequest.body,
+              parityProjectSeed.pullRequest.toBranch,
+              parityProjectSeed.pullRequest.fromBranch,
+              aliceUser.id,
+              parityCreatedAt,
+              parityCreatedAt,
+              parityProjectSeed.pullRequest.state,
+              null,
+              parityProjectSeed.pullRequest.number,
+              pullRequest.id,
+            );
+          report.pullRequest = "updated";
+        }
+      }
+
       const ensureNotification = ({
         createdAt,
         message,
@@ -815,6 +920,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
       report.milestone !== "unchanged" ||
       report.post !== "unchanged" ||
       report.postComment !== "unchanged" ||
+      report.pullRequest !== undefined ||
       report.repositories.some((entry) => entry.status !== "unchanged") ||
       report.watchers.length > 0
     ) {
@@ -873,6 +979,7 @@ export function runDevBackendOnce(env = process.env) {
 
   const config = [
     `database_url = ${JSON.stringify(`sqlite://${normalizedDatabasePath}?mode=rwc`)}`,
+    `data_root = ${JSON.stringify(path.relative(repoRoot, runtimeDirectory).replace(/\\/g, "/"))}`,
     `public_origin = ${JSON.stringify(publicOrigin)}`,
     'schema_policy = "up"',
     `seed_pilot = ${shouldSeed ? "true" : "false"}`,

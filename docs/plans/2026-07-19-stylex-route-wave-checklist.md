@@ -3237,3 +3237,22 @@ desktop/mobile geometry, and filtering.
 - [x] `project/delete.scala.html`, `partial_settingmenu.scala.html`, frozen `.box-wrap.bottom`, modal, and Bootstrap evidence establish the action wrapper contract.
 - [x] React deleteform restores the legacy `box-wrap bottom` wrapper while retaining React-owned checkbox/modal behavior; focused normal/fallback-off E2E covers desktop/mobile geometry and interaction.
 - [ ] Batch 7 final rerun, remaining corpus batches, global fallback audit, full fallback-off suite, same-fixture pairing, and overall pixel lock remain open.
+
+### 2026-07-28 — Batch 1056 site-data wrapper parity follow-up
+
+- [x] `/sites/data` composes the existing StyleX page and warning owners with the legacy `page-wrap-outer` and `cu-desc` classes so the frozen cascade is active at the React-owned boundaries.
+- [x] Normal external System Chrome focused matrix passes 14/14 with desktop/mobile screenshot assertions; explicit fallback-off warning-surface screenshots pass 6/6 with separate normal/fallback-off baselines.
+- [ ] Remaining corpus gaps, action-only/deferred targets, global fallback-consumer audit, same-fixture screenshot pairing, and overall pixel lock remain open.
+
+### 2026-07-28 — Batch 1057 visual-sweep repository-root stabilization
+
+- [x] Confirmed the long-looking stabilization was not route rendering: production-dist route paint was ~183–207ms; the remaining sweep bootstrap cost was account/fixture setup.
+- [x] Fixed the actual repository fixture mismatch by emitting `data_root` in generated `dev.toml`; otherwise SQLite used `.yona-data/visual-sweep-local` while Git branch lookup used default `.yona-data`.
+- [x] External production-dist Chrome reruns: batch 3 10/10, batch 10 10/10, and batch 14 project shell healthy. PR form-options changed from 400 empty-repository to 200.
+- [ ] Batch 15 legacy-only member edit routes and action-only `/watch` remain documented gaps; remaining corpus, fallback-off/global audit, screenshot pairing, and final pixel lock remain open.
+
+### 2026-07-28 — Batch 1058 visual-sweep project-root settle gate
+
+- [x] Project-root routes now wait for `.project-page-wrap`, so asynchronous container responses cannot be measured as the global shell.
+- [x] `/weblabs/portal` external Chrome legacy/local focused comparison passes 1/1 with zero diff/local failures; local capture moves from 121 to 397 visible characters after the settle gate.
+- [ ] Remaining corpus gaps, action-only/deferred targets, fallback-off/global audit, screenshot pairing, and overall pixel lock remain open.

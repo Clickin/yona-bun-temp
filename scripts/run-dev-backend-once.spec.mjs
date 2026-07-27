@@ -79,6 +79,27 @@ function seedParityFoundationFixture(database) {
       previous_name_changed_time bigint,
       is_code_accessible_member_only smallint
     );
+    create table pull_request (
+      id integer primary key autoincrement,
+      title varchar,
+      to_project_id bigint,
+      from_project_id bigint,
+      to_branch varchar,
+      from_branch varchar,
+      contributor_id bigint,
+      receiver_id bigint,
+      created datetime_text,
+      updated datetime_text,
+      received datetime_text,
+      state integer,
+      is_conflict smallint,
+      is_merging smallint,
+      last_commit_id varchar,
+      merged_commit_id_from varchar,
+      merged_commit_id_to varchar,
+      number bigint,
+      body text
+    );
     create table milestone (
       id integer primary key autoincrement,
       title varchar,
@@ -217,7 +238,8 @@ function seedParityFoundationFixture(database) {
       (id, name, overview, vcs, owner, created_date, last_issue_number, last_posting_number, project_scope)
     values
       (2, 'sample', 'Sample project', 'GIT', 'admin', '2026-07-06 00:00:00.000', 1, 0, 'public'),
-      (3, 'portal', 'Group portal', 'GIT', 'weblabs', '2026-07-06 00:00:00.000', 1, 0, 'protected');
+      (3, 'portal', 'Group portal', 'GIT', 'weblabs', '2026-07-06 00:00:00.000', 1, 0, 'protected'),
+      (4, 'sample', 'Alice sample', 'GIT', 'alice', '2026-07-06 00:00:00.000', 1, 0, 'public');
     insert into milestone (id, title, due_date, state, project_id, contents)
     values (1, 'Parity launch', '2026-07-31 23:59:59.999', 0, 2, 'Milestone for local legacy parity verification screens.');
     insert into issue_label_category (id, project_id, name, is_exclusive)
@@ -363,6 +385,23 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       const postComment = database
         .prepare("select author_login_id, author_name, contents from posting_comment")
         .get();
+      const pullRequest = database
+        .prepare(
+          `select title, to_project_id, from_project_id, to_branch, from_branch, contributor_id, state, number
+             from pull_request
+            where to_project_id = 4 and from_project_id = 4 and number = 1`,
+        )
+        .get();
+      assert.deepEqual({ ...pullRequest }, {
+        title: "Add feature branch change",
+        to_project_id: 4,
+        from_project_id: 4,
+        to_branch: "main",
+        from_branch: "feature/ui",
+        contributor_id: 3,
+        state: 1,
+        number: 1,
+      });
       const labelNames = database
         .prepare("select name from issue_label order by name")
         .all()
@@ -488,9 +527,11 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       database.close();
     }
 
-    const sampleRepo = join(fixture.runtimeDirectory, "repo", "2.git");
-    const portalRepo = join(fixture.runtimeDirectory, "repo", "3.git");
-    const sampleRefs = readGit(sampleRepo, "show-ref");
+      const sampleRepo = join(fixture.runtimeDirectory, "repo", "2.git");
+      const aliceRepo = join(fixture.runtimeDirectory, "repo", "4.git");
+      const portalRepo = join(fixture.runtimeDirectory, "repo", "3.git");
+      const sampleRefs = readGit(sampleRepo, "show-ref");
+      const aliceRefs = readGit(aliceRepo, "show-ref");
     const sampleMainFiles = readGit(sampleRepo, "ls-tree", "--name-only", "-r", "main").split("\n");
     const sampleFeatureFiles = readGit(
       sampleRepo,
@@ -501,7 +542,9 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
     ).split("\n");
 
     assert.match(sampleRefs, /refs\/heads\/main/);
-    assert.match(sampleRefs, /refs\/heads\/feature\/ui/);
+      assert.match(sampleRefs, /refs\/heads\/feature\/ui/);
+      assert.match(aliceRefs, /refs\/heads\/main/);
+      assert.match(aliceRefs, /refs\/heads\/feature\/ui/);
     assert.throws(() => readGit(portalRepo, "show-ref", "--head", "--quiet"));
     assert.deepEqual(sampleMainFiles, ["README.md", "docs/parity-checklist.md", "src/main.rs"]);
     assert.deepEqual(sampleFeatureFiles, [
@@ -538,6 +581,9 @@ test("reconcileDefaultDevParitySeed is idempotent for already-seeded localhost d
         postComment: Number(
           database.prepare("select count(*) as count from posting_comment").get().count,
         ),
+        pullRequests: Number(
+          database.prepare("select count(*) as count from pull_request").get().count,
+        ),
         users: Number(database.prepare("select count(*) as count from n4user").get().count),
         watchers: Number(
           database
@@ -564,6 +610,7 @@ test("reconcileDefaultDevParitySeed is idempotent for already-seeded localhost d
         issueComment: 1,
         issueLabels: 2,
         postComment: 1,
+        pullRequests: 1,
         notificationEvents: 2,
         notificationReceivers: 2,
         users: 5,

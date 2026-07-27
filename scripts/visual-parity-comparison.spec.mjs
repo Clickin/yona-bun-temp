@@ -733,10 +733,9 @@ test("visual sweep waits for form routes with query state", () => {
   assert.match(source, /pathname\.endsWith\("\/issueform"\)/u);
   assert.match(source, /\\\/\(\?:issue\|post\)\\\/\\d\+\\\/editform\$/u);
   assert.doesNotMatch(source, /pathname\.endsWith\("\/editform"\)/u);
-  assert.doesNotMatch(source, /\^\\\/\[\^\?\/#\]\+\\\/\[\^\?\/#\]\+/u);
+  assert.match(source, /return "\.project-page-wrap";/u);
   assert.match(source, /pathname\.endsWith\("\/newFork"\)/u);
   assert.match(source, /pathname\.endsWith\("\/newPullRequestForm"\)/u);
-  assert.match(source, /return "#status\.alert-success"/u);
   assert.match(source, /\/\\\/post\\\/\\d\+\$\/u\.test\(pathname\)/u);
   assert.match(source, /return "#comment-form \.upload-wrap"/u);
   assert.match(source, /\$\{localSettledSelector\}, \.project-page-wrap > \.error-wrap/u);

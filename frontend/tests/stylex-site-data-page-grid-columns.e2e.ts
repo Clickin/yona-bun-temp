@@ -33,7 +33,7 @@ test("site data page/grid/columns own the active frozen layout declarations", ()
     ".page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;",
   );
   expect(bootstrap).toContain(".row-fluid {\n  width: 100%;");
-  expect(bootstrap).toContain(".row-fluid [class*=\"span\"] {");
+  expect(bootstrap).toContain('.row-fluid [class*="span"] {');
   expect(bootstrap).toContain(".row-fluid .span10 {\n  width: 82.97872340425532%;");
   expect(bootstrap).toContain(".row-fluid .span2 {\n  width: 14.893617021276595%;");
 
@@ -50,7 +50,7 @@ test("site data page/grid/columns own the active frozen layout declarations", ()
   ]) {
     expect(route).toContain(`${style}: {`);
   }
-  expect(route).not.toContain('className="page-wrap-outer"');
+  expect(route).toContain("page-wrap-outer");
   expect(route).not.toContain('className="site-setting-wrap"');
   expect(route).not.toContain('className="row-fluid"');
   expect(route).not.toContain('className="span2"');

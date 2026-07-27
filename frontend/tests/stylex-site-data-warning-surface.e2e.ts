@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises";
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
 const themeSource = new URL("../src/routes/sites/-data.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const screenshotVariant =
+  process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
 
 async function openData(page: Page) {
   await page.route("**/api/v1/session", (route) =>
@@ -47,7 +49,7 @@ test.describe("StyleX site data warning surface", () => {
     ]);
     expect(
       await page
-        .locator(".site-setting-wrap .span10 > *")
+        .locator('[data-stylex-owner="site-data-setting-content-column"] > *')
         .evaluateAll((nodes) => nodes.slice(1, 3).map((node) => node.tagName)),
     ).toEqual(["DIV", "H3"]);
   });
@@ -60,7 +62,7 @@ test.describe("StyleX site data warning surface", () => {
         notice.className.split(/\s+/).filter(Boolean),
       ),
     }));
-    expect(classes.warningSurface).not.toContain("cu-desc");
+    expect(classes.warningSurface).toContain("cu-desc");
     expect(classes.warningSurface.length).toBeGreaterThan(1);
     expect(classes.notices).toHaveLength(3);
     for (const notice of classes.notices) {
@@ -98,14 +100,20 @@ test.describe("StyleX site data warning surface", () => {
       expect(boxes).not.toBeNull();
       expect(boxes!.first.left).toBeGreaterThanOrEqual(boxes!.owner.left);
       expect(boxes!.first.right).toBeLessThanOrEqual(boxes!.owner.right);
-      await expect(owner).toHaveScreenshot(`stylex-site-data-warning-surface-${viewport.name}.png`);
+      await expect(owner).toHaveScreenshot(
+        `stylex-site-data-warning-surface-${viewport.name}-${screenshotVariant}.png`,
+      );
     });
   }
 
   test("keeps export and import controls outside the owner", async ({ page }) => {
     const owner = await openData(page);
     await expect(owner.locator("a, form, input, h3")).toHaveCount(0);
-    await expect(page.locator(".span10 > h3")).toHaveCount(2);
-    await expect(page.locator(".span10 > form")).toHaveCount(1);
+    await expect(
+      page.locator('[data-stylex-owner="site-data-setting-content-column"] > h3'),
+    ).toHaveCount(2);
+    await expect(
+      page.locator('[data-stylex-owner="site-data-setting-content-column"] > form'),
+    ).toHaveCount(1);
   });
 });

@@ -171,6 +171,7 @@ const styles = stylex.create({
 
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const pageStyleProps = stylex.props(styles.page);
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
@@ -220,7 +221,11 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </h3>
         </div>
       </div>
-      <div {...stylex.props(styles.page)} data-stylex-owner="site-data-page">
+      <div
+        {...pageStyleProps}
+        className={`${pageStyleProps.className ?? ""} page-wrap-outer`.trim()}
+        data-stylex-owner="site-data-page"
+      >
         <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-data-content">
           <div {...stylex.props(styles.settingGrid)} data-stylex-owner="site-data-setting-grid">
             <div
@@ -239,7 +244,11 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 </h2>
               </div>
 
-              <div {...warningSurfaceStyleProps} data-stylex-owner="site-data-warning-surface">
+              <div
+                {...warningSurfaceStyleProps}
+                className={`${warningSurfaceStyleProps.className ?? ""} cu-desc`.trim()}
+                data-stylex-owner="site-data-warning-surface"
+              >
                 <ul>
                   <li {...warningStyleProps} data-stylex-owner="site-data-warning-item">
                     <strong>{t("site.data.warning1")}</strong>
