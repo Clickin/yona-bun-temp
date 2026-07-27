@@ -1,5 +1,20 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1044 — notification fixture and previous-comment payload parity — 2026-07-28
+
+The stabilization investigation separated browser settle latency from the
+remaining notification visual diff: external Chrome measured legacy route paint
+at 45–95ms, Rust dist at 169–192ms, and the settle phase at 20–32ms. The actual
+gap was that the sweep bootstrap did not create legacy-equivalent Bob/Alice
+comments, and Rust comment notification events stored an empty `oldValue` even
+though legacy `IssueApp.AddPreviousContent`/`BoardApp.AddPreviousContent` stores
+the original or previous comment context. The sweep now creates those comments
+through REST once per fresh fixture, and the repository derives the legacy
+previous-content payload for issue and board comments. Fresh external Chrome
+desktop and mobile notification pairs pass with zero diff/local failures.
+The full fallback-off/global audit, remaining route batches, and final pixel
+lock remain open.
+
 ### Batch 1043 — help-shell sweep owner mapping and metric baseline — 2026-07-28
 
 The visual sweep now recognizes the existing StyleX-owned help page outer as

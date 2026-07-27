@@ -3209,3 +3209,18 @@ desktop/mobile geometry, and filtering.
 - [ ] Remaining batches, aggregate comparison, global fallback audit, and
   overall pixel lock remain open; batch-0 route geometry failures are real
   parity gaps, not teardown failures.
+
+### 2026-07-28 — Batch 1044 notification fixture/payload parity
+
+- [x] Stabilization timing is measured separately from route inspection:
+  external Chrome reports legacy 45–95ms route paint, Rust dist 169–192ms,
+  and only 20–32ms for the font/image/animation settle phase.
+- [x] Fresh parity bootstrap creates Bob's issue comment and Alice's board
+  comment through REST, matching the legacy notification fixture without
+  direct notification-table fabrication.
+- [x] Rust issue/board comment notification events now include the legacy
+  `Original issue`/`Original posting` or `Previous comment` context in
+  `oldValue`; fresh desktop/mobile notification pairs report zero visual and
+  local failures.
+- [ ] Remaining route batches, full fallback-off/global fallback audit,
+  same-fixture screenshot pairing, and final pixel lock remain open.

@@ -1,5 +1,13 @@
 # Core Parity Audit
 
+- 2026-07-28 notification parity note: legacy `IssueApp.AddPreviousContent`,
+  `BoardApp.AddPreviousContent`, and `NotificationEvent.forComment` make the
+  original/previous comment context part of `NEW_COMMENT.oldValue`. Rust now
+  derives that context for issue and board comments; the focused
+  `notification_contract_comment_events_include_legacy_previous_context` test
+  and fresh desktop/mobile notification sweeps cover the behavior. The full
+  notification-contract suite still has unrelated mail/poisoned-global
+  failures documented in the wave audit.
 - 2026-07-13 shared auth-query cache note: the SPA now owns one TanStack Query client for its full mount lifetime. Session and auth-capability projections are intentionally retained as stable data, and the shared root-login mutation invalidates both keys after successful authentication. This changes no legacy HTML, CSS/LESS, route, copy, or user-visible geometry; `frontend/src/query-client.test.ts` verifies the cache policy.
 
 ## Purpose

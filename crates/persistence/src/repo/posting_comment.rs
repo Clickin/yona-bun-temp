@@ -1,6 +1,43 @@
 use super::*;
 
 impl AppRepositoryImpl<'_> {
+    async fn previous_posting_comment_notification_contents(
+        &self,
+        posting: &posting::Model,
+        parent_comment_id: Option<i64>,
+    ) -> Result<String, DbErr> {
+        let previous = if let Some(parent_comment_id) = parent_comment_id {
+            posting_comment::Entity::find_by_id(parent_comment_id)
+                .one(&self.db)
+                .await?
+        } else {
+            posting_comment::Entity::find()
+                .filter(posting_comment::Column::PostingId.eq(Some(posting.id)))
+                .order_by_desc(posting_comment::Column::CreatedDate)
+                .order_by_desc(posting_comment::Column::Id)
+                .one(&self.db)
+                .await?
+        };
+        if let Some(previous) = previous {
+            let contents = self
+                .read_text_column("posting_comment", "contents", previous.id)
+                .await?;
+            return Ok(legacy_previous_notification_contents(
+                "Previous comment",
+                &contents,
+                previous.created_date,
+                previous.author_login_id.as_deref(),
+            ));
+        }
+        let contents = self.read_text_column("posting", "body", posting.id).await?;
+        Ok(legacy_previous_notification_contents(
+            "Original posting",
+            &contents,
+            posting.updated_date,
+            posting.author_login_id.as_deref(),
+        ))
+    }
+
     pub async fn read_posting_comment_origin(
         &self,
         comment_id: i64,
@@ -55,6 +92,9 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(None);
         };
+        let previous_notification_contents = self
+            .previous_posting_comment_notification_contents(&posting_model, input.parent_comment_id)
+            .await?;
         let created = posting_comment::ActiveModel {
             id: NotSet,
             created_date: Set(Some(input.created_at.unwrap_or_else(current_datetime))),
@@ -84,7 +124,7 @@ impl AppRepositoryImpl<'_> {
             created.id,
             &input.contents_markdown,
             "NEW_COMMENT",
-            "",
+            &previous_notification_contents,
             &input.contents_markdown,
             PostingMentionNotificationMode::All,
         )

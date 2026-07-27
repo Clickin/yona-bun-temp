@@ -766,6 +766,21 @@ pub(super) fn format_legacy_datetime_title(value: Option<DateTime>) -> String {
         .unwrap_or_default()
 }
 
+pub(super) fn legacy_previous_notification_contents(
+    title: &str,
+    contents: &str,
+    created: Option<DateTime>,
+    author_login_id: Option<&str>,
+) -> String {
+    let date = created
+        .map(|value| format!(" at {}", value.format("%-I:%M %p")))
+        .unwrap_or_default();
+    format!(
+        "\n\n<br />\n\n--- {title} from @{author} {date} ---\n\n<br />\n\n{contents}",
+        author = author_login_id.unwrap_or_default(),
+    )
+}
+
 pub(super) fn looks_like_email_address(value: &str) -> bool {
     let trimmed = value.trim();
     let Some((local, domain)) = trimmed.split_once('@') else {

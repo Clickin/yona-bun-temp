@@ -683,6 +683,12 @@ async function bootstrapLocalAccount(page, baseUrl) {
     name: "Alice Kim",
     password: "admin",
   };
+  const bobAccount = {
+    emailAddress: "bob@example.com",
+    loginId: "bob",
+    name: "Bob Park",
+    password: "admin",
+  };
   const carolAccount = {
     emailAddress: "carol@example.com",
     loginId: "carol",
@@ -899,11 +905,45 @@ async function bootstrapLocalAccount(page, baseUrl) {
     }
     await signOutLocalAccount(page, baseUrl).catch(() => {});
   };
+  const ensureParityComments = async () => {
+    const ensureComment = async (account, path, contentsMarkdown) => {
+      await signOutLocalAccount(page, baseUrl).catch(() => {});
+      if (!(await ensureLocalAccountSession(page, baseUrl, account))) {
+        return;
+      }
+      const existingResponse = await page.request.get(`${baseUrl}${path}`);
+      const existing = existingResponse.ok()
+        ? await existingResponse.json().catch(() => null)
+        : null;
+      const comments = Array.isArray(existing?.comments) ? existing.comments : [];
+      if (comments.some((comment) => comment.contentsMarkdown === contentsMarkdown)) {
+        return;
+      }
+      await postLocalJson(page, baseUrl, `${path}/comments`, {
+        attachmentIds: [],
+        contentsMarkdown,
+        parentCommentId: null,
+      });
+    };
+
+    await ensureComment(
+      bobAccount,
+      "/api/v1/projects/admin/sample/issues/1",
+      "I can reproduce the legacy issue view from this seed.",
+    );
+    await ensureComment(
+      aliceAccount,
+      "/api/v1/projects/admin/sample/posts/1",
+      "Board seed confirmed from the fork contributor side.",
+    );
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+  };
   const adminReady = await ensureLocalAccountSession(page, baseUrl, adminAccount);
   if (adminReady) {
     await patchLocalWorkspaceProfile(page, baseUrl, adminAccount);
     await ensureAdminFixtures();
     await ensureAliceSampleFork();
+    await ensureParityComments();
     const signedInAdminAgain = await ensureLocalAccountSession(page, baseUrl, adminAccount);
     if (signedInAdminAgain) {
       await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {

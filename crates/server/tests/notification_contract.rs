@@ -380,6 +380,47 @@ async fn create_issue(app: axum::Router, cookie: &str, csrf: &str, title: &str) 
     .await;
 }
 
+#[tokio::test]
+async fn notification_contract_comment_events_include_legacy_previous_context() {
+    let (app, _repository, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Legacy context issue").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateIssueComment",
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "contentsMarkdown": "watcher comment"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let notifications = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/notifications?from=0&size=20",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    let message = notifications["items"][0]["message"]
+        .as_str()
+        .expect("notification message");
+    assert!(message.contains("Original issue from @owner"));
+    assert!(message.contains("body"));
+}
+
 async fn update_issue_body(
     app: axum::Router,
     cookie: &str,
