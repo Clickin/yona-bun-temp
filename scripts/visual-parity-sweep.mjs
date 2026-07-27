@@ -1388,8 +1388,17 @@ async function inspectPage(page, baseUrl, path, label) {
       leftMenu: selectorState(
         ".left-menu, [data-stylex-owner='project-pullrequests-search-column']",
       ),
-      postListWrap: selectorState(".post-list-wrap"),
-      postItemTitle: selectorState(".post-item.title"),
+      // The populated profile Issues pane intentionally retires the legacy
+      // list/row classes after their frozen declarations move to StyleX.
+      // Keep the legacy selectors for the reference target and accept the
+      // exact React owners for the local target so class retirement does not
+      // become a false visual-parity failure.
+      postListWrap: selectorState(
+        ".post-list-wrap, [data-stylex-owner='user-profile-open-issue-list'], [data-stylex-owner='user-profile-closed-issue-list']",
+      ),
+      postItemTitle: selectorState(
+        ".post-item.title, [data-stylex-owner='user-profile-issue-row']",
+      ),
       selectedFilterLabel: selectorState(".labels-wrap .select2-search-choice .issue-label"),
       contentFormWrap: selectorState(".content-wrap.frm-wrap"),
       markdownEditor: selectorState(".textarea-box"),

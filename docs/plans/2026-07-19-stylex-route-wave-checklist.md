@@ -3021,3 +3021,11 @@ desktop/mobile geometry, and filtering.
 - [x] Five direct owners replace only wrapper, progress shell/bar variants, ratio/complete color, and parent span/Link presentation classes; dynamic width, copy/order, truncation, and navigation remain unchanged.
 - [x] External System-Chrome normal and fallback-off focused runs pass 1/1 each at 1366×900 and 390×844 with exact base/variant/hover/focus output, nonmatching-selector proof, containment, zero overflow, and inspected screenshots.
 - [ ] Keep live same-fixture pairing, global fallback audit, full fallback-off suite, and overall final lock open.
+
+### 2026-07-27 Batch 1028 final-lock timing and sweep harness diagnosis
+
+- [x] `scripts/visual-parity-sweep.mjs` compares the legacy `.post-list-wrap`/`.post-item.title` metrics with the exact populated profile StyleX owners, so intentional class retirement is not reported as a false selector gap; geometry and screenshot gates remain unchanged.
+- [x] External System-Chrome production-dist timing shows legacy `/admin?selected=issues` settles in `106ms` and local in `216ms` for the populated isolated fixture; no selector, paint, font, image, or animation timeout occurs. The remaining `gnbSearchForm` drift is the documented consequence of the approved Yoram footer/contact/repository identity change.
+- [x] The unpopulated default isolated DB was traced to the fixed `2026-07-07` issue timestamp falling outside the current `daysAgo=14` cutoff. After changing only the temporary diagnostic DB timestamp, the populated list and row are `1126x37` in both targets and the paired diff retains only the approved GNB drift.
+- [x] Focused HMR E2E startup timing is recorded separately: the managed runner spends about `6.05s` compiling the Rust backend and `1.80s` starting Vite; the five browser checks complete in `18.0s` and the full process in `26.8s`. This is runner/bootstrap cost, not a legacy-level page-reactivity or screenshot-settle wait.
+- [ ] Keep the overall final lock open for the remaining global fallback-consumer and full final-profile evidence; do not add route-local geometry compensation for the approved GNB/footer difference.
