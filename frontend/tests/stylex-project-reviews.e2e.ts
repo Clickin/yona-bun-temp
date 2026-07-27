@@ -65,7 +65,7 @@ test("reviews list renders populated row and preserves filter/sort interaction",
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1366, height: 900 });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -191,7 +191,7 @@ test("reviews empty state preserves legacy error geometry on desktop and mobile"
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

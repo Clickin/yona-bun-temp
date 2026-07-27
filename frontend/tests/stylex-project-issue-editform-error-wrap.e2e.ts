@@ -184,7 +184,7 @@ async function mockMissingIssue(page: Page) {
   await page.route("**/api/v1/session", fulfillSession);
   await page.route("**/api/auth/session", fulfillSession);
   await page.route("**/api/v1/auth/session", fulfillSession);
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (request) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (request) =>
     request.fulfill({ json: project }),
   );
   await page.route("**/api/v1/projects/admin/sample/issues/1**", (request) =>

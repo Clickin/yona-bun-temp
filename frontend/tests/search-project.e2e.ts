@@ -146,9 +146,15 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue", "sample");
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(7);
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"]')).not.toContainText("Projects");
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issues 1");
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(
+    7,
+  );
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-list"]'),
+  ).not.toContainText("Projects");
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Issues 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Issues");
   await expect(page.locator(".search-result-title strong")).toHaveText("1");
   await expect(page.locator(".search-result-wrap > .search-list-wrap")).toHaveCount(1);
@@ -227,7 +233,9 @@ test("project issue search category Links keep legacy active state on list items
   await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issues 1");
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Issues 1");
   await expectProjectSearchCategoryAttributes(page, basePath, "sample");
   await expectProjectSearchCategoryActiveMarkers(page);
 });
@@ -242,9 +250,15 @@ test("project issue comment search renders legacy partial_issue_comments.scala.h
 
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue_comment", "sample");
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(7);
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"]')).not.toContainText("Projects");
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issue Comments 1");
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(
+    7,
+  );
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-list"]'),
+  ).not.toContainText("Projects");
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Issue Comments 1");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 1 result(s) in Issue Comments",
   );
@@ -289,7 +303,9 @@ test("project user search preserves legacy tooltip metadata without Bootstrap in
 
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "user", "sample");
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Users 1");
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Users 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Users");
 
   const row = page.locator(".search-result-wrap .search-list-item.project");
@@ -358,8 +374,12 @@ test("project search pins the live localhost issue-comment zero-result project s
     "1",
   ]);
   await expect(page.locator(".project-setting")).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(7);
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issue Comments 0");
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(
+    7,
+  );
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Issue Comments 0");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 0 result(s) in Issue Comments",
   );
@@ -557,7 +577,9 @@ test("project search preserves whitespace-only keyword and calls scoped search A
   await page.goto(`${basePath}/admin/sample/search?keyword=%20%20&searchType=review`);
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator("#searchKeyword")).toHaveValue("  ");
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Code Reviews 0");
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Code Reviews 0");
   await expectProjectSearchCategoryAttributes(page, basePath, "  ");
   expect(searchApi.count).toBe(1);
   expect(searchApi.keywords).toEqual(["  "]);
@@ -573,14 +595,18 @@ test("project search category and form navigation stay inside the React SPA", as
   await page.locator("#searchKeyword").fill("fresh");
   await expectProjectSearchCategoryAttributes(page, basePath, "fresh");
   await expectProjectSearchCategoryActiveMarkers(page);
-  const issueCategory = page.locator('[data-stylex-owner="project-search-category-list"] a', { hasText: "Issues" });
+  const issueCategory = page.locator('[data-stylex-owner="project-search-category-list"] a', {
+    hasText: "Issues",
+  });
   await expect(issueCategory).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/search?keyword=fresh&searchType=issue`,
   );
   await issueCategory.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=fresh&searchType=issue`);
-  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issues 0");
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+  ).toHaveText("Issues 0");
   await expectProjectSearchCategoryActiveMarkers(page);
   await expectSearchSpaSession(page);
 
@@ -754,24 +780,26 @@ async function expectProjectSearchCategoryAttributes(
   basePath: string,
   keyword: string,
 ) {
-  const categories = await page.locator('[data-stylex-owner="project-search-category-list"] li > a').evaluateAll((anchors) =>
-    anchors.map((anchor) => {
-      const badge = anchor.querySelector(".num-badge");
-      const label = Array.from(anchor.childNodes)
-        .filter((child) => child.nodeType === Node.TEXT_NODE)
-        .map((child) => child.textContent ?? "")
-        .join("")
-        .replace(/\s+/g, " ")
-        .trim();
-      return {
-        count: badge?.textContent?.trim() ?? "",
-        dataToggle: anchor.getAttribute("data-toggle"),
-        dataType: anchor.getAttribute("data-type"),
-        href: anchor.getAttribute("href"),
-        label,
-      };
-    }),
-  );
+  const categories = await page
+    .locator('[data-stylex-owner="project-search-category-list"] li > a')
+    .evaluateAll((anchors) =>
+      anchors.map((anchor) => {
+        const badge = anchor.querySelector(".num-badge");
+        const label = Array.from(anchor.childNodes)
+          .filter((child) => child.nodeType === Node.TEXT_NODE)
+          .map((child) => child.textContent ?? "")
+          .join("")
+          .replace(/\s+/g, " ")
+          .trim();
+        return {
+          count: badge?.textContent?.trim() ?? "",
+          dataToggle: anchor.getAttribute("data-toggle"),
+          dataType: anchor.getAttribute("data-type"),
+          href: anchor.getAttribute("href"),
+          label,
+        };
+      }),
+    );
 
   expect(categories).toHaveLength(EXPECTED_PROJECT_SEARCH_CATEGORIES.length);
   expect(
@@ -802,17 +830,29 @@ async function expectProjectSearchCategoryAttributes(
 }
 
 async function expectProjectSearchCategoryActiveMarkers(page: Page) {
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] a[aria-current]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] a[data-status]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li[data-stylex-active="true"]')).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-list"] a[aria-current]'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="project-search-category-list"] a[data-status]'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(
+      '[data-stylex-owner="project-search-category-list"] li[data-stylex-active="true"]',
+    ),
+  ).toHaveCount(1);
 
   expect(
     await page
-      .locator('[data-stylex-owner="project-search-category-list"] li:not([data-stylex-active="true"]) > a')
+      .locator(
+        '[data-stylex-owner="project-search-category-list"] li:not([data-stylex-active="true"]) > a',
+      )
       .evaluateAll((anchors) =>
         anchors.map((anchor) => ({
           hasStyleXClass: (anchor.getAttribute("class") ?? "").includes("x"),
-          hasLegacyActiveClass: (anchor.getAttribute("class") ?? "").split(/\s+/u).includes("active"),
+          hasLegacyActiveClass: (anchor.getAttribute("class") ?? "")
+            .split(/\s+/u)
+            .includes("active"),
         })),
       ),
   ).toEqual(
@@ -859,7 +899,7 @@ async function mockProjectSearch(
     });
   });
   await page.route(
-    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container**`,
     async (route) => {
       await route.fulfill({
         contentType: "application/json",

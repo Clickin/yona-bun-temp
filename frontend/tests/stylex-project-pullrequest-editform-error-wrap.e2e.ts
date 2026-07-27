@@ -201,7 +201,7 @@ async function mockEditErrors(page: Page) {
       route.fulfill({ contentType: "application/json", json: session }),
     );
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

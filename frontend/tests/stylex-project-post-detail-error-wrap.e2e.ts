@@ -168,7 +168,7 @@ async function mockMissingProjectPost(page: Page) {
       request.fulfill({ contentType: "application/json", json: session }),
     );
   }
-  await page.route("**/api/v1/owners/weblabs/projects/portal/container", (request) =>
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container**", (request) =>
     request.fulfill({
       contentType: "application/json",
       json: {

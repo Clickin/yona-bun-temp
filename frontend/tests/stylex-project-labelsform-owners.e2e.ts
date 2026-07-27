@@ -96,7 +96,7 @@ async function mockLabelsPage(page: Page) {
   });
   // The parent project layout loads `/container` before the labels child route.
   // Keep this response separate from `/settings`, which the child screen owns.
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

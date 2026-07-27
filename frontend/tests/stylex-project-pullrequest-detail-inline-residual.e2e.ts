@@ -90,7 +90,7 @@ async function mockDetail(page: Page) {
       json: { isAnonymous: false, loginId: "admin", userLabel: "Site Admin" },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

@@ -457,7 +457,7 @@ async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[
     });
   });
   await page.route(
-    `**/api/v1/owners/${LEGACY_PROJECT_OWNER}/projects/${LEGACY_PROJECT_NAME}/container`,
+    `**/api/v1/owners/${LEGACY_PROJECT_OWNER}/projects/${LEGACY_PROJECT_NAME}/container**`,
     async (route) => {
       await route.fulfill({
         contentType: "application/json",

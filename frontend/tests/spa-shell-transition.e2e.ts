@@ -24,12 +24,19 @@ test("authenticated home notification keeps the cross-shell post handoff SPA-nat
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(notificationTarget)}$`));
 
   expect(documentRequests).toEqual([]);
-  await expect.poll(() => page.evaluate(() => window.__spaShellTransitionDocumentToken)).toBe(documentToken);
+  await expect
+    .poll(() => page.evaluate(() => window.__spaShellTransitionDocumentToken))
+    .toBe(documentToken);
   await expect(page.locator('[data-last-outlet-transition="true"]')).toHaveCount(0);
 
   const hashTarget = await page.locator("#comment-1").evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    return { bottom: rect.bottom, scrollY: window.scrollY, top: rect.top, viewportHeight: window.innerHeight };
+    return {
+      bottom: rect.bottom,
+      scrollY: window.scrollY,
+      top: rect.top,
+      viewportHeight: window.innerHeight,
+    };
   });
   expect(hashTarget.scrollY).toBeGreaterThan(0);
   expect(hashTarget.top).toBeGreaterThanOrEqual(0);
@@ -71,7 +78,9 @@ async function mockHomeToPost(page: Page) {
     userLabel: "Site Admin",
   };
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
-    await page.route(url, (route: Route) => route.fulfill({ contentType: "application/json", json: session }));
+    await page.route(url, (route: Route) =>
+      route.fulfill({ contentType: "application/json", json: session }),
+    );
   }
   await page.route("**/api/v1/notifications?*", (route: Route) =>
     route.fulfill({
@@ -95,12 +104,19 @@ async function mockHomeToPost(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
+  await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
         id: 1,
-        menuSetting: { board: true, code: true, issue: true, milestone: true, pullRequest: true, review: true },
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
         ownerName: "admin",
         projectName: "sample",
         projectScope: "PUBLIC",
@@ -144,7 +160,15 @@ async function mockHomeToPost(page: Page) {
         labels: [],
         notice: false,
         ownerName: "admin",
-        permissions: { canComment: false, canCreate: true, canDelete: false, canRead: true, canSetNotice: false, canUpdate: false, canWatch: true },
+        permissions: {
+          canComment: false,
+          canCreate: true,
+          canDelete: false,
+          canRead: true,
+          canSetNotice: false,
+          canUpdate: false,
+          canWatch: true,
+        },
         postNumber: "1",
         projectName: "sample",
         readme: false,

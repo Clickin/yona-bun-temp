@@ -108,7 +108,7 @@ async function mockMissingProjectPost(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/owners/weblabs/projects/portal/container", async (route) => {
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

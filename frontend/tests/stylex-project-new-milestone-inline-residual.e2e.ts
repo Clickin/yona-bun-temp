@@ -43,7 +43,7 @@ test("new milestone form owns static editor layout declarations", async ({ page 
       json: { user: { loginId: "admin" } },
     }),
   );
-  await page.route("**/api/v1/owners/weblabs/projects/portal/container", (route) =>
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

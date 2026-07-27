@@ -170,7 +170,7 @@ async function mockCodeFile(page: Page, anonymous: boolean) {
       route.fulfill({ contentType: "application/json", json: session }),
     );
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route: Route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: { ownerName: "admin", projectName: "sample", vcs: "GIT", viewerCanUpdate: true },

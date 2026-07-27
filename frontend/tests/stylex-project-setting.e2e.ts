@@ -161,7 +161,7 @@ async function mockSetting(page: Page) {
   await page.route("**/api/v1/owners/**/projects/**/settings", (route: Route) =>
     route.fulfill({ contentType: "application/json", json: project }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
+  await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
     route.fulfill({ contentType: "application/json", json: project }),
   );
   await page.route("**/api/v1/projects/**/branches", (route: Route) =>

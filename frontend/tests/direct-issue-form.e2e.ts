@@ -235,7 +235,10 @@ test("direct issue create migrates the fallback-off project header geometry from
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.route("**/api/v1/auth/session", async (route) => {
-    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ csrfToken: "csrf" }) });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ csrfToken: "csrf" }),
+    });
   });
   await page.route("**/api/v1/owners/weblabs/projects/portal/favorite", async (route) => {
     await route.fulfill({
@@ -244,13 +247,12 @@ test("direct issue create migrates the fallback-off project header geometry from
     });
   });
   await page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').click();
-  await expect(page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]')).toHaveClass(
-    /starred/u,
-  );
-  await expect(page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]')).toHaveCSS(
-    "color",
-    "rgb(233, 30, 99)",
-  );
+  await expect(
+    page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]'),
+  ).toHaveClass(/starred/u);
+  await expect(
+    page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]'),
+  ).toHaveCSS("color", "rgb(233, 30, 99)");
 });
 
 test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {
@@ -313,7 +315,7 @@ async function mockDirectIssueForm(
       }),
     });
   });
-  await page.route("**/api/v1/owners/*/projects/*/container", async (route) => {
+  await page.route("**/api/v1/owners/*/projects/*/container**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     const match = path.match(/\/owners\/([^/]+)\/projects\/([^/]+)\/container$/u);
     const ownerName = match?.[1] ?? selectedProject.ownerName;

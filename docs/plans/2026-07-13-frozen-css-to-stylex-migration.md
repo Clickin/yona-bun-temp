@@ -21,25 +21,32 @@ The delay has two separate sources:
 - Project-route stabilization is product behavior: the project shell returns
   no content while `readProjectContainerQueryOptions` has no data. The
   `/api/v1/owners/admin/projects/sample/container` request therefore gates the
-  first visible project shell. In the live release-dist run it took about
-  160–190ms; the legacy server rendered `/admin/sample` in about 45ms
-  navigation and 138ms to the sweep paint checkpoint. The local project
-  route remained blank at `domcontentloaded` and reached content about
-  186–215ms later, before the normal two-frame/font/image paint check.
+  first visible project shell. The server trace isolated the previous roughly
+  170ms response into a 4ms base container, about 103ms README/Git work, about
+  3ms dashboard work, and about 59ms history work. The recent-project write was
+  also moved after response assembly, matching legacy `User.visits(Project)`
+  asynchronous behavior; it was not the dominant delay.
 
-The container endpoint itself performs the authenticated project read,
-recent-project read/delete/insert, member/watch/menu/milestone/logo/count
-queries, and directory assembly as sequential SQLite operations. Release
-optimization did not materially change this result, so the remaining latency
-is an explicit response/first-render performance gap, not a reason to weaken
-the screenshot or fallback-off gate. The visual sweep recorded zero selector,
-paint, or request timeout failures in this run; its bounded paint waits are not
-the cause of the observed delay.
+  Legacy `ProjectApp.project` only computes history when `tabId != readme` and
+  only renders the dashboard on the dashboard tab. The React REST client was
+  over-fetching all three tab payloads for every project route. The endpoint
+  now accepts an explicit `tabId` for React callers: fresh release/dist
+  measurements were about 102ms for `readme`, 60ms for `history`, and 3ms for
+  `dashboard`. Calls without `tabId` retain the old full-response contract for
+  compatibility. The React project shell sends `readme` for non-home routes
+  and the active home tab, so the initial project view no longer waits for
+  hidden tab data.
 
-Follow-up: reduce the project-container critical path or provide equivalent
-route-level data before the project shell is committed, then repeat the same
-legacy/release-dist timing and screenshot pair. Do not add arbitrary waiting,
-geometry compensation, or relaxed visual assertions.
+This is a critical-path correction, not a reason to weaken the screenshot or
+fallback-off gate. The visual sweep recorded zero selector, paint, or request
+timeout failures in the earlier run; its bounded paint waits are not the cause
+of the observed delay. After the new build, the focused `/admin/sample` sweep
+measured legacy body/paint at 103/124ms and local body/paint at 298/333ms. Both
+targets returned 200 with no local runtime error and the comparison still has
+only the known GNB search x-drift. The tab over-fetch gap is fixed, but the
+remaining SPA startup plus selected README request is still slower than
+legacy and remains an open performance follow-up. Do not add arbitrary
+waiting, geometry compensation, or relaxed visual assertions.
 
 ## 2026-07-27 — Public-profile Issues subtask-summary ownership
 

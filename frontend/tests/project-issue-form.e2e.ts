@@ -1541,7 +1541,7 @@ async function mockIssueForm(page: Page, options: MockOptions = {}) {
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) => {
     record(route);
     return route.fulfill({
       contentType: "application/json",

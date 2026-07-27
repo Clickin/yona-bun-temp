@@ -481,24 +481,38 @@ pub(crate) async fn project_container_read(
         };
     }
 
+    let container = build_project_container_response(
+        repository,
+        &service.public_origin,
+        &service.base_path,
+        &authorization,
+        actor_id,
+    )
+    .await?;
+    // Legacy User.visits(Project) schedules RecentProject.addNew through a
+    // background promise. Keep that write off the first-render critical path
+    // and preserve the legacy behavior that a visit-history failure does not
+    // make an otherwise readable project unavailable.
     if let Some(user_id) = actor_id {
-        repository
-            .record_recent_project_visit(user_id, &request.owner_name, &request.project_name)
-            .await
-            .map_err(internal_error)?;
+        let recent_project_repository = repository.clone();
+        let owner_name = request.owner_name.clone();
+        let project_name = request.project_name.clone();
+        tokio::spawn(async move {
+            if let Err(error) = recent_project_repository
+                .record_recent_project_visit(user_id, &owner_name, &project_name)
+                .await
+            {
+                tracing::warn!(
+                    %error,
+                    owner = %owner_name,
+                    project = %project_name,
+                    "could not record recent project visit"
+                );
+            }
+        });
     }
 
-    Ok((
-        build_project_container_response(
-            repository,
-            &service.public_origin,
-            &service.base_path,
-            &authorization,
-            actor_id,
-        )
-        .await?,
-        ctx,
-    ))
+    Ok((container, ctx))
 }
 
 pub(crate) async fn project_overview_update(
@@ -2447,9 +2461,22 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             "/owners/{owner_name}/projects/{project_name}/container",
             get({
                 let service = service.clone();
-                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                move |
+                    headers: HeaderMap,
+                    Path((owner_name, project_name)): Path<(String, String)>,
+                    Query(query): Query<HashMap<String, String>>,
+                | {
                     let service = service.clone();
-                    async move { rest_read_project_container(headers, owner_name, project_name, service).await }
+                    async move {
+                        rest_read_project_container(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query.get("tabId").cloned(),
+                            service,
+                        )
+                        .await
+                    }
                 }
             }),
         )

@@ -78,7 +78,7 @@ test(`reviews filters and export action float parity (${fallback})`, async ({ pa
       }),
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (r) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (r) =>
     r.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

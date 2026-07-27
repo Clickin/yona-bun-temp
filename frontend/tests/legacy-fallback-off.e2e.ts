@@ -1368,7 +1368,7 @@ async function mockBoardEditFormSession(page: Page) {
   await page.route("**/api/v1/session", session);
   await page.route("**/api/auth/session", session);
   await page.route("**/api/v1/auth/session", session);
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       json: {
         id: 7,
@@ -1449,7 +1449,7 @@ async function mockPullRequestEditFormSession(page: Page) {
   await page.route("**/api/v1/session", session);
   await page.route("**/api/auth/session", session);
   await page.route("**/api/v1/auth/session", session);
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       json: {
         backgroundImageUrl: "/assets/images/bg-default-project.png",
@@ -1589,7 +1589,7 @@ async function mockProjectPostsSession(page: Page) {
       json: { actorId: 1, isAnonymous: false, loginId: "admin" },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
@@ -1708,7 +1708,7 @@ async function mockRuntimeGridProjectHome(page: Page) {
       }),
     );
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

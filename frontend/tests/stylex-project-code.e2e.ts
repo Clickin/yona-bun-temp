@@ -47,7 +47,7 @@ test("code route translates no-head clone instructions without legacy DOM script
 test("code no-head state renders alert and clone instructions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1366, height: 900 });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

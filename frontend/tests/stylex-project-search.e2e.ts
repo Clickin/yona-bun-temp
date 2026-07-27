@@ -254,7 +254,7 @@ async function mockProjectSearch(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/container", (route) =>
+  await page.route("**/api/v1/owners/**/projects/**/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

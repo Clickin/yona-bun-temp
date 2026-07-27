@@ -101,11 +101,12 @@ pub(super) async fn rest_read_project_container(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
+    tab_id: Option<String>,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     let request = ReadProjectContainerRequest {
-        owner_name,
-        project_name,
+        owner_name: owner_name.clone(),
+        project_name: project_name.clone(),
         ..Default::default()
     };
     let request = rest_owned_view::<ReadProjectContainerRequestView<'static>>(&request)?;
@@ -113,15 +114,28 @@ pub(super) async fn rest_read_project_container(
     let (payload, ctx) = project_container_read(&service, context, request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let readme_file = rest_project_readme_file(&service, &headers, &payload)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    let dashboard = rest_project_home_dashboard(&service, &headers, &payload)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    let history = rest_project_home_history(&service, &payload)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let requested_tab = tab_id.as_deref();
+    let readme_file = if requested_tab.is_none() || requested_tab == Some("readme") {
+        rest_project_readme_file(&service, &headers, &payload)
+            .await
+            .map_err(RestRouteError::from_connect_error)?
+    } else {
+        None
+    };
+    let dashboard = if requested_tab.is_none() || requested_tab == Some("dashboard") {
+        rest_project_home_dashboard(&service, &headers, &payload)
+            .await
+            .map_err(RestRouteError::from_connect_error)?
+    } else {
+        RestProjectDashboard::default()
+    };
+    let history = if requested_tab.is_none() || requested_tab == Some("history") {
+        rest_project_home_history(&service, &payload)
+            .await
+            .map_err(RestRouteError::from_connect_error)?
+    } else {
+        RestProjectHistory::default()
+    };
     Ok(rest_json_response(
         RestProjectContainerResponse {
             container: payload,

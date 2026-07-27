@@ -95,10 +95,23 @@ async function mockProjectSearchCategory(page: Page) {
       route.fulfill({ contentType: "application/json", json: session }),
     );
   }
-  await page.route("**/api/v1/owners/**/projects/**/container", (route) =>
+  await page.route("**/api/v1/owners/**/projects/**/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
-      json: { ownerName: "weblabs", projectName: "demo", name: "demo", vcs: "GIT", menuSetting: { code: true, issue: true, pullRequest: true, review: true, milestone: true, board: true } },
+      json: {
+        ownerName: "weblabs",
+        projectName: "demo",
+        name: "demo",
+        vcs: "GIT",
+        menuSetting: {
+          code: true,
+          issue: true,
+          pullRequest: true,
+          review: true,
+          milestone: true,
+          board: true,
+        },
+      },
     }),
   );
   await page.route("**/api/v1/projects/**/**/search?**", (route) =>
@@ -106,9 +119,40 @@ async function mockProjectSearchCategory(page: Page) {
       contentType: "application/json",
       json: {
         context: { organizationName: "", ownerName: "weblabs", projectName: "demo" },
-        counts: { issues: 1, users: 0, projects: 0, posts: 0, milestones: 0, issueComments: 0, postComments: 0, reviews: 0 },
-        items: [{ id: "42", type: "issue", title: "Save button fails", href: "/weblabs/demo/issue/42", number: "42", snippets: [{ text: "Bug body", highlights: [] }], authorLabel: "Alice", authorLoginId: "alice", createdLabel: "Jun 30, 2026", updatedLabel: "", state: "OPEN", ownerName: "weblabs", projectName: "demo" }],
-        keyword: "bug", pageNum: 1, pageSize: 20, requestedSearchType: "issue", scope: "project", searchType: "issue", totalCount: 1,
+        counts: {
+          issues: 1,
+          users: 0,
+          projects: 0,
+          posts: 0,
+          milestones: 0,
+          issueComments: 0,
+          postComments: 0,
+          reviews: 0,
+        },
+        items: [
+          {
+            id: "42",
+            type: "issue",
+            title: "Save button fails",
+            href: "/weblabs/demo/issue/42",
+            number: "42",
+            snippets: [{ text: "Bug body", highlights: [] }],
+            authorLabel: "Alice",
+            authorLoginId: "alice",
+            createdLabel: "Jun 30, 2026",
+            updatedLabel: "",
+            state: "OPEN",
+            ownerName: "weblabs",
+            projectName: "demo",
+          },
+        ],
+        keyword: "bug",
+        pageNum: 1,
+        pageSize: 20,
+        requestedSearchType: "issue",
+        scope: "project",
+        searchType: "issue",
+        totalCount: 1,
       },
     }),
   );

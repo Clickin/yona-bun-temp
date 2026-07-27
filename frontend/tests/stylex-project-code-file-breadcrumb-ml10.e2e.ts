@@ -76,7 +76,7 @@ test("project code file breadcrumbs preserve the legacy ml10 layout", async ({ p
     await page.route(pattern, (route) => route.fulfill({ json: session }));
   }
 
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       json: {
         ownerName: "admin",

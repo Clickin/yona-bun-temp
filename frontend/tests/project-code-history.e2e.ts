@@ -831,7 +831,7 @@ async function mockProjectCodeHistory(
     });
   });
   await page.route(
-    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container**`,
     async (route) => {
       await route.fulfill({
         contentType: "application/json",

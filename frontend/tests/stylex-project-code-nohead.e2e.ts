@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("project no-head code preserves runtime owners", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

@@ -236,7 +236,7 @@ async function mockMilestoneDetail(page: Page) {
     );
   }
 
-  await page.route("**/api/v1/owners/weblabs/projects/demo/container", (route: Route) =>
+  await page.route("**/api/v1/owners/weblabs/projects/demo/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

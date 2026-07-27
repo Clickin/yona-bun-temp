@@ -1032,7 +1032,7 @@ async function mockProjectCodeFile(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1112,7 +1112,7 @@ async function mockProjectCodeFolder(page: Page, codeRequests: string[], folderP
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

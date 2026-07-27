@@ -272,6 +272,8 @@ export type ProjectForkResponse = {
   redirectPath: string;
 };
 
+export type ProjectContainerTabId = "readme" | "history" | "dashboard";
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -820,24 +822,30 @@ export function readProjectContainerRest(
   ownerName: string,
   projectName: string,
   fetchImpl: typeof fetch = fetch,
+  tabId?: ProjectContainerTabId,
 ): Promise<ProjectContainer> {
-  return restFetch<ProjectContainer>(
-    runtimeConfig,
-    projectPath(ownerName, projectName, "/container"),
-    {
-      fetchImpl,
-      method: "GET",
-    },
-  );
+  const suffix = tabId ? `/container?tabId=${encodeURIComponent(tabId)}` : "/container";
+  return restFetch<ProjectContainer>(runtimeConfig, projectPath(ownerName, projectName, suffix), {
+    fetchImpl,
+    method: "GET",
+  });
 }
 
 export function readProjectContainerQueryOptions(
   runtimeConfig: RuntimeConfig,
-  input: ProjectPathInput,
+  input: ProjectPathInput & { tabId?: ProjectContainerTabId },
 ) {
+  const queryKey = apiQueryKeys.project.container(input.ownerName, input.projectName);
   return queryOptions({
-    queryFn: () => readProjectContainerRest(runtimeConfig, input.ownerName, input.projectName),
-    queryKey: apiQueryKeys.project.container(input.ownerName, input.projectName),
+    queryFn: () =>
+      readProjectContainerRest(
+        runtimeConfig,
+        input.ownerName,
+        input.projectName,
+        undefined,
+        input.tabId,
+      ),
+    queryKey: input.tabId ? [...queryKey, { tabId: input.tabId }] : queryKey,
   });
 }
 

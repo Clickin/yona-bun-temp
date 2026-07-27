@@ -1744,6 +1744,61 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert!(container["history"]["items"].as_array().is_some());
     assert!(container.get("readmeFile").is_some());
 
+    let readme_tab = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/container?tabId=readme",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(readme_tab["history"]["items"]
+        .as_array()
+        .is_some_and(Vec::is_empty));
+    assert!(readme_tab["dashboard"]["assignees"]
+        .as_array()
+        .is_some_and(Vec::is_empty));
+
+    let history_tab = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/container?tabId=history",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(history_tab["readmeFile"].is_null());
+    assert!(history_tab["history"]["items"].as_array().is_some());
+    assert!(history_tab["dashboard"]["assignees"]
+        .as_array()
+        .is_some_and(Vec::is_empty));
+
+    let dashboard_tab = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/container?tabId=dashboard",
+            Some(&visitor_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(dashboard_tab["readmeFile"].is_null());
+    assert!(dashboard_tab["history"]["items"]
+        .as_array()
+        .is_some_and(Vec::is_empty));
+    assert!(dashboard_tab["dashboard"]["assignees"].as_array().is_some());
+
     let forbidden_settings = rest(
         app.clone(),
         Method::GET,

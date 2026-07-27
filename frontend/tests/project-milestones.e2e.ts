@@ -287,7 +287,7 @@ async function mockProjectMilestones(page: Page, state: "all" | "open" = "open")
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -341,7 +341,7 @@ async function mockProtectedPortalMilestones(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/owners/weblabs/projects/portal/container", async (route) => {
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

@@ -112,7 +112,7 @@ async function mockSvnIssueForm(page: Page, options: MockOptions = {}) {
       }),
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/svnplayground/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/svnplayground/container**", (route) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify(project()) }),
   );
   await page.route("**/api/v1/owners/admin/projects/svnplayground/labels", (route) =>

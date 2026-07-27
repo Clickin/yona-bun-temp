@@ -46,7 +46,7 @@ test("project pull-request empty state owns the legacy error-wrap geometry", asy
       json: { actorId: 1, isAnonymous: false, loginId: "admin" },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

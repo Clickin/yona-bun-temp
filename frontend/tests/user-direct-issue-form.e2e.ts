@@ -292,7 +292,7 @@ async function mockDirectIssueForm(
       body: JSON.stringify(options.directOptions),
     });
   });
-  await page.route("**/api/v1/owners/*/projects/*/container", async (route) => {
+  await page.route("**/api/v1/owners/*/projects/*/container**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     const match = path.match(/\/owners\/([^/]+)\/projects\/([^/]+)\/container$/u);
     const ownerName = match?.[1] ?? selectedProject.ownerName;

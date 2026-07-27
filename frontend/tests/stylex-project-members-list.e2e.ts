@@ -198,7 +198,7 @@ async function mockProjectMembers(page: Page) {
     vcs: "GIT",
     viewerCanUpdate: true,
   };
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({ contentType: "application/json", json: project }),
   );
   const addedLoginIds: string[] = [];

@@ -55,7 +55,7 @@ test("webhooks route translates legacy JSON git-push lock to React state", () =>
 test("webhooks form renders fields/list and locks git push for JSON type", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1366, height: 900 });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

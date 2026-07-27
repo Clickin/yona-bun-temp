@@ -45,7 +45,7 @@ async function mockMilestoneEdit(page: import("@playwright/test").Page) {
       body: JSON.stringify({ actorId: 1, isAnonymous: false, isSiteAdmin: true, loginId: "admin" }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

@@ -238,7 +238,7 @@ async function mockPullRequestDetail(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route: Route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

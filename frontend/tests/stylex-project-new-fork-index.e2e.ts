@@ -78,7 +78,7 @@ async function mockFork(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
+  await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

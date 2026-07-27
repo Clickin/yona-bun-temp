@@ -32,7 +32,7 @@ test("reviews export action owns legacy padding through route StyleX", async ({ 
       }),
     });
   });
-  await page.route(`**/api/v1/owners/${OWNER}/projects/${PROJECT}/container`, async (route) => {
+  await page.route(`**/api/v1/owners/${OWNER}/projects/${PROJECT}/container**`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

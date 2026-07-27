@@ -292,7 +292,7 @@ async function mockHistory(page: Page) {
       route.fulfill({ contentType: "application/json", json: session }),
     );
   }
-  await page.route("**/api/v1/owners/weblabs/projects/demo/container", (route: Route) =>
+  await page.route("**/api/v1/owners/weblabs/projects/demo/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

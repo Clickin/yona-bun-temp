@@ -1842,7 +1842,7 @@ async function mockProjectMembers(
       }),
     });
   });
-  await page.route(`**${projectApiBase}/container`, async (route) => {
+  await page.route(`**${projectApiBase}/container**`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(currentProject),

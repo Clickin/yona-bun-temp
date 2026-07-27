@@ -84,7 +84,7 @@ test("populated code-file author link owns the legacy ml5 margin", async ({ page
       }),
     );
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: { ownerName: "admin", projectName: "sample", vcs: "GIT", defaultBranch: "main" },
@@ -189,7 +189,7 @@ test("code file renders legacy metadata, markdown, and actions", async ({ page }
       }),
     );
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: { ownerName: "admin", projectName: "sample", vcs: "GIT", viewerCanUpdate: true },

@@ -120,7 +120,7 @@ async function mockMembers(page: Page, options: { added?: string[]; membersStatu
       }),
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/svnplayground/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/svnplayground/container**", (route) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify(svnProject()) }),
   );
   await page.route("**/api/v1/owners/admin/projects/svnplayground/members", async (route) => {

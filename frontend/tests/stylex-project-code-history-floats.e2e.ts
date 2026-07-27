@@ -140,7 +140,7 @@ async function assertFloatLayout(page: Page, viewportName: string) {
 }
 
 async function mockCodeHistory(page: Page) {
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: { ownerName: "admin", projectName: "sample", vcs: "GIT", defaultBranch: "main" },

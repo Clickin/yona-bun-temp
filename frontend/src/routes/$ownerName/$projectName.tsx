@@ -213,6 +213,7 @@ import {
   toggleProjectWatchRest,
   updateProjectOverviewRest,
 } from "../../api/org-project";
+import type { ProjectContainerTabId } from "../../api/org-project";
 import { readProjectPostQueryOptions } from "../../api/boards";
 import { apiQueryKeys } from "../../api/query-keys";
 import {
@@ -481,9 +482,16 @@ function ProjectHomeRouteShell({
 }) {
   const { ownerName, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const codePath = `/${ownerName}/${projectName}/code`;
+  const projectContainerTabId: ProjectContainerTabId =
+    active === "home" ? projectHomeTabId(locationHref) : "readme";
   const query = useQuery({
-    ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+    ...readProjectContainerQueryOptions(runtimeConfig, {
+      ownerName,
+      projectName,
+      tabId: projectContainerTabId,
+    }),
     retry(failureCount, error) {
       const status = projectRouteErrorStatus(error);
       return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
@@ -578,7 +586,6 @@ function ProjectHomeRouteShell({
     },
     retryOnMount: false,
   });
-  const locationHref = useRouterState({ select: (state) => state.location.href });
   const projectSearch = projectSearchRouteSearch(locationHref);
   const searchQuery = useQuery({
     ...projectSearchQueryOptions(runtimeConfig, {
@@ -1335,6 +1342,11 @@ function projectSearchRouteSearch(locationHref: string) {
     searchType,
     valid: keyword.length > 0 && isSearchType(rawSearchType) && rawSearchType !== "project",
   };
+}
+
+function projectHomeTabId(locationHref: string): ProjectContainerTabId {
+  const tabId = new URL(locationHref, "http://localhost").searchParams.get("tabId");
+  return tabId === "history" || tabId === "dashboard" ? tabId : "readme";
 }
 
 export function ProjectHomeBody({

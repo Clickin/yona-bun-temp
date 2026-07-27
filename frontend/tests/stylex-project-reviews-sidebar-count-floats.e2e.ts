@@ -257,7 +257,7 @@ async function mockProjectReviews(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/weblabs/projects/portal/container", (route) =>
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

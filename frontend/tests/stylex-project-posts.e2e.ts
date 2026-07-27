@@ -54,7 +54,7 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
       json: { actorId: 1, isAnonymous: false, loginId: "admin" },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
@@ -235,7 +235,7 @@ test("project posts empty state preserves legacy error geometry on desktop and m
       json: { actorId: 1, isAnonymous: false, loginId: "admin" },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

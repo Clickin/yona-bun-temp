@@ -52,7 +52,7 @@ async function mockSvnHistory(page: Page) {
       body: JSON.stringify({ actorId: 1, isAnonymous: false, isSiteAdmin: true, loginId: "admin" }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/svnplayground/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/svnplayground/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

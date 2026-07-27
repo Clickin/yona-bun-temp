@@ -29,7 +29,7 @@ async function mockIssueDetail(page: Page) {
   await page.route("**/api/v1/auth/session", (route) =>
     route.fulfill({ headers: { "x-csrf-token": "test-csrf-token" }, json: session }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       json: {
         backgroundImageUrl: "/assets/images/bg-default-project.png",

@@ -754,7 +754,7 @@ async function mockNonGitProjectForkAccess(page: Page) {
 }
 
 async function mockPullRequestsDestination(page: Page) {
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(sourceProject()),
@@ -932,7 +932,7 @@ async function mockProjectContainer(
   source: Partial<ReturnType<typeof sourceProject>> = {},
 ) {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

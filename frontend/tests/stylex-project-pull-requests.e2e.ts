@@ -177,7 +177,7 @@ async function mockPullRequests(page: Page) {
     await page.route(url, (route: Route) =>
       route.fulfill({ contentType: "application/json", json: session }),
     );
-  await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
+  await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },

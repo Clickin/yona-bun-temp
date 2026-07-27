@@ -2,27 +2,42 @@
 
 ### Production-dist stabilization latency — 2026-07-27
 
-This is a runtime performance gap, not a StyleX or screenshot-gate relaxation.
-After a fresh `frontend/dist` build, the live pair used System Chrome outside
-the sandbox and a release Rust server serving filesystem assets. Legacy
-`/admin/sample` reached the sweep paint checkpoint in about 138ms; local
-production-dist navigation left the project shell blank until the project
-container query resolved, with about 160–190ms spent in
-`/api/v1/owners/admin/projects/sample/container` and about 186–215ms from
-navigation to first body content in the direct measurement. The same delay
-remained in the release binary, so debug/HMR execution is not the primary
-product cause.
+This is a runtime performance correction, not a StyleX or screenshot-gate
+relaxation. After a fresh `frontend/dist` build, System Chrome outside the
+sandbox and a release Rust server showed the old `/container` response at
+about 170ms: base project data 4ms, README/Git 103ms, dashboard 3ms, and
+history 59ms. The recent-project write was moved after response assembly to
+match legacy `User.visits(Project)` promise behavior, but it was not the main
+source of delay. Legacy `/admin/sample` reached its sweep paint checkpoint in
+about 138ms; HMR/debug startup remained a separate process overhead.
 
-`frontend/src/routes/$ownerName/$projectName.tsx` currently returns no project
-shell while `readProjectContainerQueryOptions` has no data. The server endpoint
-also serially assembles authorization, recent-visit mutation, membership,
-menu, milestone, logo, watcher, and activity-count data. The live release-dist
-focused screenshot pair loaded all three requested targets with HTTP 200 and no
-local runtime errors; expected parity differences remain documented elsewhere.
+Legacy `ProjectApp.project` computes history only when `tabId != readme` and
+renders one tab at a time. The React client now sends an explicit
+`tabId=readme|history|dashboard` query and includes only the selected
+supplemental payload in the response; non-home project routes request
+`readme`. Fresh release/dist API timings are about 102ms for readme, 60ms
+for history, and 3ms for dashboard. No-query REST calls retain the previous
+full response for compatibility. The project shell still waits for its
+selected container query, but it no longer waits for hidden tab data.
 
-Follow-up is to shorten that critical path or supply equivalent route-level
-data before first render. The final screenshot/pixel and fallback-off gates
-remain unchanged.
+The final screenshot/pixel and fallback-off gates remain unchanged. Repeat the
+legacy/release-dist timing and focused screenshot pair after each critical-path
+change; expected user-approved deviations remain documented elsewhere. The
+final release/dist focused `/admin/sample` sweep measured legacy body/paint at
+103/124ms versus local 298/333ms, with HTTP 200, no local runtime error, and
+only the known GNB search geometry difference. Tab over-fetching is corrected,
+but the remaining SPA startup plus selected README request is still an open
+legacy-responsiveness gap.
+
+### Query-tolerant project container mocks — 2026-07-27
+
+The project shell now sends an explicit `tabId` query, so exact Playwright
+`/container` route globs no longer intercept those requests. The harness worker
+updated 234 affected `frontend/tests/**/*.e2e.ts` matchers from `/container` to
+`/container**`, changing no fixtures, assertions, DOM, CSS, or comparison
+tolerances. `git diff --check` passed. One focused README test still exposes a
+pre-existing canonicalizer mismatch in StyleX-generated classes; the live
+visual sweep remains the screenshot evidence for this change.
 
 | 2026-07-27 | Batch 1027 populated public-profile Issues subtask-summary class ownership | `user/view.scala.html` includes `user/partial_issues.scala.html` and `issue/partial_list_subtask.scala.html`; frozen `_common.less .upload-progress`, `_page.less` subtask/progress/complete-color/parent-link and `.for-subtask-progressbar` rules, Bootstrap/common anchor cascade, the complete `yobi.less` chain, and messages establish incomplete/complete/parent-only/no-subtask output. | Five direct route-local owners replace only the summary wrapper, progress shell/variants, bar/variants, ratio/complete color, and parent span/link presentation literals. Dynamic percentage width, branch copy/order, parent truncation/navigation, title-cell ancestry, all other issue descendants, frozen CSS, sidebar, and footer remain unchanged. | `stylex-user-profile-issue-subtask-class-ownership.e2e.ts` records RED on residual `subtask-progress` and passes external System-Chrome normal/fallback-off 1/1 each at desktop/390px with all branches, exact base/variant/hover/focus output, dynamic width, scoped class absence, nonmatching-selector proof, containment, zero overflow, plugin-attribute absence, and inspected screenshots. Live same-fixture and broader final-lock work remain open. |
 

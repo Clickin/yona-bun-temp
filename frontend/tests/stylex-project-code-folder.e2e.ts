@@ -102,7 +102,7 @@ test("populated folder rows own ml5 and preserve folder/file navigation", async 
       },
     }),
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

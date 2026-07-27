@@ -252,7 +252,7 @@ async function mockIssueDetail(page: Page) {
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
     await page.route(url, fulfillSession);
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

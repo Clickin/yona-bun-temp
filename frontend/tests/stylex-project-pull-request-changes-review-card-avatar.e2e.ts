@@ -203,7 +203,7 @@ async function mockPullRequestChanges(page: Page, basePath: string) {
       route.fulfill({ contentType: "application/json", json: session }),
     );
   }
-  await page.route("**/api/v1/owners/admin/projects/sample/container", (route: Route) =>
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
