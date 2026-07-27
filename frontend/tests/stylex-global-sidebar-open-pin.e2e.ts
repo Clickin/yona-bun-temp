@@ -19,6 +19,25 @@ test("global sidebar open pin has complete global-theme StyleX ownership", () =>
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const owner = route.slice(start, end);
+  for (const declaration of [
+    'backgroundImage: "none"',
+    'display: "inline-block"',
+    'fontFamily: "yobicon"',
+    'fontStyle: "normal"',
+    'fontVariant: "normal"',
+    'fontWeight: "normal"',
+    "lineHeight: 1",
+    'textDecoration: "none"',
+    'verticalAlign: "baseline"',
+    'WebkitFontSmoothing: "antialiased"',
+    'MozOsxFontSmoothing: "grayscale"',
+  ]) {
+    expect(owner).toContain(declaration);
+  }
+  expect(owner).toContain("leftIcon:");
+  expect(owner).toContain("rightIcon:");
+  expect(owner).toContain("content: " + "'\"\\\\e031\"'");
+  expect(owner).toContain("content: " + "'\"\\\\e030\"'");
 
   for (const token of [
     "globalSidebarOpenPinSurface",
@@ -108,6 +127,13 @@ for (const viewport of [
             cursor: "auto",
             display: "block",
             fontSize: "18px",
+            fontFamily: "yobicon",
+            fontStyle: "normal",
+            fontVariant: "normal",
+            fontWeight: "400",
+            verticalAlign: "baseline",
+            textDecoration: "none",
+            backgroundImage: "none",
             lineHeight: "18px",
             padding: "4px 0px 4px 5px",
           },
@@ -206,6 +232,13 @@ async function readEvidence(pin: Locator) {
           cursor: rightStyle.cursor,
           display: rightStyle.display,
           fontSize: rightStyle.fontSize,
+          fontFamily: rightStyle.fontFamily,
+          fontStyle: rightStyle.fontStyle,
+          fontVariant: rightStyle.fontVariant,
+          fontWeight: rightStyle.fontWeight,
+          verticalAlign: rightStyle.verticalAlign,
+          textDecoration: rightStyle.textDecoration,
+          backgroundImage: rightStyle.backgroundImage,
           lineHeight: rightStyle.lineHeight,
           padding: rightStyle.padding,
         },

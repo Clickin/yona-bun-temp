@@ -9218,3 +9218,22 @@ wave; legacy `:9000`, the user-session local server, frozen sources, and
 pixel/fallback gates were left untouched. This remains a harness lifecycle
 follow-up; it does not relax screenshot parity or the bounded font/image/
 animation settlement checks.
+
+## 2026-07-28 — Batch 1037 global sidebar open-pin Yobicon primitive and glyph ownership
+
+The legacy `yona-original/app/views/common/navbar.scala.html` pin emits the
+left/right arrow elements; frozen `yona-original/public/stylesheets/yobicon/style.css`
+provides the generic Yobicon primitive and `\e031`/`\e030` glyph content, while
+the frozen `_page.less` pin rules establish the icon padding and visible-box
+geometry. The global React pin now owns that primitive and the two pseudo-glyphs
+in `globalSidebarOpenPinStyles`; the existing root layout and React motion/open-
+close behavior are unchanged. No frozen source or numeric compensation changed.
+
+- [x] `frontend/tests/stylex-global-sidebar-open-pin.e2e.ts` verifies source
+  ownership, computed primitive declarations, desktop/mobile `25x26` root and
+  `23x26` right-icon geometry, open/close behavior, and fallback class removal.
+- [x] External System-Chrome normal and explicit fallback-off runs pass `6/6`
+  each (`15.0s`/`16.3s` assertion time); the focused desktop/mobile captures
+  were visually inspected.
+- [ ] Global fallback-consumer audit, full fallback-off suite, same-fixture
+  screenshot pairing, and overall final pixel lock remain open.

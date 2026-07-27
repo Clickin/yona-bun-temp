@@ -3108,3 +3108,22 @@ timed out on profile owner markers and survived outer Ctrl-C until its nested
 process group was terminated; the same 7-test set passed 7/7 in 18.0s normal
 and 7/7 in 16.5s fallback-off with one worker. Only exact stale
 diagnostic/duplicate groups were terminated, with parity gates unchanged.
+
+### Batch 1037 global sidebar open-pin Yobicon primitive and glyph ownership — 2026-07-28
+
+The legacy `common/navbar.scala.html` `.pin` control emits separate left and
+right Yobicon arrow elements. Frozen `public/stylesheets/yobicon/style.css`
+provides the generic icon primitive and the `\e031`/`\e030` pseudo-glyphs;
+`_page.less` provides the icon padding and `25x26`/`23x26` visible-box result.
+The global React pin now owns those primitive declarations and glyph contents
+through `globalSidebarOpenPinStyles`, while the existing root geometry and
+React open/close behavior remain unchanged. The restricted sidebar pin is a
+separate owner. No frozen source, `app.css`, or numeric compensation changed.
+
+`stylex-global-sidebar-open-pin.e2e.ts` verifies source ownership, computed
+primitive fields, desktop/mobile geometry, open/close behavior, and fallback
+class removal. External System-Chrome normal and explicit fallback-off runs
+pass `6/6` each; the captured desktop/mobile images were visually inspected.
+The prior fallback-off `7x8`/`5x8` static glyph boxes are closed for this
+owner. The global fallback-consumer audit, full fallback-off suite,
+same-fixture legacy pairing, and overall final pixel lock remain open.

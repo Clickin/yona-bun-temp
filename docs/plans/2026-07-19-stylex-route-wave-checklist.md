@@ -3112,9 +3112,8 @@ desktop/mobile geometry, and filtering.
   normal shell motion coverage passes `4/4`; final open geometry is `362px`
   desktop and `392px` mobile. The route transition-end filter now also accepts
   its declared `border-right-width` property. Fallback-off shell motion
-  coverage passes; existing global-pin static fallback parity remains a
-  separate consumer gap because removing fallback CSS makes the icon box
-  `8x7` instead of the expected `26x25`.
+  coverage passes; the pre-existing global-pin static fallback gap was
+  carried into Batch 1037 for a separate Yobicon primitive/glyph owner.
 - [ ] Global fallback-consumer audit, full fallback-off suite, same-fixture
   screenshot pairing, and overall final pixel lock remain open. The broad
   fallback-off suite remains red on pre-existing route/fixture baseline
@@ -3134,3 +3133,17 @@ desktop/mobile geometry, and filtering.
   matching its existing bounded browser-close diagnostic.
 - [ ] Full fallback-off, global fallback-consumer, same-fixture screenshot,
   and final pixel-lock work remains open.
+
+### 2026-07-28 Batch 1037 global sidebar open-pin Yobicon primitive and glyph ownership
+
+- [x] Legacy `common/navbar.scala.html`, frozen Yobicon `style.css`, and
+  `_page.less` establish the pin's two arrow elements, generic icon primitive,
+  `\e031`/`\e030` glyphs, padding, and `25x26`/`23x26` visible geometry.
+- [x] `globalSidebarOpenPinStyles` now owns the generic primitive and separate
+  left/right `::before` glyphs; both JSX icons compose those owners while the
+  existing root geometry and React open/close behavior remain unchanged.
+- [x] Focused external System-Chrome normal and explicit fallback-off runs
+  pass `6/6` each (`15.0s`/`16.3s` assertion time) at desktop/mobile metrics;
+  focused desktop/mobile captures were visually inspected.
+- [ ] Global fallback-consumer audit, full fallback-off suite, same-fixture
+  screenshot pairing, and overall final pixel lock remain open.

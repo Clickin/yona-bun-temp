@@ -1759,11 +1759,11 @@ export function SiteLayoutShell({
                 type="button"
               >
                 <i
-                  className={`yobicon-arrow-left ${stylex.props(globalSidebarOpenPinStyles.icon).className}`}
+                  className={`yobicon-arrow-left ${stylex.props(globalSidebarOpenPinStyles.icon, globalSidebarOpenPinStyles.leftIcon, globalSidebarOpenPinStyles.hiddenIcon).className}`}
                   aria-hidden="true"
                 />
                 <i
-                  className={`yobicon-arrow-right ${stylex.props(globalSidebarOpenPinStyles.icon, globalSidebarOpenPinStyles.visibleIcon).className}`}
+                  className={`yobicon-arrow-right ${stylex.props(globalSidebarOpenPinStyles.icon, globalSidebarOpenPinStyles.rightIcon, globalSidebarOpenPinStyles.visibleIcon).className}`}
                   aria-hidden="true"
                 />
               </button>
@@ -4874,6 +4874,17 @@ const globalSidebarOpenPinStyles = stylex.create({
     top: "6px",
   },
   icon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
     color: {
       default: "inherit",
       ":hover": homeColors.globalSidebarOpenPinInteractionText,
@@ -4882,12 +4893,20 @@ const globalSidebarOpenPinStyles = stylex.create({
       default: "inherit",
       ":hover": "pointer",
     },
-    display: "none",
     fontSize: "18px",
     padding: "4px 0 4px 5px",
   },
   visibleIcon: {
     display: "block",
+  },
+  hiddenIcon: {
+    display: "none",
+  },
+  leftIcon: {
+    "::before": { content: '"\\e031"' },
+  },
+  rightIcon: {
+    "::before": { content: '"\\e030"' },
   },
 });
 
