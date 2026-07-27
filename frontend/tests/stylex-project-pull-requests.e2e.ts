@@ -10,6 +10,17 @@ test("records project pull request list owners and responsive containment", asyn
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const theme = readFileSync("src/routes/$ownerName/$projectName/-pull-requests.stylex.ts", "utf8");
+  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
+  const responsive = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
+    "utf8",
+  );
+  const lessResponsive = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const lessPage = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const yobiUI = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
   const template = readFileSync("../yona-original/app/views/git/partial_list.scala.html", "utf8");
   const twoColumn = readFileSync(
     "../yona-original/public/javascripts/service/yona.twoColumnMode.js",
@@ -21,6 +32,17 @@ test("records project pull request list owners and responsive containment", asyn
   );
   expect(template).toContain('class="post-list-wrap"');
   expect(template).toContain('class="avatar-wrap mlarge"');
+  expect(bootstrap).toContain(".row-fluid .span2 {");
+  expect(bootstrap).toContain("width: 14.893617021276595%;");
+  expect(bootstrap).toContain(".row-fluid .span10 {");
+  expect(bootstrap).toContain("width: 82.97872340425532%;");
+  expect(responsive).toContain('.row-fluid [class*="span"] {');
+  expect(lessResponsive).toContain(".hide-in-mobile");
+  expect(lessResponsive).toContain(".span-hard-wrap");
+  expect(lessPage).toContain(".issue-option");
+  expect(lessPage).toContain("select {\n          width: 100%;");
+  expect(yobiUI).toContain(".search-bar");
+  expect(yobiUI).toContain("&.full {\n            width: 100%;");
   expect(route).not.toContain("pullrequeset-tab-menu");
   for (const selector of [
     ".pullrequeset-tab-menu > li > button {",
@@ -35,6 +57,12 @@ test("records project pull request list owners and responsive containment", asyn
   expect(route).toContain("searchColumnHidden");
   expect(route).not.toContain('style={leftMenuHiddenByTwoColumnMode ? { display: "none" }');
   expect(theme).toContain('searchColumnHidden: { display: "none" }');
+  expect(theme).toContain('width: "14.893617021276595%"');
+  expect(theme).toContain('width: "82.97872340425532%"');
+  expect(theme).toContain('contributorsSelect: { width: "100%" }');
+  expect(theme).toMatch(/searchInput: \{[\s\S]*?width: "100%"/u);
+  expect(route).toContain('data-stylex-owner="project-pullrequests-contributors-select"');
+  expect(route).toContain('data-stylex-owner="project-pullrequests-content-column"');
   expect(twoColumn).toContain('$(".left-menu").hide(0)');
   expect(twoColumnTemplate).toContain('id="two-column-mode-checkbox"');
   expect(route).toContain('data-stylex-owner="project-pullrequests-two-column-popover"');
@@ -50,6 +78,9 @@ test("records project pull request list owners and responsive containment", asyn
     await page.goto(`${basePath}/weblabs/demo/pullRequests`);
     await expect(owner(page, "project-pullrequests-tabs")).toBeVisible();
     await expect(owner(page, "project-pullrequests-list")).toBeVisible();
+    await expect(owner(page, "project-pullrequests-rows")).toContainText(
+      "Parity profile pull request",
+    );
     await expect(owner(page, "project-pullrequests-search-input")).toHaveAttribute(
       "name",
       "filter",
@@ -58,6 +89,58 @@ test("records project pull request list owners and responsive containment", asyn
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,
     }));
+    const columns = await page.evaluate(() => {
+      const search = document.querySelector(
+        '[data-stylex-owner="project-pullrequests-search-column"]',
+      );
+      const content = document.querySelector(
+        '[data-stylex-owner="project-pullrequests-content-column"]',
+      );
+      const list = document.querySelector('[data-stylex-owner="project-pullrequests-rows"]');
+      const row = document.querySelector('[data-stylex-owner="project-pullrequests-row"]');
+      const contributors = document.querySelector(
+        '[data-stylex-owner="project-pullrequests-contributors-select"]',
+      );
+      if (!search || !content || !list || !row || !contributors) return null;
+      const searchBox = search.getBoundingClientRect();
+      const contentBox = content.getBoundingClientRect();
+      const listBox = list.getBoundingClientRect();
+      const rowBox = row.getBoundingClientRect();
+      const contributorsBox = contributors.getBoundingClientRect();
+      return {
+        search: {
+          left: searchBox.left,
+          width: searchBox.width,
+          clientWidth: search.clientWidth,
+          scrollWidth: search.scrollWidth,
+          right: searchBox.right,
+          display: getComputedStyle(search).display,
+        },
+        content: { left: contentBox.left, width: contentBox.width },
+        list: { left: listBox.left },
+        row: { left: rowBox.left },
+        contributors: {
+          clientWidth: contributors.clientWidth,
+          scrollWidth: contributors.scrollWidth,
+          right: contributorsBox.right,
+          width: getComputedStyle(contributors).width,
+        },
+      };
+    });
+    expect(columns).not.toBeNull();
+    if (viewport.width === 1366) {
+      expect(columns!.search.width).toBeCloseTo(200.4, 0);
+      expect(columns!.content.left).toBeCloseTo(columns!.list.left, 0);
+      expect(columns!.list.left).toBeCloseTo(columns!.row.left, 0);
+      expect(columns!.content.left).toBeGreaterThan(columns!.search.left);
+      expect(columns!.content.left - columns!.search.left).toBeGreaterThan(200);
+      expect(columns!.contributors.clientWidth).toBeLessThanOrEqual(columns!.search.clientWidth);
+      expect(columns!.contributors.scrollWidth).toBeLessThanOrEqual(columns!.search.clientWidth);
+      expect(columns!.contributors.right).toBeLessThanOrEqual(columns!.search.right + 1);
+      expect(columns!.search.scrollWidth).toBeLessThanOrEqual(columns!.search.clientWidth);
+    } else {
+      expect(columns!.search.display).toBe("none");
+    }
     expect(geometry.width).toBeGreaterThan(0);
     expect(geometry.scrollWidth).toBe(viewport.width);
 
@@ -104,13 +187,37 @@ async function mockPullRequests(page: Page) {
     route.fulfill({
       contentType: "application/json",
       json: {
-        items: [],
-        openCount: 0,
+        items: [
+          {
+            closedCommentThreadCount: 0,
+            commentThreadCount: 0,
+            conflict: false,
+            contributorLabel: "Site Admin",
+            contributorLoginId: "admin",
+            createdLabel: "Today",
+            fromBranch: "feature/parity",
+            fromOwnerName: "weblabs",
+            fromProjectName: "demo",
+            id: 1,
+            ownerName: "weblabs",
+            projectName: "demo",
+            pullRequestNumber: 1,
+            receiverLabel: "Site Admin",
+            receiverLoginId: "admin",
+            reviewerCount: 0,
+            reviewerNames: [],
+            state: "open",
+            title: "Parity profile pull request",
+            toBranch: "main",
+            updatedLabel: "Today",
+          },
+        ],
+        openCount: 1,
         closedCount: 0,
         sentCount: 0,
         pageNum: 1,
         pageSize: 20,
-        totalCount: 0,
+        totalCount: 1,
       },
     }),
   );

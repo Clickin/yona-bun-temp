@@ -28,9 +28,11 @@ const sx = {
   searchColumn: stylex.props(styles.searchColumn),
   searchBar: stylex.props(styles.searchBar),
   searchInput: stylex.props(styles.searchInput),
+  contributorsSelect: stylex.props(styles.contributorsSelect),
   searchButton: stylex.props(styles.searchButton),
   tabs: stylex.props(styles.tabs),
   searchColumnHidden: stylex.props(styles.searchColumnHidden),
+  contentColumn: stylex.props(styles.contentColumn),
   newPullRequestAction: stylex.props(styles.newPullRequestAction),
   receiverRail: stylex.props(styles.receiverRail),
   stateBadge: stylex.props(styles.stateBadge),
@@ -356,10 +358,12 @@ function ProjectPullRequestsBody({
                     <dt>{t("pullRequest.sender")}</dt>
                     <dd>
                       <select
+                        {...sx.contributorsSelect}
                         key={`contributor:${search.contributorId || ""}`}
                         id="contributors"
                         name="contributorId"
                         data-format="user"
+                        data-stylex-owner="project-pullrequests-contributors-select"
                         defaultValue={search.contributorId ? String(search.contributorId) : ""}
                         onChange={(event) => {
                           const nextContributorId = event.currentTarget.value;
@@ -391,7 +395,12 @@ function ProjectPullRequestsBody({
               )}
             </form>
           </div>
-          <div className="span10 span-hard-wrap" id="span10">
+          <div
+            {...sx.contentColumn}
+            className={`${sx.contentColumn.className} span10 span-hard-wrap`}
+            id="span10"
+            data-stylex-owner="project-pullrequests-content-column"
+          >
             <ProjectRecentlyPushedBranches
               runtimeConfig={runtimeConfig}
               listQueryKey={apiQueryKeys.project.pullRequestList(ownerName, projectName, {

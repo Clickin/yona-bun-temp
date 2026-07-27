@@ -21,6 +21,37 @@ administrator-notice/sidebar collapse-button x-axis mismatch and approved Yoram
 footer/provider/developer-contact/upstream-repository differences remain
 intentional exclusions.
 
+## 2026-07-27 — Authenticated project Pull Request populated grid/overflow ownership
+
+Batch 1022 closes the populated project Pull Request list's remaining route-local
+grid and filter overflow gap. The legacy roots are
+`yona-original/app/views/git/list.scala.html`,
+`git/partial_search.scala.html`, and `git/partial_list.scala.html`: the search
+column is the first `row-fluid` `span2`, the list content is the following
+`span10 span-hard-wrap`, and the populated row is emitted by
+`post-list-wrap`/`post-item`. Frozen Bootstrap/responsive CSS and the traced
+`_page.less`/`_yobiUI.less` declarations supply the exact widths, mobile
+collapse, select width, and `.textbox.full` width.
+
+`frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` and
+`-pull-requests.stylex.ts` now own those declarations at the route boundary,
+preserving DOM, copy, links, and React/TanStack behavior. The focused populated
+fixture verifies desktop x-axis alignment, mobile filter hiding, and no column or
+document overflow. The external System-Chrome fallback-off focused test passes
+1/1; live legacy/local desktop and mobile captures were inspected. The sweep now
+captures this route and maps its retired wrapper classes to stable StyleX owners.
+The remaining global GNB drift, live row fixture paint/copy/avatar/pagination
+differences, and approved Yoram footer differences remain explicit parity gaps
+or intentional deviations; the inherited administrator-notice/sidebar collapse
+button mismatch remains intentionally excluded.
+
+The final external `PW_CHANNEL=chrome` fallback-off consumer graph was also
+allowed to complete: 1941 tests passed, one intentional generated-fallback test
+was skipped, and 36 unrelated baseline tests failed. The graph exited 1 on
+those existing auth, user, UI-kit, and other route failures; the focused Pull
+Request test remained 1/1, so this route change is not the source of the graph
+failure.
+
 ## 2026-07-27 — Public profile missing-user Home CTA ownership
 
 Batch 1021 moves the missing-user public-profile `Home` CTA to a route-local

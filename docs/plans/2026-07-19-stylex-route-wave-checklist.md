@@ -1,5 +1,15 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-27 Batch 1022 authenticated project Pull Request populated grid and overflow ownership
+
+- [x] `yona-original/app/views/git/list.scala.html`, `git/partial_search.scala.html`, and `git/partial_list.scala.html` establish the populated Pull Request filter/content/list DOM; frozen Bootstrap/responsive CSS plus `_responsive.less`, `_page.less:3748-3758`, and `_yobiUI.less:1348-1383` establish the exact grid, responsive hiding, select width, and full filter-input width.
+- [x] `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` preserves the existing search/list DOM, owner markers, copy, links, and React/TanStack query/navigation behavior. Route-local StyleX now owns exact Bootstrap `span2`/`span10` geometry, the contributor select `width:100%`, and `.search-bar .textbox.full` `width:100%`; no frozen file or invented geometry value changed.
+- [x] `frontend/tests/stylex-project-pull-requests.e2e.ts` uses a populated PR fixture and verifies source/import provenance, desktop search/content/list/row x-axis alignment, mobile filter hiding, contributor/input containment, and zero document/column overflow. Managed external System-Chrome fallback-off focused run passes 1/1; TypeScript check, Vitest 14/14, production build, and StyleX verifier pass.
+- [x] Owner-aware `scripts/visual-parity-sweep.mjs` recognizes the retired-wrapper replacements (`project-pullrequests-page`, `project-pullrequests-shell`, `project-pullrequests-search-column`) and always captures this route. Live legacy/local desktop and 390px screenshots were inspected: the grid and overflow gap is resolved. Remaining comparator output is the known global GNB placement; visible fixture-level row paint/copy/avatar/pagination differences and approved Yoram footer differences remain documented, while the inherited administrator-notice/sidebar collapse-button x-axis mismatch remains intentionally uncorrected.
+- [x] The final external `PW_CHANNEL=chrome` fallback-off consumer graph completed with 1941 passed, 1 intentional generated-fallback skip, and 36 unrelated baseline failures (exit 1); the focused Pull Request 1/1 result remains green.
+
+### 2026-07-27 Batch 1021 public-profile missing-user Home CTA
+
 ### 2026-07-27 Batch 1021 public-profile missing-user Home CTA
 
 - [x] `yona-original/app/views/user/view.scala.html` and included `error/notfound_default.scala.html` are the output DOM/UX sources; the complete frozen `yobi.less` chain, `_variables.less`, `_yobiUI.less`, Bootstrap CSS/responsive CSS, and `conf/messages` are recorded as cascade evidence.

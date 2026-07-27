@@ -266,6 +266,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/postform",
   "/admin/sample/postform?issueTemplate=true",
   "/admin/sample/postform?readme=true",
+  "/admin/sample/pullRequests",
 ]);
 
 function localSettledSelectorForPath(path) {
@@ -1331,8 +1332,12 @@ async function inspectPage(page, baseUrl, path, label) {
       projectWatchAction: selectorState(".project-util-wrap .down-arrow"),
       projectMenu: selectorState(".project-menu-outer"),
       projectMenuNav: selectorState(".project-menu-nav"),
-      pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
-      projectPageWrap: selectorState(".project-page-wrap"),
+      pageWrap: selectorState(
+        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page']",
+      ),
+      projectPageWrap: selectorState(
+        ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell']",
+      ),
       issueBodyRow: selectorState(".board-body.row-fluid"),
       issueLeftPane: selectorState(".board-body.row-fluid > .span9"),
       issueRightPane: selectorState(".board-body.row-fluid > .span3"),
@@ -1344,7 +1349,9 @@ async function inspectPage(page, baseUrl, path, label) {
       projectSettingRight: selectorState(".setting-box.right"),
       projectDescription: selectorState("#project-desc"),
       issueListWrap: selectorState(".row-fluid.issue-list-wrap"),
-      leftMenu: selectorState(".left-menu"),
+      leftMenu: selectorState(
+        ".left-menu, [data-stylex-owner='project-pullrequests-search-column']",
+      ),
       postListWrap: selectorState(".post-list-wrap"),
       postItemTitle: selectorState(".post-item.title"),
       selectedFilterLabel: selectorState(".labels-wrap .select2-search-choice .issue-label"),
