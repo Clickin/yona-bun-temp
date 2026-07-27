@@ -3262,3 +3262,10 @@ desktop/mobile geometry, and filtering.
 - [x] Confirmed `/alice/sample/watch`, `/weblabs/portal/member/*/edit`, and `/sites/user/delete*` are action-only legacy endpoints (POST/DELETE), not GET screens to implement for visual parity.
 - [x] Started the managed dynamic-port full fallback-off command (`VITE_DISABLE_LEGACY_FALLBACK=1`, 3,070 tests). Selector-consumer checks passed through the observed range; global shell/login/organization tests exposed a repeated existing fallback-off legacy-DOM contract family.
 - [ ] The broad run was stopped at test 205 to avoid repeating the same known failure family. Full fallback-off/global audit and final pixel lock remain open; no green claim is made.
+
+### 2026-07-28 — Batch 1060 global-shell stabilization wait diagnosis
+
+- [x] Corrected frozen global GNB ownership: desktop outer padding is `0`, mobile padding remains `10px`; retained `.gnb-search-form` because frozen `_responsive.less` consumes it for mobile visibility.
+- [x] Removed stale fallback-off contracts for the old `/src/assets/...` response path and pre-TanStack source forms.
+- [x] Measured the delay mechanism: failed assertions reached Playwright's 30-second timeout, so a 4-test focused run took about 1.3 minutes despite server/Vite startup completing in seconds.
+- [ ] Remaining global shell logo/mobile geometry mismatches, broad fallback-off audit, and final pixel lock remain open.

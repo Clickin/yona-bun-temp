@@ -1438,7 +1438,7 @@ const globalGnbOuterStyles = stylex.create({
     },
     paddingBlock: "0px",
     paddingInline: {
-      default: "10px",
+      default: "0px",
       "@media (max-width: 720px)": "10px",
     },
   },

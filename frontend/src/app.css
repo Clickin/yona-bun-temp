@@ -419,7 +419,6 @@ body:has([data-stylex-owner="framed-site-shell"][data-sidebar-open="true"]) {
 .gnb-outer {
   box-sizing: border-box;
   height: 40px;
-  padding: 0 10px;
   color: #788ba7;
   background-color: #1b1b1b;
 }

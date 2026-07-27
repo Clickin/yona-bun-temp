@@ -3204,3 +3204,14 @@ present. All other global geometry remains strict. Comparator unit tests pass
 26/26; focused live legacy/local sweeps pass 2/2 at both 1366x900 and 390x844
 with zero diff failures and zero local failures. No UI compensation or frozen
 source change was made.
+
+### Batch 1060 — global-shell stabilization wait diagnosis — 2026-07-28
+
+The frozen navbar/page/responsive sources establish the 40px GNB geometry and
+responsive `.gnb-search-form` contract. The home route now explicitly owns
+desktop outer padding `0px` and mobile padding `10px`; the app.css bridge
+padding was removed. Focused source assertions follow React/TanStack-owned
+links and Vite-imported assets while retaining the frozen responsive class.
+External fallback-off timing showed repeated 30-second assertion timeouts were
+the apparent stabilization wait; remaining logo/mobile geometry and broad
+fallback-off audit stay open.

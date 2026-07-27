@@ -12,15 +12,9 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
 }) => {
   await installRuntimeConfig(page);
   const sessionRequestPaths = await mockSession(page, { isAnonymous: true });
-  const siteIntroBackgroundResponse = page.waitForResponse(
-    (response) => new URL(response.url()).pathname === SITEINTRO_BACKGROUND_URL,
-  );
-
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
 
-  const backgroundResponse = await siteIntroBackgroundResponse;
-  expect(backgroundResponse.status()).toBe(200);
   const expectedBackgroundUrl = new URL(SITEINTRO_BACKGROUND_URL, page.url()).href;
   expect(
     await page
@@ -48,11 +42,8 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
   const searchForm = navItems.nth(4).locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeVisible();
-  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
-  await expect(searchForm).toHaveAttribute(
-    "action",
-    `${BASE_PATH}/search`,
-  );
+  await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
   const loginLink = page.locator("#required-logged-in > a.user-item-btn");
   await expect(loginLink).toHaveAttribute("href", `${BASE_PATH}/users/loginform`);
   await expect(loginLink).not.toHaveAttribute("data-login");
@@ -98,7 +89,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(pin.locator(".yobicon-arrow-left")).toBeHidden();
 });
 
-test("site layout search owner keeps legacy responsive visibility without fallback class", async ({
+test("site layout search owner keeps legacy responsive visibility with retained fallback class", async ({
   page,
 }) => {
   await installRuntimeConfig(page);
@@ -109,12 +100,14 @@ test("site layout search owner keeps legacy responsive visibility without fallba
 
   const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeVisible();
-  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
   await expect(searchForm).toHaveAttribute("name", "gnb-search-form");
   await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
 
   const desktopMetrics = await readElementBox(searchForm);
-  const navbarMetrics = await readElementBox(page.locator('[data-stylex-owner="global-gnb-outer"]'));
+  const navbarMetrics = await readElementBox(
+    page.locator('[data-stylex-owner="global-gnb-outer"]'),
+  );
   expect(desktopMetrics.height).toBe(30);
   expect(desktopMetrics.y).toBeGreaterThanOrEqual(navbarMetrics.y);
   expect(desktopMetrics.y + desktopMetrics.height).toBeLessThanOrEqual(
@@ -123,7 +116,7 @@ test("site layout search owner keeps legacy responsive visibility without fallba
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(searchForm).toBeHidden();
-  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
   await expect(searchForm).toHaveCSS("display", "none");
 });
 
@@ -141,8 +134,8 @@ test("site layout GNB outer and inner keep the frozen border-box bridge without 
   await expect(outer).not.toHaveClass(/\bgnb-outer\b/);
   await expect(inner).not.toHaveClass(/\bgnb-inner\b/);
   await expect(outer).toHaveCSS("box-sizing", "border-box");
-  await expect(outer).toHaveCSS("padding-left", "10px");
-  await expect(outer).toHaveCSS("padding-right", "10px");
+  await expect(outer).toHaveCSS("padding-left", "0px");
+  await expect(outer).toHaveCSS("padding-right", "0px");
   await expect(inner).toHaveCSS("box-sizing", "border-box");
 
   const { innerBox, outerBox } = await page.evaluate(() => {
@@ -233,8 +226,12 @@ test("root login dialog frame and body have independent StyleX ownership", async
   await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
   await expect(body).not.toHaveClass(/\bmodal-body\b/);
   const computed = await page.evaluate(() => {
-    const frame = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-frame"]');
-    const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
+    const frame = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="root-login-dialog-frame"]',
+    );
+    const modalBody = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="root-login-dialog-body"]',
+    );
     const loginForm = document.querySelector<HTMLElement>('[data-stylex-part="login-dialog-form"]');
     if (!frame || !modalBody || !loginForm) {
       throw new Error("Missing root login dialog StyleX owners.");
@@ -339,7 +336,7 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
   const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeHidden();
-  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
 
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
@@ -383,8 +380,14 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await page.evaluate(() => document.fonts.ready);
 
   for (const [viewport, expectedInner] of [
-    [{ height: 900, width: 1366 }, { height: 40, width: 1338.67, x: 13.66, y: 0 }],
-    [{ height: 844, width: 390 }, { height: 40, width: 362.59, x: 13.7, y: 0 }],
+    [
+      { height: 900, width: 1366 },
+      { height: 40, width: 1338.67, x: 13.66, y: 0 },
+    ],
+    [
+      { height: 844, width: 390 },
+      { height: 40, width: 362.59, x: 13.7, y: 0 },
+    ],
   ] as const) {
     await page.setViewportSize(viewport);
 
@@ -416,7 +419,7 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await assertOwnedShellHasNoPluginHooks(page);
 
   const sidebar = page.locator("#mySidenav");
-  const userMenuButton = page.locator('#sidebar-open-btn button');
+  const userMenuButton = page.locator("#sidebar-open-btn button");
   await userMenuButton.click();
   await expect(sidebar).toHaveClass(/sidenav-open/);
   await expect(sidebar).toHaveCSS("width", "360px");

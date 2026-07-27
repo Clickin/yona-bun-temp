@@ -27,7 +27,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+        <form action="__BASE_PATH__/search" class="gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
           <div class="search-box">
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
@@ -574,11 +574,12 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).toContain(
     'const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine"',
   );
-  expect(routeSource).toContain("prefixBasePath(runtimeConfig.basePath, notification.targetHref)");
-  expect(routeSource).toContain('<span className="provider">Yoram authors</span>');
+  expect(routeSource).toContain("to={notification.targetHref}");
+  expect(routeSource).toContain('data-stylex-owner="site-footer-provider"');
+  expect(routeSource).toContain("Yoram authors");
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
   expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
-  expect(routeSource).toContain("href={navbarCustomLinkUrl}");
+  expect(routeSource).toContain("to={navbarCustomLinkUrl}");
   expect(routeSource).toContain("to={LEGACY_AUTHENTICATED_LOGOUT_PATH}");
   expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}");
   expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}");
