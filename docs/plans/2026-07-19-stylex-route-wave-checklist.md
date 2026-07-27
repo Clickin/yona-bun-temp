@@ -1,5 +1,14 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1042 direct issue-form uploader geometry
+
+- [x] Restore the legacy Bootstrap border-box behavior on the fixed-height
+  issue editor so the uploader follows it without a numeric offset.
+- [x] Focused external Chrome fallback-off desktop/mobile test passes 2/2 for
+  both `/user/issues/new` and `/user/issues/new/mine`.
+- [ ] Remaining visual-sweep batches, full fallback-off/global audit, and final
+  pixel lock remain open.
+
 ### 2026-07-28 — Batch 1041 user-issues left-menu containment
 
 - [x] Restore the legacy search-bar/textbox declarations required to keep the

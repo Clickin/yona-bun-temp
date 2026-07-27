@@ -262,6 +262,7 @@ export const issueFormStyles = stylex.create({
     borderColor: "#ddd #ddd transparent",
   },
   editorTextarea: {
+    boxSizing: "border-box",
     overflow: "hidden",
     overflowWrap: "break-word",
     resize: "none",

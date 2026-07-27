@@ -2066,6 +2066,7 @@ function IssueMarkdownEditor({
           <div
             ref={textareaBoxRef}
             className="textarea-box"
+            data-stylex-owner="project-issue-form-textarea-box"
             onBlurCapture={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
                 setDismissedMentionKey(mentionKey);
@@ -2073,6 +2074,7 @@ function IssueMarkdownEditor({
               }
             }}
           >
+            {/* Keep the legacy Bootstrap border-box contract on this fixed-height editor. */}
             <textarea
               ref={bodyRef}
               name="body"

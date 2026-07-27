@@ -1,5 +1,14 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1042 — direct issue-form editor/uploader vertical parity — 2026-07-28
+
+The direct issue creation form now restores the frozen Bootstrap
+`box-sizing: border-box` contract on its fixed-height editor textarea. This
+removes the 10px uploader vertical drift seen in the live sweep without an
+offset compensation. Focused Chrome fallback-off desktop/mobile coverage for
+`/user/issues/new` and `/user/issues/new/mine` passes 2/2; final global audit
+and pixel lock remain open.
+
 ### Batch 1041 — user-issues left-menu search containment — 2026-07-28
 
 The `/user/issues` left-menu search now restores the frozen legacy

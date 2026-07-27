@@ -1,5 +1,18 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1042 — direct issue-form editor/uploader vertical parity — 2026-07-28
+
+Legacy `yona-original/app/views/issue/create.scala.html` includes the shared
+`common.uploadForm.scala.html`; frozen Bootstrap establishes
+`box-sizing: border-box` for the editor textarea, while `_page.less` provides
+the uploader cascade. The local editor's fixed `height: 300px` was previously
+content-box, adding 20px and moving the uploader 10px below the legacy pair.
+`frontend/src/routes/$ownerName/$projectName/issueform.tsx` now marks the
+textarea-box owner and `-issueform.stylex.ts` restores the exact border-box
+contract. Focused Chrome fallback-off desktop/mobile coverage for both direct
+routes passes 2/2. Full fallback-off/global audit and final pixel lock remain
+open.
+
 ### Batch 1041 — user-issues left-menu search containment — 2026-07-28
 
 `yona-original/app/views/issue/my_partial_search.scala.html` emits the
