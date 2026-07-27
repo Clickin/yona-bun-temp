@@ -3240,3 +3240,13 @@ System Chrome. `/admin/sample` and `/admin/sample/post/1` both passed on
 1366×900 and 390×844 with `diffFailures=0`, `localFailures=0`, and no status
 delta. The result is focused shell/project/issue-detail evidence only; the
 full corpus pixel lock and remaining populated-fixture gaps stay open.
+
+### Batch 1064 — release-dist corpus batch 0 fixture classification — 2026-07-28
+
+The first ten-page desktop corpus batch was rerun with live legacy and the
+release Rust server serving the rebuilt `frontend/dist`: 9/10 local pages had
+no failures and all 10 had no comparison diff. `/projects` alone failed the
+local safety check because the local seed exposes the pilot `yona` project
+with `browser-safe route tree` copy, which the legacy fixture does not expose.
+The paired screenshots confirm seed/content drift; no route CSS, geometry
+compensation, or screenshot assertion was relaxed.

@@ -27,6 +27,16 @@ focused live evidence for the global shell/project and issue-detail states; it
 does not close the remaining corpus-wide screenshot lock or populated-state
 fixture gaps.
 
+### Batch 1064 — release-dist corpus batch 0 fixture classification — 2026-07-28
+
+The first ten-page desktop corpus batch was rerun against live legacy and the
+release server serving the rebuilt `frontend/dist`. Nine pages had no local or
+comparison failures. The only local failure was `/projects`, where the sweep
+correctly detected the local pilot `yona` project copy (`browser-safe route
+tree`) that is absent from the legacy fixture. Paired screenshots confirm this
+is seed/content drift, not a React geometry or stabilization defect; it remains
+an explicit fixture gap rather than a CSS compensation or route-side filter.
+
 ### Batch 1044 — notification fixture and previous-comment payload parity — 2026-07-28
 
 The stabilization investigation separated browser settle latency from the

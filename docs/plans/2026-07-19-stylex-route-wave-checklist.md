@@ -3292,3 +3292,12 @@ desktop/mobile geometry, and filtering.
   status deltas.
 - [ ] This focused pair does not close the full corpus screenshot lock or
   populated-state fixture gaps.
+
+### 2026-07-28 — Batch 1064 release-dist corpus batch 0 classification
+
+- [x] External System Chrome reran corpus batch 0 against live legacy and the
+  rebuilt release-dist server: 9/10 local pages passed, all 10 comparison
+  entries had zero diff failures, and the single `/projects` failure was the
+  local pilot `yona`/`browser-safe route tree` seed copy.
+- [ ] The `/projects` seed/content drift remains open; it is not treated as a
+  route CSS fix or screenshot-gate relaxation.
