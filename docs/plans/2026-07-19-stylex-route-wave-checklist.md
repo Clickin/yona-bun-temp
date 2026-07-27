@@ -3081,3 +3081,41 @@ desktop/mobile geometry, and filtering.
 - [x] Production build/verifier and frozen legacy-fallback hash verification
   pass; global fallback-consumer audit, same-fixture screenshot pairing, and
   the overall final pixel lock remain open.
+
+### 2026-07-27 Batch 1036 full live sweep teardown and responsiveness evidence
+
+- [x] Outside-sandbox System Chrome (`PW_CHANNEL=chrome`) reran the full
+  legacy/local corpus against legacy `:9000` and rebuilt release/dist Rust:
+  desktop completed `273` legacy and `397` local states; mobile completed the
+  same corpus. Desktop is legacy `248/273`, local `362/397`; mobile is legacy
+  `248/273`, local `361/397`. Compared states remain `273`, with `210`
+  visual/geometry diff failures and local failures `35` desktop / `36` mobile.
+- [x] Directly inspected fresh legacy/local captures for `/user/editform`,
+  `/admin/sample`, and `/admin/sample/post/1`. The approved Yoram footer
+  identity change and same-fixture content differences remain explicit; no
+  geometry compensation or screenshot assertion relaxation was introduced.
+- [x] `scripts/visual-parity-sweep.mjs` now bounds `browser.close()` at five
+  seconds and labels a timeout. The mobile run reproduced
+  `legacy browser close timed out after 5000ms` after the legacy route loop,
+  then continued through all local states. This isolates the long tail to
+  Playwright/Chrome teardown IPC, separate from page rendering.
+- [x] `scripts/run-playwright-e2e.mjs` now tracks the Playwright child process
+  group during SIGINT/SIGTERM cleanup together with the managed backend and
+  frontend groups, preventing an interrupted validation from leaving stale
+  browser workers behind. Normal child wait and all parity gates remain
+  unchanged.
+- [x] Representative routes normally reach DOM `80–100ms`, body `150–300ms`,
+  and paint `180–500ms`; existing route/data-dependent selector/paint waits
+  near ten seconds remain strict and are tracked as separate route gaps.
+- [x] Sidebar focused shell tests now await the existing `0.5s` open/close
+  width transition before strict geometry assertions. External System Chrome
+  normal shell motion coverage passes `4/4`; final open geometry is `362px`
+  desktop and `392px` mobile. The route transition-end filter now also accepts
+  its declared `border-right-width` property. Fallback-off shell motion
+  coverage passes; existing global-pin static fallback parity remains a
+  separate consumer gap because removing fallback CSS makes the icon box
+  `8x7` instead of the expected `26x25`.
+- [ ] Global fallback-consumer audit, full fallback-off suite, same-fixture
+  screenshot pairing, and overall final pixel lock remain open. The broad
+  fallback-off suite remains red on pre-existing route/fixture baseline
+  failures; it is not claimed as passed from this batch.

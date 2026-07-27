@@ -1673,7 +1673,9 @@ export function SiteLayoutShell({
     if (event.target !== event.currentTarget) {
       return;
     }
-    if (!new Set(["flex-basis", "max-width", "width"]).has(event.propertyName)) {
+    if (
+      !new Set(["border-right-width", "flex-basis", "max-width", "width"]).has(event.propertyName)
+    ) {
       return;
     }
     setLeftSidebarMotion((motion) => {

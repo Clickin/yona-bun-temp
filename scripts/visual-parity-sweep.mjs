@@ -1695,6 +1695,23 @@ async function closePageSafely(page) {
   ]);
 }
 
+async function closeBrowserSafely(browser, label) {
+  let timeoutId;
+  try {
+    await Promise.race([
+      browser.close().catch(() => {}),
+      new Promise((resolveTimeout) => {
+        timeoutId = setTimeout(() => {
+          console.error(`[visual-sweep] ${label} browser close timed out after 5000ms`);
+          resolveTimeout();
+        }, 5_000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function isViteDevModuleAbort(failure) {
   return (
     failure.startsWith("net::ERR_ABORTED ") &&
@@ -1816,7 +1833,7 @@ async function runTarget(label, baseUrl) {
       results,
     };
   } finally {
-    await browser.close().catch(() => {});
+    await closeBrowserSafely(browser, label);
   }
 }
 

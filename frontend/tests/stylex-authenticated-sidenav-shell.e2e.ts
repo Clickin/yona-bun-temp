@@ -89,6 +89,7 @@ for (const viewport of [
     await toggle.click();
     await expect(shell).toHaveClass(/sidenav-open/);
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await waitForTransitionEnd(shell, ["width"]);
     const open = await readShellEvidence(shell);
     const openLayout = await readLayoutEvidence(page);
     console.log(`authenticated-sidenav-${viewport.label}-open`, JSON.stringify(open));
@@ -287,6 +288,27 @@ async function readShellEvidence(shell: Locator) {
       viewport: { scrollWidth: document.documentElement.scrollWidth, width: innerWidth },
     };
   });
+}
+
+async function waitForTransitionEnd(shell: Locator, properties: readonly string[]) {
+  await shell.evaluate(
+    (element, transitionProperties) =>
+      new Promise<void>((resolve) => {
+        const handleTransitionEnd = (event: Event) => {
+          const transitionEvent = event as TransitionEvent;
+          if (
+            transitionEvent.target !== element ||
+            !transitionProperties.includes(transitionEvent.propertyName)
+          ) {
+            return;
+          }
+          element.removeEventListener("transitionend", handleTransitionEnd);
+          resolve();
+        };
+        element.addEventListener("transitionend", handleTransitionEnd);
+      }),
+    properties,
+  );
 }
 
 async function saveScreenshot(page: Page, filename: string) {

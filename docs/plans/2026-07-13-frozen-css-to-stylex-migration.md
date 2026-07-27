@@ -2,6 +2,46 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Full live sweep stabilization teardown result
+
+The post-validation live sweep was rerun against legacy `:9000` and the
+release Rust server serving the rebuilt `frontend/dist`, outside the sandbox
+with `PW_CHANNEL=chrome`. The full desktop corpus completed all `273` legacy
+and `397` local states; the mobile corpus completed the same corpus. The
+strict comparison result is unchanged from the recorded baseline:
+
+- desktop: legacy `248/273`, local `362/397`, compared `273`, local failures
+  `35`, visual/geometry diff failures `210`;
+- mobile: legacy `248/273`, local `361/397`, compared `273`, local failures
+  `36`, visual/geometry diff failures `210`.
+
+These are evidence of remaining parity/fixture gaps, not a successful final
+lock. Direct captures of `/user/editform`, `/admin/sample`, and
+`/admin/sample/post/1` were inspected. The captures confirm the approved
+Yoram footer identity difference and fixture/content differences such as the
+empty legacy README versus the populated local README. They also retain the
+known global GNB search geometry drift; no route-local compensation was added.
+
+The long stabilization tail was reproduced as a harness teardown issue. The
+route loop reached `397/397`, but the old unbounded `browser.close()` could
+keep the sweep from writing its summary. `scripts/visual-parity-sweep.mjs`
+now bounds browser cleanup at five seconds and reports the target label when
+the close exceeds that bound. The mobile run directly emitted
+`legacy browser close timed out after 5000ms` and continued through the local
+corpus, proving that the delay is lifecycle/Chrome IPC cleanup rather than a
+page-wide render settle. Route-specific waits remain strict: representative
+normal routes settle in roughly DOM `80–100ms`, body `150–300ms`, and paint
+`180–500ms`; a small set of empty/data-dependent states still reaches the
+existing ~10-second selector/paint wait and remains a route/data issue to
+investigate separately. No screenshot, geometry, or failure assertion was
+relaxed.
+
+The managed E2E runner had the same ownership hole on interruption:
+`run-playwright-e2e.mjs` tracked backend/frontend process groups for SIGINT and
+SIGTERM but not the Playwright child group. It now registers that exact child
+when spawned and terminates it with the managed servers, preventing stale
+browser workers from turning a completed validation into an apparent wait.
+
 ## 2026-07-27 — Post-validation stabilization and harness teardown audit
 
 After the validation process had finished, the focused external System-Chrome

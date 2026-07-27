@@ -222,13 +222,14 @@ async function waitForReady(name, url, serverStates) {
   throw new Error(`${name} did not become ready at ${url} within ${READY_TIMEOUT_MS}ms.`);
 }
 
-async function runPlaywright(forwardedArgs, env) {
+async function runPlaywright(forwardedArgs, env, onSpawn) {
   const next = resolveSpawn("pnpm", ["exec", "playwright", "test", ...forwardedArgs]);
   const state = spawnTracked("playwright", next.command, next.args, {
     cwd: frontendDirectory,
     env,
     stdio: ["ignore", "inherit", "inherit"],
   });
+  onSpawn?.(state);
 
   await waitForExit(state);
 
@@ -252,6 +253,7 @@ async function main() {
     spawnManagedServer("backend", ["../scripts/run-dev-backend-once.mjs"], env),
     spawnManagedServer("frontend", ["../scripts/run-e2e-frontend.mjs"], env),
   ];
+  let playwrightState = null;
   let shuttingDown = false;
 
   const stopFromSignal = (signal) => {
@@ -259,7 +261,8 @@ async function main() {
       return;
     }
     shuttingDown = true;
-    void shutdown(serverStates).finally(() => {
+    const states = playwrightState ? [...serverStates, playwrightState] : serverStates;
+    void shutdown(states).finally(() => {
       process.kill(process.pid, signal);
     });
   };
@@ -275,7 +278,9 @@ async function main() {
     await waitForReady("backend", runtime.backendSessionUrl, serverStates);
     await waitForReady("frontend", runtime.frontendUrl, serverStates);
     await waitForReady("frontend session", runtime.frontendSessionUrl, serverStates);
-    const exitCode = await runPlaywright(forwardedArgs, env);
+    const exitCode = await runPlaywright(forwardedArgs, env, (state) => {
+      playwrightState = state;
+    });
     console.log(`[playwright-e2e] playwright exited with code ${exitCode}`);
     return exitCode;
   } finally {
