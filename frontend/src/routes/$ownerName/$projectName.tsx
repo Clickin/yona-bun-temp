@@ -777,6 +777,16 @@ function ProjectHomeRouteShell({
   }
 
   if (!query.data) {
+    if (active === "home" && query.isPending) {
+      return (
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+        >
+          {null}
+        </SiteLayoutShell>
+      );
+    }
     return null;
   }
 

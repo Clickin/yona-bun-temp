@@ -45,6 +45,70 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   );
 });
 
+test("project home paints the framed shell before its delayed container settles", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let releaseContainer!: () => void;
+  const containerResponse = new Promise<void>((resolve) => {
+    releaseContainer = resolve;
+  });
+  let resolveContainerStarted!: () => void;
+  const containerStarted = new Promise<void>((resolve) => {
+    resolveContainerStarted = resolve;
+  });
+
+  // Legacy output evidence: common/navbar.scala.html emits the global navbar,
+  // project/header.scala.html emits the project header, and home.scala.html
+  // supplies the project menu and project-home content inside that shell.
+  await mockProjectHome(page, {
+    containerGate: {
+      onStart: resolveContainerStarted,
+      response: containerResponse,
+    },
+  });
+
+  const navigation = page.goto(`${basePath}/admin/sample`, { waitUntil: "commit" });
+  await containerStarted;
+  await expect(page.locator('[data-stylex-owner="global-gnb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-sidebar-open-pin"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+
+  releaseContainer();
+  await navigation;
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop > li.active .menu-name")).toHaveText(
+    "Project home",
+  );
+  await expect(page.locator(".bubble-wrap.gray.readme")).toBeVisible();
+  await expect(page.locator(".project-header-outer .project-name")).toHaveText("sample");
+  await expect(page.locator(".nav-tabs li.active a")).toHaveText("README");
+  await expect(page.locator(".bubble-wrap.gray.readme")).toContainText(
+    "README.md will be shown here if you add it to the code repository's root directory.",
+  );
+  const finalGeometry = await page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".project-header-outer");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const home = document.querySelector<HTMLElement>(".page-wrap-outer");
+    if (!header || !menu || !home) return null;
+    return {
+      headerBottom: header.getBoundingClientRect().bottom,
+      homeTop: home.getBoundingClientRect().top,
+      menuBottom: menu.getBoundingClientRect().bottom,
+      menuTop: menu.getBoundingClientRect().top,
+    };
+  });
+  expect(finalGeometry).not.toBeNull();
+  expect(finalGeometry!.menuTop).toBeGreaterThanOrEqual(finalGeometry!.headerBottom);
+  expect(finalGeometry!.homeTop).toBeGreaterThanOrEqual(finalGeometry!.menuBottom);
+});
+
 test("unavailable project routes immediately render legacy container error screens", async ({
   page,
 }) => {
@@ -1552,6 +1616,7 @@ async function mockProjectHome(
   page: Page,
   overrides: Partial<{
     containerRequests: string[];
+    containerGate: { onStart: () => void; response: Promise<void> };
     containerStatus: number;
     enrollmentRequestCount: number;
     enrollRequests: { hasCsrfToken: boolean; method: string }[];
@@ -1688,6 +1753,10 @@ async function mockProjectHome(
   await page.route(
     `**/api/v1/owners/${ownerName}/projects/${projectName}/container**`,
     async (route) => {
+      if (overrides.containerGate) {
+        overrides.containerGate.onStart();
+        await overrides.containerGate.response;
+      }
       if (overrides.containerStatus) {
         overrides.containerRequests?.push(`${overrides.containerStatus}`);
         await route.fulfill({

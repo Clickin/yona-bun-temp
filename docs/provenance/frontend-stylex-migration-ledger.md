@@ -29,6 +29,26 @@ only the known GNB search geometry difference. Tab over-fetching is corrected,
 but the remaining SPA startup plus selected README request is still an open
 legacy-responsiveness gap.
 
+### Project-home shell-first paint and settled visual measurement — 2026-07-27
+
+The active project-home route now mounts the existing `SiteLayoutShell` while
+its selected container request is pending. This exposes the legacy-equivalent
+global navigation and sidebar control immediately, without adding a spinner,
+skeleton, placeholder spacing, CSS compensation, or fallback content; the
+existing project DOM is still rendered only after the container resolves. The
+focused delayed-container System Chrome test passes 1/1 and verifies the final
+header/menu/README DOM plus geometry.
+
+The visual sweep previously measured `/admin/sample` during that transient shell
+and reported missing project selectors. Its exact project-root settle selector
+now waits for `.project-page-wrap` before paint/metrics. The external
+release-dist rerun measured legacy body/paint/metrics at 92/112/117ms and local
+at 159/380/385ms, with final project selectors present, HTTP 200, no local
+runtime errors, and only the known GNB search geometry drift. This is a
+harness-timing correction and a bounded perceived-startup improvement; it does
+not relax the screenshot, geometry, fallback-off, or final pixel gates. The
+settled local latency and broader final lock remain open.
+
 ### Query-tolerant project container mocks — 2026-07-27
 
 The project shell now sends an explicit `tabId` query, so exact Playwright
