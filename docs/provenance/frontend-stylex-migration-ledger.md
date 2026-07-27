@@ -3049,3 +3049,27 @@ The same run isolated a harness latency defect: persistent sidebar `Loading...` 
 - Batch 1029 stabilization-wait and left framed-sidebar motion diagnosis: frozen `yona-original` user-menu LESS/JS establishes the existing top-right `#mySidenav` width transition, while current `SiteLayoutShell` conditionally mounts `LegacyFramedSidebar` and therefore has no persistent transition target. External System Chrome measures legacy `/admin` paint `110ms`, local dev `385ms`, and font/image/finite-animation settle `12ms`/`14ms` with zero timeouts; the longer local loop is managed Rust/Vite bootstrap (`6.05s` compile, `1.80s` Vite, `26.8s` five-check process), not page settle. Focused visual-sweep traces remain below `1.3s` without consuming selector/paint bounds. A bounded worker patch is pending for transition-aware left-sidebar evidence; no frozen CSS, new dependency, or geometry compensation is authorized. Existing local/diff failures and live populated-profile pairing remain open.
 - Batch 1030 left framed-sidebar motion ownership: `SiteLayoutShell` keeps `LegacyFramedSidebar` mounted through `opening/open/closing` and retires it only after the existing CSS transition ends. `leftSidebarOuterShellStyles.motion/closed` owns the transition, desktop/mobile final dimensions, overflow and noninteractive closing state; React owns motion state, `inert`, transition-end cleanup, and focus restoration. External System Chrome passes the new motion spec `1/1` normal and `1/1` fallback-off; the existing three-spec geometry/close-pin/account-action matrix passes `9/9` normal. The fallback-off matrix's descendant geometry failures are the known broader consumer gap, not this shell owner. No frozen CSS, new dependency, or compensation is added.
 - Stabilization-wait separation (2026-07-27): a fresh external System Chrome trace against release Rust plus freshly built `frontend/dist` measured legacy `/admin/sample` initial paint at about 115ms, local GNB shell at about 25ms, selected `container?tabId=readme` at 102–121ms, and local project DOM commit at about 150ms after navigation. The subsequent parity settle phase (fonts/images/finite animations/stylesheet access/two frames) took about 15ms with no timeout. The remaining gap is therefore the REST container critical path and React commit; no screenshot wait is removed or relaxed. The fast project-detail endpoint is 2–6ms but lacks the fields required by the existing project header/menu shell, so a future responsiveness fix needs an evidence-backed payload/shell change.
+
+### Batch 1034 user-settings profile field-row mt10 ownership — 2026-07-27
+
+`yona-original/app/views/user/edit.scala.html` emits three profile `<dd
+class="mt10">` rows for login ID, name, and email. The included settings tab
+partial, the full ordered `yobi.less` imports, `_common.less` `.mt10`, frozen
+Bootstrap `dl`/form rules, and `conf/messages`/`messages.ko-KR` establish the
+legacy DOM, spacing, and copy. The React route already had the exact
+`userSettingsProfileStyles.profileFieldRow` StyleX `marginTop: "10px"`
+declaration, so this wave retires only the three direct `mt10` class literals;
+the avatar upload `btn-wrap mt10` remains as a separate global fallback
+consumer. No frozen source, app.css, global selector, or numeric compensation
+changed.
+
+`frontend/tests/stylex-user-settings-profile-field-rows.e2e.ts` records the
+legacy/import/message/JS evidence, source/runtime class retirement, exact
+desktop/mobile computed margin, row/input containment, DOM order/copy, no
+overflow, and retained fallback. The existing
+`stylex-user-editform-profile-fields-mt10.e2e.ts` regression was updated from
+class-presence to declaration ownership. Both specs pass 3/3 in normal and
+3/3 in explicit fallback-off external System Chrome; the inspected legacy/local
+user-settings screenshots show only known fixture/avatar and approved
+Yoram navbar/footer identity differences. Production build/verifier, global
+fallback-consumer audit, and final full pixel lock remain open.

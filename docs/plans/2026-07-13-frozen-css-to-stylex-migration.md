@@ -9084,3 +9084,26 @@ Batch 1017 gives the populated `/$user?selected=pullRequests` project and receiv
 - Batch 1029: stabilization-wait diagnosis separates browser settle from local bootstrap. External System Chrome measures legacy `/admin` paint at `110ms` and local dev at `385ms`; font/image/finite-animation settle is `12ms`/`14ms` with zero timeouts. Focused visual-sweep traces reach paint in `476ms`, `715ms`, and `1228ms` without consuming route-selector or paint bounds. The HMR runner remains the dominant cost (`6.05s` Rust compile, `1.80s` Vite readiness, `18.0s` five checks, `26.8s` total), so no pixel gate is relaxed. The left framed sidebar remains a separate interaction gap because `LegacyFramedSidebar` is conditionally mounted; the top-right `#mySidenav` already has the legacy `width 0.5s ease` transition. A bounded transition patch and focused evidence are pending; final local/diff/profile fixture locks remain open.
 - Batch 1030: left framed-sidebar open/close motion is implemented as a persistent, StyleX-owned shell state (`opening/open/closing/closed`) with the existing desktop/mobile final dimensions, `0.5s ease` width/flex transition, closing `inert`/input blocking, transition-end layout removal, and open-pin focus restoration. External System Chrome focused motion coverage passes `1/1` in normal mode and `1/1` with fallback CSS disabled; the existing geometry/close-pin/account-action matrix passes `9/9` in normal mode. Its fallback-off run remains a pre-existing descendant fallback-consumer baseline failure, separate from the new motion owner. No new dependency, frozen CSS change, or numeric compensation is introduced.
 - Batch 1031: project-home stabilization is split into perceived shell paint and final settled parity. While the active home container query is pending, `ProjectHomeRouteShell` mounts the existing `SiteLayoutShell` with route-known search scope; no spinner, skeleton, placeholder spacing, CSS compensation, or fallback content is added, and the final project header/menu/README branches remain unchanged. The focused delayed-container external System-Chrome test passes 1/1. The visual sweep now waits for `.project-page-wrap` on exact project-root screenshot paths before paint/metrics, avoiding a false early-shell comparison; release-dist `/admin/sample` final selectors are present and only the known GNB search x-drift remains. Legacy body/paint/metrics are 92/112/117ms versus local 159/380/385ms in the focused rerun, so settled local responsiveness and broader final pixel/fallback locks remain open.
+
+## 2026-07-27 — Batch 1034 user-settings profile field-row mt10 ownership
+
+Move the three authenticated `/user/editform` profile `<dd>` rows (login ID,
+name, and email) from the shared `mt10` presentation class to their existing
+route-local `profileFieldRow` StyleX owner. The legacy root is
+`yona-original/app/views/user/edit.scala.html`, with the settings tab partial,
+the complete `yobi.less` import chain, `_common.less` `.mt10`, Bootstrap
+`dl`/form cascade, and user-setting messages establishing the output. Preserve
+the legacy `<dl>` order, labels, field names/types/values, form behavior, and
+the avatar upload wrapper's separate `mt10` fallback consumer. No frozen source,
+global fallback, or route-specific geometry value changed.
+
+The new focused source/DOM/geometry spec and the existing profile-field
+regression both pass 3/3 in normal external System Chrome (14.2s) and 3/3 in
+fallback-off external System Chrome (14.1s). Desktop 1366x900 and mobile
+390x844 checks assert exact computed `margin-top: 10px`, row/input containment,
+order/copy, no overflow, class retirement, and the retained avatar/global
+fallback. Existing legacy/local user-settings desktop/mobile screenshots were
+visually inspected alongside the new local captures; visible fixture/avatar,
+approved Yoram footer/navbar identity differences remain documented and no
+compensation was added. Production build, frozen-hash verification, and the
+global/full fallback final lock remain open for this wave.

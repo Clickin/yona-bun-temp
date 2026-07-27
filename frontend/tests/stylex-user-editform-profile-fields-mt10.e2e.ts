@@ -13,7 +13,7 @@ const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relat
 
 test.use({ locale: "ko-KR" });
 
-test("user edit profile fields own the three legacy mt10 rows", async ({ page }) => {
+test("user edit profile fields own the three legacy mt10 declarations", async ({ page }) => {
   const route = read("src/routes/user/editform.tsx");
   const styles = read("src/routes/user/-editform.stylex.ts");
   const legacyTemplate = read("../yona-original/app/views/user/edit.scala.html");
@@ -37,7 +37,7 @@ test("user edit profile fields own the three legacy mt10 rows", async ({ page })
   ]) {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
-  expect(route.match(/className="mt10"/gu)).toHaveLength(3);
+  expect(route.match(/className="mt10"/gu) ?? []).toHaveLength(0);
   expect(route).toContain('data-stylex-owner="user-settings-avatar-upload-wrap"');
   expect(route).toContain(
     "className={`btn-wrap mt10 ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}",
@@ -65,7 +65,7 @@ async function assertProfileRows(page: Page, viewportName: "desktop" | "mobile")
   await expect(rows).toHaveCount(3);
   for (const index of [0, 1, 2]) {
     await expect(rows.nth(index)).toBeVisible();
-    await expect(rows.nth(index)).toHaveClass(/\bmt10\b/u);
+    await expect(rows.nth(index)).not.toHaveClass(/\bmt10\b/u);
     await expect(rows.nth(index)).not.toHaveAttribute("style");
   }
 
