@@ -48,6 +48,29 @@ and release/dist settles in `9–15ms` after the route exists. This is cold
 HMR/Vite transformation overhead, not a reason to relax the final visual or
 fallback-off gates.
 
+### Batch 1033 nested file-history empty warning ownership — 2026-07-27
+
+`yona-original/app/views/code/history.scala.html` emits the path-specific
+`code-table commits@if(path != null){ mt10}` table and the exact empty
+`tr > td[colspan="5"].warning-none` branch. Its full ordered `yobi.less` import
+chain, `_common.less` `.mt10`, `_page.less` `.commit-wrap`/`.code-table`/
+`.warning-none`, frozen Bootstrap/responsive tables, `commitMsg.scala.html`,
+and `conf/messages` establish the output and cascade. Only
+`frontend/src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx`
+now emits the stable `commit-file-empty-warning` owner and the colocated
+`-commit-file.stylex.ts` owns the exact `fontSize:16px`, centered text, and
+`#d4d4d4` background. Breadcrumbs, `mt10`, copy/order, non-empty rows, links,
+and pagination remain unchanged. The shared `warning-none`/`app.css` fallback
+remains for HOME, notifications, and other real consumers.
+
+`stylex-project-commit-file-history-warning-none.e2e.ts` records RED→GREEN
+source/import/message/fallback evidence and passes normal and explicit
+fallback-off external System-Chrome `1/1` each (`14.3s`/`14.4s`) at desktop
+and 390px with exact computed output, table/colSpan/copy/order, plugin-only
+attribute absence, containment, no overflow, and screenshots. Frontend
+typecheck, production build/StyleX verifier, and diff check pass. Same-fixture
+legacy pairing and the global/full fallback final lock remain open.
+
 ### Production-dist stabilization latency — 2026-07-27
 
 This is a runtime performance correction, not a StyleX or screenshot-gate

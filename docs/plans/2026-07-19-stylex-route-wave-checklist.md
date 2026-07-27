@@ -17,6 +17,14 @@
 - [x] Stabilization diagnosis is recorded separately from parity: a regression `page.goto(.../commits)` trace under HMR spent `8624ms` waiting for the HTTP 200 HTML document before `load`; release/dist settle remains `9–15ms` after the route exists. No screenshot or parity wait was relaxed.
 - [ ] Keep the nested file-history `warning-none` consumer, global fallback-consumer audit, full fallback-off suite, same-fixture legacy screenshot pair, and overall final pixel lock open.
 
+### 2026-07-27 Batch 1033 nested file-history empty warning ownership
+
+- [x] `yona-original/app/views/code/history.scala.html`, `commitMsg.scala.html`, the full `yobi.less` import chain, `_common.less`/`_page.less`, Bootstrap/responsive CSS, and `conf/messages` establish the path-specific `mt10` table and exact empty `code.nocommits` cell.
+- [x] `frontend/src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx` preserves breadcrumbs, path table/`mt10`, `tr > td[colSpan=5]`, copy/order, and non-empty history behavior while moving only the empty cell to `commit-file-empty-warning` StyleX ownership.
+- [x] `frontend/tests/stylex-project-commit-file-history-warning-none.e2e.ts` records RED→GREEN provenance, exact `16px`/center/`#d4d4d4` output, HOME/app.css fallback retention, DOM/plugin/geometry/no-overflow contracts, and desktop/mobile screenshots.
+- [x] External System-Chrome normal and fallback-off focused runs pass `1/1` each (`14.3s` and `14.4s`), with frontend typecheck, production build/StyleX verifier, and diff check passing.
+- [ ] Keep global fallback-consumer audit, same-fixture legacy screenshot pairing, full fallback-off final lock, and remaining unrelated code-history presentation consumers open.
+
 ### Focused/full visual evidence lifecycle — 2026-07-27
 
 - [x] A sweep with explicit `YORAM_SWEEP_PATHS` writes `latest-focused.json` or `latest-focused-mobile.json`; only a full corpus run writes the canonical `latest.json` or `latest-mobile.json`.

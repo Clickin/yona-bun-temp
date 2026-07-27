@@ -16,6 +16,7 @@ const sx = {
   breadcrumbs: stylex.props(styles.breadcrumbs),
   history: stylex.props(styles.history),
   historyTable: stylex.props(styles.historyTable),
+  emptyWarning: stylex.props(styles.emptyWarning),
   paginationLink: stylex.props(styles.paginationLink),
   commentCount: stylex.props(styles.commentCount),
 } as const;
@@ -191,7 +192,11 @@ function ProjectCodeFileHistoryBody({
                 <tbody className="tbody">
                   {history.commits.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="warning-none">
+                      <td
+                        {...sx.emptyWarning}
+                        colSpan={5}
+                        data-stylex-owner="commit-file-empty-warning"
+                      >
                         {t("code.nocommits")}
                       </td>
                     </tr>

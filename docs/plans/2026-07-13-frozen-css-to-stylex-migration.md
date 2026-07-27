@@ -128,6 +128,24 @@ overhead, not browser font/image/animation settling. Release/dist remains the
 responsiveness and screenshot-parity runtime evidence; no parity wait or pixel
 gate is relaxed.
 
+## 2026-07-27 — Batch 1033 nested file-history empty warning ownership
+
+The file-specific `/$ownerName/$projectName/commits/$branch/$filePath` state
+now owns only its empty history cell through `commit-file-empty-warning`.
+`yona-original/app/views/code/history.scala.html` remains the output source for
+the conditional `mt10` table and exact `tr > td[colspan="5"]` empty branch;
+`_page.less` keeps the three `warning-none` declarations unchanged. The
+route-local StyleX preserves the path table, breadcrumbs, copy, and all
+non-empty history behavior. The global fallback remains for HOME, notifications,
+and other real consumers, so no app.css or frozen-source deletion is justified.
+
+The focused normal and explicit fallback-off System-Chrome tests pass `1/1`
+each at desktop and 390px, covering source/import/message evidence, exact
+computed declarations, table structure/colSpan/copy/order, plugin-attribute
+absence, containment, no overflow, and screenshots. Frontend typecheck,
+production build/StyleX verifier, and diff check pass. Same-fixture live legacy
+pairing and the global/full fallback final lock remain open.
+
 ## 2026-07-27 — Public-profile Issues subtask-summary ownership
 
 Batch 1027 closes five presentation boundaries in the populated public-profile
