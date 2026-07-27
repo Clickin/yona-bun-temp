@@ -3265,7 +3265,20 @@ desktop/mobile geometry, and filtering.
 
 ### 2026-07-28 — Batch 1060 global-shell stabilization wait diagnosis
 
-- [x] Corrected frozen global GNB ownership: desktop outer padding is `0`, mobile padding remains `10px`; retained `.gnb-search-form` because frozen `_responsive.less` consumes it for mobile visibility.
+- [x] Recorded the initial global GNB stabilization diagnosis; Batch 1062 supersedes its intermediate desktop-padding assumption with the frozen responsive `10px` rule.
 - [x] Removed stale fallback-off contracts for the old `/src/assets/...` response path and pre-TanStack source forms.
 - [x] Measured the delay mechanism: failed assertions reached Playwright's 30-second timeout, so a 4-test focused run took about 1.3 minutes despite server/Vite startup completing in seconds.
-- [ ] Remaining global shell logo/mobile geometry mismatches, broad fallback-off audit, and final pixel lock remain open.
+- [x] Remaining logo/mobile metric mismatches were resolved as stale baselines; broad fallback-off audit and final pixel lock remain open.
+
+### 2026-07-28 — Batch 1061 global-shell geometry baseline correction
+
+- [x] Corrected stale desktop child metrics against the frozen responsive 10px outer padding rule.
+- [x] Updated feedback width/search-flow metrics for the intentional `Yoram repository` copy; no CSS or tolerance relaxation was introduced.
+- [x] External Chrome focused parity passes normal `3/3` and fallback-off `2/2`; each completes in about 13 seconds without assertion timeout.
+- [ ] Broad fallback-off/global audit and final pixel lock remain open.
+
+### 2026-07-28 — Batch 1062 restore frozen responsive GNB padding
+
+- [x] Restored desktop/mobile `padding: 0 10px` in the React GNB owner from frozen `_responsive.less:600` evidence; this route does not consume the shared `.gnb-outer` bridge class.
+- [x] Normal and fallback-off focused GNB parity both pass `3/3`; no timeout or tolerance relaxation remains.
+- [ ] Broad fallback-off/global audit and final pixel lock remain open.

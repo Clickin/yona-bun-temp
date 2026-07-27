@@ -1,5 +1,22 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1061 — global-shell geometry baseline correction — 2026-07-28
+
+The initial metric correction was an intermediate baseline and is superseded by
+Batch 1062: direct frozen `_responsive.less:600` comparison proves the tested
+GNB retains desktop/mobile outer `padding: 0 10px`. The intentional `Yoram
+repository` feedback width remains 130.05px. Batch 1062 is authoritative;
+broader fallback-off audit and final pixel lock remain open.
+
+### Batch 1062 — restore frozen responsive GNB padding — 2026-07-28
+
+The legacy comparison corrected an intermediate diagnosis: frozen
+`_responsive.less:600` applies `.gnb-outer { padding: 0 10px; box-sizing: border-box; }`
+at the tested shell widths. The route StyleX owner retains that exact padding;
+the route does not consume the shared `.gnb-outer` bridge class. The test records the intentional
+`Yoram repository` copy width. External Chrome normal/fallback-off focused GNB
+checks pass 3/3 each; no tolerance or frozen source changed.
+
 ### Batch 1044 — notification fixture and previous-comment payload parity — 2026-07-28
 
 The stabilization investigation separated browser settle latency from the

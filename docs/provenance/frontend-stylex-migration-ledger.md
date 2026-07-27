@@ -3208,10 +3208,26 @@ source change was made.
 ### Batch 1060 — global-shell stabilization wait diagnosis — 2026-07-28
 
 The frozen navbar/page/responsive sources establish the 40px GNB geometry and
-responsive `.gnb-search-form` contract. The home route now explicitly owns
-desktop outer padding `0px` and mobile padding `10px`; the app.css bridge
-padding was removed. Focused source assertions follow React/TanStack-owned
-links and Vite-imported assets while retaining the frozen responsive class.
-External fallback-off timing showed repeated 30-second assertion timeouts were
-the apparent stabilization wait; remaining logo/mobile geometry and broad
-fallback-off audit stay open.
+responsive `.gnb-search-form` contract. Batch 1062 supersedes the intermediate
+no-padding assumption after direct comparison with frozen `_responsive.less:600`;
+the tested GNB retains the exact 10px outer padding. The stabilization wait was
+caused by stale assertions reaching Playwright's 30-second timeout.
+
+### Batch 1061 — global-shell geometry baseline correction — 2026-07-28
+
+The legacy navbar partial and frozen `_page.less`/`_responsive.less` remain the
+DOM and declaration evidence. The focused geometry test corrected stale desktop
+child x values that still reflected the removed 10px outer bridge padding and
+updated the measured feedback/search flow for the intentional `Yoram repository`
+copy. No route CSS, frozen source, or tolerance changed. External Chrome focused
+normal passes 3/3 and fallback-off passes 2/2; broad fallback-off/global audit
+and final pixel lock remain open.
+
+### Batch 1062 — restore frozen responsive GNB padding — 2026-07-28
+
+The legacy comparison of `common/navbar.scala.html` and frozen
+`_responsive.less:600` proves that the tested GNB uses `padding: 0 10px`.
+`frontend/src/routes/-home-route-screen.tsx` restores that exact owner rule;
+this route does not consume the shared app.css `.gnb-outer` bridge. `frontend/tests/global-shell-geometry.e2e.ts` retains the
+measured intentional `Yoram repository` feedback width and legacy child flow.
+External Chrome normal and fallback-off focused GNB checks pass 3/3 each.

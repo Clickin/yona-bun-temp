@@ -63,13 +63,13 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 900, scrollWidth: 1366, width: 1366 });
   expectBox(metrics.navbar, { height: 40, width: 1366, x: 0, y: 0 });
-  expectBox(metrics.inner, { height: 40, width: 1338.67, x: 13.66, y: 0 });
+  expectBox(metrics.inner, { height: 40, width: 1319.08, x: 23.45, y: 0 });
   expectBox(metrics.pin, { height: 26, width: 25, x: -6, y: 6 });
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 80.45, y: 5 });
   expectBox(metrics.listAll, { height: 37, width: 63.02, x: 110.22, y: 1 });
   expectBox(metrics.divider, { height: 40, width: 3.11, x: 173.23, y: 0 });
-  expectBox(metrics.feedback, { height: 37, width: 83.17, x: 176.34, y: 1 });
-  expectBox(metrics.search, { height: 30, width: 112, x: 259.52, y: 5 });
+  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 176.34, y: 1 });
+  expectBox(metrics.search, { height: 30, width: 112, x: 306.4, y: 5 });
   expectBox(metrics.heroCover, { height: 269, width: 750, x: 298, y: 40 });
   expectBox(metrics.heroHeading, { height: 40, width: 750, x: 298, y: 95 });
 
@@ -151,7 +151,7 @@ test("site layout GNB outer and inner keep the frozen border-box bridge without 
     };
   });
   expectBox(outerBox, { height: 40, width: 1366, x: 0, y: 0 });
-  expectBox(innerBox, { height: 40, width: 1338.67, x: 13.66, y: 0 });
+  expectBox(innerBox, { height: 40, width: 1319.08, x: 23.45, y: 0 });
 });
 
 test("anonymous home login Link opens and dismisses the legacy root dialog", async ({ page }) => {
@@ -346,7 +346,7 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 30.7, y: 5 });
   expectBox(metrics.listAll, { height: 37, width: 72.23, x: 60.47, y: 1 });
   expectBox(metrics.divider, { height: 40, width: 3.11, x: 132.7, y: 0 });
-  expectBox(metrics.feedback, { height: 37, width: 132.78, x: 135.81, y: 1 });
+  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 135.81, y: 1 });
   expectBox(metrics.heroCover, { height: 309, width: 410, x: -20, y: 40 });
   expectBox(metrics.heroHeading, { height: 80, width: 410, x: -20, y: 95 });
 
@@ -382,7 +382,7 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   for (const [viewport, expectedInner] of [
     [
       { height: 900, width: 1366 },
-      { height: 40, width: 1338.67, x: 13.66, y: 0 },
+      { height: 40, width: 1319.08, x: 23.45, y: 0 },
     ],
     [
       { height: 844, width: 390 },
