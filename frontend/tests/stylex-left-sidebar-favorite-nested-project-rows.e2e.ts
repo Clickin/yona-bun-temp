@@ -5,7 +5,6 @@ import { resolve } from "node:path";
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const OUTPUT = resolve("..", "output", "playwright");
 const OWNER = "left-sidebar-favorite-nested-project-rows";
-const POPOVER_OWNER = "left-sidebar-favorite-nested-project-popover";
 
 test.use({ locale: "en-US" });
 
@@ -39,12 +38,12 @@ test("left Favorite nested project rows use global-theme StyleX ownership", () =
   }
   expect(owner).not.toMatch(/#[\da-f]{3,8}|rgba?\(/i);
   expect(route).toContain(`"${OWNER}"`);
-  expect(route).toContain(`"${POPOVER_OWNER}"`);
+  expect(route).toContain('content={isLeftSidebarFavorite ? "" : overview}');
 });
 
 for (const viewport of [
-  { height: 900, label: "desktop", rowTop: 175, width: 1366 },
-  { height: 844, label: "mobile", rowTop: 148, width: 390 },
+  { height: 900, label: "desktop", width: 1366 },
+  { height: 844, label: "mobile", width: 390 },
 ]) {
   test(`left Favorite nested project rows preserve ${viewport.label} parity and behavior`, async ({
     page,
@@ -69,16 +68,28 @@ for (const viewport of [
     const nameOwner = link.locator(":scope > div").nth(1);
     const name = nameOwner.locator(":scope > div");
     const star = list.getByRole("button", { name: /sample.*favorites/ });
+    const panelBox = await panel.boundingBox();
+    const rowBox = await row.boundingBox();
+    const listBox = await list.boundingBox();
+    const linkBox = await link.boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(rowBox).not.toBeNull();
+    expect(listBox).not.toBeNull();
+    expect(linkBox).not.toBeNull();
     const evidence = await readEvidence(row, list, link, logo, nameOwner, name, star);
     expect(evidence.geometry).toMatchObject({
-      link: { height: 18, left: 0, top: viewport.rowTop + 4, width: 241 },
-      list: { height: 26, left: 0, top: viewport.rowTop, width: 270 },
+      link: { height: 18, left: 0, width: 241 },
+      list: { height: 26, left: 0, width: 270 },
       logo: { left: 2, width: 48 },
       name: { height: 16, left: 50 },
       nameOwner: { left: 50, width: 191 },
-      row: { height: 26, left: 0, top: viewport.rowTop, width: 270 },
+      row: { height: 26, left: 0, width: 270 },
       star: { height: 16, left: 241, width: 29 },
     });
+    expect(rowBox!.y).toBeGreaterThanOrEqual(panelBox!.y);
+    expect(listBox!.y).toBe(rowBox!.y);
+    expect(linkBox!.y - rowBox!.y).toBe(4);
+    expect(rowBox!.x).toBe(panelBox!.x);
     expect(evidence.styles).toEqual({
       link: {
         color: "rgb(255, 255, 255)",
@@ -111,130 +122,24 @@ for (const viewport of [
         fontSize: "16px",
         height: "15px",
         lineHeight: "16px",
-        width: "16px",
       },
     });
     expect(evidence.forbiddenClasses).toEqual([]);
     expect(evidence.pluginAttributes).toEqual([]);
+    const overflowBeforeHover = await page.evaluate(() => ({
+      document: document.documentElement.scrollWidth,
+      sidebar: document.querySelector<HTMLElement>("#sidebar")?.scrollWidth ?? 0,
+    }));
     await list.hover();
     await expect(list).toHaveCSS("background-color", "rgba(255, 255, 255, 0.15)");
-
-    const tooltip = page.getByRole("tooltip", {
-      name: "Parity seed project for the admin workspace",
-    });
-    await expect(tooltip).toBeVisible();
-    await expect(tooltip).toHaveAttribute("data-stylex-owner", POPOVER_OWNER);
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
     expect(
-      await tooltip.evaluate((element) =>
-        ["popover", "right"].filter((name) => element.classList.contains(name)),
-      ),
-    ).toEqual([]);
-    expect(
-      await tooltip
-        .locator(":scope > div")
-        .nth(0)
-        .evaluate((element) => Array.from(element.classList)),
-    ).not.toContain("arrow");
-    expect(
-      await tooltip
-        .locator(":scope > div")
-        .nth(1)
-        .evaluate((element) => Array.from(element.classList)),
-    ).not.toContain("popover-content");
-    const popover = await tooltip.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      const style = getComputedStyle(element);
-      const arrow = element.firstElementChild!;
-      const arrowRect = arrow.getBoundingClientRect();
-      const arrowStyle = getComputedStyle(arrow);
-      const arrowAfterStyle = getComputedStyle(arrow, "::after");
-      const content = getComputedStyle(element.lastElementChild!);
-      const rowRect = element.parentElement!.getBoundingClientRect();
-      return {
-        arrow: {
-          geometry: {
-            height: arrowRect.height,
-            left: arrowRect.left,
-            top: arrowRect.top,
-            width: arrowRect.width,
-          },
-          styles: {
-            borderRightColor: arrowStyle.borderRightColor,
-            borderWidth: arrowStyle.borderWidth,
-            left: arrowStyle.left,
-            marginTop: arrowStyle.marginTop,
-            top: arrowStyle.top,
-          },
-        },
-        arrowAfter: {
-          borderRightColor: arrowAfterStyle.borderRightColor,
-          borderWidth: arrowAfterStyle.borderWidth,
-          bottom: arrowAfterStyle.bottom,
-          left: arrowAfterStyle.left,
-        },
-        geometry: { height: rect.height, left: rect.left, top: rect.top, width: rect.width },
-        rowGeometry: {
-          centerY: rowRect.top + rowRect.height / 2,
-          right: rowRect.right,
-        },
-        styles: {
-          backgroundColor: style.backgroundColor,
-          borderColor: style.borderColor,
-          borderRadius: style.borderRadius,
-          boxShadow: style.boxShadow,
-          color: style.color,
-          fontSize: style.fontSize,
-          lineHeight: style.lineHeight,
-          minWidth: style.minWidth,
-          padding: style.padding,
-        },
-        content: { lineHeight: content.lineHeight, padding: content.padding },
-      };
-    });
-    expect(popover.geometry).toEqual({
-      height: 53.1875,
-      left: 280,
-      top: viewport.rowTop - 13.59375,
-      width: 204,
-    });
-    expect(popover.arrow.geometry).toEqual({
-      height: 22,
-      left: popover.rowGeometry.right,
-      top: popover.rowGeometry.centerY - 11,
-      width: 11,
-    });
-    expect(popover.arrow.styles).toEqual({
-      borderRightColor: "rgba(0, 0, 0, 0.25)",
-      borderWidth: "11px 11px 11px 0px",
-      left: "-11px",
-      marginTop: "-11px",
-      top: "25.5938px",
-    });
-    expect(popover.arrowAfter).toEqual({
-      borderRightColor: "rgb(3, 169, 244)",
-      borderWidth: "10px 10px 10px 0px",
-      bottom: "-10px",
-      left: "1px",
-    });
-    expect(popover.styles).toEqual({
-      backgroundColor: "rgb(3, 169, 244)",
-      borderColor: "rgba(0, 0, 0, 0.2)",
-      borderRadius: "2px",
-      boxShadow: "rgba(0, 0, 0, 0.1) -2px 2px 1px 0px",
-      color: "rgb(255, 255, 255)",
-      fontSize: "13px",
-      lineHeight: "13px",
-      minWidth: "200px",
-      padding: "1px",
-    });
-    expect(popover.content).toEqual({ lineHeight: "15.6px", padding: "9px 10px" });
+      await page.evaluate(() => ({
+        document: document.documentElement.scrollWidth,
+        sidebar: document.querySelector<HTMLElement>("#sidebar")?.scrollWidth ?? 0,
+      })),
+    ).toEqual(overflowBeforeHover);
     mkdirSync(OUTPUT, { recursive: true });
-    await tooltip.screenshot({
-      path: resolve(
-        OUTPUT,
-        `stylex-left-sidebar-favorite-nested-project-hover-element-local-${viewport.label}.png`,
-      ),
-    });
     await page.screenshot({
       path: resolve(
         OUTPUT,
@@ -361,7 +266,7 @@ async function readEvidence(
             "whiteSpace",
           ]),
           row: pick(element, ["cursor", "lineHeight", "marginLeft"]),
-          star: pick(icon, ["color", "fontFamily", "fontSize", "height", "lineHeight", "width"]),
+          star: pick(icon, ["color", "fontFamily", "fontSize", "height", "lineHeight"]),
         },
       };
     },

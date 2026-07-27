@@ -6367,7 +6367,7 @@ function SidebarAllProjectItem({
       }
     >
       <SidebarHoverPopover
-        content={overview}
+        content={isLeftSidebarFavorite ? "" : overview}
         variant={
           isLeftSidebarFavorite
             ? "left-favorite-nested-project"

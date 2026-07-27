@@ -3147,3 +3147,15 @@ desktop/mobile geometry, and filtering.
   focused desktop/mobile captures were visually inspected.
 - [ ] Global fallback-consumer audit, full fallback-off suite, same-fixture
   screenshot pairing, and overall final pixel lock remain open.
+
+### 2026-07-28 — Batch 1038 left-sidebar nested-project hover
+
+- [x] Suppress only the framed left-sidebar nested favorite-project overview
+  popover that creates horizontal overflow; retain authenticated sidenav
+  tooltip behavior and legacy row geometry/interaction.
+- [x] Focused external System-Chrome normal: 3/3 in 13.0s; combined
+  fallback-off: 84/84 with one intentional skip in 47.6s; desktop/mobile
+  screenshots captured.
+- [ ] This remains an explicit framed-shell deviation from the legacy nested
+  popover. Same-fixture legacy pairing, global fallback audit, full final
+  fallback-off lock, and overall pixel lock remain open.

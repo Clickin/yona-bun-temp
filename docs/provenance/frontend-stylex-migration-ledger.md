@@ -3127,3 +3127,17 @@ pass `6/6` each; the captured desktop/mobile images were visually inspected.
 The prior fallback-off `7x8`/`5x8` static glyph boxes are closed for this
 owner. The global fallback-consumer audit, full fallback-off suite,
 same-fixture legacy pairing, and overall final pixel lock remain open.
+
+### Batch 1038 — framed left-sidebar nested-project hover overflow stabilization — 2026-07-28
+
+Legacy `sidebar.scala.html`, `index/allProjectList_partial.scala.html`, and
+`index/myProjectList_partial.scala.html` establish the nested project row and
+overview-popover evidence. The framed React left-sidebar favorite-nested-project
+variant intentionally suppresses that popover to prevent horizontal overflow;
+authenticated legacy sidenav tooltip behavior is retained. Focused external
+System-Chrome normal passes 3/3 in 13.0s, and the combined fallback-off run passes
+84/84 with one intentional skip in 47.6s. Desktop/mobile screenshots were
+captured. This is an explicit framed-shell deviation, not exact legacy popover
+parity; no frozen source or numeric compensation changed. Full fallback-off,
+same-fixture legacy pairing, global fallback audit, and final pixel lock remain
+open.

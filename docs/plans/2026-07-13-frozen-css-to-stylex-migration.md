@@ -9237,3 +9237,16 @@ close behavior are unchanged. No frozen source or numeric compensation changed.
   were visually inspected.
 - [ ] Global fallback-consumer audit, full fallback-off suite, same-fixture
   screenshot pairing, and overall final pixel lock remain open.
+
+### Batch 1038 — framed left-sidebar nested-project hover overflow stabilization — 2026-07-28
+
+The framed left-sidebar favorite nested-project row no longer mounts the
+legacy overview popover, whose absolute aside caused horizontal overflow when
+project descriptions existed. This is an explicit framed-shell deviation from
+the legacy nested `allProjectList` popover; authenticated sidenav tooltips and
+the row's legacy geometry/interaction remain preserved. Focused external
+System-Chrome normal passes 3/3 in 13.0s; the combined fallback-off run passes
+84/84 with one intentional skip in 47.6s. Screenshots were captured for desktop
+and mobile. No frozen CSS/source or route-specific numeric compensation changed.
+Full fallback-off, same-fixture legacy screenshot pairing, global fallback
+audit, and final pixel lock remain open.
