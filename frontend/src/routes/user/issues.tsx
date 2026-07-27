@@ -276,7 +276,10 @@ function UserIssuesBody({
                 <input type="hidden" name="mentionId" value={activeFilterIds.mentionId} />
                 <input type="hidden" name="sharerId" value={activeFilterIds.sharerId} />
                 <input type="hidden" name="favoriteId" value={activeFilterIds.favoriteId} />
-                <div className="search myissues-search-input">
+                <div
+                  {...stylex.props(issueStyles.searchWrapper)}
+                  data-stylex-owner="user-issues-search-wrapper"
+                >
                   <div
                     {...stylex.props(issueStyles.searchBar)}
                     data-stylex-owner="user-issues-search-bar"

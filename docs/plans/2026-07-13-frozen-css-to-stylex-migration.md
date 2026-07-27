@@ -1,5 +1,13 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1041 — user-issues left-menu search containment — 2026-07-28
+
+The `/user/issues` left-menu search now restores the frozen legacy
+`.search-bar`, `.textbox`, and `.textbox.full` declarations that were missing
+from the StyleX owner. Focused Chrome fallback-off desktop/mobile verification
+passes 1/1, including no horizontal overflow and search query navigation. The
+remaining full fallback-off/global audit and final screenshot lock stay open.
+
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
 ## 2026-07-28 — Post-validation runner teardown measurement

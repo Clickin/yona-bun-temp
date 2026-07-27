@@ -870,8 +870,8 @@ async function bootstrapLocalAccount(page, baseUrl) {
   };
   const ensureAliceSampleFork = async () => {
     await signOutLocalAccount(page, baseUrl).catch(() => {});
-    const signedInAlice = await ensureLocalAccountSession(page, baseUrl, aliceAccount);
-    if (!signedInAlice) {
+    const signedInAdmin = await ensureLocalAccountSession(page, baseUrl, adminAccount);
+    if (!signedInAdmin) {
       return;
     }
     await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/fork", {
@@ -879,6 +879,11 @@ async function bootstrapLocalAccount(page, baseUrl) {
       owner: "alice",
       projectScope: "public",
     });
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+    const signedInAlice = await ensureLocalAccountSession(page, baseUrl, aliceAccount);
+    if (!signedInAlice) {
+      return;
+    }
     await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
       ownerName: "alice",
       projectName: "sample",

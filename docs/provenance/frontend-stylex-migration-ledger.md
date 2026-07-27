@@ -1,5 +1,18 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1041 — user-issues left-menu search containment — 2026-07-28
+
+`yona-original/app/views/issue/my_partial_search.scala.html` emits the
+`left-menu span2 span-hard-wrap` shell and `search myissues-search-input`
+nesting. Frozen `_yobiUI.less` `.search-bar`, `.textbox`, and `.textbox.full`
+rules establish the search box height, border/radius, `width: 100%`, and
+`margin: 0 -5px`. React StyleX restores only those missing declarations;
+route DOM, search submission, and navigation remain unchanged.
+`stylex-user-issues-left-menu-overflow.e2e.ts` passes Chrome fallback-off on
+desktop and mobile, verifying `scrollWidth === clientWidth`, input
+containment, and query navigation. Full fallback-off/global audit and final
+pixel lock remain open.
+
 ### Post-validation stabilization and harness teardown audit — 2026-07-27
 
 Once the validation process was confirmed stopped, the focused external

@@ -1,5 +1,14 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1041 user-issues left-menu containment
+
+- [x] Restore the legacy search-bar/textbox declarations required to keep the
+  `/user/issues` left menu horizontally contained.
+- [x] Focused external Chrome fallback-off test passes 1/1 on desktop/mobile,
+  including search submission and URL query behavior.
+- [ ] Full fallback-off/global audit, remaining visual-sweep batches, and the
+  final pixel lock remain open.
+
 ### Production full-sweep responsiveness — 2026-07-27
 
 - [x] Rebuilt frontend dist and Rust filesystem-asset runtime; ran Playwright with System Chrome outside the sandbox.
