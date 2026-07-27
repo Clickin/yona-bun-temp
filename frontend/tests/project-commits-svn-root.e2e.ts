@@ -36,7 +36,7 @@ test("svn root commit history matches the ko-KR legacy history shell", async ({ 
     "커밋한 날짜",
     "작성자",
   ]);
-  await expect(page.locator(".code-table.commits .warning-none")).toHaveText(
+  await expect(page.locator('[data-stylex-owner="project-commits-empty-warning"]')).toHaveText(
     "커밋이 존재하지 않습니다",
   );
   expect(await historyGeometry(page)).toEqual({ inside: true, ordered: true, overflow: false });

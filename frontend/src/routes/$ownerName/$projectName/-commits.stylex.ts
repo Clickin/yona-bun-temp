@@ -23,6 +23,11 @@ export const styles = stylex.create({
   paginationLink: { float: "left" },
   history: { backgroundColor: commitsTheme.historySurface },
   table: { color: commitsTheme.mutedText },
+  emptyWarning: {
+    backgroundColor: "#d4d4d4",
+    fontSize: "16px",
+    textAlign: "center",
+  },
   commitIdCell: {
     position: "relative",
     width: "70px",

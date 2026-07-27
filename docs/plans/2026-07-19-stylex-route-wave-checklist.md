@@ -8,6 +8,15 @@
 - [x] Regenerated canonical full evidence: legacy `248/273`, local `362/397`, zero timing failures.
 - [ ] Final pixel parity remains open: `35` local failures and `210` comparison diff failures are recorded for follow-up.
 
+### 2026-07-27 Batch 1032 project-commits empty warning ownership
+
+- [x] `yona-original/app/views/code/history.scala.html:130`, `_page.less:6253-6257`, `conf/messages`, the complete `yobi.less` import chain, and Bootstrap table rules establish the exact empty history cell, copy, and cascade.
+- [x] `frontend/src/routes/$ownerName/$projectName/commits.tsx` preserves the legacy `tr > td[colspan=5]` output and moves only this cell from shared `warning-none` to the stable `project-commits-empty-warning` StyleX owner with the three exact declarations. HOME and nested file-history consumers intentionally retain the shared fallback.
+- [x] `frontend/tests/stylex-project-commits-warning-none.e2e.ts` records RED→GREEN source/import/message evidence, runtime class absence, exact desktop/mobile computed output, DOM structure, plugin-attribute absence, containment, no overflow, and screenshots.
+- [x] External System-Chrome normal worker focus passed `1/1 (14.7s)`; explicit fallback-off focus passed `1/1 (13.3s)`; frontend typecheck, production build/StyleX verifier, and diff check pass.
+- [x] Stabilization diagnosis is recorded separately from parity: a regression `page.goto(.../commits)` trace under HMR spent `8624ms` waiting for the HTTP 200 HTML document before `load`; release/dist settle remains `9–15ms` after the route exists. No screenshot or parity wait was relaxed.
+- [ ] Keep the nested file-history `warning-none` consumer, global fallback-consumer audit, full fallback-off suite, same-fixture legacy screenshot pair, and overall final pixel lock open.
+
 ### Focused/full visual evidence lifecycle — 2026-07-27
 
 - [x] A sweep with explicit `YORAM_SWEEP_PATHS` writes `latest-focused.json` or `latest-focused-mobile.json`; only a full corpus run writes the canonical `latest.json` or `latest-mobile.json`.

@@ -21,6 +21,33 @@ finish. No canonical validation command was active during this audit; old
 debug Rust/Vite/Playwright processes were observed but intentionally left
 untouched. Screenshot, geometry, and fallback-off gates remain unchanged.
 
+### Batch 1032 project-commits empty warning ownership and HMR navigation wait — 2026-07-27
+
+Legacy `yona-original/app/views/code/history.scala.html:130` emits the exact
+empty history `tr > td[colspan="5"].warning-none` cell, `_page.less:6253-6257`
+provides `font-size:16px`, `text-align:center`, and `background-color:#d4d4d4`,
+and `conf/messages` supplies `code.nocommits`. Only the project commit-history
+route now owns those three declarations in `-commits.stylex.ts` and emits the
+stable `project-commits-empty-warning` owner marker. The `warning-none` fallback
+and `app.css` remain because HOME and nested file-history are still real
+consumers; no global deletion or frozen-source change is claimed.
+
+`stylex-project-commits-warning-none.e2e.ts` passes normal `1/1` in `14.7s`
+and explicit fallback-off `1/1` in `13.3s` under external System Chrome. It
+checks source/import/message provenance, exact desktop/mobile computed output,
+legacy table structure/copy/order, plugin-only attribute absence, containment,
+zero overflow, and screenshots. TypeScript check, production build/StyleX
+verifier, and diff check pass.
+
+The same turn isolated a separate stabilization wait: the existing SVN-root
+regression timed out inside `page.goto(.../commits)` while waiting for
+`load`, before any assertion. Its Playwright trace records the HMR Vite HTML
+document as HTTP 200 with `8624ms` server wait; module/CSS requests are canceled
+only when the test timeout fires. The focused StyleX test has no teardown hang,
+and release/dist settles in `9–15ms` after the route exists. This is cold
+HMR/Vite transformation overhead, not a reason to relax the final visual or
+fallback-off gates.
+
 ### Production-dist stabilization latency — 2026-07-27
 
 This is a runtime performance correction, not a StyleX or screenshot-gate

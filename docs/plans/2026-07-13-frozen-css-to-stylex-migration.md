@@ -103,6 +103,31 @@ preserve the legacy initial shell and the strict final screenshot/fallback-off
 gates, and should target the endpoint/payload or an evidence-backed shell split
 rather than removing parity waits.
 
+## 2026-07-27 — Batch 1032 project-commits empty warning ownership and HMR navigation wait diagnosis
+
+The empty project commit-history cell is now a route-local StyleX owner. Legacy
+`yona-original/app/views/code/history.scala.html:130` emits the exact
+`<tr><td colspan="5" class="warning-none">@Messages("code.nocommits")</td></tr>`
+shape; `_page.less:6253-6257` supplies only `font-size:16px`,
+`text-align:center`, and `background-color:#d4d4d4`. The React route preserves
+the `td`/`colspan=5`/copy/order and owns those three declarations through
+`data-stylex-owner="project-commits-empty-warning"`. The global `.warning-none`
+fallback remains intentionally because HOME and nested file-history still
+consume it; `app.css` and the frozen legacy sources are unchanged.
+
+External System-Chrome fallback-off focused verification passes `1/1` in
+`13.3s`, including desktop/mobile computed styles, structure, containment, and
+screenshots. Frontend typecheck, production build, StyleX verifier, and diff
+check pass. The existing SVN-root regression with a 10-second test timeout
+reproduces a different wait: `page.goto(.../commits)` remains in
+`waitUntil:"load"` before its first assertion. The trace shows the HMR Vite
+HTML document response was HTTP 200 but spent `8624ms` in server wait; the
+subsequent module/CSS requests were canceled when the test timeout fired. The
+focused test has no teardown wait. This is cold HMR/Vite route transformation
+overhead, not browser font/image/animation settling. Release/dist remains the
+responsiveness and screenshot-parity runtime evidence; no parity wait or pixel
+gate is relaxed.
+
 ## 2026-07-27 — Public-profile Issues subtask-summary ownership
 
 Batch 1027 closes five presentation boundaries in the populated public-profile

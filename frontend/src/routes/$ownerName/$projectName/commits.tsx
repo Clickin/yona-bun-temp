@@ -342,7 +342,11 @@ export function ProjectCodeHistoryBody({
                 <tbody className="tbody">
                   {history.commits.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="warning-none">
+                      <td
+                        className={stylex.props(styles.emptyWarning).className}
+                        colSpan={5}
+                        data-stylex-owner="project-commits-empty-warning"
+                      >
                         {t("code.nocommits")}
                       </td>
                     </tr>
