@@ -9377,3 +9377,21 @@ issue-form worker's managed mock test passes, but the live release-dist batch
 still reports the original 30px upward `markdownEditor`/`uploadWrap` drift on
 both `/user/issues/new` and `/user/issues/new/mine`. The mock result is not
 accepted as live parity evidence; the issue-form gap remains open.
+
+### Batch 1067 — live direct issue-form markdown-help parity — 2026-07-28
+
+The shared markdown-help nav was missing the legacy inline whitespace between
+`li` elements, so mobile wrapped it in two rows instead of three. The StyleX
+owner also now carries the frozen Bootstrap `.label` declarations. External
+System Chrome against authenticated legacy Yona confirms the same mobile
+geometry: 91px help block, `Header x=119`, and the same subsequent nav-item
+positions. Fresh release-dist paired sweep passes both `/user/issues/new` and
+`/user/issues/new/mine` with zero diff failures, zero local failures, and
+`200 -> 200` status parity.
+
+The stabilization trace remains separate from screenshot correctness. Legacy
+metrics settled at 416–419ms and local metrics at 438–604ms; the first local
+route spent 399ms reaching its route selector and 599ms to paint. The runner's
+per-page close and browser close each retain a 5s bound, so stale or competing
+Chrome/Playwright processes can still make teardown appear much slower than
+the page itself. No wait bound was relaxed.

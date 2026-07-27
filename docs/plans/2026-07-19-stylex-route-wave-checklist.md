@@ -3317,3 +3317,12 @@ desktop/mobile geometry, and filtering.
 - [ ] Direct issue-form live production parity remains open despite a 2/2
   managed fixture test; reproduce against the live seeded route before further
   implementation changes.
+### 2026-07-28 — Batch 1067 live direct issue-form markdown-help parity
+
+- [x] Restored the legacy inline whitespace between markdown-help nav items and
+  the frozen Bootstrap `.label` declarations in the StyleX owner.
+- [x] Fresh release-dist paired mobile sweep passes both direct issue routes:
+  zero diff failures, zero local failures, and `200 -> 200` status parity.
+- [x] Stabilization timing is documented separately: local route settle is
+  438–604ms versus legacy 416–419ms in this focused run; teardown retains
+  bounded page/browser close waits and was not loosened.

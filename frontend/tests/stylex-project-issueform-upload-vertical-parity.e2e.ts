@@ -6,6 +6,11 @@ const styleSource = new URL(
   "../src/routes/$ownerName/$projectName/-issueform.stylex.ts",
   import.meta.url,
 );
+const markdownSource = new URL("../src/routes/-legacy-markdown-help.tsx", import.meta.url);
+const markdownStyleSource = new URL(
+  "../src/routes/-legacy-markdown-help.stylex.ts",
+  import.meta.url,
+);
 const bootstrapSource = new URL(
   "../../yona-original/public/bootstrap/css/bootstrap.css",
   import.meta.url,
@@ -18,14 +23,36 @@ const legacyPageSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
   import.meta.url,
 );
+const legacyMarkdownSource = new URL(
+  "../../yona-original/app/views/help/markdown.scala.html",
+  import.meta.url,
+);
+const legacyResponsiveSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_responsive.less",
+  import.meta.url,
+);
 
 test("issueform editor owns legacy border-box geometry before the upload shell", async () => {
-  const [route, styles, bootstrap, legacyCreate, legacyPage] = await Promise.all([
+  const [
+    route,
+    styles,
+    markdown,
+    markdownStyles,
+    bootstrap,
+    legacyCreate,
+    legacyPage,
+    legacyMarkdown,
+    legacyResponsive,
+  ] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
+    readFile(markdownSource, "utf8"),
+    readFile(markdownStyleSource, "utf8"),
     readFile(bootstrapSource, "utf8"),
     readFile(legacyCreateSource, "utf8"),
     readFile(legacyPageSource, "utf8"),
+    readFile(legacyMarkdownSource, "utf8"),
+    readFile(legacyResponsiveSource, "utf8"),
   ]);
 
   expect(route).toContain('data-stylex-owner="project-issue-form-editor-textarea"');
@@ -42,6 +69,11 @@ test("issueform editor owns legacy border-box geometry before the upload shell",
   expect(legacyPage).toContain("margin-top: 15px;");
   expect(legacyPage).toContain("margin-bottom: 15px;");
   expect(route).toContain('data-stylex-owner="project-issue-form-upload-shell"');
+  expect(markdown).toContain('data-stylex-owner="markdown-help-nav-list"');
+  expect(markdown).toContain('data-stylex-owner="markdown-help-nav-choice"');
+  expect(markdownStyles).toContain("navLabel:");
+  expect(legacyMarkdown).toContain('<ul class="markdown-help-nav">');
+  expect(legacyResponsive).toContain(".markdown-help .markdown-help-nav li");
 });
 
 test("issueform upload shell stays immediately after the border-box editor on both direct routes", async ({
@@ -82,6 +114,22 @@ test("issueform upload shell stays immediately after the border-box editor on bo
         const titleBox = title.getBoundingClientRect();
         const titleStyle = getComputedStyle(title);
         const uploadBox = upload.getBoundingClientRect();
+        const markdownHelp = document.querySelector<HTMLElement>(".markdown-help");
+        const markdownNav = document.querySelector<HTMLElement>(".markdown-help-nav");
+        const markdownNavItems = Array.from(
+          document.querySelectorAll<HTMLElement>(".markdown-help-nav > li.help-nav"),
+        );
+        if (!markdownHelp || !markdownNav || markdownNavItems.length === 0) {
+          throw new Error("Missing markdown help geometry");
+        }
+        const markdownRowTops = [
+          ...new Set(markdownNavItems.map((item) => Math.round(item.getBoundingClientRect().top))),
+        ];
+        const markdownNavGeometry = markdownNavItems.map((item) => ({
+          label: item.textContent?.trim() ?? "",
+          left: Math.round(item.getBoundingClientRect().left),
+          top: Math.round(item.getBoundingClientRect().top),
+        }));
         return {
           editorHeight: editorBox.height,
           editorTop: editorBox.top,
@@ -94,6 +142,9 @@ test("issueform upload shell stays immediately after the border-box editor on bo
           uploadTop: uploadBox.top,
           uploadHeight: uploadBox.height,
           uploadMinHeight: Number.parseFloat(getComputedStyle(upload).minHeight),
+          markdownHelpHeight: markdownHelp.getBoundingClientRect().height,
+          markdownRowTops,
+          markdownNavGeometry,
         };
       });
 
@@ -103,15 +154,22 @@ test("issueform upload shell stays immediately after the border-box editor on bo
       expect(geometry.titleMarginBottom).toBe("15px");
       expect(geometry.uploadTop).toBeCloseTo(geometry.editorBottom, 0);
       expect(geometry.uploadHeight).toBeGreaterThanOrEqual(geometry.uploadMinHeight);
-      console.log(
-        JSON.stringify({
-          path,
-          viewport,
-          title: geometry.titleTop,
-          editor: geometry.editorTop,
-          upload: geometry.uploadTop,
-        }),
-      );
+      if (viewport.width === 390) {
+        expect(geometry.markdownHelpHeight).toBeCloseTo(91, 0);
+        expect(geometry.markdownRowTops).toHaveLength(3);
+        expect(geometry.markdownNavGeometry).toEqual([
+          { label: "Header", left: 119, top: geometry.markdownNavGeometry[0].top },
+          { label: "Text Style", left: 183, top: geometry.markdownNavGeometry[1].top },
+          { label: "Link", left: 262, top: geometry.markdownNavGeometry[2].top },
+          { label: "List", left: 307, top: geometry.markdownNavGeometry[3].top },
+          { label: "Checklist", left: 1, top: geometry.markdownNavGeometry[4].top },
+          { label: "Image", left: 77, top: geometry.markdownNavGeometry[5].top },
+          { label: "Blockquote", left: 133, top: geometry.markdownNavGeometry[6].top },
+          { label: "Code", left: 221, top: geometry.markdownNavGeometry[7].top },
+          { label: "Table", left: 272, top: geometry.markdownNavGeometry[8].top },
+          { label: "Short Link", left: 1, top: geometry.markdownNavGeometry[9].top },
+        ]);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         viewport.width,
       );

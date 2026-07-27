@@ -38,7 +38,16 @@ export const markdownHelpNavStyles = stylex.create({
   },
   navLabel: {
     backgroundColor: markdownHelpColors.navLabelSurface,
+    borderRadius: "3px",
+    color: "#ffffff",
+    display: "inline-block",
+    fontSize: "11.844px",
+    fontWeight: "bold",
+    lineHeight: "14px",
+    padding: "2px 4px",
     textShadow: "none",
+    verticalAlign: "baseline",
+    whiteSpace: "nowrap",
   },
   navChoice: {
     color: {

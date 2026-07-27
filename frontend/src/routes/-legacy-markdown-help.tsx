@@ -358,7 +358,7 @@ export function LegacyMarkdownHelp() {
             {t("title.markdown.help")}
           </span>
         </li>{" "}
-        {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }) => {
+        {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }, index) => {
           const active = activeTarget === target;
           const itemStyle = stylex.props(
             navStyles.navItem,
@@ -366,17 +366,19 @@ export function LegacyMarkdownHelp() {
             active && navStyles.navChoiceActive,
           );
           const buttonStyle = stylex.props(navStyles.navButton);
-          return (
+          const navClassName = `${itemStyle.className} help-nav${activeClass(target)}`;
+          const buttonClassName = `${buttonStyle.className} markdown-help-nav-button`;
+          const item = (
             <li
               {...itemStyle}
-              className={`${itemStyle.className} help-nav${activeClass(target)}`}
+              className={navClassName}
               data-stylex-owner="markdown-help-nav-choice"
               key={target}
             >
               <button
                 {...buttonStyle}
                 type="button"
-                className={`${buttonStyle.className} markdown-help-nav-button`}
+                className={buttonClassName}
                 aria-controls={markdownHelpContentId(target)}
                 aria-expanded={active}
                 data-stylex-owner="markdown-help-nav-button"
@@ -386,6 +388,7 @@ export function LegacyMarkdownHelp() {
               </button>
             </li>
           );
+          return index === 0 ? item : [" ", item];
         })}
       </ul>
       <ul

@@ -3273,3 +3273,16 @@ compensation, or screenshot assertion was relaxed.
 - [ ] Live release-dist `/user/issues/new` and `/user/issues/new/mine` still
   report the 30px upward editor/uploader drift; derive the production-state
   source before changing the implementation again.
+### Batch 1067 — live direct issue-form markdown-help parity — 2026-07-28
+
+- [x] Restored legacy inline whitespace between mapped markdown-help `li`
+  elements, restoring the mobile three-row, 91px help block.
+- [x] Added the frozen Bootstrap `.label` declarations to the existing StyleX
+  owner; authenticated legacy System Chrome and local managed Chrome agree on
+  the nav geometry.
+- [x] Fresh release-dist paired sweep for `/user/issues/new` and
+  `/user/issues/new/mine` passes with zero diff failures, zero local failures,
+  and `200 -> 200` status parity.
+- [x] Recorded stabilization separately from rendering: local metrics were
+  438–604ms versus legacy 416–419ms; bounded page/browser teardown and stale
+  browser contention remain harness lifecycle concerns, with no relaxed waits.
