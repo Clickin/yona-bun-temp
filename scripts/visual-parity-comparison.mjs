@@ -116,6 +116,13 @@ function geometryTolerance(field, legacyState) {
   );
 }
 
+function isApprovedMissingNavbarContact(legacyMetrics, localMetrics) {
+  return (
+    isVisibleSelectorState(legacyMetrics?.gnbFeedback) &&
+    !isVisibleSelectorState(localMetrics?.gnbFeedback)
+  );
+}
+
 function selectorDiffErrors(legacyMetrics, localMetrics) {
   const errors = [];
   for (const [name, comparisonFields] of Object.entries(selectorComparisonFields)) {
@@ -133,7 +140,20 @@ function selectorDiffErrors(legacyMetrics, localMetrics) {
     }
 
     const deltas = [];
+    const approvedMissingNavbarContact = isApprovedMissingNavbarContact(
+      legacyMetrics,
+      localMetrics,
+    );
+    const ignoredFields =
+      name === "gnbSearchForm" && approvedMissingNavbarContact
+        ? new Set(horizontalGeometryFields)
+        : name === "gnbUsermenu" && approvedMissingNavbarContact
+          ? new Set(["y", "bottom"])
+          : new Set();
     for (const field of comparisonFields) {
+      if (ignoredFields.has(field)) {
+        continue;
+      }
       if (!isFiniteNumber(legacyState[field]) || !isFiniteNumber(localState[field])) {
         continue;
       }

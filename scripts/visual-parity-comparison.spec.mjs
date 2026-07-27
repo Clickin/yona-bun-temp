@@ -200,6 +200,42 @@ test("content-driven selectors ignore vertical content growth but reject horizon
   }
 });
 
+test("approved missing navbar contact does not report its natural search shift", () => {
+  const comparison = buildVisualComparison({
+    legacyResults: [
+      {
+        path: "/admin/sample",
+        ok: true,
+        status: 200,
+        metrics: {
+          bodyTextLength: 500,
+          isErrorPage: false,
+          gnbFeedback: { visible: true, width: 83, height: 40 },
+          gnbSearchForm: { visible: true, x: 267, right: 498, width: 231, y: 48, bottom: 78 },
+          gnbUsermenu: { visible: true, x: 1133, right: 1352, y: 83, bottom: 123, width: 220, height: 40 },
+        },
+      },
+    ],
+    localResults: [
+      {
+        path: "/admin/sample",
+        ok: true,
+        status: 200,
+        errors: [],
+        metrics: {
+          bodyTextLength: 500,
+          isErrorPage: false,
+          gnbFeedback: null,
+          gnbSearchForm: { visible: true, x: 134, right: 365, width: 231, y: 48, bottom: 78 },
+          gnbUsermenu: { visible: true, x: 1133, right: 1352, y: 43, bottom: 83, width: 220, height: 40 },
+        },
+      },
+    ],
+  });
+
+  assert.deepEqual(comparison[0].diffErrors, []);
+});
+
 test("fixed selectors reject a 32px move and a 96px shrink", () => {
   const legacyHeading = {
     x: 200,

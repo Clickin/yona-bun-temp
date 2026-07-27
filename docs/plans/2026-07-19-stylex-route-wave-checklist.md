@@ -3159,3 +3159,15 @@ desktop/mobile geometry, and filtering.
 - [ ] This remains an explicit framed-shell deviation from the legacy nested
   popover. Same-fixture legacy pairing, global fallback audit, full final
   fallback-off lock, and overall pixel lock remain open.
+
+### 2026-07-28 — Batch 1039 approved navbar-contact comparator boundary
+
+- [x] Visual sweep proves the legacy configured contact link versus local
+  intentional absence from the actual navbar sibling structure.
+- [x] Ignore only the resulting search-form horizontal shift and mobile
+  user-menu vertical shift; all other global geometry/overflow checks remain
+  strict.
+- [x] Comparator unit tests pass 26/26; live legacy/local focused sweeps pass
+  2/2 at desktop and mobile with zero diff/local failures.
+- [ ] Full fallback-off/global audit, same-fixture route coverage, and overall
+  final pixel lock remain open.

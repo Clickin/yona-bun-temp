@@ -9250,3 +9250,16 @@ System-Chrome normal passes 3/3 in 13.0s; the combined fallback-off run passes
 and mobile. No frozen CSS/source or route-specific numeric compensation changed.
 Full fallback-off, same-fixture legacy screenshot pairing, global fallback
 audit, and final pixel lock remain open.
+
+### Batch 1039 — approved navbar-contact deviation in visual comparator — 2026-07-28
+
+The live legacy navbar contains its configured developer-contact item while the
+local Yoram runtime intentionally leaves that item absent until a public
+repository URL exists. The visual sweep now proves that condition from the
+actual search-form preceding sibling and ignores only its natural search-form
+horizontal movement and the resulting mobile user-menu vertical movement. The
+comparator remains strict for every other selector and overflow condition.
+Unit tests pass 26/26; focused live legacy/local desktop and mobile sweeps each
+pass 2/2 with zero diff failures and zero local failures. No route CSS, frozen
+source, or numeric compensation changed. Full fallback-off/global audit and
+overall final pixel lock remain open.

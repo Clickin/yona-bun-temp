@@ -3141,3 +3141,16 @@ captured. This is an explicit framed-shell deviation, not exact legacy popover
 parity; no frozen source or numeric compensation changed. Full fallback-off,
 same-fixture legacy pairing, global fallback audit, and final pixel lock remain
 open.
+
+### Batch 1039 — approved navbar-contact deviation in visual comparator — 2026-07-28
+
+The live legacy `/admin/sample` and `/admin/sample/issues` captures include the
+conditional developer-contact link from `yona-original/app/views/common/navbar.scala.html`;
+the local Yoram runtime intentionally omits it until a public repository URL is
+configured. The visual sweep now records the actual preceding sibling of the
+search form and suppresses only the resulting `gnbSearchForm` horizontal shift
+and mobile `gnbUsermenu` vertical shift when that exact approved condition is
+present. All other global geometry remains strict. Comparator unit tests pass
+26/26; focused live legacy/local sweeps pass 2/2 at both 1366x900 and 390x844
+with zero diff failures and zero local failures. No UI compensation or frozen
+source change was made.

@@ -1302,8 +1302,11 @@ async function inspectPage(page, baseUrl, path, label) {
         return { href: sheet.href, rules: -1 };
       }
     });
-    const selectorState = (selector) => {
-      const element = document.querySelector(selector);
+    const selectorState = (selectorOrElement) => {
+      const element =
+        typeof selectorOrElement === "string"
+          ? document.querySelector(selectorOrElement)
+          : selectorOrElement;
       if (!element) {
         return null;
       }
@@ -1344,6 +1347,10 @@ async function inspectPage(page, baseUrl, path, label) {
     };
     const selectorTextLength = (selector) =>
       document.querySelector(selector)?.textContent?.trim().length ?? null;
+    const gnbSearchFormElement = document.querySelector(".gnb-search-form");
+    const gnbFeedbackLink = gnbSearchFormElement
+      ?.closest("li")
+      ?.previousElementSibling?.querySelector("a");
     return {
       title: document.title,
       text: body.innerText.slice(0, 5000),
@@ -1362,6 +1369,7 @@ async function inspectPage(page, baseUrl, path, label) {
       ),
       gnbLogoLetter: selectorState(".logo-letter, [data-stylex-owner='global-gnb-brand-link']"),
       gnbSearchForm: selectorState(".gnb-search-form"),
+      gnbFeedback: selectorState(gnbFeedbackLink),
       gnbUsermenu: selectorState(".gnb-usermenu"),
       sidenav: selectorState("#mySidenav"),
       projectHeader: selectorState(".project-header-outer"),
@@ -1545,6 +1553,7 @@ async function inspectPage(page, baseUrl, path, label) {
       gnbPin: metrics.gnbPin,
       gnbLogoLetter: metrics.gnbLogoLetter,
       gnbSearchForm: metrics.gnbSearchForm,
+      gnbFeedback: metrics.gnbFeedback,
       gnbUsermenu: metrics.gnbUsermenu,
       sidenav: metrics.sidenav,
       projectHeader: metrics.projectHeader,
