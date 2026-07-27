@@ -606,7 +606,10 @@ function PublicProfileBody({
                             </p>
                           </div>
                         ) : null}
-                        <ul className="post-list-wrap my-issues row-fluid">
+                        <ul
+                          className={`${stylex.props(styles.issueList).className} my-issues`}
+                          data-stylex-owner="user-profile-open-issue-list"
+                        >
                           {openIssues.map((issue) => (
                             <ProfileIssueRow
                               basePath={runtimeConfig.basePath}
@@ -640,7 +643,10 @@ function PublicProfileBody({
                             </p>
                           </div>
                         ) : null}
-                        <ul className="post-list-wrap my-issues row-fluid">
+                        <ul
+                          className={`${stylex.props(styles.issueList).className} my-issues`}
+                          data-stylex-owner="user-profile-closed-issue-list"
+                        >
                           {closedIssues.map((issue) => (
                             <ProfileIssueRow
                               basePath={runtimeConfig.basePath}

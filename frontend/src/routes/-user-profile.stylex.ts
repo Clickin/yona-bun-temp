@@ -1122,6 +1122,24 @@ export const styles = stylex.create({
   pullRequestEmptyAvatarWrap: { height: "32px", width: "32px" },
   // Frozen less/_page.less .post-list-wrap, Bootstrap .row-fluid width/clearfix,
   // and less/_responsive.less max-720 .post-list-wrap margin.
+  issueList: {
+    listStyle: "none",
+    width: "100%",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: 0,
+    },
+    "@media (max-width: 720px)": { marginLeft: "10px" },
+  },
+  // Frozen less/_page.less .post-list-wrap, Bootstrap .row-fluid width/clearfix,
+  // and less/_responsive.less max-720 .post-list-wrap margin.
   pullRequestList: {
     listStyle: "none",
     width: "100%",

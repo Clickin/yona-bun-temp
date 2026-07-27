@@ -2,6 +2,21 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Public-profile Issues open/closed list-root ownership
+
+Batch 1026 gives the two `/$user?selected=issues` open/closed `<ul>` roots
+direct route-local StyleX ownership for the exact frozen list reset,
+Bootstrap `row-fluid` width/clearfix, and max-720 list margin. Only
+`post-list-wrap row-fluid` retires; `my-issues` remains because its descendant
+fallback boundary is still active. Pane IDs/order, filtering, empty output,
+rows, copy, links, and every child owner remain unchanged.
+
+The focused test records RED before implementation and passes external
+System-Chrome normal and fallback-off 2/2 each at desktop and 390px. Four
+screenshots were inspected with no target-list drift or overflow. Live legacy
+`:9000` and `:8089` were unavailable, so same-fixture screenshot pairing and
+the global final lock remain open.
+
 ## 2026-07-27 — Public-profile Pull Request list/glyph ownership
 
 Batch 1023 closes two residual presentation boundaries in the populated
