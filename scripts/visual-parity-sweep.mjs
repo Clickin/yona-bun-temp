@@ -318,6 +318,12 @@ const alwaysScreenshotPaths = new Set([
 
 function localSettledSelectorForPath(path) {
   const pathname = path.split("?", 1)[0];
+  if (/\/milestone\/\d+$/u.test(pathname)) {
+    return '[data-stylex-content-ready="true"]';
+  }
+  if (pathname.endsWith("/milestones")) {
+    return '[data-stylex-content-ready="true"]';
+  }
   if (pathname === "/user/issues/new" || pathname === "/user/issues/new/mine") {
     return ".content-wrap.frm-wrap";
   }
@@ -350,7 +356,10 @@ function localSettledSelectorForPath(path) {
   if (issueDetailMatch) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
   }
-  if (pathname.endsWith("/issues") || pathname === "/user/issues") {
+  if (pathname.endsWith("/issues")) {
+    return '[data-stylex-content-ready="true"]';
+  }
+  if (pathname === "/user/issues") {
     return ".row-fluid.issue-list-wrap";
   }
   if (
@@ -750,16 +759,33 @@ async function bootstrapLocalAccount(page, baseUrl) {
     const sampleLabelsResponse = await page.request.get(
       `${baseUrl}/api/v1/owners/admin/projects/sample/labels`,
     );
-    const sampleLabels = sampleLabelsResponse.ok()
+    const sampleLabelsPayload = sampleLabelsResponse.ok()
       ? await sampleLabelsResponse.json().catch(() => [])
       : [];
-    if (!Array.isArray(sampleLabels) || sampleLabels.length === 0) {
-      await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/labels", {
-        categoryIsExclusive: false,
-        categoryName: "종류",
-        labelColor: "#51aacc",
-        labelName: "버그",
-      });
+    const sampleLabels = Array.isArray(sampleLabelsPayload)
+      ? sampleLabelsPayload
+      : Array.isArray(sampleLabelsPayload?.labels)
+        ? sampleLabelsPayload.labels
+        : [];
+    const parityLabelSeeds = [
+      { labelColor: "#51aacc", labelName: "버그" },
+      { labelColor: "#88bb44", labelName: "기능" },
+    ];
+    while (sampleLabels.length < parityLabelSeeds.length) {
+      const seed = parityLabelSeeds[sampleLabels.length];
+      const createdLabelResponse = await postLocalJson(
+        page,
+        baseUrl,
+        "/api/v1/owners/admin/projects/sample/labels",
+        {
+          categoryIsExclusive: false,
+          categoryName: "종류",
+          ...seed,
+        },
+      );
+      if (!createdLabelResponse) break;
+      const createdLabel = await createdLabelResponse.json().catch(() => null);
+      sampleLabels.push(createdLabel?.label ?? createdLabel);
     }
     const issueResponse = await page.request.get(
       `${baseUrl}/api/v1/projects/admin/sample/issues/1`,
@@ -814,6 +840,28 @@ async function bootstrapLocalAccount(page, baseUrl) {
     );
     if (seededIssueResponse.ok()) {
       const seededIssue = await seededIssueResponse.json().catch(() => null);
+      const parityLabelIds = sampleLabels
+        .map((label) =>
+          Number(label?.id ?? label?.labelId ?? label?.label?.id ?? label?.label?.labelId ?? 0),
+        )
+        .filter((id) => id > 0);
+      const issueLabelIds = Array.isArray(seededIssue?.labelIds)
+        ? seededIssue.labelIds.map(Number).filter(Number.isFinite)
+        : [];
+      const nextIssueLabelIds = [...new Set([...issueLabelIds, ...parityLabelIds])];
+      if (nextIssueLabelIds.length !== issueLabelIds.length) {
+        await putLocalJson(page, baseUrl, "/api/v1/projects/admin/sample/issues/1", {
+          assigneeLoginId: seededIssue?.assigneeLoginId ?? "",
+          attachmentIds: [],
+          bodyMarkdown: seededIssue?.bodyMarkdown ?? "Sample issue body",
+          dueDate: seededIssue?.dueDateLabel ?? "",
+          isDraft: seededIssue?.isDraft ?? false,
+          isPublish: false,
+          labelIds: nextIssueLabelIds,
+          milestoneId: Number(seededIssue?.milestoneId ?? 0),
+          title: seededIssue?.title ?? "Sample issue",
+        });
+      }
       if (Number(seededIssue?.milestoneId ?? 0) === 0) {
         await putLocalJson(page, baseUrl, "/api/v1/projects/admin/sample/issues/1", {
           assigneeLoginId: seededIssue?.assigneeLoginId ?? "",
@@ -822,7 +870,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
           dueDate: seededIssue?.dueDateLabel ?? "",
           isDraft: seededIssue?.isDraft ?? false,
           isPublish: false,
-          labelIds: [],
+          labelIds: nextIssueLabelIds,
           milestoneId: sampleMilestoneId,
           title: seededIssue?.title ?? "Sample issue",
         });
@@ -1461,10 +1509,10 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: selectorState(".project-menu-outer"),
       projectMenuNav: selectorState(".project-menu-nav"),
       pageWrap: selectorState(
-        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page'], [data-stylex-owner='projects-directory-page-wrap'], [data-stylex-owner='organization-directory-page-wrap'], [data-stylex-owner='site-user-list-page-wrap-outer'], [data-stylex-owner='user-settings-page-wrap-outer'], [data-stylex-owner='help-shell-page-wrap-outer']",
+        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page'], [data-stylex-owner='projects-directory-page-wrap'], [data-stylex-owner='organization-directory-page-wrap'], [data-stylex-owner='site-user-list-page-wrap-outer'], [data-stylex-owner='site-post-list-page-wrap-outer'], [data-stylex-owner='site-issue-list-page-wrap-outer'], [data-stylex-owner='site-project-list-page-wrap-outer'], [data-stylex-owner='site-mail-page'], [data-stylex-owner='site-massmail-page'], [data-stylex-owner='site-update-page'], [data-stylex-owner='site-diagnostic-page'], [data-stylex-owner='user-settings-page-wrap-outer'], [data-stylex-owner='help-shell-page-wrap-outer']",
       ),
       projectPageWrap: selectorState(
-        ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell'], [data-stylex-owner='projects-directory-page'], [data-stylex-owner='organization-directory-page']",
+        ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell'], [data-stylex-owner='projects-directory-page'], [data-stylex-owner='organization-directory-page'], [data-stylex-owner='project-milestones-shell'], [data-stylex-owner='milestone-detail-shell']",
       ),
       issueBodyRow: selectorState(".board-body.row-fluid"),
       issueLeftPane: selectorState(".board-body.row-fluid > .span9"),
@@ -1486,10 +1534,10 @@ async function inspectPage(page, baseUrl, path, label) {
       // exact React owners for the local target so class retirement does not
       // become a false visual-parity failure.
       postListWrap: selectorState(
-        ".post-list-wrap, [data-stylex-owner='user-profile-open-issue-list'], [data-stylex-owner='user-profile-closed-issue-list']",
+        ".post-list-wrap, [data-stylex-owner='user-profile-open-issue-list'], [data-stylex-owner='user-profile-closed-issue-list'], [data-stylex-owner='site-post-list-container'], [data-stylex-owner='site-issue-list-container']",
       ),
       postItemTitle: selectorState(
-        ".post-item.title, [data-stylex-owner='user-profile-issue-row']",
+        ".post-item.title, [data-stylex-owner='user-profile-issue-row'], [data-stylex-owner='site-post-list-title-link'], [data-stylex-owner='site-issue-list-title-link']",
       ),
       selectedFilterLabel: selectorState(".labels-wrap .select2-search-choice .issue-label"),
       contentFormWrap: selectorState(".content-wrap.frm-wrap"),

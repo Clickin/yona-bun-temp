@@ -75,6 +75,12 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
     expect(routeSource).toContain(`data-stylex-owner="${marker}"`);
   }
   expect(routeSource).not.toContain("right-txt");
+  expect(routeSource).toContain(
+    '<div className="write-comment-wrap">\n            <MarkdownEditor editorMode="comment-body"',
+  );
+  expect(routeSource).toContain(
+    '<UploadForm resourceType="ISSUE_COMMENT" />\n            <div\n              className={stylex.props(styles.commentFormActions).className}',
+  );
   expect(routeSource).toContain('data-stylex-owner-issue-info="project-issue-detail-issue-info"');
   for (const declaration of [
     'display: "block"',
@@ -117,11 +123,14 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   const author = page.locator('[data-stylex-owner="project-issue-detail-author"]');
   const content = page.locator('[data-stylex-owner="project-issue-detail-content"]');
   const actions = page.locator('[data-stylex-owner="project-issue-detail-actions"]');
+  const upload = page.locator(".write-comment-wrap .upload-wrap.content-footer").first();
   const footer = page.locator('[data-stylex-owner="project-issue-detail-board-footer"]');
   const sidebar = page.locator('[data-stylex-owner="project-issue-detail-sidebar-meta"]');
   await expect(author).toBeVisible();
   await expect(content).toContainText("Body markdown");
   await expect(actions).toBeVisible();
+  await expect(upload).toBeVisible();
+  await expect(upload.locator("xpath=..")).toHaveClass(/write-comment-wrap/u);
   await expect(sidebar).toBeVisible();
   await expect(author).toHaveCSS("display", "block");
   await expect(content).toHaveCSS("min-height", "150px");

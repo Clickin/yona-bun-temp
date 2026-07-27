@@ -63,6 +63,8 @@ test("project issues preserves list owners", async ({ page }) => {
     );
   }
   await page.goto(`${basePath}/admin/sample/issues`, { waitUntil: "commit" });
+  await expect(page.locator('[data-stylex-content-ready="true"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-content-ready="true"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-issues-page"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-issues-results"]')).toBeVisible();
 });

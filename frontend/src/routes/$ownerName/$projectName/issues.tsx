@@ -220,7 +220,14 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     !issueAuthorsQuery.data ||
     !issueAssigneesQuery.data
   ) {
-    return null;
+    return (
+      <div
+        className="page-wrap-outer"
+        data-stylex-owner="project-issues-loading-shell"
+        data-stylex-content-ready="false"
+        aria-busy="true"
+      />
+    );
   }
 
   return (
@@ -459,7 +466,11 @@ function ProjectIssuesBody({
   const showLabelEdit = projectManagerControlsEnabled(project);
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-issues-page">
+    <div
+      className="page-wrap-outer"
+      data-stylex-owner="project-issues-page"
+      data-stylex-content-ready="true"
+    >
       <div className="project-page-wrap" data-stylex-owner="project-issues-list">
         <div className="row-fluid issue-list-wrap" onKeyDownCapture={handleIssueListKeyDownCapture}>
           <div className="left-menu span2 span-hard-wrap">

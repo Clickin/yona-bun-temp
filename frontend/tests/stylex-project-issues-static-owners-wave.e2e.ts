@@ -44,6 +44,9 @@ test("project issues static owners use route-local StyleX", async () => {
   expect(route).not.toContain("massUpdateOptionButtonStyle");
   expect(route).not.toContain("TWO_COLUMN_MODE_POPOVER_STYLE");
   expect(route).not.toContain("SHOW_SUBTASKS_POPOVER_STYLE");
+  expect(route).toContain('data-stylex-content-ready="false"');
+  expect(route).toContain('data-stylex-content-ready="true"');
+  expect(route).toContain('data-stylex-owner="project-issues-loading-shell"');
   expect(appCss).not.toContain(".issue-list-page .post-list-wrap {");
   expect(appCss).toContain(".post-list-wrap {");
   expect(appCss).not.toContain(".issue-list-page .issue-item-row {");

@@ -18,6 +18,7 @@ test("milestone detail preserves the legacy project wrapper hierarchy", async ({
   expect(routeSource).toContain("className={`${sx.page.className} page-wrap-outer`}");
   expect(routeSource).toContain('className="project-page-wrap"');
   expect(routeSource).toContain("className={`${sx.wrap.className} milesion-wrap`}");
+  expect(routeSource).toContain('data-stylex-content-ready="true"');
 
   await mockMilestoneDetail(page);
 
@@ -28,6 +29,8 @@ test("milestone detail preserves the legacy project wrapper hierarchy", async ({
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/milestone/1`, { waitUntil: "commit" });
 
+    await expect(page.locator('[data-stylex-content-ready="true"]')).toHaveCount(1);
+    await expect(page.locator("body")).toContainText("Details");
     const outer = page.locator('[data-stylex-owner="milestone-detail-page"]');
     const project = page.locator('[data-stylex-owner="milestone-detail-shell"]');
     const content = page.locator('[data-stylex-owner="milestone-detail-wrap"]');

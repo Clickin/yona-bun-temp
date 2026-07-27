@@ -112,7 +112,7 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   });
 
   if (!projectQuery.data || !milestonesQuery.data) {
-    return null;
+    return <ProjectMilestonesLoading />;
   }
 
   return (
@@ -121,6 +121,20 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       project={projectQuery.data}
       search={search}
     />
+  );
+}
+
+function ProjectMilestonesLoading() {
+  return (
+    <div
+      className={`${sx.page.className} page-wrap-outer`}
+      data-stylex-owner="project-milestones-page"
+      aria-busy="true"
+    >
+      <div className="project-page-wrap" data-stylex-owner="project-milestones-shell">
+        <div className="tab-wrap" data-stylex-owner="project-milestones-loading-tabs" />
+      </div>
+    </div>
   );
 }
 
@@ -144,6 +158,7 @@ function ProjectMilestonesBody({
       {...sx.page}
       className={`${sx.page.className} page-wrap-outer`}
       data-stylex-owner="project-milestones-page"
+      data-stylex-content-ready="true"
     >
       <div className="project-page-wrap" data-stylex-owner="project-milestones-shell">
         <div

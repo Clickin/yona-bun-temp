@@ -3021,9 +3021,9 @@ function IssueCommentForm({
           className={`${stylex.props(styles.commentForm).className} write-comment-box`}
           data-stylex-owner="project-issue-detail-comment-form"
         >
-          <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
-          <UploadForm resourceType="ISSUE_COMMENT" />
           <div className="write-comment-wrap">
+            <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
+            <UploadForm resourceType="ISSUE_COMMENT" />
             <div
               className={stylex.props(styles.commentFormActions).className}
               data-stylex-owner="project-issue-detail-comment-actions"

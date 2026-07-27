@@ -144,7 +144,7 @@ export function ProjectMilestoneDetailIndexScreen({
   }
 
   if (milestoneQuery.isPending || !milestoneQuery.data?.milestone) {
-    return null;
+    return <ProjectMilestoneDetailLoading />;
   }
 
   const currentUser = {
@@ -183,6 +183,25 @@ export function ProjectMilestoneDetailIndexScreen({
   );
 
   return detailContent;
+}
+
+function ProjectMilestoneDetailLoading() {
+  return (
+    <div
+      className={`${sx.page.className} page-wrap-outer`}
+      data-stylex-owner="milestone-detail-page"
+      aria-busy="true"
+    >
+      <div className="project-page-wrap" data-stylex-owner="milestone-detail-shell">
+        <div className="milesion-wrap" data-stylex-owner="milestone-detail-wrap">
+          <ul
+            className="post-list-wrap row-fluid"
+            data-stylex-owner="milestone-detail-issue-list"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ProjectMilestoneDetailTitle({
@@ -351,6 +370,7 @@ function ProjectMilestoneDetailBody({
       {...sx.page}
       className={`${sx.page.className} page-wrap-outer`}
       data-stylex-owner="milestone-detail-page"
+      data-stylex-content-ready="true"
     >
       <div className="project-page-wrap" data-stylex-owner="milestone-detail-shell">
         <div

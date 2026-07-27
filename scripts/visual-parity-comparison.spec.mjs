@@ -561,6 +561,8 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /viewportProfile: viewportProfile\.name/u);
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
+  assert.match(source, /pathname\.endsWith\("\/issues"\)/u);
+  assert.match(source, /data-stylex-content-ready="true"/u);
   assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(pathname\)\)/u);
   assert.match(source, /return "\.code-browse-wrap, \.project-page-wrap \.alert";/u);
   assert.match(source, /if \(\/\\\/commits\\\/\?\$\/u\.test\(pathname\)\)/u);
@@ -703,6 +705,24 @@ test("visual sweep maps the StyleX-owned help page shell to pageWrap", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /data-stylex-owner='help-shell-page-wrap-outer'/u);
+});
+
+test("visual sweep maps site management page and post selectors to StyleX owners", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /site-post-list-page-wrap-outer/u);
+  assert.match(source, /site-issue-list-page-wrap-outer/u);
+  assert.match(source, /site-post-list-container/u);
+  assert.match(source, /site-issue-list-container/u);
+  assert.match(source, /site-post-list-title-link/u);
+  assert.match(source, /site-issue-list-title-link/u);
+  assert.match(source, /site-project-list-page-wrap-outer/u);
+  assert.match(source, /site-mail-page/u);
+  assert.match(source, /site-massmail-page/u);
+  assert.match(source, /site-update-page/u);
+  assert.match(source, /site-diagnostic-page/u);
+  assert.match(source, /project-milestones-shell/u);
+  assert.match(source, /milestone-detail-shell/u);
 });
 
 test("visual sweep waits for form routes with query state", () => {
