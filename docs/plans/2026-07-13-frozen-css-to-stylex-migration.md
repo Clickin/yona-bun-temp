@@ -2,6 +2,29 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Final-lock directory/settings sweep ownership repair
+
+The visual parity sweep now recognizes the stable local StyleX owners for the
+projects directory, organization directory, site user list, and user settings
+page/shell boundaries. It also always captures `/projects`, `/orgs`,
+`/sites/userList`, and `/user/editform`. This is a harness-only correction for
+retired wrapper classes; no route TSX, E2E expectation, frozen stylesheet, or
+rendered geometry changed.
+
+External System-Chrome desktop and 390px sweeps loaded every legacy/local target
+with HTTP 200. Direct inspection of all sixteen captures confirms that the stale
+missing/hidden `pageWrap` and `projectPageWrap` reports are gone. The remaining
+GNB comparator output is an approved shell difference. The local long-running
+`/projects` database still exposes the stale implementation-fixture copy
+`Pilot projects list is using the browser-safe route tree.` and remains correctly
+flagged; the safeguard was not weakened. `/sites/userList` also has a different
+live user population and local site-admin guidance copy, so it remains a
+fixture/content residual and is not claimed as same-fixture pixel parity.
+`/user/editform` geometry aligns, while directory copy, dates, and footer content
+continue to reflect fixture data and the approved Yoram footer deviation. The
+inherited administrator-notice/sidebar collapse-button x-axis mismatch remains
+an intentional exclusion.
+
 ## 2026-07-27 — Final-lock visual-sweep harness ownership repair
 
 The visual parity sweep now accepts the stable `data-stylex-owner="user-profile-page"`

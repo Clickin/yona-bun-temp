@@ -1,5 +1,24 @@
 # Frontend StyleX Migration Ledger
 
+### Final-lock directory/settings visual-sweep evidence — 2026-07-27
+
+This is harness evidence, not a route ownership row.
+`scripts/visual-parity-sweep.mjs` now maps the stable local owners for the
+projects directory, organization directory, site user list, and user settings
+page/shell boundaries to its generic wrapper metrics. The four routes are also
+always captured. Legacy class selectors remain available for the live legacy
+target; React DOM, route code, E2E expectations, and frozen CSS are unchanged.
+
+External System-Chrome desktop and 390px runs loaded all legacy/local targets
+with HTTP 200. Direct inspection of the sixteen screenshots confirms the
+missing/hidden wrapper false positives are removed. The long-running local
+`/projects` fixture still contains implementation-facing copy and remains
+correctly reported. `/sites/userList` differs in live user population and local
+administrator guidance copy, so same-fixture pixel parity remains unclaimed.
+The remaining GNB and approved Yoram footer differences, plus the inherited
+administrator-notice/sidebar collapse-button x-axis mismatch, remain intentional
+exclusions rather than harness suppressions.
+
 | 2026-07-27 | Batch 1022 authenticated project Pull Request populated grid and overflow ownership | `yona-original/app/views/git/list.scala.html` mounts `git/partial_search.scala.html`, which emits the first `left-menu span2 search-wrap hide-in-mobile` filter column and following `span10 span-hard-wrap` content column; `git/partial_list.scala.html` emits the populated `post-list-wrap`/`post-item` row. Frozen Bootstrap/responsive CSS, `_responsive.less`, `_page.less:3748-3758` (`.issue-option dd select { width:100% }`), and `_yobiUI.less:1348-1383` (`.search-bar .textbox.full { width:100% }`) establish the exact geometry and overflow contract. | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` and `-pull-requests.stylex.ts` preserve DOM, copy, links, and React/TanStack behavior while route-local StyleX owns the exact `span2`/`span10` grid, contributor select width, and filter input width. `scripts/visual-parity-sweep.mjs` maps the retired local wrappers to stable route owners and captures this route explicitly; frozen CSS and arbitrary compensation remain unchanged. | `frontend/tests/stylex-project-pull-requests.e2e.ts` verifies legacy source/import evidence, populated copy, desktop x-axis alignment, mobile filter hiding, input/select containment, and zero document/column overflow. External System-Chrome fallback-off focused run passes 1/1; live legacy/local desktop and mobile screenshots were captured and inspected. Remaining sweep output is the known global GNB placement; fixture-level row paint/copy/avatar/pagination differences and approved Yoram footer differences remain explicit, and the inherited administrator-notice/sidebar collapse-button mismatch remains intentionally excluded. |
 
 | 2026-07-27 | Batch 1021 missing-user public-profile Home CTA ownership | `yona-original/app/views/user/view.scala.html` includes `yona-original/app/views/error/notfound_default.scala.html`, whose `error-wrap` emits the icon/message/`a.ybtn.ybtn-info` order and Home copy. The frozen `yobi.less` import chain, `_variables.less`, `_yobiUI.less`, Bootstrap CSS/responsive CSS, and `conf/messages` establish the final button cascade. | `frontend/src/routes/$user.tsx` preserves the anchor, `/` destination, Home copy, error wrapper order, icon/message, and SPA navigation while removing only `ybtn ybtn-info`; `frontend/src/routes/-user-profile.stylex.ts` owns the traced base/info/hover/focus/active declarations. The shared fallback, frozen CSS, route geometry, inherited admin-notice/sidebar mismatch, and approved Yoram footer differences remain unchanged. | `frontend/tests/stylex-user-profile-notfound-home-button.e2e.ts` verifies source/import/cascade evidence, owner/class retirement, DOM/copy/order, navigation, computed interaction states, desktop/390px containment, and screenshots. External System-Chrome normal and fallback-off focused runs pass 1/1 each. Live legacy `/ghost` desktop/mobile captures were inspected; the available local sweep was stale/unmatched and its generic comparator reported `pageWrap`/`projectPageWrap` gaps, so no live same-fixture pair claim is made. No compensation was added. |

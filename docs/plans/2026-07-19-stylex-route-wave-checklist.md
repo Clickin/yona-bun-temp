@@ -1,5 +1,13 @@
 # StyleX Screen Migration Checklist
 
+### Final-lock directory/settings harness evidence — 2026-07-27
+
+- [x] `scripts/visual-parity-sweep.mjs` maps the local projects directory, organization directory, site user list, and user settings page/shell StyleX owners to the generic `pageWrap`/`projectPageWrap` metrics while retaining the legacy class selectors.
+- [x] `/projects`, `/orgs`, `/sites/userList`, and `/user/editform` are now unconditional desktop/mobile screenshot targets. No route TSX, E2E expectation, frozen CSS, or geometry changed.
+- [x] External `PW_CHANNEL=chrome` desktop and 390px sweeps loaded all eight legacy/local page states with HTTP 200. All sixteen screenshots were directly inspected, and the false missing/hidden wrapper reports are cleared.
+- [x] The stale local `/projects` implementation-fixture copy remains flagged rather than suppressed. `/sites/userList` has different live users and local administrator guidance copy, so same-fixture pixel parity is not claimed for that state.
+- [x] Remaining GNB output and Yoram footer differences are approved deviations. The inherited administrator-notice/sidebar collapse-button x-axis mismatch remains intentionally uncorrected.
+
 ### 2026-07-27 Batch 1022 authenticated project Pull Request populated grid and overflow ownership
 
 - [x] `yona-original/app/views/git/list.scala.html`, `git/partial_search.scala.html`, and `git/partial_list.scala.html` establish the populated Pull Request filter/content/list DOM; frozen Bootstrap/responsive CSS plus `_responsive.less`, `_page.less:3748-3758`, and `_yobiUI.less:1348-1383` establish the exact grid, responsive hiding, select width, and full filter-input width.

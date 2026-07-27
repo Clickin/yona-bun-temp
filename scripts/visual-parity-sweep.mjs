@@ -267,6 +267,10 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/postform?issueTemplate=true",
   "/admin/sample/postform?readme=true",
   "/admin/sample/pullRequests",
+  "/projects",
+  "/orgs",
+  "/sites/userList",
+  "/user/editform",
 ]);
 
 function localSettledSelectorForPath(path) {
@@ -1333,10 +1337,10 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: selectorState(".project-menu-outer"),
       projectMenuNav: selectorState(".project-menu-nav"),
       pageWrap: selectorState(
-        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page']",
+        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page'], [data-stylex-owner='projects-directory-page-wrap'], [data-stylex-owner='organization-directory-page-wrap'], [data-stylex-owner='site-user-list-page-wrap-outer'], [data-stylex-owner='user-settings-page-wrap-outer']",
       ),
       projectPageWrap: selectorState(
-        ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell']",
+        ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell'], [data-stylex-owner='projects-directory-page'], [data-stylex-owner='organization-directory-page']",
       ),
       issueBodyRow: selectorState(".board-body.row-fluid"),
       issueLeftPane: selectorState(".board-body.row-fluid > .span9"),
