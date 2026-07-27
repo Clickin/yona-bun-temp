@@ -17,6 +17,16 @@ the route does not consume the shared `.gnb-outer` bridge class. The test record
 `Yoram repository` copy width. External Chrome normal/fallback-off focused GNB
 checks pass 3/3 each; no tolerance or frozen source changed.
 
+### Batch 1063 — release-dist live shell pair after stabilization audit — 2026-07-28
+
+After rebuilding `frontend/dist` and serving it from the release Rust binary,
+the strict external System-Chrome paired sweep against the prepared legacy
+instance passed `/admin/sample` and `/admin/sample/post/1` on both 1366×900 and
+390×844: `diffFailures=0`, `localFailures=0`, and no status deltas. This is
+focused live evidence for the global shell/project and issue-detail states; it
+does not close the remaining corpus-wide screenshot lock or populated-state
+fixture gaps.
+
 ### Batch 1044 — notification fixture and previous-comment payload parity — 2026-07-28
 
 The stabilization investigation separated browser settle latency from the

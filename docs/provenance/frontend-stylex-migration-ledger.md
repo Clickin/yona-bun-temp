@@ -3231,3 +3231,12 @@ The legacy comparison of `common/navbar.scala.html` and frozen
 this route does not consume the shared app.css `.gnb-outer` bridge. `frontend/tests/global-shell-geometry.e2e.ts` retains the
 measured intentional `Yoram repository` feedback width and legacy child flow.
 External Chrome normal and fallback-off focused GNB checks pass 3/3 each.
+
+### Batch 1063 — release-dist live shell pair after stabilization audit — 2026-07-28
+
+The prepared live legacy instance at `127.0.0.1:9000` and a release Rust
+server serving the rebuilt `frontend/dist` were compared with external
+System Chrome. `/admin/sample` and `/admin/sample/post/1` both passed on
+1366×900 and 390×844 with `diffFailures=0`, `localFailures=0`, and no status
+delta. The result is focused shell/project/issue-detail evidence only; the
+full corpus pixel lock and remaining populated-fixture gaps stay open.

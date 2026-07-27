@@ -3282,3 +3282,13 @@ desktop/mobile geometry, and filtering.
 - [x] Restored desktop/mobile `padding: 0 10px` in the React GNB owner from frozen `_responsive.less:600` evidence; this route does not consume the shared `.gnb-outer` bridge class.
 - [x] Normal and fallback-off focused GNB parity both pass `3/3`; no timeout or tolerance relaxation remains.
 - [ ] Broad fallback-off/global audit and final pixel lock remain open.
+
+### 2026-07-28 — Batch 1063 release-dist live shell pair
+
+- [x] Rebuilt `frontend/dist` was served by the release Rust binary and paired
+  against the prepared legacy `127.0.0.1:9000` instance in external System
+  Chrome. `/admin/sample` and `/admin/sample/post/1` passed on desktop
+  1366×900 and mobile 390×844 with `diffFailures=0`, `localFailures=0`, and no
+  status deltas.
+- [ ] This focused pair does not close the full corpus screenshot lock or
+  populated-state fixture gaps.
