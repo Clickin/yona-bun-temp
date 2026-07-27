@@ -48,6 +48,28 @@ remaining SPA startup plus selected README request is still slower than
 legacy and remains an open performance follow-up. Do not add arbitrary
 waiting, geometry compensation, or relaxed visual assertions.
 
+## 2026-07-27 — Stabilization wait separated from release-dist responsiveness
+
+An independent external System Chrome trace against a newly started release
+Rust server serving the freshly built `frontend/dist` separates browser
+stabilization from product latency. Legacy `/admin/sample` paints its project
+header/menu/content from the initial HTML at about 115ms. The local route paints
+the global shell first at about 25ms, starts the selected
+`container?tabId=readme` request immediately, and commits the project screen at
+about 150ms after that navigation; repeated release measurements put that
+request at 102–121ms. `api/v1/session` remains a 1–14ms request. The parity
+settle phase after the project DOM exists (fonts, images, finite animations,
+stylesheet access, and two committed frames) took about 15ms with no timeout.
+
+Therefore the remaining responsiveness gap is the REST project-container
+critical path plus the React commit, not HMR, a release-build problem, or an
+overly long screenshot settle wait. The fast project-detail endpoint is only
+2–6ms but does not contain the header/menu fields required by the current
+project shell; the selected container response does. Any future fix must
+preserve the legacy initial shell and the strict final screenshot/fallback-off
+gates, and should target the endpoint/payload or an evidence-backed shell split
+rather than removing parity waits.
+
 ## 2026-07-27 — Public-profile Issues subtask-summary ownership
 
 Batch 1027 closes five presentation boundaries in the populated public-profile
