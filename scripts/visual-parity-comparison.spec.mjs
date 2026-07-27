@@ -699,6 +699,12 @@ test("visual sweep records P2 and P3 template verifier metrics", () => {
   }
 });
 
+test("visual sweep maps the StyleX-owned help page shell to pageWrap", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /data-stylex-owner='help-shell-page-wrap-outer'/u);
+});
+
 test("visual sweep waits for form routes with query state", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 

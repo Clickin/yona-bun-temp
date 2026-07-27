@@ -1,5 +1,14 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1043 help-shell sweep metric correction
+
+- [x] Map the existing `help-shell-page-wrap-outer` owner into the visual
+  sweep's legacy `pageWrap` metric.
+- [x] Record the actual centered 143px metric for the 1080px desktop fallback;
+  the unchanged stale 133px assertion remains a separate baseline item.
+- [ ] Remaining visual-sweep batches, full fallback-off/global audit, and final
+  pixel lock remain open.
+
 ### 2026-07-28 — Batch 1042 direct issue-form uploader geometry
 
 - [x] Restore the legacy Bootstrap border-box behavior on the fixed-height

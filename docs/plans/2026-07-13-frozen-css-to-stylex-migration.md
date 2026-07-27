@@ -1,5 +1,14 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1043 — help-shell sweep owner mapping and metric baseline — 2026-07-28
+
+The visual sweep now recognizes the existing StyleX-owned help page outer as
+the legacy `pageWrap` metric, eliminating a false missing-selector failure.
+The actual centered margin for a 1080px page at 1366px is 143px; the existing
+focused fallback-equivalence assertion still expects 133px and remains a
+separate test baseline item. No route CSS or frozen source changed; final
+global audit and pixel lock remain open.
+
 ### Batch 1042 — direct issue-form editor/uploader vertical parity — 2026-07-28
 
 The direct issue creation form now restores the frozen Bootstrap

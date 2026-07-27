@@ -1421,7 +1421,7 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: selectorState(".project-menu-outer"),
       projectMenuNav: selectorState(".project-menu-nav"),
       pageWrap: selectorState(
-        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page'], [data-stylex-owner='projects-directory-page-wrap'], [data-stylex-owner='organization-directory-page-wrap'], [data-stylex-owner='site-user-list-page-wrap-outer'], [data-stylex-owner='user-settings-page-wrap-outer']",
+        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page'], [data-stylex-owner='projects-directory-page-wrap'], [data-stylex-owner='organization-directory-page-wrap'], [data-stylex-owner='site-user-list-page-wrap-outer'], [data-stylex-owner='user-settings-page-wrap-outer'], [data-stylex-owner='help-shell-page-wrap-outer']",
       ),
       projectPageWrap: selectorState(
         ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell'], [data-stylex-owner='projects-directory-page'], [data-stylex-owner='organization-directory-page']",

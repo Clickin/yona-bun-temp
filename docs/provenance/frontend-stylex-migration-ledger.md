@@ -1,5 +1,17 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1043 — help-shell sweep owner mapping and fallback metric baseline — 2026-07-28
+
+The live `/_help` comparison reported a missing `pageWrap` only because the
+sweep did not recognize the existing `help-shell-page-wrap-outer` StyleX
+owner. The comparator now maps that owner to the legacy `.page-wrap-outer`
+metric. Its fallback-equivalence test also records the mathematically correct
+`1366 - 1080` desktop margin is `143px`; the existing focused help-shell test
+still records its stale `133px` expectation as a separate baseline issue.
+Comparator unit tests pass 28/28; the help FAQ and shell owner checks pass,
+with that one unchanged equivalence assertion documented rather than hidden.
+This is harness correction only; no frozen source or UI compensation changed.
+
 ### Batch 1042 — direct issue-form editor/uploader vertical parity — 2026-07-28
 
 Legacy `yona-original/app/views/issue/create.scala.html` includes the shared
