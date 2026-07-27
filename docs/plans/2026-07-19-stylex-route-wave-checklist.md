@@ -3256,3 +3256,9 @@ desktop/mobile geometry, and filtering.
 - [x] Project-root routes now wait for `.project-page-wrap`, so asynchronous container responses cannot be measured as the global shell.
 - [x] `/weblabs/portal` external Chrome legacy/local focused comparison passes 1/1 with zero diff/local failures; local capture moves from 121 to 397 visible characters after the settle gate.
 - [ ] Remaining corpus gaps, action-only/deferred targets, fallback-off/global audit, screenshot pairing, and overall pixel lock remain open.
+
+### 2026-07-28 — Batch 1059 fallback-off broad-audit classification
+
+- [x] Confirmed `/alice/sample/watch`, `/weblabs/portal/member/*/edit`, and `/sites/user/delete*` are action-only legacy endpoints (POST/DELETE), not GET screens to implement for visual parity.
+- [x] Started the managed dynamic-port full fallback-off command (`VITE_DISABLE_LEGACY_FALLBACK=1`, 3,070 tests). Selector-consumer checks passed through the observed range; global shell/login/organization tests exposed a repeated existing fallback-off legacy-DOM contract family.
+- [ ] The broad run was stopped at test 205 to avoid repeating the same known failure family. Full fallback-off/global audit and final pixel lock remain open; no green claim is made.
