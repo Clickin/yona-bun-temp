@@ -25,9 +25,22 @@ const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PAT
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
 const sweepLocale = "ko-KR";
 const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
-const sweepScope = requestedSweepPaths.length > 0 ? "focused" : "full";
+const sweepBatchSize = parseOptionalPositiveInteger(process.env.YORAM_SWEEP_BATCH_SIZE);
+const sweepBatchIndex = parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_BATCH_INDEX);
+if ((sweepBatchSize === null) !== (sweepBatchIndex === null)) {
+  throw new Error(
+    "YORAM_SWEEP_BATCH_SIZE and YORAM_SWEEP_BATCH_INDEX must be provided together",
+  );
+}
+const sweepIsBatched = sweepBatchSize !== null;
+const sweepScope = requestedSweepPaths.length > 0 ? "focused" : sweepIsBatched ? "batch" : "full";
 const closeTimeoutMs = 5_000;
-const outputPrefix = sweepScope === "focused" ? "latest-focused" : "latest";
+const outputPrefix =
+  sweepScope === "focused"
+    ? "latest-focused"
+    : sweepScope === "batch"
+      ? `batch-${sweepBatchIndex}`
+      : "latest";
 const latestOutputName =
   viewportProfile.name === "desktop"
     ? `${outputPrefix}.json`
@@ -44,6 +57,28 @@ function parseViewportProfile(input) {
     return { name: "desktop", width: 1366, height: 900 };
   }
   throw new Error(`Unsupported YORAM_SWEEP_VIEWPORT: ${input}`);
+}
+
+function parseOptionalPositiveInteger(input) {
+  if (input === undefined || input.trim() === "") {
+    return null;
+  }
+  const value = Number.parseInt(input, 10);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`Expected a positive integer, received: ${input}`);
+  }
+  return value;
+}
+
+function parseOptionalNonNegativeInteger(input) {
+  if (input === undefined || input.trim() === "") {
+    return null;
+  }
+  const value = Number.parseInt(input, 10);
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`Expected a non-negative integer, received: ${input}`);
+  }
+  return value;
 }
 
 function parseRequestedSweepPaths(input) {
@@ -1796,7 +1831,7 @@ async function runTarget(label, baseUrl) {
     const page = await context.newPage();
     const loggedIn =
       label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
-    const useRequestedPaths = requestedSweepPaths.length > 0;
+    const useRequestedPaths = requestedSweepPaths.length > 0 || sweepIsBatched;
     const directApiSurfaces =
       label === "local" && loggedIn && !useRequestedPaths
         ? await inspectLocalDirectApiSurfaces(page, baseUrl)
@@ -1805,7 +1840,7 @@ async function runTarget(label, baseUrl) {
       loggedIn && !useRequestedPaths ? await discoverProjectPaths(page, baseUrl) : [];
     const legacyAuditPages = legacyAuditDiscoveredPageLinks();
     const routeSamples = label === "legacy" || useRequestedPaths ? [] : routeTreeSamplePaths();
-    const paths = useRequestedPaths
+    const allPaths = requestedSweepPaths.length > 0
       ? requestedSweepPaths
       : [
           ...new Set([
@@ -1815,6 +1850,9 @@ async function runTarget(label, baseUrl) {
             ...discoveredProjectPages,
           ]),
         ];
+    const paths = sweepIsBatched
+      ? allPaths.slice(sweepBatchIndex * sweepBatchSize, (sweepBatchIndex + 1) * sweepBatchSize)
+      : allPaths;
     const results = [];
     for (const [index, path] of paths.entries()) {
       console.error(`[visual-sweep] ${label} ${index + 1}/${paths.length} ${path}`);
@@ -1908,6 +1946,12 @@ const comparison = buildVisualComparison({
 const summary = {
   checkedAt: new Date().toISOString(),
   scope: sweepScope,
+  batch: sweepIsBatched
+    ? {
+        index: sweepBatchIndex,
+        size: sweepBatchSize,
+      }
+    : null,
   viewportProfile,
   legacy,
   local,

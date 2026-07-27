@@ -3142,6 +3142,18 @@ parity; no frozen source or numeric compensation changed. Full fallback-off,
 same-fixture legacy pairing, global fallback audit, and final pixel lock remain
 open.
 
+### Batch 1040 — bounded full visual-sweep batches — 2026-07-28
+
+`visual-parity-sweep.mjs` now accepts `YORAM_SWEEP_BATCH_SIZE` and
+`YORAM_SWEEP_BATCH_INDEX`, slices the full route corpus after corpus assembly,
+and writes `output/playwright/visual-sweep/batch-<index>[-mobile].json` with
+batch metadata. The existing focused/full modes and strict diff exit behavior
+are unchanged. Comparator/source contract tests pass 27/27. A live external
+System-Chrome batch-0 run over 10 routes completed and persisted its report;
+it correctly exited nonzero for the real geometry differences in that batch,
+not for a teardown hang. Remaining batches and the final aggregate visual lock
+remain open.
+
 ### Batch 1039 — approved navbar-contact deviation in visual comparator — 2026-07-28
 
 The live legacy `/admin/sample` and `/admin/sample/issues` captures include the

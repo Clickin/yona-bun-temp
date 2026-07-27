@@ -547,9 +547,10 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /process\.env\.YORAM_SWEEP_VIEWPORT/u);
   assert.match(
     source,
-    /const sweepScope = requestedSweepPaths\.length > 0 \? "focused" : "full";/u,
+    /const sweepScope = requestedSweepPaths\.length > 0 \? "focused" : sweepIsBatched \? "batch" : "full";/u,
   );
-  assert.match(source, /const outputPrefix = sweepScope === "focused" \? "latest-focused" : "latest";/u);
+  assert.match(source, /const outputPrefix =/u);
+  assert.match(source, /sweepScope === "batch"/u);
   assert.match(source, /`\$\{outputPrefix\}-\$\{viewportProfile\.name\}\.json`/u);
   assert.match(source, /scope: sweepScope/u);
   assert.match(source, /name: "mobile", width: 390, height: 844/u);
@@ -762,6 +763,15 @@ test("visual sweep bounds and reports each route inspection", () => {
   assert.match(source, /errors: \[message\]/u);
   assert.match(source, /\[visual-sweep\] \$\{label\} \$\{index \+ 1\}\/\$\{paths\.length\} \$\{path\}/u);
   assert.match(source, /results\.push\(await inspectPageSafely\(routePage, baseUrl, path, label\)\)/u);
+});
+
+test("visual sweep supports bounded full-corpus batches", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+  assert.match(source, /YORAM_SWEEP_BATCH_SIZE/u);
+  assert.match(source, /YORAM_SWEEP_BATCH_INDEX/u);
+  assert.match(source, /allPaths\.slice\(sweepBatchIndex \* sweepBatchSize/u);
+  assert.match(source, /scope: sweepScope,/u);
+  assert.match(source, /batch: sweepIsBatched/u);
 });
 
 test("visual sweep defaults to system Chrome and reports bounded page teardown", () => {

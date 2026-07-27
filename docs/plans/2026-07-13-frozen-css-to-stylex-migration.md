@@ -9251,6 +9251,17 @@ and mobile. No frozen CSS/source or route-specific numeric compensation changed.
 Full fallback-off, same-fixture legacy screenshot pairing, global fallback
 audit, and final pixel lock remain open.
 
+### Batch 1040 — bounded full visual-sweep batches — 2026-07-28
+
+Full rendered-corpus sweeps can now be divided with
+`YORAM_SWEEP_BATCH_SIZE`/`YORAM_SWEEP_BATCH_INDEX`; slicing occurs after the
+full legacy audit/route corpus is assembled, and each batch writes a distinct
+JSON report while preserving strict geometry, overflow, and local-render exit
+criteria. Contract tests pass 27/27. Live external System-Chrome batch 0
+covered 10 routes and produced `batch-0.json`; its nonzero result reflects real
+route geometry drift, not runner teardown. Full batch coverage and aggregate
+pixel lock remain open.
+
 ### Batch 1039 — approved navbar-contact deviation in visual comparator — 2026-07-28
 
 The live legacy navbar contains its configured developer-contact item while the

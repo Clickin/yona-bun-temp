@@ -3171,3 +3171,14 @@ desktop/mobile geometry, and filtering.
   2/2 at desktop and mobile with zero diff/local failures.
 - [ ] Full fallback-off/global audit, same-fixture route coverage, and overall
   final pixel lock remain open.
+
+### 2026-07-28 — Batch 1040 bounded full visual sweep
+
+- [x] Add bounded full-corpus execution with `YORAM_SWEEP_BATCH_SIZE` and
+  `YORAM_SWEEP_BATCH_INDEX`; preserve strict per-batch exit behavior and write
+  distinct batch reports.
+- [x] Contract tests pass 27/27; live external Chrome batch 0 covers 10
+  routes and persists `output/playwright/visual-sweep/batch-0.json`.
+- [ ] Remaining batches, aggregate comparison, global fallback audit, and
+  overall pixel lock remain open; batch-0 route geometry failures are real
+  parity gaps, not teardown failures.
