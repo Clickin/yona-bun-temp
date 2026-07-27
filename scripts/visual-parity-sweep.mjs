@@ -245,6 +245,8 @@ const localDirectApiSurfaces = [
 const alwaysScreenshotPaths = new Set([
   "/",
   "/admin/sample",
+  "/admin/sample/",
+  "/sample/sample/",
   "/users/loginform",
   "/admin/sample/settingform",
   "/admin/sample/members",
@@ -1177,12 +1179,7 @@ async function inspectPage(page, baseUrl, path, label) {
     .waitForFunction(
       () => {
         const text = document.body.innerText.trim();
-        return (
-          text.length > 0 &&
-          !text.includes("불러오는 중") &&
-          !text.includes("common.loading") &&
-          !text.includes("Loading")
-        );
+        return text.length > 0;
       },
       undefined,
       { timeout: 5_000 },

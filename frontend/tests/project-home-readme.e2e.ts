@@ -76,6 +76,60 @@ test("unavailable project routes immediately render legacy container error scree
   }
 });
 
+test("project home trailing slash directly renders the same home or forbidden state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  expect(routeSource).toContain("pathname === homePath || pathname === `${homePath}/`");
+
+  await mockProjectHome(page);
+  await page.goto(`${basePath}/admin/sample/`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/`);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop > li.active .menu-name")).toHaveText(
+    "Project home",
+  );
+  await expect(page.locator("#project-description")).toHaveText("Sample overview");
+  const normalGeometry = await page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".project-header-outer");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const home = document.querySelector<HTMLElement>(".project-home-header");
+    if (!header || !menu || !home) return null;
+    const headerBox = header.getBoundingClientRect();
+    const menuBox = menu.getBoundingClientRect();
+    const homeBox = home.getBoundingClientRect();
+    return {
+      headerBottom: headerBox.bottom,
+      homeTop: homeBox.top,
+      menuBottom: menuBox.bottom,
+      menuTop: menuBox.top,
+    };
+  });
+  expect(normalGeometry).not.toBeNull();
+  expect(normalGeometry!.menuTop).toBeGreaterThanOrEqual(normalGeometry!.headerBottom);
+  expect(normalGeometry!.homeTop).toBeGreaterThanOrEqual(normalGeometry!.menuBottom);
+
+  const containerRequests: string[] = [];
+  await mockProjectHome(page, {
+    containerRequests,
+    containerStatus: 403,
+    ownerName: "sample",
+    projectName: "sample",
+  });
+  await page.goto(`${basePath}/sample/sample/`);
+
+  await expect(page).toHaveURL(`${basePath}/sample/sample/`);
+  await expect(page).toHaveTitle("You are not authorized");
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "You are not authorized",
+  );
+  await expect(page.locator(".project-page-wrap > .error-wrap .ico.ico-err2")).toBeVisible();
+  expect(containerRequests).toEqual(["403"]);
+});
+
 test("trailing-slash code and commits roots retain the project shell and container errors", async ({
   page,
 }) => {

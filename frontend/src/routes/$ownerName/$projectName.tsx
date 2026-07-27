@@ -346,7 +346,7 @@ function ProjectHomeRoute() {
   const searchPath = `${homePath}/search`;
   const statisticsPath = `${homePath}/statistics`;
   const standardActive =
-    pathname === homePath
+    pathname === homePath || pathname === `${homePath}/`
       ? "home"
       : pathname === issuesPath
         ? "issue"

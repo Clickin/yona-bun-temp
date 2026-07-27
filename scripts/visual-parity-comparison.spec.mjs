@@ -568,6 +568,8 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /signupButton: metrics\.signupButton/u);
   assert.match(source, /footer: selectorState\("footer\.page-footer-outer, \[data-stylex-owner='site-footer'\]"\)/u);
   assert.match(source, /"\/admin\/sample\/settingform"/u);
+  assert.match(source, /"\/admin\/sample\/"/u);
+  assert.match(source, /"\/sample\/sample\/"/u);
   assert.match(source, /"\/admin\/sample\/issue\/1"/u);
   assert.match(source, /#issue-body-\$\{issueDetailMatch\[1\]\} \.content\.markdown-wrap`/u);
   assert.match(source, /const selectorTextLength = \(selector\)/u);
@@ -603,7 +605,8 @@ test("visual sweep waits for local session resolution before measuring the root"
 test("visual sweep passes waitForFunction timeouts in the Playwright options position", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
-  assert.match(source, /!text\.includes\("Loading"\)[\s\S]*undefined,\s*\{ timeout: 5_000 \}/u);
+  assert.match(source, /return text\.length > 0;[\s\S]*undefined,\s*\{ timeout: 5_000 \}/u);
+  assert.doesNotMatch(source, /document\.body\.innerText[\s\S]{0,300}includes\("Loading"\)/u);
   assert.match(source, /sheet\.cssRules\.length > 0[\s\S]*undefined,\s*\{ timeout: 10_000 \}/u);
 });
 
