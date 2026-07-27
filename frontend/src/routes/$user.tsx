@@ -74,7 +74,6 @@ const userProfileStaticStyles = stylex.create({
   },
   issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
   issueSubtaskParent: { fontSize: "0.8em !important" },
-  issueAuthorLineHeight: { lineHeight: "36px" },
 });
 
 export const Route = createFileRoute("/$user")({
@@ -958,19 +957,10 @@ function ProfileIssueRow({
         </div>
         <div
           {...stylex.props(
-            styles.issueAuthor,
             styles.issueGridAuthorColumn,
+            styles.issueAuthor,
             styles.issueDesktopPersonVisibility,
-            userProfileStaticStyles.issueAuthorLineHeight,
           )}
-          className={`${
-            stylex.props(
-              styles.issueAuthor,
-              styles.issueGridAuthorColumn,
-              styles.issueDesktopPersonVisibility,
-              userProfileStaticStyles.issueAuthorLineHeight,
-            ).className
-          } author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -981,19 +971,10 @@ function ProfileIssueRow({
         </div>
         <div
           {...stylex.props(
-            styles.issueAuthor,
             styles.issueGridAuthorColumn,
+            styles.issueAuthor,
             styles.issueDesktopPersonVisibility,
-            userProfileStaticStyles.issueAuthorLineHeight,
           )}
-          className={`${
-            stylex.props(
-              styles.issueAuthor,
-              styles.issueGridAuthorColumn,
-              styles.issueDesktopPersonVisibility,
-              userProfileStaticStyles.issueAuthorLineHeight,
-            ).className
-          } author`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -1003,13 +984,11 @@ function ProfileIssueRow({
           />
         </div>
         <div
-          {...stylex.props(styles.issueInfos, styles.issueMeta, styles.issueGridMetaColumn)}
-          className={`${stylex.props(styles.issueInfos, styles.issueMeta, styles.issueGridMetaColumn).className} infos meta`}
+          {...stylex.props(styles.issueGridMetaColumn, styles.issueMeta)}
           data-stylex-owner="user-profile-issue-meta"
         >
           <span
             {...stylex.props(styles.issueMetaCell)}
-            className={`${stylex.props(styles.issueMetaCell).className} meta-cell`}
             data-stylex-owner="user-profile-issue-meta-cell"
           >
             <span
@@ -1023,7 +1002,6 @@ function ProfileIssueRow({
             </span>
             <span
               {...stylex.props(styles.issueMetadataItem)}
-              className={`${stylex.props(styles.issueMetadataItem).className} infos-item`}
               data-stylex-owner="user-profile-issue-metadata-date"
               title={stringField(issue, "updatedLabel")}
             >
@@ -2002,11 +1980,22 @@ function ProfilePersonLink({
   applyAuthorCellStyle?: boolean;
 }) {
   if (!loginId) {
-    return <span className="infos-item"></span>;
+    return applyAuthorCellStyle ? (
+      <span
+        {...stylex.props(styles.issueAuthorCell)}
+        data-stylex-owner="user-profile-issue-author-cell"
+      ></span>
+    ) : (
+      <span className="infos-item"></span>
+    );
   }
   return (
     <ProfileTextLink
-      className={`${applyAuthorCellStyle ? `${stylex.props(styles.issueAuthorCell).className} ` : ""}infos-item infos-link-item author-cell`}
+      className={
+        applyAuthorCellStyle
+          ? (stylex.props(styles.issueAuthorCell).className ?? "")
+          : "infos-item infos-link-item author-cell"
+      }
       label={label}
       loginId={loginId}
       stylexOwner={applyAuthorCellStyle ? "user-profile-issue-author-cell" : undefined}

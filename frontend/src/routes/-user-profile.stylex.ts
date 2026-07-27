@@ -721,14 +721,14 @@ export const styles = stylex.create({
   // Frozen Bootstrap .row-fluid [class*="span"]/.span3.
   issueGridMetaColumn: {
     boxSizing: "border-box",
-    display: "block",
+    display: "table",
     float: "left",
     marginLeft: "2.127659574468085%",
     minHeight: "30px",
     width: "23.404255319148934%",
     "@media (max-width: 767px)": {
       boxSizing: "border-box",
-      display: "block",
+      display: "table",
       float: "none",
       marginLeft: "0px",
       width: "100%",
@@ -994,14 +994,33 @@ export const styles = stylex.create({
   },
   // Frozen less/_page.less .my-issues .post-item .author .author-cell.
   issueAuthorCell: {
+    color: "inherit",
     display: "table-cell",
+    outline: "none",
     overflow: "hidden",
+    textDecoration: "none",
     textOverflow: "ellipsis",
     verticalAlign: "middle",
     whiteSpace: "nowrap",
+    ":hover": {
+      color: "#3592b5",
+      outline: "none",
+      textDecoration: "none",
+    },
+    ":focus": {
+      outline: "none",
+      textDecoration: "underline",
+    },
   },
-  // Frozen less/_page.less .my-issues .post-item .meta.
-  issueMeta: { display: "table" },
+  // Frozen less/_page.less .post-item .infos plus .my-issues descendants .infos/.meta.
+  issueMeta: {
+    color: "#999",
+    display: "table",
+    fontSize: "12px",
+    lineHeight: "20px",
+    marginTop: "4px",
+    overflow: "hidden",
+  },
   // Frozen less/_page.less .my-issues .post-item .meta .meta-cell.
   issueMetaCell: { display: "table-cell", verticalAlign: "middle" },
   // Frozen less/_page.less .post-item .infos .infos-item.
@@ -1022,8 +1041,6 @@ export const styles = stylex.create({
     fontWeight: "normal",
     marginRight: "5px",
   },
-  // Frozen less/_page.less .my-issues .post-item .infos.
-  issueInfos: { marginTop: "4px" },
   // Frozen Bootstrap .pull-right used by user/partial_issues.scala.html.
   issueDueDate: { float: "right" },
   // Frozen less/_page.less .overdue and less/_variables.less @yobi-red.

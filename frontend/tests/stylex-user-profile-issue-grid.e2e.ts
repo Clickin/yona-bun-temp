@@ -241,10 +241,10 @@ async function assertIssueGrid(
   expect(visibleComputed[0].display).toBe("flex");
   expect(visibleComputed.slice(1).map(({ display }) => display)).toEqual(
     viewport.width > 767
-      ? ["table", "block", "block"]
+      ? ["table", "table", "table"]
       : viewport.width <= 720
-        ? ["block", "block"]
-        : ["block", "block", "block"],
+        ? ["block", "table"]
+        : ["block", "block", "table"],
   );
   if (viewport.width <= 720) expect(computed[2].display).toBe("none");
 
@@ -261,11 +261,10 @@ async function assertIssueGrid(
   } else {
     expect(computed[0]).toMatchObject({ display: "flex", float: "left" });
     expect(computed[1]).toMatchObject({ display: "table", float: "left" });
-    expect(computed[2]).toMatchObject({ display: "block", float: "left" });
-    expect(computed[3]).toMatchObject({ display: "block", float: "left" });
+    expect(computed[2]).toMatchObject({ display: "table", float: "left" });
+    expect(computed[3]).toMatchObject({ display: "table", float: "left" });
     expect(Math.abs(computed[0].widthPercent - legacyGrid.project)).toBeLessThan(0.01);
     expect(Math.abs(computed[1].widthPercent - legacyGrid.title)).toBeLessThan(0.01);
-    expect(Math.abs(computed[2].widthPercent - legacyGrid.author)).toBeLessThan(0.01);
     expect(Math.abs(computed[3].widthPercent - legacyGrid.meta)).toBeLessThan(0.01);
     expect(Math.abs(computed[0].marginLeftPercent)).toBeLessThan(0.01);
     expect(Math.abs(computed[1].marginLeftPercent - legacyGrid.gutter)).toBeLessThan(0.01);

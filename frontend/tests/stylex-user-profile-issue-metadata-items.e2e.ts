@@ -195,7 +195,7 @@ test("authenticated public profile owns populated issue date and milestone metad
   );
   await expect(rows).toHaveCount(2);
   await expect(date).toHaveCount(1);
-  await expect(date).toHaveClass(/\binfos-item\b/);
+  await expect(date).not.toHaveClass(/\binfos-item\b/);
   await expect(date).toHaveText("Jul 7, 2026");
   await expect(date).toHaveAttribute("title", "Jul 7, 2026");
   await expect(date).toHaveCSS("float", "left");

@@ -171,7 +171,7 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
     });
   expect(await measure()).toEqual({
     projectLineHeight: "36px",
-    authorDisplays: ["block", "block"],
+    authorDisplays: ["table", "table"],
     authorLineHeights: ["36px", "36px"],
     contained: true,
     scrollWidth: 1366,

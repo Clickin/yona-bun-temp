@@ -2999,3 +2999,11 @@ desktop/mobile geometry, and filtering.
 - [x] Direct route-local StyleX owns the exact project wrapper/link, post-id, title wrapper/cell/link declarations; only `infos-item project-name`, `title project`, `infos-item post-id`, `title-wrap`, `title-cell`, and the issue-link `title` retire.
 - [x] External System-Chrome normal and fallback-off focused runs pass 1/1 each at 1366×900 and 390×844 with exact computed declarations, DOM/copy/order/navigation, plugin-attribute absence, zero overflow, and four inspected screenshots.
 - [ ] Keep labels/subtasks/author/meta and unrelated fallback consumers outside this batch. Live same-fixture legacy pairing, global fallback audit, full fallback-off suite, and overall final lock remain open.
+
+### 2026-07-27 Batch 1025 public-profile Issues author/meta ownership
+
+- [x] `user/view.scala.html`, `user/partial_issues.scala.html`, frozen LESS/Bootstrap responsive cascade, and messages establish populated/empty desktop author cells and the metadata shell.
+- [x] Direct StyleX owns the exact fixed-height table/table-cell author output and generic infos/meta/date declarations; only the scoped desktop author/meta literals retire.
+- [x] Mobile assignee `infos-item infos-link-item author-cell` remains intentionally because those descendants still match inside `.infos`.
+- [x] External System-Chrome normal and fallback-off focused runs pass 1/1 each at desktop/390px with populated/empty branches, exact output, scoped class retention, zero overflow, and four inspected screenshots.
+- [ ] Live same-fixture legacy pairing, global fallback audit, full fallback-off suite, and overall final lock remain open.

@@ -172,7 +172,7 @@ test("authenticated public profile owns populated issue author and metadata resi
     'lineHeight: "36px"',
     'display: "table-cell"',
     'textOverflow: "ellipsis"',
-    'issueMeta: { display: "table" }',
+    "issueMeta: {",
     'issueMetaCell: { display: "table-cell", verticalAlign: "middle" }',
     'color: "#999"',
     'fontSize: "12px"',
@@ -195,12 +195,20 @@ test("authenticated public profile owns populated issue author and metadata resi
   await expect(authorWrappers).toHaveCount(2);
   for (const authorWrapper of await authorWrappers.all()) {
     await expect(authorWrapper).not.toHaveClass(/project-name-in-my-issues/);
+    await expect(authorWrapper).not.toHaveClass(/(?:^|\s)(?:span1|author)(?:\s|$)/);
   }
   await expect(authorCells).toHaveCount(2);
+  for (const authorCell of await authorCells.all()) {
+    await expect(authorCell).not.toHaveClass(
+      /(?:^|\s)(?:infos-item|infos-link-item|author-cell)(?:\s|$)/,
+    );
+  }
   await expect(meta.locator(".author-cell")).toHaveCount(1);
   await expect(meta.locator('[data-stylex-owner="user-profile-issue-author-cell"]')).toHaveCount(0);
   await expect(meta).toHaveCount(1);
+  await expect(meta).not.toHaveClass(/(?:^|\s)(?:infos|meta)(?:\s|$)/);
   await expect(metaCell).toHaveCount(1);
+  await expect(metaCell).not.toHaveClass(/(?:^|\s)meta-cell(?:\s|$)/);
   await expect(postId).toHaveText("#7");
   await expect(row).toContainText("Author User");
   await expect(row).toContainText("Assignee User");
@@ -259,12 +267,12 @@ test("authenticated public profile owns populated issue author and metadata resi
     };
   });
   expect(desktop).toEqual({
-    authorDisplay: "block",
+    authorDisplay: "table",
     authorCellDisplay: "table-cell",
     authorCellVerticalAlign: "middle",
     authorCellOverflow: "hidden",
     authorCellWhiteSpace: "nowrap",
-    metaDisplay: "block",
+    metaDisplay: "table",
     metaCellDisplay: "table-cell",
     metaCellVerticalAlign: "middle",
     infosMarginTop: "4px",

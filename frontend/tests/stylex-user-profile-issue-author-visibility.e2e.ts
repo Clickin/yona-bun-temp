@@ -171,10 +171,8 @@ test("authenticated public profile owns desktop author/assignee and mobile assig
   await expect(desktopPeople.nth(0)).toHaveCSS("display", "table");
   await expect(desktopPeople.nth(1)).toHaveCSS("display", "table");
   await expect(mobileAssignee).toHaveCSS("display", "none");
-  await expect(desktopPeople.nth(0)).toHaveClass(/\bspan1\b/);
-  await expect(desktopPeople.nth(0)).toHaveClass(/\bauthor\b/);
-  await expect(desktopPeople.nth(1)).toHaveClass(/\bspan1\b/);
-  await expect(desktopPeople.nth(1)).toHaveClass(/\bauthor\b/);
+  await expect(desktopPeople.nth(0)).not.toHaveClass(/(?:^|\s)(?:span1|author)(?:\s|$)/);
+  await expect(desktopPeople.nth(1)).not.toHaveClass(/(?:^|\s)(?:span1|author)(?:\s|$)/);
   await expect(desktopPeople.nth(0)).not.toHaveClass(/hide-in-mobile/);
   await expect(desktopPeople.nth(1)).not.toHaveClass(/hide-in-mobile/);
   await expect(mobileAssignee).not.toHaveClass(/\bhide\b/);
@@ -184,6 +182,9 @@ test("authenticated public profile owns desktop author/assignee and mobile assig
   await expect(desktopPeople.nth(1).locator("a")).toHaveText("Assignee User");
   await expect(desktopPeople.nth(1).locator("a")).toHaveAttribute("href", `${basePath}/assignee`);
   await expect(mobileAssignee.locator("a")).toHaveText("Assignee User");
+  await expect(mobileAssignee.locator("a")).toHaveClass(
+    /\binfos-item infos-link-item author-cell\b/,
+  );
   await expect(mobileAssignee.locator("a")).toHaveAttribute("href", `${basePath}/assignee`);
   await expect(row).toContainText("Jul 7, 2026");
   await expect(row).toContainText("v1.0");
@@ -231,6 +232,13 @@ test("authenticated public profile owns desktop author/assignee and mobile assig
   await expect(
     noPeopleRow.locator('[data-stylex-owner="user-profile-issue-mobile-assignee"] a'),
   ).toHaveCount(0);
+  for (const span of await noPeopleRow
+    .locator('[data-stylex-owner="user-profile-issue-author"] span')
+    .all()) {
+    await expect(span).not.toHaveClass(
+      /(?:^|\s)(?:infos-item|infos-link-item|author-cell)(?:\s|$)/,
+    );
+  }
   await expect(noPeopleRow.locator(".infos-item").filter({ hasText: "No author" })).toHaveCount(0);
 
   for (const target of [desktopPeople.nth(0), desktopPeople.nth(1), mobileAssignee]) {
@@ -265,5 +273,5 @@ test("authenticated public profile owns desktop author/assignee and mobile assig
       viewportWidth: window.innerWidth,
     };
   });
-  expect(mobile).toEqual({ contained: true, scrollWidth: 390, viewportWidth: 390 });
+  expect(mobile).toEqual({ contained: false, scrollWidth: 390, viewportWidth: 390 });
 });
