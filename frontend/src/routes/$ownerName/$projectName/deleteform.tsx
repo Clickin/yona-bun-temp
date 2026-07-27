@@ -390,7 +390,7 @@ function ProjectDeleteFormBody({
           </div>
           <div
             {...actionBoxStyleProps}
-            className={actionBoxStyleProps.className}
+            className={`${actionBoxStyleProps.className ?? ""} box-wrap bottom`.trim()}
             data-stylex-owner="project-delete-action"
           >
             <button

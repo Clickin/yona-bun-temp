@@ -3231,3 +3231,9 @@ desktop/mobile geometry, and filtering.
 - [x] Reviews renders the legacy `project-page-wrap > row-fluid issue-list-wrap` shell for empty responses; settingform restores the legacy shell cascade, content-box right panel, textarea height, and page boundary; transfer restores the legacy `box-wrap bottom` action shell.
 - [x] External System-Chrome production-dist batch 6 passes 10/10 with diff failures 0, local failures 0, and no status deltas. Focused normal/fallback-off evidence covers the three route states; fallback-off settingform passes 1/1.
 - [ ] Remaining corpus batches, global fallback-consumer audit, full fallback-off suite, same-fixture screenshot pairing, and overall final pixel lock remain open.
+
+### 2026-07-28 — Batch 1055 project delete action-wrapper parity
+
+- [x] `project/delete.scala.html`, `partial_settingmenu.scala.html`, frozen `.box-wrap.bottom`, modal, and Bootstrap evidence establish the action wrapper contract.
+- [x] React deleteform restores the legacy `box-wrap bottom` wrapper while retaining React-owned checkbox/modal behavior; focused normal/fallback-off E2E covers desktop/mobile geometry and interaction.
+- [ ] Batch 7 final rerun, remaining corpus batches, global fallback audit, full fallback-off suite, same-fixture pairing, and overall pixel lock remain open.
