@@ -53,7 +53,10 @@ test("user edit avatar upload preserves legacy source and StyleX ownership", () 
 
   expect(styles).toContain('uploadWrap: {\n    textAlign: "center",\n  },');
   expect(styles).toContain('uploadWrapMargin: {\n    marginTop: "10px",\n  },');
-  expect(route).toContain("className={`btn-wrap mt10");
+  expect(route).not.toContain("btn-wrap mt10");
+  expect(route).toContain(
+    "className={`btn-wrap ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}",
+  );
   expect(route).toContain(
     "stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin)",
   );
@@ -94,6 +97,7 @@ test(`user edit avatar upload geometry ${fallbackOff ? "fallback-off" : "normal"
 
     await expect(avatarForm).toBeVisible();
     await expect(uploadWrap).toBeVisible();
+    await expect(uploadWrap).not.toHaveClass(/\bmt10\b/u);
     await expect(uploadWrap).toHaveCSS("margin-top", "10px");
     await expect(uploadWrap).toHaveCSS("text-align", "center");
     await expect(uploadWrap).not.toHaveAttribute("style");

@@ -483,7 +483,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             ></div>
           </div>
           <div
-            className={`btn-wrap mt10 ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}
+            className={`btn-wrap ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}
             data-stylex-owner="user-settings-avatar-upload-wrap"
           >
             <div

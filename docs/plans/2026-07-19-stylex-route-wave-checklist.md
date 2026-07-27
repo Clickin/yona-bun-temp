@@ -3055,3 +3055,28 @@ desktop/mobile geometry, and filtering.
 - [x] `/user/editform` login-id, name, and email `<dd>` rows retire only their directly-owned `mt10` classes; existing `profileFieldRow` StyleX owns exact `margin-top: 10px`. The avatar upload `btn-wrap mt10` and global fallback remain intentionally retained.
 - [x] Focused external System-Chrome normal and fallback-off runs pass 3/3 each at 1366x900 and 390x844 with source/runtime class absence, exact computed margins, DOM/order/copy, input containment, no overflow, and retained fallback evidence. Existing legacy/local user-settings desktop/mobile screenshots and new local captures were visually inspected; fixture/avatar and approved Yoram navbar/footer identity differences remain documented.
 - [ ] Production build/verifier, global fallback-consumer audit, and overall final lock remain open.
+
+### 2026-07-27 Batch 1035 user-settings avatar-upload mt10 class retirement
+
+- [x] `user/edit.scala.html:43-59`, the full frozen `yobi.less` import chain,
+  `_common.less` `.mt10`/`.center-txt`, `_page.less` avatar evidence,
+  `_yobiUI.less` `.fake-file-wrap`/`.file`, messages, and avatar setting JS
+  establish the avatar DOM, copy/order, spacing, and upload/crop behavior.
+- [x] `/user/editform` removes only the React-owned avatar wrapper's direct
+  `mt10` class; existing `userSettingsAvatarStyles.uploadWrapMargin` owns
+  exact `marginTop: "10px"` and `uploadWrap` owns centering. The global
+  `app.css` `.mt10` fallback remains for other consumers.
+- [x] `frontend/tests/stylex-user-editform-avatar-upload-mt10.e2e.ts` records
+  RED→GREEN source/runtime ownership, exact desktop/mobile computed output,
+  no direct class/no inline style, DOM/order/copy/input contract, containment,
+  crop interaction, and screenshots. External System-Chrome normal and
+  explicit fallback-off runs pass 2/2 each.
+- [x] Adjacent profile-field/profile-row guards were updated to assert the
+  retired avatar token and retained StyleX declaration ownership.
+- [x] Stabilization diagnosis is separate from this parity wave: legacy and
+  local first-byte probes are ~18/25ms; the long wait came from stale
+  unavailable-port Playwright groups, duplicate HMR groups, and an unbounded
+  outer Playwright-child wait. The exact stale groups were terminated without
+  changing parity gates.
+- [ ] Production build/verifier, global fallback-consumer audit, same-fixture
+  screenshot pairing, and the overall final pixel lock remain open.

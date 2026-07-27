@@ -87,8 +87,9 @@ test("records the legacy profile field ownership and retained fallback consumer"
     expect(block).not.toContain('className="mt10"');
   }
 
-  // The avatar upload row is a separate, intentionally unmigrated global .mt10 consumer.
-  expect(route).toContain("btn-wrap mt10");
+  // The avatar upload row now owns its legacy mt10 spacing through the existing StyleX boundary.
+  expect(route).not.toContain("btn-wrap mt10");
+  expect(route).toContain("userSettingsAvatarStyles.uploadWrapMargin");
   expect(appCss).toContain(".mt10 {\n  margin-top: 10px;\n}");
   expect(route).not.toContain('style={{ marginTop: "10px" }}');
   expect(route).not.toContain("document.querySelector");
@@ -202,7 +203,7 @@ test(`pins profile field row geometry ${fallbackOff ? "fallback-off" : "normal"}
     }
 
     const avatarUploadWrap = page.locator('[data-stylex-owner="user-settings-avatar-upload-wrap"]');
-    await expect(avatarUploadWrap).toHaveClass(/\bmt10\b/u);
+    await expect(avatarUploadWrap).not.toHaveClass(/\bmt10\b/u);
     await expect(avatarUploadWrap).toHaveCSS("margin-top", "10px");
     await expect(page.locator("#frmBasic")).toHaveAttribute("method", "post");
     await expect(page.locator("#frmBasic")).toHaveAttribute("action", /\/user\/edit/u);

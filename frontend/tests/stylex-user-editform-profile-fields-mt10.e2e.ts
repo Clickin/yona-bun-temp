@@ -39,8 +39,9 @@ test("user edit profile fields own the three legacy mt10 declarations", async ({
   }
   expect(route.match(/className="mt10"/gu) ?? []).toHaveLength(0);
   expect(route).toContain('data-stylex-owner="user-settings-avatar-upload-wrap"');
+  expect(route).not.toContain("btn-wrap mt10");
   expect(route).toContain(
-    "className={`btn-wrap mt10 ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}",
+    "className={`btn-wrap ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}",
   );
   expect(route).not.toContain('style={{ marginTop: "10px" }}');
   expect(route).not.toContain("document.querySelector");

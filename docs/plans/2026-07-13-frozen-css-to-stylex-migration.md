@@ -9107,3 +9107,44 @@ visually inspected alongside the new local captures; visible fixture/avatar,
 approved Yoram footer/navbar identity differences remain documented and no
 compensation was added. Production build, frozen-hash verification, and the
 global/full fallback final lock remain open for this wave.
+
+## 2026-07-27 — Batch 1035 user-settings avatar-upload mt10 class retirement
+
+The legacy `user/edit.scala.html` avatar form still establishes the
+`btn-wrap mt10 center-txt` output, while `_common.less` supplies the exact
+10px margin and centered text and `_yobiUI.less` supplies the fake-file
+wrapper/input behavior. The React avatar upload wrapper already had the exact
+`uploadWrapMargin` and `uploadWrap` StyleX declarations, so this wave retires
+only the direct `mt10` token from the React-owned wrapper. The global `.mt10`
+fallback remains for unrelated consumers; no frozen source, numeric value, or
+geometry compensation changes.
+
+- [x] Worker RED→GREEN evidence confirms the pre-change wrapper retained
+  `mt10`, then removes only that class from `frontend/src/routes/user/editform.tsx`.
+- [x] Focused avatar-upload E2E preserves legacy source/import/message/order,
+  exact computed 10px margin and centered text, no inline style, input/crop
+  behavior, desktop/mobile containment, and screenshots; normal and explicit
+  fallback-off runs pass 2/2 each under external System Chrome.
+- [x] Adjacent profile-field and profile-row regressions now assert the avatar
+  wrapper's StyleX ownership and absence of the direct `mt10` token while the
+  global app.css fallback remains documented.
+- [ ] Production build/verifier, global fallback-consumer audit, and overall
+  final pixel lock remain open.
+
+## 2026-07-27 — Stabilization wait root-cause audit
+
+The long wait was not legacy or release-dist page responsiveness. Bounded
+external probes measured approximately 18ms to first byte for legacy `:9000`
+and 25ms for local `:3104`; the stale `:18102` target was not listening.
+Process inspection found four 1h+ Playwright diagnostics, including three
+against the unavailable `18102/yona` base, Chrome children that never exited,
+and three duplicate HMR Vite groups auto-occupying `3101`–`3103` while the
+user-session HMR process occupied `3104`. The managed runner also waits for
+the Playwright child without a deadline in `scripts/run-playwright-e2e.mjs`,
+so a Chrome/worker teardown hang can appear as stabilization.
+
+The exact stale diagnostic and duplicate groups were terminated before this
+wave; legacy `:9000`, the user-session local server, frozen sources, and
+pixel/fallback gates were left untouched. This remains a harness lifecycle
+follow-up; it does not relax screenshot parity or the bounded font/image/
+animation settlement checks.
