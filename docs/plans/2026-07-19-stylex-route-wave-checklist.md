@@ -3078,5 +3078,6 @@ desktop/mobile geometry, and filtering.
   unavailable-port Playwright groups, duplicate HMR groups, and an unbounded
   outer Playwright-child wait. The exact stale groups were terminated without
   changing parity gates.
-- [ ] Production build/verifier, global fallback-consumer audit, same-fixture
-  screenshot pairing, and the overall final pixel lock remain open.
+- [x] Production build/verifier and frozen legacy-fallback hash verification
+  pass; global fallback-consumer audit, same-fixture screenshot pairing, and
+  the overall final pixel lock remain open.

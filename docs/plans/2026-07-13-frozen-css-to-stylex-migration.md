@@ -9128,8 +9128,9 @@ geometry compensation changes.
 - [x] Adjacent profile-field and profile-row regressions now assert the avatar
   wrapper's StyleX ownership and absence of the direct `mt10` token while the
   global app.css fallback remains documented.
-- [ ] Production build/verifier, global fallback-consumer audit, and overall
-  final pixel lock remain open.
+- [x] Production build/verifier and frozen legacy-fallback hash verification
+  pass; the global fallback-consumer audit and overall final pixel lock remain
+  open.
 
 ## 2026-07-27 — Stabilization wait root-cause audit
 
@@ -9142,6 +9143,13 @@ and three duplicate HMR Vite groups auto-occupying `3101`–`3103` while the
 user-session HMR process occupied `3104`. The managed runner also waits for
 the Playwright child without a deadline in `scripts/run-playwright-e2e.mjs`,
 so a Chrome/worker teardown hang can appear as stabilization.
+
+The first combined focused run also exposed the same harness pressure: five
+parallel workers spent about 18--20s timing out on profile owner markers and
+the outer runner remained alive after Ctrl-C because the nested Playwright
+group survived. Re-running the identical focused set with one worker passed
+7/7 in 18.0s normal and 7/7 in 16.5s explicit fallback-off mode. This
+separates worker/process contention from route responsiveness.
 
 The exact stale diagnostic and duplicate groups were terminated before this
 wave; legacy `:9000`, the user-session local server, frozen sources, and

@@ -3095,12 +3095,16 @@ crop interaction, and desktop/mobile screenshots. The adjacent
 `stylex-user-editform-profile-fields-mt10.e2e.ts` and
 `stylex-user-settings-profile-field-rows.e2e.ts` guards assert the same
 ownership boundary. Normal and explicit fallback-off external System-Chrome
-runs pass 2/2 each. Production build/verifier, global fallback audit, and
-final pixel lock remain open.
+runs pass 2/2 each. Production build/verifier and the frozen legacy-fallback
+hash verification pass; the global fallback audit and final pixel lock remain
+open.
 
 The separate stabilization audit measured legacy `:9000` and local `:3104`
 first-byte response at about 18ms and 25ms. The long wait was caused by four
 stale Playwright/Chrome diagnostics, three of them targeting unavailable
 `:18102`, duplicate HMR Vite groups, and the unbounded Playwright-child wait
-in `scripts/run-playwright-e2e.mjs`; only the exact stale diagnostic/duplicate
-groups were terminated, with parity gates unchanged.
+in `scripts/run-playwright-e2e.mjs`. A parallel five-worker focused run also
+timed out on profile owner markers and survived outer Ctrl-C until its nested
+process group was terminated; the same 7-test set passed 7/7 in 18.0s normal
+and 7/7 in 16.5s fallback-off with one worker. Only exact stale
+diagnostic/duplicate groups were terminated, with parity gates unchanged.
