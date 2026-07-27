@@ -1,5 +1,29 @@
 # Frontend StyleX Migration Ledger
 
+### Production-dist stabilization latency — 2026-07-27
+
+This is a runtime performance gap, not a StyleX or screenshot-gate relaxation.
+After a fresh `frontend/dist` build, the live pair used System Chrome outside
+the sandbox and a release Rust server serving filesystem assets. Legacy
+`/admin/sample` reached the sweep paint checkpoint in about 138ms; local
+production-dist navigation left the project shell blank until the project
+container query resolved, with about 160–190ms spent in
+`/api/v1/owners/admin/projects/sample/container` and about 186–215ms from
+navigation to first body content in the direct measurement. The same delay
+remained in the release binary, so debug/HMR execution is not the primary
+product cause.
+
+`frontend/src/routes/$ownerName/$projectName.tsx` currently returns no project
+shell while `readProjectContainerQueryOptions` has no data. The server endpoint
+also serially assembles authorization, recent-visit mutation, membership,
+menu, milestone, logo, watcher, and activity-count data. The live release-dist
+focused screenshot pair loaded all three requested targets with HTTP 200 and no
+local runtime errors; expected parity differences remain documented elsewhere.
+
+Follow-up is to shorten that critical path or supply equivalent route-level
+data before first render. The final screenshot/pixel and fallback-off gates
+remain unchanged.
+
 | 2026-07-27 | Batch 1027 populated public-profile Issues subtask-summary class ownership | `user/view.scala.html` includes `user/partial_issues.scala.html` and `issue/partial_list_subtask.scala.html`; frozen `_common.less .upload-progress`, `_page.less` subtask/progress/complete-color/parent-link and `.for-subtask-progressbar` rules, Bootstrap/common anchor cascade, the complete `yobi.less` chain, and messages establish incomplete/complete/parent-only/no-subtask output. | Five direct route-local owners replace only the summary wrapper, progress shell/variants, bar/variants, ratio/complete color, and parent span/link presentation literals. Dynamic percentage width, branch copy/order, parent truncation/navigation, title-cell ancestry, all other issue descendants, frozen CSS, sidebar, and footer remain unchanged. | `stylex-user-profile-issue-subtask-class-ownership.e2e.ts` records RED on residual `subtask-progress` and passes external System-Chrome normal/fallback-off 1/1 each at desktop/390px with all branches, exact base/variant/hover/focus output, dynamic width, scoped class absence, nonmatching-selector proof, containment, zero overflow, plugin-attribute absence, and inspected screenshots. Live same-fixture and broader final-lock work remain open. |
 
 | 2026-07-27 | Batch 1026 populated public-profile Issues open/closed list-root ownership | `yona-original/app/views/user/view.scala.html` includes `user/partial_issues.scala.html`, whose open and closed panes each emit `<ul class="post-list-wrap my-issues row-fluid">`; frozen `_page.less .post-list-wrap`, `_responsive.less` max-720 list margin, Bootstrap/responsive `.row-fluid`, the complete `yobi.less` import chain, and messages establish the list reset, width, clearfix, mobile margin, pane order, and copy. | `frontend/src/routes/$user.tsx` gives both list roots one exact route-local StyleX declaration and retires only `post-list-wrap row-fluid`; literal `my-issues` remains for still-active descendant fallback selectors. Elements, open/closed filtering, empty-list output, row order/copy/navigation, all row owners, frozen CSS, sidebar, and footer remain unchanged. | `frontend/tests/stylex-user-profile-issue-list-ownership.e2e.ts` records RED before `issueList` existed and passes external System-Chrome normal/fallback-off 2/2 each at 1366×900 and 390×844 with both owners, exact computed/pseudo output, retained ancestry, pane/order/branch behavior, containment, zero overflow, plugin-attribute absence, and four inspected screenshots. Live legacy `:9000`/`:8089` were unavailable, so same-fixture pairing and broader final-lock work remain open. |

@@ -2,6 +2,45 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Production-dist stabilization latency diagnosis
+
+The required live comparison was rerun after rebuilding `frontend/dist`, with
+the prepared legacy Yona instance on `127.0.0.1:9000`, System Chrome outside
+the sandbox (`PW_CHANNEL=chrome`), and the Rust server serving the filesystem
+production assets. A release Rust binary was also built and tested against the
+same seeded SQLite runtime; switching from debug `cargo run` to release did
+not remove the project-screen delay.
+
+The delay has two separate sources:
+
+- HMR verification startup is process overhead: the managed runner waits for
+  Rust compilation, Vite startup, and three readiness probes before Playwright
+  begins. The earlier HMR run measured about 26.8 seconds total, including
+  6.05 seconds of Rust compilation, 1.8 seconds of Vite startup, and 18
+  seconds of five tests. This is not browser page stabilization.
+- Project-route stabilization is product behavior: the project shell returns
+  no content while `readProjectContainerQueryOptions` has no data. The
+  `/api/v1/owners/admin/projects/sample/container` request therefore gates the
+  first visible project shell. In the live release-dist run it took about
+  160–190ms; the legacy server rendered `/admin/sample` in about 45ms
+  navigation and 138ms to the sweep paint checkpoint. The local project
+  route remained blank at `domcontentloaded` and reached content about
+  186–215ms later, before the normal two-frame/font/image paint check.
+
+The container endpoint itself performs the authenticated project read,
+recent-project read/delete/insert, member/watch/menu/milestone/logo/count
+queries, and directory assembly as sequential SQLite operations. Release
+optimization did not materially change this result, so the remaining latency
+is an explicit response/first-render performance gap, not a reason to weaken
+the screenshot or fallback-off gate. The visual sweep recorded zero selector,
+paint, or request timeout failures in this run; its bounded paint waits are not
+the cause of the observed delay.
+
+Follow-up: reduce the project-container critical path or provide equivalent
+route-level data before the project shell is committed, then repeat the same
+legacy/release-dist timing and screenshot pair. Do not add arbitrary waiting,
+geometry compensation, or relaxed visual assertions.
+
 ## 2026-07-27 — Public-profile Issues subtask-summary ownership
 
 Batch 1027 closes five presentation boundaries in the populated public-profile
