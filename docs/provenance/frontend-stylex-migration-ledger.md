@@ -1,5 +1,26 @@
 # Frontend StyleX Migration Ledger
 
+### Post-validation stabilization and harness teardown audit — 2026-07-27
+
+Once the validation process was confirmed stopped, the focused external
+System-Chrome sweep was rerun against legacy `:9000` and an isolated release
+Rust server serving the current `frontend/dist`. `/admin/sample` returned 200
+on both sides, local runtime errors were empty, and the only comparison
+failure remained the known GNB search x-drift. The trace measured legacy
+DOM/body/paint/metrics at `83/112/376/383ms`; release/dist measured
+`98/174/378/507/513ms`, with `378ms` being the project-root settle selector.
+
+A separate same-fixture browser probe measured release/dist project selector
+`273ms`, load `284ms`, and only `9ms` for fonts/images/finite animations/two
+committed frames. The selector was `79ms` on legacy. The remaining
+responsiveness gap is therefore the REST project-container critical path and
+React commit, not screenshot settling. The harness also has a lifecycle risk:
+`run-playwright-e2e.mjs` waits for the Playwright child without a deadline, so
+a worker/Chrome teardown hang can resemble a stability wait after assertions
+finish. No canonical validation command was active during this audit; old
+debug Rust/Vite/Playwright processes were observed but intentionally left
+untouched. Screenshot, geometry, and fallback-off gates remain unchanged.
+
 ### Production-dist stabilization latency — 2026-07-27
 
 This is a runtime performance correction, not a StyleX or screenshot-gate

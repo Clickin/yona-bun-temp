@@ -2,6 +2,39 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Post-validation stabilization and harness teardown audit
+
+After the validation process had finished, the focused external System-Chrome
+visual sweep was rerun against the prepared legacy instance and an isolated
+release Rust server serving the current `frontend/dist`. The route passed at
+HTTP 200 with no local runtime error and the known GNB search x-drift only.
+The timing trace was:
+
+- legacy `/admin/sample`: DOMContentLoaded `83ms`, body `112ms`, paint
+  `376ms`, metrics `383ms`;
+- release/dist `/admin/sample`: DOMContentLoaded `98ms`, body `174ms`, the
+  project-root settle selector `378ms`, paint `507ms`, metrics `513ms`.
+
+An independent single-page decomposition on the same release/dist fixture
+found the project selector at `273ms`, `load` at `284ms`, and the complete
+font/image/finite-animation/two-frame settle at `9ms`. The legacy comparison
+found its project selector at `79ms` and `load` at `79ms`; its two-frame paint
+commit was scheduler-sensitive, but fonts/images/finite animations also
+settled immediately. This confirms that the seconds-long concern is not the
+browser settle phase: the remaining user-visible gap is local project data
+resolution plus the React project-tree commit, with cold/parallel browser
+scheduling contributing to the measured spread.
+
+The harness has a separate lifecycle risk. `scripts/run-playwright-e2e.mjs`
+waits for the Playwright child without a deadline, while server teardown is
+handled independently. If a Playwright worker or Chrome teardown stops
+responding, the outer validation job can look like a stabilization wait even
+after assertions have completed. The current process audit found no active
+canonical validation command, but did find old debug Rust/Vite and Playwright
+processes from earlier runs. They were not killed during this read-only audit.
+This is a harness-lifecycle follow-up, not permission to relax screenshot
+parity or to remove the bounded font/image/animation checks.
+
 ## 2026-07-27 — Production-dist stabilization latency diagnosis
 
 The required live comparison was rerun after rebuilding `frontend/dist`, with
