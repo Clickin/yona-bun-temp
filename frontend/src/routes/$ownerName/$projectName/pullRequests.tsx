@@ -169,7 +169,7 @@ export function ProjectPullRequestsScreen({
   });
 
   if (!project) {
-    return null;
+    return <ProjectPullRequestsLoadingShell />;
   }
 
   if (!isGitProject) {
@@ -188,7 +188,7 @@ export function ProjectPullRequestsScreen({
   }
 
   if (!pullRequestsQuery.data) {
-    return null;
+    return <ProjectPullRequestsLoadingShell />;
   }
 
   return (
@@ -314,12 +314,18 @@ function ProjectPullRequestsBody({
   };
 
   return (
-    <div {...sx.page} data-stylex-owner="project-pullrequests-page">
-      <div data-stylex-owner="project-pullrequests-shell">
+    <div
+      {...sx.page}
+      className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
+      data-stylex-owner="project-pullrequests-page"
+      data-stylex-content-ready="true"
+    >
+      <div className="project-page-wrap" data-stylex-owner="project-pullrequests-shell">
         <div className="row-fluid cb">
           <div
             {...sx.searchColumn}
             {...(leftMenuHiddenByTwoColumnMode ? sx.searchColumnHidden : {})}
+            className={`${sx.searchColumn.className ?? ""} left-menu search-wrap hide-in-mobile`.trim()}
             data-stylex-owner="project-pullrequests-search-column"
           >
             <form
@@ -506,6 +512,23 @@ function ProjectPullRequestsBody({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectPullRequestsLoadingShell() {
+  return (
+    <div
+      className="page-wrap-outer"
+      data-stylex-owner="project-pullrequests-loading-shell"
+      data-stylex-content-ready="false"
+    >
+      <div className="project-page-wrap">
+        <div className="row-fluid cb">
+          <div className="left-menu search-wrap hide-in-mobile"></div>
+          <div className="span10 span-hard-wrap"></div>
         </div>
       </div>
     </div>

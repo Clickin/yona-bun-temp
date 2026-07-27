@@ -15,19 +15,6 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 import { newMilestoneColors, newMilestoneFormStyles } from "./-newMilestoneForm.stylex";
 
 const styles = stylex.create({
-  title: {
-    borderColor: newMilestoneColors.fieldBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: newMilestoneColors.mutedText,
-    display: "inline-block",
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 6px",
-    width: "100%",
-    boxSizing: "border-box",
-    outline: { ":focus": "none" },
-  },
   save: {
     backgroundColor: newMilestoneColors.actionInfo,
     borderColor: newMilestoneColors.actionInfoBorder,
@@ -72,7 +59,6 @@ const styles = stylex.create({
   },
 });
 
-const titleStyleProps = stylex.props(styles.title);
 const saveStyleProps = stylex.props(styles.save);
 const cancelStyleProps = stylex.props(styles.cancel);
 const dueDateStyleProps = stylex.props(styles.dueDate);
@@ -240,8 +226,7 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                       id="title"
                       name="title"
                       defaultValue=""
-                      {...titleStyleProps}
-                      className={titleStyleProps.className}
+                      className="zen-mode text title"
                       data-stylex-owner="project-milestone-title"
                       maxLength={250}
                       tabIndex={1}
@@ -365,6 +350,7 @@ function MilestoneMarkdownEditor({
   return (
     /* Legacy common.editor.scala.html wrapper: <div className="mt10"> */
     <div
+      data-toggle="markdown-editor"
       className={`mt10 ${markdownEditorWrapperStyleProps.className ?? ""}`.trim()}
       data-stylex-owner="project-milestone-markdown-editor-wrapper"
     >
@@ -452,7 +438,12 @@ function MilestoneFileUploader() {
     typeof FormData !== "undefined" &&
     typeof FileReader !== "undefined";
   return (
-    <div id="upload" className="upload-wrap content-footer" data-resource-type="MILESTONE">
+    <div
+      id="upload"
+      className="upload-wrap content-footer"
+      data-resource-type="MILESTONE"
+      data-stylex-owner="project-milestone-upload-wrap"
+    >
       <div className="attach-wrap">
         <span className="help help-droppable">{t("common.attach.drophere")}</span>
         <div className="btn-wrap">
@@ -472,7 +463,7 @@ function MilestoneFileUploader() {
       </div>
       <ul className="attached-files unstyled"></ul>
       <p
-        className={`help ${stylex.props(newMilestoneFormStyles.uploadSaveHelp).className}`}
+        className={`right-txt help ${stylex.props(newMilestoneFormStyles.uploadSaveHelp).className ?? ""}`.trim()}
         data-stylex-owner="project-milestone-upload-save-help"
       >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}

@@ -37,6 +37,8 @@ test("new milestone markdown editor preserves legacy mt10 ownership and tab beha
   expect(legacyCommonLessSource).toContain(".mt10 { margin-top:10px; }");
 
   expect(routeSource).toContain('data-stylex-owner="project-milestone-markdown-editor-wrapper"');
+  expect(routeSource).toContain('data-toggle="markdown-editor"');
+  expect(routeSource).toContain('data-stylex-owner="project-milestone-upload-wrap"');
   expect(routeSource).toContain(
     'className={`mt10 ${markdownEditorWrapperStyleProps.className ?? ""}`.trim()}',
   );
@@ -84,6 +86,11 @@ test("new milestone markdown editor preserves legacy mt10 ownership and tab beha
       const editorBox = editor.getBoundingClientRect();
       const tabContentBox = tabContent.getBoundingClientRect();
       const leftPaneBox = leftPane.getBoundingClientRect();
+      const textarea = editor.querySelector<HTMLTextAreaElement>(".textarea-box textarea");
+      const upload = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-milestone-upload-wrap"]',
+      );
+      if (!textarea || !upload) throw new Error("Milestone editor/upload geometry is missing.");
       return {
         documentWidth: document.documentElement.scrollWidth,
         editorLeft: editorBox.left,
@@ -92,12 +99,17 @@ test("new milestone markdown editor preserves legacy mt10 ownership and tab beha
         leftPaneRight: leftPaneBox.right,
         tabContentRight: tabContentBox.right,
         viewportWidth: window.innerWidth,
+        textareaHeight: textarea.getBoundingClientRect().height,
+        uploadTop: upload.getBoundingClientRect().top,
+        editorBottom: editorBox.bottom,
       };
     });
     expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
     expect(metrics.editorLeft).toBeGreaterThanOrEqual(0);
     expect(metrics.editorRight).toBeLessThanOrEqual(metrics.leftPaneRight + 1);
     expect(metrics.tabContentRight).toBeLessThanOrEqual(metrics.editorRight + 1);
+    expect(metrics.textareaHeight).toBeGreaterThanOrEqual(300);
+    expect(metrics.uploadTop).toBeGreaterThanOrEqual(metrics.editorBottom);
 
     mkdirSync(screenshotDirectory, { recursive: true });
     await page.screenshot({

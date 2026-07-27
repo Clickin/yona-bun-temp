@@ -25,17 +25,7 @@ export const styles = stylex.create({
   editorWrapper: { position: "relative" },
   markdownEditorWrapper: { marginTop: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
-  page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },
-  title: {
-    borderColor: postFormColors.inputBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: postFormColors.inputText,
-    fontSize: "20px",
-    padding: "4px",
-    width: "100%",
-  },
   editor: {
     borderColor: postFormColors.editorBorder,
     borderStyle: "solid",
@@ -61,7 +51,7 @@ export const styles = stylex.create({
   },
   actions: { margin: "10px 0px", textAlign: "right" },
   pasteHelpVisible: { display: "block" },
-  uploadAttachSaveHelp: { display: "block", textAlign: "right" },
+  uploadAttachSaveHelp: { textAlign: "right" },
   save: {
     backgroundColor: postFormColors.action,
     borderColor: postFormColors.action,

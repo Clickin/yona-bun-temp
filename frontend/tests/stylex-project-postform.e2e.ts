@@ -13,9 +13,14 @@ test("records board post form owners and responsive geometry", async ({ page }) 
   expect(template).toContain('name="title"');
   expect(template).toContain('@common.editor("body"');
   expect(route).toContain('data-stylex-owner="project-postform-title"');
+  expect(route).toContain('className="zen-mode text title"');
   expect(route).toContain('data-stylex-owner="project-postform-editor"');
+  expect(route).toContain('`${sx.editor.className ?? ""} editorSeries content comment nm`');
   expect(route).toContain('data-stylex-owner="project-postform-options"');
-  expect(route).toContain('data-stylex-owner="project-postform-uploader"');
+  expect(route).toContain('data-stylex-owner="project-postform-upload-wrap"');
+  expect(route).toContain(
+    'className={`right-txt help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}',
+  );
   expect(theme).toContain("export const postFormColors");
   await mockPostOptions(page);
   for (const viewport of [
@@ -26,7 +31,28 @@ test("records board post form owners and responsive geometry", async ({ page }) 
     await page.goto(`${basePath}/weblabs/demo/postform`);
     await expect(owner(page, "project-postform-form")).toBeVisible();
     await expect(owner(page, "project-postform-title")).toHaveAttribute("name", "title");
+    await expect(owner(page, "project-postform-title")).toHaveClass(/zen-mode text title/u);
+    await expect(owner(page, "project-postform-title")).toHaveCSS("border-bottom-style", "solid");
+    await expect(owner(page, "project-postform-title")).toHaveCSS("border-top-style", "none");
     await expect(owner(page, "project-postform-editor")).toHaveAttribute("name", "body");
+    await expect(owner(page, "project-postform-upload-wrap")).toHaveClass(
+      /upload-wrap content-footer/u,
+    );
+    await expect(owner(page, "project-postform-upload-attach-save-help")).toHaveClass(/right-txt/u);
+    const editorGeometry = await owner(page, "project-postform-editor").evaluate((element) => {
+      const textareaBox = element.closest(".textarea-box");
+      const textarea = element as HTMLTextAreaElement;
+      return {
+        textareaHeight: textarea.getBoundingClientRect().height,
+        textareaBoxHeight: textareaBox?.getBoundingClientRect().height ?? 0,
+        computedMinHeight: getComputedStyle(textarea).minHeight,
+        active: element.closest(".tab-pane")?.classList.contains("active") ?? false,
+      };
+    });
+    expect(editorGeometry.active).toBe(true);
+    expect(editorGeometry.computedMinHeight).toBe("300px");
+    expect(editorGeometry.textareaHeight).toBeGreaterThanOrEqual(300);
+    expect(editorGeometry.textareaBoxHeight).toBeGreaterThanOrEqual(300);
     const geometry = await owner(page, "project-postform-form").evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,
@@ -79,7 +105,7 @@ async function mockPostOptions(page: Page) {
     route.fulfill({
       contentType: "application/json",
       json: {
-        canAttachFiles: false,
+        canAttachFiles: true,
         canMarkNotice: true,
         canMarkReadme: false,
         onlineCommit: null,

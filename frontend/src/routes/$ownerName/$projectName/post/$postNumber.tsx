@@ -1408,75 +1408,75 @@ function PostCommentForm({
         className={`${sx.commentCreateWriteBox.className} write-comment-box`}
         data-stylex-owner="post-detail-comment-create-write-box"
       >
-        <MarkdownEditor
-          editorMode="comment-body"
-          key={editorResetKey}
-          name="contents"
-          value=""
-          wrapId="contents"
-        />
-        <div
-          className={`${sx.commentUploadWrap.className} upload-wrap content-footer`}
-          data-resource-type="NONISSUE_COMMENT"
-          data-stylex-owner="post-detail-comment-upload-wrap"
-          id="upload"
-        >
-          <div
-            className={`${sx.commentUploadAttachWrap.className} attach-wrap`}
-            data-stylex-owner="post-detail-comment-upload-attach-wrap"
-          >
-            <span
-              className={`${sx.commentUploadDroppable.className} help help-droppable`}
-              data-stylex-owner="post-detail-comment-upload-droppable"
-            >
-              {t("common.attach.drophere")}
-            </span>
-            <div
-              className={`${sx.commentUploadButtonWrap.className} btn-wrap`}
-              data-stylex-owner="post-detail-comment-upload-button-wrap"
-            >
-              <div
-                className={`${sx.commentUploadFileButton.className} nbtn medium white fake-file-wrap`}
-                data-stylex-owner="post-detail-comment-upload-file-button"
-              >
-                <i className="yobicon-upload"></i> {t("button.upload")}
-                <input
-                  type="file"
-                  className={`${sx.commentUploadFileInput.className} file`}
-                  data-stylex-owner="post-detail-comment-upload-file-input"
-                  name="filePath"
-                  multiple
-                />
-              </div>
-            </div>
-            <span
-              className={`${sx.commentUploadPlain.className} plain`}
-              data-stylex-owner="post-detail-comment-upload-plain"
-            >
-              {t("common.attach.clickbutton")}
-            </span>
-            <span
-              className={`${sx.commentUploadPastable.className} help help-pastable`}
-              data-stylex-owner="post-detail-comment-upload-pastable"
-            >
-              {t("common.attach.pastehere")}
-            </span>
-          </div>
-          <ul
-            className={`${sx.commentUploadAttachedFiles.className} attached-files unstyled`}
-            data-stylex-owner="post-detail-comment-upload-attached-files"
-          ></ul>
-          <p
-            className={`${sx.commentUploadHelp.className} help`}
-            data-stylex-owner="post-detail-comment-upload-help"
-          >
-            <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-          </p>
-        </div>
         <div
           className={`${sx.commentCreateWriteWrap.className} write-comment-wrap`}
           data-stylex-owner="post-detail-comment-create-write-wrap"
         >
+          <MarkdownEditor
+            editorMode="comment-body"
+            key={editorResetKey}
+            name="contents"
+            value=""
+            wrapId="contents"
+          />
+          <div
+            className={`${sx.commentUploadWrap.className} upload-wrap content-footer`}
+            data-resource-type="NONISSUE_COMMENT"
+            data-stylex-owner="post-detail-comment-upload-wrap"
+            id="upload"
+          >
+            <div
+              className={`${sx.commentUploadAttachWrap.className} attach-wrap`}
+              data-stylex-owner="post-detail-comment-upload-attach-wrap"
+            >
+              <span
+                className={`${sx.commentUploadDroppable.className} help help-droppable`}
+                data-stylex-owner="post-detail-comment-upload-droppable"
+              >
+                {t("common.attach.drophere")}
+              </span>
+              <div
+                className={`${sx.commentUploadButtonWrap.className} btn-wrap`}
+                data-stylex-owner="post-detail-comment-upload-button-wrap"
+              >
+                <div
+                  className={`${sx.commentUploadFileButton.className} nbtn medium white fake-file-wrap`}
+                  data-stylex-owner="post-detail-comment-upload-file-button"
+                >
+                  <i className="yobicon-upload"></i> {t("button.upload")}
+                  <input
+                    type="file"
+                    className={`${sx.commentUploadFileInput.className} file`}
+                    data-stylex-owner="post-detail-comment-upload-file-input"
+                    name="filePath"
+                    multiple
+                  />
+                </div>
+              </div>
+              <span
+                className={`${sx.commentUploadPlain.className} plain`}
+                data-stylex-owner="post-detail-comment-upload-plain"
+              >
+                {t("common.attach.clickbutton")}
+              </span>
+              <span
+                className={`${sx.commentUploadPastable.className} help help-pastable`}
+                data-stylex-owner="post-detail-comment-upload-pastable"
+              >
+                {t("common.attach.pastehere")}
+              </span>
+            </div>
+            <ul
+              className={`${sx.commentUploadAttachedFiles.className} attached-files unstyled`}
+              data-stylex-owner="post-detail-comment-upload-attached-files"
+            ></ul>
+            <p
+              className={`${sx.commentUploadHelp.className} help`}
+              data-stylex-owner="post-detail-comment-upload-help"
+            >
+              <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
+            </p>
+          </div>
           <div
             className={sx.commentActions.className}
             data-stylex-owner="post-detail-comment-actions"

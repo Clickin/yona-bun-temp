@@ -28,9 +28,7 @@ const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
 const sweepBatchSize = parseOptionalPositiveInteger(process.env.YORAM_SWEEP_BATCH_SIZE);
 const sweepBatchIndex = parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_BATCH_INDEX);
 if ((sweepBatchSize === null) !== (sweepBatchIndex === null)) {
-  throw new Error(
-    "YORAM_SWEEP_BATCH_SIZE and YORAM_SWEEP_BATCH_INDEX must be provided together",
-  );
+  throw new Error("YORAM_SWEEP_BATCH_SIZE and YORAM_SWEEP_BATCH_INDEX must be provided together");
 }
 const sweepIsBatched = sweepBatchSize !== null;
 const sweepScope = requestedSweepPaths.length > 0 ? "focused" : sweepIsBatched ? "batch" : "full";
@@ -324,6 +322,15 @@ function localSettledSelectorForPath(path) {
   if (pathname.endsWith("/milestones")) {
     return '[data-stylex-content-ready="true"]';
   }
+  if (
+    pathname.endsWith("/newFork") ||
+    pathname.endsWith("/postform") ||
+    pathname.endsWith("/pullRequests") ||
+    pathname.endsWith("/closedPullRequests") ||
+    pathname.endsWith("/sentPullRequests")
+  ) {
+    return '[data-stylex-content-ready="true"]';
+  }
   if (pathname === "/user/issues/new" || pathname === "/user/issues/new/mine") {
     return ".content-wrap.frm-wrap";
   }
@@ -338,7 +345,7 @@ function localSettledSelectorForPath(path) {
     return ".content-wrap.frm-wrap";
   }
   if (pathname.endsWith("/newPullRequestForm")) {
-    return "#status.alert-success";
+    return '[data-stylex-content-ready="true"]';
   }
   if (/\/post\/\d+$/u.test(pathname)) {
     return "#comment-form .upload-wrap";
@@ -357,6 +364,9 @@ function localSettledSelectorForPath(path) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
   }
   if (pathname.endsWith("/issues")) {
+    return '[data-stylex-content-ready="true"]';
+  }
+  if (pathname.endsWith("/posts")) {
     return '[data-stylex-content-ready="true"]';
   }
   if (pathname === "/user/issues") {
@@ -954,7 +964,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
     await signOutLocalAccount(page, baseUrl).catch(() => {});
   };
   const ensureParityComments = async () => {
-    const ensureComment = async (account, path, contentsMarkdown) => {
+    const ensureComment = async (account, path, contentsMarkdown, parentContentsMarkdown = null) => {
       await signOutLocalAccount(page, baseUrl).catch(() => {});
       if (!(await ensureLocalAccountSession(page, baseUrl, account))) {
         return;
@@ -967,10 +977,13 @@ async function bootstrapLocalAccount(page, baseUrl) {
       if (comments.some((comment) => comment.contentsMarkdown === contentsMarkdown)) {
         return;
       }
+      const parentCommentId = parentContentsMarkdown
+        ? Number(comments.find((comment) => comment.contentsMarkdown === parentContentsMarkdown)?.id ?? 0) || null
+        : null;
       await postLocalJson(page, baseUrl, `${path}/comments`, {
         attachmentIds: [],
         contentsMarkdown,
-        parentCommentId: null,
+        parentCommentId,
       });
     };
 
@@ -982,6 +995,12 @@ async function bootstrapLocalAccount(page, baseUrl) {
     await ensureComment(
       aliceAccount,
       "/api/v1/projects/admin/sample/posts/1",
+      "Board seed confirmed from the fork contributor side.",
+    );
+    await ensureComment(
+      adminAccount,
+      "/api/v1/projects/admin/sample/posts/1",
+      "Batch 814 nested parity",
       "Board seed confirmed from the fork contributor side.",
     );
     await signOutLocalAccount(page, baseUrl).catch(() => {});
@@ -1334,11 +1353,7 @@ async function inspectPage(page, baseUrl, path, label) {
       .locator(".project-page-wrap > .error-wrap")
       .isVisible()
       .catch(() => false));
-  if (
-    label === "local" &&
-    !localErrorVisible &&
-    path.split("?", 1)[0].endsWith("/issues")
-  ) {
+  if (label === "local" && !localErrorVisible && path.split("?", 1)[0].endsWith("/issues")) {
     await page
       .waitForFunction(
         () =>
@@ -1492,9 +1507,7 @@ async function inspectPage(page, baseUrl, path, label) {
       hasStylesheetError: stylesheets.some((sheet) => sheet.rules === -1),
       gnb: selectorState(".gnb-outer, [data-stylex-owner='global-gnb-outer']"),
       gnbInner: selectorState(".gnb-inner, [data-stylex-owner='global-gnb-inner']"),
-      gnbPin: selectorState(
-        ".gnb-inner > .pin, [data-stylex-owner='global-sidebar-open-pin']",
-      ),
+      gnbPin: selectorState(".gnb-inner > .pin, [data-stylex-owner='global-sidebar-open-pin']"),
       gnbLogoLetter: selectorState(".logo-letter, [data-stylex-owner='global-gnb-brand-link']"),
       gnbSearchForm: selectorState(".gnb-search-form"),
       gnbFeedback: selectorState(gnbFeedbackLink),
@@ -1933,16 +1946,17 @@ async function runTarget(label, baseUrl) {
       loggedIn && !useRequestedPaths ? await discoverProjectPaths(page, baseUrl) : [];
     const legacyAuditPages = legacyAuditDiscoveredPageLinks();
     const routeSamples = label === "legacy" || useRequestedPaths ? [] : routeTreeSamplePaths();
-    const allPaths = requestedSweepPaths.length > 0
-      ? requestedSweepPaths
-      : [
-          ...new Set([
-            ...basePages,
-            ...legacyAuditPages,
-            ...routeSamples,
-            ...discoveredProjectPages,
-          ]),
-        ];
+    const allPaths =
+      requestedSweepPaths.length > 0
+        ? requestedSweepPaths
+        : [
+            ...new Set([
+              ...basePages,
+              ...legacyAuditPages,
+              ...routeSamples,
+              ...discoveredProjectPages,
+            ]),
+          ];
     const paths = sweepIsBatched
       ? allPaths.slice(sweepBatchIndex * sweepBatchSize, (sweepBatchIndex + 1) * sweepBatchSize)
       : allPaths;

@@ -13,10 +13,25 @@ test("records board post detail owners and responsive containment", async ({ pag
     "utf8",
   );
   const template = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   expect(template).toContain('class="board-header issue"');
   expect(template).toContain('class="board-body row-fluid"');
   expect(route).toContain('data-stylex-owner="post-detail-content"');
+  const editorIndex = route.indexOf('editorMode="comment-body"');
+  const wrapIndex = route.indexOf("write-comment-wrap");
+  const uploadIndex = route.indexOf('data-stylex-owner="post-detail-comment-upload-wrap"');
+  const actionsIndex = route.indexOf('data-stylex-owner="post-detail-comment-actions"');
+  expect(wrapIndex).toBeGreaterThanOrEqual(0);
+  expect(wrapIndex).toBeLessThan(editorIndex);
+  expect(editorIndex).toBeGreaterThanOrEqual(0);
+  expect(uploadIndex).toBeGreaterThan(editorIndex);
+  expect(actionsIndex).toBeGreaterThan(uploadIndex);
+  expect(route.slice(wrapIndex, actionsIndex)).toContain("write-comment-wrap");
   expect(theme).toContain("export const postDetailColors");
+  expect(pageLess).toContain(".comments {\n");
+  expect(pageLess).toMatch(/\.comments\s*\{[\s\S]*?\.comment\s*\{\s*padding:\s*10px 0px;/u);
+  expect(theme).toContain("commentCreateTextareaControl: {");
+  expect(theme).toContain('padding: "10px 0px"');
   await mockPost(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -58,7 +73,7 @@ async function mockPost(page: Page) {
   await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
-      json: { ownerName: "weblabs", projectName: "demo" },
+      json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },
     }),
   );
   await page.route("**/api/v1/owners/**/projects/**/posts/1", (route: Route) =>

@@ -43,6 +43,9 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   expect(route).toContain('data-stylex-owner="project-posts-avatar"');
   expect(route).toContain('data-stylex-owner="project-posts-title-wrap"');
   expect(route).toContain('data-stylex-owner="project-posts-infos"');
+  expect(route).toContain('data-stylex-owner="project-posts-loading-shell"');
+  expect(route).toContain('data-stylex-content-ready="false"');
+  expect(route).toContain('data-stylex-content-ready="true"');
   expect(styles).toContain("postNoticeWrap:");
   expect(styles).toContain("postItem:");
   expect(styles).toContain("postTitleWrap:");
@@ -140,6 +143,8 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   );
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/posts`, { waitUntil: "commit" });
+  await expect(page.locator('[data-stylex-content-ready="true"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-content-ready="true"]')).toBeVisible();
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );

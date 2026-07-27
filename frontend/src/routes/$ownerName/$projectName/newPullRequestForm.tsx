@@ -56,7 +56,7 @@ function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: Run
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   if (!projectQuery.data) {
-    return null;
+    return <ProjectNewPullRequestLoadingShell />;
   }
   if (stringField(projectQuery.data.vcs, "GIT").toUpperCase() !== "GIT") {
     return (
@@ -95,7 +95,7 @@ function ProjectNewPullRequestScreen({
   });
 
   if (!project) {
-    return null;
+    return <ProjectNewPullRequestLoadingShell />;
   }
 
   if (formOptionsQuery.data) {
@@ -111,7 +111,7 @@ function ProjectNewPullRequestScreen({
   }
 
   if (!formOptionsQuery.error) {
-    return null;
+    return <ProjectNewPullRequestLoadingShell />;
   }
 
   const isBadRequest =
@@ -125,6 +125,20 @@ function ProjectNewPullRequestScreen({
         />
       ) : null}
     </>
+  );
+}
+
+function ProjectNewPullRequestLoadingShell() {
+  return (
+    <div className="page-wrap-outer" data-stylex-owner="new-pull-request-loading-shell">
+      <div className="project-page-wrap">
+        <div
+          className="content-wrap frm-wrap"
+          data-stylex-owner="new-pull-request-loading-form"
+          data-stylex-content-ready="false"
+        ></div>
+      </div>
+    </div>
   );
 }
 
@@ -271,7 +285,11 @@ function ProjectNewPullRequestBody({
     <>
       <div className="page-wrap-outer" data-stylex-owner="new-pull-request-page">
         <div className="project-page-wrap">
-          <div className="content-wrap frm-wrap" data-stylex-owner="new-pull-request-form">
+          <div
+            className="content-wrap frm-wrap"
+            data-stylex-owner="new-pull-request-form"
+            data-stylex-content-ready="true"
+          >
             <form
               action={prefixBasePath(
                 runtimeConfig.basePath,

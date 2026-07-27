@@ -110,7 +110,14 @@ function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   );
 
   if (!projectQuery.data || !postsQuery.data || !optionsQuery.data) {
-    return null;
+    return (
+      <div
+        className="page-wrap-outer"
+        data-stylex-owner="project-posts-loading-shell"
+        data-stylex-content-ready="false"
+        aria-busy="true"
+      />
+    );
   }
 
   return (
@@ -155,7 +162,11 @@ function ProjectPostsBody({
   };
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-posts-page">
+    <div
+      className="page-wrap-outer"
+      data-stylex-owner="project-posts-page"
+      data-stylex-content-ready="true"
+    >
       <div className="post-list project-page-wrap" data-stylex-owner="project-posts-list">
         <div className="search-wrap underline">
           <form

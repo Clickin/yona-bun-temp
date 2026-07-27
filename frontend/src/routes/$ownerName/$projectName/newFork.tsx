@@ -117,8 +117,12 @@ function ProjectForkRouteShell({
   });
 
   if (!query.data) {
-    return nestedProjectShell ? null : (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>
+    return nestedProjectShell ? (
+      <ProjectForkLoadingShell />
+    ) : (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <ProjectForkLoadingShell />
+      </SiteLayoutShell>
     );
   }
 
@@ -142,8 +146,12 @@ function ProjectForkRouteShell({
   }
 
   if (!projectQuery.data) {
-    return nestedProjectShell ? null : (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>
+    return nestedProjectShell ? (
+      <ProjectForkLoadingShell />
+    ) : (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <ProjectForkLoadingShell />
+      </SiteLayoutShell>
     );
   }
 
@@ -155,6 +163,20 @@ function ProjectForkRouteShell({
       projectName={projectName}
       runtimeConfig={runtimeConfig}
     />
+  );
+}
+
+function ProjectForkLoadingShell() {
+  return (
+    <div
+      className="page-wrap-outer"
+      data-stylex-owner="project-fork-loading-shell"
+      data-stylex-content-ready="false"
+    >
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap"></div>
+      </div>
+    </div>
   );
 }
 
@@ -275,9 +297,14 @@ function ProjectForkBody({
   }
 
   return (
-    <div {...sx.page} data-stylex-owner="project-fork-page">
-      <div data-stylex-owner="project-fork-shell">
-        <div data-stylex-owner="project-fork-form-wrap">
+    <div
+      {...sx.page}
+      className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
+      data-stylex-owner="project-fork-page"
+      data-stylex-content-ready="true"
+    >
+      <div className="project-page-wrap" data-stylex-owner="project-fork-shell">
+        <div className="content-wrap frm-wrap" data-stylex-owner="project-fork-form-wrap">
           <form
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/fork`)}
             method="post"

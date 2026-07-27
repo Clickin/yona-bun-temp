@@ -20,9 +20,7 @@ const sx = {
   editorWrapper: stylex.props(styles.editorWrapper),
   markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
   editorTabContent: stylex.props(styles.editorTabContent),
-  page: stylex.props(styles.page),
   form: stylex.props(styles.form),
-  title: stylex.props(styles.title),
   editor: stylex.props(styles.editor),
   actions: stylex.props(styles.actions),
   save: stylex.props(styles.save),
@@ -172,9 +170,29 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
     },
   });
 
+  if (!optionsQuery.data) {
+    return (
+      <div
+        className="page-wrap-outer"
+        data-stylex-owner="project-postform-loading-shell"
+        data-stylex-content-ready="false"
+      >
+        <div className="project-page-wrap">
+          <form className="nm">
+            <div className="content-wrap frm-wrap"></div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div {...sx.page} data-stylex-owner="project-postform-page">
-      <div data-stylex-owner="project-postform-shell">
+    <div
+      className="page-wrap-outer"
+      data-stylex-owner="project-postform-page"
+      data-stylex-content-ready="true"
+    >
+      <div className="project-page-wrap" data-stylex-owner="project-postform-shell">
         <form
           action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/posts`)}
           method="post"
@@ -192,7 +210,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             mutation.mutate(event.currentTarget);
           }}
         >
-          <div data-stylex-owner="project-postform-content">
+          <div className="content-wrap frm-wrap" data-stylex-owner="project-postform-content">
             <dl>
               <dd>
                 <LegacyTabIndexInput
@@ -202,7 +220,6 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   id="title"
                   autoComplete="off"
                   name="title"
-                  {...sx.title}
                   data-stylex-owner="project-postform-title"
                   maxLength={250}
                   defaultValue={title}
@@ -212,6 +229,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                       setBodyFocusRequest((current) => current + 1);
                     }
                   }}
+                  className="zen-mode text title"
                   placeholder={isOnlineCommit ? t("code.commitMsg") : t("title")}
                 />
               </dd>
@@ -250,11 +268,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               </dd>
             </dl>
 
-            {canShowUploader ? (
-              <div data-stylex-owner="project-postform-uploader">
-                <BoardPostFileUploader />
-              </div>
-            ) : null}
+            {canShowUploader ? <BoardPostFileUploader /> : null}
 
             <div
               {...stylex.props(styles.options)}
@@ -411,7 +425,7 @@ function BoardPostMarkdownEditor({
               data-stylex-owner="project-postform-editor"
               ref={bodyRef}
               name="body"
-              className="editorSeries content comment nm"
+              className={`${sx.editor.className ?? ""} editorSeries content comment nm`.trim()}
               data-editor-mode="content-body"
               id="editor-body-body"
               tabIndex={3}
@@ -487,7 +501,7 @@ function BoardPostFileUploader() {
       ></ul>
       <p
         {...stylex.props(styles.uploadAttachSaveHelp)}
-        className={`help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
+        className={`right-txt help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
         data-stylex-owner="project-postform-upload-attach-save-help"
       >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}

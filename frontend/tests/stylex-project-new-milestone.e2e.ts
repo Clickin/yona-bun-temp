@@ -31,6 +31,7 @@ test("new milestone form exposes direct StyleX owners for its legacy skeleton", 
   }
   expect(routeSource).toContain('import * as stylex from "@stylexjs/stylex"');
   expect(routeSource).toContain('from "./-newMilestoneForm.stylex"');
+  expect(routeSource).toContain('className="zen-mode text title"');
   expect(styleSource).toContain("stylex.defineVars({");
 });
 
