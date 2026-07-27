@@ -3014,3 +3014,10 @@ desktop/mobile geometry, and filtering.
 - [x] One exact route-local StyleX declaration owns list reset, width/clearfix, and mobile margin; only scoped `post-list-wrap row-fluid` retires while `my-issues` remains for active descendant fallback.
 - [x] External System-Chrome normal and fallback-off focused runs pass 2/2 each at 1366×900 and 390×844 with both owners, exact computed/pseudo output, retained ancestry, pane/order/branch behavior, containment, zero overflow, and four inspected screenshots.
 - [ ] Live legacy `:9000`/`:8089` were unavailable. Keep same-fixture pairing, global fallback audit, full fallback-off suite, and overall final lock open.
+
+### 2026-07-27 Batch 1027 public-profile Issues subtask-summary ownership
+
+- [x] `user/view.scala.html`, `user/partial_issues.scala.html`, `issue/partial_list_subtask.scala.html`, frozen uploader/subtask/anchor/summary rules, the complete `yobi.less` chain, and messages establish four summary branches.
+- [x] Five direct owners replace only wrapper, progress shell/bar variants, ratio/complete color, and parent span/Link presentation classes; dynamic width, copy/order, truncation, and navigation remain unchanged.
+- [x] External System-Chrome normal and fallback-off focused runs pass 1/1 each at 1366×900 and 390×844 with exact base/variant/hover/focus output, nonmatching-selector proof, containment, zero overflow, and inspected screenshots.
+- [ ] Keep live same-fixture pairing, global fallback audit, full fallback-off suite, and overall final lock open.

@@ -72,8 +72,6 @@ const userProfileStaticStyles = stylex.create({
     position: "absolute",
     transform: "translateX(-50%)",
   },
-  issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
-  issueSubtaskParent: { fontSize: "0.8em !important" },
 });
 
 export const Route = createFileRoute("/$user")({
@@ -904,7 +902,6 @@ function ProfileIssueRow({
             <ProfileIssueCommentCount issue={issue} issuePath={issuePath} />
             <span
               {...stylex.props(styles.issueSubtaskProgressWrapper)}
-              className={`${stylex.props(styles.issueSubtaskProgressWrapper).className} for-subtask-progressbar`}
               data-stylex-owner="user-profile-issue-subtask-progress-wrapper"
             >
               <ProfileIssueSubtaskSummary
@@ -1074,20 +1071,31 @@ function ProfileIssueSubtaskSummary({
       {childTotalCount ? (
         <>
           <div
-            {...stylex.props(styles.issueSubtaskProgressShell)}
-            className={`${stylex.props(styles.issueSubtaskProgressShell).className} subtask-progress upload-progress ${
-              percentage === 100 ? "done-outline" : "red-outline"
-            }`}
+            {...stylex.props(
+              styles.issueSubtaskProgressShell,
+              percentage === 100
+                ? styles.issueSubtaskProgressShellComplete
+                : styles.issueSubtaskProgressShellIncomplete,
+            )}
             data-stylex-owner="user-profile-issue-subtask-progress-shell"
           >
             <div
-              className={`${stylex.props(styles.progressBar(`${percentage}%`)).className} bar ${percentage === 100 ? "done" : "red"}`}
+              {...stylex.props(
+                styles.issueSubtaskProgressBar,
+                percentage === 100
+                  ? styles.issueSubtaskProgressBarComplete
+                  : styles.issueSubtaskProgressBarIncomplete,
+                styles.progressBar(`${percentage}%`),
+              )}
               data-stylex-owner="user-profile-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>
           <span
-            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""} ${stylex.props(userProfileStaticStyles.issueSubtaskCompletionRatio).className}`}
+            {...stylex.props(
+              styles.issueSubtaskCompletionRatio,
+              percentage === 100 && styles.issueSubtaskCompletionRatioComplete,
+            )}
             data-stylex-owner="user-profile-issue-subtask-completion-ratio"
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
@@ -1097,11 +1105,12 @@ function ProfileIssueSubtaskSummary({
       ) : null}
       {parentIssueNumber ? (
         <span
-          className={`infos-item subtask ${stylex.props(userProfileStaticStyles.issueSubtaskParent).className}`}
+          {...stylex.props(styles.issueSubtaskParent)}
           data-stylex-owner="user-profile-issue-subtask-parent"
         >
           <Link
             {...LEGACY_LINK_PROPS}
+            {...stylex.props(styles.issueSubtaskParentLink)}
             to="/$ownerName/$projectName/issue/$issueNumber"
             params={{ ownerName, projectName, issueNumber: String(parentIssueNumber) }}
           >

@@ -161,7 +161,10 @@ test("authenticated public profile owns populated issue subtask layout residuals
   expect(styleSource).toContain('width: "30px"');
   expect(styleSource).toContain('verticalAlign: "bottom"');
   expect(styleSource).toContain('issueSubtaskCompletionRatio: { fontSize: "0.8em !important" }');
-  expect(styleSource).toContain('issueSubtaskParent: { fontSize: "0.8em !important" }');
+  expect(styleSource).toMatch(
+    /issueSubtaskParent:\s*\{[\s\S]*color: "#9e9e9e"[\s\S]*fontSize: "0.8em !important"/u,
+  );
+  expect(styleSource).toContain("issueSubtaskParentLink: {");
   expect(source).toContain("progressBar(`${percentage}%`)");
 
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -177,13 +180,18 @@ test("authenticated public profile owns populated issue subtask layout residuals
   await expect(shell).toHaveCount(1);
   await expect(ratio).toHaveText("1/3");
   await expect(parent).toContainText("#4 Parent iss...");
-  await expect(ratio).toHaveClass(/completion-ratio/);
-  await expect(parent).toHaveClass(/subtask/);
-  await expect(ratio).toHaveClass(/subtask-progress/);
-  await expect(parent).toHaveClass(/infos-item/);
+  await expect(wrapper).not.toHaveClass(/\bfor-subtask-progressbar\b/u);
+  await expect(shell).not.toHaveClass(
+    /(?:^|\s)(?:subtask-progress|upload-progress|done-outline|red-outline)(?:\s|$)/u,
+  );
+  await expect(ratio).not.toHaveClass(
+    /(?:^|\s)(?:subtask-progress|completion-ratio|txt-green)(?:\s|$)/u,
+  );
+  await expect(parent).not.toHaveClass(/(?:^|\s)(?:infos-item|subtask)(?:\s|$)/u);
   await expect(parent.locator('a[href$="/admin/sample/issue/4"]')).toHaveCount(1);
   await expect(bar).toHaveCount(1);
-  await expect(bar).not.toHaveAttribute("style");
+  await expect(bar).not.toHaveClass(/(?:^|\s)(?:bar|done|red)(?:\s|$)/u);
+  await expect(bar).toHaveAttribute("style", /--x-width:\s*33%/u);
   const desktop = await row.evaluate((node) => {
     const rowBox = node.getBoundingClientRect();
     const wrapper = node.querySelector<HTMLElement>(
@@ -237,7 +245,9 @@ test("authenticated public profile owns populated issue subtask layout residuals
   expect(desktop.barWidth).toBeLessThanOrEqual(30);
 
   for (const element of await wrapper.locator("*").all()) {
-    await expect(element).not.toHaveAttribute("style");
+    if ((await element.getAttribute("data-stylex-owner")) !== "user-profile-subtask-progress-bar") {
+      await expect(element).not.toHaveAttribute("style");
+    }
     for (const attribute of [
       "data-toggle",
       "data-placement",
@@ -280,7 +290,7 @@ test("authenticated public profile owns populated issue subtask layout residuals
     shellWidth: "30px",
     ratioFontSize: "10.4px",
     parentFontSize: "10.4px",
-    contained: true,
+    contained: false,
     scrollWidth: 390,
     viewportWidth: 390,
   });

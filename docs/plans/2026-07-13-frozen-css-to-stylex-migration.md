@@ -2,6 +2,22 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Public-profile Issues subtask-summary ownership
+
+Batch 1027 closes five presentation boundaries in the populated public-profile
+Issues subtask summary: wrapper, progress shell and outline variants, dynamic
+bar and paint variants, completion ratio/color, and parent badge/Link. Direct
+route-local StyleX reproduces only the exact frozen uploader, subtask, anchor,
+and `for-subtask-progressbar` cascade. Incomplete, complete, parent-only, and
+no-subtask branches retain their elements, copy/order, dynamic percentage,
+truncation, and navigation.
+
+The focused external System-Chrome test passes normal and fallback-off 1/1
+each at desktop and 390px, including progress and parent-link hover plus
+Bootstrap-derived focus output. Screenshots were inspected with no target
+drift or overflow. Live same-fixture pairing and the global final lock remain
+open.
+
 ## 2026-07-27 — Public-profile Issues open/closed list-root ownership
 
 Batch 1026 gives the two `/$user?selected=issues` open/closed `<ul>` roots

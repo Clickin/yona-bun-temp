@@ -868,16 +868,69 @@ export const styles = stylex.create({
   },
   // Frozen less/_page.less .for-subtask-progressbar.
   issueSubtaskProgressWrapper: { paddingLeft: "5px" },
-  // Frozen less/_page.less .for-subtask-progressbar .subtask-progress.
+  // Frozen less/_common.less .upload-progress plus the applicable
+  // less/_page.less .for-subtask-progressbar .subtask-progress cascade.
+  // The unrelated .infos/.parent-issue upload rules do not match this
+  // title-cell ancestry.
   issueSubtaskProgressShell: {
+    backgroundColor: "#f0f0f0",
+    boxShadow: "inset 0px 1px 1px rgba(0, 0, 0, 0.25)",
     display: "inline-block",
+    filter: "none",
+    height: "7px",
+    marginBottom: "5px",
     verticalAlign: "bottom",
     width: "30px",
+    ":hover": { cursor: "pointer" },
   },
+  issueSubtaskProgressShellIncomplete: {
+    borderColor: "#f44336",
+    borderStyle: "solid",
+    borderWidth: "1px",
+  },
+  issueSubtaskProgressShellComplete: {
+    borderColor: "#8bc34a",
+    borderStyle: "solid",
+    borderWidth: "1px",
+  },
+  // Frozen less/_common.less .upload-progress .bar and red/done variants.
+  issueSubtaskProgressBar: {
+    boxShadow: "none",
+    filter: "none",
+    height: "100%",
+  },
+  issueSubtaskProgressBarIncomplete: { backgroundColor: "#f44336" },
+  issueSubtaskProgressBarComplete: { backgroundColor: "#8bc34a" },
   // Frozen less/_page.less .for-subtask-progressbar .completion-ratio.
   issueSubtaskCompletionRatio: { fontSize: "0.8em !important" },
-  // Frozen less/_page.less .for-subtask-progressbar .subtask.
-  issueSubtaskParent: { fontSize: "0.8em !important" },
+  // Frozen less/_page.less .txt-green.
+  issueSubtaskCompletionRatioComplete: { color: "#8bc34a" },
+  // Frozen less/_page.less .subtask and .for-subtask-progressbar .subtask.
+  issueSubtaskParent: {
+    color: "#9e9e9e",
+    fontSize: "0.8em !important",
+  },
+  // Frozen less/_common.less generic anchor normal/focus rules followed by
+  // less/_page.less .subtask a and its more-specific hover rule.
+  issueSubtaskParentLink: {
+    borderColor: "currentColor",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: "inherit",
+    outline: "none",
+    padding: "0px 2px",
+    textDecoration: "none",
+    ":hover": {
+      color: "#51aacc",
+      outline: "none !important",
+      textDecoration: "none",
+    },
+    ":focus": {
+      color: "#005580",
+      outline: "none !important",
+      textDecoration: "underline",
+    },
+  },
   // Frozen less/_page.less .subtask-number.
   issueSubtaskNumber: {
     display: "inline-block",
