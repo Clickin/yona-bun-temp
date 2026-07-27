@@ -196,9 +196,13 @@ export const styles = stylex.create({
   settingBox: { float: "left", width: "399px" },
   settingBoxLeft: { borderRight: "1px solid #ffffff", paddingRight: "20px" },
   settingBoxRight: {
-    borderLeft: "1px solid #d4d4d4 !important",
+    borderLeftColor: "#d4d4d4 !important",
+    borderLeftStyle: "solid !important",
+    borderLeftWidth: "1px !important",
     "@media (max-width: 900px)": {
-      borderLeft: "none !important",
+      borderLeftColor: "transparent !important",
+      borderLeftStyle: "none !important",
+      borderLeftWidth: "0px !important",
     },
     margin: "0px",
     minHeight: "190px",

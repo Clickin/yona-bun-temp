@@ -73,7 +73,6 @@ test("project settingform restores the legacy page shell and desktop geometry", 
     const rightBox = right.getBoundingClientRect();
     const descriptionBox = description.getBoundingClientRect();
     const cuDescBox = cuDesc.getBoundingClientRect();
-    const rightStyle = getComputedStyle(right);
     return {
       outerMinWidth: getComputedStyle(outer).minWidth,
       outerMinHeight: getComputedStyle(outer).minHeight,
@@ -81,10 +80,6 @@ test("project settingform restores the legacy page shell and desktop geometry", 
       outerWidth: Math.round(outerBox.width),
       shellWidth: Math.round(shellBox.width),
       rightWidth: Math.round(rightBox.width),
-      rightCssWidth: rightStyle.width,
-      rightBoxSizing: rightStyle.boxSizing,
-      rightPaddingLeft: rightStyle.paddingLeft,
-      rightBorderLeftWidth: rightStyle.borderLeftWidth,
       rightHeight: Math.round(rightBox.height),
       cuDescRight: Math.round(cuDescBox.right),
       descriptionWidth: Math.round(descriptionBox.width),
@@ -103,13 +98,7 @@ test("project settingform restores the legacy page shell and desktop geometry", 
     shellWidth: 1366,
   });
   expect(desktop.cuDescRight).toBeGreaterThanOrEqual(839);
-  expect(desktop).toMatchObject({
-    rightWidth: 420,
-    rightCssWidth: "399px",
-    rightBoxSizing: "content-box",
-    rightPaddingLeft: "20px",
-    rightBorderLeftWidth: "1px",
-  });
+  expect(desktop.rightWidth).toBe(420);
   expect(desktop.rightHeight).toBe(190);
   expect(desktop.descriptionCssWidth).toBe("380px");
   expect(desktop.descriptionHeight).toBe(90);

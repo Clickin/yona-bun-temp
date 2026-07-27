@@ -616,6 +616,7 @@ function ProjectSettingBody({
                 </ul>
               </div>
             </div>
+            {/* Keep the legacy setting-box/right owner adjacent to the StyleX border cascade. */}
             <dl
               {...sx.settingBox}
               {...sx.settingBoxRight}
