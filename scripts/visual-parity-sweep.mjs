@@ -26,6 +26,7 @@ const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
 const sweepLocale = "ko-KR";
 const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
 const sweepScope = requestedSweepPaths.length > 0 ? "focused" : "full";
+const closeTimeoutMs = 5_000;
 const outputPrefix = sweepScope === "focused" ? "latest-focused" : "latest";
 const latestOutputName =
   viewportProfile.name === "desktop"
@@ -1688,11 +1689,21 @@ async function waitForRenderedPaint(page) {
   );
 }
 
-async function closePageSafely(page) {
-  await Promise.race([
-    page.close().catch(() => {}),
-    new Promise((resolveTimeout) => setTimeout(resolveTimeout, 5_000)),
-  ]);
+async function closePageSafely(page, label) {
+  let timeoutId;
+  try {
+    await Promise.race([
+      page.close().catch(() => {}),
+      new Promise((resolveTimeout) => {
+        timeoutId = setTimeout(() => {
+          console.error(`[visual-sweep] ${label} page close timed out after ${closeTimeoutMs}ms`);
+          resolveTimeout();
+        }, closeTimeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function closeBrowserSafely(browser, label) {
@@ -1751,7 +1762,7 @@ function failedTargetResult(label, baseUrl, error) {
 }
 
 async function launchBrowser() {
-  const channel = process.env.PW_CHANNEL ?? "msedge";
+  const channel = process.env.PW_CHANNEL ?? "chrome";
   return chromium.launch({
     ...(channel === "chromium" || channel === "" ? {} : { channel }),
     headless: true,
@@ -1806,14 +1817,14 @@ async function runTarget(label, baseUrl) {
       try {
         results.push(await inspectPageSafely(routePage, baseUrl, path, label));
       } finally {
-        await closePageSafely(routePage);
+        await closePageSafely(routePage, `${label} ${path}`);
       }
     }
     const resultPaths = new Set(results.map((result) => result.path));
     const missingLegacyAuditPages = useRequestedPaths
       ? []
       : legacyAuditPages.filter((path) => !resultPaths.has(path));
-    await closePageSafely(page);
+    await closePageSafely(page, `${label} session`);
     return {
       label,
       baseUrl,

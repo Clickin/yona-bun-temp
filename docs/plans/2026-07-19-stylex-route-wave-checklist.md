@@ -3119,3 +3119,18 @@ desktop/mobile geometry, and filtering.
   screenshot pairing, and overall final pixel lock remain open. The broad
   fallback-off suite remains red on pre-existing route/fixture baseline
   failures; it is not claimed as passed from this batch.
+
+### 2026-07-28 runner teardown measurement
+
+- [x] Required Scala HTML automation passed before the diagnostic. External
+  System-Chrome fallback-off sidebar motion with one worker measured `20.5s`
+  for the test assertion, `46.0s` through Playwright's final report, and
+  `57.51s` for the outer runner. This separates route interaction from the
+  post-test Chrome/Playwright teardown tail; no parity wait or assertion was
+  relaxed.
+- [x] Long-lived Playwright CLI daemon/Chrome profile groups were observed
+  outside the application process tree. The sweep now defaults to `chrome`
+  and reports target/path when a bounded page close reaches five seconds,
+  matching its existing bounded browser-close diagnostic.
+- [ ] Full fallback-off, global fallback-consumer, same-fixture screenshot,
+  and final pixel-lock work remains open.

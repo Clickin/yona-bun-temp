@@ -56,10 +56,9 @@ pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
 requires Playwright's `chromium_headless_shell-*` executable. Confirm the
 browser before running `seed-admin`, `seed-foundation`,
 `seed-content`, or screenshot parity. For `scripts/visual-parity-sweep.mjs`,
-set `PW_CHANNEL=chrome` when the system Google Chrome is available (or
-`PW_CHANNEL=chromium` after the headless-shell install); its historical default
-is `msedge`, which is not guaranteed to be installed. The expected Playwright version is the
-one declared in `frontend/package.json`; the browser cache is user-scoped and
+the default is the system `chrome` channel. Set `PW_CHANNEL=chromium` only
+after the headless-shell install; the expected Playwright version is the one
+declared in `frontend/package.json`, and the browser cache is user-scoped and
 is not supplied by the Codex sandbox.
 
 When a system Chrome is available, the managed seed commands can use it

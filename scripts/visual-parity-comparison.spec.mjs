@@ -728,6 +728,15 @@ test("visual sweep bounds and reports each route inspection", () => {
   assert.match(source, /results\.push\(await inspectPageSafely\(routePage, baseUrl, path, label\)\)/u);
 });
 
+test("visual sweep defaults to system Chrome and reports bounded page teardown", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /process\.env\.PW_CHANNEL \?\? "chrome"/u);
+  assert.match(source, /const closeTimeoutMs = 5_000;/u);
+  assert.match(source, /page close timed out after \$\{closeTimeoutMs\}ms/u);
+  assert.match(source, /closePageSafely\(routePage, `\$\{label\} \$\{path\}`\)/u);
+});
+
 test("visual sweep waits for dynamic project label styles before measuring issue lists", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 

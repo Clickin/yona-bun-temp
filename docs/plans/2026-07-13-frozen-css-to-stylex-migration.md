@@ -2,6 +2,28 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-28 — Post-validation runner teardown measurement
+
+The required Scala HTML automation guard passed before this diagnostic. An
+external System-Chrome fallback-off run of the single sidebar-motion test with
+one worker produced the following split: the test assertion line reported
+`20.5s`, Playwright printed the final `1 passed (46.0s)` report, and the outer
+runner completed in `57.51s`. The extra time is therefore after the visible
+sidebar assertions, in Playwright/Chrome worker and browser teardown plus
+managed-process shutdown; it is not evidence that the sidebar interaction is
+slow. The full visual sweep independently reproduced the same class of issue:
+the legacy route loop reached `273/273`, then browser close exceeded its five
+second bound while the local target continued.
+
+The machine also contained long-lived Playwright CLI daemon/Chrome profile
+groups from earlier browser sessions. These are external stale browser state,
+not application requests, and can increase Chrome IPC teardown contention. The
+visual sweep now defaults to the required system `chrome` channel even when
+`PW_CHANNEL` is omitted, and page close uses the same bounded, labeled cleanup
+as browser close. The close bound only prevents an orphaned teardown from
+blocking later routes; screenshot, geometry, selector, and paint assertions are
+unchanged.
+
 ## 2026-07-27 — Full live sweep stabilization teardown result
 
 The post-validation live sweep was rerun against legacy `:9000` and the
