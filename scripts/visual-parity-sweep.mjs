@@ -24,6 +24,7 @@ const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
 const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
 const sweepLocale = "ko-KR";
+const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
 const sweepScope = requestedSweepPaths.length > 0 ? "focused" : "full";
 const outputPrefix = sweepScope === "focused" ? "latest-focused" : "latest";
 const latestOutputName =
@@ -284,8 +285,8 @@ function localSettledSelectorForPath(path) {
   }
   if (
     pathname.endsWith("/issueform") ||
-    pathname.endsWith("/editform") ||
-    pathname.endsWith("/postform")
+    pathname.endsWith("/postform") ||
+    /\/(?:issue|post)\/\d+\/editform$/u.test(pathname)
   ) {
     return ".textarea-box";
   }
@@ -299,7 +300,7 @@ function localSettledSelectorForPath(path) {
     return "#comment-form .upload-wrap";
   }
   if (/\/code(?:\/|$)/u.test(pathname)) {
-    return ".code-browse-wrap .listitem, .project-page-wrap .alert";
+    return ".code-browse-wrap, .project-page-wrap .alert";
   }
   if (/\/commits\/?$/u.test(pathname)) {
     return ".page-wrap-outer .project-page-wrap #history";
@@ -325,8 +326,7 @@ function localSettledSelectorForPath(path) {
   if (
     pathname.endsWith("/members") ||
     pathname.endsWith("/watchers") ||
-    pathname.endsWith("/webhooks") ||
-    /^\/[^/?#]+\/[^/?#]+\/?$/u.test(pathname)
+    pathname.endsWith("/webhooks")
   ) {
     return ".project-page-wrap";
   }
@@ -1049,8 +1049,8 @@ async function inspectLocalDirectApiSurfaces(page, baseUrl) {
 
 function waitForNavigationSessionResponse(page, baseUrl) {
   const sessionUrl = new URL(`${baseUrl}/api/v1/session`);
-  return page
-    .waitForResponse(
+  return Promise.race([
+    page.waitForResponse(
       (response) => {
         const responseUrl = new URL(response.url());
         return (
@@ -1060,8 +1060,9 @@ function waitForNavigationSessionResponse(page, baseUrl) {
         );
       },
       { timeout: 3_000 },
-    )
-    .catch(() => page.request.get(sessionUrl.toString()).catch(() => null));
+    ),
+    page.request.get(sessionUrl.toString()),
+  ]).catch(() => null);
 }
 
 async function waitForLocalSessionResolution(page, path, sessionResponsePromise) {
@@ -1095,6 +1096,14 @@ async function waitForLocalSessionResolution(page, path, sessionResponsePromise)
 }
 
 async function inspectPage(page, baseUrl, path, label) {
+  const startedAt = performance.now();
+  const trace = (stage) => {
+    if (traceTimings) {
+      console.error(
+        `[visual-sweep:timing] ${label} ${path} ${stage} ${Math.round(performance.now() - startedAt)}ms`,
+      );
+    }
+  };
   const consoleErrors = [];
   const requestFailures = [];
   const onConsole = (message) => {
@@ -1122,7 +1131,7 @@ async function inspectPage(page, baseUrl, path, label) {
   page.on("console", onConsole);
   page.on("requestfailed", onRequestFailed);
   const localSessionResponsePromise =
-    label === "local" ? waitForNavigationSessionResponse(page, baseUrl) : null;
+    label === "local" && path === "/" ? waitForNavigationSessionResponse(page, baseUrl) : null;
   let navigationPath = path;
   if (label === "local" && path === "/admin/sample/issueform?parentIssueId=1") {
     const response = await page.request.get(
@@ -1140,6 +1149,7 @@ async function inspectPage(page, baseUrl, path, label) {
       waitUntil: "domcontentloaded",
       timeout: 20_000,
     });
+    trace("domcontentloaded");
   } catch (error) {
     page.off("console", onConsole);
     page.off("requestfailed", onRequestFailed);
@@ -1160,6 +1170,7 @@ async function inspectPage(page, baseUrl, path, label) {
 
   if (localSessionResponsePromise) {
     await waitForLocalSessionResolution(page, path, localSessionResponsePromise);
+    trace("session");
   }
 
   await page
@@ -1173,21 +1184,39 @@ async function inspectPage(page, baseUrl, path, label) {
           !text.includes("Loading")
         );
       },
+      undefined,
       { timeout: 5_000 },
     )
     .catch(() => {});
+  trace("body");
 
   const localSettledSelector = label === "local" ? localSettledSelectorForPath(path) : null;
   if (localSettledSelector) {
-    await page.waitForSelector(localSettledSelector, { timeout: 10_000 }).catch(() => {});
+    await page
+      .waitForSelector(`${localSettledSelector}, .project-page-wrap > .error-wrap`, {
+        timeout: 10_000,
+      })
+      .catch(() => {});
+    trace("selector");
   }
-  if (label === "local" && path.split("?", 1)[0].endsWith("/issues")) {
+  const localErrorVisible =
+    label === "local" &&
+    (await page
+      .locator(".project-page-wrap > .error-wrap")
+      .isVisible()
+      .catch(() => false));
+  if (
+    label === "local" &&
+    !localErrorVisible &&
+    path.split("?", 1)[0].endsWith("/issues")
+  ) {
     await page
       .waitForFunction(
         () =>
           [...document.styleSheets].some(
             (sheet) => sheet.href?.includes("/issue/labels.css") && sheet.cssRules.length > 0,
           ),
+        undefined,
         { timeout: 10_000 },
       )
       .catch(() => {});
@@ -1215,12 +1244,14 @@ async function inspectPage(page, baseUrl, path, label) {
             getComputedStyle(element).backgroundColor === expected.style.backgroundColor
           );
         },
+        undefined,
         { timeout: 10_000 },
       )
       .catch(() => {});
   }
 
-  await waitForRenderedPaint(page);
+  const paintErrors = await waitForRenderedPaint(page);
+  trace("paint");
 
   const metrics = await page.evaluate(() => {
     const cloneChromeWithoutUserMarkdown = () => {
@@ -1397,6 +1428,7 @@ async function inspectPage(page, baseUrl, path, label) {
       ),
     };
   });
+  trace("metrics");
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
   const isNotificationFragment = path.startsWith("/notification?");
   const isFramedShell = path === "/sidebar" || path.startsWith("/sidebar?");
@@ -1465,6 +1497,7 @@ async function inspectPage(page, baseUrl, path, label) {
   if (effectiveRequestFailures.length > 0) {
     errors.push(`${effectiveRequestFailures.length} request failure(s)`);
   }
+  errors.push(...paintErrors);
   if (errors.length > 0 || alwaysScreenshotPaths.has(path.split("?", 1)[0])) {
     const screenshotLabel =
       viewportProfile.name === "desktop" ? label : `${label}-${viewportProfile.name}`;
@@ -1551,38 +1584,106 @@ async function inspectPage(page, baseUrl, path, label) {
   };
 }
 
+async function inspectPageSafely(page, baseUrl, path, label) {
+  let timeoutId;
+  try {
+    return await Promise.race([
+      inspectPage(page, baseUrl, path, label),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error(`Route inspection timed out after 60000ms: ${path}`)),
+          60_000,
+        );
+      }),
+    ]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      path,
+      status: 0,
+      ok: false,
+      errors: [message],
+      consoleErrors: [],
+      requestFailures: [],
+      ignoredRequestFailures: [],
+      metrics: {
+        bodyTextLength: 0,
+        scrollWidth: 0,
+        viewportWidth: viewportProfile.width,
+        viewportProfile: viewportProfile.name,
+        stylesheetRules: 0,
+        isErrorPage: true,
+      },
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function waitForRenderedPaint(page) {
   await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => {});
-  await page
-    .evaluate(async () => {
-      await document.fonts?.ready;
-      await Promise.all(
-        [...document.images].map((image) =>
-          image.complete ? image.decode?.().catch(() => {}) : Promise.resolve(),
-        ),
-      );
-      for (const sheet of document.styleSheets) {
-        try {
-          void sheet.cssRules.length;
-        } catch {
-          // Cross-origin sheets can be painted even though their rules are not readable.
+  return (
+    (await page
+      .evaluate(async () => {
+        const errors = [];
+        const waitBounded = async (promise, label) => {
+          let timeoutId;
+          const timedOut = await Promise.race([
+            promise.then(() => false),
+            new Promise((resolveTimeout) => {
+              timeoutId = setTimeout(() => resolveTimeout(true), 2_000);
+            }),
+          ]);
+          clearTimeout(timeoutId);
+          if (timedOut) errors.push(`${label} did not settle within 2000ms`);
+        };
+        if (document.fonts?.ready) {
+          await waitBounded(document.fonts.ready, "document fonts");
         }
-      }
-      for (let pass = 0; pass < 2; pass += 1) {
-        const activeAnimations = document
-          .getAnimations({ subtree: true })
-          .filter(
-            (animation) =>
-              animation.playState === "running" &&
-              animation.effect?.getTiming().iterations !== Infinity,
+        await waitBounded(
+          Promise.all(
+            [...document.images].map((image) =>
+              image.complete ? image.decode?.().catch(() => {}) : Promise.resolve(),
+            ),
+          ),
+          "document images",
+        );
+        for (const sheet of document.styleSheets) {
+          try {
+            void sheet.cssRules.length;
+          } catch {
+            // Cross-origin sheets can be painted even though their rules are not readable.
+          }
+        }
+        for (let pass = 0; pass < 2; pass += 1) {
+          const activeAnimations = document
+            .getAnimations({ subtree: true })
+            .filter(
+              (animation) =>
+                animation.playState === "running" &&
+                animation.effect?.getTiming().iterations !== Infinity,
+            );
+          await waitBounded(
+            Promise.all(activeAnimations.map((animation) => animation.finished.catch(() => {}))),
+            "document animations",
           );
-        await Promise.all(activeAnimations.map((animation) => animation.finished.catch(() => {})));
-      }
-      await new Promise((resolveFrame) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
-      });
-    })
-    .catch(() => {});
+        }
+        await new Promise((resolveFrame) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
+        });
+        return errors;
+      })
+      .catch((error) => [
+        `paint inspection failed: ${error instanceof Error ? error.message : String(error)}`,
+      ])) ?? []
+  );
+}
+
+async function closePageSafely(page) {
+  await Promise.race([
+    page.close().catch(() => {}),
+    new Promise((resolveTimeout) => setTimeout(resolveTimeout, 5_000)),
+  ]);
 }
 
 function isViteDevModuleAbort(failure) {
@@ -1669,24 +1770,24 @@ async function runTarget(label, baseUrl) {
           ]),
         ];
     const results = [];
-    for (const path of paths) {
+    for (const [index, path] of paths.entries()) {
+      console.error(`[visual-sweep] ${label} ${index + 1}/${paths.length} ${path}`);
       const primerPath = sessionPrimerPathForPath(path);
       if (primerPath) {
         await primeSessionProjectVisit(page, baseUrl, primerPath, label);
       }
       const routePage = await context.newPage();
       try {
-        results.push(await inspectPage(routePage, baseUrl, path, label));
+        results.push(await inspectPageSafely(routePage, baseUrl, path, label));
       } finally {
-        await routePage.close().catch(() => {});
+        await closePageSafely(routePage);
       }
     }
     const resultPaths = new Set(results.map((result) => result.path));
     const missingLegacyAuditPages = useRequestedPaths
       ? []
       : legacyAuditPages.filter((path) => !resultPaths.has(path));
-    await page.close().catch(() => {});
-    await context.close().catch(() => {});
+    await closePageSafely(page);
     return {
       label,
       baseUrl,
@@ -1749,9 +1850,11 @@ function synchronizePullRequestRepositoryFixture() {
   }
 }
 
-const legacy = sweepTarget === "local" ? null : await runTargetSafely("legacy", legacyBaseUrl);
 if (sweepTarget === "both") synchronizePullRequestRepositoryFixture();
-const local = sweepTarget === "legacy" ? null : await runTargetSafely("local", localBaseUrl);
+const [legacy, local] = await Promise.all([
+  sweepTarget === "local" ? null : runTargetSafely("legacy", legacyBaseUrl),
+  sweepTarget === "legacy" ? null : runTargetSafely("local", localBaseUrl),
+]);
 const comparison = buildVisualComparison({
   legacyResults: legacy?.results ?? [],
   localResults: local?.results ?? [],

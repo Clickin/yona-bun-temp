@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useLayoutEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
@@ -7,7 +7,6 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { LastOutletTransition } from "../../-last-outlet-transition";
 import { codeColors } from "./-code.stylex";
 
 const styles = stylex.create({
@@ -25,24 +24,11 @@ const styles = stylex.create({
 });
 
 export const Route = createFileRoute("/$ownerName/$projectName/code")({
-  beforeLoad: ({ location, params }) => {
-    if (location.pathname === `/${params.ownerName}/${params.projectName}/code/`) {
-      throw redirect({
-        params: {
-          ownerName: params.ownerName,
-          projectName: params.projectName,
-        },
-        replace: true,
-        statusCode: 303,
-        to: "/$ownerName/$projectName/code",
-      });
-    }
-  },
   component: ProjectCodeRoute,
 });
 
 function ProjectCodeRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectCodeIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -239,10 +225,7 @@ function NoHeadAlert({ message }: { message: string }) {
       className={`alert alert-block ${noHeadAlertProps.className ?? ""}`.trim()}
       data-stylex-owner="project-code-nohead-alert"
     >
-      <h4
-        {...stylex.props(styles.noHeadHeading)}
-        data-stylex-owner="project-code-nohead-heading"
-      >
+      <h4 {...stylex.props(styles.noHeadHeading)} data-stylex-owner="project-code-nohead-heading">
         {heading}
       </h4>
     </div>

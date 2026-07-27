@@ -1,13 +1,12 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { LastOutletTransition } from "../../-last-outlet-transition";
 import { styles } from "./-commits.stylex";
 
 type ProjectCodeHistorySearch = {
@@ -27,21 +26,6 @@ const legacyCodeHistoryLinkActiveProps = {
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/commits")({
-  beforeLoad: ({ location, params }) => {
-    if (location.pathname === `/${params.ownerName}/${params.projectName}/commits/`) {
-      throw redirect({
-        params: {
-          ownerName: params.ownerName,
-          projectName: params.projectName,
-        },
-        hash: location.hash,
-        replace: true,
-        search: {},
-        statusCode: 303,
-        to: "/$ownerName/$projectName/commits",
-      });
-    }
-  },
   component: ProjectCodeHistoryRoute,
   validateSearch(search): ProjectCodeHistorySearch {
     const page = typeof search.page === "number" ? search.page : Number(search.page);
@@ -50,7 +34,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits")({
 });
 
 function ProjectCodeHistoryRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectCodeHistoryIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

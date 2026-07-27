@@ -525,7 +525,7 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
   assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(pathname\)\)/u);
-  assert.match(source, /return "\.code-browse-wrap \.listitem, \.project-page-wrap \.alert";/u);
+  assert.match(source, /return "\.code-browse-wrap, \.project-page-wrap \.alert";/u);
   assert.match(source, /if \(\/\\\/commits\\\/\?\$\/u\.test\(pathname\)\)/u);
   assert.match(source, /return "\.page-wrap-outer \.project-page-wrap #history";/u);
   assert.match(source, /if \(pathname\.endsWith\("\/branches"\)\)/u);
@@ -542,7 +542,10 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
     /page\.goto\(urlFor\(baseUrl, "\/projects"\), \{ waitUntil: "domcontentloaded" \}\)/u,
   );
   assert.match(source, /page\.waitForSelector\("a\[href\]", \{ timeout: 10_000 \}\)/u);
-  assert.match(source, /await page\.waitForSelector\(localSettledSelector/u);
+  assert.match(
+    source,
+    /\.waitForSelector\(`\$\{localSettledSelector\}, \.project-page-wrap > \.error-wrap`/u,
+  );
   assert.match(source, /gnbInner: selectorState\("\.gnb-inner, \[data-stylex-owner='global-gnb-inner'\]"\)/u);
   assert.match(source, /gnbPin: selectorState\(/u);
   assert.match(source, /global-sidebar-open-pin/u);
@@ -579,6 +582,11 @@ test("visual sweep waits for local session resolution before measuring the root"
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /function waitForNavigationSessionResponse\(page, baseUrl\)/u);
+  assert.match(
+    source,
+    /label === "local" && path === "\/" \? waitForNavigationSessionResponse\(page, baseUrl\) : null/u,
+  );
+  assert.match(source, /return Promise\.race\(\[/u);
   assert.match(source, /responseUrl\.pathname === sessionUrl\.pathname/u);
   assert.match(source, /page\.request\.get\(sessionUrl\.toString\(\)\)/u);
   assert.match(source, /async function waitForLocalSessionResolution/u);
@@ -592,16 +600,27 @@ test("visual sweep waits for local session resolution before measuring the root"
   assert.match(source, /requestAnimationFrame\(\(\) => requestAnimationFrame\(resolveFrame\)\)/u);
 });
 
+test("visual sweep passes waitForFunction timeouts in the Playwright options position", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /!text\.includes\("Loading"\)[\s\S]*undefined,\s*\{ timeout: 5_000 \}/u);
+  assert.match(source, /sheet\.cssRules\.length > 0[\s\S]*undefined,\s*\{ timeout: 10_000 \}/u);
+});
+
 test("visual sweep waits for loaded assets and a committed paint before screenshots", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /async function waitForRenderedPaint\(page\)/u);
   assert.match(source, /page\.waitForLoadState\("load"/u);
-  assert.match(source, /await document\.fonts\?\.ready/u);
+  assert.match(source, /await waitBounded\(document\.fonts\.ready, "document fonts"\)/u);
   assert.match(source, /image\.decode\?\.\(\)\.catch/u);
   assert.match(source, /void sheet\.cssRules\.length/u);
   assert.match(source, /document\s*\.getAnimations\(\{ subtree: true \}\)/u);
   assert.match(source, /animation\.finished\.catch/u);
+  assert.match(source, /did not settle within 2000ms/u);
+  assert.match(source, /errors\.push\(\.\.\.paintErrors\)/u);
+  assert.match(source, /async function closePageSafely/u);
+  assert.doesNotMatch(source, /await context\.close\(\)/u);
   assert.match(source, /await waitForRenderedPaint\(page\)/u);
 });
 
@@ -645,11 +664,16 @@ test("visual sweep waits for form routes with query state", () => {
 
   assert.match(source, /const pathname = path\.split\("\?", 1\)\[0\];/u);
   assert.match(source, /pathname\.endsWith\("\/issueform"\)/u);
+  assert.match(source, /\\\/\(\?:issue\|post\)\\\/\\d\+\\\/editform\$/u);
+  assert.doesNotMatch(source, /pathname\.endsWith\("\/editform"\)/u);
+  assert.doesNotMatch(source, /\^\\\/\[\^\?\/#\]\+\\\/\[\^\?\/#\]\+/u);
   assert.match(source, /pathname\.endsWith\("\/newFork"\)/u);
   assert.match(source, /pathname\.endsWith\("\/newPullRequestForm"\)/u);
   assert.match(source, /return "#status\.alert-success"/u);
   assert.match(source, /\/\\\/post\\\/\\d\+\$\/u\.test\(pathname\)/u);
   assert.match(source, /return "#comment-form \.upload-wrap"/u);
+  assert.match(source, /\$\{localSettledSelector\}, \.project-page-wrap > \.error-wrap/u);
+  assert.match(source, /!localErrorVisible/u);
   assert.match(source, /Number\(item\.issueNumber\) === 1/u);
   assert.match(
     source,
@@ -678,6 +702,27 @@ test("focused pull request sweep aligns the compared repository refs", () => {
   assert.match(source, /synchronizePullRequestRepositoryFixture/u);
   assert.match(source, /\+refs\/heads\/main:refs\/heads\/main/u);
   assert.match(source, /\+refs\/heads\/feature\/ui:refs\/heads\/feature\/ui/u);
+});
+
+test("visual sweep runs independent legacy and local targets concurrently", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(
+    source,
+    /if \(sweepTarget === "both"\) synchronizePullRequestRepositoryFixture\(\);\s*const \[legacy, local\] = await Promise\.all\(\[/u,
+  );
+  assert.match(source, /runTargetSafely\("legacy", legacyBaseUrl\)/u);
+  assert.match(source, /runTargetSafely\("local", localBaseUrl\)/u);
+});
+
+test("visual sweep bounds and reports each route inspection", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /async function inspectPageSafely/u);
+  assert.match(source, /Route inspection timed out after 60000ms/u);
+  assert.match(source, /errors: \[message\]/u);
+  assert.match(source, /\[visual-sweep\] \$\{label\} \$\{index \+ 1\}\/\$\{paths\.length\} \$\{path\}/u);
+  assert.match(source, /results\.push\(await inspectPageSafely\(routePage, baseUrl, path, label\)\)/u);
 });
 
 test("visual sweep waits for dynamic project label styles before measuring issue lists", () => {

@@ -1,5 +1,65 @@
 # Playwright Visual Parity Sweep - 2026-06-25
 
+## 2026-07-27 production-dist full sweep
+
+- System Chrome, legacy `http://127.0.0.1:9000`, and a newly built frontend
+  served by the Rust filesystem-asset runtime at `http://127.0.0.1:8090`.
+- Canonical evidence: `output/playwright/visual-sweep/latest.json`,
+  `scope: full`, legacy `248/273`, local `362/397`, with `35` local failures
+  and `210` comparison diff failures still open. This is evidence, not a
+  pixel-parity completion claim.
+- There were no route-inspection, paint-settle, or cleanup timeouts. The prior
+  stalls came from a misplaced Playwright timeout argument, over-broad success
+  selectors, session resolution on every route, unbounded paint settlement,
+  and duplicate context cleanup.
+- Product fixes made unavailable projects render the legacy error shell
+  immediately and repaired direct `/code/` and `/commits/` navigation.
+- Latest status deltas:
+
+`/admin/sample/code`, `/alice/sample/code`, `/alice/sample/watch`,
+`/sites/user/delete33`, `/sites/user/delete34`, `/sites/user/delete35`,
+`/weblabs/portal/member/1/edit`, `/weblabs/portal/member/33/edit`,
+`/weblabs/portal/newPullRequestForm`,
+`/admin/sample/pullRequest/1/changes/HEAD`, `/admin/sample/code/`,
+`/admin/sample/code/main`, `/admin/sample/code/main/`,
+`/admin/sample/code/main/README.md`, `/admin/sample/commits`,
+`/admin/sample/commits/`, `/admin/sample/commits/main`,
+`/admin/sample/commit/HEAD`, `/admin/sample/compare/main...main`,
+`/admin/sample/branches`, `/admin/sample/search`,
+`/admin/svnplayground/issue/1`, `/admin/svnplayground/issue/1/editform`,
+`/admin/svnplayground/post/1`, `/admin/svnplayground/post/1/editform`,
+`/admin/svnplayground/pullRequests`,
+`/admin/svnplayground/closedPullRequests`,
+`/admin/svnplayground/sentPullRequests`,
+`/admin/svnplayground/pullRequest/1`,
+`/admin/svnplayground/pullRequest/1/changes`,
+`/admin/svnplayground/pullRequest/1/changes/HEAD`,
+`/admin/svnplayground/pullRequest/1/editform`,
+`/admin/svnplayground/newPullRequestForm`,
+`/admin/svnplayground/code/main/README.md`,
+`/admin/svnplayground/commits/main`, `/admin/svnplayground/commit/HEAD`,
+`/admin/svnplayground/compare/main...main`,
+`/admin/svnplayground/branches`, `/admin/svnplayground/search`,
+`/admin/svnplayground/newFork`, `/alice/sample/issue/1`,
+`/alice/sample/issue/1/editform`, `/alice/sample/post/1`,
+`/alice/sample/post/1/editform`, `/alice/sample/pullRequest/1/changes/HEAD`,
+`/alice/sample/code/`, `/alice/sample/code/main`,
+`/alice/sample/code/main/`, `/alice/sample/code/main/README.md`,
+`/alice/sample/commits`, `/alice/sample/commits/`,
+`/alice/sample/commits/main`, `/alice/sample/commit/HEAD`,
+`/alice/sample/compare/main...main`, `/alice/sample/branches`,
+`/alice/sample/search`, `/weblabs/portal/issue/1`,
+`/weblabs/portal/issue/1/editform`, `/weblabs/portal/post/1`,
+`/weblabs/portal/post/1/editform`, `/weblabs/portal/pullRequest/1`,
+`/weblabs/portal/pullRequest/1/changes`,
+`/weblabs/portal/pullRequest/1/changes/HEAD`,
+`/weblabs/portal/pullRequest/1/editform`, `/weblabs/portal/code/main`,
+`/weblabs/portal/code/main/`, `/weblabs/portal/code/main/README.md`,
+`/weblabs/portal/commits`, `/weblabs/portal/commits/`,
+`/weblabs/portal/commits/main`, `/weblabs/portal/commits/main/`,
+`/weblabs/portal/commit/HEAD`, `/weblabs/portal/compare/main...main`,
+`/weblabs/portal/branches`, `/weblabs/portal/search`.
+
 Status: historical audit evidence. The current default legacy parity baseline is
 `http://127.0.0.1:9000`.
 

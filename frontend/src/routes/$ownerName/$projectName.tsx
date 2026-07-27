@@ -352,9 +352,9 @@ function ProjectHomeRoute() {
         ? "issue"
         : pathname === issueFormPath
           ? "issueform"
-          : pathname === codePath
+          : pathname === codePath || pathname === `${codePath}/`
             ? "code"
-            : pathname === commitsPath
+            : pathname === commitsPath || pathname === `${commitsPath}/`
               ? "codeHistory"
               : commitsBranch !== null || commitsFilePath !== null
                 ? "codeHistory"
@@ -482,9 +482,14 @@ function ProjectHomeRouteShell({
   const { ownerName, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const codePath = `/${ownerName}/${projectName}/code`;
-  const query = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const query = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+    retry(failureCount, error) {
+      const status = projectRouteErrorStatus(error);
+      return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
+  });
   const membersQuery = useQuery({
     ...readProjectMembersQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: active === "members",
@@ -662,6 +667,20 @@ function ProjectHomeRouteShell({
   previousActiveRef.current = active;
   previousSearchHrefRef.current = locationHref;
 
+  const projectContainerErrorStatus = projectRouteErrorStatus(query.error);
+  if (
+    projectContainerErrorStatus === 401 ||
+    projectContainerErrorStatus === 403 ||
+    projectContainerErrorStatus === 404
+  ) {
+    return (
+      <ProjectContainerErrorRouteShell
+        errorStatus={projectContainerErrorStatus}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   // The legacy creation endpoint redirects authentication and request failures
   // through its own standalone response. Keep that branch outside the nested
   // project shell; the successful form is the only child body owned here.
@@ -807,6 +826,59 @@ function ProjectHomeRouteShell({
         }
         searchForbidden={searchForbidden}
       />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectContainerErrorRouteShell({
+  errorStatus,
+  runtimeConfig,
+}: {
+  errorStatus: 401 | 403 | 404;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+  const isNotFound = errorStatus === 404;
+  const messageKey = isNotFound ? "error.notfound" : "error.forbidden";
+  const errorWrapProps = stylex.props(styles.errorWrap);
+  const errorIconProps = stylex.props(styles.errorIcon(legacySpriteUrl));
+
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <title>{t(messageKey)}</title>
+      <div
+        className={`${stylex.props(styles.page).className} page-wrap-outer`}
+        data-stylex-owner="project-container-error-page"
+      >
+        <div className="project-page-wrap">
+          <div
+            {...errorWrapProps}
+            className={`${errorWrapProps.className} error-wrap`}
+            data-stylex-owner="project-container-error-wrap"
+          >
+            <i
+              {...errorIconProps}
+              className={`${errorIconProps.className} ico ico-err2`}
+              data-stylex-owner="project-container-error-icon"
+            />
+            <p
+              {...stylex.props(styles.errorMessage)}
+              data-stylex-owner="project-container-error-message"
+            >
+              {t(messageKey)}
+            </p>
+            <Link
+              activeOptions={legacyProjectShellLinkActiveOptions}
+              activeProps={legacyProjectShellLinkActiveProps}
+              className={`ybtn ${isNotFound ? "ybtn-info" : "ybtn-primary"}`}
+              data-stylex-owner="project-container-error-home"
+              to="/"
+            >
+              {t("menu.home")}
+            </Link>
+          </div>
+        </div>
+      </div>
     </SiteLayoutShell>
   );
 }

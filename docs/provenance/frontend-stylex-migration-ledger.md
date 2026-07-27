@@ -1,5 +1,18 @@
 # Frontend StyleX Migration Ledger
 
+### Production full-sweep responsiveness — 2026-07-27
+
+Fresh frontend/Rust production builds completed a full external System-Chrome
+sweep. Canonical evidence now records full scope with legacy `248/273`, local
+`362/397`, `35` local failures, `210` comparison diff failures, and no
+inspection/paint timeout. The open failures remain final-lock work.
+
+Harness speed was repaired without changing comparison tolerances or screenshot
+acceptance. Product-level blank screens for unavailable project containers and
+trailing `/code/`/`/commits/` deep links were also corrected to the legacy
+error/project shells. The approved Yoram footer deviations and inherited
+administrator-notice/sidebar alignment mismatch were not changed.
+
 ### Focused/full visual evidence lifecycle — 2026-07-27
 
 This is a harness-only final-lock correction. Explicit

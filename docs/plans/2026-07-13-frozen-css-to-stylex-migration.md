@@ -2,6 +2,21 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-27 — Production full-sweep responsiveness repair
+
+The frontend and Rust server were rebuilt and the full System-Chrome sweep
+completed against the production filesystem-asset runtime. The canonical
+artifact is full scope again: legacy `248/273`, local `362/397`, with zero
+inspection/paint timeouts. RC full-corpus coverage is restored; `35` local
+failures and `210` visual diff failures remain open, so pixel-perfect final
+lock is not claimed.
+
+The speed problem was not primarily HMR. It combined incorrect Playwright
+timeout argument placement, broad route selectors, repeated session waits,
+unbounded paint/cleanup, and real blank-screen behavior for unavailable
+projects and `/code/`/`/commits/` direct links. Those blank screens now render
+the legacy error or project shell immediately.
+
 ## 2026-07-27 — Focused/full visual evidence lifecycle separation
 
 `scripts/visual-parity-sweep.mjs` now writes runs with explicit

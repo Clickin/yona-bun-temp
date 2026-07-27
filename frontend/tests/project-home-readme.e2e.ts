@@ -45,6 +45,81 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   );
 });
 
+test("unavailable project routes immediately render legacy container error screens", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  for (const [projectName, suffix, status, message, buttonClass] of [
+    ["forbidden-project", "", 403, "You are not authorized", "ybtn-primary"],
+    ["unauthorized-project", "/branches", 401, "You are not authorized", "ybtn-primary"],
+    ["missing-project", "/code", 404, "Page not found", "ybtn-info"],
+  ] as const) {
+    const containerRequests: string[] = [];
+    await mockProjectHome(page, {
+      containerRequests,
+      containerStatus: status,
+      ownerName: "sample",
+      projectName,
+    });
+
+    await page.goto(`${basePath}/sample/${projectName}${suffix}`);
+
+    await expect(page).toHaveTitle(message);
+    await expect(page.locator(".project-header-outer")).toHaveCount(0);
+    await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+    await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(message);
+    await expect(page.locator(".project-page-wrap > .error-wrap .ico.ico-err2")).toBeVisible();
+    await expect(page.locator(`.project-page-wrap > .error-wrap .ybtn.${buttonClass}`)).toHaveText(
+      "Home",
+    );
+    expect(containerRequests).toEqual([`${status}`]);
+  }
+});
+
+test("trailing-slash code and commits roots retain the project shell and container errors", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  const codeRouteSource = await readFile("src/routes/$ownerName/$projectName/code.tsx", "utf8");
+  const commitsRouteSource = await readFile(
+    "src/routes/$ownerName/$projectName/commits.tsx",
+    "utf8",
+  );
+  expect(routeSource).toContain("pathname === codePath || pathname === `${codePath}/`");
+  expect(routeSource).toContain("pathname === commitsPath || pathname === `${commitsPath}/`");
+  for (const source of [codeRouteSource, commitsRouteSource]) {
+    expect(source).not.toContain("beforeLoad:");
+    expect(source).not.toContain("LastOutletTransition");
+    expect(source).toContain("return <Outlet />;");
+  }
+  await mockProjectHome(page);
+
+  for (const suffix of ["/code/", "/commits/"] as const) {
+    await page.goto(`${basePath}/admin/sample${suffix}`);
+    await expect(page.locator(".project-header-outer")).toBeVisible();
+    await expect(page.locator(".project-menu-outer")).toBeVisible();
+    await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/\bactive\b/u);
+  }
+
+  const containerRequests: string[] = [];
+  await mockProjectHome(page, {
+    containerRequests,
+    containerStatus: 403,
+    ownerName: "sample",
+    projectName: "sample",
+  });
+
+  for (const suffix of ["/code/", "/commits/"] as const) {
+    await page.goto(`${basePath}/sample/sample${suffix}`);
+    await expect(page).toHaveTitle("You are not authorized");
+    await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+      "You are not authorized",
+    );
+  }
+  expect(containerRequests).toEqual(["403", "403"]);
+});
+
 test("project home header and milestone StyleX owners retain legacy geometry without fallback", async ({
   page,
 }) => {
@@ -1422,6 +1497,8 @@ async function dispatchCancelableClick(locator: Locator) {
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
+    containerRequests: string[];
+    containerStatus: number;
     enrollmentRequestCount: number;
     enrollRequests: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited: boolean;
@@ -1557,6 +1634,21 @@ async function mockProjectHome(
   await page.route(
     `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
     async (route) => {
+      if (overrides.containerStatus) {
+        overrides.containerRequests?.push(`${overrides.containerStatus}`);
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: {
+              code: overrides.containerStatus === 404 ? "not_found" : "forbidden",
+              message: "Project unavailable",
+              status: overrides.containerStatus,
+            },
+          }),
+          status: overrides.containerStatus,
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
