@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1083 — scoped GNB search-toggle class parity
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `common/navbar.scala.html` renders the scoped search toggle as `button.ybtn.dropdown-toggle`; `common/scripts.scala.html` supplies behavior evidence only; frozen `_page.less`, `_responsive.less`, `_yobiUI.less`, imported `_temporary.less`, Bootstrap, Bootstrap Responsive, and `conf/messages` establish cascade, responsive hiding, and scope copy. | Only `global-gnb-search-scope-toggle` in `frontend/src/routes/-home-route-screen.tsx` restores the literal classes before its existing StyleX classes. React state/events retain menu and form-action ownership; plugin-only `data-toggle`, frozen sources, form/wrapper/menu/items/search box, and other GNB owners do not change. | Exact leading class order, StyleX owner, plugin-attribute absence, project/all selection and form action, desktop paint/caret/order/containment/no-overflow, and 390px responsive hiding/no-overflow. | Full final profile passes 25 tests then exposes the 10ms RED at test 26. Focused normal/fallback-off RED→Green pass 1/1 each; main fallback-off integration passes 2/2 in 14.2s, including the former source-contract failure. | Resume broad final from test 27, then global fallback-consumer audit, same-fixture screenshots/pixel lock, and overall migration completion. |
+
 ### Batch 1082 — final-profile actionability and Favorite star geometry
 
 | Legacy/evidence | Owner or harness boundary | Stable contract | Verification | Remaining scope |

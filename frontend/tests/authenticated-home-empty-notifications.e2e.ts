@@ -1543,7 +1543,9 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(siteLayoutShellSource).toContain("event.preventDefault();");
   expect(siteLayoutShellSource).toContain("event.stopPropagation();");
   expect(siteLayoutShellSource).toContain('id="gnb-search-scope-title"');
-  expect(siteLayoutShellSource).toContain('className="ybtn dropdown-toggle"');
+  expect(siteLayoutShellSource).toMatch(
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*`ybtn dropdown-toggle \$\{\s*stylex\.props\(\s*globalGnbSearchScopeStyles\.toggle,\s*isSearchScopeMenuOpen\s*&&\s*globalGnbSearchScopeStyles\.openToggle,\s*\)\.className\s*\}`;[\s\S]*?<button[\s\S]*?className=\{\s*\1\s*\}/,
+  );
   expect(siteLayoutShellSource).not.toContain('data-toggle="dropdown"');
   expect(siteLayoutShellSource).not.toContain("document.addEventListener");
   expect(siteLayoutShellSource).not.toContain("classList");

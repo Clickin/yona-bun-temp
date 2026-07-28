@@ -1,5 +1,22 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1083 — scoped GNB search-toggle class parity — 2026-07-28
+
+The full fallback-off profile advanced through 25 tests and stopped in 10ms on
+the scoped GNB search source contract. This was not an actionability or paint
+settle delay: `common/navbar.scala.html` renders
+`button.ybtn.dropdown-toggle`, while the React owner retained only generated
+StyleX classes. `frontend/src/routes/-home-route-screen.tsx` now composes the
+literal legacy classes before the existing StyleX classes without restoring
+the jQuery-only `data-toggle` attribute or changing React-owned scope/menu
+state. The focused normal and fallback-off RED both observed the missing class
+prefix; focused Green passes in both modes. Main integration fallback-off
+passes 2/2 in 14.2 seconds, including the former full-profile source failure
+and desktop/mobile geometry, paint, caret, interaction, containment, and
+overflow. Form, scope wrapper, menu/items, search box, other GNB owners, and
+the frozen cascade are unchanged. The broad final profile must resume from
+test 27; global fallback audit and same-fixture pixel lock remain open.
+
 ### Batch 1082 — final-profile actionability and Favorite star geometry — 2026-07-28
 
 The full fallback-off final profile was restarted with one System-Chrome worker

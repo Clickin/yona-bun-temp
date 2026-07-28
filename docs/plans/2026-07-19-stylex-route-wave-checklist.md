@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1083 scoped GNB search-toggle class parity
+
+- [x] Run the full fallback-off profile through test 26 and distinguish its
+  10ms source-contract failure from browser actionability/settle delay.
+- [x] Restore `ybtn dropdown-toggle` before the existing StyleX classes on the
+  scoped project/group search button from `common/navbar.scala.html`.
+- [x] Keep `data-toggle` absent and preserve React state/events, menu order,
+  scope selection, and resulting form action.
+- [x] Pass focused normal/fallback-off RED→Green plus main fallback-off 2/2
+  desktop/390 paint, caret, containment, interaction, and overflow gates.
+- [ ] Resume the broad final profile from test 27; full fallback audit,
+  same-fixture visual lock, and overall completion remain open.
+
 ### 2026-07-28 — Batch 1082 final-profile harness and Favorite stars
 
 - [x] Replace only the falsely blocked site-admin locator click with a measured,

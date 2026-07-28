@@ -1647,6 +1647,12 @@ export function SiteLayoutShell({
       : selectedSearchScope === "group" && groupSearchAction
         ? t("search.scope.group")
         : t("search.scope.all");
+  const globalGnbSearchScopeToggleClassName = `ybtn dropdown-toggle ${
+    stylex.props(
+      globalGnbSearchScopeStyles.toggle,
+      isSearchScopeMenuOpen && globalGnbSearchScopeStyles.openToggle,
+    ).className
+  }`;
   const handleSearchScopeToggleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1880,12 +1886,9 @@ export function SiteLayoutShell({
                       onBlur={handleSearchScopeBlur}
                     >
                       <button
-                        {...stylex.props(
-                          globalGnbSearchScopeStyles.toggle,
-                          isSearchScopeMenuOpen && globalGnbSearchScopeStyles.openToggle,
-                        )}
                         aria-expanded={isSearchScopeMenuOpen}
                         aria-haspopup="menu"
+                        className={globalGnbSearchScopeToggleClassName}
                         data-stylex-owner="global-gnb-search-scope-toggle"
                         id="gnb-search-scope-title"
                         onClick={handleSearchScopeToggleClick}
