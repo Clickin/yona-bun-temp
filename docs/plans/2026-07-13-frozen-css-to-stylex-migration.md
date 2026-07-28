@@ -1,5 +1,26 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1097 — standalone login and anonymous project-list contract — 2026-07-28
+
+Broad final reached the standalone login exact-DOM state with stale
+expectations for generated StyleX tokens, retired presentation classes,
+mounted paths, approved Yoram identity, and final frozen geometry. A
+legacy-first review also caught a real implementation gap that the stale
+fixture could have hidden: `NullUser` inherits `User.isGuest=false`, so the
+navbar's `!HIDE_PROJECT_LISTING && !currentUser.isGuest` branch renders
+`List All` for anonymous users.
+
+The shared shell now uses that exact predicate for the project-list link and
+reuses it for the all-projects search scope. The login route names its mounted
+legacy POST action; the strict fixture retains legacy structural classes while
+discarding only generated StyleX tokens and records the established semantic
+pin, direct `/anonymous` route, retired float/button classes, approved Yoram
+copy, final 27px input height, and four-side 10px footer padding. A fresh
+fallback-off production build/StyleX verifier passes, as do the default and
+four configured login variants 5/5 in final System Chrome, TypeScript, and
+diff checks. The independently exposed password-reset toast opacity remains
+the next state; broad, global audit, and final pixel lock remain open.
+
 ### Batch 1096 — mounted login alias form contract — 2026-07-28
 
 Broad final advanced through 142 tests and the fallback consumer graph before

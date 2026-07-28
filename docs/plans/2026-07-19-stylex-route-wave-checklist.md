@@ -1,5 +1,20 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1097 standalone login and anonymous project-list contract
+
+- [x] Recheck `user/login.scala.html`, navbar/usermenu partials, routes,
+  `User.isGuest`, and `NullUser` before accepting the broad DOM expectation.
+- [x] Restore anonymous `List All` and its divider from the exact legacy
+  `!HIDE_PROJECT_LISTING && !currentUser.isGuest` predicate.
+- [x] Keep semantic React pin behavior, mounted login action, approved Yoram
+  identity, and retired presentation-class ownership explicit.
+- [x] Pass fresh fallback-off production build/StyleX verification, final
+  System Chrome default plus four login variants 5/5, TypeScript, and diff
+  checks.
+- [ ] Repair the independently exposed password-reset toast opacity, then
+  resume broad after loginform test 146, global fallback audit, screenshot
+  pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1096 mounted login alias form contract
 
 - [x] Recheck `conf/routes`, `user/login.scala.html`, site layout, and the

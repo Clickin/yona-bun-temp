@@ -9,14 +9,14 @@ const EXPECTED_LOGIN_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <span class="pin" title="Sidebar">
+    <button class="pin" title="Sidebar" type="button">
       <i class="yobicon-arrow-left" aria-hidden="true"></i>
       <i class="yobicon-arrow-right" aria-hidden="true"></i>
-    </span>
+    </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
-      <li class="divider"></li>
+      <li><a href="__BASE_PATH__/projects">List All</a></li>
+      <li></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -30,7 +30,7 @@ const EXPECTED_LOGIN_SCREEN = `
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/anonymous">Profile</a></span>
           <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
@@ -49,14 +49,14 @@ const EXPECTED_LOGIN_SCREEN = `
         <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
       </li>
       <li class="divider"></li>
-      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+      <li><a href="__BASE_PATH__/users/signupform">Sign up</a></li>
     </ul>
   </div>
 </header>
 <div class="page full">
   <div class="center-wrap tag-line-wrap login">
     <h1 class="title">
-      Log in to <span class="highlight">Yona</span>
+      Log in to <span class="highlight">Yoram</span>
     </h1>
     <p class="tag-line">Web-based platform for collaborative software development</p>
   </div>
@@ -89,11 +89,11 @@ const DEFAULT_FORM_BODY = `
       </div>
       <div class="btns-row nm"></div>
       <div class="act-row mt5">
-        <div class="remember-me-wrap pull-left">
+        <div class="remember-me-wrap">
           <input id="remember-me" type="checkbox" name="rememberMe" class="checkbox" checked>
           <label for="remember-me" class="bg-checkbox">Stay logged in</label>
         </div>
-        <div class="links-wrap pull-right">
+        <div class="links-wrap">
           <a href="__BASE_PATH__/lostPassword">Password forgotten?</a>
         </div>
       </div>
@@ -127,18 +127,18 @@ const SOCIAL_PROVIDERS_FORM_BODY = `
         <a href="__BASE_PATH__/authenticate/google" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><img src="__BASE_PATH__/assets/images/provider-logo/btn_google_light_normal_ios.svg" alt="login with Google"> Sign in with Google</span></a>
       </div>
       <div class="act-row mt5">
-        <div class="remember-me-wrap pull-left">
+        <div class="remember-me-wrap">
           <input id="remember-me" type="checkbox" name="rememberMe" class="checkbox" checked>
           <label for="remember-me" class="bg-checkbox">Stay logged in</label>
         </div>
-        <div class="links-wrap pull-right">
+        <div class="links-wrap">
           <a href="__BASE_PATH__/lostPassword">Password forgotten?</a>
         </div>
       </div>
 `;
 
 const EMAIL_VERIFICATION_HELP = `
-    <div class="email-verification-help">If you are trying to login for the first time, a confirmation mail will be sent.</div>
+    <div>If you are trying to login for the first time, a confirmation mail will be sent.</div>
 `;
 
 const ROOT_LOGIN_DIALOG_FORM_BODY = `
@@ -182,6 +182,28 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     "Log in",
   );
   await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-sidebar-open-pin"]')).toHaveJSProperty(
+    "tagName",
+    "BUTTON",
+  );
+  const projectListingLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  await expect(projectListingLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(projectListingLink).toHaveText("List All");
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
+    1,
+  );
+  expect(
+    await projectListingLink.evaluate((link) =>
+      link.parentElement?.nextElementSibling?.getAttribute("data-stylex-owner"),
+    ),
+  ).toBe("global-gnb-project-list-divider");
+  await expect(page.locator(`#mySidenav a[href="${basePath}/anonymous"]`)).toHaveText("Profile");
+  await expect(page.locator(`a[href="${basePath}/users/signupform"]`)).not.toHaveClass(
+    /\bybtn(?:-success)?\b/u,
+  );
+  await expect(page.locator(".remember-me-wrap")).not.toHaveClass(/\bpull-left\b/u);
+  await expect(page.locator(".links-wrap")).not.toHaveClass(/\bpull-right\b/u);
+  await expect(page.locator(".page.full h1.title")).toContainText("Yoram");
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(page, expectedLoginScreen(basePath, defaultFormBody()));
 
@@ -201,14 +223,14 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     logoLineHeight: "40px",
     logoPadding: "6px 10px",
     pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
+    pageFooterOuterPadding: "10px",
     passwordMarginBottom: "15px",
     providerColor: "rgb(51, 51, 51)",
     providerFontSize: "9px",
     providerMarginLeft: "4px",
     tagLineMarginBottom: "26px",
     tagLinePaddingTop: "80px",
-    textHeight: "30px",
+    textHeight: "27px",
     textMarginBottom: "10px",
     textWidth: "386px",
     titleLineHeight: "42px",
@@ -254,8 +276,52 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     width: "85%",
   });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
-  expect(readFileSync("src/routes/users/loginform.tsx", "utf8")).not.toContain(
-    "LegacyInternalLink",
+  const routeSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
+  const styleSource = readFileSync("src/routes/users/-loginform.stylex.ts", "utf8");
+  const legacyLogin = readFileSync("../yona-original/app/views/user/login.scala.html", "utf8");
+  const legacyNavbar = readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8");
+  const legacyUsermenu = readFileSync(
+    "../yona-original/app/views/common/usermenu.scala.html",
+    "utf8",
+  );
+  const legacyNullUser = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
+  const legacyUser = readFileSync("../yona-original/app/models/User.java", "utf8");
+  const legacyRoutes = readFileSync("../yona-original/conf/routes", "utf8");
+  const sharedShellSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const responsiveLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  expect(legacyLogin).toContain('<form action="@routes.UserApp.login()" method="POST">');
+  expect(legacyNavbar).toContain('<div class="pin"');
+  expect(legacyNavbar).toContain(
+    "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest)",
+  );
+  expect(legacyNullUser).toContain("public class NullUser extends User");
+  expect(legacyNullUser).not.toMatch(/\bisGuest\s*=/u);
+  expect(legacyUser).toContain("public boolean isGuest = false;");
+  expect(legacyUsermenu).toContain('href="@routes.UserApp.userInfo(currentUser.loginId)"');
+  expect(legacyRoutes).toMatch(/^GET\s+\/:user\s+controllers\.UserApp\.userInfo/mu);
+  expect(pageLess).toMatch(/\.login-form-wrap,[\s\S]*?\.text \{[\s\S]*?height: 27px;/u);
+  expect(responsiveLess).toMatch(/@media all \{[\s\S]*?\.page-footer-outer \{\s*padding: 10px;/u);
+  expect(routeSource).toMatch(
+    /const canonicalLegacyLoginAction = prefixBasePath\(\s*runtimeConfig\.basePath,\s*"\/users\/login",?\s*\);/u,
+  );
+  expect(routeSource).toContain("action={canonicalLegacyLoginAction}");
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("pull-left");
+  expect(routeSource).not.toContain("pull-right");
+  expect(styleSource).toContain('float: "left"');
+  expect(styleSource).toContain('float: "right"');
+  expect(sharedShellSource).toMatch(
+    /const shouldRenderProjectListingLink =\s*runtimeConfig\.hideProjectListing !== true && !isGuest;/u,
+  );
+  expect(sharedShellSource).toContain(
+    "const shouldRenderAllProjectsSearchScope = shouldRenderProjectListingLink || isSiteAdmin;",
+  );
+  expect(sharedShellSource).not.toContain(
+    "runtimeConfig.hideProjectListing !== true && session?.isAnonymous === false && !isGuest",
   );
 });
 
@@ -836,7 +902,7 @@ test("email-verification login help matches legacy user/login.scala.html screen 
   await mockCapabilities(page, { emailVerificationEnabled: true });
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
 
-  await expect(page.locator(".email-verification-help")).toHaveText(
+  await expect(page.locator('[data-stylex-owner="standalone-login-verification-help"]')).toHaveText(
     "If you are trying to login for the first time, a confirmation mail will be sent.",
   );
   const actual = await canonicalizeScreenRoots(page);
@@ -1264,10 +1330,10 @@ async function assertOAuthProviderLinks(page: Page, basePath: string) {
   const google = page.locator(".oauth-login-btn").nth(1);
 
   await expect(github).toHaveAttribute("href", `${basePath}/authenticate/github`);
-  await expect(github).toHaveClass("ybtn oauth-login-btn");
+  await expect(github).toHaveClass(/(?:^|\s)ybtn oauth-login-btn(?:\s|$)/u);
   await expect(github).toContainText("Sign in with github");
   await expect(google).toHaveAttribute("href", `${basePath}/authenticate/google`);
-  await expect(google).toHaveClass("ybtn oauth-login-btn");
+  await expect(google).toHaveClass(/(?:^|\s)ybtn oauth-login-btn(?:\s|$)/u);
   await expect(google).toContainText("Sign in with Google");
 }
 
@@ -1330,29 +1396,13 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return "";
       }
-      if (
-        name === "class" &&
-        current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
-      ) {
-        const originalValue = current.getAttribute(name) ?? "";
-        current.setAttribute(
-          name,
-          originalValue
-            .split(/\s+/u)
-            .filter((token) => token !== "gnb-nav")
-            .join(" "),
-        );
-        try {
-          return normalizeAttribute(current, name);
-        } finally {
-          current.setAttribute(name, originalValue);
-        }
-      }
       if (name === "class") {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/u)
-          .filter((value) => value && value !== "active")
+          .filter(
+            (value) =>
+              value && value !== "active" && !value.includes("__") && !/^x[a-z0-9]+$/u.test(value),
+          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -1592,7 +1642,10 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
       if (name === "class") {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/u)
-          .filter((value) => value && value !== "active")
+          .filter(
+            (value) =>
+              value && value !== "active" && !value.includes("__") && !/^x[a-z0-9]+$/u.test(value),
+          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }

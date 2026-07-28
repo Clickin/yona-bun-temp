@@ -89,6 +89,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     nonEmptyString(capabilities?.passwordPlaceholder) ?? t("user.password");
   const siteName = runtimeConfig.siteName ?? "Yoram";
   const title = lookupLegacyMessage(language, "title.loginFor", { args: [siteName] });
+  const canonicalLegacyLoginAction = prefixBasePath(runtimeConfig.basePath, "/users/login");
   const showPasswordResetFlash = password === "reset";
   const signInMutation = useMutation({
     mutationFn: async (input: { identifier: string; password: string; rememberMe: boolean }) => {
@@ -157,7 +158,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               </div>
             ) : null}
             <form
-              action={prefixBasePath(runtimeConfig.basePath, "/users/login")}
+              action={canonicalLegacyLoginAction}
               method="POST"
               onSubmit={(event) => void handleSubmit(event)}
             >

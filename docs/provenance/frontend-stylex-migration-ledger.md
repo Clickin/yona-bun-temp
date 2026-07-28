@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1097 — standalone login and anonymous project-list contract
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `user/login.scala.html`, `common/navbar.scala.html`, `common/usermenu.scala.html`, `conf/routes`, `User.java`, and `NullUser.java` establish the standalone form and shared anonymous shell. `NullUser` does not override inherited `User.isGuest=false`, so the navbar condition renders `List All`; frozen `_page.less` and later `_responsive.less` establish 27px text height and final four-side 10px footer padding. | `SiteLayoutShell` removes only the non-legacy anonymous exclusion from the shared project-list predicate and reuses the result for all-project search scope. `LoginFormScreen` names the existing mounted `/users/login` action. React retains semantic pin/events and TanStack routing; approved Yoram identity and previously retired presentation classes remain unchanged. | Exact login DOM keeps legacy structural classes while canonicalizing only generated StyleX tokens; anonymous `List All` plus divider/order, direct `/anonymous`, mounted action, semantic pin, default/social/email-verification/custom-placeholder variants, desktop/mobile geometry, and approved copy deviations stay strict. | Fresh fallback-off production build/StyleX verification passes; final System Chrome default plus four variants pass 5/5; TypeScript and diff checks pass. | Password-reset toast opacity state, broad after test 146, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1096 — mounted login alias form contract
 
 | Legacy/evidence | Route boundary | Stable contract | Verification | Remaining scope |
