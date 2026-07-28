@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1087 — forgot-password alias production contract
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `conf/routes`, `site/lostPassword.scala.html`, included site/layout/navbar/footer partials, frozen Bootstrap alert rules, `_page.less`, and `_responsive.less` establish the canonical endpoint, success copy, form ancestry, and presentation. | `/forgot-password` remains a compatibility-only TanStack redirect. The route only names its canonical legacy href; the canonical `/lostPassword` screen retains React/StyleX ownership and does not restore retired Bootstrap classes. | Replace redirect preserves `requested=1`; mounted pathname and native form action resolve to `/yona/lostPassword`; stable success-alert owner/heading and “Mail has been sent.” are visible; `alert`/`alert-success` stay absent. | Fresh fallback-off production build/verifier and focused System-Chrome checks pass 2/2 in 3.5s, with the browser case in 1.2s. Broad final advances through 45 tests. The same fresh build took 64s before browser execution. | Test 46 production asset URL contract, build-stage latency variance, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1086 — notification learn-more computed height
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

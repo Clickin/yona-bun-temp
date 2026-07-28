@@ -1,5 +1,22 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1087 — forgot-password alias production contract — 2026-07-28
+
+The production-dist profile exposed stale development-era presentation-class
+and unmounted form-action assertions in the `/forgot-password?requested=1`
+alias test. The alias still redirects with replace semantics to canonical
+`/lostPassword`, preserves search, and lets the mounted runtime base own the
+result URL and native form action. The canonical screen remains StyleX-owned;
+retired Bootstrap alert classes were not restored.
+
+The route only names the canonical legacy href before the existing TanStack
+redirect. The focused test now uses stable StyleX owners and visible legacy
+copy, requires retired alert classes absent, and checks the exact mounted form
+action. A fresh fallback-off production build passes 2/2 in 3.5s (browser
+1.2s). The broad suite advances through 45 tests; test 46 has a separate stale
+development asset-URL expectation. The same run's 64s build is retained as a
+build-stage latency investigation, not a browser stabilization regression.
+
 ### Batch 1086 — notification learn-more computed height — 2026-07-28
 
 The production-dist profile showed that the learn-more implementation was

@@ -11,9 +11,18 @@ test("forgot-password alias redirects to the legacy lostPassword route with sear
   await expect(page).toHaveURL(/\/lostPassword/u);
   const redirectedUrl = new URL(page.url());
   expect(redirectedUrl.pathname).toBe(`${basePath}/lostPassword`);
-  expect(redirectedUrl.searchParams.get("requested")).toContain("1");
-  await expect(page.locator(".alert.alert-success")).toBeVisible();
-  await expect(page.locator(".login-form-wrap form[action='/lostPassword']")).toBeVisible();
+  expect(redirectedUrl.searchParams.get("requested")).toBe("1");
+  const successAlert = page.locator('[data-stylex-owner="lost-password-success-alert"]');
+  const successHeading = successAlert.locator(
+    '[data-stylex-part="lost-password-success-alert-heading"]',
+  );
+  await expect(successAlert).toBeVisible();
+  await expect(successHeading).toBeVisible();
+  await expect(successHeading).toHaveText("Mail has been sent.");
+  await expect(successAlert).not.toHaveClass(/\b(?:alert|alert-success)\b/u);
+  const form = page.locator(".login-form-wrap > form");
+  await expect(form).toBeVisible();
+  await expect(form).toHaveAttribute("action", `${basePath === "/" ? "" : basePath}/lostPassword`);
 });
 
 test("forgot-password alias source uses TanStack Router redirect instead of browser replace", () => {
@@ -30,8 +39,11 @@ test("forgot-password alias source uses TanStack Router redirect instead of brow
   expect(legacyLostPassword).toContain("@routes.PasswordResetApp.requestResetPasswordEmail()");
   expect(source).toContain('createFileRoute("/forgot-password")');
   expect(source).toContain("beforeLoad");
-  expect(source).toContain("redirect({");
-  expect(source).toContain("href: `/lostPassword${location.searchStr}`");
-  expect(source).toContain("return null;");
+  expect(source).toMatch(
+    /const canonicalLegacyLostPasswordHref\s*=\s*`\/lostPassword\$\{location\.searchStr\}`;/u,
+  );
+  expect(source).toMatch(
+    /throw redirect\(\{\s*href:\s*canonicalLegacyLostPasswordHref,\s*replace:\s*true,\s*\}\);/u,
+  );
   expect(source).not.toContain("window.location.replace");
 });

@@ -1,5 +1,16 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1087 forgot-password alias production contract
+
+- [x] Preserve `/forgot-password?requested=1` replace redirect to canonical
+  `/lostPassword` with the query and mounted base.
+- [x] Use the stable success-alert owner, visible legacy copy, retired-class
+  absence, and exact mounted native form action as the browser contract.
+- [x] Pass a fresh fallback-off production build 2/2 in 3.5s, including the
+  browser case in 1.2s, and advance the broad suite through 45 tests.
+- [ ] Correct test 46's development-only asset URL expectation, then measure
+  the separate 64s build-stage variance and continue final pixel lock.
+
 ### 2026-07-28 — Batch 1086 notification learn-more computed height
 
 - [x] Recheck legacy `.nowrap` toggle, child-message measurement, expanded
