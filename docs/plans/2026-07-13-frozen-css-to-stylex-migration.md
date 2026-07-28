@@ -1,5 +1,24 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1107 — root not-found Yoram shell and GNB box — 2026-07-28
+
+The migration-after chunk immediately exposed the root not-found fixture still
+requiring Yona, NAVER/D2, upstream feedback, `/user/anonymous`, plugin hooks,
+and retired signup paint. Those conflict with the user's explicit Yoram
+identity/footer/repository/contact changes and established React ownership.
+
+The expected shell now preserves Yoram, configured-link absence, direct
+`/anonymous`, semantic tab buttons, mounted trailing-slash root, and Yoram
+authors. Generated StyleX tokens alone are canonicalized; the legacy
+error-wrap/ico-err2/message/Home structural classes, order, paint, and geometry
+remain exact. A real fallback-off gap was also repaired: root not-found now
+owns `_responsive.less @media all` GNB `padding:0 10px` and border-box sizing.
+Error/home and logo navigation retain SPA state.
+
+Fast and fresh production fallback-off System Chrome pass all five not-found
+states, StyleX production verification passes, and TypeScript/diff pass.
+Snapshots and thresholds are unchanged. Organization chunk resumes next.
+
 ### Batch 1106 — migration disabled-shell fallback-off visual parity — 2026-07-28
 
 Broad test 177 first exposed a stale shared-shell DOM fixture for the disabled

@@ -1,5 +1,20 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1107 root not-found Yoram shell and GNB box
+
+- [x] Rebuild the not-found expected shell from the error template/layout and
+  preserve explicit Yoram identity deviations.
+- [x] Do not restore Yona, NAVER/D2, upstream feedback, or retired plugin
+  attributes/classes.
+- [x] Restore the frozen responsive GNB outer 10px inline padding and
+  border-box ownership.
+- [x] Keep error-wrap/icon/message/Home structure, glyph, geometry, SPA
+  navigation, screenshots, and thresholds strict.
+- [x] Pass fast and fresh production fallback-off System Chrome 5/5,
+  StyleX verifier, TypeScript, and diff checks.
+- [ ] Continue organization chunk, then broad/global fallback audit,
+  screenshot pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1106 migration disabled-shell fallback-off visual parity
 
 - [x] Rebuild the stale shared-shell expected DOM from migration layout,

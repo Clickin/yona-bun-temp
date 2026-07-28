@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1107 — root not-found Yoram shell and GNB box
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `error/notfound_default.scala.html`, layout/usermenu, frozen `_page.less`, `_sprites.less`, responsive GNB and Bootstrap paragraph rules establish the error output. User-approved Yoram identity removes upstream provider/contact/repository content. | `__root.tsx` names/reuses not-found error props, removes retired plugin/presentation attributes, and adds exact responsive GNB outer 10px inline padding plus border-box. React/TanStack owns semantic buttons and SPA links. | Mounted Yoram shell, no absent feedback, direct `/anonymous`, Yoram authors; exact error-wrap → ico-err2 → message → Home structure/paint/geometry and SPA continuity. Generated StyleX tokens only are ignored. | Fast and fresh production fallback-off System Chrome pass 5/5; StyleX verifier, TypeScript, and diff pass; screenshots/thresholds unchanged. | Organization chunk, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1106 — migration disabled-shell fallback-off visual parity
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

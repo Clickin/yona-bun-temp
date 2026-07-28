@@ -33,6 +33,10 @@ const legacyPlainLinkActiveProps = {
   "data-status": undefined,
 };
 
+const rootNotFoundErrorWrapStyleProps = stylex.props(rootNotFoundStyles.errorWrap);
+const rootNotFoundErrorIconStyleProps = stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl));
+const rootNotFoundErrorMessageStyleProps = stylex.props(rootNotFoundStyles.errorMessage);
+
 type RootToast = {
   durationMs?: number;
   key: string;
@@ -79,6 +83,11 @@ const styles = stylex.create({
   rootEventBoundary: {
     "--yoram-stylex-root-boundary": "stylex",
     display: "contents",
+  },
+  rootNotFoundGnbOuter: {
+    boxSizing: "border-box",
+    paddingBlock: "0px",
+    paddingInline: "10px",
   },
   rootToastContainer: {
     position: "fixed",
@@ -283,6 +292,7 @@ const rootLoginDialogRememberGroupClassName = stylex.props(
 ).className;
 const rootLoginDialogSubmitClassName = stylex.props(styles.rootLoginDialogSubmit).className;
 const rootLoginDialogBackdropClassName = stylex.props(styles.rootLoginDialogBackdrop).className;
+const rootNotFoundGnbOuterStyleProps = stylex.props(styles.rootNotFoundGnbOuter);
 
 export function useRootToast() {
   const setRootToast = React.use(RootToastContext);
@@ -965,7 +975,10 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
 
   return (
     <>
-      <header className="gnb-outer">
+      <header
+        {...rootNotFoundGnbOuterStyleProps}
+        className={`${rootNotFoundGnbOuterStyleProps.className} gnb-outer`}
+      >
         <div className="gnb-inner">
           <Link
             activeOptions={legacyPlainLinkActiveOptions}
@@ -1057,15 +1070,13 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           </div>
           <ul className="gnb-usermenu">
             <li className="gnb-usermenu-item" id="required-logged-in">
-              <Link to={loginFormPath} className="user-item-btn" data-login="required">
+              <Link to={loginFormPath} className="user-item-btn">
                 {t("title.login")}
               </Link>
             </li>
             <li className="divider"></li>
             <li>
-              <Link to={signupFormPath} className="ybtn ybtn-success">
-                {t("title.signup")}
-              </Link>
+              <Link to={signupFormPath}>{t("title.signup")}</Link>
             </li>
           </ul>
         </div>
@@ -1073,17 +1084,17 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div
-            {...stylex.props(rootNotFoundStyles.errorWrap)}
-            className={`${stylex.props(rootNotFoundStyles.errorWrap).className} error-wrap`}
+            {...rootNotFoundErrorWrapStyleProps}
+            className={`${rootNotFoundErrorWrapStyleProps.className} error-wrap`}
             data-stylex-owner="root-alias-notfound-error-wrap"
           >
             <i
-              {...stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl))}
-              className={`${stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+              {...rootNotFoundErrorIconStyleProps}
+              className={`${rootNotFoundErrorIconStyleProps.className} ico ico-err2`}
               data-stylex-owner="root-alias-notfound-error-icon"
             />
             <p
-              {...stylex.props(rootNotFoundStyles.errorMessage)}
+              {...rootNotFoundErrorMessageStyleProps}
               data-stylex-owner="root-alias-notfound-error-message"
             >
               {t("error.notfound")}
