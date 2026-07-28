@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1093 — profile-scoped failure trace cost
+
+| Evidence | Harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Isolated production-dist rendering reaches the visible root in 285ms. The same strict shared-markdown CSS failure takes the full 30-second test ceiling with retained trace/context finalization but reports in 6.2s with trace disabled. | `stylexVerificationEnvironment("fast")` sets `YONA_E2E_TRACE_MODE=off`; `final` sets `retain-on-failure`; Playwright config consumes only this trace policy. System Chrome, outside-sandbox execution, fallback-off, server isolation, timeouts, assertions, screenshots, geometry, and pixel thresholds are unchanged. | Fast development failures do not serialize retained trace; final visual-lock failures retain trace evidence. The config defaults to retained trace outside the explicit fast profile. | Profile contracts pass 3/3 and TypeScript passes. The actual fast-profile environment reproduces the same strict CSS mismatch in 6.8s without trace attachment or 30s tail; final retains the artifact policy. | Shared markdown-help font-size state, broad test 60 onward, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1092 — help footer final cascade and post-broad latency isolation
 
 | Legacy/evidence | Owner or harness boundary | Stable contract | Verification | Remaining scope |

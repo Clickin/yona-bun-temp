@@ -8,6 +8,8 @@ const frontendOrigin = process.env.YONA_E2E_FRONTEND_ORIGIN ?? "http://127.0.0.1
 const backendOrigin = process.env.YONA_E2E_BACKEND_ORIGIN ?? "http://127.0.0.1:8089";
 const wrapperManagesServers = process.env.YONA_E2E_MANAGED_SERVERS === "1";
 const browserChannel = process.env.PW_CHANNEL ?? "chrome";
+const traceMode =
+  process.env.YONA_E2E_TRACE_MODE === "off" ? ("off" as const) : ("retain-on-failure" as const);
 
 export default defineConfig({
   testDir: "./tests",
@@ -16,7 +18,7 @@ export default defineConfig({
   use: {
     baseURL: frontendOrigin,
     channel: browserChannel,
-    trace: "retain-on-failure",
+    trace: traceMode,
   },
   webServer: wrapperManagesServers
     ? []

@@ -48,6 +48,7 @@ export function stylexVerificationEnvironment(profileName) {
     YONA_STYLEX_PROFILE: profile.name,
     VITE_DISABLE_LEGACY_FALLBACK: "1",
     YONA_E2E_FALLBACK_MODE: "fallback-off",
+    YONA_E2E_TRACE_MODE: profile.name === "fast" ? "off" : "retain-on-failure",
     PW_CHANNEL: "chrome",
     ...(profile.name === "final"
       ? {

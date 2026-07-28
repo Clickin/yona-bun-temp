@@ -1,5 +1,14 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1093 profile-scoped failure trace cost
+
+- [x] Keep `PW_CHANNEL=chrome`, outside-sandbox execution, fallback-off,
+  assertion timeouts, screenshots, geometry, and pixel thresholds unchanged.
+- [x] Set only the fast StyleX profile to Playwright trace `off`.
+- [x] Keep the final StyleX profile explicitly at `retain-on-failure`.
+- [ ] Continue shared markdown-help parity, broad final, global fallback audit,
+  screenshot pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1092 help footer and stabilization isolation
 
 - [x] Trace `/_help` through `siteLayout`/`common/footer` and the complete
@@ -13,8 +22,8 @@
 - [x] Prove retained trace normally adds about 0.68s on a simple page, then
   reproduce the complex failure's 30s artifact/context tail as 6.2s with trace
   off; terminate only three confirmed 8–10-hour orphan E2E backend groups.
-- [ ] Keep retained trace in final and disable it only in the fast development
-  profile as a separate harness commit.
+- [x] Keep retained trace in final and disable it only in the fast development
+  profile in Batch 1093.
 - [ ] Continue broad final from test 60, then global fallback audit,
   screenshot pair, and final pixel lock.
 

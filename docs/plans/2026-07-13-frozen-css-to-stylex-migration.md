@@ -1,5 +1,21 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1093 — profile-scoped failure trace cost — 2026-07-28
+
+The stabilization audit proved the actual dist screen settles in hundreds of
+milliseconds while a complex failed Playwright case can spend the remaining
+30-second test budget finalizing retained trace/context artifacts. The same
+strict shared-markdown CSS mismatch completed in 6.2s with trace disabled.
+
+The canonical fast StyleX profile now explicitly selects Playwright trace
+`off`; the final profile explicitly retains `retain-on-failure`. Browser,
+fallback-off, assertion, screenshot, geometry, timeout, and pixel settings are
+unchanged. This removes a failure-only development-loop tax while preserving
+the final visual-lock evidence policy. System Chrome and outside-sandbox
+requirements remain mandatory. The actual fast-profile environment reproduced
+the strict markdown mismatch in 6.8s without a trace attachment or 30s tail;
+profile contracts pass 3/3 and frontend TypeScript passes.
+
 ### Batch 1092 — help footer final cascade and post-broad latency isolation — 2026-07-28
 
 The broad final profile passed 58 tests before the anonymous `/_help` screen
@@ -24,8 +40,8 @@ the 30s test ceiling, while `--trace=off` reported the same strict 5s CSS
 assertion failure in 6.2s. Complex failure artifact/context finalization, not
 page stabilization, is therefore the cause. Three 8–10-hour orphan E2E backend
 groups were also identified on isolated temporary ports and terminated. The
-final profile retains its evidence; disabling retained trace only for the fast
-development profile is the queued harness fix. No screenshot, geometry,
+final profile retains its evidence; Batch 1093 disables retained trace only
+for the fast development profile. No screenshot, geometry,
 timeout, or pixel threshold was relaxed. Broad test 60 onward, global fallback
 audit, and final pixel lock remain open.
 
