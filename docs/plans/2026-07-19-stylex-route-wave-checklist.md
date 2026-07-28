@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1088 production shell asset and latency classification
+
+- [x] Verify the intro photo remains a Vite import in dev and mounted hashed
+  production output; reject public runtime string paths.
+- [x] Preserve the approved three-item Yoram GNB and strict retained-item
+  desktop/mobile geometry without restoring unrelated upstream entries.
+- [x] Pass the reused fallback-off production-dist browser case in 963ms
+  (Playwright 2.8s; complete managed run 7.39s).
+- [x] Attribute the 73s fresh build to StyleX transform (87%) and Babel (9%),
+  and the failed-run 30s tail to retained-trace finalization, not UI settling.
+- [ ] Continue the broad fallback-off suite after test 46 and complete the
+  global fallback audit, screenshot pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1087 forgot-password alias production contract
 
 - [x] Preserve `/forgot-password?requested=1` replace redirect to canonical

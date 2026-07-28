@@ -14,7 +14,7 @@ import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { globalBreakpoints } from "../theme.stylex";
 import { useRootLoginDialog, useRootToast } from "./__root";
-import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
+import viteOwnedSiteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
 import {
   anonymousHomeIntroBackgroundTheme,
   anonymousHomeIntroBackgroundVars,
@@ -604,13 +604,13 @@ function HomeScreen({
           {...stylex.props(
             anonymousHomeIntroBackgroundTheme,
             anonymousHomeIntroStyles.hero,
-            anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl),
+            anonymousHomeIntroDynamicStyles.background(viteOwnedSiteIntroBackgroundUrl),
           )}
           className={`siteintro ${
             stylex.props(
               anonymousHomeIntroBackgroundTheme,
               anonymousHomeIntroStyles.hero,
-              anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl),
+              anonymousHomeIntroDynamicStyles.background(viteOwnedSiteIntroBackgroundUrl),
             ).className
           }`}
           data-stylex-owner="anonymous-home-intro"

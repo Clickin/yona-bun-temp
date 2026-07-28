@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1088 — production shell asset and latency classification
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Anonymous intro Scala partials, navbar partial, frozen `.siteintro`/`.gnb-nav`/responsive rules, and the approved Yoram identity deviation establish the photo, retained GNB order, and intentional upstream-item absence. | The route only names its existing Vite-imported photo. Vite owns dev/fingerprinted URLs; React/StyleX output and approved three-item GNB behavior are unchanged. The test, not the UI, retires stale dev URL/five-item assumptions. | Same-origin mounted Vite asset; no public runtime path; brand → Yoram repository → search; project-list/divider absent; exact retained desktop/mobile geometry and normal interaction. | Reused fallback-off dist passes the System-Chrome case in 963ms, Playwright in 2.8s, and the managed run in 7.39s. Fresh build transforms 1,213 modules in 73s with plugin timing 87% StyleX/9% Babel. A failed 628ms assertion incurred a separate 30s retained-trace finalization tail. | Broad test 47 onward, stale create-link source assertion, global fallback audit, same-fixture screenshots, final pixel lock, and a later harness optimization for fresh-build/failed-trace overhead. |
+
 ### Batch 1087 — forgot-password alias production contract
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

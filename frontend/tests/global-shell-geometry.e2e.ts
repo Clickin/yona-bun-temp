@@ -1,9 +1,8 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const LEGACY_FEEDBACK_URL = "https://github.com/yona-projects/yona/issues";
-const SITEINTRO_BACKGROUND_PATH = "/src/assets/legacy/photo-svetacreative.jpg";
-const SITEINTRO_BACKGROUND_URL = `${BASE_PATH === "/" ? "" : BASE_PATH}${SITEINTRO_BACKGROUND_PATH}`;
 
 test.use({ locale: "en-US", viewport: { width: 1366, height: 900 } });
 
@@ -15,32 +14,55 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
 
-  const expectedBackgroundUrl = new URL(SITEINTRO_BACKGROUND_URL, page.url()).href;
+  const backgroundImage = await page
+    .locator('[data-stylex-owner="anonymous-home-intro"]')
+    .evaluate((element) => getComputedStyle(element).backgroundImage);
+  const backgroundAssetMatch = backgroundImage.match(
+    /url\(["']?([^"')]*\/photo-svetacreative[^"')]*\.jpg(?:\?[^"')]*)?)["']?\)/u,
+  );
+  expect(backgroundAssetMatch).not.toBeNull();
+  const backgroundAssetUrl = new URL(backgroundAssetMatch![1], page.url());
+  const mountedBasePath = BASE_PATH === "/" ? "" : BASE_PATH;
+  expect(backgroundAssetUrl.origin).toBe(new URL(page.url()).origin);
+  expect(backgroundAssetUrl.pathname.startsWith(`${mountedBasePath}/`)).toBe(true);
+  expect(backgroundAssetUrl.pathname.slice(mountedBasePath.length)).toMatch(
+    /^\/(?:src\/assets\/legacy\/photo-svetacreative\.jpg|assets\/photo-svetacreative-[A-Za-z0-9_-]+\.jpg)$/u,
+  );
+  expect(backgroundAssetUrl.pathname).not.toContain("/legacy-assets/");
+
+  const homeRouteSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  expect(homeRouteSource).toMatch(
+    /import\s+viteOwnedSiteIntroBackgroundUrl\s+from\s+["']\.\.\/assets\/legacy\/photo-svetacreative\.jpg["'];/u,
+  );
   expect(
-    await page
-      .locator('[data-stylex-owner="anonymous-home-intro"]')
-      .evaluate((element) => getComputedStyle(element).backgroundImage),
-  ).toContain(`url("${expectedBackgroundUrl}")`);
+    homeRouteSource.match(
+      /anonymousHomeIntroDynamicStyles\.background\(viteOwnedSiteIntroBackgroundUrl\)/gu,
+    ),
+  ).toHaveLength(2);
+  expect(homeRouteSource).not.toMatch(
+    /anonymousHomeIntroDynamicStyles\.background\(["'`]\/(?:legacy-assets|public|src)\//u,
+  );
 
   const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
   const brandItem = page.locator('[data-stylex-owner="global-gnb-brand-item"]');
-  await expect(navItems).toHaveCount(5);
+  await expect(navItems).toHaveCount(3);
+  expect(
+    await navItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
+  ).toEqual(["global-gnb-brand-item", "global-gnb-feedback-item", "global-gnb-search-item"]);
   await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveText("Y");
   await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveAttribute(
     "href",
     `${BASE_PATH}/`,
   );
-  await expect(navItems.nth(1).locator("a")).toHaveText("List All");
-  await expect(navItems.nth(1).locator("a")).toHaveAttribute("href", `${BASE_PATH}/projects`);
-  await expect(navItems.nth(2)).toHaveAttribute(
-    "data-stylex-owner",
-    "global-gnb-project-list-divider",
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-item"]')).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
+    0,
   );
-  const feedbackLink = navItems.nth(3).locator('[data-stylex-owner="global-gnb-feedback-link"]');
+  const feedbackLink = navItems.nth(1).locator('[data-stylex-owner="global-gnb-feedback-link"]');
   await expect(feedbackLink).toHaveText("Yoram repository");
   await expect(feedbackLink).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
-  const searchForm = navItems.nth(4).locator('[data-stylex-owner="global-gnb-search-form"]');
+  const searchForm = navItems.nth(2).locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeVisible();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
   await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
@@ -58,7 +80,6 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   ).toHaveAttribute("href", `${BASE_PATH}/users/signupform`);
   await expect.poll(() => sessionRequestPaths).toEqual([`${BASE_PATH}/api/v1/session`]);
   await assertOwnedShellHasNoPluginHooks(page);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
 
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 900, scrollWidth: 1366, width: 1366 });
@@ -66,16 +87,12 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expectBox(metrics.inner, { height: 40, width: 1319.08, x: 23.45, y: 0 });
   expectBox(metrics.pin, { height: 26, width: 25, x: -6, y: 6 });
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 80.45, y: 5 });
-  expectBox(metrics.listAll, { height: 37, width: 63.02, x: 110.22, y: 1 });
-  expectBox(metrics.divider, { height: 40, width: 3.11, x: 173.23, y: 0 });
-  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 176.34, y: 1 });
-  expectBox(metrics.search, { height: 30, width: 112, x: 306.4, y: 5 });
+  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 110.22, y: 1 });
+  expectBox(metrics.search, { height: 33, width: 112, x: 240.27, y: 5 });
   expectBox(metrics.heroCover, { height: 269, width: 750, x: 298, y: 40 });
   expectBox(metrics.heroHeading, { height: 40, width: 750, x: 298, y: 95 });
 
-  expect(metrics.logo.right).toBeLessThanOrEqual(metrics.listAll.x);
-  expect(metrics.listAll.right).toBeLessThanOrEqual(metrics.divider.x + 0.01);
-  expect(metrics.divider.right).toBeLessThanOrEqual(metrics.feedback.x + 0.01);
+  expect(metrics.logo.right).toBeLessThanOrEqual(metrics.feedback.x);
   expect(metrics.feedback.right).toBeLessThanOrEqual(metrics.search.x + 0.01);
   expect(metrics.search.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
   expect(metrics.search.right).toBeLessThan(metrics.userMenu.x);
@@ -333,7 +350,10 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
 
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-item"]')).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
+    0,
+  );
   const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeHidden();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
@@ -344,9 +364,7 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
   expectBox(metrics.inner, { height: 40, width: 362.59, x: 13.7, y: 0 });
   expectBox(metrics.pin, { height: 26, width: 25, x: -6, y: 6 });
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 30.7, y: 5 });
-  expectBox(metrics.listAll, { height: 37, width: 72.23, x: 60.47, y: 1 });
-  expectBox(metrics.divider, { height: 40, width: 3.11, x: 132.7, y: 0 });
-  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 135.81, y: 1 });
+  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 60.47, y: 1 });
   expectBox(metrics.heroCover, { height: 309, width: 410, x: -20, y: 40 });
   expectBox(metrics.heroHeading, { height: 80, width: 410, x: -20, y: 95 });
 
@@ -665,13 +683,11 @@ async function readShellMetrics(page: Page) {
     };
 
     return {
-      divider: box('[data-stylex-owner="global-gnb-project-list-divider"]'),
       feedback: box('[data-stylex-owner="global-gnb-feedback-link"]'),
       heroCover: box('[data-stylex-owner="anonymous-home-intro-cover"]'),
       heroHeading: box('[data-stylex-owner="anonymous-home-intro-heading"]'),
       inner: box('[data-stylex-owner="global-gnb-inner"]'),
       login: box("#required-logged-in"),
-      listAll: box('[data-stylex-owner="global-gnb-nav"] > li:nth-child(2) > a'),
       logo: box('[data-stylex-owner="global-gnb-brand-link"]'),
       nav: box('[data-stylex-owner="global-gnb-nav"]'),
       navbar: box("[data-stylex-owner=global-gnb-outer]"),

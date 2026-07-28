@@ -1,5 +1,23 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1088 — production shell asset and latency classification — 2026-07-28
+
+The anonymous shell broad test mixed two stale development assumptions with
+the approved Yoram identity deviation. Vite correctly emits the imported intro
+photo as a source URL in development and a mounted fingerprinted asset in
+production. The approved anonymous GNB contains brand, configured Yoram
+repository contact, and search; unrelated upstream identity items remain
+intentionally absent. The test now verifies that contract and the retained
+strict geometry without restoring removed items or adding compensation.
+
+Timing separates frontend response from harness overhead. A fresh final build
+spent 73s transforming 1,213 modules; Rolldown's plugin report attributes 87%
+to `@stylexjs/unplugin` and 9% to Babel. After reusing that dist, managed
+servers plus the focused check complete in 7.39s, Playwright in 2.8s, and the
+actual browser case in 963ms. A synchronous failing assertion completed in
+628ms but retained-trace finalization consumed the remaining 30s timeout.
+There is no fixed application stabilization sleep in the runner.
+
 ### Batch 1087 — forgot-password alias production contract — 2026-07-28
 
 The production-dist profile exposed stale development-era presentation-class
