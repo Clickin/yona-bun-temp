@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1099 — anonymous HOME project-list regression contract
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `common/navbar.scala.html` renders project listing when listing is enabled and current user is not a guest; `User.isGuest=false` is inherited unchanged by `NullUser`. | `SiteLayoutShell` names the existing exact predicate `legacyProjectListingEnabled` and reuses it for List All output and all-project search scope; rendered output from Batch 1097 is unchanged. | Anonymous HOME GNB order is logo → List All → divider → search with exact mounted `/projects` href and copy; login/signup/sidebar behavior remains unchanged. | Fresh fallback-off production final System Chrome passes 1/1 in 712ms; TypeScript and diff checks pass. | Broad after test 16, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1098 — password-reset toast opacity
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

@@ -1,5 +1,20 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1099 — anonymous HOME project-list regression contract — 2026-07-28
+
+The restarted broad final immediately reached another stale test that expected
+anonymous HOME to omit `List All`. The implementation corrected in Batch 1097
+is the legacy result: `NullUser` inherits `User.isGuest=false`, so the navbar
+condition renders the link and divider.
+
+The shared shell now names that same byte-equivalent predicate as
+`legacyProjectListingEnabled` and reuses it for link output and all-project
+search scope. The HOME test verifies the exact logo → List All → divider →
+search sequence, mounted href/copy, and source inheritance while preserving
+all login/signup interactions. Fresh fallback-off production final System
+Chrome passes 1/1 in 712ms; TypeScript and diff checks pass. Broad resumes
+after test 16; global audit and final pixel lock remain open.
+
 ### Batch 1098 — password-reset toast opacity — 2026-07-28
 
 The next standalone-login state exposed one real frozen-cascade mismatch:

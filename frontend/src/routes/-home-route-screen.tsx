@@ -1615,8 +1615,8 @@ export function SiteLayoutShell({
     globalGnbBrandLinkStyles.root,
     hasScopedSearch && globalGnbBrandLinkStyles.projectHeader,
   ).className;
-  const shouldRenderProjectListingLink = runtimeConfig.hideProjectListing !== true && !isGuest;
-  const shouldRenderAllProjectsSearchScope = shouldRenderProjectListingLink || isSiteAdmin;
+  const legacyProjectListingEnabled = runtimeConfig.hideProjectListing !== true && !isGuest;
+  const shouldRenderAllProjectsSearchScope = legacyProjectListingEnabled || isSiteAdmin;
   const feedbackUrl = runtimeConfig.feedbackUrl?.trim();
   const initialSearchScope = projectSearchAction ? "project" : groupSearchAction ? "group" : "all";
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
@@ -1837,7 +1837,7 @@ export function SiteLayoutShell({
                   Y
                 </Link>
               </li>
-              {shouldRenderProjectListingLink ? (
+              {legacyProjectListingEnabled ? (
                 <>
                   <li
                     {...stylex.props(

@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1099 anonymous HOME project-list regression contract
+
+- [x] Correct the stale anonymous HOME expectation using navbar, `User`, and
+  `NullUser` source evidence.
+- [x] Name and reuse the byte-equivalent legacy project-list predicate in the
+  shared shell.
+- [x] Verify `logo → List All → divider → search`, copy, mounted href, and
+  existing login/signup interactions.
+- [x] Pass fresh fallback-off production final System Chrome 1/1 in 712ms,
+  TypeScript, and diff checks.
+- [ ] Resume broad after test 16, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1098 password-reset toast opacity
 
 - [x] Recheck `common/scripts.scala.html`, `_yobiUI.less`, and legacy Toast JS

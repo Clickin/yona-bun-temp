@@ -646,11 +646,20 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   const loginLink = page.locator("#required-logged-in a.user-item-btn");
   const signupMenuLink = page.locator('[data-stylex-owner="anonymous-site-signup"]');
   const landingSignupLink = page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]');
+  const globalGnbNav = page.locator('[data-stylex-owner="global-gnb-nav"]');
   const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  const projectListDivider = page.locator('[data-stylex-owner="global-gnb-project-list-divider"]');
   const profileLink = page.locator("#mySidenav .user-menu a").first();
   const logoutLink = page.locator("#mySidenav a:has(.logout)");
   const resetPasswordLink = page.locator("#loginDialog .act-row a").nth(0);
   const dialogSignupLink = page.locator("#loginDialog .act-row a").nth(1);
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const legacyNavbarSource = readFileSync(
+    "../yona-original/app/views/common/navbar.scala.html",
+    "utf8",
+  );
+  const legacyUserSource = readFileSync("../yona-original/app/models/User.java", "utf8");
+  const legacyNullUserSource = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
 
   await expect(loginLink).toHaveText("Log in");
   await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
@@ -665,7 +674,21 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   await expect(landingSignupLink).toHaveText("Sign up for Yoram");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(landingSignupLink).not.toHaveAttribute("class", /(?:^|\s)ybtn(?:\s|$)/u);
-  await expect(projectListLink).toHaveCount(0);
+  await expect(projectListLink).toBeVisible();
+  await expect(projectListLink).toHaveText("List All");
+  await expect(projectListLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(projectListDivider).toBeVisible();
+  await expect(projectListDivider).toHaveText("");
+  expect(
+    await globalGnbNav
+      .locator(":scope > li")
+      .evaluateAll((items) => items.map((item) => item.getAttribute("data-stylex-owner"))),
+  ).toEqual([
+    "global-gnb-brand-item",
+    "global-gnb-project-list-item",
+    "global-gnb-project-list-divider",
+    "global-gnb-search-item",
+  ]);
   await expect(profileLink).toHaveAttribute("href", `${basePath}/anonymous`);
   await expect(profileLink).not.toHaveAttribute("aria-current");
   await expect(profileLink).not.toHaveAttribute("data-status");
@@ -673,6 +696,20 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   await loginLink.click();
   await expect(resetPasswordLink).toHaveAttribute("href", `${basePath}/lostPassword`);
   await expect(dialogSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
+
+  expect(legacyNavbarSource).toContain(
+    "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest){",
+  );
+  expect(legacyUserSource).toContain("public boolean isGuest = false;");
+  expect(legacyNullUserSource).toContain("public class NullUser extends User");
+  expect(legacyNullUserSource).not.toMatch(/\bboolean\s+isGuest\b/u);
+  expect(routeSource).toContain(
+    "const legacyProjectListingEnabled = runtimeConfig.hideProjectListing !== true && !isGuest;",
+  );
+  expect(routeSource).toContain(
+    "const shouldRenderAllProjectsSearchScope = legacyProjectListingEnabled || isSiteAdmin;",
+  );
+  expect(routeSource).toContain("{legacyProjectListingEnabled ? (");
 });
 
 test("root login submit refreshes the authenticated home shell without a document reload", async ({
