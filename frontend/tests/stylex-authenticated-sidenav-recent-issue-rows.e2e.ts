@@ -33,11 +33,12 @@ test("authenticated Recent issue rows have narrow global-theme StyleX ownership"
   expect(theme).not.toContain("transparent:");
   expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   const issueStyle = owner?.match(/\n  issue: \{([\s\S]*?)\n  \},\n  marker:/)?.[1] ?? "";
-  expect(issueStyle).not.toMatch(/\bdisplay\s*:/);
-  expect(issueStyle).not.toMatch(/\bpaddingLeft\s*:/);
+  expect(issueStyle).toContain('display: "block"');
+  expect(issueStyle).toContain('paddingLeft: "5px"');
   expect(theme).toContain('sidenavIssueTitleMarker: "darkgray"');
-  // The non-authenticated left sidebar still uses the narrow inline positioning fallback.
-  expect(source).toContain("HOME_SIDEBAR_POPOVER_STYLE");
+  expect(source).toContain(
+    "isAuthenticatedRecentIssueRow && authenticatedSidenavRecentIssueRowStyles.popover",
+  );
   expect(source).toContain('"authenticated-sidenav-recent-issue-rows"');
   expect(source).toContain('"authenticated-sidenav-recent-issue-popover"');
 
@@ -49,8 +50,8 @@ test("authenticated Recent issue rows have narrow global-theme StyleX ownership"
 });
 
 for (const viewport of [
-  { height: 900, label: "desktop", width: 1366, x: 1015, rowWidth: 350 },
-  { height: 844, label: "mobile", width: 390, x: 9, rowWidth: 390 },
+  { height: 900, label: "desktop", paneScrollWidth: 359, width: 1366, x: 1015, rowWidth: 350 },
+  { height: 844, label: "mobile", paneScrollWidth: 398, width: 390, x: 9, rowWidth: 390 },
 ]) {
   test(`authenticated Recent issue row preserves ${viewport.label} parity and React behavior`, async ({
     page,
@@ -64,7 +65,8 @@ for (const viewport of [
 
     const row = page.locator('[data-stylex-owner="authenticated-sidenav-recent-issue-rows"]');
     const link = row.getByRole("link", { name: "Seed notes" });
-    const host = link.locator("..");
+    const item = link.locator("..");
+    const host = item.locator("..");
     await expect(row).toBeVisible();
 
     const initial = await readRowEvidence(row);
@@ -81,6 +83,11 @@ for (const viewport of [
     });
     expect(initial.geometry.host).toMatchObject({
       height: 27,
+      left: viewport.x,
+      width: viewport.rowWidth,
+    });
+    expect(initial.geometry.item).toMatchObject({
+      height: 19,
       left: viewport.x,
       width: viewport.rowWidth,
     });
@@ -118,9 +125,8 @@ for (const viewport of [
         paddingLeft: "5px",
         paddingTop: "1px",
       },
-      link: {
+      item: {
         alignItems: "center",
-        color: "rgb(0, 0, 0)",
         display: "flex",
         flexDirection: "row",
         flexGrow: "1",
@@ -128,6 +134,16 @@ for (const viewport of [
         fontSize: "14px",
         fontWeight: "400",
         justifyContent: "space-between",
+        overflowX: "hidden",
+        overflowY: "hidden",
+      },
+      link: {
+        alignItems: "center",
+        color: "rgb(0, 0, 0)",
+        display: "flex",
+        flexDirection: "row",
+        flexGrow: "1",
+        minWidth: "0px",
         overflowX: "hidden",
         overflowY: "hidden",
         textDecorationLine: "none",
@@ -227,6 +243,18 @@ for (const viewport of [
     expect(popover.geometry.top + popover.geometry.height / 2).toBe(
       hoveredHost.top + hoveredHost.height / 2,
     );
+    expect(
+      await page.evaluate(() => ({
+        document: document.documentElement.scrollWidth,
+        pane: document.querySelector<HTMLElement>("#myRecentIssueList")?.scrollWidth ?? Number.NaN,
+        viewport: innerWidth,
+      })),
+    ).toEqual({
+      document: viewport.width,
+      // The frozen content-box search input determines this internal scroll width.
+      pane: viewport.paneScrollWidth,
+      viewport: viewport.width,
+    });
 
     const beforeDeletion = await readRowEvidence(row);
     const beforePopoverDeletion = await readPopoverEvidence(tooltip);
@@ -301,7 +329,8 @@ async function installAuthenticatedHome(page: Page) {
 async function readRowEvidence(row: Locator) {
   return row.evaluate((element) => {
     const host = element.firstElementChild as HTMLElement;
-    const link = host.firstElementChild as HTMLElement;
+    const item = host.firstElementChild as HTMLElement;
+    const link = item.firstElementChild as HTMLElement;
     const issue = link.firstElementChild as HTMLElement;
     const marker = issue.firstElementChild as HTMLElement;
     const title = issue.lastElementChild as HTMLElement;
@@ -324,6 +353,7 @@ async function readRowEvidence(row: Locator) {
       geometry: {
         host: box(host),
         issue: box(issue),
+        item: box(item),
         link: box(link),
         marker: box(marker),
         row: box(element),
@@ -362,9 +392,8 @@ async function readRowEvidence(row: Locator) {
           "paddingLeft",
           "paddingTop",
         ]),
-        link: pick(link, [
+        item: pick(item, [
           "alignItems",
-          "color",
           "display",
           "flexDirection",
           "flexGrow",
@@ -372,6 +401,16 @@ async function readRowEvidence(row: Locator) {
           "fontSize",
           "fontWeight",
           "justifyContent",
+          "overflowX",
+          "overflowY",
+        ]),
+        link: pick(link, [
+          "alignItems",
+          "color",
+          "display",
+          "flexDirection",
+          "flexGrow",
+          "minWidth",
           "overflowX",
           "overflowY",
           "textDecorationLine",
@@ -471,8 +510,9 @@ async function removeLegacyClasses(row: Locator, tooltip: Locator) {
     element.classList.remove("user-li");
     const host = element.firstElementChild!;
     host.classList.remove("project-list", "project-flex-container");
-    const link = host.firstElementChild!;
-    link.classList.remove("project-item", "project-item-container", "sidebar-row-link");
+    const item = host.firstElementChild!;
+    item.classList.remove("project-item", "project-item-container");
+    const link = item.firstElementChild!;
     const issue = link.firstElementChild!;
     issue.classList.remove("projectName-owner", "flex-item");
     issue.firstElementChild!.classList.remove("issue-title-start");

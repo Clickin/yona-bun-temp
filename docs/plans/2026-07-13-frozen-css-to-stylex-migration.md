@@ -1,5 +1,34 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1078 — authenticated Recent History row DOM parity — 2026-07-28
+
+The authenticated `/` Recent History pane now restores the Scala partial's
+separate `li > .project-list > .project-item > .issue-item` wrapper skeleton.
+The legacy `data-location` behavior is translated into one nested TanStack
+issue link; React continues to own hover-popover state and the framed left
+sidebar remains unchanged. The link's `min-width: 0` contains long issue titles,
+while the authenticated issue owner now also carries the exact frozen
+`display: block` and `padding-left: 5px` declarations that the normal profile's
+legacy `!important` rule had previously hidden from fallback-off verification.
+
+The focused canonicalizer retires generated StyleX/debug tokens only inside the
+four authenticated Recent owner scopes. External System Chrome passes 4/4
+sequentially in both normal and explicit fallback-off profiles, covering the
+legacy-shaped DOM, desktop/mobile 27px row and 19px item/link geometry,
+10px marker, React popover, SPA navigation, and no document overflow. A fresh
+production build and StyleX verifier pass with the frozen fallback hash
+`8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6`.
+
+Live desktop/mobile System-Chrome pairs under
+`output/playwright/recent-pane-1078/` were inspected against legacy `:9000`
+and the rebuilt dist served by release Rust at `:18101/yona`. Pane x/y/width,
+359/398px internal search scroll width, and first-row x/y/width/27px height
+match exactly. Legacy has two recent issues while the local fixture has one,
+so only total pane height/content differs. The inherited mobile document width
+is 397px on both targets. Approved Yoram/footer/contact differences remain
+excluded; broad fallback-off/global audit and final corpus pixel lock remain
+open.
+
 ### Batch 1077 — post-validation stabilization latency isolation — 2026-07-28
 
 The required Scala-goal automation guard completed before this investigation,

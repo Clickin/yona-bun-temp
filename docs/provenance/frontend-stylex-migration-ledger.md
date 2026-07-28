@@ -1,5 +1,29 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1078 — authenticated Recent History row DOM parity
+
+`common/usermenu.scala.html`, `common/usermenu_tab_content_list.scala.html`,
+`index/myRecentIssueList.scala.html`, and
+`index/myRecentIssueList_partial.scala.html` establish the populated Recent
+pane and the direct `project-list > project-item > issue-item` row skeleton.
+Frozen `_usermenu.less` establishes the 4px list padding, block issue item,
+5px left padding, 10px marker, title wrapping, and popover presentation.
+
+Only the authenticated right sidenav owner changes. It restores the separate
+`.project-item` wrapper, nests one semantic TanStack issue link inside it, and
+keeps hover state React-owned. The link owns `min-width: 0`; the issue owner
+also carries exact `display: block` and `padding-left: 5px` so normal and
+fallback-off profiles render identically even though the retained frozen rule
+is important. Generated StyleX/debug token retirement is scoped to the Recent
+pane's authenticated owners.
+
+Sequential external System Chrome normal and fallback-off runs pass 4/4 each.
+The fresh production build/StyleX verifier and frozen hash pass. Inspected live
+desktop/mobile pairs in `output/playwright/recent-pane-1078/` match pane and
+first-row geometry exactly; one missing local recent issue is fixture/content
+drift, not geometry drift. The framed left sidebar, shared fallback consumers,
+global audit, and final corpus pixel lock remain open.
+
 ### Batch 1076 — authenticated Project direct-row DOM parity
 
 `common/usermenu.scala.html`, `common/usermenu_tab_content_list.scala.html`,

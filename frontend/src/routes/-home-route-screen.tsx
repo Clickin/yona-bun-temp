@@ -4611,10 +4611,8 @@ const authenticatedSidenavRecentIssueRowStyles = stylex.create({
     padding: "4px 0",
     position: "relative",
   },
-  link: {
+  item: {
     alignItems: "center",
-    backgroundColor: "transparent",
-    color: homeColors.sidenavText,
     display: "flex",
     flexDirection: "row",
     flexGrow: 1,
@@ -4622,6 +4620,16 @@ const authenticatedSidenavRecentIssueRowStyles = stylex.create({
     fontSize: "14px",
     fontWeight: 400,
     justifyContent: "space-between",
+    overflow: "hidden",
+  },
+  link: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    color: homeColors.sidenavText,
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    minWidth: 0,
     overflow: "hidden",
     textDecoration: {
       default: "none",
@@ -4631,12 +4639,14 @@ const authenticatedSidenavRecentIssueRowStyles = stylex.create({
   },
   issue: {
     alignItems: "center",
+    display: "block",
     flexDirection: "row",
     flexGrow: 1,
     flexWrap: "nowrap",
     justifyContent: "space-between",
     overflow: "hidden",
     paddingBottom: "1px",
+    paddingLeft: "5px",
     paddingRight: 0,
     paddingTop: "1px",
   },
@@ -7660,6 +7670,37 @@ function SidebarRecentIssueItem({
   const issueNumber = valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "");
   const issueNumberLabel = issueNumber ? `${projectName} #${issueNumber}` : "";
   const title = valueString(issue.title, "");
+  const issueContent = (
+    <div
+      className={`issue-item projectName-owner flex-item ${
+        stylex.props(
+          isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.issue,
+          isLeftSidebar && leftSidebarRecentIssueRowStyles.issue,
+        ).className
+      }`.trimEnd()}
+    >
+      <div
+        className={`issue-title-start ${
+          stylex.props(
+            isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.marker,
+            isLeftSidebar && leftSidebarRecentIssueRowStyles.marker,
+          ).className
+        }`.trimEnd()}
+      >
+        -
+      </div>
+      <div
+        className={`issue-title flex-item ${
+          stylex.props(
+            isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.title,
+            isLeftSidebar && leftSidebarRecentIssueRowStyles.title,
+          ).className
+        }`.trimEnd()}
+      >
+        {title}
+      </div>
+    </div>
+  );
 
   return (
     <li
@@ -7687,46 +7728,31 @@ function SidebarRecentIssueItem({
               : "legacy"
         }
       >
-        <Link
-          className={`project-item project-item-container sidebar-row-link ${
-            stylex.props(
-              isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.link,
-              isLeftSidebar && leftSidebarRecentIssueRowStyles.link,
-            ).className
-          }`.trimEnd()}
-          params={{ issueNumber, ownerName, projectName }}
-          to="/$ownerName/$projectName/issue/$issueNumber"
-        >
+        {isAuthenticatedSidenav ? (
           <div
-            className={`issue-item projectName-owner flex-item ${
-              stylex.props(
-                isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.issue,
-                isLeftSidebar && leftSidebarRecentIssueRowStyles.issue,
-              ).className
-            }`.trimEnd()}
+            className={`project-item project-item-container ${
+              stylex.props(authenticatedSidenavRecentIssueRowStyles.item).className
+            }`}
           >
-            <div
-              className={`issue-title-start ${
-                stylex.props(
-                  isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.marker,
-                  isLeftSidebar && leftSidebarRecentIssueRowStyles.marker,
-                ).className
-              }`.trimEnd()}
+            <Link
+              {...stylex.props(authenticatedSidenavRecentIssueRowStyles.link)}
+              params={{ issueNumber, ownerName, projectName }}
+              to="/$ownerName/$projectName/issue/$issueNumber"
             >
-              -
-            </div>
-            <div
-              className={`issue-title flex-item ${
-                stylex.props(
-                  isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.title,
-                  isLeftSidebar && leftSidebarRecentIssueRowStyles.title,
-                ).className
-              }`.trimEnd()}
-            >
-              {title}
-            </div>
+              {issueContent}
+            </Link>
           </div>
-        </Link>
+        ) : (
+          <Link
+            className={`project-item project-item-container sidebar-row-link ${
+              stylex.props(isLeftSidebar && leftSidebarRecentIssueRowStyles.link).className
+            }`.trimEnd()}
+            params={{ issueNumber, ownerName, projectName }}
+            to="/$ownerName/$projectName/issue/$issueNumber"
+          >
+            {issueContent}
+          </Link>
+        )}
       </SidebarHoverPopover>
     </li>
   );

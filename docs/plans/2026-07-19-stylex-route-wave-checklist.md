@@ -1,5 +1,22 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1078 authenticated Recent History row DOM parity
+
+- [x] Restore the Scala partial's separate `.project-item` wrapper and translate
+  whole-row `data-location` behavior into one nested TanStack issue link.
+- [x] Keep React-owned hover popover behavior and the framed left-sidebar
+  consumer unchanged.
+- [x] Move exact frozen `display:block` and `padding-left:5px` into the
+  authenticated issue owner so fallback-off retains the normal-profile result.
+- [x] Scope canonical generated-token retirement to authenticated Recent owner
+  boundaries and retain semantic legacy classes.
+- [x] Pass sequential external System Chrome normal and fallback-off 4/4 with
+  desktop/mobile geometry, popover, SPA navigation, and overflow checks.
+- [x] Rebuild production dist; StyleX verifier and frozen fallback hash pass.
+- [x] Inspect live legacy/release-dist desktop/mobile pairs. Pane and first-row
+  geometry match exactly; one missing local recent issue is fixture drift.
+- [ ] Broad fallback-off/global audit and final corpus pixel lock remain open.
+
 ### 2026-07-28 — Batch 1076 authenticated Project direct-row DOM parity
 
 - [x] Replace Project-pane logo/name split links with one TanStack project link,

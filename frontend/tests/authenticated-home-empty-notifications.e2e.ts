@@ -332,20 +332,24 @@ const EXPECTED_SIDEBAR_RECENT_ISSUE_TAB = `
           <ul class="tab-pane user-ul active" id="recentlyVisitedIssues">
             <li class="user-li">
               <div class="project-list project-flex-container">
-                <a href="__BASE_PATH__/admin/sample/issue/42" class="project-item project-item-container sidebar-row-link">
-                  <div class="issue-item projectName-owner flex-item">
-                    <div class="issue-title-start">-</div><div class="issue-title flex-item">Crash on login</div>
-                  </div>
-                </a>
+                <div class="project-item project-item-container">
+                  <a href="__BASE_PATH__/admin/sample/issue/42">
+                    <div class="issue-item projectName-owner flex-item">
+                      <div class="issue-title-start">-</div><div class="issue-title flex-item">Crash on login</div>
+                    </div>
+                  </a>
+                </div>
               </div>
             </li>
             <li class="user-li">
               <div class="project-list project-flex-container">
-                <a href="__BASE_PATH__/weblabs/playground/issue/7" class="project-item project-item-container sidebar-row-link">
-                  <div class="issue-item projectName-owner flex-item">
-                    <div class="issue-title-start">-</div><div class="issue-title flex-item">Review onboarding copy</div>
-                  </div>
-                </a>
+                <div class="project-item project-item-container">
+                  <a href="__BASE_PATH__/weblabs/playground/issue/7">
+                    <div class="issue-item projectName-owner flex-item">
+                      <div class="issue-title-start">-</div><div class="issue-title flex-item">Review onboarding copy</div>
+                    </div>
+                  </a>
+                </div>
               </div>
             </li>
           </ul>
@@ -3249,13 +3253,15 @@ async function readFavoriteProjectNavigationGeometry(row: Locator) {
 }
 
 async function assertSidebarRightPopover(page: Page, target: Locator, expectedContent: string) {
-  const popover = page.locator("#usermenu-tab-content-list .popover.right");
+  const popover = page.locator(
+    '#usermenu-tab-content-list [data-stylex-owner="authenticated-sidenav-recent-issue-popover"]',
+  );
   await expect(popover).toHaveCount(0);
 
   await target.hover();
   await expect(popover).toBeVisible();
-  await expect(popover).toHaveClass("popover right");
-  await expect(popover.locator(".popover-content")).toHaveText(expectedContent);
+  await expect(popover).not.toHaveClass(/(?:^|\s)(?:popover|right)(?:\s|$)/);
+  await expect(popover.locator(":scope > div").nth(1)).toHaveText(expectedContent);
   const metrics = await readSidebarRightPopoverMetrics(page);
   expect(metrics.arrowDisplay).toBe("block");
   expect(metrics.content).toBe(expectedContent);
@@ -3269,11 +3275,13 @@ async function assertSidebarRightPopover(page: Page, target: Locator, expectedCo
 async function readSidebarRightPopoverMetrics(page: Page) {
   return page.evaluate(() => {
     const target = document.querySelector<HTMLElement>(
-      "#usermenu-tab-content-list .project-list:has(.popover.right)",
+      '#usermenu-tab-content-list .project-list:has([data-stylex-owner="authenticated-sidenav-recent-issue-popover"])',
     );
-    const popover = target?.querySelector<HTMLElement>(".popover.right");
-    const arrow = popover?.querySelector<HTMLElement>(".arrow");
-    const content = popover?.querySelector<HTMLElement>(".popover-content");
+    const popover = target?.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-sidenav-recent-issue-popover"]',
+    );
+    const arrow = popover?.children.item(0) as HTMLElement | null;
+    const content = popover?.children.item(1) as HTMLElement | null;
     if (!target || !popover || !arrow || !content) {
       throw new Error("Expected sidebar right popover metric targets are missing.");
     }
@@ -4444,12 +4452,22 @@ async function canonicalizeSelector(page: Page, selector: string) {
                 "authenticated-sidenav-direct-project-rows",
                 "authenticated-sidenav-favorite-stars",
               ].includes(stylexOwner ?? "")));
+        const isRecentTabStylexOwned =
+          current.closest("#myRecentIssueList") !== null &&
+          (current.matches("#myRecentIssueList") ||
+            (stylexOwner !== null &&
+              [
+                "authenticated-sidenav-tab-panel",
+                "authenticated-sidenav-recent-shell",
+                "authenticated-sidenav-recent-issue-rows",
+                "authenticated-sidenav-recent-issue-popover",
+              ].includes(stylexOwner ?? "")));
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
           .filter(
             (value) =>
-              (!isFavoriteStylexOwned && !isProjectTabStylexOwned) ||
+              (!isFavoriteStylexOwned && !isProjectTabStylexOwned && !isRecentTabStylexOwned) ||
               (!value.startsWith("x") && !value.includes("-home-route-screen__")),
           )
           .join(" ");
@@ -4538,7 +4556,20 @@ async function canonicalizeHtml(page: Page, html: string) {
                 "authenticated-sidenav-direct-project-rows",
                 "authenticated-sidenav-favorite-stars",
               ].includes(stylexOwner ?? "")));
-        if (name === "class" && (isFavoriteStylexOwned || isProjectTabStylexOwned)) {
+        const isRecentTabStylexOwned =
+          current.closest("#myRecentIssueList") !== null &&
+          (current.matches("#myRecentIssueList") ||
+            (stylexOwner !== null &&
+              [
+                "authenticated-sidenav-tab-panel",
+                "authenticated-sidenav-recent-shell",
+                "authenticated-sidenav-recent-issue-rows",
+                "authenticated-sidenav-recent-issue-popover",
+              ].includes(stylexOwner ?? "")));
+        if (
+          name === "class" &&
+          (isFavoriteStylexOwned || isProjectTabStylexOwned || isRecentTabStylexOwned)
+        ) {
           const className = value
             .split(/\s+/u)
             .filter(
