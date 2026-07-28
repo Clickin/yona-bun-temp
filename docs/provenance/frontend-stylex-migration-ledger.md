@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1091 — site-admin page-anchored collapsed pin
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `layout.scala.html`, `siteLayout.scala.html`, `common/navbar.scala.html`, sidebar scripts, `index/notifications.scala.html` behavior evidence, frozen `_page.less`, and `_responsive.less` establish affix-first order, static unscoped GNB, page-referenced absolute pin, and independently offset right sidenav. | Existing implementation output is unchanged. The GNB style-selection boundary explicitly records that only scoped search headers receive positioned project styling; site-admin presence does not create a pin containing block. | Authenticated admin HOME desktop/mobile: affix bottom equals GNB y; collapsed pin remains x=-6/y=6 and ends before GNB starts; ARIA stays false. | Reused fallback-off production-dist System Chrome passes 1/1. Existing site-admin-affix focused evidence independently confirms static-header/page-pin behavior. Broad final advances through test 55. | Test 56 onward, stale create-link source assertion, global fallback audit, same-fixture screenshot pair, and final pixel lock. |
+
 ### Batch 1090 — approved anonymous mobile GNB contract
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

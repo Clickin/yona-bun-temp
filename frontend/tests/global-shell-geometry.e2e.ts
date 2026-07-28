@@ -452,20 +452,25 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await expect(sidebar).not.toHaveClass(/sidenav-open/);
 });
 
-test("site-admin affix keeps the global sidebar pin inside the unscoped GNB", async ({ page }) => {
+test("site-admin affix preserves the legacy page-anchored collapsed global sidebar pin", async ({
+  page,
+}) => {
   await installRuntimeConfig(page);
   await mockSession(page, { isAnonymous: false, isGuest: false, isSiteAdmin: true });
-  await mockSiteUserListData(page);
+  await mockAuthenticatedHomeData(page);
 
   for (const viewport of [
     { height: 900, width: 1366 },
     { height: 844, width: 390 },
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto(`${BASE_PATH}/sites/userList`);
+    await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.locator('[data-stylex-owner="site-user-list-title-strip"]')).toBeVisible();
     await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="global-sidebar-open-pin"]')).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
 
     const metrics = await page.evaluate(() => {
       const box = (owner: string) => {
@@ -482,8 +487,8 @@ test("site-admin affix keeps the global sidebar pin inside the unscoped GNB", as
     });
 
     expect(metrics.gnb.y).toBeCloseTo(metrics.affix.bottom, 1);
-    expect(metrics.pin.y).toBeCloseTo(metrics.gnb.y + 6, 1);
-    expect(metrics.pin.bottom).toBeLessThanOrEqual(metrics.gnb.bottom);
+    expect(metrics.pin.y).toBeCloseTo(metrics.affix.y + 6, 1);
+    expect(metrics.pin.bottom).toBeLessThanOrEqual(metrics.gnb.y);
     expect(metrics.pin.x).toBeCloseTo(metrics.gnb.x - 6, 1);
   }
 });

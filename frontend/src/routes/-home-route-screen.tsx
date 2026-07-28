@@ -1784,6 +1784,7 @@ export function SiteLayoutShell({
         <header
           {...stylex.props(
             globalGnbOuterStyles.root,
+            // Legacy unscoped GNB stays static under the site-admin affix, so its absolute pin remains page-referenced.
             hasScopedSearch && globalGnbOuterStyles.project,
           )}
           data-stylex-owner="global-gnb-outer"

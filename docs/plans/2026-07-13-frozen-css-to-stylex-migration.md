@@ -1,5 +1,22 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1091 — site-admin page-anchored collapsed pin — 2026-07-28
+
+The broad final profile advanced through 54 tests before reaching a
+superseded assertion that moved the global collapsed pin into the GNB below
+the administrator affix. Legacy keeps an unscoped GNB static and positions
+the pin absolutely at `left:-6px; top:6px`, so the pin remains page-anchored
+while the affix pushes the GNB down. Only the right sidenav receives the
+administrator offset.
+
+This administrator-only legacy alignment bug was explicitly deprioritized by
+the user and is preserved rather than “fixed.” The existing GNB style
+selection now documents that only scoped project/group headers receive the
+positioned project style. The focused authenticated HOME desktop/mobile case
+passes 1/1 against reused fallback-off production dist, including affix/GNB
+stacking, collapsed ARIA state, `(-6,6)` pin placement, and separation. Broad
+final advances through test 55; global audit and pixel lock remain open.
+
 ### Batch 1090 — approved anonymous mobile GNB contract — 2026-07-28
 
 After Batch 1089 rebuilt and verified the anonymous shell, the next broad

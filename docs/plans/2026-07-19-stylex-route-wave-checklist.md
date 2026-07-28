@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1091 site-admin page-anchored collapsed pin
+
+- [x] Recheck layout/navbar/sidebar/admin-affix Scala templates and frozen pin
+  containing-block rules.
+- [x] Preserve the legacy admin-only page-anchored pin at `(-6,6)` instead of
+  restoring the superseded GNB-relative containing block.
+- [x] Keep affix→GNB stacking, collapsed ARIA state, pin/GNB separation, and
+  desktop/mobile geometry strict.
+- [x] Pass reused fallback-off production-dist System Chrome 1/1 and advance
+  broad final through test 55.
+- [ ] Continue test 56 onward, global fallback audit, screenshot pair, and
+  final pixel lock.
+
 ### 2026-07-28 — Batch 1090 approved anonymous mobile GNB contract
 
 - [x] Retain the approved three-item Yoram identity deviation and hidden mobile
