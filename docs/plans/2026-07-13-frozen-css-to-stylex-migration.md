@@ -1,5 +1,23 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1100 — anonymous global-shell five-item geometry — 2026-07-28
+
+Broad test 46 exposed the remaining global-shell fixture that classified the
+anonymous navbar as an approved three-item Yoram deviation. That classification
+was incorrect: the user's approved identity changes cover Yoram branding,
+feedback/repository, and footer entries, but do not remove legacy `List All`.
+Navbar/User/NullUser source and direct System-Chrome comparison between legacy
+`:8089` and current output confirm the five-item sequence.
+
+The geometry contract now verifies brand → List All → divider → Yoram
+repository → search at desktop, with exact boxes and containment. At 390px the
+frozen responsive rule hides only search, so the nav remains on the first row
+and the anonymous user menu occupies the second row; this inherited legacy
+layout is recorded without compensating offsets. Screenshot baseline and
+threshold are unchanged. The route only clarifies the byte-equivalent predicate
+name. Fresh fallback-off production final System Chrome passes desktop/mobile
+2/2; TypeScript and diff checks pass. Broad resumes after test 46.
+
 ### Batch 1099 — anonymous HOME project-list regression contract — 2026-07-28
 
 The restarted broad final immediately reached another stale test that expected

@@ -31,6 +31,20 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expect(backgroundAssetUrl.pathname).not.toContain("/legacy-assets/");
 
   const homeRouteSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const legacyNavbarSource = readFileSync(
+    "../yona-original/app/views/common/navbar.scala.html",
+    "utf8",
+  );
+  const legacyUserSource = readFileSync("../yona-original/app/models/User.java", "utf8");
+  const legacyNullUserSource = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
+  const legacyPageStyles = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyResponsiveStyles = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
   expect(homeRouteSource).toMatch(
     /import\s+viteOwnedSiteIntroBackgroundUrl\s+from\s+["']\.\.\/assets\/legacy\/photo-svetacreative\.jpg["'];/u,
   );
@@ -42,27 +56,59 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expect(homeRouteSource).not.toMatch(
     /anonymousHomeIntroDynamicStyles\.background\(["'`]\/(?:legacy-assets|public|src)\//u,
   );
+  expect(legacyNavbarSource).toContain(
+    "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest){",
+  );
+  expect(legacyNavbarSource.indexOf("routes.ProjectApp.projects()")).toBeLessThan(
+    legacyNavbarSource.indexOf("@if(appFeedbackUrl)"),
+  );
+  expect(legacyNavbarSource.indexOf("@if(appFeedbackUrl)")).toBeLessThan(
+    legacyNavbarSource.indexOf('<form action="@makeSearchLink()"'),
+  );
+  expect(legacyUserSource).toContain("public boolean isGuest = false;");
+  expect(legacyNullUserSource).toContain("public class NullUser extends User");
+  expect(legacyNullUserSource).not.toMatch(/\bboolean\s+isGuest\b/u);
+  expect(legacyPageStyles).toMatch(
+    /\.gnb-nav\s*\{[\s\S]*?li\s*\{[\s\S]*?float:\s*left;[\s\S]*?&\.divider\s*\{[\s\S]*?line-height:\s*40px;/u,
+  );
+  expect(legacyResponsiveStyles).toMatch(
+    /@media all and \(max-width: 720px\)\s*\{[\s\S]*?\.gnb-search-form\s*\{\s*display:\s*none !important;/u,
+  );
+  expect(homeRouteSource).toContain(
+    "const legacyNavbarProjectListingEnabled =\n    runtimeConfig.hideProjectListing !== true && !isGuest;",
+  );
+  expect(homeRouteSource).toContain(
+    "const shouldRenderAllProjectsSearchScope = legacyNavbarProjectListingEnabled || isSiteAdmin;",
+  );
 
   const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
   const brandItem = page.locator('[data-stylex-owner="global-gnb-brand-item"]');
-  await expect(navItems).toHaveCount(3);
+  const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  const projectListDivider = page.locator('[data-stylex-owner="global-gnb-project-list-divider"]');
+  await expect(navItems).toHaveCount(5);
   expect(
     await navItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
-  ).toEqual(["global-gnb-brand-item", "global-gnb-feedback-item", "global-gnb-search-item"]);
+  ).toEqual([
+    "global-gnb-brand-item",
+    "global-gnb-project-list-item",
+    "global-gnb-project-list-divider",
+    "global-gnb-feedback-item",
+    "global-gnb-search-item",
+  ]);
   await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveText("Y");
   await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveAttribute(
     "href",
     `${BASE_PATH}/`,
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-item"]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
-    0,
-  );
-  const feedbackLink = navItems.nth(1).locator('[data-stylex-owner="global-gnb-feedback-link"]');
+  await expect(projectListLink).toHaveText("List All");
+  await expect(projectListLink).toHaveAttribute("href", `${BASE_PATH}/projects`);
+  await expect(projectListDivider).toBeVisible();
+  await expect(projectListDivider).toHaveText("");
+  const feedbackLink = navItems.nth(3).locator('[data-stylex-owner="global-gnb-feedback-link"]');
   await expect(feedbackLink).toHaveText("Yoram repository");
   await expect(feedbackLink).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
-  const searchForm = navItems.nth(2).locator('[data-stylex-owner="global-gnb-search-form"]');
+  const searchForm = navItems.nth(4).locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeVisible();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
   await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
@@ -86,14 +132,20 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expectBox(metrics.navbar, { height: 40, width: 1366, x: 0, y: 0 });
   expectBox(metrics.inner, { height: 40, width: 1319.08, x: 23.45, y: 0 });
   expectBox(metrics.pin, { height: 26, width: 25, x: -6, y: 6 });
+  expectBox(metrics.nav, { height: 40, width: 379.94, x: 38.45, y: 0 });
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 80.45, y: 5 });
-  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 110.22, y: 1 });
-  expectBox(metrics.search, { height: 33, width: 112, x: 240.27, y: 5 });
+  expectBox(metrics.projectList, { height: 37, width: 63.02, x: 110.22, y: 1 });
+  expectBox(metrics.projectListDivider, { height: 40, width: 3.11, x: 173.23, y: 0 });
+  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 176.34, y: 1 });
+  expectBox(metrics.search, { height: 33, width: 112, x: 306.39, y: 5 });
   expectBox(metrics.heroCover, { height: 269, width: 750, x: 298, y: 40 });
   expectBox(metrics.heroHeading, { height: 40, width: 750, x: 298, y: 95 });
 
-  expect(metrics.logo.right).toBeLessThanOrEqual(metrics.feedback.x);
+  expect(metrics.logo.right).toBeLessThanOrEqual(metrics.projectList.x);
+  expect(metrics.projectList.right).toBeLessThanOrEqual(metrics.projectListDivider.x + 0.01);
+  expect(metrics.projectListDivider.right).toBeLessThanOrEqual(metrics.feedback.x + 0.01);
   expect(metrics.feedback.right).toBeLessThanOrEqual(metrics.search.x + 0.01);
+  expect(metrics.search.right).toBeLessThanOrEqual(metrics.nav.right + 0.01);
   expect(metrics.search.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
   expect(metrics.search.right).toBeLessThan(metrics.userMenu.x);
   expect(metrics.userMenu.right).toBeLessThanOrEqual(metrics.inner.right + 0.01);
@@ -346,7 +398,7 @@ test("anonymous Korean root login backdrop keeps the frozen Bootstrap/Yobi viewp
   expect(metrics.scrollWidth).toBe(390);
 });
 
-test("anonymous public shell keeps the approved mobile GNB on one line without overflow", async ({
+test("anonymous public shell keeps the approved mobile GNB rows without horizontal overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -355,10 +407,25 @@ test("anonymous public shell keeps the approved mobile GNB on one line without o
 
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-item"]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
-    0,
+  const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
+  await expect(navItems).toHaveCount(5);
+  expect(
+    await navItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
+  ).toEqual([
+    "global-gnb-brand-item",
+    "global-gnb-project-list-item",
+    "global-gnb-project-list-divider",
+    "global-gnb-feedback-item",
+    "global-gnb-search-item",
+  ]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
+    "전체 목록",
   );
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
+    "href",
+    `${BASE_PATH}/projects`,
+  );
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
   const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeHidden();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
@@ -368,25 +435,32 @@ test("anonymous public shell keeps the approved mobile GNB on one line without o
   expectBox(metrics.navbar, { height: 40, width: 390, x: 0, y: 0 });
   expectBox(metrics.inner, { height: 40, width: 362.59, x: 13.7, y: 0 });
   expectBox(metrics.pin, { height: 26, width: 25, x: -6, y: 6 });
+  expectBox(metrics.nav, { height: 40, width: 237.16, x: 28.7, y: 0 });
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 30.7, y: 5 });
-  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 60.47, y: 1 });
+  expectBox(metrics.projectList, { height: 37, width: 72.23, x: 60.47, y: 1 });
+  expectBox(metrics.projectListDivider, { height: 40, width: 3.11, x: 132.7, y: 0 });
+  expectBox(metrics.feedback, { height: 37, width: 130.05, x: 135.81, y: 1 });
+  expectBox(metrics.userMenu, { height: 40, width: 147.88, x: 228.42, y: 40 });
+  expectBox(metrics.login, { height: 30, width: 56.34, x: 228.42, y: 45 });
+  expectBox(metrics.signup, { height: 30, width: 78.23, x: 298.06, y: 45 });
   expectBox(metrics.heroCover, { height: 309, width: 410, x: -20, y: 40 });
   expectBox(metrics.heroHeading, { height: 80, width: 410, x: -20, y: 95 });
 
   expect(metrics.search.display).toBe("none");
   expect(metrics.search.width).toBe(0);
+  expect(metrics.logo.right).toBeLessThanOrEqual(metrics.projectList.x);
+  expect(metrics.projectList.right).toBeLessThanOrEqual(metrics.projectListDivider.x + 0.01);
+  expect(metrics.projectListDivider.right).toBeLessThanOrEqual(metrics.feedback.x + 0.01);
   expect(metrics.feedback.right).toBeLessThanOrEqual(metrics.nav.x + metrics.nav.width + 0.01);
-  expect(metrics.feedback.right).toBeLessThanOrEqual(metrics.login.x);
-  expect(metrics.userMenu.y).toBe(metrics.navbar.y);
-  expect(metrics.userMenu.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.nav.bottom).toBeLessThanOrEqual(metrics.userMenu.y);
   expect(metrics.userMenu.right).toBeLessThanOrEqual(metrics.inner.right + 0.01);
   expect(metrics.login.display).not.toBe("none");
   expect(metrics.login.color).toBe("rgb(93, 187, 224)");
   expect(metrics.signup.display).not.toBe("none");
-  expect(metrics.login.y).toBeGreaterThanOrEqual(metrics.navbar.y);
-  expect(metrics.signup.y).toBeGreaterThanOrEqual(metrics.navbar.y);
-  expect(metrics.login.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
-  expect(metrics.signup.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.login.y).toBeGreaterThanOrEqual(metrics.userMenu.y);
+  expect(metrics.signup.y).toBeGreaterThanOrEqual(metrics.userMenu.y);
+  expect(metrics.login.bottom).toBeLessThanOrEqual(metrics.userMenu.bottom);
+  expect(metrics.signup.bottom).toBeLessThanOrEqual(metrics.userMenu.bottom);
   expect(metrics.login.right).toBeLessThanOrEqual(metrics.signup.x);
   expect(metrics.heroCover.right).toBe(390);
   expect(metrics.heroHeading.right).toBe(metrics.heroCover.right);
@@ -704,6 +778,8 @@ async function readShellMetrics(page: Page) {
       nav: box('[data-stylex-owner="global-gnb-nav"]'),
       navbar: box("[data-stylex-owner=global-gnb-outer]"),
       pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
+      projectList: box('[data-stylex-owner="global-gnb-project-list-link"]'),
+      projectListDivider: box('[data-stylex-owner="global-gnb-project-list-divider"]'),
       search: box('[data-stylex-owner="global-gnb-search-form"]'),
       signup: box('[data-stylex-owner="anonymous-site-signup"]'),
       userMenu: box(".gnb-usermenu"),

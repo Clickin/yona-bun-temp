@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1100 — anonymous global-shell five-item geometry
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `common/navbar.scala.html`, `User.isGuest=false`, `NullUser` inheritance, frozen `_page.less`, and max-720 `_responsive.less` establish List All/divider, float order, and search-only mobile hiding. Direct legacy `:8089` and current System-Chrome measurements confirm the result. | `SiteLayoutShell` only renames the byte-equivalent predicate to `legacyNavbarProjectListingEnabled`; the approved Yoram brand/repository identity remains, but project listing is correctly excluded from that deviation. | Desktop has five ordered GNB items and exact boxes. At 390px search is hidden, nav remains first-row, anonymous user menu is second-row, and the document has no horizontal overflow. No screenshot baseline, threshold, or route offset changes. | Fresh fallback-off production final System Chrome passes 2/2; TypeScript and diff checks pass. | Broad after test 46, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1099 — anonymous HOME project-list regression contract
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

@@ -1,5 +1,20 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1100 anonymous global-shell five-item geometry
+
+- [x] Recheck navbar/User/NullUser and frozen desktop/mobile GNB cascade.
+- [x] Compare legacy `:8089` and current output in System Chrome at matching
+  desktop/mobile viewports.
+- [x] Correct the earlier erroneous three-item deviation classification:
+  approved Yoram identity changes do not remove legacy `List All`.
+- [x] Verify exact five-item order, geometry, mobile second-row user menu,
+  containment, and no horizontal overflow without changing screenshots or
+  thresholds.
+- [x] Pass fresh fallback-off production final System Chrome 2/2, TypeScript,
+  and diff checks.
+- [ ] Resume broad after test 46, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1099 anonymous HOME project-list regression contract
 
 - [x] Correct the stale anonymous HOME expectation using navbar, `User`, and
