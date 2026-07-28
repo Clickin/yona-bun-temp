@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1081 — release-dist batch 12 timing and fixture classification
+
+| Evidence | Runtime/harness boundary | Result | Remaining scope |
+| --- | --- | --- | --- |
+| Fresh `frontend/dist`, release Rust at `:18101/yona`, prepared legacy at `:9000`, external System Chrome, and `output/playwright/visual-sweep/batch-12.json`. Legacy `user/view.scala.html` proves the default profile tab renders issue rows through `user/partial_issues.scala.html`; `action=resetPassword` does not define a separate profile view. | No route, StyleX, frozen source, threshold, timeout, or fallback change. This row records the strict Batch 1080 rerun and distinguishes screen parity from fixture population. | `/info/leave/alice/sample` and `/info/leave/weblabs/portal` have zero local/diff failures. Local routes reach metrics in 194–212ms and legacy in 88–145ms with no settle or teardown bound consumed. Three `alice/sample` errors and the missing Alice issue-row metrics are fixture/state drift. | Same-fixture data preparation, broad fallback-consumer audit, aggregate corpus comparison, and final pixel lock remain open. |
+
 ### Batch 1080 — redirect-only corpus classification
 
 | Legacy evidence | Harness boundary | Stable contract | Verification | Remaining scope |

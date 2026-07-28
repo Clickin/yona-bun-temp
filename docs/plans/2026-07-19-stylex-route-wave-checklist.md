@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1081 release-dist batch 12 timing and fixtures
+
+- [x] Rebuild production dist and serve it from release Rust against the
+  prepared legacy parity instance.
+- [x] Re-run desktop batch 12 in external System Chrome with strict timing
+  traces; `/info/leave/*` is 2/2 diff-free with zero local failures.
+- [x] Confirm local metrics settle in 194–212ms versus legacy 88–145ms with no
+  body/selector/paint/font/image/animation or teardown timeout.
+- [x] Classify the three inaccessible `alice/sample` states and the absent
+  local Alice issue row as fixture differences, not CSS/screenshot fixes.
+- [ ] Establish same-fixture corpus pairs, complete the broad fallback audit,
+  and finish the global pixel lock.
+
 ### 2026-07-28 — Batch 1080 redirect-only corpus classification
 
 - [x] Confirm `/info/leave/:owner/:project` is legacy `UserApp.leave`, an

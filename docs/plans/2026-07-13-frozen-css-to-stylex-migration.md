@@ -1,5 +1,25 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1081 — release-dist batch 12 timing and fixture classification — 2026-07-28
+
+The freshly rebuilt production dist was served by the release Rust binary and
+desktop corpus batch 12 was rerun against the prepared legacy instance with
+external System Chrome and strict timing traces. The two redirect-only
+`/info/leave/*` endpoints now have zero local and comparison failures, proving
+the Batch 1080 classifier correction without weakening visible project-screen
+checks.
+
+All ten local routes reached metrics in `194–212ms`; the legacy routes reached
+metrics in `88–145ms`. No body, selector, font, image, animation, paint, page
+close, or browser close bound was consumed. The remaining four comparison
+failures are fixture/state differences: local has no accessible
+`alice/sample` project for three project routes, and its Alice profile has no
+issue row while the legacy fixture does. The latter is why the generic
+`.post-list-wrap` metrics differ on `/alice?action=resetPassword`; the query
+does not select a distinct reset-password profile screen. No route CSS or
+pixel compensation is warranted. Global fallback audit, same-fixture corpus
+pairing, and the overall final pixel lock remain open.
+
 ### Batch 1080 — redirect-only corpus classification — 2026-07-28
 
 The full-corpus sweep no longer classifies legacy `UserApp.leave` endpoints
