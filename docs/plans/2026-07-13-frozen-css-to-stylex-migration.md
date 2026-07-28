@@ -1,5 +1,20 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1103 — mobile login trigger second-row origin — 2026-07-28
+
+After the five-item shell passed, the adjacent Korean mobile login-dialog test
+still expected the login trigger on the first GNB row. Matching legacy/current
+comparison confirms the anonymous user menu starts at `y=40` and the login link
+at `y=46`, six pixels inside that second row.
+
+Only those flow-origin expectations change. The dialog remains fixed at
+`y=84.39`; its body/form/input dimensions and the viewport-fixed `390×844`
+backdrop remain identical with no overflow. The route names/reuses the existing
+anonymous user-menu StyleX composition with byte-equivalent output. Screenshot
+and thresholds are unchanged. Fresh fallback-off production final System
+Chrome passes the trigger/dialog, backdrop, and mobile shell 3/3; TypeScript
+and diff checks pass.
+
 ### Batch 1102 — E2E frontend port-collision fail-fast — 2026-07-28
 
 A broad restart reproduced a second, separate 60-second readiness delay. The

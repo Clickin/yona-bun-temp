@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1103 — mobile login trigger second-row origin
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Anonymous HOME/login-dialog Scala includes and frozen GNB responsive flow establish the five-item nav plus second-row user menu; fixed Bootstrap/Yobi dialog/backdrop rules keep the overlay viewport-relative. Matching legacy/current System-Chrome measurement confirms the split. | `AnonymousSiteUserMenu` names/reuses its existing menu StyleX props with byte-equivalent class output. No declaration, element, event, or routing change. | At 390px user menu is `y=40`, login trigger `y=46`, and nav bottom equals the second-row origin. Dialog remains `392×378 @ y=84.39`; backdrop remains `390×844 @ 0,0`; form/input and overflow stay strict. | Fresh fallback-off production final System Chrome passes 3/3; TypeScript and diff checks pass; screenshots/thresholds unchanged. | Broad after test 51, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1102 — E2E frontend port-collision fail-fast
 
 | Evidence | Harness boundary | Stable contract | Verification | Remaining scope |

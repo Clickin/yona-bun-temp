@@ -1,5 +1,20 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1103 mobile login trigger second-row origin
+
+- [x] Compare the Korean mobile login state against legacy after restoring the
+  five-item anonymous GNB.
+- [x] Record user menu `y=40` and login link `y=46`, with exact row adjacency
+  and internal 6px offset.
+- [x] Keep the fixed dialog/backdrop, form/input geometry, overflow, screenshot,
+  and thresholds unchanged.
+- [x] Name/reuse the anonymous user-menu StyleX composition without changing
+  emitted output.
+- [x] Pass fresh fallback-off production final System Chrome 3/3, TypeScript,
+  and diff checks.
+- [ ] Resume broad after test 51, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1102 E2E frontend port-collision fail-fast
 
 - [x] Reproduce a reserved-port race where Vite moved from `51249` to `51251`

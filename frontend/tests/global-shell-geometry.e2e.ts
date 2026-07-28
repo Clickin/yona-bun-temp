@@ -347,7 +347,12 @@ test("anonymous mobile home login dialog keeps legacy Korean geometry without ov
   const loginLink = page.locator("#required-logged-in > a.user-item-btn");
   await expect(loginLink).toHaveText("로그인");
   await expect(loginLink).not.toHaveAttribute("data-login");
-  expectBox(await readElementBox(loginLink), { height: 27, width: 56.34, x: 228.42, y: 6 });
+  const shellMetrics = await readShellMetrics(page);
+  const loginLinkBox = await readElementBox(loginLink);
+  expectBox(shellMetrics.userMenu, { height: 40, width: 147.88, x: 228.42, y: 40 });
+  expectBox(loginLinkBox, { height: 27, width: 56.34, x: 228.42, y: 46 });
+  expect(shellMetrics.nav.bottom).toBe(shellMetrics.userMenu.y);
+  expect(loginLinkBox.y).toBe(shellMetrics.userMenu.y + 6);
   await loginLink.click();
 
   const metrics = await readLoginDialogMetrics(page);

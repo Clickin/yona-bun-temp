@@ -5500,6 +5500,7 @@ function AnonymousSiteUserMenu() {
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
     "favorite",
   );
+  const anonymousSiteUserMenuStyleProps = stylex.props(anonymousSiteUserMenuStyles.menu);
 
   return (
     <>
@@ -5574,7 +5575,7 @@ function AnonymousSiteUserMenu() {
         </div>
       </div>
       <ul
-        className={`gnb-usermenu ${stylex.props(anonymousSiteUserMenuStyles.menu).className}`}
+        className={`gnb-usermenu ${anonymousSiteUserMenuStyleProps.className}`}
         data-stylex-owner="anonymous-site-user-menu"
       >
         <li
