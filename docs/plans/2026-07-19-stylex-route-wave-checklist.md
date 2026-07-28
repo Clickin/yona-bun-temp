@@ -8,8 +8,26 @@
   retirement symmetric between React output and legacy fixture.
 - [x] Focused fallback-off shell checks pass 3/4; DOM, logo, anonymous-menu, and
   custom-navbar contracts are green.
-- [ ] Diagnose the remaining 1100px site-admin link outside-viewport interaction
-  against frozen responsive geometry; no test threshold was weakened.
+- [x] Measured the remaining 1100px site-admin link against frozen responsive
+  geometry; the final rectangle is inside the viewport, so the remaining
+  failure is retained as a harness/actionability stabilization issue. No test
+  threshold was weakened.
+
+### 2026-07-28 — Batch 1073 stabilization wait diagnosis after shared-shell verification
+
+- [x] Rechecked the 1100px site-admin rectangle: `x=923.109375`,
+  `width=35.1875`, document/scroll width `1100`; final measured geometry is
+  inside the viewport.
+- [x] Separated the remaining 30-second Playwright action timeout from route
+  rendering: normal click retries report `visible, enabled and stable` followed
+  by `outside of the viewport`, while the current account breadcrumb owner
+  selector is not reached.
+- [x] Identified harness lifecycle contention from multiple hours-old idle
+  Playwright daemons and duplicate Yona Vite processes left by interrupted
+  runs, in addition to bounded page/browser teardown waits.
+- [ ] Clean stale process state and rerun the isolated fallback-off Chrome
+  interaction. Keep strict normal interaction and screenshot gates; no
+  force-click or timeout relaxation is allowed.
 
 ### 2026-07-28 — Batch 1071 anonymous public landing legacy shell parity
 

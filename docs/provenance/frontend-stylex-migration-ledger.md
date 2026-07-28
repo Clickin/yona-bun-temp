@@ -13,6 +13,21 @@ keeps the visible legacy tokens. Focused fallback-off external Chrome passes
 3/4; the remaining site-admin click at 1100px is an open viewport-geometry
 diagnostic, not suppressed by force-click or timeout changes.
 
+### Batch 1073 — shared-shell stabilization wait diagnosis
+
+`yona-original/app/views/common/navbar.scala.html`, frozen `_page.less`/
+`_responsive.less`, and the current StyleX GNB owner establish the 40px
+navbar and 1100px responsive geometry. `frontend/tests/authenticated-home-empty-notifications.e2e.ts`
+keeps normal click behavior, waits for fonts/layout readiness, uses the
+current site-user-list and user-settings owner selectors, and does not
+force-click. The site-admin rectangle is inside the 1100px viewport
+(`x=923.109375`, `width=35.1875`; document/scroll width `1100`), but Playwright
+still retries for 30s with `outside of the viewport`. Multiple hours-old idle
+Playwright daemons and duplicate Vite processes were also observed after
+interrupted runs; clean process state and an isolated rerun remain open. This
+is harness stabilization evidence, not a verified visual gap or final-lock
+pass.
+
 ### Batch 1071 — anonymous public landing legacy shell parity
 
 The Scala intro/navbar/site-layout partials and frozen `_page.less` plus

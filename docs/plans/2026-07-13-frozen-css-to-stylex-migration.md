@@ -360,6 +360,26 @@ one 1100px site-admin click remains outside the viewport and is retained as an
 open responsive geometry gap pending measurement against the frozen cascade.
 No click force, timeout relaxation, or screenshot threshold change was made.
 
+### Batch 1073 stabilization wait diagnosis after shared-shell verification
+
+The site-admin link's measured 1100px rectangle is inside the viewport
+(`x=923.109375`, `width=35.1875`, viewport width `1100`; document and scroll
+width both `1100`). The current focused run therefore does not establish a
+final responsive overflow defect. Playwright still retries the normal click
+until its 30-second test timeout with `visible, enabled and stable` followed by
+`outside of the viewport`; the account breadcrumb assertion was updated to the
+current `user-settings-breadcrumb-heading` owner but is not reached in that
+failure.
+
+The separate long stabilization symptom is harness lifecycle contention:
+multiple idle Playwright daemons and duplicate Yona Vite dev processes from
+earlier interrupted runs remain alive for hours, while the managed runner also
+has bounded per-page/browser teardown waits. This is verification-process
+contention, not evidence that local React rendering is slower than legacy. Keep
+the normal click and strict screenshot/geometry gates; do not force-click,
+relax timeouts, or claim the final pixel lock. Clean the stale process set
+before the next isolated verification run.
+
 ## 2026-07-27 — Public-profile Issues open/closed list-root ownership
 
 Batch 1026 gives the two `/$user?selected=issues` open/closed `<ul>` roots
