@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1085 framed-left pane consumer contract
+
+- [x] Reconcile legacy's three `user-project-list` panes with the completed
+  consumer-by-consumer StyleX retirement ledger.
+- [x] Keep the class absent from framed Favorite/Project and present only on
+  Recent; make that policy explicit without changing rendered behavior.
+- [x] Verify pane IDs/order, one-visible state, transitions/reloads,
+  persistence, Query refresh, and SPA links using stable owners.
+- [x] Pass the exact fallback-off production-dist scenario in 1.6s and advance
+  the broad suite through 35 tests.
+- [ ] Classify the notifications learn-more inline-height failure at test 36,
+  then continue the broad fallback audit and final pixel lock.
+
 ### 2026-07-28 — Batch 1084 production-dist final-profile runtime
 
 - [x] Keep fast/focused development on Vite HMR and move only the final

@@ -1,5 +1,24 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1085 — framed-left pane consumer contract — 2026-07-28
+
+The production-dist final profile exposed a stale broad assertion rather than
+a route regression. Legacy emits `user-project-list` on all three framed-left
+panes, but completed StyleX ownership has retired that ancestor from Favorite
+and Project because their descendant fallback consumers are gone. Recent
+retains it for its remaining `_usermenu.less` issue-row consumer. The route now
+names this per-consumer choice explicitly without changing rendered output.
+
+The broad scenario verifies all three pane IDs/order, Favorite/Project class
+absence, Recent class retention, exactly one visible pane across selection and
+reload, persistence, Query refresh, and SPA links. Its account-link locator
+also uses the migrated account-actions owner instead of retired `.user-menu`.
+Fresh fallback-off production dist and System Chrome pass the exact scenario
+in 1.6 seconds; the reused verified dist passes it in 1.0 second and advances
+the broad suite through 35 tests. Test 36 now exposes a separate notifications
+learn-more inline-height contract. Global fallback audit and pixel lock remain
+open.
+
 ### Batch 1084 — production-dist final-profile runtime — 2026-07-28
 
 The final fallback-off profile now builds once and serves `frontend/dist`

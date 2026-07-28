@@ -5639,7 +5639,8 @@ function SidebarTabContent({
   const paneClassName = (tab: SidebarTab) => {
     const isActive = activeTab === tab;
     if (isLeftSidebar) {
-      return `${tab === "recent" ? "user-project-list " : ""}${
+      const leftSidebarLegacyConsumerClassName = tab === "recent" ? "user-project-list " : "";
+      return `${leftSidebarLegacyConsumerClassName}${
         stylex.props(
           leftSidebarTabPanelStyles.pane,
           isActive && leftSidebarTabPanelStyles.activePane,

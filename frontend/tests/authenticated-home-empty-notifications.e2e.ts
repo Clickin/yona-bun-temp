@@ -1865,19 +1865,35 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   const favoriteTab = leftTabs.getByRole("button", { exact: true, name: "Favorite" });
   const projectTab = leftTabs.getByRole("button", { exact: true, name: "Project" });
   const recentTab = leftTabs.getByRole("button", { exact: true, name: "Recent History" });
+  const leftPanes = leftSidebar.locator("#left-sidebar-tab-content-list > div");
+  const favoritePane = leftSidebar.locator("#left-sidebar-myOrganizationList");
+  const projectPane = leftSidebar.locator("#left-sidebar-myProjectList");
+  const recentPane = leftSidebar.locator("#left-sidebar-myRecentIssueList");
+  const expectOnlyVisibleLeftPane = async (id: string) => {
+    const visiblePanes = leftSidebar.locator("#left-sidebar-tab-content-list > div:visible");
+    await expect(visiblePanes).toHaveCount(1);
+    await expect(visiblePanes).toHaveAttribute("id", id);
+  };
   await expect(leftSidebar).toBeVisible();
   await expect(favoriteTab).toHaveAttribute("aria-pressed", "true");
   await expect(projectTab).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator("#left-sidebar-tab-content-list")).toHaveCount(1);
   await expect(page.locator("#usermenu-tab-content-list")).toHaveCount(1);
-  await expect(page.locator("#left-sidebar-tab-content-list > .user-project-list")).toHaveCount(3);
-  await expect(
-    page.locator("#left-sidebar-tab-content-list > .user-project-list:visible"),
-  ).toHaveAttribute("id", "left-sidebar-myOrganizationList");
+  await expect(leftPanes).toHaveCount(3);
+  expect(await leftPanes.evaluateAll((panes) => panes.map((pane) => pane.id))).toEqual([
+    "left-sidebar-myOrganizationList",
+    "left-sidebar-myProjectList",
+    "left-sidebar-myRecentIssueList",
+  ]);
+  await expect(favoritePane).not.toHaveClass(/\buser-project-list\b/);
+  await expect(projectPane).not.toHaveClass(/\buser-project-list\b/);
+  await expect(recentPane).toHaveClass(/\buser-project-list\b/);
+  await expectOnlyVisibleLeftPane("left-sidebar-myOrganizationList");
   expect(await duplicateSidebarIds(page)).toEqual([]);
 
   await projectTab.click();
   await expect(projectTab).toHaveAttribute("aria-pressed", "true");
+  await expectOnlyVisibleLeftPane("left-sidebar-myProjectList");
   expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
     "myProjectList",
   );
@@ -1887,9 +1903,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
       .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
       .getByRole("button", { exact: true, name: "Project" }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(
-    page.locator("#left-sidebar-tab-content-list > .user-project-list:visible"),
-  ).toHaveAttribute("id", "left-sidebar-myProjectList");
+  await expectOnlyVisibleLeftPane("left-sidebar-myProjectList");
   expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
 
   const requestCountBeforeRefresh = workspace.requestCount;
@@ -1897,6 +1911,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   await expect.poll(() => workspace.requestCount).toBeGreaterThan(requestCountBeforeRefresh);
 
   await recentTab.click();
+  await expectOnlyVisibleLeftPane("left-sidebar-myRecentIssueList");
   expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
     "myRecentIssueList",
   );
@@ -1906,9 +1921,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
       .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
       .getByRole("button", { exact: true, name: "Recent History" }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(
-    page.locator("#left-sidebar-tab-content-list > .user-project-list:visible"),
-  ).toHaveAttribute("id", "left-sidebar-myRecentIssueList");
+  await expectOnlyVisibleLeftPane("left-sidebar-myRecentIssueList");
   expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
     "myRecentIssueList",
   );
@@ -1921,6 +1934,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
     .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
     .getByRole("button", { exact: true, name: "Project" })
     .click();
+  await expectOnlyVisibleLeftPane("left-sidebar-myProjectList");
   const projectLink = page.locator("#left-sidebar-myProjectList a[href$='/admin/sample']").first();
   await expect(projectLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await page.evaluate(() => {
@@ -1944,7 +1958,9 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
     ),
   ).toBe("alive");
 
-  const accountLink = page.locator("#sidebar .user-menu a[href$='/user/editform']");
+  const accountLink = leftSidebar.locator(
+    ':scope > [data-stylex-owner="left-sidebar-account-actions"] a[href$="/user/editform"]',
+  );
   await expect(accountLink).toHaveAttribute("href", `${basePath}/user/editform`);
   await accountLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/editform`);

@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1085 — framed-left pane consumer contract
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `layout.scala.html`, `layout_framed.scala.html`, `sidebar.scala.html`, `common/usermenu_tab_content_list.scala.html`, the three `index/my*List.scala.html` partial trees, Bootstrap direct-pane display, and `_usermenu.less` establish the original pane ancestry. Completed ledger rows prove Favorite and Project no longer consume the broad ancestor while Recent still does. | `SidebarTabContent` only names the existing framed-left Recent consumer class policy; no DOM, StyleX declaration, state, data, navigation, geometry, or frozen source changes. The broad E2E retires stale presentation-class assumptions and preserves behavior checks. | Three ordered pane IDs; Favorite/Project lack `user-project-list`; Recent retains it; exactly one visible pane through Favorite → Project → Recent, reload persistence, refresh query, semantic links, and SPA sentinels. | Fresh fallback-off production build/verifier passes with frozen hash `8b437655...de18be6`; exact System-Chrome scenario passes in 1.6s, reused dist in 1.0s, and broad final advances through 35 tests. | Notifications learn-more test 36, stale create-link source-only assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1084 — production-dist final-profile runtime
 
 | Evidence | Harness boundary | Stable contract | Verification | Remaining scope |
