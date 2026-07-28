@@ -431,10 +431,12 @@ function HomeScreen({
             >
               <div
                 {...stylex.props(authenticatedHomeContentGridStyles.grid)}
+                className={`row-fluid content-container ${stylex.props(authenticatedHomeContentGridStyles.grid).className}`}
                 data-stylex-owner="authenticated-home-content-grid"
               >
                 <div
                   {...stylex.props(authenticatedHomeContentGridStyles.main)}
+                  className={`span8 main-stream ${stylex.props(authenticatedHomeContentGridStyles.main).className}`}
                   data-stylex-owner="authenticated-home-main-stream"
                 >
                   <ul
@@ -545,6 +547,7 @@ function HomeScreen({
                   </ul>
                   <ul
                     {...stylex.props(authenticatedHomeNotificationStyles.list)}
+                    className={`activity-streams notification-wrap unstyled ${stylex.props(authenticatedHomeNotificationStyles.list).className}`}
                     data-stylex-owner="authenticated-home-notification-list"
                   >
                     {notificationItems.length === 0 ? (
@@ -579,6 +582,7 @@ function HomeScreen({
                 </div>
                 <div
                   {...stylex.props(authenticatedHomeContentGridStyles.rail)}
+                  className={`span4 index-menu right-menu span-hard-wrap ${stylex.props(authenticatedHomeContentGridStyles.rail).className}`}
                   data-stylex-owner="authenticated-home-index-rail"
                 />
               </div>
@@ -1779,6 +1783,7 @@ export function SiteLayoutShell({
                 {...stylex.props(globalSidebarOpenPinStyles.root)}
                 aria-controls="sidebar"
                 aria-expanded="false"
+                className={`pin ${stylex.props(globalSidebarOpenPinStyles.root).className}`}
                 data-stylex-owner="global-sidebar-open-pin"
                 onClick={handleLeftSidebarOpen}
                 ref={globalSidebarOpenPinRef}
@@ -1806,11 +1811,6 @@ export function SiteLayoutShell({
                     explicitUndefined: true,
                     includeHash: true,
                     includeSearch: true,
-                  }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
                   }}
                   className={`logo logo-letter ${globalGnbBrandLinkClassName}`}
                   data-stylex-owner="global-gnb-brand-link"
@@ -5221,6 +5221,12 @@ function AuthenticatedSiteUserMenu({
                   authenticatedSidenavAccountActionStyles.menu,
                   authenticatedSidenavAccountActionStyles.logout,
                 )}
+                className={`user-menu logout label ${
+                  stylex.props(
+                    authenticatedSidenavAccountActionStyles.menu,
+                    authenticatedSidenavAccountActionStyles.logout,
+                  ).className
+                }`}
               >
                 {t("title.logout")}
               </span>

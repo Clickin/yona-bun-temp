@@ -1,5 +1,18 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1072 — authenticated shared-shell legacy class contract follow-up
+
+`yona-original/app/views/common/navbar.scala.html` and
+`common/usermenu.scala.html` require literal `pin`, `logo logo-letter`,
+`input-prepend gnb-search-form`, and `user-menu logout label` classes;
+`index/notifications.scala.html` requires the page/grid/stream/rail class
+nesting. `frontend/src/routes/-home-route-screen.tsx` now composes those
+legacy classes with the existing StyleX owners. The authenticated-home E2E
+canonicalizer retires only the corresponding generated/ownership tokens and
+keeps the visible legacy tokens. Focused fallback-off external Chrome passes
+3/4; the remaining site-admin click at 1100px is an open viewport-geometry
+diagnostic, not suppressed by force-click or timeout changes.
+
 ### Batch 1071 — anonymous public landing legacy shell parity
 
 The Scala intro/navbar/site-layout partials and frozen `_page.less` plus

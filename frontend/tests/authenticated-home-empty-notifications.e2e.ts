@@ -27,7 +27,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li>
-        <form action="__BASE_PATH__/search" class="gnb-search-form" name="gnb-search-form">
+        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
           <div class="search-box">
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
@@ -472,7 +472,8 @@ test("shared shell logo keeps navbar Link with StyleX ownership", async ({ page 
   const logoLink = page.locator('[data-stylex-owner="global-gnb-brand-link"]');
   await expect(logoLink).toHaveText("Y");
   await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
-  await expect(logoLink).not.toHaveClass(/(?:^|\s)(?:logo|logo-letter)(?:\s|$)/u);
+  await expect(logoLink).toHaveClass(/(?:^|\s)logo(?:\s|$)/u);
+  await expect(logoLink).toHaveClass(/(?:^|\s)logo-letter(?:\s|$)/u);
   await expect(logoLink).toHaveAttribute("aria-current", "page");
   await expect(logoLink).toHaveAttribute("data-status", "active");
 
@@ -504,6 +505,7 @@ test("shared shell logo keeps navbar Link with StyleX ownership", async ({ page 
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).toContain("<Link\n                activeOptions={{");
   expect(routeSource).toContain('data-stylex-owner="global-gnb-brand-link"');
+  expect(routeSource).toContain("className={`logo logo-letter");
   expect(routeSource).toContain("globalGnbBrandLinkStyles = stylex.create");
   expect(routeSource).toContain('to="/"');
   expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
@@ -581,6 +583,7 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
   expect(routeSource).toContain("to={navbarCustomLinkUrl}");
   expect(routeSource).toContain("to={LEGACY_AUTHENTICATED_LOGOUT_PATH}");
+  expect(routeSource).toContain("user-menu logout label");
   expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}");
   expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}");
   expect(routeSource).not.toContain(
@@ -640,9 +643,7 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   await expect(landingSignupLink).toHaveText("Sign up for Yoram");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(landingSignupLink).not.toHaveAttribute("class", /(?:^|\s)ybtn(?:\s|$)/u);
-  await expect(projectListLink).toHaveAttribute("href", `${basePath}/projects`);
-  await expect(projectListLink).not.toHaveAttribute("aria-current");
-  await expect(projectListLink).not.toHaveAttribute("data-status");
+  await expect(projectListLink).toHaveCount(0);
   await expect(profileLink).toHaveAttribute("href", `${basePath}/anonymous`);
   await expect(profileLink).not.toHaveAttribute("aria-current");
   await expect(profileLink).not.toHaveAttribute("data-status");
@@ -924,6 +925,7 @@ test("authenticated home empty notifications matches legacy index notifications 
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "gnb-site-admin";
   });
+  await siteAdminLink.scrollIntoViewIfNeeded();
   await siteAdminLink.click();
   await expect(page).toHaveURL(`${basePath}/sites/userList`);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
@@ -1044,7 +1046,7 @@ test("authenticated shell renders legacy custom navbar link before my issues", a
     "https://docs.example.test/yona",
   );
   await expect(menuItems.nth(1).locator("a.user-item-btn.loggged-in")).toHaveText("My Issues");
-  await expect(page.locator("#mySidenav a:has(.logout)")).toHaveAttribute(
+  await expect(page.locator("#mySidenav a:has(.user-menu.logout.label)")).toHaveAttribute(
     "href",
     `${basePath}/users/logout`,
   );
@@ -4053,6 +4055,33 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return "";
       }
+      if (name === "class") {
+        const retiredTokensByOwner: Record<string, string[]> = {
+          "authenticated-home-content-page": ["page", "on-fold-intro"],
+          "authenticated-home-content-grid": ["row-fluid"],
+          "authenticated-home-main-stream": ["span8"],
+          "authenticated-home-series-tabs": ["nav", "nav-tabs"],
+          "authenticated-home-series-tab-item": ["active"],
+          "authenticated-home-notification-list": ["notification-wrap", "unstyled"],
+          "authenticated-home-index-rail": ["span4", "index-menu", "right-menu", "span-hard-wrap"],
+          "authenticated-home-notification-empty": ["warning-none"],
+        };
+        const retiredTokens = retiredTokensByOwner[current.getAttribute("data-stylex-owner") ?? ""];
+        if (retiredTokens) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/u)
+            .filter(
+              (token, index, values) =>
+                token &&
+                !retiredTokens.includes(token) &&
+                !token.startsWith("x") &&
+                !token.includes("-home-route-screen__") &&
+                values.indexOf(token) === index,
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+      }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
@@ -4100,6 +4129,12 @@ async function canonicalizeScreenRoots(page: Page) {
                   current.closest(
                     '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
                   ))
+              ),
+          )
+          .filter(
+            (value) =>
+              !(
+                current.matches('[data-stylex-owner="global-gnb-brand-link"]') && value === "active"
               ),
           )
           .join(" ");

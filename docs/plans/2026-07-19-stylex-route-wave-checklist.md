@@ -1,5 +1,16 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1072 authenticated shared-shell legacy class contract follow-up
+
+- [x] Restored literal legacy GNB pin, logo/search, authenticated logout, and
+  notification grid/stream classes while retaining StyleX ownership.
+- [x] Updated only stale shared-shell expectations and made canonicalizer token
+  retirement symmetric between React output and legacy fixture.
+- [x] Focused fallback-off shell checks pass 3/4; DOM, logo, anonymous-menu, and
+  custom-navbar contracts are green.
+- [ ] Diagnose the remaining 1100px site-admin link outside-viewport interaction
+  against frozen responsive geometry; no test threshold was weakened.
+
 ### 2026-07-28 — Batch 1071 anonymous public landing legacy shell parity
 
 - [x] Restored legacy anonymous landing/navbar/footer class and wrapper flow from

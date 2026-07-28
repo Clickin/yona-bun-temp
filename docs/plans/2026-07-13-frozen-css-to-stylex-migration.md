@@ -349,6 +349,17 @@ Bootstrap-derived focus output. Screenshots were inspected with no target
 drift or overflow. Live same-fixture pairing and the global final lock remain
 open.
 
+### Batch 1072 authenticated shared-shell legacy class contract follow-up
+
+The authenticated shell follow-up restores the remaining visible classes from
+`common/navbar.scala.html`, `common/usermenu.scala.html`, and
+`index/notifications.scala.html`: the GNB `pin`, authenticated logout
+`user-menu logout label`, and notification content/grid classes. The focused
+fallback-off suite now passes the DOM and three shell interaction contracts;
+one 1100px site-admin click remains outside the viewport and is retained as an
+open responsive geometry gap pending measurement against the frozen cascade.
+No click force, timeout relaxation, or screenshot threshold change was made.
+
 ## 2026-07-27 — Public-profile Issues open/closed list-root ownership
 
 Batch 1026 gives the two `/$user?selected=issues` open/closed `<ul>` roots
