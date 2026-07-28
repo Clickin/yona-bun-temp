@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import {
   resolveE2eFrontendViteBaseArgs,
   resolveE2eFrontendViteCommand,
+  resolveE2eFrontendViteListenArgs,
 } from "./playwright-e2e-runtime.mjs";
 
 const frontendPort = process.env.YONA_E2E_FRONTEND_PORT ?? "3101";
@@ -31,10 +32,7 @@ const next = resolveSpawn("pnpm", [
   "vite",
   viteCommand,
   ...viteBaseArgs,
-  "--host",
-  "127.0.0.1",
-  "--port",
-  frontendPort,
+  ...resolveE2eFrontendViteListenArgs(frontendPort),
 ]);
 const child = spawn(next.command, next.args, {
   cwd: process.cwd(),

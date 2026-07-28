@@ -1,5 +1,17 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1102 E2E frontend port-collision fail-fast
+
+- [x] Reproduce a reserved-port race where Vite moved from `51249` to `51251`
+  while readiness polled the original URL for 60 seconds.
+- [x] Keep isolated dynamic ports and add Vite `--strictPort` so the existing
+  managed-server early-exit check reports a collision immediately.
+- [x] Preserve production preview, System Chrome, final trace, screenshots,
+  geometry, timeouts, and pixel thresholds.
+- [x] Pass runtime contract tests 5/5 and diff check.
+- [ ] Restart broad final, then global fallback audit, screenshot pair, and
+  final pixel lock.
+
 ### 2026-07-28 — Batch 1101 project-list source-guard decoupling
 
 - [x] Remove exact local-variable-name coupling exposed by broad test 16.

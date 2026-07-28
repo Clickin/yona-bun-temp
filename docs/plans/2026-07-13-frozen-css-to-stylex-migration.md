@@ -1,5 +1,20 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1102 — E2E frontend port-collision fail-fast — 2026-07-28
+
+A broad restart reproduced a second, separate 60-second readiness delay. The
+dynamic frontend port was free when reserved, but another listener claimed it
+before Vite bound. Vite silently advanced from `51249` to `51251`, while the
+managed runner correctly continued polling its declared `51249` URL until the
+readiness timeout.
+
+The E2E frontend now passes `--strictPort`. On this rare reservation race Vite
+exits instead of changing the runtime contract, and the runner's existing
+250ms early-exit polling reports the collision without a blind 60-second wait.
+No retry abstraction or timeout change is added. Production preview, System
+Chrome, final retained trace, screenshot/geometry checks, and pixel thresholds
+remain unchanged. Runtime contract tests pass 5/5 and diff check passes.
+
 ### Batch 1101 — project-list source-guard decoupling — 2026-07-28
 
 The next broad restart failed before browser parity on an exact local variable

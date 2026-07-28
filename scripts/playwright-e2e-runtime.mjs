@@ -69,6 +69,10 @@ export function resolveE2eFrontendViteBaseArgs(mode, basePath) {
   return mode === "preview" ? ["--base", `${basePath.replace(/\/$/u, "")}/`] : [];
 }
 
+export function resolveE2eFrontendViteListenArgs(port) {
+  return ["--host", "127.0.0.1", "--port", String(port), "--strictPort"];
+}
+
 export async function reserveOpenPort() {
   return await new Promise((resolve, reject) => {
     const server = net.createServer();

@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1102 — E2E frontend port-collision fail-fast
+
+| Evidence | Harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| A real broad run reserved frontend `51249`, but Vite found it occupied and served `51251`; readiness remained pinned to the declared URL and timed out after 60 seconds. This is the close-after-reservation TCP race, not React stabilization. | `run-e2e-frontend.mjs` receives shared listen args ending in `--strictPort`; the managed runner's existing early-exit check handles collision failure. Dynamic isolation, runtime URLs, preview mode, and readiness policy stay unchanged. | Vite may not silently mutate the E2E frontend origin. A collision fails near the 250ms poll cadence rather than consuming the 60-second readiness ceiling. Final visual gates remain intact. | Runtime contract tests pass 5/5; diff check passes. | Broad restart, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1101 — project-list source-guard decoupling
 
 | Evidence | Harness boundary | Stable contract | Verification | Remaining scope |

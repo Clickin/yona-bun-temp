@@ -7,6 +7,7 @@ import {
   buildPlaywrightE2eRuntime,
   resolveE2eFrontendViteBaseArgs,
   resolveE2eFrontendViteCommand,
+  resolveE2eFrontendViteListenArgs,
 } from "./playwright-e2e-runtime.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -68,6 +69,13 @@ test("final verification can serve the built frontend without changing fast dev 
   assert.equal(resolveE2eFrontendViteCommand(undefined), "dev");
   assert.deepEqual(resolveE2eFrontendViteBaseArgs("preview", "/yona"), ["--base", "/yona/"]);
   assert.deepEqual(resolveE2eFrontendViteBaseArgs(undefined, "/yona"), []);
+  assert.deepEqual(resolveE2eFrontendViteListenArgs(43101), [
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "43101",
+    "--strictPort",
+  ]);
 });
 
 test("normalizePlaywrightArgs keeps grep options ahead of file filters", () => {
