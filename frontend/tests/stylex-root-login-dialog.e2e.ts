@@ -59,7 +59,8 @@ test.describe("StyleX root login dialog", () => {
     expect(root).toContain('data-stylex-part="login-dialog-form"');
     expect(root).toContain("const rootLoginDialogProps = stylex.props(");
     expect(root).toContain("visible && styles.rootLoginDialogVisible,");
-    expect(root).toContain('["loginDialog", rootLoginDialogProps.className]');
+    expect(root).toContain("className={rootLoginDialogProps.className}");
+    expect(root).not.toContain('["loginDialog", rootLoginDialogProps.className]');
     expect(root).not.toContain('"modal hide loginDialog in"');
     expect(root).toContain('default: "460px"');
     expect(root).not.toContain("globalColors.");
@@ -75,8 +76,9 @@ test.describe("StyleX root login dialog", () => {
     const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute("id", "loginDialog");
-    await expect(dialog).toHaveClass(/\bloginDialog\b/);
-    await expect(dialog).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/);
+    await expect(dialog).toHaveAttribute("role", "dialog");
+    await expect(dialog).toHaveAttribute("aria-hidden", "false");
+    await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
     await expect(dialog.locator('input[placeholder="Login ID or E-mail"]')).toBeVisible();
     await expect(dialog.locator('input[placeholder="Password"]')).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Log in" })).toBeVisible();

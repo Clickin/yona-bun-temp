@@ -48,10 +48,11 @@ const SELECT2_TEMPLATE_IDS = [
 ];
 
 async function expectRootLoginDialogState(dialog: Locator, visible: boolean) {
+  await expect(dialog).toHaveAttribute("id", "loginDialog");
   await expect(dialog).toHaveAttribute("data-stylex-owner", "root-login-dialog-frame");
+  await expect(dialog).toHaveAttribute("role", "dialog");
   await expect(dialog.locator('[data-stylex-owner="root-login-dialog-body"]')).toHaveCount(1);
-  await expect(dialog).toHaveClass(/(?:^|\s)loginDialog(?:\s|$)/);
-  await expect(dialog).not.toHaveClass(/(?:^|\s)(?:modal|hide|in)(?:\s|$)/);
+  await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
   await expect(dialog).toHaveAttribute("aria-hidden", visible ? "false" : "true");
 }
 
@@ -273,6 +274,8 @@ test("root shell owns login dialog state without delegated document modal mutati
   expect(ROOT_ROUTE_SOURCE).toContain("submitRootLoginDialogForm");
   expect(ROOT_ROUTE_SOURCE).toContain("onClickCapture={handleRootShellClick}");
   expect(ROOT_ROUTE_SOURCE).toContain("onSubmit={handleRootLoginDialogSubmit}");
+  expect(ROOT_ROUTE_SOURCE).toContain("className={rootLoginDialogProps.className}");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('["loginDialog", rootLoginDialogProps.className]');
   expect(ROOT_ROUTE_SOURCE).toContain('className="modal-backdrop in"');
   expect(ROOT_ROUTE_SOURCE).toContain("data-stylex-owner={");
   expect(ROOT_ROUTE_SOURCE).toContain('"root-login-dialog-backdrop"');
@@ -929,7 +932,9 @@ async function readRenderedLegacyHrefControls(page: Page) {
 async function readLoginDialogOpenMetrics(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
+    const modalBody = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="root-login-dialog-body"]',
+    );
     const close = document.querySelector<HTMLElement>("#loginDialog .close");
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
     const input = document.querySelector<HTMLElement>("#loginIdOrEmailD");

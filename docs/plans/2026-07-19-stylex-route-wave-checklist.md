@@ -1,5 +1,32 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1090 approved anonymous mobile GNB contract
+
+- [x] Retain the approved three-item Yoram identity deviation and hidden mobile
+  search; do not restore unrelated upstream items to force wrapping.
+- [x] Pin Korean login at `56.34×27 @ 228.42,6` and strict one-row containment,
+  adjacency, login/signup visibility, and no overflow.
+- [x] Confirm the unchanged mobile dialog/body/form/input/backdrop geometry.
+- [x] Pass reused fallback-off production-dist System Chrome 2/2 and advance
+  broad final through test 51.
+- [ ] Continue test 52 onward, global fallback audit, screenshot pair, and
+  final pixel lock.
+
+### 2026-07-28 — Batch 1089 anonymous shell and root-login-dialog repair
+
+- [x] Reconcile search 33px geometry, outer 10px border-box padding, inner
+  content-box, and approved three-item anonymous GNB from frozen evidence.
+- [x] Restore exact root-dialog checkbox/label/social/provider declarations
+  after generic fallback-class retirement; keep React/TanStack behavior.
+- [x] Retire frame `loginDialog/modal/hide/in` and checkbox `checkbox` actual
+  classes while retaining legacy fixtures, IDs, roles, copy, and interactions.
+- [x] Restore desktop `462×378`, social `400×120`, action `400×27`, mobile
+  geometry, and unchanged screenshot threshold.
+- [x] Pass fresh fallback-off production build/verifier and focused 4/4 in
+  3.1s; advance the broad suite through test 50.
+- [ ] Continue test 51 onward, global fallback audit, screenshot pair, and
+  final pixel lock.
+
 ### 2026-07-28 — Batch 1088 production shell asset and latency classification
 
 - [x] Verify the intro photo remains a Vite import in dev and mounted hashed

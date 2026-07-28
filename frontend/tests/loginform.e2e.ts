@@ -164,11 +164,11 @@ const ROOT_LOGIN_DIALOG_FORM_BODY = `
       </div>
       <div class="act-row right-txt mt20">
         <div class="pull-left">
-          <input id="remember-meD" type="checkbox" name="rememberMe" class="checkbox" checked>
+          <input id="remember-meD" type="checkbox" name="rememberMe" checked>
           <label for="remember-meD" class="bg-checkbox">Stay logged in</label>
         </div>
         <a href="__BASE_PATH__/lostPassword">Reset password</a>
-        <span class="gray-txt ml10 mr10">|</span>
+        <span>|</span>
         <a href="__BASE_PATH__/users/signupform">Sign up</a>
       </div>
 `;
@@ -590,8 +590,11 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
     "data-stylex-owner",
     "root-login-dialog-frame",
   );
-  await expect(page.locator("#loginDialog")).toHaveClass(/\bloginDialog\b/u);
-  await expect(page.locator("#loginDialog")).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/u);
+  await expect(page.locator("#loginDialog")).toHaveAttribute("role", "dialog");
+  await expect(page.locator("#loginDialog")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#loginDialog")).not.toHaveClass(
+    /\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/u,
+  );
   await expect(page.locator(`#loginDialog a[href="${basePath}/lostPassword"]`)).toHaveText(
     "Reset password",
   );
@@ -621,14 +624,15 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   expect(legacyLoginDialog).toContain("@routes.PasswordResetApp.lostPassword()");
   expect(legacyLoginDialog).toContain("@routes.UserApp.signupForm");
   expect(legacyLoginDialog).toContain("@p.getUrl");
-  expect(source).toContain('const lostPasswordPath: string = "/lostPassword";');
-  expect(source).toContain("to={lostPasswordPath}");
-  expect(source).toContain('href={prefixBasePath(basePath, "/lostPassword")}');
-  expect(source).toContain('const signupPath: string = "/users/signupform";');
-  expect(source).toContain("to={signupPath}");
-  expect(source).toContain('href={prefixBasePath(basePath, "/users/signupform")}');
+  expect(source).toMatch(
+    /<Link\s+to="\/lostPassword">\s*\{t\("title\.resetPassword"\)\}\s*<\/Link>/u,
+  );
+  expect(source).toMatch(
+    /<Link\s+to="\/users\/signupform">\s*\{t\("title\.signup"\)\}\s*<\/Link>/u,
+  );
   expect(source).toContain("const providerLoginPath: string = `/authenticate/${normalized}`;");
-  expect(source).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
+  expect(source).toContain("to={providerLoginPath}");
+  expect(source).not.toContain("href={prefixBasePath(basePath, providerLoginPath)}");
   expect(source).toContain("reloadDocument");
   expect(source).toContain("GITHUB_OAUTH_LOGO_PATH");
   expect(source).not.toContain("as never");
@@ -654,12 +658,14 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   await rootLoginLink.click();
 
   await expect(page.locator("#loginDialog")).toBeVisible();
-  await expect(page.locator("#loginDialog")).toHaveClass(/\bloginDialog\b/u);
-  await expect(page.locator("#loginDialog")).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/u);
+  await expect(page.locator("#loginDialog")).not.toHaveClass(
+    /\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/u,
+  );
   await expect(page.locator("#loginDialog")).toHaveAttribute(
     "data-stylex-owner",
     "root-login-dialog-frame",
   );
+  await expect(page.locator("#loginDialog")).toHaveAttribute("role", "dialog");
   await expect(page.locator("#loginDialog")).toHaveAttribute("aria-hidden", "false");
   await expect(
     page.locator('#loginDialog [data-stylex-owner="root-login-dialog-action-row"]'),
@@ -762,6 +768,11 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-frame"');
   expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-body"');
   expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-action-row"');
+  expect(rootLoginDialogSource).toContain("className={rootLoginDialogProps.className}");
+  expect(rootLoginDialogSource).not.toContain('["loginDialog", rootLoginDialogProps.className]');
+  expect(rootLoginDialogSource).not.toContain(
+    '"checkbox",\n                    rootLoginDialogInputClassName',
+  );
   expect(rootLoginDialogSource).not.toContain('className={["act-row right-txt mt20"');
   expect(rootLoginDialogSource).not.toContain("modal hide loginDialog");
   expect(rootLoginDialogSource).toContain("tabIndex={-1}");
@@ -1061,7 +1072,7 @@ function expectedLoginScreen(
 
 function expectedRootLoginDialog(basePath: string, formBody: string) {
   return `
-<div id="loginDialog" class="loginDialog" tabindex="-1" role="dialog" aria-hidden="false" data-stylex-owner="root-login-dialog-frame">
+<div id="loginDialog" tabindex="-1" role="dialog" aria-hidden="false" data-stylex-owner="root-login-dialog-frame">
   <div data-stylex-owner="root-login-dialog-body">
     <div class="pull-right">
       <button type="button" class="close" aria-hidden="true">×</button>

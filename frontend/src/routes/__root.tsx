@@ -199,11 +199,23 @@ const styles = stylex.create({
     marginRight: "5px",
     fontSize: "13px",
   },
+  // frozen _page.less:835-839 and 6568-6570. The generic `.checkbox`
+  // important shorthand cannot remain once the dialog-specific class retires.
   rootLoginDialogCheckbox: {
+    display: "inline-block",
     marginTop: "4px",
+    marginRight: "2px",
+    marginBottom: "2px",
+    marginLeft: "2px",
+    minHeight: "20px",
+    verticalAlign: "top",
+    width: "auto",
   },
   rootLoginDialogRememberLabel: {
     display: "inline-block",
+    fontSize: "12px",
+    lineHeight: "20px",
+    marginBottom: "5px",
   },
   rootLoginDialogButtonRow: {
     display: "block",
@@ -213,6 +225,7 @@ const styles = stylex.create({
   // frozen _page.less:1626-1645. Keep the dialog's lower rows independent
   // from the generated legacy fallback stylesheet.
   rootLoginDialogSocialTitleLine: {
+    lineHeight: "20px",
     marginTop: "12px",
     marginBottom: "10px",
   },
@@ -692,7 +705,7 @@ function RootLoginDialog({
     <div
       id="loginDialog"
       {...rootLoginDialogProps}
-      className={["loginDialog", rootLoginDialogProps.className].filter(Boolean).join(" ")}
+      className={rootLoginDialogProps.className}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}
@@ -835,11 +848,7 @@ function RootLoginDialog({
                   id="remember-meD"
                   type="checkbox"
                   name="rememberMe"
-                  className={[
-                    "checkbox",
-                    rootLoginDialogInputClassName,
-                    rootLoginDialogCheckboxClassName,
-                  ]
+                  className={[rootLoginDialogInputClassName, rootLoginDialogCheckboxClassName]
                     .filter(Boolean)
                     .join(" ")}
                   checked={state.rememberMe}
@@ -907,6 +916,7 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
           data-stylex-owner="root-provider-logo"
         >
           <img
+            {...stylex.props(rootProviderStyles.logoSvg)}
             src={prefixBasePath(
               basePath,
               "/assets/images/provider-logo/btn_google_light_normal_ios.svg",

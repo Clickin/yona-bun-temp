@@ -1,5 +1,43 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1090 — approved anonymous mobile GNB contract — 2026-07-28
+
+After Batch 1089 rebuilt and verified the anonymous shell, the next broad
+case exposed one remaining harness assumption from the removed upstream GNB
+items. The approved three-item mobile nav does not wrap the anonymous user
+menu onto a second 40px row. Brand, Yoram repository, login, and signup remain
+inside the single navbar row while search is hidden.
+
+The Korean login link is `56.34×27 @ 228.42,6`; user-menu/login/signup
+containment and non-overlap remain strict. Opening it still produces the
+already-verified mobile dialog/body/form/input/backdrop boxes, so no route or
+StyleX declaration changed. Reused fallback-off production-dist System Chrome
+passes the dialog and adjacent mobile-shell cases 2/2. The broad suite now
+advances through test 51; final audit and pixel lock remain open.
+
+### Batch 1089 — anonymous shell and root-login-dialog final-profile repair — 2026-07-28
+
+The fallback-off production suite advanced through 50 anonymous-shell tests.
+Three stale test contracts were corrected from frozen/current evidence: the
+search form border box is 33px because its 30px line height contains an input
+with a 3px bottom margin; the shared outer owns 10px inline padding while its
+98% inner remains content-box; and the approved anonymous GNB contains only
+brand, configured Yoram repository contact, and search.
+
+The login-dialog blocker was a real fallback-retirement gap. Its generic
+checkbox class imposed an important 2px margin, widening the remember group
+and wrapping the action row. The root owner now carries the exact legacy
+checkbox display/alignment/margins, 20px minimum, label typography, social
+line height, and provider-image alignment. The fully StyleX-owned frame
+retires `loginDialog/modal/hide/in`; `#loginDialog`, role/ARIA, React state,
+TanStack links, copy, and interactions remain. Canonical desktop geometry is
+again `462×378`, with `400×120` social and `400×27` action rows.
+
+Fresh fallback-off production build/verifier passes with frozen hash
+`8b437655...de18be6`. The four formerly failing focused checks pass 4/4 in
+3.1s, including the unchanged mobile screenshot and 50-pixel native-AA cap.
+The broad suite advances through test 50. Global audit and pixel lock remain.
+
 ### Batch 1088 — production shell asset and latency classification — 2026-07-28
 
 The anonymous shell broad test mixed two stale development assumptions with

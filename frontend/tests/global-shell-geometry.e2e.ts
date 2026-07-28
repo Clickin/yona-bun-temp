@@ -125,7 +125,7 @@ test("site layout search owner keeps legacy responsive visibility with retained 
   const navbarMetrics = await readElementBox(
     page.locator('[data-stylex-owner="global-gnb-outer"]'),
   );
-  expect(desktopMetrics.height).toBe(30);
+  expect(desktopMetrics.height).toBe(33);
   expect(desktopMetrics.y).toBeGreaterThanOrEqual(navbarMetrics.y);
   expect(desktopMetrics.y + desktopMetrics.height).toBeLessThanOrEqual(
     navbarMetrics.y + navbarMetrics.height,
@@ -137,7 +137,7 @@ test("site layout search owner keeps legacy responsive visibility with retained 
   await expect(searchForm).toHaveCSS("display", "none");
 });
 
-test("site layout GNB outer and inner keep the frozen border-box bridge without fallback classes", async ({
+test("site layout GNB outer border-box and inner content-box match the frozen cascade", async ({
   page,
 }) => {
   await installRuntimeConfig(page);
@@ -151,9 +151,9 @@ test("site layout GNB outer and inner keep the frozen border-box bridge without 
   await expect(outer).not.toHaveClass(/\bgnb-outer\b/);
   await expect(inner).not.toHaveClass(/\bgnb-inner\b/);
   await expect(outer).toHaveCSS("box-sizing", "border-box");
-  await expect(outer).toHaveCSS("padding-left", "0px");
-  await expect(outer).toHaveCSS("padding-right", "0px");
-  await expect(inner).toHaveCSS("box-sizing", "border-box");
+  await expect(outer).toHaveCSS("padding-left", "10px");
+  await expect(outer).toHaveCSS("padding-right", "10px");
+  await expect(inner).toHaveCSS("box-sizing", "content-box");
 
   const { innerBox, outerBox } = await page.evaluate(() => {
     const readBox = (selector: string) => {
@@ -205,6 +205,8 @@ test("anonymous home login Link opens and dismisses the legacy root dialog", asy
   expectBox(metrics.identifier, { height: 36, width: 398, x: 484, y: 126 });
   expectBox(metrics.password, { height: 36, width: 398, x: 484, y: 172 });
   expectBox(metrics.submit, { height: 30, width: 400, x: 484, y: 223 });
+  expectBox(metrics.social, { height: 120, width: 400, x: 484, y: 265 });
+  expectBox(metrics.action, { height: 27, width: 400, x: 484, y: 405 });
   expectBox(metrics.backdrop, { height: 900, width: 1366, x: 0, y: 0 });
   expect(metrics.backdropOpacity).toBe("0.5");
   expect(metrics.backdropZIndex).toBe("1040");
@@ -239,6 +241,9 @@ test("root login dialog frame and body have independent StyleX ownership", async
   const body = page.locator('[data-stylex-owner="root-login-dialog-body"]');
   const form = page.locator('[data-stylex-part="login-dialog-form"]');
   await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("id", "loginDialog");
+  await expect(dialog).toHaveAttribute("role", "dialog");
+  await expect(dialog).toHaveAttribute("aria-hidden", "false");
   await expect(body).toBeVisible();
   await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
   await expect(body).not.toHaveClass(/\bmodal-body\b/);
@@ -271,8 +276,8 @@ test("root login dialog frame and body have independent StyleX ownership", async
   expect(computed.bodyPosition).toBe("relative");
   expect(computed.bodyPadding).toBe("15px");
   expect(computed.bodyOverflowY).toBe("auto");
-  await expect(form).toHaveCSS("margin", "20px 0px");
-  expect(computed.formMargin).toBe("20px 0px");
+  await expect(form).toHaveCSS("margin", "20px 15px");
+  expect(computed.formMargin).toBe("20px 15px");
 });
 
 test("anonymous mobile home login dialog keeps legacy Korean geometry without overflow", async ({
@@ -289,10 +294,10 @@ test("anonymous mobile home login dialog keeps legacy Korean geometry without ov
   const loginLink = page.locator("#required-logged-in > a.user-item-btn");
   await expect(loginLink).toHaveText("로그인");
   await expect(loginLink).not.toHaveAttribute("data-login");
+  expectBox(await readElementBox(loginLink), { height: 27, width: 56.34, x: 228.42, y: 6 });
   await loginLink.click();
 
   const metrics = await readLoginDialogMetrics(page);
-  expectBox(await readElementBox(loginLink), { height: 27, width: 56.34, x: 228.42, y: 46 });
   expectBox(metrics.dialog, { height: 378, width: 392, x: 0, y: 84.39 });
   expectBox(metrics.body, { height: 376, width: 390, x: 1, y: 85.39 });
   expectBox(metrics.form, { height: 306, width: 342, x: 25, y: 120.39 });
@@ -341,7 +346,7 @@ test("anonymous Korean root login backdrop keeps the frozen Bootstrap/Yobi viewp
   expect(metrics.scrollWidth).toBe(390);
 });
 
-test("anonymous public shell keeps the live legacy mobile wrapping without overflow", async ({
+test("anonymous public shell keeps the approved mobile GNB on one line without overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -371,15 +376,17 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
   expect(metrics.search.display).toBe("none");
   expect(metrics.search.width).toBe(0);
   expect(metrics.feedback.right).toBeLessThanOrEqual(metrics.nav.x + metrics.nav.width + 0.01);
-  expect(metrics.userMenu.y).toBe(metrics.navbar.bottom);
+  expect(metrics.feedback.right).toBeLessThanOrEqual(metrics.login.x);
+  expect(metrics.userMenu.y).toBe(metrics.navbar.y);
+  expect(metrics.userMenu.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
   expect(metrics.userMenu.right).toBeLessThanOrEqual(metrics.inner.right + 0.01);
   expect(metrics.login.display).not.toBe("none");
   expect(metrics.login.color).toBe("rgb(93, 187, 224)");
   expect(metrics.signup.display).not.toBe("none");
-  expect(metrics.login.y).toBeGreaterThanOrEqual(metrics.navbar.bottom);
-  expect(metrics.signup.y).toBeGreaterThanOrEqual(metrics.navbar.bottom);
-  expect(metrics.login.bottom).toBeLessThanOrEqual(metrics.heroHeading.y);
-  expect(metrics.signup.bottom).toBeLessThanOrEqual(metrics.heroHeading.y);
+  expect(metrics.login.y).toBeGreaterThanOrEqual(metrics.navbar.y);
+  expect(metrics.signup.y).toBeGreaterThanOrEqual(metrics.navbar.y);
+  expect(metrics.login.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.signup.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
   expect(metrics.login.right).toBeLessThanOrEqual(metrics.signup.x);
   expect(metrics.heroCover.right).toBe(390);
   expect(metrics.heroHeading.right).toBe(metrics.heroCover.right);
@@ -738,6 +745,7 @@ async function readLoginDialogMetrics(page: Page) {
       throw new Error("Missing login dialog style target.");
     }
     return {
+      action: elementBox('[data-stylex-owner="root-login-dialog-action-row"]'),
       backdrop: elementBox(".modal-backdrop.in"),
       backdropOpacity: getComputedStyle(backdrop).opacity,
       backdropZIndex: getComputedStyle(backdrop).zIndex,
@@ -749,6 +757,7 @@ async function readLoginDialogMetrics(page: Page) {
       identifier: elementBox("#loginIdOrEmailD"),
       identifierFontSize: getComputedStyle(identifier).fontSize,
       password: elementBox("#passwordD"),
+      social: elementBox("#loginDialog .btns-row:has(.oauth-login-btn)"),
       submit: elementBox("#loginDialog button[type='submit']"),
     };
   });

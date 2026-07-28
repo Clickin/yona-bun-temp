@@ -1,5 +1,17 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1090 — approved anonymous mobile GNB contract
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Anonymous navbar/site-intro partials and frozen responsive rules establish containment and hidden search; the approved Yoram identity deviation removes unrelated upstream items and therefore their former wrap pressure. | No implementation declaration changes. Only the already-rebuilt anonymous `/` test contract retires its stale second-row assumption. | At 390px: brand → Yoram repository → anonymous login/signup remain in the 40px navbar, search is hidden, Korean login is `56.34×27 @ 228.42,6`, adjacent items do not overlap, and the document does not overflow. | Reused fallback-off production-dist System Chrome passes the Korean dialog and adjacent mobile shell cases 2/2; all subsequent mobile dialog boxes remain unchanged. Broad final advances through test 51. | Test 52 onward, stale create-link source assertion, global fallback audit, same-fixture screenshot pair, and final pixel lock. |
+
+### Batch 1089 — anonymous shell and root-login-dialog final-profile repair
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `index` anonymous partials, `common/navbar.scala.html`, `common/loginDialog.scala.html`, included shell/login partials, Bootstrap 2.3.1 modal/form/checkbox/label/image rules, frozen `_page.less` GNB/login declarations, `_responsive.less`, `_yobiUI.less`, `_override.less`, messages, and login JS behavior evidence. | Existing anonymous shell owners retain exact Vite/GNB output. `__root.tsx` root-dialog owners add only the retired source-backed checkbox display/alignment/margins/minimum, label typography, social line height, and Google image alignment. The actual frame and checkbox retire their broad presentation classes; React state/events and TanStack links remain. | Approved brand → Yoram repository → search; 33px search form; outer 10px border-box/inner content-box; class-free `#loginDialog` owner with role/ARIA; canonical `462×378` dialog, `400×120` social and `400×27` action rows; desktop/mobile interaction and screenshot parity. | Fresh fallback-off production build/verifier passes with frozen hash `8b437655...de18be6`; the four formerly failing focused System-Chrome checks pass 4/4 in 3.1s, including the unchanged mobile snapshot and `maxDiffPixels:50`. Broad final advances through 50 tests. | Test 51 onward, stale create-link source assertion, global fallback audit, same-fixture screenshot pair, and final pixel lock. |
+
 ### Batch 1088 — production shell asset and latency classification
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
