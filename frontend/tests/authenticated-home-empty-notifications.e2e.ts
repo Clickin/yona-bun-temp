@@ -654,6 +654,10 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   const resetPasswordLink = page.locator("#loginDialog .act-row a").nth(0);
   const dialogSignupLink = page.locator("#loginDialog .act-row a").nth(1);
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const siteLayoutShellSource = routeSource.slice(
+    routeSource.indexOf("export function SiteLayoutShell"),
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+  );
   const legacyNavbarSource = readFileSync(
     "../yona-original/app/views/common/navbar.scala.html",
     "utf8",
@@ -703,13 +707,9 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   expect(legacyUserSource).toContain("public boolean isGuest = false;");
   expect(legacyNullUserSource).toContain("public class NullUser extends User");
   expect(legacyNullUserSource).not.toMatch(/\bboolean\s+isGuest\b/u);
-  expect(routeSource).toContain(
-    "const legacyProjectListingEnabled = runtimeConfig.hideProjectListing !== true && !isGuest;",
+  expect(siteLayoutShellSource).toMatch(
+    /runtimeConfig\.hideProjectListing\s*!==\s*true\s*&&\s*!isGuest/u,
   );
-  expect(routeSource).toContain(
-    "const shouldRenderAllProjectsSearchScope = legacyProjectListingEnabled || isSiteAdmin;",
-  );
-  expect(routeSource).toContain("{legacyProjectListingEnabled ? (");
 });
 
 test("root login submit refreshes the authenticated home shell without a document reload", async ({

@@ -31,6 +31,10 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expect(backgroundAssetUrl.pathname).not.toContain("/legacy-assets/");
 
   const homeRouteSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const siteLayoutShellSource = homeRouteSource.slice(
+    homeRouteSource.indexOf("export function SiteLayoutShell"),
+    homeRouteSource.indexOf("function AuthenticatedSiteUserMenu"),
+  );
   const legacyNavbarSource = readFileSync(
     "../yona-original/app/views/common/navbar.scala.html",
     "utf8",
@@ -74,11 +78,8 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expect(legacyResponsiveStyles).toMatch(
     /@media all and \(max-width: 720px\)\s*\{[\s\S]*?\.gnb-search-form\s*\{\s*display:\s*none !important;/u,
   );
-  expect(homeRouteSource).toContain(
-    "const legacyNavbarProjectListingEnabled =\n    runtimeConfig.hideProjectListing !== true && !isGuest;",
-  );
-  expect(homeRouteSource).toContain(
-    "const shouldRenderAllProjectsSearchScope = legacyNavbarProjectListingEnabled || isSiteAdmin;",
+  expect(siteLayoutShellSource).toMatch(
+    /runtimeConfig\.hideProjectListing\s*!==\s*true\s*&&\s*!isGuest/u,
   );
 
   const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');

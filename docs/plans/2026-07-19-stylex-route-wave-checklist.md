@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1101 project-list source-guard decoupling
+
+- [x] Remove exact local-variable-name coupling exposed by broad test 16.
+- [x] Keep only the formatter-resilient legacy predicate source guard; rely on
+  runtime DOM/geometry tests for render-consumer behavior.
+- [x] Generalize the shared predicate owner name because navbar output and
+  all-project search scope both consume it; rendered output remains identical.
+- [x] Avoid whole-route source dumps on a harmless local rename.
+- [x] Pass focused fallback-off production final System Chrome 3/3,
+  TypeScript, and diff checks.
+- [ ] Resume broad, then global fallback audit, screenshot pair, and final
+  pixel lock.
+
 ### 2026-07-28 — Batch 1100 anonymous global-shell five-item geometry
 
 - [x] Recheck navbar/User/NullUser and frozen desktop/mobile GNB cascade.

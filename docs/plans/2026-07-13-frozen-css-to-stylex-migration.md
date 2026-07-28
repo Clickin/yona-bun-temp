@@ -1,5 +1,21 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1101 — project-list source-guard decoupling — 2026-07-28
+
+The next broad restart failed before browser parity on an exact local variable
+name introduced by the preceding byte-equivalent clarification. The two
+anonymous shell tests now source-guard only the formatter-resilient legacy
+predicate expression. Their runtime assertions already verify the actual
+link/divider/order and complete desktop/mobile geometry, so duplicating local
+consumer names in source checks added churn without strengthening parity.
+The shared TSX name is generalized from navbar-specific wording because both
+navbar output and all-project search scope consume the predicate; this is
+byte-equivalent.
+
+No React output, style, geometry, screenshot, or threshold changes. Focused
+fallback-off production final System Chrome passes 3/3; TypeScript and diff
+checks pass. Broad continuation remains open.
+
 ### Batch 1100 — anonymous global-shell five-item geometry — 2026-07-28
 
 Broad test 46 exposed the remaining global-shell fixture that classified the

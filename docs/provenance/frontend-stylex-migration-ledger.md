@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1101 — project-list source-guard decoupling
+
+| Evidence | Harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Broad test 16 failed solely because a source assertion named a byte-equivalent local variable; browser output had already passed. Navbar/User/NullUser remain canonical evidence. | Two anonymous shell tests retain a formatter-resilient check for `hideProjectListing !== true && !isGuest` but stop pinning local variable and consumer names. Runtime DOM and geometry assertions remain the consumer gate. The shared TSX owner name is generalized because navbar and search scope both consume it. | Harmless source refactors no longer print the full route or fail visual parity; exact List All/divider/order/geometry and final screenshot thresholds are unchanged. | Focused fallback-off production final System Chrome passes 3/3; TypeScript and diff checks pass. | Broad continuation, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1100 — anonymous global-shell five-item geometry
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
