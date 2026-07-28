@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1086 — notification learn-more computed height
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `index/notifications.scala.html:80-96`, included `index/partial_notifications.scala.html:61-70`, and frozen `_page.less:1280-1325` establish click exclusion, nowrap toggle, child-height measurement, 20px minimum, 200px collapsed maximum, and transition. | Only the existing `NotificationStreamItem` measured dynamic StyleX path names its expanded height. React state/event ownership, DOM, declarations, data, links, and output remain unchanged; no inline mutation or legacy listener returns. | Computed expanded minimum equals rendered child height; wrapper height equals child height; 20px minimum; collapsed/expanded max-height; no inline minimum; anchor/image exclusion; URL and source ownership. | Fresh fallback-off production build/verifier passes with frozen hash `8b437655...de18be6`; exact System-Chrome scenario passes in 790ms. Broad final passes tests 36–39 and advances through 43. | Forgot-password alias test 44, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1085 — framed-left pane consumer contract
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

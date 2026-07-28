@@ -1,5 +1,22 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1086 — notification learn-more computed height — 2026-07-28
+
+The production-dist profile showed that the learn-more implementation was
+correct while its broad test was tied to development output shape. Legacy
+measures the child message and sets the expanded wrapper minimum height.
+React performs the same measurement and gives the value to dynamic StyleX;
+the production compiler emits a class rather than an inline `min-height`.
+
+The route now names the measured expanded message height without changing
+behavior. The test compares computed minimum height to the rendered child
+height, requires the 20px legacy minimum, exact wrapper containment, no inline
+minimum, 200px collapsed/none expanded max-height, anchor/image exclusion,
+URL stability, and absence of legacy listeners/DOM control. Fresh verified
+fallback-off dist passes in 790ms. The broad suite passes notification tests
+36–39 and advances through 43 tests before a separate forgot-password alias
+presentation-class failure. Global fallback audit and pixel lock remain open.
+
 ### Batch 1085 — framed-left pane consumer contract — 2026-07-28
 
 The production-dist final profile exposed a stale broad assertion rather than

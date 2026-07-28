@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1086 notification learn-more computed height
+
+- [x] Recheck legacy `.nowrap` toggle, child-message measurement, expanded
+  minimum height, and anchor/image exclusion.
+- [x] Keep React state and dynamic StyleX ownership; do not add inline style or
+  legacy DOM-control JavaScript.
+- [x] Verify computed expanded minimum equals child height, collapsed minimum
+  returns to 20px, wrapper containment, max-height, and interaction.
+- [x] Pass fresh fallback-off production dist in 790ms and advance the broad
+  suite through 43 tests.
+- [ ] Classify the forgot-password alias presentation-class failure at test 44
+  and continue the final fallback/pixel lock.
+
 ### 2026-07-28 — Batch 1085 framed-left pane consumer contract
 
 - [x] Reconcile legacy's three `user-project-list` panes with the completed

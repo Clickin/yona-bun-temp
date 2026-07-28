@@ -2703,6 +2703,7 @@ test("direct notifications route keeps React-owned learn-more behavior without l
   await expect(streamDesc).not.toHaveAttribute("role");
   await expect(streamDesc).not.toHaveAttribute("tabindex");
   await expect(messageWrap).toHaveCSS("max-height", "200px");
+  await expect(messageWrap).toHaveCSS("min-height", "20px");
   await expect(messageWrap).not.toHaveAttribute("style", /min-height/u);
   await expect
     .poll(() =>
@@ -2732,11 +2733,30 @@ test("direct notifications route keeps React-owned learn-more behavior without l
 
   await page.locator(NOTIFICATION_MESSAGE).click();
   await expect(messageWrap).toHaveCSS("max-height", "none");
-  await expect
-    .poll(() => messageWrap.evaluate((element) => element.style.minHeight))
-    .toMatch(/px$/u);
+  const expandedMessageMetrics = await messageWrap.evaluate((element) => {
+    const message = element.querySelector(
+      '[data-stylex-owner="authenticated-home-notification-message"]',
+    );
+    if (!(message instanceof HTMLElement)) {
+      return null;
+    }
+    return {
+      computedMinHeight: getComputedStyle(element).minHeight,
+      inlineMinHeight: element.style.minHeight,
+      messageHeight: message.getBoundingClientRect().height,
+      wrapHeight: element.getBoundingClientRect().height,
+    };
+  });
+  expect(expandedMessageMetrics).not.toBeNull();
+  expect(expandedMessageMetrics!.computedMinHeight).toBe(
+    `${expandedMessageMetrics!.messageHeight}px`,
+  );
+  expect(expandedMessageMetrics!.messageHeight).toBeGreaterThanOrEqual(20);
+  expect(expandedMessageMetrics!.wrapHeight).toBe(expandedMessageMetrics!.messageHeight);
+  expect(expandedMessageMetrics!.inlineMinHeight).toBe("");
   await page.locator(NOTIFICATION_MESSAGE).click();
   await expect(messageWrap).toHaveCSS("max-height", "200px");
+  await expect(messageWrap).toHaveCSS("min-height", "20px");
   await expect.poll(() => messageWrap.evaluate((element) => element.style.minHeight)).toBe("");
   expect(page.url()).toBe(beforeUrl);
 

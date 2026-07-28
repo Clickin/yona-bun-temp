@@ -776,8 +776,13 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
   function toggleLearnMore() {
     setIsExpanded((wasExpanded) => {
       const nextExpanded = !wasExpanded;
+      const measuredExpandedMessageHeight = nextExpanded
+        ? (messageRef.current?.getBoundingClientRect().height ?? 0)
+        : undefined;
       setExpandedMinHeight(
-        nextExpanded ? `${messageRef.current?.getBoundingClientRect().height ?? 0}px` : undefined,
+        measuredExpandedMessageHeight === undefined
+          ? undefined
+          : `${measuredExpandedMessageHeight}px`,
       );
       return nextExpanded;
     });
