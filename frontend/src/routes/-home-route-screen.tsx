@@ -593,7 +593,7 @@ function HomeScreen({
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <HomeFlashToast message={flashMessage} />
       <div
-        className={`siteintro-bg ${stylex.props(anonymousHomeIntroOuterStyles.outer).className}`}
+        className={`siteintro-bg row ${stylex.props(anonymousHomeIntroOuterStyles.outer).className}`}
         data-stylex-owner="anonymous-home-intro-outer"
       >
         <div
@@ -602,24 +602,35 @@ function HomeScreen({
             anonymousHomeIntroStyles.hero,
             anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl),
           )}
+          className={`siteintro ${
+            stylex.props(
+              anonymousHomeIntroBackgroundTheme,
+              anonymousHomeIntroStyles.hero,
+              anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl),
+            ).className
+          }`}
           data-stylex-owner="anonymous-home-intro"
         >
           <div
             {...stylex.props(anonymousHomeIntroStyles.cover)}
+            className={`siteintro-cover ${stylex.props(anonymousHomeIntroStyles.cover).className}`}
             data-stylex-owner="anonymous-home-intro-cover"
           >
             <div
               {...stylex.props(anonymousHomeIntroStyles.wrap)}
+              className={`siteintro-wrap ${stylex.props(anonymousHomeIntroStyles.wrap).className}`}
               data-stylex-owner="anonymous-home-intro-wrap"
             >
               <h1
                 {...stylex.props(anonymousHomeIntroStyles.heading)}
+                className={`site-heading ${stylex.props(anonymousHomeIntroStyles.heading).className}`}
                 data-stylex-owner="anonymous-home-intro-heading"
               >
                 21st Century Software Development Platform
               </h1>
               <ul
                 {...stylex.props(anonymousHomeIntroStyles.tagline)}
+                className={`site-features ${stylex.props(anonymousHomeIntroStyles.tagline).className}`}
                 data-stylex-owner="anonymous-home-intro-tagline"
               >
                 <li
@@ -632,6 +643,7 @@ function HomeScreen({
             </div>
             <div
               {...stylex.props(anonymousHomeIntroStyles.signup)}
+              className={`signup-btn ${stylex.props(anonymousHomeIntroStyles.signup).className}`}
               data-stylex-owner="anonymous-home-intro-signup"
             >
               <Link
@@ -647,6 +659,7 @@ function HomeScreen({
         </div>
         <div
           {...stylex.props(anonymousHomeFeatureStyles.feature)}
+          className={`feature ${stylex.props(anonymousHomeFeatureStyles.feature).className}`}
           data-stylex-owner="anonymous-home-feature"
         >
           <h2
@@ -662,6 +675,7 @@ function HomeScreen({
           </h2>
           <ul
             {...stylex.props(anonymousHomeFeatureStyles.list)}
+            className={`feature-wrap row ${stylex.props(anonymousHomeFeatureStyles.list).className}`}
             data-stylex-owner="anonymous-home-feature-list"
           >
             {features.map(([iconClassName, title, description]) => (
@@ -672,22 +686,26 @@ function HomeScreen({
                 >
                   <div
                     {...stylex.props(anonymousHomeFeatureStyles.icon)}
+                    className={`feature-image ${stylex.props(anonymousHomeFeatureStyles.icon).className}`}
                     data-stylex-owner="anonymous-home-feature-icon"
                   >
                     <i className={iconClassName} />
                   </div>
                   <div
                     {...stylex.props(anonymousHomeFeatureStyles.info)}
+                    className={`feature-info ${stylex.props(anonymousHomeFeatureStyles.info).className}`}
                     data-stylex-owner="anonymous-home-feature-info"
                   >
                     <h3
                       {...stylex.props(anonymousHomeFeatureStyles.title)}
+                      className={`feature-title ${stylex.props(anonymousHomeFeatureStyles.title).className}`}
                       data-stylex-owner="anonymous-home-feature-title"
                     >
                       {title}
                     </h3>
                     <p
                       {...stylex.props(anonymousHomeFeatureStyles.description)}
+                      className={`feature-desc ${stylex.props(anonymousHomeFeatureStyles.description).className}`}
                       data-stylex-owner="anonymous-home-feature-description"
                     >
                       {description}
@@ -1588,9 +1606,11 @@ export function SiteLayoutShell({
     globalGnbBrandLinkStyles.root,
     hasScopedSearch && globalGnbBrandLinkStyles.projectHeader,
   ).className;
-  const shouldRenderProjectListingLink = runtimeConfig.hideProjectListing !== true && !isGuest;
+  const shouldRenderProjectListingLink =
+    runtimeConfig.hideProjectListing !== true && session?.isAnonymous === false && !isGuest;
   const shouldRenderAllProjectsSearchScope =
-    (runtimeConfig.hideProjectListing !== true && !isGuest) || isSiteAdmin;
+    (runtimeConfig.hideProjectListing !== true && session?.isAnonymous === false && !isGuest) ||
+    isSiteAdmin;
   const feedbackUrl = runtimeConfig.feedbackUrl?.trim();
   const initialSearchScope = projectSearchAction ? "project" : groupSearchAction ? "group" : "all";
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
@@ -1787,7 +1807,12 @@ export function SiteLayoutShell({
                     includeHash: true,
                     includeSearch: true,
                   }}
-                  className={globalGnbBrandLinkClassName}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  className={`logo logo-letter ${globalGnbBrandLinkClassName}`}
                   data-stylex-owner="global-gnb-brand-link"
                   to="/"
                 >
@@ -1843,7 +1868,7 @@ export function SiteLayoutShell({
                 <form
                   action={gnbSearchAction}
                   {...stylex.props(globalGnbSearchFormStyles.form)}
-                  className={`gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
+                  className={`input-prepend gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
                   data-stylex-owner="global-gnb-search-form"
                   name="gnb-search-form"
                 >
@@ -1936,6 +1961,7 @@ export function SiteLayoutShell({
                       globalGnbSearchBoxStyles.box,
                       hasScopedSearch && globalGnbSearchBoxStyles.scoped,
                     )}
+                    className={`search-box${hasScopedSearch ? " select" : ""}`}
                     data-stylex-owner="global-gnb-search-box"
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
@@ -2855,7 +2881,10 @@ const siteFooterStyles = stylex.create({
       default: "0px",
       "@media (max-width: 720px)": "10px",
     },
-    padding: "10px",
+    padding: {
+      default: "10px 0px",
+      [globalBreakpoints.mobile]: "10px",
+    },
   },
   inner: {
     boxSizing: "content-box",
@@ -5487,17 +5516,29 @@ function AnonymousSiteUserMenu() {
           </div>
           <ul className="nav nav-tabs nm">
             <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
-              <button type="button" onClick={() => setActiveSidebarTab("favorite")}>
+              <button
+                type="button"
+                data-stylex-owner="anonymous-sidebar-tab-favorite"
+                onClick={() => setActiveSidebarTab("favorite")}
+              >
                 {t("title.favorite")}
               </button>
             </li>
             <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
-              <button type="button" onClick={() => setActiveSidebarTab("project")}>
+              <button
+                type="button"
+                data-stylex-owner="anonymous-sidebar-tab-project"
+                onClick={() => setActiveSidebarTab("project")}
+              >
                 {t("title.project")}
               </button>
             </li>
             <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
-              <button type="button" onClick={() => setActiveSidebarTab("recent")}>
+              <button
+                type="button"
+                data-stylex-owner="anonymous-sidebar-tab-recent"
+                onClick={() => setActiveSidebarTab("recent")}
+              >
                 {t("title.recently.visited.issue")}
               </button>
             </li>

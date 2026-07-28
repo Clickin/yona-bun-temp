@@ -9442,3 +9442,16 @@ route spent 399ms reaching its route selector and 599ms to paint. The runner's
 per-page close and browser close each retain a 5s bound, so stale or competing
 Chrome/Playwright processes can still make teardown appear much slower than
 the page itself. No wait bound was relaxed.
+
+### Batch 1071 anonymous public landing legacy shell parity
+
+The anonymous landing wave restores visible structure from
+`yona-original/app/views/index/partial_intro.scala.html`,
+`yona-original/app/views/common/navbar.scala.html`, and the frozen `_page.less`
+and `_responsive.less` cascade. Desktop footer padding is `10px 0`, the mobile
+override is `10px`, and the GNB remains the legacy `width: 98%` rule without a
+compensating max-width. Focused fallback-off external System Chrome DOM and
+desktop/mobile metrics pass 2/2. The old `1176px` fixture was stale for the
+current viewport and is now checked with the legacy `content width * 0.98`
+formula. Full fallback-off, global fallback audit, and final pixel lock remain
+open.

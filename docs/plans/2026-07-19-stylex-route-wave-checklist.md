@@ -1,5 +1,16 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1071 anonymous public landing legacy shell parity
+
+- [x] Restored legacy anonymous landing/navbar/footer class and wrapper flow from
+  the Scala partials and frozen LESS cascade.
+- [x] Preserved React state/event ownership for anonymous sidebar tabs and pin.
+- [x] Applied desktop footer `10px 0px` and mobile `10px` from frozen evidence;
+  retained GNB `98%` geometry without compensation.
+- [x] Fallback-off external System Chrome focused desktop/mobile parity passes
+  2/2, including DOM, source contract, geometry, and overflow.
+- [ ] Broad fallback-off/global audit and final pixel lock remain open.
+
 ### 2026-07-28 — Batch 1070 authenticated sidebar transition and icon parity
 
 - [x] Preserve the legacy-derived open/close animation while committing the

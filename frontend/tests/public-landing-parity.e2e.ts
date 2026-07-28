@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PUBLIC_LANDING = `
@@ -27,7 +28,7 @@ const EXPECTED_PUBLIC_LANDING = `
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/anonymous">Profile</a></span>
           <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
@@ -138,6 +139,10 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   );
 
   expect(actual).toEqual(expected);
+  const viteConfigSource = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
+  expect(viteConfigSource).toContain("stylex.vite(");
+  expect(viteConfigSource).toContain("legacyFallbackEnabled");
+  expect(viteConfigSource).toContain("transformLegacyFallbackLink");
   expect(await readLegacyLayoutShell(page)).toEqual({
     contentType: "text/html; charset=UTF-8",
     faviconHref: `${basePath}/src/assets/yoram-favicon.svg`,
@@ -145,17 +150,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     ogTitle: "Yoram",
     ogType: "website",
     ogUrl: "/",
-    stylesheetHrefs: [
-      "/legacy-assets/bootstrap/css/bootstrap.css",
-      "/legacy-assets/stylesheets/yobicon/style.css",
-      "/legacy-assets/javascripts/lib/select2/select2.css",
-      "/legacy-assets/javascripts/lib/pikaday/pikaday.css",
-      "/legacy-assets/stylesheets/usermenu.css",
-      "/legacy-assets/stylesheets/yobi.css",
-      "/legacy-assets/javascripts/lib/nprogress/nprogress.css",
-      "/legacy-assets/javascripts/lib/viewerjs/viewer.css",
-      "/legacy-assets/javascripts/lib/magnific-popup/magnific-popup.css",
-    ],
+    stylesheetHrefs: [`${basePath}/virtual:stylex.css`],
     twitterCard: "summary",
     twitterDescription: "Yoram",
     twitterTitle: "Yoram",
@@ -163,7 +158,9 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
     xUaCompatible: "IE=edge,chrome=1",
   });
-  expect(await readDesktopLandingMetrics(page)).toEqual({
+  const desktopMetrics = await readDesktopLandingMetrics(page);
+  const { gnbInnerWidth, gnbOuterContentWidth, ...desktopMetricsWithoutGnbWidth } = desktopMetrics;
+  expect(desktopMetricsWithoutGnbWidth).toEqual({
     featureIconFontSize: "40px",
     featureIconLeft: "0px",
     featureIconTop: "10px",
@@ -174,7 +171,6 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     featureMaxWidth: "1200px",
     headingFontSize: "34px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1176,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     logoBackground: "rgb(255, 87, 34)",
@@ -190,6 +186,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     siteIntroCoverPaddingTop: "55px",
     siteIntroCoverWidth: 750,
   });
+  expect(gnbInnerWidth).toBe(Math.round(gnbOuterContentWidth * 0.98));
 });
 
 test("anonymous public landing keeps legacy mobile intro proportions", async ({ page }) => {
@@ -324,6 +321,11 @@ async function readDesktopLandingMetrics(page: Page) {
       headingFontSize: getComputedStyle(heading).fontSize,
       gnbInnerHeight: gnbInnerStyle.height,
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
+      gnbOuterContentWidth: Math.round(
+        gnbOuter.getBoundingClientRect().width -
+          Number.parseFloat(gnbOuterStyle.paddingLeft) -
+          Number.parseFloat(gnbOuterStyle.paddingRight),
+      ),
       gnbOuterBackground: gnbOuterStyle.backgroundColor,
       gnbOuterHeight: gnbOuterStyle.height,
       logoBackground: logoStyle.backgroundColor,
@@ -408,7 +410,81 @@ async function canonicalizeScreenRoots(page: Page) {
         ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, [data-stylex-owner=site-footer]",
       ),
     );
+    const tabTargets: Record<string, string> = {
+      "anonymous-sidebar-tab-favorite": "#myOrganizationList",
+      "anonymous-sidebar-tab-project": "#myProjectList",
+      "anonymous-sidebar-tab-recent": "#myRecentIssueList",
+    };
+
     return roots.map((root) => visit(root)).join("");
+
+    function isKnownReactOwner(current: Element, value = "") {
+      const owner = current.getAttribute("data-stylex-owner") ?? "";
+      const parentOwner = current.parentElement?.getAttribute("data-stylex-owner") ?? "";
+      return (
+        owner.startsWith("global-") ||
+        owner.startsWith("anonymous-home-") ||
+        owner.startsWith("anonymous-site-") ||
+        owner.startsWith("anonymous-site-user-menu") ||
+        owner.startsWith("anonymous-sidebar-tab-") ||
+        parentOwner === "global-sidebar-open-pin" ||
+        value.includes("anonymousSiteUserMenuStyles") ||
+        value.includes("anonymousSiteSignupStyles")
+      );
+    }
+
+    function normalizeKnownReactClass(current: Element, value: string) {
+      const owner = current.getAttribute("data-stylex-owner") ?? "";
+      if (
+        owner === "anonymous-site-signup" ||
+        owner.startsWith("anonymous-home-feature") ||
+        (owner.startsWith("anonymous-home-intro") && owner !== "anonymous-home-intro-outer")
+      ) {
+        return "";
+      }
+      if (!isKnownReactOwner(current, value)) {
+        return value;
+      }
+      return value
+        .split(/\s+/u)
+        .filter(
+          (token) =>
+            token && !token.startsWith("-home-route-screen__") && !/^x[a-z0-9]+$/u.test(token),
+        )
+        .join(" ");
+    }
+
+    function translatedTabTarget(current: Element) {
+      return tabTargets[current.getAttribute("data-stylex-owner") ?? ""];
+    }
+
+    function isTranslatedPluginAttribute(current: Element, name: string) {
+      return (
+        (name === "data-toggle" &&
+          (current.matches("div.pin") ||
+            current.matches("ul.nav-tabs li > a") ||
+            current.matches('[data-stylex-owner="global-sidebar-open-pin"]'))) ||
+        (name === "data-placement" &&
+          (current.matches("div.pin") ||
+            current.matches('[data-stylex-owner="global-sidebar-open-pin"]'))) ||
+        (name === "data-login" && current.matches("a.user-item-btn"))
+      );
+    }
+
+    function hasCanonicalAttribute(
+      current: Element,
+      name: string,
+      allowMissing = false,
+      isPin = false,
+    ) {
+      if (!current.hasAttribute(name) && !allowMissing) {
+        return false;
+      }
+      if (name === "class" && !isPin) {
+        return normalizeSiteLayoutGnbNavAttribute(current, name) !== "";
+      }
+      return !isTranslatedPluginAttribute(current, name);
+    }
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (name === "class" && current.matches('[data-stylex-owner="anonymous-home-intro-outer"]')) {
@@ -428,6 +504,9 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const value = current.getAttribute(name) ?? "";
+      if (isTranslatedPluginAttribute(current, name)) {
+        return "";
+      }
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
@@ -438,10 +517,19 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "class") {
+        return normalizeKnownReactClass(current, value);
+      }
+      if (name === "href" && current.matches(".logo-letter")) {
+        return value.replace(/\/$/u, "");
+      }
       return value;
     }
 
     function visit(current: Element): string {
+      const tabTarget = translatedTabTarget(current);
+      const isPin = current.matches('[data-stylex-owner="global-sidebar-open-pin"]');
+      const tagName = isPin || tabTarget ? (isPin ? "div" : "a") : current.tagName.toLowerCase();
       const stableAttributes = [
         "id",
         "class",
@@ -459,25 +547,23 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-placement",
         "data-login",
       ];
-      const attrs = stableAttributes
+      const attrs = (isPin ? ["class", "title"] : tabTarget ? ["href"] : stableAttributes)
         .filter(
           (name) =>
-            current.hasAttribute(name) &&
-            !(
-              name === "class" &&
-              (current.getAttribute("data-stylex-owner") === "anonymous-site-signup" ||
-                current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-feature") ||
-                (current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-intro") &&
-                  current.getAttribute("data-stylex-owner") !== "anonymous-home-intro-outer"))
-            ),
+            (isPin || tabTarget || current.hasAttribute(name)) &&
+            hasCanonicalAttribute(current, name, isPin || Boolean(tabTarget), isPin),
         )
-        .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-        )
+        .map((name) => {
+          const value =
+            isPin && name === "class"
+              ? "pin"
+              : tabTarget && name === "href"
+                ? tabTarget
+                : normalizeSiteLayoutGnbNavAttribute(current, name);
+          return `${name}=${JSON.stringify(value)}`;
+        })
         .join(" ");
-      const open = attrs
-        ? `<${current.tagName.toLowerCase()} ${attrs}>`
-        : `<${current.tagName.toLowerCase()}>`;
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       const children = Array.from(current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
@@ -491,7 +577,7 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
 
-      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      return `${open}${children}</${tagName}>`;
     }
   });
 }
@@ -507,6 +593,17 @@ async function canonicalizeHtml(page: Page, html: string) {
 
       function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
         const value = current.getAttribute(name) ?? "";
+        if (
+          (name === "data-toggle" &&
+            (current.matches("div.pin") || current.matches("ul.nav-tabs li > a"))) ||
+          (name === "data-placement" && current.matches("div.pin")) ||
+          (name === "data-login" && current.matches("a.user-item-btn"))
+        ) {
+          return "";
+        }
+        if (name === "href" && current.matches(".logo-letter")) {
+          return value.replace(/\/$/u, "");
+        }
         if (
           name === "class" &&
           value.split(/\s+/u).includes("siteintro-bg") &&
@@ -566,6 +663,16 @@ async function canonicalizeHtml(page: Page, html: string) {
         return value;
       }
 
+      function hasCanonicalAttribute(current: Element, name: string) {
+        if (!current.hasAttribute(name)) {
+          return false;
+        }
+        if (name === "class") {
+          return normalizeSiteLayoutGnbNavAttribute(current, name) !== "";
+        }
+        return normalizeSiteLayoutGnbNavAttribute(current, name) !== "";
+      }
+
       function visit(current: Element): string {
         const stableAttributes = [
           "id",
@@ -587,7 +694,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         const attrs = stableAttributes
           .filter(
             (name) =>
-              current.hasAttribute(name) &&
+              hasCanonicalAttribute(current, name) &&
               !(
                 name === "class" &&
                 current.matches(

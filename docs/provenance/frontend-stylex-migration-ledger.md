@@ -1,5 +1,18 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1071 — anonymous public landing legacy shell parity
+
+The Scala intro/navbar/site-layout partials and frozen `_page.less` plus
+`_responsive.less` establish the anonymous landing wrappers, navbar/search flow,
+footer padding, and responsive override. `frontend/src/routes/-home-route-screen.tsx`
+restores the visible legacy classes and wrappers while keeping anonymous tabs and
+pin behavior React-owned. `frontend/tests/public-landing-parity.e2e.ts` covers
+DOM, StyleX virtual stylesheet/source ownership, desktop/mobile geometry, and
+overflow; external System Chrome fallback-off passes 2/2. The GNB remains the
+legacy `98%` rule with no compensation, and the stale 1176px fixture is replaced
+by a legacy-derived content-width formula. Full fallback-off/global audit and
+final pixel lock remain open.
+
 ### Batch 1070 — authenticated sidebar transition and icon parity
 
 `yona-original/app/views/common/navbar.scala.html` and
