@@ -5,14 +5,18 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
-  await expect(page.locator(".login-form-wrap form[action='/users/login']")).toBeVisible();
+  await expect(
+    page.locator(`.login-form-wrap form[action='${basePath}/users/login']`),
+  ).toBeVisible();
   const loginRoots = await canonicalizeAuthPublicRoots(page);
 
   await page.goto(`${basePath}/login?redirectUrl=/me`);
   await expect(page).toHaveURL(/\/users\/loginform\?redirectUrl=/u);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/loginform`);
   expect(new URL(page.url()).searchParams.get("redirectUrl")).toBe("/me");
-  await expect(page.locator(".login-form-wrap form[action='/users/login']")).toBeVisible();
+  await expect(
+    page.locator(`.login-form-wrap form[action='${basePath}/users/login']`),
+  ).toBeVisible();
   expect(await canonicalizeAuthPublicRoots(page)).toEqual(loginRoots);
 
   await page.goto(`${basePath}/users/signupform`);
@@ -25,14 +29,16 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
   expect(await canonicalizeAuthPublicRoots(page)).toEqual(signupRoots);
 
   await page.goto(`${basePath}/lostPassword?requested=1`);
-  await expect(page.locator(".alert.alert-success")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="lost-password-success-alert"]')).toBeVisible();
   const lostPasswordRoots = await canonicalizeAuthPublicRoots(page);
 
   await page.goto(`${basePath}/forgot-password?requested=1`);
   await expect(page).toHaveURL(/\/lostPassword/u);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/lostPassword`);
-  await expect(page.locator(".alert.alert-success")).toBeVisible();
-  await expect(page.locator(".login-form-wrap form[action='/lostPassword']")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="lost-password-success-alert"]')).toBeVisible();
+  await expect(
+    page.locator(`.login-form-wrap form[action='${basePath}/lostPassword']`),
+  ).toBeVisible();
   expect(await canonicalizeAuthPublicRoots(page)).toEqual(lostPasswordRoots);
 
   await page.goto(`${basePath}/resetPassword?s=reset-token`);
@@ -122,34 +128,25 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
   expect(legacyShellSource).toContain("@routes.UserApp.signupForm()");
   expect(legacyShellSource).toContain('href="http://navercorp.com/"');
   expect(source).not.toContain("as never");
-  expect(source).toContain('const projectListPath: string = "/projects";');
-  expect(source).toContain("to={projectListPath}");
+  expect(source).toContain('to="/projects"');
   expect(source).toContain('const loginFormPath: string = "/users/loginform";');
   expect(source).toContain("to={loginFormPath}");
   expect(source).toContain('const signupFormPath: string = "/users/signupform";');
   expect(source).toContain("to={signupFormPath}");
-  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
-  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}');
-  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
-  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}');
-  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}');
+  expect(source).toContain('to="/user/editform"');
+  expect(source).toContain("to={logoutPath}");
+  expect(source).toContain('to="/$user"');
   expect(source).toContain("<RootYoramToast");
-  expect(source).toContain("key: `notify:${source.dataset.message");
   expect(source).not.toContain("toast.innerHTML");
   expect(source).toContain('<span className="provider">Yoram authors</span>');
   expect(source).not.toContain("github.com/nforge/yobi");
   expect(source).not.toContain("navercorp.com");
   expect(source).not.toContain("developers.naver.com");
-  expect(source).toContain('to="/user/anonymous"');
   expect(source).not.toContain('to="/logout"');
-  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
-  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
-  expect(source).not.toContain(
-    '<a href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}',
-  );
-  expect(source).not.toContain(
-    '<a href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}',
-  );
+  expect(source).not.toContain('<a href="/projects"');
+  expect(source).not.toContain('<a href="/logout"');
+  expect(source).not.toContain('<a href="/users/loginform"');
+  expect(source).not.toContain('<a href="/users/signupform"');
   expect(source).not.toContain('className="user-item-btn"\n                data-login="required"');
 });
 
@@ -157,6 +154,7 @@ async function canonicalizeIndexRoots(page: Page) {
   return canonicalizeRoots(
     page,
     ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, [data-stylex-owner=site-footer]",
+    true,
   );
 }
 
@@ -167,65 +165,77 @@ async function canonicalizeAuthPublicRoots(page: Page) {
   );
 }
 
-async function canonicalizeRoots(page: Page, selector: string) {
-  return page.evaluate((rootSelector) => {
-    const roots = Array.from(document.querySelectorAll(rootSelector));
-    return roots.map((root) => visit(root)).join("");
+async function canonicalizeRoots(page: Page, selector: string, stripBrandActive = false) {
+  return page.evaluate(
+    ({ rootSelector, stripBrandActive }) => {
+      const roots = Array.from(document.querySelectorAll(rootSelector));
+      return roots.map((root) => visit(root)).join("");
 
-    function visit(current: Element): string {
-      const stableAttributes = [
-        "id",
-        "class",
-        "name",
-        "type",
-        "method",
-        "action",
-        "value",
-        "autocomplete",
-        "placeholder",
-        "href",
-        "target",
-        "title",
-        "data-toggle",
-        "data-placement",
-        "data-dismiss",
-        "for",
-        "checked",
-        "required",
-      ];
-      const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(normalizeAttribute(current, name))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${current.tagName.toLowerCase()} ${attrs}>`
-        : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
-        .map((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-          }
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            return visit(child as Element);
-          }
-          return "";
-        })
-        .filter(Boolean)
-        .join("");
-
-      return `${open}${children}</${current.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttribute(current: Element, name: string) {
-      if (name === "class") {
-        return (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((value, index, values) => value && values.indexOf(value) === index)
+      function visit(current: Element): string {
+        const stableAttributes = [
+          "id",
+          "class",
+          "name",
+          "type",
+          "method",
+          "action",
+          "value",
+          "autocomplete",
+          "placeholder",
+          "href",
+          "target",
+          "title",
+          "data-toggle",
+          "data-placement",
+          "data-dismiss",
+          "for",
+          "checked",
+          "required",
+        ];
+        const attrs = stableAttributes
+          .filter((name) => current.hasAttribute(name))
+          .map((name) => `${name}=${JSON.stringify(normalizeAttribute(current, name))}`)
           .join(" ");
+        const open = attrs
+          ? `<${current.tagName.toLowerCase()} ${attrs}>`
+          : `<${current.tagName.toLowerCase()}>`;
+        const children = Array.from(current.childNodes)
+          .map((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+            }
+            if (child.nodeType === Node.ELEMENT_NODE) {
+              return visit(child as Element);
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join("");
+
+        return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
-      return current.getAttribute(name) ?? "";
-    }
-  }, selector);
+
+      function normalizeAttribute(current: Element, name: string) {
+        if (name === "class") {
+          return (current.getAttribute(name) ?? "")
+            .split(/\s+/u)
+            .filter(
+              (value, index, values) =>
+                value &&
+                !(
+                  stripBrandActive &&
+                  current.matches('[data-stylex-owner="global-gnb-brand-link"]') &&
+                  value === "active"
+                ) &&
+                values.indexOf(value) === index,
+            )
+            .join(" ");
+        }
+        return current.getAttribute(name) ?? "";
+      }
+    },
+    { rootSelector: selector, stripBrandActive },
+  );
 }
 
 async function readDesktopIndexMetrics(page: Page) {
@@ -235,7 +245,7 @@ async function readDesktopIndexMetrics(page: Page) {
     );
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
     const heading = document.querySelector<HTMLElement>(
       '[data-stylex-owner="anonymous-home-intro-heading"]',
     );

@@ -1,5 +1,16 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1069 legacy auth alias route parity
+
+- [x] Add explicit `/login`, `/register`, and `/forgot-password` TanStack
+  compatibility routes with query-preserving redirects to the legacy
+  canonical screens.
+- [x] Verify the auth alias flow and migrated public-index/source contracts in
+  external System Chrome; the focused spec's alias and four remaining checks
+  are green across the final reruns.
+- [ ] Full fallback-off/global audit, production-dist live pair for this wave,
+  and final pixel lock remain open.
+
 ### 2026-07-28 — Batch 1068 managed E2E stabilization diagnosis
 
 - [x] Separate the fallback-off assertion failures from runner stabilization:

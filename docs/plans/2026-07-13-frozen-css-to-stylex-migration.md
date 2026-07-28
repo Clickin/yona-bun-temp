@@ -1,5 +1,19 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1069 — legacy auth alias route parity — 2026-07-28
+
+Legacy compatibility aliases are now explicit TanStack file routes: `/login`
+redirects to `/users/loginform`, `/register` to `/users/signupform`, and
+`/forgot-password` to `/lostPassword`, preserving the query string through
+`beforeLoad` redirects. This follows `yona-original/conf/routes:129-133,169-170`
+and the canonical `user/login.scala.html`, `user/signup.scala.html`, and
+`site/lostPassword.scala.html` screens. The focused auth spec also replaced
+selectors that referred to retired frozen classes with stable StyleX owners and
+normalizes only the home-brand active token when comparing `/` with the legacy
+`/users/login` URL. External System-Chrome verification passes the complete
+focused auth spec passes 5/5 in normal and explicit fallback-off System Chrome;
+the remaining global fallback-off suite and final pixel lock remain open.
+
 ### Batch 1068 — managed E2E stabilization-wait diagnosis — 2026-07-28
 
 The fallback-off run was stopped after its first repeated failure family so
