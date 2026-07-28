@@ -1,5 +1,21 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1096 — mounted login alias form contract — 2026-07-28
+
+Broad final advanced through 142 tests and the fallback consumer graph before
+the `/login` compatibility alias test looked for an unmounted
+`form[action='/users/login']`. The actual mounted route correctly redirects to
+`/yona/users/loginform` with both search values and renders the canonical
+legacy POST action `/yona/users/login`.
+
+`conf/routes` and `user/login.scala.html` establish GET loginform and POST
+login. The alias now names its canonical legacy loginform href before the
+unchanged TanStack replace redirect; the test verifies stable form ancestry,
+base-prefixed action, exact search preservation, and absence of browser
+replacement. Fast and reused production-dist final System Chrome pass 2/2,
+with the browser case at 625ms. Broad resumes at test 145; global audit and
+final pixel lock remain open.
+
 ### Batch 1095 — authenticated HOME shared-footer baseline — 2026-07-28
 
 The fresh broad run restarted and exposed an earlier authenticated HOME

@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1096 mounted login alias form contract
+
+- [x] Recheck `conf/routes`, `user/login.scala.html`, site layout, and the
+  canonical loginform React action.
+- [x] Preserve `/login` replace redirect and both search values while naming
+  the canonical legacy target.
+- [x] Verify mounted `/yona/users/loginform` and `/yona/users/login` action
+  without unprefixed locator assumptions.
+- [x] Pass fast and fallback-off production-dist final System Chrome 2/2;
+  browser case 625ms.
+- [ ] Resume broad at test 145, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1095 authenticated HOME shared-footer baseline
 
 - [x] Recheck notifications → siteLayout → common/footer and the

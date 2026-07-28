@@ -2,8 +2,9 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: ({ location }) => {
+    const canonicalLegacyLoginFormHref = `/users/loginform${location.searchStr}`;
     throw redirect({
-      href: `/users/loginform${location.searchStr}`,
+      href: canonicalLegacyLoginFormHref,
       replace: true,
     });
   },

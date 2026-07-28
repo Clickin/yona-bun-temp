@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1096 — mounted login alias form contract
+
+| Legacy/evidence | Route boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `yona-original/conf/routes` defines GET `/users/loginform` and POST `/users/login`; `yona-original/app/views/user/login.scala.html` uses `@routes.UserApp.login()` inside the site layout. | `frontend/src/routes/login.tsx` names the canonical `/users/loginform${location.searchStr}` href before throwing the unchanged TanStack replace redirect. The canonical loginform route continues to prefix its POST action from runtime base. | `/login?redirectUrl=/me&password=reset` becomes mounted `/yona/users/loginform` with both values; visible `.login-form-wrap > form` action is `/yona/users/login`; no window replacement or document reload. | Fast and reused fallback-off production-dist final System Chrome pass 2/2 in 1.9s, with the browser case at 625ms; TypeScript and diff checks pass. | Broad test 145 onward, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1095 — authenticated HOME shared-footer baseline
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
