@@ -1,5 +1,17 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1105 lost-password tagline line-height
+
+- [x] Trace the 2px page-height deficit through `site/lostPassword.scala.html`,
+  Bootstrap body line-height, and later Yobi font-size rules.
+- [x] Restore exact 20px tagline line-height without changing expected boxes,
+  screenshots, or thresholds.
+- [x] Verify desktop/mobile tagline and complete page/form geometry.
+- [x] Pass fresh fallback-off production final System Chrome 3/3, TypeScript,
+  and diff checks.
+- [ ] Resume broad after test 171, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1104 login action source-guard decoupling
 
 - [x] Replace the stale inline-JSX action requirement exposed at broad test

@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1105 — lost-password tagline line-height
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `site/lostPassword.scala.html` emits the reset-password tagline. Bootstrap body supplies 20px line-height; later Yobi rules alter tagline font size but do not override line-height. | `lostPassword.tsx` adds only exact `lineHeight:"20px"` to the existing route tagline owner. DOM, copy, TanStack behavior, and all other declarations remain unchanged. | Desktop tagline is 20px high and mobile wraps to 40px; preserved complete page height is 340px rather than the broken 338px. Existing form/input/footer geometry, screenshots, and thresholds remain strict. | Fresh fallback-off production final System Chrome passes 3/3; TypeScript and diff checks pass. Legacy `:8089` unavailable; frozen source and established metrics used. | Broad after test 171, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1104 — login action source-guard decoupling
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

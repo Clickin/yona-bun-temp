@@ -43,6 +43,7 @@ const styles = stylex.create({
   tagline: {
     margin: "10px 0px 0px",
     fontSize: "1.2em",
+    lineHeight: "20px",
     color: lostPasswordTheme.taglineText,
   },
   formWrap: {

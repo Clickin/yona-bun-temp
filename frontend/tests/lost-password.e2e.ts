@@ -95,6 +95,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
   expectBox(desktop.tagLineWrap, { height: 152, width: 1280, x: 0, y: 40 });
   expectBox(desktop.title, { height: 42, width: 472.94, x: 403.53, y: 120 });
   expectBox(desktop.tagLine, { height: 20, width: 1280, x: 0, y: 172 });
+  expect(desktop.tagLineLineHeight).toBe("20px");
   expectBox(desktop.form, { height: 134, width: 400, x: 440, y: 246 });
   expectBox(desktop.loginId, { height: 36, width: 398, x: 440, y: 246 });
   expectBox(desktop.emailAddress, { height: 36, width: 398, x: 440, y: 292 });
@@ -109,6 +110,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
   expectBox(mobile.tagLineWrap, { height: 214, width: 390, x: 0, y: 40 });
   expectBox(mobile.title, { height: 84, width: 390, x: 0, y: 120 });
   expectBox(mobile.tagLine, { height: 40, width: 390, x: 0, y: 214 });
+  expect(mobile.tagLineLineHeight).toBe("20px");
   expectBox(mobile.form, { height: 134, width: 370.5, x: 9.75, y: 308 });
   expectBox(mobile.loginId, { height: 36, width: 363.97, x: 9.75, y: 308 });
   expectBox(mobile.emailAddress, { height: 36, width: 363.97, x: 9.75, y: 354 });
@@ -422,6 +424,8 @@ async function readLostPasswordMetrics(page: Page) {
     };
     const loginId = document.querySelector<HTMLElement>("#loginId");
     if (!loginId) throw new Error("Missing lost-password input style target.");
+    const tagLine = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password .tag-line");
+    if (!tagLine) throw new Error("Missing lost-password tagline style target.");
 
     return {
       emailAddress: element("#emailAddress"),
@@ -431,6 +435,7 @@ async function readLostPasswordMetrics(page: Page) {
       page: element(".page.full"),
       submit: element(".login-form-wrap button[type='submit']"),
       tagLine: element(".tag-line-wrap.reset-password .tag-line"),
+      tagLineLineHeight: getComputedStyle(tagLine).lineHeight,
       tagLineWrap: element(".tag-line-wrap.reset-password"),
       title: element(".tag-line-wrap.reset-password .title"),
       viewport: {

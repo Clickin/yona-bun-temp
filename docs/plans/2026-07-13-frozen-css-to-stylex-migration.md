@@ -1,5 +1,21 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1105 — lost-password tagline line-height — 2026-07-28
+
+Broad reached test 171 and found `/lostPassword` two pixels shorter than the
+preserved legacy geometry. The missing declaration is real: Bootstrap supplies
+20px body line-height, while the later Yobi rule changes tagline font size but
+does not replace line-height. The React tagline had inherited an 18px app
+line-height.
+
+The route owner now carries exact 20px line-height. Existing expected page,
+tagline, form, input, footer, desktop/mobile screenshot, and threshold values
+are unchanged; the page returns from 338px to legacy 340px. Fresh fallback-off
+production final System Chrome passes the broad state and desktop/mobile paint
+3/3; TypeScript and diff checks pass. Legacy `:8089` was not running for this
+state, so frozen Scala/Bootstrap/LESS and the established measurements are the
+evidence.
+
 ### Batch 1104 — login action source-guard decoupling — 2026-07-28
 
 Broad advanced through 143 passing cases and the fallback consumer graph,
