@@ -1,5 +1,15 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1068 managed E2E stabilization diagnosis
+
+- [x] Separate the fallback-off assertion failures from runner stabilization:
+  managed E2E launches Vite HMR and a fresh `cargo run`, rather than serving
+  the rebuilt `frontend/dist`.
+- [x] Record host contention evidence: 75 Chrome, 2 Vite, 2 Yoram, and 5
+  stale Playwright installer processes were present during the focused run.
+- [ ] Keep the final pixel lock and full fallback-off/global audit open; no
+  timeout or screenshot threshold was relaxed.
+
 ### 2026-07-28 — Batch 1043 help-shell sweep metric correction
 
 - [x] Map the existing `help-shell-page-wrap-outer` owner into the visual

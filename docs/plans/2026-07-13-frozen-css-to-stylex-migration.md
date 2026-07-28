@@ -1,5 +1,24 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1068 — managed E2E stabilization-wait diagnosis — 2026-07-28
+
+The fallback-off run was stopped after its first repeated failure family so
+stabilization latency could be measured separately from parity assertions. The
+managed `scripts/run-playwright-e2e.mjs` path starts `scripts/run-e2e-frontend.mjs`,
+which runs Vite dev/HMR, and starts a fresh backend through `cargo run` for every
+focused command; it does not exercise the already-built `frontend/dist`. A
+focused auth run spent about 1.8 minutes in test/teardown despite the individual
+assertion output being short. At the same time, the host process inventory had
+75 Chrome processes, 2 Vite processes, 2 Yoram processes, and 5 stale
+`playwright install chromium --only-shell` processes. This explains the long
+browser/context stabilization and cleanup wait as harness/process contention,
+not evidence that the release/dist UI lacks legacy-level responsiveness.
+
+This is diagnostic evidence only: no timeout, screenshot threshold, or parity
+gate was relaxed. Production-dist responsiveness remains covered separately by
+the release-server paired sweep; the global fallback-off suite and final pixel
+lock remain open.
+
 ### Batch 1061 — global-shell geometry baseline correction — 2026-07-28
 
 The initial metric correction was an intermediate baseline and is superseded by

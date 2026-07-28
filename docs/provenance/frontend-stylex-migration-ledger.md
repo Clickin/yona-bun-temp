@@ -1,5 +1,18 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1068 — managed E2E stabilization-wait diagnosis — 2026-07-28
+
+The focused fallback-off run exposed two separate classes of work. The
+assertions reported an actual missing auth-alias route and an actual public
+index logo metric gap; those remain parity work. Independently, the managed
+runner starts Vite HMR plus a fresh Rust `cargo run` for each command, and the
+host had 75 Chrome processes, 2 Vite processes, 2 Yoram processes, and 5 stale
+Playwright installer processes. The roughly 1.8-minute focused run therefore
+includes process/browser contention and cleanup stabilization. This record
+does not relax Playwright waits or screenshot gates and does not treat HMR
+timing as release/dist responsiveness. Alias correction remains unverified;
+the full fallback-off/global audit and final pixel lock remain open.
+
 ### Batch 1043 — help-shell sweep owner mapping and fallback metric baseline — 2026-07-28
 
 The live `/_help` comparison reported a missing `pageWrap` only because the
