@@ -1,5 +1,26 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1076 authenticated Project direct-row DOM parity
+
+- [x] Replace Project-pane logo/name split links with one TanStack project link,
+  a separate owner link, and a sibling React-owned star button.
+- [x] Keep all four subtab states and remove reliance on Scala
+  `data-location`/`data-project-id` behavior attributes.
+- [x] Preserve the canonical 26px row using frozen 18px base line-height plus
+  `_usermenu.less` 4px vertical list padding; reject content-dependent
+  25/28px drift.
+- [x] Verify normal and fallback-off System Chrome 1/1 with canonical DOM,
+  desktop/mobile relative geometry and overflow, subtab/filter behavior,
+  project/owner SPA navigation, and favorite mutation.
+- [x] Confirm isolated fallback-off completes in 17.0 seconds. Concurrent
+  normal/fallback-off runs can contend in Playwright worker teardown and must
+  not be used as authoritative timing or verification evidence.
+- [x] Capture and inspect desktop/mobile pairs against legacy port 9000 and the
+  rebuilt dist served by Rust at `8089/yona`; owned Project geometry matches,
+  while one extra local recent-project row is fixture-only height drift.
+- [ ] Recent History, broad fallback-off/global audit, and final corpus pixel
+  lock remain open.
+
 ### 2026-07-28 — Batch 1075 authenticated Favorite direct-project DOM parity
 
 - [x] Translate direct Favorite project-row navigation into separate TanStack

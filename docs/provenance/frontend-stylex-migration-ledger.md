@@ -1,5 +1,31 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1076 — authenticated Project direct-row DOM parity
+
+`common/usermenu.scala.html`, `common/usermenu_tab_content_list.scala.html`,
+`index/myProjectList.scala.html`, and `index/myProjectList_partial.scala.html`
+establish the four Project subpanes and direct row's logo/name/owner/star order.
+Scala `data-location` is behavior evidence only. The React translation uses one
+TanStack project link for logo/name, a sibling owner link, and a sibling star
+button, with no legacy plugin/navigation attributes.
+
+Frozen `_variables.less` supplies `@base-line-height: 18px` and
+`_usermenu.less` supplies `.project-list { padding: 4px 0; }`, preserving the
+existing live-derived 26px row after the valid link structure removed the old
+two-project-link split. The focused authenticated-home E2E symmetrically
+retires generated StyleX/debug tokens only inside `#myProjectList`, preserves
+semantic legacy classes, and verifies all four rows, subtab/filter behavior,
+private/star states, desktop/mobile containment and overflow, both SPA
+navigation targets, and mutation. Normal and isolated fallback-off external
+System Chrome each pass 1/1. A concurrent two-run replay caused Playwright
+worker teardown contention after both test bodies passed; the sequential green
+run is authoritative and no timeout was relaxed. Fresh desktop/mobile
+System-Chrome pairs under `output/playwright/project-pane-1076/` were directly
+inspected against legacy `9000` and Rust-served rebuilt dist `8089/yona`.
+Project-pane placement, width, controls, 26px row rhythm, and internal
+name/owner/star alignment match. Local has one additional recent-project row,
+so total pane height is fixture drift rather than geometry drift.
+
 ### Batch 1075 — authenticated Favorite direct-project DOM parity
 
 `common/usermenu.scala.html`, `common/usermenu_tab_content_list.scala.html`,

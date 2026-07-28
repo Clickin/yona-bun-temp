@@ -259,13 +259,13 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
           <ul class="tab-pane user-ul active" id="recentlyVisited">
             <li class="user-li">
               <div class="project-list project-flex-container">
-                <a href="__BASE_PATH__/admin/sample" class="project-item project-item-container sidebar-project-link sidebar-row-link">
-                  <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
-                  <div class="projectName-owner flex-item">
+                <div class="project-item project-item-container">
+                  <a href="__BASE_PATH__/admin/sample">
+                    <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
                     <div class="project-name flex-item">sample </div>
-                    <div class="project-owner flex-item">admin</div>
-                  </div>
-                </a>
+                  </a>
+                  <div class="projectName-owner flex-item"><div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div></div>
+                </div>
                 <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
               </div>
             </li>
@@ -273,13 +273,13 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
           <ul class="tab-pane user-ul " id="watching">
             <li class="user-li">
               <div class="project-list project-flex-container">
-                <a href="__BASE_PATH__/weblabs/playground" class="project-item project-item-container sidebar-project-link sidebar-row-link">
-                  <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
-                  <div class="projectName-owner flex-item">
+                <div class="project-item project-item-container">
+                  <a href="__BASE_PATH__/weblabs/playground">
+                    <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                     <div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div>
-                    <div class="project-owner flex-item">weblabs</div>
-                  </div>
-                </a>
+                  </a>
+                  <div class="projectName-owner flex-item"><div class="project-owner flex-item"><a href="__BASE_PATH__/weblabs">weblabs</a></div></div>
+                </div>
                 <button class="star-project flex-item" type="button"><i class="star material-icons">star</i></button>
               </div>
             </li>
@@ -287,13 +287,13 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
           <ul class="tab-pane user-ul " id="createdByMe">
             <li class="user-li">
               <div class="project-list project-flex-container">
-                <a href="__BASE_PATH__/admin/sample" class="project-item project-item-container sidebar-project-link sidebar-row-link">
-                  <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
-                  <div class="projectName-owner flex-item">
+                <div class="project-item project-item-container">
+                  <a href="__BASE_PATH__/admin/sample">
+                    <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
                     <div class="project-name flex-item">sample </div>
-                    <div class="project-owner flex-item">admin</div>
-                  </div>
-                </a>
+                  </a>
+                  <div class="projectName-owner flex-item"><div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div></div>
+                </div>
                 <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
               </div>
             </li>
@@ -301,13 +301,13 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
           <ul class="tab-pane user-ul " id="joinmember">
             <li class="user-li">
               <div class="project-list project-flex-container">
-              <a href="__BASE_PATH__/external/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
-                  <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
-                  <div class="projectName-owner flex-item">
+                <div class="project-item project-item-container">
+                  <a href="__BASE_PATH__/external/member">
+                    <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                     <div class="project-name flex-item">member </div>
-                  <div class="project-owner flex-item">external</div>
-                  </div>
-                </a>
+                  </a>
+                  <div class="projectName-owner flex-item"><div class="project-owner flex-item"><a href="__BASE_PATH__/external">external</a></div></div>
+                </div>
                 <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
               </div>
             </li>
@@ -1928,6 +1928,11 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   await mockWorkspaceSidebarProjects(page);
+  const favoriteRequests: string[] = [];
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    favoriteRequests.push(route.request().method());
+    await route.fulfill({ contentType: "application/json", body: "{}", status: 200 });
+  });
 
   await page.goto(`${basePath}/`);
   await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
@@ -2011,6 +2016,53 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
     subtabMarginTop: "0px",
   });
 
+  const paneRows = [
+    ["recentlyVisited", "Recently visited", "admin", "sample"],
+    ["createdByMe", "Create", "admin", "sample"],
+    ["watching", "Watching", "weblabs", "playground"],
+    ["joinmember", "Member", "external", "member"],
+  ] as const;
+  for (const [paneId, label, ownerName, projectName] of paneRows) {
+    await page.locator("#myProjectList .nav-subtab button", { hasText: label }).click();
+    const row = page.locator(`#myProjectList #${paneId} > .user-li`);
+    const projectLink = row.locator(
+      `:scope > .project-list > .project-item > a[href$="/${ownerName}/${projectName}"]`,
+    );
+    const ownerLink = row.getByRole("link", { name: ownerName, exact: true });
+    await expect(projectLink).toHaveCount(1);
+    await expect(projectLink.locator(":scope > .site-logo")).toHaveCount(1);
+    await expect(projectLink.locator(":scope > .project-name")).toHaveCount(1);
+    await expect(projectLink.locator("a")).toHaveCount(0);
+    await expect(ownerLink).toHaveAttribute("href", `${basePath}/${ownerName}`);
+    await expect(row.locator("button.star-project")).toHaveCount(1);
+    await expect(row).not.toHaveAttribute("data-location");
+    await expect(row.locator("[data-location], [data-project-id]")).toHaveCount(0);
+  }
+
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const [paneId, label] of paneRows) {
+      await page.locator("#myProjectList .nav-subtab button", { hasText: label }).click();
+      const geometry = await readProjectPaneRowGeometry(page, paneId);
+      expect(geometry.logoRight).toBeLessThanOrEqual(geometry.nameLeft);
+      expect(geometry.nameRight).toBeLessThanOrEqual(geometry.ownerLeft);
+      expect(geometry.ownerRight).toBeLessThanOrEqual(geometry.starLeft);
+      expect(geometry.rowLeft).toBeGreaterThanOrEqual(geometry.rootLeft);
+      expect(geometry.rowRight).toBeLessThanOrEqual(geometry.rootRight);
+      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+    }
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.locator("#myProjectList .nav-subtab button", { hasText: "Recently visited" }).click();
+  const sampleRow = page.locator("#myProjectList #recentlyVisited > .user-li");
+  await sampleRow.locator("button.star-project").click();
+  await expect.poll(() => favoriteRequests).toEqual(["POST"]);
+  await expect(sampleRow.locator("button.star-project")).toHaveAttribute("aria-pressed", "false");
+
   const projectSearch = page.locator("#myProjectList .project-search");
   await projectSearch.fill("sample");
   await page.evaluate(() => {
@@ -2041,6 +2093,44 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
       )
       .toBe("home-project-subtabs");
   }
+
+  await page.evaluate(() => {
+    (
+      window as Window & typeof globalThis & { __projectPaneSpaSentinel?: string }
+    ).__projectPaneSpaSentinel = "alive";
+  });
+  await sampleRow
+    .locator(':scope > .project-list > .project-item > a[href$="/admin/sample"]')
+    .click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample`);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __projectPaneSpaSentinel?: string })
+          .__projectPaneSpaSentinel,
+    ),
+  ).toBe("alive");
+
+  await page.goto(`${basePath}/`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
+  await page.locator(".myProjectList button").click();
+  await page.evaluate(() => {
+    (
+      window as Window & typeof globalThis & { __projectPaneOwnerSpaSentinel?: string }
+    ).__projectPaneOwnerSpaSentinel = "alive";
+  });
+  await page
+    .locator("#myProjectList #recentlyVisited > .user-li")
+    .getByRole("link", { name: "admin", exact: true })
+    .click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin`);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __projectPaneOwnerSpaSentinel?: string })
+          .__projectPaneOwnerSpaSentinel,
+    ),
+  ).toBe("alive");
 });
 
 test("authenticated root sidebar recent issue tab matches legacy index/myRecentIssueList DOM", async ({
@@ -3246,6 +3336,40 @@ async function readSidebarProjectTabMetrics(page: Page) {
   });
 }
 
+async function readProjectPaneRowGeometry(page: Page, paneId: string) {
+  return page.evaluate((id) => {
+    const root = document.querySelector<HTMLElement>("#myProjectList");
+    const row = root?.querySelector<HTMLElement>(`#${id} > .user-li > .project-list`);
+    const logo = row?.querySelector<HTMLElement>(".site-logo");
+    const name = row?.querySelector<HTMLElement>(".project-name");
+    const owner = row?.querySelector<HTMLElement>(".project-owner");
+    const star = row?.querySelector<HTMLElement>("button.star-project");
+    if (!root || !row || !logo || !name || !owner || !star) {
+      throw new Error(`Expected project pane row geometry targets are missing for ${id}.`);
+    }
+    const rootBox = root.getBoundingClientRect();
+    const rowBox = row.getBoundingClientRect();
+    const logoBox = logo.getBoundingClientRect();
+    const nameBox = name.getBoundingClientRect();
+    const ownerBox = owner.getBoundingClientRect();
+    const starBox = star.getBoundingClientRect();
+    return {
+      clientWidth: row.clientWidth,
+      logoRight: logoBox.right,
+      nameLeft: nameBox.left,
+      nameRight: nameBox.right,
+      ownerLeft: ownerBox.left,
+      ownerRight: ownerBox.right,
+      rootLeft: rootBox.left,
+      rootRight: rootBox.right,
+      rowLeft: rowBox.left,
+      rowRight: rowBox.right,
+      scrollWidth: row.scrollWidth,
+      starLeft: starBox.left,
+    };
+  }, paneId);
+}
+
 async function readSidebarRecentIssueTabMetrics(page: Page) {
   return page.evaluate(() => {
     const root = document.querySelector<HTMLElement>("#myRecentIssueList");
@@ -4293,13 +4417,13 @@ async function canonicalizeSelector(page: Page, selector: string) {
     }
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
-        const favoriteOwner = current
+        const stylexOwner = current
           .closest("[data-stylex-owner]")
           ?.getAttribute("data-stylex-owner");
         const isFavoriteStylexOwned =
           current.closest("#myOrganizationList") !== null &&
           (current.matches("#myOrganizationList") ||
-            (favoriteOwner !== null &&
+            (stylexOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-favorite-shell",
@@ -4307,13 +4431,25 @@ async function canonicalizeSelector(page: Page, selector: string) {
                 "authenticated-sidenav-favorite-project-rows",
                 "authenticated-sidenav-favorite-stars",
                 "authenticated-sidenav-direct-project-rows",
-              ].includes(favoriteOwner ?? "")));
+              ].includes(stylexOwner ?? "")));
+        const isProjectTabStylexOwned =
+          current.closest("#myProjectList") !== null &&
+          (current.matches("#myProjectList") ||
+            (stylexOwner !== null &&
+              [
+                "authenticated-sidenav-tab-panel",
+                "authenticated-sidenav-project-shell",
+                "authenticated-sidenav-project-subtabs",
+                "authenticated-sidenav-project-organization-list",
+                "authenticated-sidenav-direct-project-rows",
+                "authenticated-sidenav-favorite-stars",
+              ].includes(stylexOwner ?? "")));
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
           .filter(
             (value) =>
-              !isFavoriteStylexOwned ||
+              (!isFavoriteStylexOwned && !isProjectTabStylexOwned) ||
               (!value.startsWith("x") && !value.includes("-home-route-screen__")),
           )
           .join(" ");
@@ -4375,13 +4511,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       function normalizeAttribute(current: Element, name: string): string {
         const value = current.getAttribute(name) ?? "";
-        const favoriteOwner = current
+        const stylexOwner = current
           .closest("[data-stylex-owner]")
           ?.getAttribute("data-stylex-owner");
         const isFavoriteStylexOwned =
           current.closest("#myOrganizationList") !== null &&
           (current.matches("#myOrganizationList") ||
-            (favoriteOwner !== null &&
+            (stylexOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-favorite-shell",
@@ -4389,8 +4525,20 @@ async function canonicalizeHtml(page: Page, html: string) {
                 "authenticated-sidenav-favorite-project-rows",
                 "authenticated-sidenav-favorite-stars",
                 "authenticated-sidenav-direct-project-rows",
-              ].includes(favoriteOwner ?? "")));
-        if (name === "class" && isFavoriteStylexOwned) {
+              ].includes(stylexOwner ?? "")));
+        const isProjectTabStylexOwned =
+          current.closest("#myProjectList") !== null &&
+          (current.matches("#myProjectList") ||
+            (stylexOwner !== null &&
+              [
+                "authenticated-sidenav-tab-panel",
+                "authenticated-sidenav-project-shell",
+                "authenticated-sidenav-project-subtabs",
+                "authenticated-sidenav-project-organization-list",
+                "authenticated-sidenav-direct-project-rows",
+                "authenticated-sidenav-favorite-stars",
+              ].includes(stylexOwner ?? "")));
+        if (name === "class" && (isFavoriteStylexOwned || isProjectTabStylexOwned)) {
           const className = value
             .split(/\s+/u)
             .filter(

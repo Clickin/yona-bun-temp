@@ -4374,6 +4374,9 @@ const authenticatedSidenavDirectProjectRowStyles = stylex.create({
     justifyContent: "space-between",
     overflow: "hidden",
   },
+  projectPaneItem: {
+    height: "18px",
+  },
   logo: {
     flexShrink: 0,
     marginLeft: "2px",
@@ -7127,6 +7130,7 @@ function SidebarProjectPane({
     >
       {visibleProjects.map((project) => (
         <SidebarProjectItem
+          isAuthenticatedProjectPane={isAuthenticatedSidenav}
           isLeftSidebar={isLeftSidebar}
           key={projectKey(project)}
           project={project}
@@ -7139,11 +7143,13 @@ function SidebarProjectPane({
 
 function SidebarProjectItem({
   isAuthenticatedFavoritePane = false,
+  isAuthenticatedProjectPane = false,
   isLeftSidebar = false,
   project,
   runtimeConfig,
 }: {
   isAuthenticatedFavoritePane?: boolean;
+  isAuthenticatedProjectPane?: boolean;
   isLeftSidebar?: boolean;
   project: YoramRecord;
   runtimeConfig: RuntimeConfig;
@@ -7186,10 +7192,16 @@ function SidebarProjectItem({
           className={
             isLeftSidebar
               ? stylex.props(leftSidebarDirectProjectRowStyles.item).className
-              : `project-item project-item-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.item).className}`
+              : `project-item project-item-container ${
+                  stylex.props(
+                    authenticatedSidenavDirectProjectRowStyles.item,
+                    isAuthenticatedProjectPane &&
+                      authenticatedSidenavDirectProjectRowStyles.projectPaneItem,
+                  ).className
+                }`
           }
         >
-          {isAuthenticatedFavoritePane && !isLeftSidebar ? (
+          {(isAuthenticatedFavoritePane || isAuthenticatedProjectPane) && !isLeftSidebar ? (
             <Link
               aria-label={`Open ${ownerName}/${projectName}`}
               className={
@@ -7274,7 +7286,7 @@ function SidebarProjectItem({
                 : `projectName-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.nameOwner).className}`
             }
           >
-            {!isAuthenticatedFavoritePane || isLeftSidebar ? (
+            {!isAuthenticatedFavoritePane && !isAuthenticatedProjectPane ? (
               <div
                 className={
                   isLeftSidebar

@@ -1,5 +1,38 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1076 — authenticated Project direct-row DOM parity — 2026-07-28
+
+The authenticated `/` Project pane now translates each Scala
+`li[data-location]` row into one TanStack project link containing the logo and
+project name, a separate owner-profile link, and the existing React-owned star
+button. The change is limited to the four Recently visited/Create/Watching/
+Member panes; Favorite, Recent History, nested organization rows, and the
+framed left sidebar are unchanged.
+
+The valid link structure initially exposed content-dependent inner heights
+(17px without a logo and 20px with an image). The Project owner now restores
+the frozen `_variables.less` 18px base line box; together with
+`_usermenu.less` `.project-list { padding: 4px 0; }`, the canonical row remains
+26px rather than accepting a new 25/28px drift. Focused external System Chrome
+passes 1/1 in normal and explicit fallback-off profiles with strict canonical
+DOM, all four subtab states, desktop/mobile ordering and overflow, project/
+owner SPA navigation, and star mutation.
+
+The main-agent parallel normal/fallback-off replay demonstrated a harness
+constraint: both test bodies passed at about 19 seconds, but the two concurrent
+Playwright process trees contended during worker teardown and one remained
+alive until interrupted. A subsequent isolated fallback-off run completed
+normally in 17.0 seconds. Focused browser verification should therefore remain
+sequential; parity thresholds and timeouts were not changed. Live screenshot
+pairing was captured in external System Chrome from legacy
+`127.0.0.1:9000` and the rebuilt dist served by Rust at
+`127.0.0.1:8089/yona`. Desktop/mobile inspection confirms matching
+Project-pane position, width, tab/search flow, 26px row rhythm, and
+name/owner/star alignment. Total pane height differs only because the local
+seed has one additional recent project; approved Yoram/footer copy differences
+also remain excluded. Full fallback-off/global audit and final corpus pixel
+lock remain open.
+
 ### Batch 1075 — authenticated Favorite direct-project DOM parity — 2026-07-28
 
 The authenticated `/` Favorite pane now translates the legacy direct-project
