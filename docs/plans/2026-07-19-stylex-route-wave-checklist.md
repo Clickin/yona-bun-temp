@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1095 authenticated HOME shared-footer baseline
+
+- [x] Recheck notifications → siteLayout → common/footer and the
+  `_page.less` → `_responsive.less` import order.
+- [x] Preserve exact four-side `10px` final footer padding and the approved
+  Yoram footer identity deviations.
+- [x] Name/reuse the shared footer JSX/StyleX render boundary without changing
+  emitted DOM, classes, attributes, copy, or behavior.
+- [x] Pass fast RED→GREEN and fallback-off production-dist final System Chrome
+  1/1 in 1.8s.
+- [ ] Resume broad after test 18, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1094 shared markdown mobile task-list cascade
 
 - [x] Trace checklist DOM through `help/markdown.scala.html`, `_markdown.less`,

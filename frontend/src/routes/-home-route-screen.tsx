@@ -1736,6 +1736,15 @@ export function SiteLayoutShell({
   const handleLeftSidebarRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["workspace", "overview", "sidebar"] });
   };
+  const sharedSiteFooterWithStyleProps = (
+    <footer {...stylex.props(siteFooterStyles.outer)} data-stylex-owner="site-footer">
+      <div {...stylex.props(siteFooterStyles.inner)} data-stylex-owner="site-footer-inner">
+        <span {...stylex.props(siteFooterStyles.provider)} data-stylex-owner="site-footer-provider">
+          Yoram authors
+        </span>
+      </div>
+    </footer>
+  );
 
   return (
     <div
@@ -2011,16 +2020,7 @@ export function SiteLayoutShell({
           </div>
         </header>
         {children}
-        <footer {...stylex.props(siteFooterStyles.outer)} data-stylex-owner="site-footer">
-          <div {...stylex.props(siteFooterStyles.inner)} data-stylex-owner="site-footer-inner">
-            <span
-              {...stylex.props(siteFooterStyles.provider)}
-              data-stylex-owner="site-footer-provider"
-            >
-              Yoram authors
-            </span>
-          </div>
-        </footer>
+        {sharedSiteFooterWithStyleProps}
       </div>
     </div>
   );

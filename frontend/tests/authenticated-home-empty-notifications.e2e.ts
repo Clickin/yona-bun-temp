@@ -377,7 +377,7 @@ const EXPECTED_AUTHENTICATED_NOTIFICATION_SHELL_METRICS = {
   navLinkFontWeight: "700",
   navLinkPaddingLeft: "30px",
   pageFooterLineHeight: "34px",
-  pageFooterOuterPadding: "10px 0px",
+  pageFooterOuterPadding: "10px",
   pageWrapOuterMarginTop: "10px",
   pageWrapOuterMinHeight: "450px",
   providerColor: "rgb(51, 51, 51)",
@@ -538,8 +538,14 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
       "utf8",
     ),
     layout: readFileSync("../yona-original/app/views/layout.scala.html", "utf8"),
+    pageLess: readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    responsiveLess: readFileSync(
+      "../yona-original/app/assets/stylesheets/less/_responsive.less",
+      "utf8",
+    ),
     siteLayout: readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8"),
     usermenu: readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8"),
+    yobiLess: readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8"),
   };
   const fullHomeRouteSources = `${indexRouteSource}\n${notificationsRouteSource}`;
 
@@ -583,6 +589,9 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
     'const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine"',
   );
   expect(routeSource).toContain("to={notification.targetHref}");
+  expect(routeSource).toContain("const sharedSiteFooterWithStyleProps = (");
+  expect(routeSource).toContain("<footer {...stylex.props(siteFooterStyles.outer)}");
+  expect(routeSource).toContain("{sharedSiteFooterWithStyleProps}");
   expect(routeSource).toContain('data-stylex-owner="site-footer-provider"');
   expect(routeSource).toContain("Yoram authors");
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
@@ -617,6 +626,13 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(legacySources.footer).toContain("https://www.ncloud.com/?referer=yona");
   expect(legacySources.siteLayout).toContain("@common.navbar(menuType, null, null)");
   expect(legacySources.siteLayout).toContain("@common.footer()");
+  expect(legacySources.pageLess).toContain("padding:10px 0;");
+  expect(legacySources.responsiveLess).toMatch(
+    /@media all \{[\s\S]*?\.page-footer-outer \{\s*padding: 10px;/u,
+  );
+  expect(legacySources.yobiLess.indexOf('@import "less/_page.less";')).toBeLessThan(
+    legacySources.yobiLess.indexOf('@import "less/_responsive.less";'),
+  );
 });
 
 test("anonymous home shell renders React-owned login and React-owned signup Link affordances", async ({

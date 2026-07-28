@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1095 — authenticated HOME shared-footer baseline
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `index/notifications.scala.html` is wrapped by `siteLayout.scala.html`, which includes `common/footer.scala.html`. `yobi.less` imports `_page.less`'s intermediate `padding:10px 0` before `_responsive.less`'s later `@media all` `padding:10px`; Bootstrap has no overriding footer rule. | `SiteLayoutShell` names and reuses the existing shared footer JSX/StyleX composition. The prior Batch 1092 exact owner declarations, emitted footer DOM/classes/attributes, approved `Yoram authors` identity, children order, and all React/TanStack behavior remain unchanged. | Authenticated HOME empty-notification exact DOM plus final footer four-side 10px, 34px line height, provider typography/spacing, page wrapper geometry, desktop/mobile containment, and approved identity deviation. | Fast profile reproduces stale `10px 0` RED and passes GREEN. Reused fallback-off production-dist final System Chrome passes 1/1 with the browser case in 1.8s; TypeScript and diff checks pass. | Broad test 19 onward, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1094 — shared markdown mobile task-list cascade
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

@@ -1,5 +1,21 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1095 — authenticated HOME shared-footer baseline — 2026-07-28
+
+The fresh broad run restarted and exposed an earlier authenticated HOME
+expectation still pinned to `_page.less`'s intermediate `10px 0` footer
+padding. The screen includes the same `siteLayout/common/footer` chain as
+help, and `yobi.less` imports `_responsive.less` after `_page.less`; its
+`@media all` four-side `10px` rule is the final desktop/mobile value.
+
+The shared footer JSX/StyleX composition is now named and reused at the
+`SiteLayoutShell` render boundary without changing emitted DOM, classes,
+attributes, copy, or behavior. The authenticated empty-notification test
+records the complete import-order evidence and final computed value. Fast
+RED→GREEN and reused fallback-off production-dist final System Chrome pass
+1/1, with the browser case at 1.8s. Broad resumes after test 18; global
+fallback audit and final pixel lock remain open.
+
 ### Batch 1094 — shared markdown mobile task-list cascade — 2026-07-28
 
 After the help footer state passed desktop/mobile, the next independent
