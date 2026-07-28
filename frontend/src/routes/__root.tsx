@@ -103,7 +103,7 @@ const styles = stylex.create({
     backgroundColor: rootColors.toastSurface,
     borderRadius: "2px",
     boxShadow: rootColors.toastShadow,
-    opacity: "1",
+    opacity: "0.9",
     transitionDuration: "0.3s",
   },
   rootToastDismiss: {

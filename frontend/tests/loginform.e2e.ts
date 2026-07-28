@@ -970,10 +970,10 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   const expected = await canonicalizeHtml(
     page,
     `${expectedLoginScreen(basePath, defaultFormBody(), "")}
-    <div id="yobiToasts" class="yobiToasts">
-      <div class="toast" tabindex="-1">
-        <div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div>
-        <div class="center-text"><span class="v"></span><div class="msg">Please log in with the new password!</div></div>
+    <div id="yobiToasts">
+      <div tabindex="-1">
+        <div><button type="button">×</button></div>
+        <div><span></span><div>Please log in with the new password!</div></div>
       </div>
     </div>`,
   );
@@ -1010,6 +1010,20 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
     verticalSpacerHeight: "50px",
     verticalSpacerWidth: "0px",
   });
+  await page.locator('[data-stylex-part="toast-dismiss"] button').click();
+  await expect(page.locator('[data-stylex-owner="root-yoram-toast"]')).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __passwordResetLoginFlashSpaSentinel?: string;
+            }
+          ).__passwordResetLoginFlashSpaSentinel,
+      ),
+    )
+    .toBe("alive");
 });
 
 test("root yobi toast renders legacy shell DOM through React context without parsing message html", async ({
@@ -1024,6 +1038,14 @@ test("root yobi toast renders legacy shell DOM through React context without par
   await expect(toast.locator('[data-stylex-part="toast-message"]')).toHaveText(
     "Please log in with the new password!",
   );
+  await expect(
+    page.locator('#yobiToasts[data-stylex-owner="root-toast-container"]'),
+  ).not.toHaveClass(/\byobiToasts\b/u);
+  await expect(toast).not.toHaveClass(/\btoast\b/u);
+  await expect(toast.locator('[data-stylex-part="toast-dismiss"]')).not.toHaveClass(
+    /\bbtn-dismiss\b/u,
+  );
+  await expect(toast.locator('[data-stylex-part="toast-message"]')).not.toHaveClass(/\bmsg\b/u);
   expect(await toast.locator('[data-stylex-part="toast-message"]').innerHTML()).toBe(
     "Please log in with the new password!",
   );
@@ -1031,6 +1053,19 @@ test("root yobi toast renders legacy shell DOM through React context without par
 
   const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
   const loginSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
+  const legacyToastStyles = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+    "utf8",
+  );
+  const rootToastStylesSource = rootSource.slice(
+    rootSource.indexOf("rootToast: {"),
+    rootSource.indexOf("rootToastDismiss: {"),
+  );
+  expect(legacyToastStyles).toMatch(
+    /\.yobiToasts\s*\{[\s\S]*?\.toast\s*\{[\s\S]*?\.opacity\(90\);/u,
+  );
+  expect(rootToastStylesSource).toContain('opacity: "0.9"');
+  expect(rootToastStylesSource).not.toContain('opacity: "1"');
   expect(rootSource).toContain("<RootYoramToast");
   expect(rootSource).toContain("ROOT_YOBI_TOAST_DURATION_MS = 5000");
   expect(rootSource).toContain("durationMs={rootToast.durationMs}");
@@ -1971,12 +2006,16 @@ async function readMobileLoginMetrics(page: Page) {
 
 async function readToastMetrics(page: Page) {
   return page.evaluate(() => {
-    const container = document.querySelector<HTMLElement>("#yobiToasts");
-    const toast = document.querySelector<HTMLElement>("#yobiToasts .toast");
-    const dismiss = document.querySelector<HTMLElement>("#yobiToasts .btn-dismiss");
-    const button = document.querySelector<HTMLElement>("#yobiToasts .btn-dismiss button");
-    const verticalSpacer = document.querySelector<HTMLElement>("#yobiToasts .v");
-    const message = document.querySelector<HTMLElement>("#yobiToasts .msg");
+    const container = document.querySelector<HTMLElement>(
+      '#yobiToasts[data-stylex-owner="root-toast-container"]',
+    );
+    const toast = container?.querySelector<HTMLElement>(
+      '[data-stylex-owner="root-yoram-toast"][data-stylex-part="toast"]',
+    );
+    const dismiss = toast?.querySelector<HTMLElement>('[data-stylex-part="toast-dismiss"]');
+    const button = dismiss?.querySelector<HTMLElement>("button");
+    const message = toast?.querySelector<HTMLElement>('[data-stylex-part="toast-message"]');
+    const verticalSpacer = message?.previousElementSibling;
     if (!container || !toast || !dismiss || !button || !verticalSpacer || !message) {
       throw new Error("Expected toast metric targets are missing.");
     }

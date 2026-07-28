@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1098 — password-reset toast opacity
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `common/scripts.scala.html` emits the toast container/template contract; frozen `_yobiUI.less` applies `.opacity(90)` plus the toast box/paint declarations; legacy Toast JS supplies display, timed removal, and click-dismiss behavior evidence. | Only `__root.tsx`'s existing `rootToast` StyleX owner changes opacity from `1` to exact `0.9`. React state/context continues to own typed message rendering, timing, and dismissal; retired plugin presentation classes remain absent. | `/users/loginform?password=reset` renders the exact message and full frozen geometry/paint including opacity 0.9, retains the URL and SPA sentinel, and dismisses from the semantic owner/part button without reload. | Fresh fallback-off production final System Chrome passes 1/1 in 579ms; TypeScript and diff checks pass. | Broad after the toast test, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1097 — standalone login and anonymous project-list contract
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

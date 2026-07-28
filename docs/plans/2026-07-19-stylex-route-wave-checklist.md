@@ -1,5 +1,17 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1098 password-reset toast opacity
+
+- [x] Recheck `common/scripts.scala.html`, `_yobiUI.less`, and legacy Toast JS
+  before changing the React toast owner.
+- [x] Restore the exact frozen `.opacity(90)` result as StyleX opacity `0.9`.
+- [x] Keep React-owned semantic DOM, typed message rendering, dismiss state,
+  and SPA continuity while retiring plugin presentation classes.
+- [x] Pass fresh fallback-off production final System Chrome 1/1 in 579ms,
+  TypeScript, and diff checks.
+- [ ] Resume broad after the password-reset toast, then global fallback audit,
+  screenshot pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1097 standalone login and anonymous project-list contract
 
 - [x] Recheck `user/login.scala.html`, navbar/usermenu partials, routes,

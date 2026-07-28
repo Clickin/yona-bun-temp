@@ -1,5 +1,20 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1098 — password-reset toast opacity — 2026-07-28
+
+The next standalone-login state exposed one real frozen-cascade mismatch:
+React's root toast owner used opacity `1`, while `_yobiUI.less` applies
+`.opacity(90)` to `.yobiToasts .toast`. The shared owner now carries the exact
+computed opacity `0.9`; all existing background, box, typography, duration,
+and transition declarations remain unchanged.
+
+The test now compares the established React-owned semantic toast DOM rather
+than demanding retired legacy plugin presentation classes, while retaining
+strict complete geometry and paint metrics. It also verifies click dismissal
+without page replacement or loss of SPA state. Fresh fallback-off production
+final System Chrome passes 1/1 in 579ms; TypeScript and diff checks pass.
+Broad continuation, global fallback audit, and final pixel lock remain open.
+
 ### Batch 1097 — standalone login and anonymous project-list contract — 2026-07-28
 
 Broad final reached the standalone login exact-DOM state with stale
