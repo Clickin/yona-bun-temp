@@ -1,5 +1,33 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1077 — post-validation stabilization latency isolation — 2026-07-28
+
+The required Scala-goal automation guard completed before this investigation,
+and a fresh frontend production build completed in `20.99s`; build diagnostics
+attribute `88%` of that build time to the StyleX transform. This is build-time
+verification cost, not browser stabilization or product response latency.
+
+The rebuilt `frontend/dist` was then served by the release Rust binary on an
+isolated port and measured in one external System Chrome process. Anonymous
+`/` reached DOM/load at `87–88ms`, visible `#main` at `188ms`, and the complete
+font/image/finite-animation/two-frame settle at `197ms`. `/projects` settled at
+`100ms`. A missing-fixture `/admin/sample` response settled its rendered error
+state at `92ms`; that state is not project-screen parity evidence. Page close
+took `6ms`, context close `9ms`, and browser close `139ms`. The complete
+three-navigation probe, including a `713ms` cold Chrome launch, took `1.454s`.
+The isolated release path therefore has no seconds-long stabilization tail.
+
+A separate managed HMR verification command took `24.90s`: the fresh Rust dev
+compile took `6.01s`, Vite readiness took `1.583s`, and the three-test Playwright
+spec reported `16.4s`; managed server teardown completed immediately. The spec
+had one stale source-token assertion and two passing browser cases, which is a
+test-baseline gap rather than responsiveness evidence. The measured long wall
+time is therefore dominated by per-command dev-server startup and the selected
+spec's browser work. Chrome/worker teardown contention remains a possible
+failure mode from prior interrupted or parallel runs, but did not reproduce in
+this isolated run. Screenshot, geometry, fallback-off, and interaction gates
+remain unchanged.
+
 ### Batch 1076 — authenticated Project direct-row DOM parity — 2026-07-28
 
 The authenticated `/` Project pane now translates each Scala
