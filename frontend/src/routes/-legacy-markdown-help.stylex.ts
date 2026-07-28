@@ -178,12 +178,16 @@ export const markdownHelpContentStyles = stylex.create({
     wordBreak: "break-all",
   },
   taskList: {
+    fontSize: { default: "inherit", [globalBreakpoints.mobile]: "16px" },
     fontWeight: "normal",
     lineHeight: "20px",
     listStyle: "disc",
     marginBottom: "16px",
     marginLeft: "0px",
-    padding: "0px 0px 5px 2.5em",
+    padding: {
+      default: "0px 0px 5px 2.5em",
+      [globalBreakpoints.mobile]: "0px 0px 0px 1.5em",
+    },
   },
   taskCheckbox: { verticalAlign: "top" },
 });

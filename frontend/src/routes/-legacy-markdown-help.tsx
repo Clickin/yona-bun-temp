@@ -334,6 +334,7 @@ export function LegacyMarkdownHelp() {
   const activeClass = (target: MarkdownHelpTarget) => (activeTarget === target ? " active" : "");
   const paneStyle = (target: MarkdownHelpTarget) =>
     stylex.props(contentStyles.pane, activeTarget === target && contentStyles.paneActive);
+  const checklistTaskListResponsiveStyleProps = stylex.props(contentStyles.taskList);
   const toggleActiveTarget = (target: MarkdownHelpTarget) => {
     setActiveTarget((current) => (current === target ? null : target));
   };
@@ -516,7 +517,7 @@ export function LegacyMarkdownHelp() {
                 data-stylex-owner="markdown-help-output"
               >
                 <ul
-                  {...stylex.props(contentStyles.taskList)}
+                  {...checklistTaskListResponsiveStyleProps}
                   data-stylex-owner="markdown-help-task-list"
                 >
                   <li>

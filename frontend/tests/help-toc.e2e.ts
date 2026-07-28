@@ -480,9 +480,21 @@ test("shared markdown help uses typed React targets without legacy target marker
   expect(LEGACY_PAGE_LESS_SOURCE).toContain(".markdown-help-nav {");
   expect(LEGACY_PAGE_LESS_SOURCE).toContain("&.active {");
   expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(".markdown-help .markdown-help-nav li");
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain("font-size: 16px !important;");
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain("padding: 0 0 0 1.5em !important;");
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("MARKDOWN_HELP_NAV_ITEMS.map");
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("active && navStyles.navChoiceActive");
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("onClick={() => toggleActiveTarget(target)}");
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
+    "const checklistTaskListResponsiveStyleProps = stylex.props(contentStyles.taskList)",
+  );
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("{...checklistTaskListResponsiveStyleProps}");
+  expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(
+    'fontSize: { default: "inherit", [globalBreakpoints.mobile]: "16px" }',
+  );
+  expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(
+    '[globalBreakpoints.mobile]: "0px 0px 0px 1.5em"',
+  );
   for (const ownerName of ["root", "list", "item", "label", "choice", "button"]) {
     expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
       `data-stylex-owner="markdown-help-nav-${ownerName}"`,

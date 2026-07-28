@@ -1,5 +1,19 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1094 shared markdown mobile task-list cascade
+
+- [x] Trace checklist DOM through `help/markdown.scala.html`, `_markdown.less`,
+  the later max-720 `_responsive.less` override, and Bootstrap.
+- [x] Restore only mobile task-list 16px type and 1.5em/24px left padding;
+  preserve desktop, React toggling, copy, marker, and checkbox behavior.
+- [x] Name the responsive task-list StyleX composition at the TSX render site
+  without changing emitted DOM, attributes, classes, or behavior.
+- [x] Pass fast-profile RED→GREEN, TypeScript, and diff checks.
+- [x] Pass fresh fallback-off production build/verifier in 21.48s and final
+  System Chrome 1/1 in 1.3s; pass the complete help file 3/3 in 2.9s.
+- [ ] Resume broad final from the next test, then global fallback audit,
+  screenshot pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1093 profile-scoped failure trace cost
 
 - [x] Keep `PW_CHANNEL=chrome`, outside-sandbox execution, fallback-off,

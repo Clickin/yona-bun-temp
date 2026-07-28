@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1094 — shared markdown mobile task-list cascade
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `help/markdown.scala.html` directly emits the checklist `li.markdownTaskList` and rendered `.markdown-wrap ul`; legacy JS toggles only pane activity. `_markdown.less` gives lists `font-size:1.1em` and desktop padding, then max-720 `_responsive.less` applies `font-size:16px !important` and `padding:0 0 0 1.5em !important`; Bootstrap has no later list font override. | Only `markdownHelpContentStyles.taskList` adds mobile 16px and mobile `0 0 0 1.5em`, while retaining desktop inherited font and `0 0 5px 2.5em`. The TSX render site names and reuses the exact StyleX props composition; emitted DOM/classes, React state/events, TanStack routing, copy, other panes, and frozen sources remain unchanged. | At mobile width the checklist task-list computes to 16px and 24px left padding; disc marker, 20px line height, checkbox top alignment, pane toggle, containment, navigation/output order, and plugin-attribute absence stay strict. | Fast profile reproduces 14.3px RED and passes GREEN 1/1. TypeScript and diff checks pass. Fresh fallback-off production build/verifier completes in 21.48s with unchanged fallback hash `8b437655...de18be6`; final retained-trace System Chrome passes 1/1 in 1.3s and the complete help file passes 3/3 in 2.9s. | Broad next test, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1093 — profile-scoped failure trace cost
 
 | Evidence | Harness boundary | Stable contract | Verification | Remaining scope |

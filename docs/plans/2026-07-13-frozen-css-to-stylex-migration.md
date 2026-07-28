@@ -1,5 +1,25 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1094 — shared markdown mobile task-list cascade — 2026-07-28
+
+After the help footer state passed desktop/mobile, the next independent
+shared-markdown check exposed a real production fallback-off gap. The task
+list inherited 13px and retained only `_markdown.less`'s `1.1em`, producing
+14.3px. Legacy's later max-720 `_responsive.less` rule applies
+`font-size:16px !important` and `padding:0 0 0 1.5em !important` to
+`.markdown-wrap ul`, yielding 16px and 24px.
+
+The shared task-list owner now translates those exact mobile final values
+while preserving its desktop inherited font and 2.5em/5px list padding. The
+TSX render site explicitly names and reuses that responsive task-list StyleX
+composition, preserving identical emitted DOM/classes. Scala DOM, React pane
+toggling, TanStack routes, copy, list marker, checkbox, and all other markdown
+panes remain unchanged. Fast profile RED→GREEN passes; a fresh fallback-off
+production build/verifier completes in 21.48s and final System Chrome passes
+the target 1/1 in 1.3s; the complete help desktop/mobile/shared-markdown file
+passes 3/3 in 2.9s. Broad final resumes from the next test; global fallback
+audit and final pixel lock remain open.
+
 ### Batch 1093 — profile-scoped failure trace cost — 2026-07-28
 
 The stabilization audit proved the actual dist screen settles in hundreds of
