@@ -1,5 +1,26 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1082 final-profile harness and Favorite stars
+
+- [x] Replace only the falsely blocked site-admin locator click with a measured,
+  hit-tested real mouse click; retain URL, SPA-marker, visible destination, and
+  strict actionability evidence without force/DOM navigation/timeouts.
+- [x] Replace stale destination presentation-class locators with the existing
+  site-user-list and user-settings stable owner contracts.
+- [x] Re-run the final fallback-off profile: the corrected scenario passes and
+  the suite advances from test 18 to a genuine Favorite star geometry failure
+  after 23 passing tests.
+- [x] Recheck the right-sidenav Favorite project/organization star action
+  against the full frozen cascade: 29×16 is the legacy action box centered
+  inside 26px project and 25px organization rows; leave the 15px glyph,
+  framed-left sidebar, other tabs, and mutation behavior unchanged.
+- [x] External System-Chrome focused normal/fallback-off desktop/mobile runs
+  pass 2/2 each with ARIA, pending/error/success, containment, and overflow.
+- [x] Correct the second stale 29×29 broad-suite assertion to the same
+  legacy-derived 29×16 contract; its exact fallback-off scenario passes 1/1.
+- [ ] Continue the final profile from the next failure; full fallback audit,
+  same-fixture visual lock, and overall completion remain open.
+
 ### 2026-07-28 — Batch 1081 release-dist batch 12 timing and fixtures
 
 - [x] Rebuild production dist and serve it from release Rust against the

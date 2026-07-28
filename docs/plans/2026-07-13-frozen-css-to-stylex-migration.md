@@ -1,5 +1,34 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1082 — final-profile actionability and Favorite star geometry — 2026-07-28
+
+The full fallback-off final profile was restarted with one System-Chrome worker
+and `--max-failures=1`. Its first failure was the previously isolated
+Playwright actionability defect: the visible/stable site-admin Link was inside
+the viewport and hit-testable, but `locator.click()` retried for 30 seconds as
+outside the viewport. The harness now requires a non-null measured box, proves
+the center is inside the viewport and resolves to the Link or its descendant,
+then sends a real `page.mouse.click` at that point. It does not use force,
+DOM click, direct navigation, a longer timeout, or a relaxed destination/SPA
+assertion. Destination checks now use the already-canonical site-user-list and
+user-settings stable owners instead of retired presentation classes. The
+focused scenario passes in 19.7 seconds.
+
+The rerun passed 23 tests before exposing the next fallback-off harness
+classification: it assumed that the authenticated right-sidenav Favorite
+project/organization `29×16` star action should be `29×29`. Full-cascade review
+of the Favorite partials and `_usermenu.less` disproved that assumption:
+legacy establishes a 29×16 action centered inside 26px project and 25px
+organization rows around the unchanged 15px glyph. A trial 29px height expanded
+the project row to 37px and was discarded; no route implementation changed.
+Focused normal and fallback-off System-Chrome desktop/mobile runs pass 2/2
+each, including favored/unfavored/pending/error/success behavior, ARIA,
+containment, and overflow. The broad final profile must continue from the next
+failure; global pixel lock and migration completion remain open.
+The corrected broad run passes the preceding Favorite DOM test in 4.1 seconds;
+the following interaction test exposed the same stale 29×29 assertion and its
+exact fallback-off rerun passes 1/1 after correcting only that expectation.
+
 ### Batch 1081 — release-dist batch 12 timing and fixture classification — 2026-07-28
 
 The freshly rebuilt production dist was served by the release Rust binary and

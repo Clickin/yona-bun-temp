@@ -1,5 +1,12 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1082 — final-profile actionability and Favorite star geometry
+
+| Legacy/evidence | Owner or harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Batch 1074 proved the GNB site-admin Link is visible, within the viewport, and returned by `elementFromPoint` although Playwright locator actionability reports it outside. The site-user-list and user-settings routes have already retired their breadcrumb/sidebar presentation classes in favor of stable owners. | Only the existing authenticated-home E2E interaction measures and hit-tests the Link center before a real mouse click. Destination assertions use existing stable owners. No UI, CSS, timeout, or assertion threshold changes. | Non-null box, in-viewport center, Link/descendant hit target, actual mouse event, exact SPA URL/marker, and visible destination copy. | Focused explicit fallback-off scenario passes in 19.7s; the full final profile advances past this former 30s failure. | Continue classifying later final-profile failures. |
+| `common/usermenu.scala.html`, Favorite organization/project partials, `_usermenu.less` `.star` and `.star-project,.star-org`, the Favorite flex-row cascade, Bootstrap/browser button defaults, and messages establish the right Favorite action box and unchanged 15px glyph. | Full-cascade review rejects the harness's assumed 29px height: the existing authenticated right-sidenav owner already matches the legacy 29×16 action centered inside 26px project and 25px organization rows, so no route implementation change is required. React/TanStack Query mutation, ARIA, classes, icon, copy/order, and error boundary remain; framed-left sidebar and other tabs are excluded. | Project/organization favored, unfavored, pending, error, and success branches; 29×16 action, 15px icon, 26px/25px parent rows, stable owner, plugin-attribute absence, desktop/mobile containment and zero overflow. | New focused System-Chrome normal and fallback-off runs pass 2/2 each; the broad profile exposed two stale 29×29 expectations, a trial 29px height produced a genuine 37px-row regression before being discarded, the preceding broad DOM case passes in 4.1s, and the exact corrected interaction case passes 1/1 fallback-off. | Resume broad final profile, global corpus pixel lock, and overall migration completion. |
+
 ### Batch 1081 — release-dist batch 12 timing and fixture classification
 
 | Evidence | Runtime/harness boundary | Result | Remaining scope |

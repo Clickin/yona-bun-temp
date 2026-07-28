@@ -931,10 +931,34 @@ test("authenticated home empty notifications matches legacy index notifications 
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "gnb-site-admin";
   });
-  await siteAdminLink.scrollIntoViewIfNeeded();
-  await siteAdminLink.click();
+  const siteAdminLinkBox = await siteAdminLink.boundingBox();
+  expect(siteAdminLinkBox).not.toBeNull();
+  const siteAdminLinkCenter = {
+    x: siteAdminLinkBox!.x + siteAdminLinkBox!.width / 2,
+    y: siteAdminLinkBox!.y + siteAdminLinkBox!.height / 2,
+  };
+  const siteAdminLinkPoint = await siteAdminLink.evaluate((link, center) => {
+    const hit = document.elementFromPoint(center.x, center.y);
+    return {
+      insideViewport:
+        center.x >= 0 &&
+        center.x < window.innerWidth &&
+        center.y >= 0 &&
+        center.y < window.innerHeight,
+      resolvesToLink: hit !== null && (hit === link || link.contains(hit)),
+    };
+  }, siteAdminLinkCenter);
+  expect(siteAdminLinkPoint).toEqual({
+    insideViewport: true,
+    resolvesToLink: true,
+  });
+  await page.mouse.click(siteAdminLinkCenter.x, siteAdminLinkCenter.y);
   await expect(page).toHaveURL(`${basePath}/sites/userList`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+    ),
+  ).toHaveText("Users");
   await expect
     .poll(() =>
       page.evaluate(
@@ -957,7 +981,9 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
   await accountLink.evaluate((link) => (link as HTMLAnchorElement).click());
   await expect(page).toHaveURL(`${basePath}/user/editform`);
-  await expect(page.locator(".site-breadcrumb-inner h3")).toHaveText("Account");
+  await expect(page.locator('[data-stylex-owner="user-settings-breadcrumb-heading"]')).toHaveText(
+    "Account",
+  );
   await expect
     .poll(() =>
       page.evaluate(
@@ -1403,7 +1429,7 @@ test("authenticated sidebar translates legacy favorite search and organization b
         const box = button.getBoundingClientRect();
         return { height: Math.round(box.height), width: Math.round(box.width) };
       }),
-  ).toEqual({ height: 29, width: 29 });
+  ).toEqual({ height: 16, width: 29 });
   expect(
     await page.locator("#mySidenav .right-menu").evaluate((menu) => ({
       clientWidth: menu.clientWidth,
