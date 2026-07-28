@@ -791,6 +791,15 @@ test("visual sweep bounds and reports each route inspection", () => {
   assert.match(source, /results\.push\(await inspectPageSafely\(routePage, baseUrl, path, label\)\)/u);
 });
 
+test("visual sweep does not require project chrome from redirect-only leave actions", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /const isRedirectOnlyProjectAction = path\.startsWith\("\/info\/leave\/"\)/u);
+  assert.match(source, /!isRedirectOnlyProjectAction/u);
+  assert.match(source, /if \(isProjectPage && !metrics\.isErrorPage && !metrics\.projectHeader\)/u);
+  assert.match(source, /if \(isProjectPage && !metrics\.isErrorPage && !metrics\.projectMenu\)/u);
+});
+
 test("visual sweep supports bounded full-corpus batches", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
   assert.match(source, /YORAM_SWEEP_BATCH_SIZE/u);

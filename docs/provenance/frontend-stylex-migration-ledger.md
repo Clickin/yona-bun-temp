@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1080 — redirect-only corpus classification
+
+| Legacy evidence | Harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `yona-original/conf/routes` maps `/info/leave/:owner/:project` to `UserApp.leave`; the controller mutates membership and redirects, so there is no persistent Scala screen that owns project chrome. | Only the visual-sweep project-page classifier excludes the exact `/info/leave/` prefix. No route TSX, StyleX, frozen source, pixel threshold, or timeout changes. | Redirect-only leave actions do not require a project header/menu; every visible two-segment project route still does. | Focused source contract pins the exact exclusion and both unchanged `isProjectPage` header/menu gates. | Re-run the bounded corpus after the current validation cycle; global final pixel lock and overall migration completion remain open. |
+
 ### Batch 1079 — authenticated empty-notification DOM and settle-gate parity
 
 | Legacy evidence | React owner boundary | Stable contract | Verification | Remaining scope |

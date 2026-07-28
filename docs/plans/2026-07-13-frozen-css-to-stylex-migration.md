@@ -1,5 +1,16 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1080 — redirect-only corpus classification — 2026-07-28
+
+The full-corpus sweep no longer classifies legacy `UserApp.leave` endpoints
+under `/info/leave/:owner/:project` as persistent project screens. Those
+action-only routes redirect after changing membership and therefore do not own
+the project header or project menu. The exclusion is limited to that exact
+prefix; all visible project routes retain the same project chrome, geometry,
+overflow, screenshot, and comparison gates. A source contract pins both the
+exclusion and the unchanged header/menu checks. Final corpus pixel lock and
+overall migration completion remain open.
+
 ### Batch 1079 — authenticated empty-notification DOM and settle-gate parity — 2026-07-28
 
 The authenticated `/notifications` empty state now restores

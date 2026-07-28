@@ -1,5 +1,16 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1080 redirect-only corpus classification
+
+- [x] Confirm `/info/leave/:owner/:project` is legacy `UserApp.leave`, an
+  action-only redirect endpoint with no persistent Scala screen.
+- [x] Exclude only that exact prefix from project header/menu requirements.
+- [x] Retain all project chrome, geometry, overflow, screenshot, and comparison
+  gates for visible project routes.
+- [x] Pin the exclusion and unchanged project chrome checks with a focused
+  harness source contract.
+- [ ] Global corpus pixel lock and overall migration completion remain open.
+
 ### 2026-07-28 — Batch 1079 authenticated empty-notification DOM and settle gate
 
 - [x] Restore the exact legacy

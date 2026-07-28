@@ -1588,7 +1588,11 @@ async function inspectPage(page, baseUrl, path, label) {
     };
   });
   trace("metrics");
-  const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
+  const isRedirectOnlyProjectAction = path.startsWith("/info/leave/");
+  const isProjectPage =
+    /^\/[^/?#]+\/[^/?#]+/u.test(path) &&
+    !rootNames.has(path.split("/")[1]) &&
+    !isRedirectOnlyProjectAction;
   const isNotificationFragment = path.startsWith("/notification?");
   const isFramedShell = path === "/sidebar" || path.startsWith("/sidebar?");
   const effectiveRequestFailures = requestFailures.filter(
