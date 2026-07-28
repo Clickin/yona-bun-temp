@@ -553,10 +553,10 @@ function HomeScreen({
                     {notificationItems.length === 0 ? (
                       <div
                         {...stylex.props(authenticatedHomeNotificationStyles.empty)}
+                        className={`warning-none ${stylex.props(authenticatedHomeNotificationStyles.empty).className}`}
                         data-stylex-owner="authenticated-home-notification-empty"
                       >
-                        <i className="yobicon-danger" />
-                        {t("notification.none")}
+                        <i className="yobicon-danger" /> {t("notification.none")}
                       </div>
                     ) : (
                       notificationItems.map((notification) => (

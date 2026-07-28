@@ -1,5 +1,33 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1079 — authenticated empty-notification DOM and settle-gate parity — 2026-07-28
+
+The authenticated `/notifications` empty state now restores
+`partial_notifications.scala.html`'s literal
+`ul.activity-streams.notification-wrap.unstyled > div.warning-none >
+i.yobicon-danger` skeleton while retaining the existing StyleX owner and
+React/TanStack query behavior. The populated broad fallback contract no longer
+mistakes the required `activity-streams` class for the retired source-less
+`.notification-page .activity-streams` bridge: it requires the visible list
+classes and row owner and excludes only `.notification-page`.
+
+The two affected browser cases now navigate to `domcontentloaded` and use their
+existing visible owner, polling, desktop/mobile geometry, and paint assertions
+as the real settle gate. This removes an unrelated full-page `load` wait that
+repeatedly consumed the 30-second test timeout on Vite/HMR without relaxing any
+pixel, geometry, interaction, or assertion timeout. External System Chrome
+passes the focused normal and fallback-off pair 2/2 each, and the complete
+fallback-off consumer graph passes 81 tests with one intentional skip. Fresh
+production build and StyleX verification pass with the unchanged frozen
+fallback hash `8b437655...de18be6`. Live legacy and release-dist empty-state
+captures under `output/playwright/batch-1079/` were inspected at 1366×900 and
+390×844. The warning geometry matches exactly at
+`887.78125×50 @ x10/y376.078125` and `390×50 @ x0/y416.078125`; background,
+text color, 16px type, 15px/20px padding, 6px radius, Korean copy, literal icon
+spacing, and document width also match. The approved Yoram/navbar contact and
+footer/provider differences remain outside this owner. Final corpus pixel lock
+and overall migration completion remain open.
+
 ### Batch 1078 — authenticated Recent History row DOM parity — 2026-07-28
 
 The authenticated `/` Recent History pane now restores the Scala partial's

@@ -1,5 +1,26 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1079 authenticated empty-notification DOM and settle gate
+
+- [x] Restore the exact legacy
+  `ul.activity-streams.notification-wrap.unstyled > div.warning-none >
+  i.yobicon-danger` empty-state skeleton without changing StyleX paint or
+  React/TanStack behavior.
+- [x] Correct the broad fallback contract to preserve the required
+  `activity-streams notification-wrap unstyled` list and exclude only the dead
+  `.notification-page` bridge.
+- [x] Replace only the affected full-page `load` waits with
+  `domcontentloaded`; retain visible-owner, polling, desktop/mobile geometry,
+  paint, interaction, and timeout gates.
+- [x] External System-Chrome focused normal/fallback-off pairs pass 2/2 each;
+  the complete fallback-off consumer graph passes 81 tests with one
+  intentional skip.
+- [x] Fresh production build/StyleX verifier passes; inspected live
+  legacy/release-dist desktop/mobile pairs under
+  `output/playwright/batch-1079/` match exact empty-warning geometry, paint,
+  Korean copy, literal icon spacing, and document width.
+- [ ] Global corpus pixel lock and overall migration completion remain open.
+
 ### 2026-07-28 — Batch 1078 authenticated Recent History row DOM parity
 
 - [x] Restore the Scala partial's separate `.project-item` wrapper and translate

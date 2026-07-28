@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1079 — authenticated empty-notification DOM and settle-gate parity
+
+| Legacy evidence | React owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `yona-original/app/views/index/notifications.scala.html` includes `index/partial_notifications.scala.html`, whose zero-result branch is exactly `ul.activity-streams.notification-wrap.unstyled > div.warning-none > i.yobicon-danger + notification.none`; frozen `_page.less` supplies the nested warning paint and Bootstrap supplies the list reset. | Only the existing authenticated HOME empty-warning owner gains the missing visible `warning-none` class and literal icon/copy whitespace. StyleX still owns its declarations, React/TanStack Query owns state/data, and no frozen source, theme, fallback stylesheet, or numeric value changes. | Exact direct-child skeleton and serialized icon/whitespace/copy, stable empty owner, no plugin attributes, required list classes, populated row ownership, and absence of only the dead `.notification-page` bridge. | Raw direct-child RED becomes focused external System-Chrome normal/fallback-off GREEN 2/2 each. The affected navigations stop at `domcontentloaded` and retain the existing visible-owner/poll/desktop/mobile geometry and paint gates. The complete fallback-off consumer graph is GREEN 81 passed / 1 intentional skip; typecheck and fresh production build/StyleX verifier pass with frozen hash `8b437655...de18be6`. | Inspected System-Chrome pairs under `output/playwright/batch-1079/` match exact warning geometry at desktop `887.78125×50 @ x10/y376.078125` and mobile `390×50 @ x0/y416.078125`, plus paint, Korean copy, literal spacing, and document width. Approved navbar/footer differences remain outside this owner. Global final corpus pixel lock and overall migration completion remain open. |
+
 ### Batch 1078 — authenticated Recent History row DOM parity
 
 `common/usermenu.scala.html`, `common/usermenu_tab_content_list.scala.html`,

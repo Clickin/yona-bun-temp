@@ -2277,17 +2277,21 @@ test("notifications output retains the runtime fallback boundary without its dea
     ? configuredBasePath.slice(0, -1)
     : configuredBasePath;
   await mockAuthenticatedNotificationSession(page);
-  await page.goto(`${basePath}/notifications`);
+  await page.goto(`${basePath}/notifications`, { waitUntil: "domcontentloaded" });
 
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
   const list = page.locator('[data-stylex-owner="authenticated-home-notification-list"]');
   await expect(list).toBeVisible();
+  await expect(list).toHaveClass(/\bactivity-streams\b/u);
+  await expect(list).toHaveClass(/\bnotification-wrap\b/u);
+  await expect(list).toHaveClass(/\bunstyled\b/u);
   await expect(
     list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
   ).toHaveCount(1);
-  await expect(page.locator(".notification-page, .activity-streams")).toHaveCount(0);
+  await expect(list.locator(":scope > .warning-none")).toHaveCount(0);
+  await expect(page.locator(".notification-page")).toHaveCount(0);
 });
 
 test("secret setup output retains active fallback classes without secret-page branches", async ({

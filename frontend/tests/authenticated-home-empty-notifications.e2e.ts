@@ -120,7 +120,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
             <li></li>
           </ul>
           <ul class="activity-streams notification-wrap unstyled">
-            <div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>
+            <div class="warning-none"><i class="yobicon-danger"></i> No notification has been received.</div>
           </ul>
         </div>
         <div class="span4 index-menu right-menu span-hard-wrap"></div>
@@ -143,7 +143,7 @@ const EXPECTED_DIRECT_NOTIFICATIONS = EXPECTED_AUTHENTICATED_HOME.replace(
 );
 
 const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICATIONS.replace(
-  `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
+  `<div class="warning-none"><i class="yobicon-danger"></i> No notification has been received.</div>`,
   `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
     <div class="stream-desc">
@@ -2203,7 +2203,7 @@ test("direct notifications route matches legacy Application.notifications empty 
     });
   });
 
-  await page.goto(`${basePath}/notifications`);
+  await page.goto(`${basePath}/notifications`, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveTitle("Yoram");
   await expect
     .poll(() =>
@@ -2218,9 +2218,36 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(
     page.locator('[data-stylex-owner="authenticated-home-notification-list"]'),
   ).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
-  ).toContainText("No notification");
+  const emptyNotification = page.locator(
+    "ul.activity-streams.notification-wrap.unstyled > div.warning-none",
+  );
+  await expect(emptyNotification).toHaveCount(1);
+  await expect(emptyNotification).toHaveAttribute(
+    "data-stylex-owner",
+    "authenticated-home-notification-empty",
+  );
+  await expect(emptyNotification.locator(":scope > i.yobicon-danger")).toHaveCount(1);
+  await expect(emptyNotification).toHaveText("No notification has been received.");
+  await expect(emptyNotification.locator(":scope > *")).toHaveCount(1);
+  expect(await emptyNotification.evaluate((element) => element.innerHTML)).toBe(
+    '<i class="yobicon-danger"></i> No notification has been received.',
+  );
+  for (const attribute of [
+    "data-toggle",
+    "data-placement",
+    "data-action",
+    "data-href",
+    "data-url",
+    "data-dismiss",
+    "data-target",
+    "data-trigger",
+    "data-backdrop",
+    "data-spy",
+    "data-provider",
+    "data-loading-text",
+  ]) {
+    await expect(emptyNotification).not.toHaveAttribute(attribute);
+  }
   await expect(
     page.locator(
       ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
@@ -2772,7 +2799,7 @@ test("direct notifications route appends legacy notification-more rows", async (
     await canonicalizeHtml(
       page,
       EXPECTED_DIRECT_NOTIFICATIONS.replace(
-        `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
+        `<div class="warning-none"><i class="yobicon-danger"></i> No notification has been received.</div>`,
         `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button">More</button></li>`,
       ).replaceAll("__BASE_PATH__", basePath),
     ),
@@ -2790,7 +2817,7 @@ test("direct notifications route appends legacy notification-more rows", async (
     await canonicalizeHtml(
       page,
       EXPECTED_DIRECT_NOTIFICATIONS.replace(
-        `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
+        `<div class="warning-none"><i class="yobicon-danger"></i> No notification has been received.</div>`,
         expectedNotificationRows([...firstPageItems, nextPageItem], basePath),
       ).replaceAll("__BASE_PATH__", basePath),
     ),
