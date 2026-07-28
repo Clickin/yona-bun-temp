@@ -33,8 +33,16 @@ assert(
 );
 
 const builtHtml = await fs.readFile(path.join(frontendRoot, "dist/index.html"), "utf8");
-const fallbackHref = `./${manifest.artifact}`;
-assert(builtHtml.includes(`href="${fallbackHref}"`), "production HTML misses relative fallback");
+const configuredBasePath = (process.env.VITE_YONA_BASE_PATH ?? "").replace(/^\/|\/$/gu, "");
+const assetPrefix = configuredBasePath === "" ? "./" : `/${configuredBasePath}/`;
+const fallbackHref = `${assetPrefix}${manifest.artifact}`;
+const fallbackEnabled = process.env.VITE_DISABLE_LEGACY_FALLBACK !== "1";
+assert(
+  builtHtml.includes(`href="${fallbackHref}"`) === fallbackEnabled,
+  fallbackEnabled
+    ? "production HTML misses relative fallback"
+    : "fallback-off production HTML still links the legacy fallback",
+);
 assert(!builtHtml.includes("stylesheets/yobi.css"), "production HTML still links yobi.css");
 assert(!builtHtml.includes("stylesheets/usermenu.css"), "production HTML still links usermenu.css");
 assert(
@@ -59,11 +67,17 @@ assert(
   "StyleX CSS does not declare legacy before its priority layers",
 );
 assert(stylexCss.includes("--yoram-stylex-root-boundary: stylex"), "root StyleX probe missing");
-assert(
-  builtHtml.indexOf(fallbackHref) < builtHtml.indexOf(`./assets/${stylexFile}`),
-  "legacy fallback link must precede the production StyleX asset",
+if (fallbackEnabled) {
+  assert(
+    builtHtml.indexOf(fallbackHref) < builtHtml.indexOf(`${assetPrefix}assets/${stylexFile}`),
+    "legacy fallback link must precede the production StyleX asset",
+  );
+}
+console.log(
+  fallbackEnabled
+    ? `verified ${manifest.artifactSha256} before ${stylexFile}`
+    : `verified ${manifest.artifactSha256}; fallback link disabled before ${stylexFile}`,
 );
-console.log(`verified ${manifest.artifactSha256} before ${stylexFile}`);
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");

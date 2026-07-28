@@ -1,12 +1,22 @@
 import { spawn } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const STYLEX_VERIFICATION_PROFILES = Object.freeze({
   fast: Object.freeze({
     name: "fast",
-    required: ["focused fallback-off Playwright", "desktop/mobile target metrics", "source and provenance checks"],
-    deferred: ["live legacy screenshot pair", "global fallback consumer audit", "full fallback-off suite", "production build"],
+    required: [
+      "focused fallback-off Playwright",
+      "desktop/mobile target metrics",
+      "source and provenance checks",
+    ],
+    deferred: [
+      "live legacy screenshot pair",
+      "global fallback consumer audit",
+      "full fallback-off suite",
+      "production build",
+    ],
   }),
   final: Object.freeze({
     name: "final",
@@ -39,7 +49,24 @@ export function stylexVerificationEnvironment(profileName) {
     VITE_DISABLE_LEGACY_FALLBACK: "1",
     YONA_E2E_FALLBACK_MODE: "fallback-off",
     PW_CHANNEL: "chrome",
+    ...(profile.name === "final"
+      ? {
+          YONA_E2E_FRONTEND_MODE: "preview",
+          VITE_YONA_BASE_PATH: "/yona",
+        }
+      : {}),
   };
+}
+
+export function stylexVerificationBuildRequired(profileName) {
+  return resolveStylexVerificationProfile(profileName).name === "final";
+}
+
+export function injectPreviewRuntimeConfig(html, basePath) {
+  return html.replace(
+    "<head>",
+    `<head><script>window.__YONA_RUNTIME_CONFIG__ ||= {basePath:${JSON.stringify(basePath)}};</script>`,
+  );
 }
 
 function usage() {
@@ -63,7 +90,9 @@ async function main() {
   }
 
   const separatorIndex = args.indexOf("--");
-  const forwardedArgs = args.slice(separatorIndex === -1 ? 0 : separatorIndex + 1).filter((arg) => arg !== "--profile" && arg !== profileName);
+  const forwardedArgs = args
+    .slice(separatorIndex === -1 ? 0 : separatorIndex + 1)
+    .filter((arg) => arg !== "--profile" && arg !== profileName);
   if (forwardedArgs.length === 0) {
     throw new Error(usage());
   }
@@ -76,14 +105,42 @@ async function main() {
     console.log(`[stylex-harness] deferred to final lock: ${profile.deferred.join(", ")}`);
   }
 
-  const child = spawn(process.execPath, [path.join(scriptDirectory, "run-playwright-e2e.mjs"), ...forwardedArgs], {
-    cwd: path.resolve(scriptDirectory, ".."),
-    env,
-    stdio: "inherit",
-  });
+  if (stylexVerificationBuildRequired(profile.name)) {
+    console.log("[stylex-harness] building fallback-off production frontend");
+    const build = spawn("pnpm", ["--dir", "frontend", "build"], {
+      cwd: path.resolve(scriptDirectory, ".."),
+      env,
+      stdio: "inherit",
+    });
+    const buildCode = await new Promise((resolve, reject) => {
+      build.once("error", reject);
+      build.once("exit", (exitCode, signal) => resolve(signal ? 1 : (exitCode ?? 1)));
+    });
+    if (buildCode !== 0) {
+      return buildCode;
+    }
+    const indexPath = path.join(
+      path.resolve(scriptDirectory, ".."),
+      "frontend",
+      "dist",
+      "index.html",
+    );
+    const indexHtml = await readFile(indexPath, "utf8");
+    await writeFile(indexPath, injectPreviewRuntimeConfig(indexHtml, "/yona"));
+  }
+
+  const child = spawn(
+    process.execPath,
+    [path.join(scriptDirectory, "run-playwright-e2e.mjs"), ...forwardedArgs],
+    {
+      cwd: path.resolve(scriptDirectory, ".."),
+      env,
+      stdio: "inherit",
+    },
+  );
   const code = await new Promise((resolve, reject) => {
     child.once("error", reject);
-    child.once("exit", (exitCode, signal) => resolve(signal ? 1 : exitCode ?? 1));
+    child.once("exit", (exitCode, signal) => resolve(signal ? 1 : (exitCode ?? 1)));
   });
   return code;
 }

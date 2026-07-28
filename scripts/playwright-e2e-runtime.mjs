@@ -61,6 +61,14 @@ export function createPlaywrightE2eRunToken() {
   return `${Date.now().toString(36)}-${process.pid}-${crypto.randomBytes(3).toString("hex")}`;
 }
 
+export function resolveE2eFrontendViteCommand(mode) {
+  return mode === "preview" ? "preview" : "dev";
+}
+
+export function resolveE2eFrontendViteBaseArgs(mode, basePath) {
+  return mode === "preview" ? ["--base", `${basePath.replace(/\/$/u, "")}/`] : [];
+}
+
 export async function reserveOpenPort() {
   return await new Promise((resolve, reject) => {
     const server = net.createServer();

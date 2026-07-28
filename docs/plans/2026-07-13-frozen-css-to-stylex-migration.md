@@ -1,5 +1,25 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1084 — production-dist final-profile runtime — 2026-07-28
+
+The final fallback-off profile now builds once and serves `frontend/dist`
+through Vite preview instead of paying Vite/HMR's cold transform cost inside
+the first browser navigation. The former server-ready signal preceded a
+1,213-module browser transform and could consume the full 30-second navigation
+timeout; production-dist focused flows now render in 0.3–1.4 seconds after the
+unchanged verified build. Fast/focused development remains on HMR.
+
+The mounted preview build explicitly uses `/yona/` for asset URLs and injects
+the matching runtime base-path config. This is required for deep links:
+relative production URLs made `/yona/users/loginform` request every chunk from
+`/yona/users/assets/*`. The final verifier supports both the default relative
+release build and an explicitly mounted build while continuing to require the
+frozen fallback artifact/hash and fallback-link absence. The focused auth
+deep-link passes in 1.4 seconds; a broad run passes 29 tests before exposing a
+real sidebar pane class contract failure rather than a stabilization delay.
+That route defect and the stale create-link source-shape assertion remain
+separate goal work; global fallback audit and final pixel lock remain open.
+
 ### Batch 1083 — scoped GNB search-toggle class parity — 2026-07-28
 
 The full fallback-off profile advanced through 25 tests and stopped in 10ms on

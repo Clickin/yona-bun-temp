@@ -4,7 +4,7 @@ import babel from "@rolldown/plugin-babel";
 import type { IncomingMessage } from "node:http";
 import { fileURLToPath, URL } from "node:url";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { defineConfig, loadEnv, normalizePath } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import { legacyFallbackEnabled, transformLegacyFallbackLink } from "./src/legacy-fallback-mode";
 
 function normalizeBasePath(input: string | undefined): string {
@@ -84,7 +84,8 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
-    base: mode === "production" ? "./" : basePath === "/" ? "/" : `${basePath}/`,
+    base:
+      mode === "production" && basePath === "/" ? "./" : basePath === "/" ? "/" : `${basePath}/`,
     plugins: [
       stylex.vite({
         useCSSLayers: {

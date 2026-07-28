@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { normalizePlaywrightArgs } from "./playwright-e2e-args.mjs";
-import { buildPlaywrightE2eRuntime } from "./playwright-e2e-runtime.mjs";
+import {
+  buildPlaywrightE2eRuntime,
+  resolveE2eFrontendViteBaseArgs,
+  resolveE2eFrontendViteCommand,
+} from "./playwright-e2e-runtime.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, "..");
@@ -59,6 +63,13 @@ test("buildPlaywrightE2eRuntime gives each run its own isolated runtime director
   assert.notEqual(first.backendEnv.YONA_DEV_RUNTIME_DIR, second.backendEnv.YONA_DEV_RUNTIME_DIR);
 });
 
+test("final verification can serve the built frontend without changing fast dev mode", () => {
+  assert.equal(resolveE2eFrontendViteCommand("preview"), "preview");
+  assert.equal(resolveE2eFrontendViteCommand(undefined), "dev");
+  assert.deepEqual(resolveE2eFrontendViteBaseArgs("preview", "/yona"), ["--base", "/yona/"]);
+  assert.deepEqual(resolveE2eFrontendViteBaseArgs(undefined, "/yona"), []);
+});
+
 test("normalizePlaywrightArgs keeps grep options ahead of file filters", () => {
   assert.deepEqual(
     normalizePlaywrightArgs([
@@ -73,10 +84,10 @@ test("normalizePlaywrightArgs keeps grep options ahead of file filters", () => {
     ],
   );
 
-  assert.deepEqual(
-    normalizePlaywrightArgs(["search-parity.e2e.ts", "--grep=hostile"]),
-    ["--grep=hostile", "search-parity.e2e.ts"],
-  );
+  assert.deepEqual(normalizePlaywrightArgs(["search-parity.e2e.ts", "--grep=hostile"]), [
+    "--grep=hostile",
+    "search-parity.e2e.ts",
+  ]);
 });
 
 test("normalizePlaywrightArgs preserves option values and positional order", () => {

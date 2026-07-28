@@ -1,5 +1,19 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1084 production-dist final-profile runtime
+
+- [x] Keep fast/focused development on Vite HMR and move only the final
+  fallback-off profile to a freshly verified production dist.
+- [x] Build final assets for the explicit `/yona/` mount, inject the matching
+  runtime config, and preserve test-level runtime overrides.
+- [x] Teach the build verifier to accept default relative or explicit mounted
+  asset prefixes without weakening fallback hash/link/layer checks.
+- [x] Pass the auth deep-link in 1.4s and advance the broad profile through 29
+  tests with ordinary render times of 0.3–2.5s.
+- [ ] Fix the newly exposed left-sidebar pane class contract through the
+  frontend goal worker, classify the stale source-only create-link assertion,
+  and resume the global pixel lock.
+
 ### 2026-07-28 — Batch 1083 scoped GNB search-toggle class parity
 
 - [x] Run the full fallback-off profile through test 26 and distinguish its

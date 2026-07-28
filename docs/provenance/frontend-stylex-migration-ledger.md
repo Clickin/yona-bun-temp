@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1084 — production-dist final-profile runtime
+
+| Evidence | Harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| Vite reported ready before the first browser navigation transformed 1,213 modules; the cold HMR page could consume 30s while a second page on the same server completed in about 1.7s. A relative production build loaded from `/yona/users/loginform` resolved chunks beneath `/yona/users/assets/*`, producing deterministic 404s rather than a React settle delay. | Only the final verification profile performs a fallback-off production build and serves dist with an explicit `/yona/` asset/runtime base. Fast mode remains Vite dev. The build verifier derives its expected asset prefix from the explicit build base and retains the frozen artifact, hash, link-presence, order, and StyleX-layer contracts. | System Google Chrome outside the sandbox, verified fallback-off dist, mounted deep-link chunk loading, existing strict interaction/geometry/pixel assertions, no timeout or screenshot-threshold relaxation. | Focused create links pass 2/2 in 2.1s; focused auth aliases pass 1/1 in 1.4s. The broad run passes 29 tests with ordinary cases at 0.3–0.5s and larger parity cases at 1.4–2.5s, then fails on a genuine `user-project-list` count mismatch. | Route-worker correction for the sidebar pane class contract, stale source-only link assertion classification, broad fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1083 — scoped GNB search-toggle class parity
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
