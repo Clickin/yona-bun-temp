@@ -1,5 +1,19 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1070 — authenticated sidebar transition and icon parity — 2026-07-28
+
+The authenticated framed sidebar now separates its visual expansion state from
+the logical `open` state: the existing 0.5s legacy-derived width transition is
+preserved, and `open` is committed on the transition end rather than during
+the first animation frame. The close arrow and refresh glyphs own the exact
+legacy Yobicon font contracts (`_page.less` `.pin-in-sidebar` and
+`public/stylesheets/yobicon/style.css` arrow/refresh mappings), so fallback-off
+geometry remains 271px sidebar / x=271 main / 24x26 close pin and the refresh
+tab remains 19px wide. Focused fallback-off System Chrome passes 1/1 on the
+desktop/mobile geometry and interaction state. The legacy three-pane sidebar
+DOM difference remains a separate documented gap; full fallback-off/global
+audit and final pixel lock remain open.
+
 ### Batch 1069 — legacy auth alias route parity — 2026-07-28
 
 Legacy compatibility aliases are now explicit TanStack file routes: `/login`

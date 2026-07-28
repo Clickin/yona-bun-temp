@@ -1635,6 +1635,21 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
   await openPin.click();
 
   const leftSidebar = page.locator("#sidebar");
+  await expect(leftSidebar).toHaveAttribute("data-sidebar-motion", "opening");
+  const sidebarTransitionSettled = leftSidebar.evaluate((element) => {
+    return new Promise<void>((resolve) => {
+      const handleTransitionEnd = (event: TransitionEvent) => {
+        if (event.target !== element || event.propertyName !== "width") {
+          return;
+        }
+        element.removeEventListener("transitionend", handleTransitionEnd);
+        resolve();
+      };
+      element.addEventListener("transitionend", handleTransitionEnd);
+    });
+  });
+  await sidebarTransitionSettled;
+  await expect(leftSidebar).toHaveAttribute("data-sidebar-motion", "open");
   const closePin = leftSidebar.getByRole("button", { name: "Sidebar" });
   await expect(leftSidebar).toBeVisible();
   await expect(
@@ -1685,7 +1700,6 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
     tabTops: [44, 44, 44, 78],
     tabWidths: [74, 68, 118, 19],
   });
-
   expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
   await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);

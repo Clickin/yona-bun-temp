@@ -1601,6 +1601,8 @@ export function SiteLayoutShell({
   const [leftSidebarMotion, setLeftSidebarMotion] = React.useState<LeftSidebarMotion>(() =>
     isLeftSidebarOpen ? "open" : "closed",
   );
+  const [leftSidebarMotionExpanded, setLeftSidebarMotionExpanded] =
+    React.useState(isLeftSidebarOpen);
   const [activeLeftSidebarTab, setActiveLeftSidebarTab] =
     React.useState<SidebarTab>(readStoredLeftSidebarTab);
   const globalSidebarOpenPinRef = React.useRef<HTMLButtonElement>(null);
@@ -1646,7 +1648,7 @@ export function SiteLayoutShell({
     if (leftSidebarMotion !== "opening") {
       return;
     }
-    const frameId = window.requestAnimationFrame(() => setLeftSidebarMotion("open"));
+    const frameId = window.requestAnimationFrame(() => setLeftSidebarMotionExpanded(true));
     return () => window.cancelAnimationFrame(frameId);
   }, [leftSidebarMotion]);
   React.useEffect(() => {
@@ -1661,11 +1663,13 @@ export function SiteLayoutShell({
     setLeftSidebarMotion((motion) =>
       motion === "closed" || motion === "closing" ? "opening" : motion,
     );
+    setLeftSidebarMotionExpanded(false);
     writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "true");
   };
   const handleLeftSidebarClose = () => {
     setIsLeftSidebarOpen(false);
     shouldRestoreSidebarOpenPinFocus.current = true;
+    setLeftSidebarMotionExpanded(false);
     setLeftSidebarMotion((motion) => (motion === "closed" ? "closed" : "closing"));
     writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "false");
   };
@@ -1680,9 +1684,11 @@ export function SiteLayoutShell({
     }
     setLeftSidebarMotion((motion) => {
       if (motion === "opening") {
+        setLeftSidebarMotionExpanded(true);
         return "open";
       }
       if (motion === "closing") {
+        setLeftSidebarMotionExpanded(false);
         return "closed";
       }
       return motion;
@@ -1715,6 +1721,7 @@ export function SiteLayoutShell({
           runtimeConfig={runtimeConfig}
           session={session ?? {}}
           motion={leftSidebarMotion}
+          motionExpanded={leftSidebarMotionExpanded}
           onTransitionEnd={handleLeftSidebarTransitionEnd}
           workspace={navbarWorkspaceQuery.data}
         />
@@ -3031,14 +3038,23 @@ const leftSidebarClosePinStyles = stylex.create({
     },
   },
   icon: {
+    "::before": { content: '"\\e031"' },
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
     cursor: {
       default: "auto",
       ":hover": "pointer",
     },
     display: "inline-block",
     fontSize: "18px",
-    lineHeight: "18px",
+    lineHeight: 1,
     padding: "4px 2px",
+    textDecoration: "none",
+    verticalAlign: "baseline",
     ":hover": {
       color: homeColors.leftSidebarClosePinInteractionText,
     },
@@ -3062,6 +3078,7 @@ function LegacyFramedSidebar({
   activeTab,
   basePath,
   motion,
+  motionExpanded,
   onClose,
   onRefresh,
   onTabChange,
@@ -3073,6 +3090,7 @@ function LegacyFramedSidebar({
   activeTab: SidebarTab;
   basePath: string;
   motion: LeftSidebarMotion;
+  motionExpanded: boolean;
   onClose: () => void;
   onRefresh: () => void;
   onTabChange: (tab: SidebarTab) => void;
@@ -3107,7 +3125,7 @@ function LegacyFramedSidebar({
         stylex.props(
           leftSidebarOuterShellStyles.shell,
           leftSidebarOuterShellStyles.motion,
-          motion !== "open" && leftSidebarOuterShellStyles.closed,
+          !motionExpanded && leftSidebarOuterShellStyles.closed,
         ).className
       }`}
       data-stylex-owner="left-sidebar-outer-shell"
@@ -3220,7 +3238,10 @@ function LegacyFramedSidebar({
             onClick={onRefresh}
             type="button"
           >
-            <i aria-hidden="true" className="yobicon-refresh" />
+            <i
+              aria-hidden="true"
+              className={`yobicon-refresh ${stylex.props(leftSidebarRefreshIconStyles.icon).className}`}
+            />
           </button>
         </li>
       </ul>
@@ -3277,6 +3298,23 @@ const leftSidebarTabPanelStyles = stylex.create({
   },
   activePane: {
     display: "block",
+  },
+});
+
+const leftSidebarRefreshIconStyles = stylex.create({
+  icon: {
+    "::before": { content: '"\\e1d8"' },
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
   },
 });
 

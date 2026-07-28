@@ -1,5 +1,16 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1070 authenticated sidebar transition and icon parity
+
+- [x] Preserve the legacy-derived open/close animation while committing the
+  logical sidebar state only after the width transition settles.
+- [x] Restore the fallback-off Yobicon arrow and refresh contracts from the
+  frozen icon stylesheet; desktop/mobile sidebar, main, close-pin, refresh,
+  storage, and interaction checks pass 1/1 in external System Chrome.
+- [ ] Rebuild the remaining legacy three-pane sidebar DOM gap in a separate
+  route-state wave; full fallback-off/global audit and final pixel lock remain
+  open.
+
 ### 2026-07-28 — Batch 1069 legacy auth alias route parity
 
 - [x] Add explicit `/login`, `/register`, and `/forgot-password` TanStack

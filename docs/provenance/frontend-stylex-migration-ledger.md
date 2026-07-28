@@ -1,5 +1,22 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1070 — authenticated sidebar transition and icon parity
+
+`yona-original/app/views/common/navbar.scala.html` and
+`yona-original/app/views/sidebar.scala.html` establish the framed shell and
+pin controls; frozen `_page.less` `.pin`/`.pin-in-sidebar` plus
+`yona-original/public/stylesheets/yobicon/style.css` establish the exact
+transition-visible box and Yobicon arrow/refresh mappings. React keeps the
+button semantics and React state/events, but delays the logical `open` state
+until the existing width transition ends and directly owns the missing arrow
+and refresh font contracts in `frontend/src/routes/-home-route-screen.tsx`.
+No arbitrary geometry value, frozen source edit, or animation removal was
+introduced. `frontend/tests/authenticated-home-empty-notifications.e2e.ts`
+waits for the real transition end and verifies desktop/mobile sidebar/main,
+close-pin, refresh-tab, storage, and interaction metrics in fallback-off
+System Chrome: 1/1 passed. The sidebar's legacy three-pane DOM remains a
+separate gap; global/full fallback-off audit and final pixel lock remain open.
+
 ### Batch 1069 — legacy auth alias route parity
 
 `yona-original/conf/routes:129-133,169-170` defines the canonical auth
