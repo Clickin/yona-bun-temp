@@ -8,6 +8,22 @@ const legacySource = new URL(
   "../../yona-original/app/views/migration/home.scala.html",
   import.meta.url,
 );
+const legacyMigrationLessSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_migration.less",
+  import.meta.url,
+);
+const legacyYobiUiLessSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+  import.meta.url,
+);
+const legacyBootstrapSource = new URL(
+  "../../yona-original/public/bootstrap/css/bootstrap.css",
+  import.meta.url,
+);
+const legacyYobiconSource = new URL(
+  "../../yona-original/public/stylesheets/yobicon/style.css",
+  import.meta.url,
+);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function openMigration(page: Page) {
@@ -21,26 +37,50 @@ async function openMigration(page: Page) {
 }
 
 test.describe("StyleX migration disabled shell", () => {
-  test("uses route paint theme ownership while retaining shared migration fallbacks", async () => {
-    const [route, routeTheme, theme, legacy] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(routeThemeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(legacySource, "utf8"),
-    ]);
+  test("owns the frozen migration consumer cascade without fallback CSS", async () => {
+    const [route, routeTheme, theme, legacy, migrationLess, yobiUiLess, bootstrap, yobicon] =
+      await Promise.all([
+        readFile(routeSource, "utf8"),
+        readFile(routeThemeSource, "utf8"),
+        readFile(themeSource, "utf8"),
+        readFile(legacySource, "utf8"),
+        readFile(legacyMigrationLessSource, "utf8"),
+        readFile(legacyYobiUiLessSource, "utf8"),
+        readFile(legacyBootstrapSource, "utf8"),
+        readFile(legacyYobiconSource, "utf8"),
+      ]);
     expect(route).toContain('data-stylex-owner="migration-disabled-shell"');
     expect(route).toContain("styles.projectList");
+    expect(route).toContain("styles.progress");
     expect(route).toContain("styles.progressBar");
+    expect(route).toContain("styles.statusTable");
+    expect(route).toContain("styles.disabledDangerButton");
     expect(route).toContain('data-stylex-owner="migration-progress-bar"');
     expect(route).not.toContain('style={{ width: "0%" }}');
     expect(route).toContain('fontSize: "30px"');
     expect(route).toContain("backgroundColor: migrationTheme.boardSurface");
+    expect(route).toContain('lineHeight: "20px"');
+    expect(route).toContain('borderRadius: "2px"');
+    expect(route).toContain('"::before": { content: \'"\\\\e01c"\' }');
     expect(routeTheme).toContain('boardSurface: "#333333"');
     expect(routeTheme).toContain('paneHeaderSurface: "#e36b23"');
     expect(theme).not.toMatch(/^\s+migrationDisabled[A-Z]/m);
     expect(legacy).toContain(
       'style="width: {{vm.importResult.count/vm.expectedImportCount*100 || 0 }}%"',
     );
+    expect(migrationLess).toMatch(/\.destination-project\s*\{\s*margin-left:\s*0\s*!important;/u);
+    expect(migrationLess).toMatch(
+      /\.btn-group\s*\{\s*width:\s*300px;\s*\}[\s\S]*?\.btn\s*\{[\s\S]*?width:\s*100%;/u,
+    );
+    expect(migrationLess).toMatch(
+      /\.caution\s*\{[\s\S]*?border-radius:\s*3px;[\s\S]*?padding:\s*5px;/u,
+    );
+    expect(yobiUiLess).toMatch(/\.btn\.disabled,\s*\.btn\[disabled\]\s*\{\s*opacity:\s*0\.35;/u);
+    expect(bootstrap).toMatch(
+      /\.table th,\s*\.table td\s*\{\s*padding:\s*8px;\s*line-height:\s*20px;/u,
+    );
+    expect(bootstrap).toMatch(/\.progress\s*\{\s*height:\s*20px;[\s\S]*?overflow:\s*hidden;/u);
+    expect(yobicon).toContain('.yobicon-arrow-right-alt:before {\n    content: "\\e01c";');
   });
 
   test("keeps disabled copy, order, controls, and shared primitives", async ({ page }) => {
@@ -86,29 +126,66 @@ test.describe("StyleX migration disabled shell", () => {
       const owner = await openMigration(page);
       const board = owner.locator("#system-msg");
       const sourceHeader = owner.locator(".source-project > .header");
+      const searchInput = owner.locator(".source-project input.search-query");
       const sourceList = owner.locator(".left-project-list");
+      const destinationColumn = owner.locator(".destination-project");
       const destinationList = owner.locator(".destination-project-list");
-      const progress = owner.locator('[data-stylex-owner="migration-progress-bar"]');
+      const progressShell = owner.locator(".status > .progress");
+      const progressBar = owner.locator('[data-stylex-owner="migration-progress-bar"]');
+      const statusTable = owner.locator(".status > table.table");
+      const firstHeaderCell = statusTable.locator("thead th").first();
+      const firstDataCell = statusTable.locator("tbody td").first();
+      const buttonGroup = statusTable.locator(".btn-group").first();
+      const disabledButton = buttonGroup.locator("button.btn-danger");
+      const caution = statusTable.locator(".caution");
+      const arrowIcon = owner.locator(".arrow .yobicon-arrow-right-alt");
 
       await expect(board).toHaveCSS("background-color", "rgb(51, 51, 51)");
       await expect(board).toHaveCSS("color", "rgb(255, 255, 255)");
+      await expect(board).toHaveCSS("padding-left", "40px");
+      await expect(board).toHaveCSS("padding-top", "19px");
+      await expect(owner).toHaveCSS("line-height", "20px");
       await expect(sourceHeader).toHaveCSS("background-color", "rgb(227, 107, 35)");
       await expect(sourceHeader).toHaveCSS("font-size", "16px");
+      await expect(searchInput).toHaveCSS("background-color", "rgb(238, 238, 238)");
+      await expect(searchInput).toHaveCSS("border-radius", "2px");
+      await expect(searchInput).toHaveCSS("width", "206px");
+      await expect(destinationColumn).toHaveCSS("margin-left", "0px");
       const sourceContentHeight = await sourceList.evaluate((element) =>
         Number.parseFloat(getComputedStyle(element).height),
       );
       expect(sourceContentHeight).toBeCloseTo(viewport.height * 0.6, 1);
       await expect(destinationList).toHaveCSS("border-left-width", "0px");
+      await expect(progressShell).toHaveCSS("height", "20px");
+      await expect(progressShell).toHaveCSS("margin-bottom", "0px");
+      await expect(progressShell).toHaveCSS("border-radius", "0px");
+      await expect(statusTable).toHaveCSS("margin-bottom", "20px");
+      await expect(firstHeaderCell).toHaveCSS("border-top-width", "0px");
+      await expect(firstDataCell).toHaveCSS("border-top-width", "1px");
+      await expect(firstDataCell).toHaveCSS("padding", "8px");
+      await expect(firstDataCell).toHaveCSS("line-height", "20px");
+      await expect(buttonGroup).toHaveCSS("width", "300px");
+      await expect(disabledButton).toHaveCSS("background-color", "rgb(189, 54, 47)");
+      await expect(disabledButton).toHaveCSS("border-radius", "4px");
+      await expect(disabledButton).toHaveCSS("font-size", "12px");
+      await expect(disabledButton).toHaveCSS("opacity", "0.35");
+      await expect(caution).toHaveCSS("background-color", "rgb(238, 238, 238)");
+      await expect(caution).toHaveCSS("border-radius", "3px");
+      await expect(caution).toHaveCSS("padding", "5px");
+      await expect(arrowIcon).toHaveCSS("font-family", "yobicon");
       const [ownerBox, sourceBox, destinationBox, progressBox] = await Promise.all([
         owner.boundingBox(),
         sourceList.boundingBox(),
         destinationList.boundingBox(),
-        progress.boundingBox(),
+        progressBar.boundingBox(),
       ]);
+      const buttonBox = await disabledButton.boundingBox();
       expect(ownerBox).not.toBeNull();
       expect(sourceBox).not.toBeNull();
       expect(destinationBox).not.toBeNull();
       expect(progressBox).not.toBeNull();
+      expect(buttonBox).not.toBeNull();
+      expect(buttonBox).toMatchObject({ height: 30, width: 300 });
       expect(sourceBox!.height).toBeGreaterThanOrEqual(sourceContentHeight);
       expect(sourceBox!.height).toBeLessThanOrEqual(sourceContentHeight + 2);
       expect(sourceBox!.width).toBeGreaterThan(0);
@@ -127,9 +204,7 @@ test.describe("StyleX migration disabled shell", () => {
     });
   }
 
-  test("keeps global shell and bootstrap status primitives outside this owner", async ({
-    page,
-  }) => {
+  test("keeps the global shell outside the route-owned migration primitives", async ({ page }) => {
     await openMigration(page);
     await expect(page.locator('[data-stylex-owner="global-gnb-outer"]')).toHaveCount(1);
     await expect(page.locator('[data-stylex-owner="site-footer"]')).toHaveCount(1);

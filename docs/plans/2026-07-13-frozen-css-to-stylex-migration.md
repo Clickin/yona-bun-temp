@@ -1,5 +1,27 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1106 — migration disabled-shell fallback-off visual parity — 2026-07-28
+
+Broad test 177 first exposed a stale shared-shell DOM fixture for the disabled
+migration screen. After correcting semantic pin, anonymous List All/divider,
+direct profile path, plugin-attribute retirement, generated StyleX tokens, and
+final footer cascade, exact DOM and metrics passed. The adjacent desktop/mobile
+owner screenshots still failed, so the batch remained open.
+
+Baseline/actual/diff inspection proved the snapshots were correct. Fallback-off
+had lost active Bootstrap/Yobi row clearfix/margins, well surface, input,
+table, progress/bar, disabled-danger-button, caution, and yobicon glyph
+declarations. Destination composition also allowed the generic 20px migration
+column margin to override its legacy zero margin. The route now owns those
+exact frozen declarations and composes the destination variant last. Migration
+body structure/classes/copy and React behavior remain unchanged.
+
+Fresh fallback-off production build/StyleX verification passes, and production
+System Chrome passes source, exact DOM, desktop/mobile metrics, paint, and
+unchanged screenshots 9/9. No snapshot or threshold was modified. Legacy
+`:8089` was unavailable; frozen Scala/LESS/Bootstrap and preserved snapshots
+are the evidence. Broad resumes after test 177.
+
 ### Batch 1105 — lost-password tagline line-height — 2026-07-28
 
 Broad reached test 171 and found `/lostPassword` two pixels shorter than the

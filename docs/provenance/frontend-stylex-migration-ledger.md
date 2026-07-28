@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1106 — migration disabled-shell fallback-off visual parity
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `migration/home.scala.html` and `migrationPageLayout.scala.html` include the shared shell and emit the disabled migration body. Frozen `_migration.less`, Bootstrap/Yobi row, well, form, table, progress, button and icon rules establish the complete output; preserved desktop/mobile snapshots corroborate paint. | `migration.tsx` translates exact active declarations into existing route StyleX owners, names the shell props composition, applies row clearfix ownership, and composes destination zero-margin after the generic column. React/TanStack behavior and migration structural DOM/classes remain. | Semantic shared shell plus exact migration body DOM; destination margin 0; frozen line/box/paint/glyph declarations; desktop/mobile geometry and screenshots. Generated StyleX tokens and retired plugin attributes alone are canonicalized. | Fresh fallback-off production build/verifier passes; System Chrome exact DOM/metrics/screenshots pass 9/9; TypeScript/diff pass; snapshots and thresholds unchanged. | Broad after test 177, stale create-link source assertion, global fallback audit, same-fixture screenshot pair, and final pixel lock. |
+
 ### Batch 1105 — lost-password tagline line-height
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

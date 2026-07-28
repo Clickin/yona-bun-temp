@@ -1,5 +1,21 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1106 migration disabled-shell fallback-off visual parity
+
+- [x] Rebuild the stale shared-shell expected DOM from migration layout,
+  navbar/usermenu/footer partials, and current React-owned behavior.
+- [x] Inspect desktop/mobile baseline, actual, and diff images before deciding
+  whether snapshots were stale.
+- [x] Restore frozen row/well/input/table/progress/button/caution and yobicon
+  declarations in route-owned StyleX; fix destination composition to legacy
+  zero left margin.
+- [x] Keep migration structural classes/body DOM, screenshots, and thresholds
+  unchanged.
+- [x] Pass fresh fallback-off production build/verifier and System Chrome
+  exact DOM/metrics/screenshots 9/9; TypeScript and diff checks pass.
+- [ ] Resume broad after test 177, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1105 lost-password tagline line-height
 
 - [x] Trace the 2px page-height deficit through `site/lostPassword.scala.html`,

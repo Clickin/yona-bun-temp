@@ -6,6 +6,49 @@ const MIGRATION_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const LEGACY_MIGRATION_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/migration/home.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_MIGRATION_LAYOUT_SOURCE = readFileSync(
+  new URL(
+    "../../yona-original/app/views/migration/migrationPageLayout.scala.html",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const LEGACY_NAVBAR_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/navbar.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_USERMENU_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/usermenu.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_FOOTER_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/footer.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_USER_SOURCE = readFileSync(
+  new URL("../../yona-original/app/models/User.java", import.meta.url),
+  "utf8",
+);
+const LEGACY_NULL_USER_SOURCE = readFileSync(
+  new URL("../../yona-original/app/models/NullUser.java", import.meta.url),
+  "utf8",
+);
+const LEGACY_YOBI_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
+  "utf8",
+);
+const LEGACY_PAGE_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  "utf8",
+);
+const LEGACY_RESPONSIVE_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_MIGRATION_SCREEN = `
 <div class="unsupported hidden">
@@ -15,12 +58,14 @@ const EXPECTED_MIGRATION_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
+    <button class="pin" title="Sidebar" type="button">
+      <i class="yobicon-arrow-left" aria-hidden="true"></i>
+      <i class="yobicon-arrow-right" aria-hidden="true"></i>
+    </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects">List All</a></li>
+      <li></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -34,14 +79,14 @@ const EXPECTED_MIGRATION_SCREEN = `
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/anonymous">Profile</a></span>
           <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
+          <li class="myRecentIssueList"><button type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -50,10 +95,10 @@ const EXPECTED_MIGRATION_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
       </li>
       <li class="divider"></li>
-      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+      <li><a href="__BASE_PATH__/users/signupform">Sign up</a></li>
     </ul>
   </div>
 </header>
@@ -152,6 +197,12 @@ test("migration route source keeps tabindex, progress width, and title declarati
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={1}");
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={2}");
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-progress-bar"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain(
+    "const migrationDisabledShellStyleProps = stylex.props(styles.disabledShell);",
+  );
+  expect(MIGRATION_ROUTE_SOURCE).toContain(
+    "className={`yobi-migration ${migrationDisabledShellStyleProps.className}`}",
+  );
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-destination-row"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-column-grid"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-destination-column-grid"');
@@ -169,6 +220,25 @@ test("migration route source keeps tabindex, progress width, and title declarati
   expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row > \.span6/u);
   expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row > \.span4/u);
   expect(APP_CSS_SOURCE).toContain('.row-fluid [class*="span"]');
+  expect(LEGACY_MIGRATION_SOURCE).toContain('@migrationPageLayout(utils.Config.getSiteName)("")');
+  expect(LEGACY_MIGRATION_LAYOUT_SOURCE).toContain(
+    "@common.navbar(utils.MenuType.SITE_HOME, null, null)",
+  );
+  expect(LEGACY_NAVBAR_SOURCE).toContain(
+    "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest)",
+  );
+  expect(LEGACY_USER_SOURCE).toContain("public boolean isGuest = false;");
+  expect(LEGACY_NULL_USER_SOURCE).toContain("public class NullUser extends User");
+  expect(LEGACY_NULL_USER_SOURCE).not.toMatch(/\bboolean\s+isGuest\b/u);
+  expect(LEGACY_USERMENU_SOURCE).toContain('href="@routes.UserApp.userInfo(currentUser.loginId)"');
+  expect(LEGACY_FOOTER_SOURCE).toContain("Yona authors");
+  expect(LEGACY_YOBI_LESS_SOURCE.indexOf('@import "less/_page.less";')).toBeLessThan(
+    LEGACY_YOBI_LESS_SOURCE.indexOf('@import "less/_responsive.less";'),
+  );
+  expect(LEGACY_PAGE_LESS_SOURCE).toMatch(/\.page-footer-outer\s*\{[\s\S]*?padding:\s*10px 0;/u);
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toMatch(
+    /@media all\s*\{[\s\S]*?\.page-footer-outer\s*\{\s*padding:\s*10px;/u,
+  );
 });
 
 test("migration disabled shell matches legacy migration/home.scala.html screen DOM", async ({
@@ -206,6 +276,46 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
       .locator(".yobi-migration button.btn-danger")
       .evaluateAll((buttons) => buttons.every((button) => button.hasAttribute("disabled"))),
   ).toBe(true);
+  const sidebarPin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
+  await expect(sidebarPin).toHaveJSProperty("tagName", "BUTTON");
+  await expect(sidebarPin).toHaveAttribute("type", "button");
+  await expect(sidebarPin).toHaveAttribute("aria-controls", "sidebar");
+  await expect(sidebarPin).toHaveAttribute("aria-expanded", "false");
+  const sidebarPinIcons = sidebarPin.locator("i");
+  await expect(sidebarPinIcons).toHaveCount(2);
+  expect(
+    await sidebarPinIcons.evaluateAll((icons) =>
+      icons.every((icon) => icon.getAttribute("aria-hidden") === "true"),
+    ),
+  ).toBe(true);
+  const globalNavItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
+  expect(
+    await globalNavItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
+  ).toEqual([
+    "global-gnb-brand-item",
+    "global-gnb-project-list-item",
+    "global-gnb-project-list-divider",
+    "global-gnb-search-item",
+  ]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/projects`,
+  );
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
+    "List All",
+  );
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
+    1,
+  );
+  await expect(page.locator(`#mySidenav a[href="${basePath}/anonymous"]`)).toHaveText("Profile");
+  await expect(page.locator('[data-stylex-owner="site-footer-provider"]')).toHaveText(
+    "Yoram authors",
+  );
+  for (const attribute of ["data-login", "data-placement", "data-toggle"]) {
+    await expect(page.locator(`[data-stylex-owner="global-gnb-outer"] [${attribute}]`)).toHaveCount(
+      0,
+    );
+  }
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -216,10 +326,10 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
 
   expect(await readMigrationMetrics(page)).toEqual({
     destinationColumnFloat: "left",
-    destinationColumnMarginLeft: "20px",
+    destinationColumnMarginLeft: "0px",
     destinationColumnMinHeight: "1px",
     destinationWidth: 300,
-    footerPadding: "10px 0px",
+    footerPadding: "10px",
     gnbOuterHeight: "40px",
     migrationRowBeforeDisplay: "table",
     migrationRowAfterDisplay: "table",
@@ -340,21 +450,14 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const value = current.getAttribute(name) ?? "";
-      if (name === "class" && current.closest('[data-stylex-owner="migration-disabled-shell"]')) {
+      if (name === "class") {
         return value
           .split(/\s+/u)
-          .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))
+          .filter((token) => token && !/^x[a-z0-9]+$/u.test(token) && !token.includes("__"))
           .join(" ");
       }
-      if (
-        name === "class" &&
-        value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
-      ) {
-        return value
-          .split(/\s+/u)
-          .filter((token) => token !== "gnb-nav")
-          .join(" ");
+      if (name === "href" && current.classList.contains("logo-letter") && value.length > 1) {
+        return value.replace(/\/$/u, "");
       }
       return value;
     }
@@ -374,19 +477,19 @@ async function canonicalizeScreenRoots(page: Page) {
         "href",
         "target",
         "title",
+        "aria-hidden",
         "tabindex",
         "disabled",
-        "data-toggle",
-        "data-placement",
-        "data-login",
         "colspan",
         "style",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-        )
+        .map((name) => {
+          const value = normalizeSiteLayoutGnbNavAttribute(current, name);
+          return name === "class" && !value ? "" : `${name}=${JSON.stringify(value)}`;
+        })
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -467,6 +570,15 @@ async function canonicalizeHtml(page: Page, html: string) {
             .filter((token) => token !== retiredToken)
             .join(" ");
         }
+        if (name === "class") {
+          return value
+            .split(/\s+/u)
+            .filter((token) => token && !/^x[a-z0-9]+$/u.test(token) && !token.includes("__"))
+            .join(" ");
+        }
+        if (name === "href" && current.classList.contains("logo-letter") && value.length > 1) {
+          return value.replace(/\/$/u, "");
+        }
         return value;
       }
 
@@ -485,20 +597,19 @@ async function canonicalizeHtml(page: Page, html: string) {
           "href",
           "target",
           "title",
+          "aria-hidden",
           "tabindex",
           "disabled",
-          "data-toggle",
-          "data-placement",
-          "data-login",
           "colspan",
           "style",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map(
-            (name) =>
-              `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-          )
+          .map((name) => {
+            const value = normalizeSiteLayoutGnbNavAttribute(current, name);
+            return name === "class" && !value ? "" : `${name}=${JSON.stringify(value)}`;
+          })
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
