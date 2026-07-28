@@ -29,8 +29,13 @@ test("login alias source uses TanStack Router redirect instead of window replace
   expect(legacyLoginForm).toContain('class="login-form-wrap frm-wrap"');
   expect(legacyLoginForm).toContain("@routes.UserApp.login()");
   expect(legacySiteLayout).toContain("@layout(Messages(title))");
+  expect(
+    /const\s+LEGACY_LOGIN_ACTION_PATH\s*:\s*"\/users\/login"\s*=\s*"\/users\/login"\s*;/u.test(
+      canonicalLoginFormSource,
+    ),
+  ).toBe(true);
   expect(canonicalLoginFormSource).toMatch(
-    /action=\{prefixBasePath\(\s*runtimeConfig\.basePath,\s*"\/users\/login",?\s*\)\}/u,
+    /prefixBasePath\(\s*runtimeConfig\.basePath\s*,\s*LEGACY_LOGIN_ACTION_PATH\s*,?\s*\)/u,
   );
   expect(source).toContain("redirect({");
   expect(source).toMatch(

@@ -287,7 +287,6 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   const legacyNullUser = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
   const legacyUser = readFileSync("../yona-original/app/models/User.java", "utf8");
   const legacyRoutes = readFileSync("../yona-original/conf/routes", "utf8");
-  const sharedShellSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const responsiveLess = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_responsive.less",
@@ -305,24 +304,19 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   expect(legacyRoutes).toMatch(/^GET\s+\/:user\s+controllers\.UserApp\.userInfo/mu);
   expect(pageLess).toMatch(/\.login-form-wrap,[\s\S]*?\.text \{[\s\S]*?height: 27px;/u);
   expect(responsiveLess).toMatch(/@media all \{[\s\S]*?\.page-footer-outer \{\s*padding: 10px;/u);
+  expect(
+    /const\s+LEGACY_LOGIN_ACTION_PATH\s*:\s*"\/users\/login"\s*=\s*"\/users\/login"\s*;/u.test(
+      routeSource,
+    ),
+  ).toBe(true);
   expect(routeSource).toMatch(
-    /const canonicalLegacyLoginAction = prefixBasePath\(\s*runtimeConfig\.basePath,\s*"\/users\/login",?\s*\);/u,
+    /prefixBasePath\(\s*runtimeConfig\.basePath\s*,\s*LEGACY_LOGIN_ACTION_PATH\s*,?\s*\)/u,
   );
-  expect(routeSource).toContain("action={canonicalLegacyLoginAction}");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("pull-left");
   expect(routeSource).not.toContain("pull-right");
   expect(styleSource).toContain('float: "left"');
   expect(styleSource).toContain('float: "right"');
-  expect(sharedShellSource).toMatch(
-    /const shouldRenderProjectListingLink =\s*runtimeConfig\.hideProjectListing !== true && !isGuest;/u,
-  );
-  expect(sharedShellSource).toContain(
-    "const shouldRenderAllProjectsSearchScope = shouldRenderProjectListingLink || isSiteAdmin;",
-  );
-  expect(sharedShellSource).not.toContain(
-    "runtimeConfig.hideProjectListing !== true && session?.isAnonymous === false && !isGuest",
-  );
 });
 
 test("authenticated login form request redirects to the legacy root without rendering login DOM", async ({

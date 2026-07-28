@@ -1,5 +1,21 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1104 — login action source-guard decoupling — 2026-07-28
+
+Broad advanced through 143 passing cases and the fallback consumer graph,
+then stopped on a source assertion that required the login form action to
+inline `prefixBasePath(...)`. The rendered mounted action was already correct
+and the route had intentionally named that calculation.
+
+The canonical POST path is now a typed route-level `/users/login` constant.
+Source checks verify only that legacy identity and its base-prefix calculation;
+the browser remains responsible for strict `/yona/users/login` form-action
+consumption. A large backreference/distance regex and unrelated navbar source
+checks were deliberately omitted because runtime DOM/geometry tests already
+cover those contracts. No output, behavior, style, screenshot, or threshold
+changes. Fresh fallback-off production final System Chrome passes 4/4;
+TypeScript and diff checks pass.
+
 ### Batch 1103 — mobile login trigger second-row origin — 2026-07-28
 
 After the five-item shell passed, the adjacent Korean mobile login-dialog test

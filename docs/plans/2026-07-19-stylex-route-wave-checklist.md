@@ -1,5 +1,18 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1104 login action source-guard decoupling
+
+- [x] Replace the stale inline-JSX action requirement exposed at broad test
+  145 with a typed legacy POST-path contract.
+- [x] Keep source checks limited to path identity and mounted prefix
+  calculation; rely on strict browser action assertions for form consumption.
+- [x] Remove unrelated shared-navbar source coupling from the login screen
+  test and avoid whole-file failure dumps.
+- [x] Pass fresh fallback-off production final System Chrome 4/4, TypeScript,
+  and diff checks.
+- [ ] Resume broad at loginform, then global fallback audit, screenshot pair,
+  and final pixel lock.
+
 ### 2026-07-28 — Batch 1103 mobile login trigger second-row origin
 
 - [x] Compare the Korean mobile login state against legacy after restoring the

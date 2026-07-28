@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1104 — login action source-guard decoupling
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `conf/routes` POST `/users/login` and `user/login.scala.html`'s `@routes.UserApp.login()` establish the action identity. Broad test 145 proved inline-JSX shape was not a UI contract. | `loginform.tsx` owns typed `LEGACY_LOGIN_ACTION_PATH` and uses it in the existing mounted prefix calculation. Tests source-guard only identity/calculation; strict runtime form action verifies consumption. Unrelated navbar source coupling is removed from the login screen test. | `/login` alias and canonical loginform still render exact mounted `/yona/users/login`; redirect/search, DOM, geometry, and final visual gates are unchanged. | Fresh fallback-off production final System Chrome passes 4/4; TypeScript and diff checks pass. | Broad loginform onward, stale create-link source assertion, global fallback audit, same-fixture screenshots, and final pixel lock. |
+
 ### Batch 1103 — mobile login trigger second-row origin
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

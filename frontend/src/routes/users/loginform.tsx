@@ -41,6 +41,7 @@ const linksWrapClassName = stylex.props(loginFormStyles.linksWrap).className;
 const checkboxClassName = stylex.props(loginFormStyles.checkbox).className;
 const actionRowClassName = stylex.props(loginFormStyles.actionRow).className;
 const verificationHelpClassName = stylex.props(loginFormStyles.verificationHelp).className;
+const LEGACY_LOGIN_ACTION_PATH: "/users/login" = "/users/login";
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
@@ -89,7 +90,10 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     nonEmptyString(capabilities?.passwordPlaceholder) ?? t("user.password");
   const siteName = runtimeConfig.siteName ?? "Yoram";
   const title = lookupLegacyMessage(language, "title.loginFor", { args: [siteName] });
-  const canonicalLegacyLoginAction = prefixBasePath(runtimeConfig.basePath, "/users/login");
+  const canonicalLegacyLoginAction = prefixBasePath(
+    runtimeConfig.basePath,
+    LEGACY_LOGIN_ACTION_PATH,
+  );
   const showPasswordResetFlash = password === "reset";
   const signInMutation = useMutation({
     mutationFn: async (input: { identifier: string; password: string; rememberMe: boolean }) => {
