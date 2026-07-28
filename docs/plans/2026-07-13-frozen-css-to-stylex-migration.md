@@ -1,5 +1,31 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1075 — authenticated Favorite direct-project DOM parity — 2026-07-28
+
+The authenticated `/` Favorite pane now translates the legacy direct-project
+row's `data-location` behavior into separate TanStack project and owner links
+plus the existing React-owned star action. Nested organization rows and the
+framed left sidebar remain out of scope. Frozen Bootstrap `li` line-height and
+`_usermenu.less` `.site-logo`/`.org-list` declarations restore the 25px
+fallback-off organization row without invented compensation. External System
+Chrome focused checks pass 1/1 in normal and fallback-off profiles, including
+canonical DOM, desktop/mobile ordering and overflow, navigation, and star
+interaction.
+
+A fresh production build passed the StyleX verifier. Five-run browser timing
+separates runtime response from harness delay: median DOMContentLoaded was
+about 224ms on the existing Vite/HMR server and 126ms on rebuilt dist; visible
+UI readiness was about 75ms versus 71ms after DOMContentLoaded, and the first
+dialog interaction was about 39ms versus 35ms. The long-looking waits are
+failure-path bounds: the visual sweep can consume 5s waiting for body content
+and another 10s for its route-ready selector, while a failed focused E2E can
+consume its 30s test timeout. Vite preview is not valid deep-link screenshot
+evidence for this relative-base build (`/admin/test` resolved chunks under
+`/admin/assets` and exhausted those 5s+10s waits); release-dist screenshot
+parity must continue through the Rust asset server. The attempted live pair
+was therefore rejected, not counted as parity evidence. Full fallback-off,
+global fallback audit, and final release-server pixel lock remain open.
+
 ### Batch 1070 — authenticated sidebar transition and icon parity — 2026-07-28
 
 The authenticated framed sidebar now separates its visual expansion state from

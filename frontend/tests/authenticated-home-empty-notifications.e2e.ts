@@ -221,13 +221,15 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
       <ul class="etc-favorites"></ul>
       <li class="user-li">
         <div class="project-list project-flex-container">
-          <a href="__BASE_PATH__/external/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
+          <div class="project-item project-item-container">
+            <a href="__BASE_PATH__/external/member">
             <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
-            <div class="projectName-owner flex-item">
               <div class="project-name flex-item">member </div>
-              <div class="project-owner flex-item">external</div>
-            </div>
           </a>
+            <div class="projectName-owner flex-item">
+              <div class="project-owner flex-item"><a href="__BASE_PATH__/external">external</a></div>
+            </div>
+          </div>
           <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
         </div>
       </li>
@@ -1144,6 +1146,11 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   await mockWorkspaceSidebarProjects(page);
+  const favoriteRequests: string[] = [];
+  await page.route("**/api/v1/owners/external/projects/member/favorite", async (route) => {
+    favoriteRequests.push(route.request().method());
+    await route.fulfill({ contentType: "application/json", body: "{}", status: 200 });
+  });
 
   await page.goto(`${basePath}/`);
   await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
@@ -1161,6 +1168,23 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await expect(
     page.locator("#usermenu-tab-content-list > .user-project-list.active"),
   ).toHaveAttribute("id", "myOrganizationList");
+  await expect(page.locator("#myOrganizationList [data-location]")).toHaveCount(0);
+  const directRow = page.locator(
+    "#myOrganizationList #organizations > .user-li:has-text('member')",
+  );
+  const directProjectLink = directRow.locator(
+    ':scope > .project-list > .project-item > a[href$="/external/member"]',
+  );
+  const directOwnerLink = directRow.getByRole("link", { name: "external", exact: true });
+  const directStarButton = directRow.locator("button.star-project");
+  await expect(directProjectLink).toHaveCount(1);
+  await expect(directProjectLink).toHaveAttribute("href", `${basePath}/external/member`);
+  await expect(directProjectLink.locator(":scope > .site-logo")).toHaveCount(1);
+  await expect(directProjectLink.locator(":scope > .project-name")).toHaveCount(1);
+  await expect(directOwnerLink).toHaveCount(1);
+  await expect(directOwnerLink).toHaveAttribute("href", `${basePath}/external`);
+  await expect(directStarButton).toHaveCount(1);
+  await expect(directStarButton).toHaveAccessibleName("Remove external/member from favorites");
 
   expect(await canonicalizeSelector(page, "#myOrganizationList")).toEqual(
     await canonicalizeHtml(
@@ -1189,7 +1213,40 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await expect(sampleProjectRow).not.toHaveAttribute("data-trigger");
   await expect(sampleProjectRow).not.toHaveAttribute("data-placement");
   await expect(sampleProjectRow).not.toHaveAttribute("data-content");
-  await assertSidebarRightPopover(page, sampleProjectRow, "Sample project");
+  await sampleProjectRow.hover();
+  await expect(page.locator("#usermenu-tab-content-list .popover.right")).toHaveCount(0);
+
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const favoriteGeometry = await readFavoriteProjectNavigationGeometry(directRow);
+    expect(favoriteGeometry.logoRight).toBeLessThanOrEqual(favoriteGeometry.nameLeft);
+    expect(favoriteGeometry.nameRight).toBeLessThanOrEqual(favoriteGeometry.ownerLeft);
+    expect(favoriteGeometry.ownerRight).toBeLessThanOrEqual(favoriteGeometry.starLeft);
+    expect(favoriteGeometry.logoLeft).toBeGreaterThanOrEqual(favoriteGeometry.rowLeft);
+    expect(favoriteGeometry.starRight).toBeLessThanOrEqual(favoriteGeometry.rowRight);
+    expect(favoriteGeometry.rowLeft).toBeGreaterThanOrEqual(favoriteGeometry.rootLeft);
+    expect(favoriteGeometry.rowRight).toBeLessThanOrEqual(favoriteGeometry.rootRight);
+    expect(favoriteGeometry.scrollWidth).toBeLessThanOrEqual(favoriteGeometry.clientWidth);
+  }
+
+  await directStarButton.click();
+  await expect.poll(() => favoriteRequests).toEqual(["POST"]);
+  await expect(directStarButton).toHaveAttribute("aria-pressed", "false");
+
+  await directProjectLink.click();
+  await expect(page).toHaveURL(new RegExp(`${escapeRegExp(basePath)}/external/member$`));
+  await page.goto(`${basePath}/`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
+  await directOwnerLink.click();
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === `${basePath}/external` &&
+      url.searchParams.get("daysAgo") === "14" &&
+      url.searchParams.get("selected") === "issues",
+  );
 });
 
 test("authenticated sidebar translates legacy favorite search and organization behavior to React", async ({
@@ -1217,10 +1274,11 @@ test("authenticated sidebar translates legacy favorite search and organization b
   });
   await expect(ownOrganization.locator(".sub-project-counter")).toHaveText("2");
   await expect(favoriteRoot.locator("#organizations > .user-li")).toHaveCount(1);
-  await expect(favoriteRoot.locator("#organizations > .user-li a")).toHaveAttribute(
-    "href",
-    `${basePath}/external/shared`,
-  );
+  await expect(
+    favoriteRoot
+      .locator("#organizations > .user-li")
+      .getByRole("link", { name: "Open external/shared" }),
+  ).toHaveAttribute("href", `${basePath}/external/shared`);
   await expect(favoriteRoot.locator("#organizations > .user-li .yobicon-lock")).toHaveCount(1);
 
   const weblabsOrganization = favoriteRoot.locator(".org-li", { hasText: "weblabs" });
@@ -1263,7 +1321,7 @@ test("authenticated sidebar translates legacy favorite search and organization b
     "#myProjectList #joinmember .user-li:has(a[href$='/external/shared']) button.star-project",
   );
   const directOrderBefore = await favoriteRoot
-    .locator("#organizations > .user-li a.sidebar-project-link")
+    .locator("#organizations > .user-li a[aria-label^='Open ']")
     .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
   await expect(directFavoriteButton).toHaveAttribute("aria-pressed", "true");
   await expect(memberFavoriteButton).toHaveAttribute("aria-pressed", "true");
@@ -1278,7 +1336,7 @@ test("authenticated sidebar translates legacy favorite search and organization b
   await expect(memberFavoriteButton).toHaveAttribute("aria-pressed", "true");
   expect(
     await favoriteRoot
-      .locator("#organizations > .user-li a.sidebar-project-link")
+      .locator("#organizations > .user-li a[aria-label^='Open ']")
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual(directOrderBefore);
 
@@ -3060,6 +3118,46 @@ async function readSidebarFavoriteTabMetrics(page: Page) {
   });
 }
 
+async function readFavoriteProjectNavigationGeometry(row: Locator) {
+  return row.evaluate((currentRow) => {
+    const root = currentRow.closest<HTMLElement>("#myOrganizationList");
+    const menu = currentRow
+      .closest<HTMLElement>("#mySidenav")
+      ?.querySelector<HTMLElement>(".right-menu");
+    const projectLink = currentRow.querySelector<HTMLElement>('a[href$="/external/member"]');
+    const logo = projectLink?.querySelector<HTMLElement>(".site-logo");
+    const name = projectLink?.querySelector<HTMLElement>(".project-name");
+    const owner = currentRow.querySelector<HTMLElement>(".project-owner a");
+    const star = currentRow.querySelector<HTMLElement>("button.star-project");
+    const list = currentRow.querySelector<HTMLElement>(".project-list");
+    if (!root || !menu || !projectLink || !logo || !name || !owner || !star || !list) {
+      throw new Error("Expected direct Favorite project navigation geometry targets.");
+    }
+    const logoBox = logo.getBoundingClientRect();
+    const nameBox = name.getBoundingClientRect();
+    const ownerBox = owner.getBoundingClientRect();
+    const starBox = star.getBoundingClientRect();
+    const rowBox = list.getBoundingClientRect();
+    const rootBox = root.getBoundingClientRect();
+    return {
+      clientWidth: menu.clientWidth,
+      logoLeft: logoBox.left,
+      logoRight: logoBox.right,
+      nameLeft: nameBox.left,
+      nameRight: nameBox.right,
+      ownerLeft: ownerBox.left,
+      ownerRight: ownerBox.right,
+      rootLeft: rootBox.left,
+      rootRight: rootBox.right,
+      rowLeft: rowBox.left,
+      rowRight: rowBox.right,
+      scrollWidth: menu.scrollWidth,
+      starLeft: starBox.left,
+      starRight: starBox.right,
+    };
+  });
+}
+
 async function assertSidebarRightPopover(page: Page, target: Locator, expectedContent: string) {
   const popover = page.locator("#usermenu-tab-content-list .popover.right");
   await expect(popover).toHaveCount(0);
@@ -4195,9 +4293,29 @@ async function canonicalizeSelector(page: Page, selector: string) {
     }
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
+        const favoriteOwner = current
+          .closest("[data-stylex-owner]")
+          ?.getAttribute("data-stylex-owner");
+        const isFavoriteStylexOwned =
+          current.closest("#myOrganizationList") !== null &&
+          (current.matches("#myOrganizationList") ||
+            (favoriteOwner !== null &&
+              [
+                "authenticated-sidenav-tab-panel",
+                "authenticated-sidenav-favorite-shell",
+                "authenticated-sidenav-favorite-organization-rows",
+                "authenticated-sidenav-favorite-project-rows",
+                "authenticated-sidenav-favorite-stars",
+                "authenticated-sidenav-direct-project-rows",
+              ].includes(favoriteOwner ?? "")));
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
+          .filter(
+            (value) =>
+              !isFavoriteStylexOwned ||
+              (!value.startsWith("x") && !value.includes("-home-route-screen__")),
+          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -4257,6 +4375,34 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       function normalizeAttribute(current: Element, name: string): string {
         const value = current.getAttribute(name) ?? "";
+        const favoriteOwner = current
+          .closest("[data-stylex-owner]")
+          ?.getAttribute("data-stylex-owner");
+        const isFavoriteStylexOwned =
+          current.closest("#myOrganizationList") !== null &&
+          (current.matches("#myOrganizationList") ||
+            (favoriteOwner !== null &&
+              [
+                "authenticated-sidenav-tab-panel",
+                "authenticated-sidenav-favorite-shell",
+                "authenticated-sidenav-favorite-organization-rows",
+                "authenticated-sidenav-favorite-project-rows",
+                "authenticated-sidenav-favorite-stars",
+                "authenticated-sidenav-direct-project-rows",
+              ].includes(favoriteOwner ?? "")));
+        if (name === "class" && isFavoriteStylexOwned) {
+          const className = value
+            .split(/\s+/u)
+            .filter(
+              (token, index, values) =>
+                token &&
+                !token.startsWith("x") &&
+                !token.includes("-home-route-screen__") &&
+                values.indexOf(token) === index,
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
         if (name === "class" && current.closest("li.notification-stream")) {
           const retiredNotificationTokens = new Set([
             "notification-stream",

@@ -1,5 +1,27 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1075 authenticated Favorite direct-project DOM parity
+
+- [x] Translate direct Favorite project-row navigation into separate TanStack
+  project/owner links and retain the React-owned star action; remove the legacy
+  `data-location` behavior attribute.
+- [x] Preserve nested organization and framed-left sidebar owners unchanged.
+- [x] Restore the legacy 25px fallback-off organization-row box from frozen
+  Bootstrap line-height and `_usermenu.less` logo/list padding evidence.
+- [x] External System Chrome focused normal and fallback-off checks pass 1/1
+  with strict DOM, desktop/mobile geometry, overflow, navigation, and mutation
+  assertions.
+- [x] Rebuild production dist and pass the StyleX verifier. Median browser
+  timings show about 224ms HMR versus 126ms dist DOMContentLoaded and
+  39ms versus 35ms first interaction.
+- [x] Classify the long stabilization wait as failure-path harness bounds: 5s
+  body wait + 10s route-selector wait in the visual sweep, or the focused
+  E2E's 30s test timeout after an assertion failure.
+- [ ] Do not use Vite preview deep links as screenshot evidence for the
+  relative-base production build; rerun the final strict pair through the Rust
+  asset server. Full fallback-off/global audit and final pixel lock remain
+  open.
+
 ### 2026-07-28 — Batch 1072 authenticated shared-shell legacy class contract follow-up
 
 - [x] Restored literal legacy GNB pin, logo/search, authenticated logout, and

@@ -3863,6 +3863,7 @@ const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
     flexDirection: "row",
     flexWrap: "nowrap",
     justifyContent: "space-between",
+    lineHeight: "20px",
     padding: "1px 0",
     position: "relative",
   },
@@ -3895,7 +3896,7 @@ const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
     fontWeight: "inherit",
     lineHeight: "inherit",
     margin: 0,
-    minHeight: 0,
+    minHeight: "23px",
     padding: 0,
     textAlign: "left",
     width: "auto",
@@ -7188,48 +7189,84 @@ function SidebarProjectItem({
               : `project-item project-item-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.item).className}`
           }
         >
-          <div
-            className={
-              isLeftSidebar
-                ? stylex.props(leftSidebarDirectProjectRowStyles.logo).className
-                : `flex-item site-logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.logo).className}`
-            }
-          >
+          {isAuthenticatedFavoritePane && !isLeftSidebar ? (
             <Link
               aria-label={`Open ${ownerName}/${projectName}`}
               className={
-                stylex.props(
-                  isLeftSidebar
-                    ? leftSidebarDirectProjectRowStyles.projectLink
-                    : authenticatedSidenavDirectProjectRowStyles.projectLink,
-                ).className
+                stylex.props(authenticatedSidenavDirectProjectRowStyles.projectLink).className
               }
               params={{ ownerName, projectName }}
               to="/$ownerName/$projectName"
             >
-              <i
+              <div
+                className={`flex-item site-logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.logo).className}`}
+              >
+                <i
+                  className={`project-avatar ${stylex.props(authenticatedSidenavDirectProjectRowStyles.avatar).className}`}
+                >
+                  {logoUrl ? (
+                    <img
+                      alt=""
+                      className={`logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.image).className}`}
+                      src={logoUrl}
+                    />
+                  ) : (
+                    <span className="dummy-25px"> </span>
+                  )}
+                </i>
+              </div>
+              <div
+                className={`project-name flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.name).className}`}
+              >
+                {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+              </div>
+            </Link>
+          ) : (
+            <>
+              <div
                 className={
                   isLeftSidebar
-                    ? stylex.props(leftSidebarDirectProjectRowStyles.avatar).className
-                    : `project-avatar ${stylex.props(authenticatedSidenavDirectProjectRowStyles.avatar).className}`
+                    ? stylex.props(leftSidebarDirectProjectRowStyles.logo).className
+                    : `flex-item site-logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.logo).className}`
                 }
               >
-                {logoUrl ? (
-                  <img
-                    alt=""
+                <Link
+                  aria-label={`Open ${ownerName}/${projectName}`}
+                  className={
+                    stylex.props(
+                      isLeftSidebar
+                        ? leftSidebarDirectProjectRowStyles.projectLink
+                        : authenticatedSidenavDirectProjectRowStyles.projectLink,
+                    ).className
+                  }
+                  params={{ ownerName, projectName }}
+                  to="/$ownerName/$projectName"
+                >
+                  <i
                     className={
                       isLeftSidebar
-                        ? stylex.props(leftSidebarDirectProjectRowStyles.image).className
-                        : `logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.image).className}`
+                        ? stylex.props(leftSidebarDirectProjectRowStyles.avatar).className
+                        : `project-avatar ${stylex.props(authenticatedSidenavDirectProjectRowStyles.avatar).className}`
                     }
-                    src={logoUrl}
-                  />
-                ) : (
-                  <span className={isLeftSidebar ? undefined : "dummy-25px"}> </span>
-                )}
-              </i>
-            </Link>
-          </div>
+                  >
+                    {logoUrl ? (
+                      <img
+                        alt=""
+                        className={
+                          isLeftSidebar
+                            ? stylex.props(leftSidebarDirectProjectRowStyles.image).className
+                            : `logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.image).className}`
+                        }
+                        src={logoUrl}
+                      />
+                    ) : (
+                      <span className={isLeftSidebar ? undefined : "dummy-25px"}> </span>
+                    )}
+                  </i>
+                </Link>
+              </div>
+            </>
+          )}
           <div
             className={
               isLeftSidebar
@@ -7237,27 +7274,29 @@ function SidebarProjectItem({
                 : `projectName-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.nameOwner).className}`
             }
           >
-            <div
-              className={
-                isLeftSidebar
-                  ? stylex.props(leftSidebarDirectProjectRowStyles.name).className
-                  : `project-name flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.name).className}`
-              }
-            >
-              <Link
+            {!isAuthenticatedFavoritePane || isLeftSidebar ? (
+              <div
                 className={
-                  stylex.props(
-                    isLeftSidebar
-                      ? leftSidebarDirectProjectRowStyles.projectLink
-                      : authenticatedSidenavDirectProjectRowStyles.projectLink,
-                  ).className
+                  isLeftSidebar
+                    ? stylex.props(leftSidebarDirectProjectRowStyles.name).className
+                    : `project-name flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.name).className}`
                 }
-                params={{ ownerName, projectName }}
-                to="/$ownerName/$projectName"
               >
-                {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
-              </Link>
-            </div>
+                <Link
+                  className={
+                    stylex.props(
+                      isLeftSidebar
+                        ? leftSidebarDirectProjectRowStyles.projectLink
+                        : authenticatedSidenavDirectProjectRowStyles.projectLink,
+                    ).className
+                  }
+                  params={{ ownerName, projectName }}
+                  to="/$ownerName/$projectName"
+                >
+                  {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+                </Link>
+              </div>
+            ) : null}
             <div
               className={
                 isLeftSidebar

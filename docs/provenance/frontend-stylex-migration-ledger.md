@@ -1,5 +1,30 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1075 — authenticated Favorite direct-project DOM parity
+
+`common/usermenu.scala.html`, `common/usermenu_tab_content_list.scala.html`,
+`index/myOrganizationList*.scala.html`, and
+`index/myProjectList_partial.scala.html` establish the Favorite pane's direct
+project row, owner profile anchor, order, and whole-row navigation.
+`bootstrap.css` supplies `li { line-height: 20px; }`; `_usermenu.less` supplies
+`.site-logo { padding-top: 3px; }` and `.org-list { padding: 1px 0; }`.
+`frontend/src/routes/-home-route-screen.tsx` translates the legacy
+`data-location` behavior into separate TanStack project/owner links and keeps
+the star action React-owned. The focused authenticated-home E2E verifies the
+canonical visible DOM, no legacy DOM-control attributes, desktop/mobile
+geometry and overflow, both navigation targets, and favorite mutation. Normal
+and fallback-off external System Chrome each pass 1/1.
+
+The rebuilt production bundle and StyleX verifier pass. Runtime timing does not
+show a React stabilization problem: median DOMContentLoaded was about 224ms
+under Vite/HMR and 126ms from dist, with visible UI ready about 75ms/71ms later.
+The observed 15.1s visual-sweep pause was the failed-route sequence of a 5s
+body wait followed by a 10s settled-selector wait. The attempted Vite-preview
+deep-link comparison is invalid because the production relative base resolved
+chunks beneath `/admin/assets`; release screenshot evidence must use the Rust
+asset server. No timeout or screenshot threshold was relaxed, and this failed
+attempt does not close the final pixel lock.
+
 ### Batch 1072 — authenticated shared-shell legacy class contract follow-up
 
 `yona-original/app/views/common/navbar.scala.html` and
