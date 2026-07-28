@@ -28,6 +28,21 @@ interrupted runs; clean process state and an isolated rerun remain open. This
 is harness stabilization evidence, not a verified visual gap or final-lock
 pass.
 
+### Batch 1074 — isolated site-admin locator actionability reproduction
+
+The frozen GNB evidence remains `yona-original/app/views/common/navbar.scala.html`,
+`_page.less`, and `_responsive.less`; no frozen source or route implementation
+changed. A fresh dynamic-port fallback-off run reproduced the Playwright
+locator timeout at 1100x720 while measuring the site-admin link inside the
+viewport (`x=972.09`, `y=49`, `width=20`, `height=28`) with document scroll
+width `1100`. The body retains `overflow-x:auto` and `overflow-y:scroll`, but
+GNB ancestors are static, untransformed, and unclipped; `elementFromPoint` at
+the link center resolves to the link. A coordinate mouse click and normal DOM
+anchor click both navigate, isolating the failure to locator actionability at
+the body scroll/layout viewport boundary. This is harness evidence, not a
+responsive parity gap or final-lock pass; a measured-point workaround must be
+handled as a separate harness change without force-click or geometry changes.
+
 ### Batch 1071 — anonymous public landing legacy shell parity
 
 The Scala intro/navbar/site-layout partials and frozen `_page.less` plus

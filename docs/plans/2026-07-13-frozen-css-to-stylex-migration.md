@@ -380,6 +380,26 @@ the normal click and strict screenshot/geometry gates; do not force-click,
 relax timeouts, or claim the final pixel lock. Clean the stale process set
 before the next isolated verification run.
 
+### Batch 1074 isolated actionability reproduction
+
+The isolated dynamic-port fallback-off run reproduced the locator timeout with
+fresh managed servers and System Chrome, so the hours-old processes were not
+the root cause. At 1100x720, the link remained inside the viewport
+(`x=972.09`, `y=49`, `width=20`, `height=28`), its center resolved to the link
+with `elementFromPoint`, and the document scroll width remained `1100`.
+`body` has the legacy scroll-container behavior (`overflow-x: auto`,
+`overflow-y: scroll`), while all GNB ancestors remain static with no transform
+or clipping. Playwright's locator click still reports `outside of the
+viewport`; a real `page.mouse.click` at the measured link center and the
+anchor's normal DOM click both navigate successfully.
+
+This closes the stale-process hypothesis and classifies the remaining failure
+as Playwright locator actionability/layout-viewport behavior at this body
+scroll boundary. No route geometry, legacy source, screenshot threshold, or
+normal application interaction was changed. Do not treat the locator timeout
+as a responsive parity gap; any test-harness workaround must retain a measured
+in-viewport point and strict navigation/geometry assertions.
+
 ## 2026-07-27 — Public-profile Issues open/closed list-root ownership
 
 Batch 1026 gives the two `/$user?selected=issues` open/closed `<ul>` roots

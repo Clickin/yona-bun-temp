@@ -25,9 +25,23 @@
 - [x] Identified harness lifecycle contention from multiple hours-old idle
   Playwright daemons and duplicate Yona Vite processes left by interrupted
   runs, in addition to bounded page/browser teardown waits.
-- [ ] Clean stale process state and rerun the isolated fallback-off Chrome
-  interaction. Keep strict normal interaction and screenshot gates; no
-  force-click or timeout relaxation is allowed.
+- [x] Re-ran the isolated fallback-off Chrome interaction on fresh dynamic
+  ports; the locator timeout persists independently of stale process state.
+  Keep strict normal interaction and screenshot gates; no force-click or
+  timeout relaxation is allowed.
+
+### 2026-07-28 — Batch 1074 isolated actionability reproduction
+
+- [x] Reproduced the locator timeout with fresh dynamic-port servers and a new
+  System Chrome process; stale daemons are not the root cause.
+- [x] Confirmed the site-admin link remains in viewport at 1100x720 and that
+  `elementFromPoint` resolves its measured center to the link.
+- [x] Confirmed a real coordinate mouse click and the anchor's normal DOM click
+  both navigate successfully; only Playwright locator actionability reports
+  `outside of the viewport`.
+- [ ] Keep the strict parity gate and decide the harness-level measured-point
+  interaction workaround separately from route implementation. Do not alter
+  route geometry or weaken screenshot/timeout criteria.
 
 ### 2026-07-28 — Batch 1071 anonymous public landing legacy shell parity
 
