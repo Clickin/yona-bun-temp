@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1092 — help footer final cascade and post-broad latency isolation
+
+| Legacy/evidence | Owner or harness boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| `help/toc.scala.html` uses `siteLayout.scala.html` and `common/footer.scala.html`. Frozen `_page.less` first emits `padding:10px 0`; the later `yobi.less` import of `_responsive.less` emits `@media all { .page-footer-outer { padding:10px } }`, which is the effective desktop/mobile value. | Only the shared `siteFooterStyles.outer` declaration changes from a breakpoint split to exact four-side 10px. Help DOM/copy, React FAQ state, TanStack links, frozen files, and the user-approved Yoram footer/provider/contact/repository identity deviations remain unchanged. | Anonymous `/_help` exact DOM, title, FAQ interactions, no plugin hooks, footer line/provider declarations, and final `padding:10px`; no arbitrary route compensation. | Reused fallback-off production-dist System Chrome passes 1/1 in 969ms and the adjacent mobile case passes in 350ms. Fresh isolated timing reaches backend 2.33s, preview/proxy +94ms, Chrome +857ms, visible dist root 285ms, fonts 1ms, and network idle +491ms. A simple failure is 5.23s retained-trace versus 4.55s trace-off; the independent shared-markdown failure consumes 30s with trace but reports the same strict CSS failure in 6.2s trace-off, isolating complex artifact/context finalization. Three confirmed 8–10-hour orphan E2E backend groups were terminated. No parity gate changed. | Shared markdown-help font-size state, broad test 60 onward, stale create-link source assertion, global fallback audit, same-fixture screenshot pair, and final pixel lock. |
+
 ### Batch 1091 — site-admin page-anchored collapsed pin
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

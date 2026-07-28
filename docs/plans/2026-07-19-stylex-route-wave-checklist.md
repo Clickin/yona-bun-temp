@@ -1,5 +1,23 @@
 # StyleX Screen Migration Checklist
 
+### 2026-07-28 — Batch 1092 help footer and stabilization isolation
+
+- [x] Trace `/_help` through `siteLayout`/`common/footer` and the complete
+  frozen import order.
+- [x] Apply `_responsive.less`'s later `@media all` footer override as exact
+  four-side `10px` StyleX padding; retain approved Yoram footer copy changes.
+- [x] Pass reused fallback-off production-dist System Chrome 1/1 in 969ms.
+- [x] Separate fresh backend/DB readiness (2.33s), preview/proxy readiness
+  (94ms), Chrome launch (857ms), dist root visibility (285ms), and network
+  idle (491ms) without changing parity gates.
+- [x] Prove retained trace normally adds about 0.68s on a simple page, then
+  reproduce the complex failure's 30s artifact/context tail as 6.2s with trace
+  off; terminate only three confirmed 8–10-hour orphan E2E backend groups.
+- [ ] Keep retained trace in final and disable it only in the fast development
+  profile as a separate harness commit.
+- [ ] Continue broad final from test 60, then global fallback audit,
+  screenshot pair, and final pixel lock.
+
 ### 2026-07-28 — Batch 1091 site-admin page-anchored collapsed pin
 
 - [x] Recheck layout/navbar/sidebar/admin-affix Scala templates and frozen pin

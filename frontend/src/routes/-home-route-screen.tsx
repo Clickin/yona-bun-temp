@@ -2890,10 +2890,7 @@ const siteFooterStyles = stylex.create({
       default: "0px",
       "@media (max-width: 720px)": "10px",
     },
-    padding: {
-      default: "10px 0px",
-      [globalBreakpoints.mobile]: "10px",
-    },
+    padding: "10px",
   },
   inner: {
     boxSizing: "content-box",

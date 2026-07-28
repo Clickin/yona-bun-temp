@@ -1,5 +1,34 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+### Batch 1092 — help footer final cascade and post-broad latency isolation — 2026-07-28
+
+The broad final profile passed 58 tests before the anonymous `/_help` screen
+reported footer padding `10px 0` instead of the frozen final `10px`. Legacy
+first declares `padding:10px 0` in `_page.less`, but the later imported
+`_responsive.less` `@media all` rule overrides it with `padding:10px` at every
+viewport. The shared footer owner now carries that effective final value; FAQ
+DOM, copy, React interactions, approved Yoram footer identity, and all strict
+geometry assertions remain unchanged. Reused fallback-off production-dist
+System Chrome passes the exact help case 1/1 in 969ms.
+
+The requested stabilization audit was performed only after the broad process
+stopped. A fresh isolated managed environment reached backend HTTP readiness
+in 2.33s, frontend preview in another 88ms, and proxied session readiness in
+6ms. System Chrome launch took 857ms; the dist page then had about 3ms TTFB,
+DOMContentLoaded at 162ms, visible React root/load at 285ms, fonts in 1ms, and
+network idle after another 491ms. An immediate-failure diagnostic completed
+in 5.23s with retained trace and 4.55s with trace disabled, so retained trace
+normally costs about 0.68s on a simple page. The next independent shared
+markdown-help failure reproduced the real long tail: retained trace consumed
+the 30s test ceiling, while `--trace=off` reported the same strict 5s CSS
+assertion failure in 6.2s. Complex failure artifact/context finalization, not
+page stabilization, is therefore the cause. Three 8–10-hour orphan E2E backend
+groups were also identified on isolated temporary ports and terminated. The
+final profile retains its evidence; disabling retained trace only for the fast
+development profile is the queued harness fix. No screenshot, geometry,
+timeout, or pixel threshold was relaxed. Broad test 60 onward, global fallback
+audit, and final pixel lock remain open.
+
 ### Batch 1091 — site-admin page-anchored collapsed pin — 2026-07-28
 
 The broad final profile advanced through 54 tests before reaching a

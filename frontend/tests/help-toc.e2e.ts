@@ -6,6 +6,11 @@ const HELP_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
+const SITE_LAYOUT_SHELL_SOURCE = readFileSync(
+  new URL("../src/routes/-home-route-screen.tsx", import.meta.url),
+  "utf8",
+);
+
 const SHARED_MARKDOWN_HELP_SOURCE = readFileSync(
   new URL("../src/routes/-legacy-markdown-help.tsx", import.meta.url),
   "utf8",
@@ -209,6 +214,15 @@ const EXPECTED_HELP_SCREEN = `
 test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1366, height: 900 });
+  expect(LEGACY_PAGE_LESS_SOURCE).toMatch(
+    /\.page-footer-outer\s*\{\s*background-color:@yobi-white;\s*padding:10px 0;/u,
+  );
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toMatch(
+    /@media all\s*\{[\s\S]*?\.page-footer-outer\s*\{\s*padding:\s*10px;/u,
+  );
+  expect(SITE_LAYOUT_SHELL_SOURCE).toMatch(
+    /const siteFooterStyles = stylex\.create\(\{[\s\S]*?outer:\s*\{[\s\S]*?padding:\s*"10px"/u,
+  );
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain(
