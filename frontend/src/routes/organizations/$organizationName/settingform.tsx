@@ -10,6 +10,7 @@ import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+// Batch 1111: topBox padding uses mobile breakpoint (10px) matching legacy _responsive.less.
 import { organizationSettingFormStyles } from "./-organization-settingform.stylex";
 import { organizationSettingColors, organizationSettingStyles } from "./-settingform.stylex";
 

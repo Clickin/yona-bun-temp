@@ -15,8 +15,9 @@ test("organization setting form owns static and dynamic inline residuals in Styl
   expect(route).not.toContain("style={{ paddingTop: 20 }}");
   expect(route).not.toContain("style={{ backgroundImage:");
   expect(route).toContain("organizationSettingStyles.logo");
-  expect(styles).toContain("logo: (backgroundImage: string) => ({ backgroundImage })");
-  expect(styles).toContain('topBox: { paddingTop: "20px" }');
+  expect(styles).toContain("logo: (backgroundImage: string) => ({");
+  expect(styles).toContain('backgroundSize: "cover"');
+  expect(styles).toContain('[globalBreakpoints.mobile]: "10px"');
 });
 
 for (const viewport of [

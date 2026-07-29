@@ -60,7 +60,10 @@ export const organizationSettingStyles = stylex.create({
     marginBottom: "0px",
     resize: "vertical",
   },
-  topBox: { paddingTop: "20px" },
+  topBox: {
+    paddingTop: { default: "20px", [globalBreakpoints.mobile]: "10px" },
+    paddingBottom: { default: "20px", [globalBreakpoints.mobile]: "10px" },
+  },
   saveFooter: {
     padding: { default: "20px 0", [globalBreakpoints.mobile]: "10px 0" },
     paddingBottom: { default: "12px", [globalBreakpoints.mobile]: "10px" },
