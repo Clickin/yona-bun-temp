@@ -694,7 +694,7 @@ function MemberPanel({
     <div
       {...stylex.props(styles.memberPanel, panelKey === "member" ? styles.memberPanelMember : null)}
       className={`${className} ${stylex.props(styles.memberPanel, panelKey === "member" ? styles.memberPanelMember : null).className ?? ""}`.trim()}
-      data-stylex-owner={`organization-home-members-panel-${panelKey}`}
+      data-stylex-owner="organization-home-members-panel"
     >
       <div
         {...stylex.props(
@@ -702,7 +702,7 @@ function MemberPanel({
           organizationMemberPanelMigrationStyles.memberInfo,
         )}
         className={`inner member-info ${stylex.props(styles.memberPanelInner, organizationMemberPanelMigrationStyles.memberInfo).className ?? ""}`.trim()}
-        data-stylex-owner={`organization-home-members-panel-inner-${panelKey}`}
+        data-stylex-owner="organization-home-members-panel-inner"
       >
         <header
           className={stylex.props(styles.memberPanelHeader).className}

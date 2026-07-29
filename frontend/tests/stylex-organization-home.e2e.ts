@@ -276,3 +276,5 @@ test("organization home header and overview map frozen declarations to route-loc
   expect(route).toContain('data-stylex-owner="organization-home-header"');
   expect(route).toContain('data-stylex-owner="organization-home-overview"');
 });
+
+// Batch 1110: MemberPanel uses static org-home-members-panel owner (not template literal suffix).
