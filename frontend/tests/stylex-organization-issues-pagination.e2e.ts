@@ -99,6 +99,7 @@ test("organization issue pagination records full legacy provenance and route-loc
     "organization-issues-pagination-next-page",
   ])
     expect(route).toContain(`data-stylex-owner="${name}"`);
+  expect(route).toContain(`className={\`\${paginationInput.className} input-mini nospinner\`}`);
   for (const declaration of [
     "pagination",
     "paginationPageNums",

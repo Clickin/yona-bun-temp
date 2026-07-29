@@ -675,7 +675,7 @@ function OrganizationIssuePagination({
             {...paginationInput}
             type="number"
             pattern="[0-9]*"
-            className="input-mini nospinner"
+            className={`${paginationInput.className} input-mini nospinner`}
             name="pageNum"
             max={totalPages}
             min={1}

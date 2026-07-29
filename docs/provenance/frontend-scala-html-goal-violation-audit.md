@@ -1,3 +1,4 @@
+| 2026-07-29 | Batch 1109 organization issues pagination input className merge fix | `yona-original/app/views/organization/group_issue_list.scala.html` emits pagination with `.input-mini.nospinner`; frozen `_page.less` `.input-mini { width:30px }`. | `frontend/src/routes/organizations/$organizationName/issues.tsx` merges stylex `paginationInput.className` with `input-mini nospinner` to preserve `width:30px` under fallback-off. `-organization-issues.stylex.ts` already defines `width:"30px"` in `paginationInput`. | `frontend/tests/stylex-organization-issues-pagination.e2e.ts` adds className merging source check and passes 4/4 geometry tests under fallback-off. |
 # Frontend Scala HTML Goal Violation Audit
 
 Manual multi-screen exception note: commit `29f3a5b07` is a human-supervised coordinated issue/milestone parity commit; its single Batch 1043 audit row covers all route and focused-test evidence changed together.
