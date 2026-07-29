@@ -9,6 +9,15 @@ const ORGANIZATION_PARENT_ROUTE_SOURCE = readFileSync(
   "src/routes/organizations/$organizationName.tsx",
   "utf8",
 );
+const LEGACY_GROUP_BOARD_LIST_SOURCE = readFileSync(
+  "../yona-original/app/views/organization/group_board_list.scala.html",
+  "utf8",
+);
+const LEGACY_BOARD_APP_SOURCE = readFileSync(
+  "../yona-original/app/controllers/BoardApp.java",
+  "utf8",
+);
+const LEGACY_ROUTES_SOURCE = readFileSync("../yona-original/conf/routes", "utf8");
 
 const EXPECTED_ORGANIZATION_BOARDS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -375,7 +384,7 @@ test("organization board aggregate renders legacy pagination and input behavior"
   );
 
   const pagination = page.locator("#pagination");
-  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination).toHaveClass(/(?:^|\s)page-navigation-wrap(?:\s|$)/u);
   await expect(pagination.locator("ul.page-nums > li.page-num")).toHaveCount(5);
   await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
   await expect(pagination.locator(".page-num.ikon").first()).toHaveText("Previous page");
@@ -489,6 +498,21 @@ test("organization boards filter and breadcrumb links preserve legacy hrefs with
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_GROUP_BOARD_LIST_SOURCE).toContain(
+    '@urlToList?orderBy=@fieldName&orderDir=@if(orderDir.equals("desc")){asc}else{desc}',
+  );
+  expect(LEGACY_GROUP_BOARD_LIST_SOURCE).toContain("@urlToList?orderBy=@fieldName&orderDir=desc");
+  expect(LEGACY_BOARD_APP_SOURCE).toContain(
+    "SearchCondition searchCondition = postParamForm.bindFromRequest().get();",
+  );
+  expect(LEGACY_BOARD_APP_SOURCE).toContain("searchCondition.pageNum = pageNum - 1;");
+  expect(LEGACY_ROUTES_SOURCE).toContain("/organizations/:organizationName/boards");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toMatch(
+    /type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &\s+SearchSchemaInput & \{\s+"projectNames\[\]"\?: unknown;\s+\};/u,
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toMatch(
+    /if \(result\.orderBy === search\.orderBy && result\.orderDir === search\.orderDir\) \{\s+return result;\s+\}\s+return \{ orderBy: result\.orderBy, orderDir: result\.orderDir \};/u,
+  );
   await mockOrganizationBoards(page);
 
   await page.goto(

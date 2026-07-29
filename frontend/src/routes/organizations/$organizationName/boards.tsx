@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  type Register,
+  type SearchSchemaInput,
+  useRouter,
+} from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
@@ -72,17 +78,49 @@ type OrganizationBoardsSearch = {
   pageNum: number;
   projectNames: string[];
 };
+type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &
+  SearchSchemaInput & {
+    "projectNames[]"?: unknown;
+  };
+type OrganizationBoardsSearchNavigation = Omit<
+  OrganizationBoardsSearchInput,
+  keyof SearchSchemaInput
+>;
 
-export const Route = createFileRoute("/organizations/$organizationName/boards")({
+const resetLegacyBoardSortSearch = ({
+  next,
+  search,
+}: {
+  next: (search: OrganizationBoardsSearchNavigation) => OrganizationBoardsSearchNavigation;
+  search: OrganizationBoardsSearchNavigation;
+}) => {
+  const result = next(search);
+  if (result.orderBy === search.orderBy && result.orderDir === search.orderDir) {
+    return result;
+  }
+  return { orderBy: result.orderBy, orderDir: result.orderDir };
+};
+
+function validateOrganizationBoardsSearch(
+  search: OrganizationBoardsSearchInput,
+): OrganizationBoardsSearch {
+  return {
+    filter: stringSearch(search.filter),
+    orderBy: stringSearch(search.orderBy, "updatedDate"),
+    orderDir: stringSearch(search.orderDir, "desc"),
+    pageNum: Number(search.pageNum) || 1,
+    projectNames: arraySearch(search.projectNames ?? search["projectNames[]"]),
+  };
+}
+
+export const Route = createFileRoute("/organizations/$organizationName/boards")<
+  Register,
+  typeof validateOrganizationBoardsSearch
+>({
   component: OrganizationBoardsRoute,
-  validateSearch(search: Record<string, unknown>): OrganizationBoardsSearch {
-    return {
-      filter: stringSearch(search.filter),
-      orderBy: stringSearch(search.orderBy, "updatedDate"),
-      orderDir: stringSearch(search.orderDir, "desc"),
-      pageNum: Number(search.pageNum) || 1,
-      projectNames: arraySearch(search.projectNames ?? search["projectNames[]"]),
-    };
+  validateSearch: validateOrganizationBoardsSearch,
+  search: {
+    middlewares: [resetLegacyBoardSortSearch],
   },
 });
 
@@ -298,11 +336,8 @@ function BoardFilters({
               to="/organizations/$organizationName/boards"
               params={{ organizationName }}
               search={{
-                filter: search.filter,
                 orderBy: filter.field,
                 orderDir: active ? nextDir : "desc",
-                pageNum: search.pageNum,
-                projectNames: search.projectNames,
               }}
             >
               <i
