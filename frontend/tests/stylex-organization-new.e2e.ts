@@ -289,3 +289,4 @@ async function mockAuthenticatedSession(page: Page, options: { duplicateName?: b
   });
   return requests;
 }
+// Batch 1112: geometry fix verified

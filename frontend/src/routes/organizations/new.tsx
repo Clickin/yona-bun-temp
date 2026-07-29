@@ -23,10 +23,10 @@ const styles = stylex.create({
   },
   listReset: {
     margin: "0",
-    padding: "0",
+    padding: "1px 0 0 0",
   },
   term: {
-    margin: "3px 0 1px",
+    margin: "0 0 1px",
     padding: "0",
   },
   definition: {
@@ -83,6 +83,7 @@ const styles = stylex.create({
   },
   nameField: {
     height: "20px",
+    margin: "0 0 14px",
   },
   descriptionField: {
     height: "40px",
