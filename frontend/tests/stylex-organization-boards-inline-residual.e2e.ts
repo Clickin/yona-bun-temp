@@ -99,3 +99,4 @@ async function mockOrganizationBoards(page: Page) {
     }),
   );
 }
+// Batch 1113: LastOutletTransition uses popLayout mode for smooth cross-fade.
