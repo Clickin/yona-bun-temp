@@ -62,7 +62,10 @@ export type CodeCommitDetailResponse = {
     message: string;
     shortMessage: string;
   } | null;
+  deletions?: number;
   files: Array<{ path: string; patch: string }>;
+  filesChanged?: number;
+  insertions?: number;
   isWatching: boolean;
   issueReferences?: IssueReferenceMetadata[];
   noHead: boolean;

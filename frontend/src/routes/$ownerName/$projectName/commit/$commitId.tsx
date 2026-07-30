@@ -84,6 +84,12 @@ const sx = {
   reviewCardContent: stylex.props(styles.reviewCardContent),
   reviewCardDate: stylex.props(styles.reviewCardDate),
   reviewCardComments: stylex.props(styles.reviewCardComments),
+  diffStatBar: stylex.props(styles.diffStatBar),
+  diffStatBadgeChanged: stylex.props(styles.diffStatBadgeChanged),
+  diffStatBadgeAdd: stylex.props(styles.diffStatBadgeAdd),
+  diffStatBadgeDelete: stylex.props(styles.diffStatBadgeDelete),
+  fileDiffCardHeader: stylex.props(styles.fileDiffCardHeader),
+  fileToggleIcon: stylex.props(styles.fileToggleIcon),
 } as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
@@ -404,6 +410,18 @@ function ProjectCommitDetailBody({
                     </strong>
                   </div>
                 </div>
+
+                {detail.files.length > 0 ? (
+                  <div {...sx.diffStatBar} data-stylex-owner="commit-detail-diff-stat-bar">
+                    <span {...sx.diffStatBadgeChanged}>
+                      {detail.filesChanged ?? detail.files.length}{" "}
+                      {(detail.filesChanged ?? detail.files.length) === 1 ? "file" : "files"}{" "}
+                      changed
+                    </span>
+                    <span {...sx.diffStatBadgeAdd}>+{detail.insertions ?? 0}</span>
+                    <span {...sx.diffStatBadgeDelete}>-{detail.deletions ?? 0}</span>
+                  </div>
+                ) : null}
 
                 {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
                 <div
@@ -799,6 +817,7 @@ function FileDiffView({
   updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   const { t } = useLegacyMessages();
+  const [collapsed, setCollapsed] = useState(false);
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const filePath = parsed.pathB || parsed.pathA || file.path;
   const fileHeader = fileDiffHeaderLabel(parsed, filePath, t);
@@ -810,6 +829,9 @@ function FileDiffView({
   const fileModeChange = getFileModeChange(file);
   const shouldRenderNoChanges = parsed.lines.length === 0 && !fileModeChange;
 
+  const fileAdditions = parsed.lines.filter((l) => l.kind === "line" && l.type === "add").length;
+  const fileDeletions = parsed.lines.filter((l) => l.kind === "line" && l.type === "remove").length;
+
   return (
     <div
       id={fileId}
@@ -817,152 +839,174 @@ function FileDiffView({
       data-stylex-owner="commit-detail-file"
     >
       <div className="diff-partial-inner">
-        <div
-          {...sx.fileMeta}
-          className={`${sx.fileMeta.className} diff-partial-meta`}
-          data-stylex-owner="commit-detail-file-meta"
+        <button
+          type="button"
+          {...sx.fileDiffCardHeader}
+          onClick={() => setCollapsed(!collapsed)}
+          data-stylex-owner="commit-detail-file-card-header"
         >
-          <div
-            {...sx.diffPartialCommit}
-            className={`${sx.diffPartialCommit.className} diff-partial-commit`}
-            data-stylex-owner="commit-detail-file-commit"
-          >
-            <div
-              {...sx.diffPartialCommitId}
-              className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
-              data-stylex-owner="commit-detail-file-commit-id"
-            >
-              {commitA && parsed.pathA ? (
-                <Link
-                  to={projectTo(ownerName, projectName, "code", commitA, parsed.pathA)}
-                  title={commitA}
-                  target="_blank"
-                >
-                  {commitAShort}
-                </Link>
-              ) : (
-                "\u00a0"
-              )}
-            </div>
-            <div
-              {...sx.diffPartialCommitId}
-              className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
-              data-stylex-owner="commit-detail-file-commit-id"
-            >
-              {commitB && parsed.pathB ? (
-                <Link
-                  to={projectTo(ownerName, projectName, "code", commitB, parsed.pathB)}
-                  title={commitB}
-                  target="_blank"
-                >
-                  {commitBShort}
-                </Link>
-              ) : (
-                "\u00a0"
-              )}
-            </div>
-          </div>
-          <div
-            {...sx.diffPartialFile}
-            className={`${sx.diffPartialFile.className} diff-partial-file`}
-            data-stylex-owner="commit-detail-file-header"
-          >
-            <span
-              {...sx.diffPartialFilename}
-              className={`${sx.diffPartialFilename.className} filename`}
-              data-stylex-owner="commit-detail-file-header-filename"
-            >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span {...sx.fileToggleIcon}>{collapsed ? "▶" : "▼"}</span>
+            <span className="filename" style={{ fontWeight: 600, fontSize: "13px" }}>
               {fileHeader}
             </span>
           </div>
-        </div>
-        <div
-          {...sx.fileCode}
-          className={`${sx.fileCode.className} diff-partial-code`}
-          data-hashcode={filePath}
-          data-stylex-owner="commit-detail-file-code"
-        >
-          <div className="patch-header">
-            {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
-            {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
+          <div {...sx.diffStatBar} style={{ margin: 0 }}>
+            {fileAdditions > 0 ? <span {...sx.diffStatBadgeAdd}>+{fileAdditions}</span> : null}
+            {fileDeletions > 0 ? <span {...sx.diffStatBadgeDelete}>-{fileDeletions}</span> : null}
           </div>
-          <table
-            {...sx.diffPartialTable}
-            className={`${sx.diffPartialTable.className} diff-container show-comments`}
-            data-stylex-owner="commit-detail-diff-partial-table"
-            data-path-a={parsed.pathA}
-            data-path-b={parsed.pathB}
-            data-commit-a={commitA}
-            data-commit-b={commitB}
-            data-file-path={filePath}
-          >
-            <tbody>
-              {errorMessageKey ? (
-                <FileDiffErrorRow messageKey={errorMessageKey} />
-              ) : shouldRenderNoChanges ? (
-                <FileDiffErrorRow messageKey="code.noChanges" />
-              ) : (
-                <>
-                  {fileModeChange ? <FileModeChangedRow modeChange={fileModeChange} /> : null}
-                  {parsed.lines.map((line) => {
-                    const lineThreads =
-                      line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
+        </button>
 
-                    return line.kind === "range" ? (
-                      <tr className="range" key={diffLineKey(line)}>
-                        <td
-                          {...sx.diffLineNumber}
-                          data-stylex-owner="commit-detail-diff-line-number-cell"
-                          className={`${sx.diffLineNumber.className} linenum`}
-                        >
-                          <div
-                            {...sx.diffLineNumberMarker}
-                            data-stylex-owner="commit-detail-diff-line-number"
-                            className={`${sx.diffLineNumberMarker.className} line-number`}
-                            data-line-num="..."
-                          >
-                            <span className="hidden">...</span>
-                          </div>
-                        </td>
-                        <td
-                          {...sx.diffLineNumber}
-                          data-stylex-owner="commit-detail-diff-line-number-cell"
-                          className={`${sx.diffLineNumber.className} linenum`}
-                        >
-                          <div
-                            {...sx.diffLineNumberMarker}
-                            data-stylex-owner="commit-detail-diff-line-number"
-                            className={`${sx.diffLineNumberMarker.className} line-number`}
-                            data-line-num="..."
-                          >
-                            <span className="hidden">...</span>
-                          </div>
-                        </td>
-                        <td className="hunk">{line.text}</td>
-                      </tr>
-                    ) : (
-                      <FragmentWithInlineComments
-                        commitId={commitB}
-                        currentUser={currentUser}
-                        deleteComment={deleteComment}
-                        openCommentDeleteModal={openCommentDeleteModal}
-                        key={diffLineKey(line)}
-                        line={line}
-                        ownerName={ownerName}
-                        projectName={projectName}
-                        runtimeConfig={runtimeConfig}
-                        submitReply={submitReply}
-                        threads={lineThreads}
-                        toggleThreadState={toggleThreadState}
-                        updateComment={updateComment}
-                      />
-                    );
-                  })}
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {!collapsed ? (
+          <>
+            <div
+              {...sx.fileMeta}
+              className={`${sx.fileMeta.className} diff-partial-meta`}
+              data-stylex-owner="commit-detail-file-meta"
+            >
+              <div
+                {...sx.diffPartialCommit}
+                className={`${sx.diffPartialCommit.className} diff-partial-commit`}
+                data-stylex-owner="commit-detail-file-commit"
+              >
+                <div
+                  {...sx.diffPartialCommitId}
+                  className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
+                  data-stylex-owner="commit-detail-file-commit-id"
+                >
+                  {commitA && parsed.pathA ? (
+                    <Link
+                      to={projectTo(ownerName, projectName, "code", commitA, parsed.pathA)}
+                      title={commitA}
+                      target="_blank"
+                    >
+                      {commitAShort}
+                    </Link>
+                  ) : (
+                    "\u00a0"
+                  )}
+                </div>
+                <div
+                  {...sx.diffPartialCommitId}
+                  className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
+                  data-stylex-owner="commit-detail-file-commit-id"
+                >
+                  {commitB && parsed.pathB ? (
+                    <Link
+                      to={projectTo(ownerName, projectName, "code", commitB, parsed.pathB)}
+                      title={commitB}
+                      target="_blank"
+                    >
+                      {commitBShort}
+                    </Link>
+                  ) : (
+                    "\u00a0"
+                  )}
+                </div>
+              </div>
+              <div
+                {...sx.diffPartialFile}
+                className={`${sx.diffPartialFile.className} diff-partial-file`}
+                data-stylex-owner="commit-detail-file-header"
+              >
+                <span
+                  {...sx.diffPartialFilename}
+                  className={`${sx.diffPartialFilename.className} filename`}
+                  data-stylex-owner="commit-detail-file-header-filename"
+                >
+                  {fileHeader}
+                </span>
+              </div>
+            </div>
+            <div
+              {...sx.fileCode}
+              className={`${sx.fileCode.className} diff-partial-code`}
+              data-hashcode={filePath}
+              data-stylex-owner="commit-detail-file-code"
+            >
+              <div className="patch-header">
+                {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
+                {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
+              </div>
+              <table
+                {...sx.diffPartialTable}
+                className={`${sx.diffPartialTable.className} diff-container show-comments`}
+                data-stylex-owner="commit-detail-diff-partial-table"
+                data-path-a={parsed.pathA}
+                data-path-b={parsed.pathB}
+                data-commit-a={commitA}
+                data-commit-b={commitB}
+                data-file-path={filePath}
+              >
+                <tbody>
+                  {errorMessageKey ? (
+                    <FileDiffErrorRow messageKey={errorMessageKey} />
+                  ) : shouldRenderNoChanges ? (
+                    <FileDiffErrorRow messageKey="code.noChanges" />
+                  ) : (
+                    <>
+                      {fileModeChange ? <FileModeChangedRow modeChange={fileModeChange} /> : null}
+                      {parsed.lines.map((line) => {
+                        const lineThreads =
+                          line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
+
+                        return line.kind === "range" ? (
+                          <tr className="range" key={diffLineKey(line)}>
+                            <td
+                              {...sx.diffLineNumber}
+                              data-stylex-owner="commit-detail-diff-line-number-cell"
+                              className={`${sx.diffLineNumber.className} linenum`}
+                            >
+                              <div
+                                {...sx.diffLineNumberMarker}
+                                data-stylex-owner="commit-detail-diff-line-number"
+                                className={`${sx.diffLineNumberMarker.className} line-number`}
+                                data-line-num="..."
+                              >
+                                <span className="hidden">...</span>
+                              </div>
+                            </td>
+                            <td
+                              {...sx.diffLineNumber}
+                              data-stylex-owner="commit-detail-diff-line-number-cell"
+                              className={`${sx.diffLineNumber.className} linenum`}
+                            >
+                              <div
+                                {...sx.diffLineNumberMarker}
+                                data-stylex-owner="commit-detail-diff-line-number"
+                                className={`${sx.diffLineNumberMarker.className} line-number`}
+                                data-line-num="..."
+                              >
+                                <span className="hidden">...</span>
+                              </div>
+                            </td>
+                            <td className="hunk">{line.text}</td>
+                          </tr>
+                        ) : (
+                          <FragmentWithInlineComments
+                            commitId={commitB}
+                            currentUser={currentUser}
+                            deleteComment={deleteComment}
+                            key={diffLineKey(line)}
+                            line={line}
+                            openCommentDeleteModal={openCommentDeleteModal}
+                            ownerName={ownerName}
+                            projectName={projectName}
+                            runtimeConfig={runtimeConfig}
+                            submitReply={submitReply}
+                            threads={lineThreads}
+                            toggleThreadState={toggleThreadState}
+                            updateComment={updateComment}
+                          />
+                        );
+                      })}
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );

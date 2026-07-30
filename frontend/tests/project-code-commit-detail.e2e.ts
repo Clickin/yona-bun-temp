@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync } from "node:fs";
+// Batch 1117: verify commit diff stat (+insertions, -deletions) and per-file diff card rendering
 import { resolve } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
