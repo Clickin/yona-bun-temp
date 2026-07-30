@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router";
 import "./legacy-dynatree.css";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -10,6 +10,7 @@ import { useLegacyMessages } from "../../../../i18n";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { styles } from "../-code-branch.stylex";
+import { ProjectCodeSearchPanel } from "../code";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
   component: ProjectCodeBranchRoute,
@@ -20,7 +21,13 @@ function ProjectCodeBranchRoute() {
 }
 
 export function ProjectCodeBranchIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
+  const params = useParams({ strict: false }) as {
+    ownerName?: string;
+    projectName?: string;
+    branch?: string;
+  };
+  const ownerName = params.ownerName ?? "";
+  const projectName = params.projectName ?? "";
   const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -41,7 +48,14 @@ function ProjectCodeBranchScreen({
   project: ProjectContainer | undefined;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { branch, ownerName, projectName } = Route.useParams();
+  const params = useParams({ strict: false }) as {
+    ownerName?: string;
+    projectName?: string;
+    branch?: string;
+  };
+  const ownerName = params.ownerName ?? "";
+  const projectName = params.projectName ?? "";
+  const branch = params.branch ?? "main";
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { branch, ownerName, path: "", projectName }),
   );
@@ -348,6 +362,13 @@ function ProjectCodeFolderBody({
               </>
             ) : null}
           </div>
+
+          <ProjectCodeSearchPanel
+            branch={selectedBranch}
+            ownerName={ownerName}
+            projectName={projectName}
+            runtimeConfig={runtimeConfig}
+          />
 
           <div
             className={`${stylex.props(styles.list).className} code-viewer-wrap`}

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+// Batch 1120: verify branch code search UI
 
 test("project code search find file and grep in file UI with stylex", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
