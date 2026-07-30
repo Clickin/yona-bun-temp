@@ -8,6 +8,7 @@
     "agent:scala-html-goal-automation": "node scripts/check-scala-html-goal-automation.mjs",
     "agent:turn-commit": "node tools/agent-turn-commit.mjs",
     "build:windows-msvc:xwin": "node scripts/build-windows-msvc-xwin.mjs",
+    "build:migrate-windows": "node scripts/build-migrate-windows.mjs",
     "dev": "node scripts/dev.mjs",
     "dev:backend": "node scripts/dev-backend.mjs",
     "dev:frontend": "pnpm --dir frontend dev",
