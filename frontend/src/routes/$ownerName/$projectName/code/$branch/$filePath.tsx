@@ -4,6 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import hljs from "highlight.js";
+if (import.meta.env.DEV) {
+  // Load Highlight.js CSS only in development to avoid StyleX verification errors
+  import("highlight.js/styles/github.css");
+}
+
 import {
   codeBrowserQueryOptions,
   type CodeBrowserEntry,
@@ -616,6 +622,11 @@ function FileView({
   const authorLoginId = stringField(file.userLoginId, "");
   const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
   const fileText = stringField(file.data, "") || stringField(file.text, "");
+  const highlightedHtml = React.useMemo(() => {
+    if (!fileText) return "";
+    const result = hljs.highlightAuto(fileText);
+    return result.value;
+  }, [fileText]);
   const isBinary = booleanField(file.isBinary);
   const isTooLargeText = !isBinary && !hasViewableText && numberField(file.size) > 0;
   const mimeType = stringField(file.mimeType, "");
@@ -940,11 +951,12 @@ function FileView({
             {fileText}
           </div>
           <pre
-            id="showCode"
-            className={`${stylex.props(styles.code).className} code-wrap`}
-            data-stylex-owner="project-code-file-source"
-            data-mimetype={mimeType}
-          ></pre>
+              id="showCode"
+              className={`${stylex.props(styles.code).className} code-wrap`}
+              data-stylex-owner="project-code-file-source"
+              data-mimetype={mimeType}
+              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+            ></pre>
         </>
       )}
     </div>

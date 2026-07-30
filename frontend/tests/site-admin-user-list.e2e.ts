@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+// Batch 1121: verify admin user bulk delete UI and API
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const SITE_USER_LIST_ROUTE_SOURCE = new URL("../src/routes/sites/userList.tsx", import.meta.url);

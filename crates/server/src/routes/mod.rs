@@ -8,6 +8,7 @@ mod code;
 mod comments;
 #[cfg(debug_assertions)]
 mod debug;
+mod exports;
 mod files;
 mod issues;
 mod legacy_runtime;
@@ -38,6 +39,7 @@ pub(crate) use code::routes as code_routes;
 pub(crate) use comments::routes as comment_routes;
 #[cfg(debug_assertions)]
 pub(crate) use debug::routes as debug_routes;
+pub(crate) use exports::rest_routes as export_rest_routes;
 pub(crate) use files::routes as file_routes;
 pub(crate) use files::{
     detect_upload_mime_type, legacy_content_disposition_filename, uploaded_file_path_with_root,
@@ -164,6 +166,7 @@ pub(crate) fn rest_api_routes(service: PilotServiceImpl) -> Router {
         .merge(board_rest_routes(service.clone()))
         .merge(code_rest_routes(service.clone()))
         .merge(project_rest_routes(service.clone()))
+        .merge(export_rest_routes(service.clone()))
         .merge(pull_request_rest_routes(pull_request_service));
 
     #[cfg(debug_assertions)]

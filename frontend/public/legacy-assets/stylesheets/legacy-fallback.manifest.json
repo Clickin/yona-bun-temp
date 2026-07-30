@@ -3,8 +3,19 @@
   "artifact": "legacy-assets/stylesheets/legacy-fallback.css",
   "artifactSha256": "8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6",
   "layer": "legacy",
-  "activeFrozen": ["bootstrap", "usermenu", "yobi"],
-  "pluginPassthrough": ["yobicon", "select2", "pikaday", "nprogress", "viewer", "magnific-popup"],
+  "activeFrozen": [
+    "bootstrap",
+    "usermenu",
+    "yobi"
+  ],
+  "pluginPassthrough": [
+    "yobicon",
+    "select2",
+    "pikaday",
+    "nprogress",
+    "viewer",
+    "magnific-popup"
+  ],
   "layeredViteInputs": [
     {
       "id": "react-app",
@@ -14,7 +25,7 @@
       "sourceFiles": [
         {
           "path": "frontend/src/app.css",
-          "sha256": "43d67928ade0071c3cd80d4876d3d7d61cd374f3de6fa4f7a9f49ccef1113abf"
+          "sha256": "07594d320619e3982b775c41cb9a54d7c20bc5542bf8fa843688b95c1608508a"
         }
       ]
     },

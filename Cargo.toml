@@ -8,6 +8,7 @@ members = [
     "crates/vcs",
     "crates/search",
     "crates/integrations",
+    "crates/yona-migrate",
 ]
 resolver = "2"
 
