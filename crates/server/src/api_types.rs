@@ -2162,3 +2162,60 @@ pub struct RestCommitDetail {
     #[serde(default)]
     pub deletions: u32,
 }
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeFindFileResult {
+    #[serde(default)]
+    pub owner_name: String,
+    #[serde(default)]
+    pub project_name: String,
+    #[serde(default)]
+    pub selected_branch: String,
+    #[serde(default)]
+    pub query: String,
+    #[serde(default)]
+    pub paths: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeGrepMatch {
+    #[serde(default)]
+    pub path: String,
+    #[serde(default)]
+    pub line_number: u32,
+    #[serde(default)]
+    pub content: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeGrepResult {
+    #[serde(default)]
+    pub owner_name: String,
+    #[serde(default)]
+    pub project_name: String,
+    #[serde(default)]
+    pub selected_branch: String,
+    #[serde(default)]
+    pub query: String,
+    #[serde(default)]
+    pub matches: Vec<RestCodeGrepMatch>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestBulkDeleteBody {
+    #[serde(default, alias = "loginIds", alias = "projectIds")]
+    pub ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestBulkDeleteResponse {
+    #[serde(default)]
+    pub count: u64,
+    #[serde(default)]
+    pub ok: bool,
+}

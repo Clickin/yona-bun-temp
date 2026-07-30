@@ -248,6 +248,26 @@ pub struct CodeTagListItemRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeFindFileResult {
+    pub paths: Vec<String>,
+    pub selected_branch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeGrepMatchRecord {
+    pub content: String,
+    pub line_number: u32,
+    pub path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeGrepResult {
+    pub matches: Vec<CodeGrepMatchRecord>,
+    pub query: String,
+    pub selected_branch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GitHttpBackendRequest<'a> {
     pub body: &'a [u8],
     pub content_type: Option<&'a str>,
@@ -2395,6 +2415,128 @@ pub fn read_code_blame(
         lines,
         path: clean_path,
         selected_branch: revision.to_string(),
+    })
+}
+
+pub fn find_code_files(
+    repo_path: &Path,
+    branch: &str,
+    query: Option<&str>,
+) -> Result<CodeFindFileResult, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let selected_branch = if branch.trim().is_empty() {
+        default_branch(repo_path).ok_or(VcsError::NotFound)?
+    } else {
+        branch.to_string()
+    };
+
+    let output = git_output(repo_path, &["ls-tree", "-r", "--name-only", &selected_branch])?;
+    let q_lower = query.map(|q| q.trim().to_lowercase()).unwrap_or_default();
+    let mut paths = Vec::new();
+
+    for line in output.lines() {
+        let p = line.trim();
+        if p.is_empty() {
+            continue;
+        }
+        if !q_lower.is_empty() && !p.to_lowercase().contains(&q_lower) {
+            continue;
+        }
+        paths.push(p.to_string());
+    }
+
+    Ok(CodeFindFileResult {
+        paths,
+        selected_branch,
+    })
+}
+
+pub fn grep_code_files(
+    repo_path: &Path,
+    branch: &str,
+    query: &str,
+) -> Result<CodeGrepResult, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let query_trimmed = query.trim();
+    let selected_branch = if branch.trim().is_empty() {
+        default_branch(repo_path).ok_or(VcsError::NotFound)?
+    } else {
+        branch.to_string()
+    };
+
+    if query_trimmed.is_empty() {
+        return Ok(CodeGrepResult {
+            matches: Vec::new(),
+            query: query.to_string(),
+            selected_branch,
+        });
+    }
+
+    let mut command = git_command();
+    command
+        .arg("--git-dir")
+        .arg(repo_path)
+        .args(["grep", "-n", "-I", "--full-name", "-e", query_trimmed, &selected_branch])
+        .stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped());
+
+    let (output, exceeded) =
+        capture_command_output(command, Duration::from_secs(10), Some(10 * 1024 * 1024), Some(64 * 1024))
+            .map_err(|error| match error {
+                CommandCaptureError::Unavailable => VcsError::GitUnavailable,
+                CommandCaptureError::TimedOut => VcsError::GitTimedOut,
+            })?;
+
+    if exceeded {
+        return Err(VcsError::GitFailed(
+            "git grep output exceeded configured limit".to_string(),
+        ));
+    }
+
+    if !output.status.success() {
+        let code = output.status.code();
+        let stderr = git_error_text(&output);
+        if code == Some(1) && stderr.is_empty() {
+            return Ok(CodeGrepResult {
+                matches: Vec::new(),
+                query: query.to_string(),
+                selected_branch,
+            });
+        }
+        if stderr.contains("Not a valid object name")
+            || stderr.contains("ambiguous argument")
+            || stderr.contains("pathspec")
+        {
+            return Err(VcsError::NotFound);
+        }
+        return Err(VcsError::GitFailed(stderr));
+    }
+
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+    let mut matches = Vec::new();
+    for line in stdout_str.lines() {
+        let parts: Vec<&str> = line.splitn(4, ':').collect();
+        if parts.len() >= 4 {
+            let path = parts[1].to_string();
+            let line_number = parts[2].parse::<u32>().unwrap_or(0);
+            let content = parts[3].to_string();
+            matches.push(CodeGrepMatchRecord {
+                content,
+                line_number,
+                path,
+            });
+        }
+    }
+
+    Ok(CodeGrepResult {
+        matches,
+        query: query.to_string(),
+        selected_branch,
     })
 }
 
@@ -4623,5 +4765,54 @@ mod tests {
 
         let deleted_snapshot = delete_code_tag(&repo_path, "v1.0.0").expect("delete tag");
         assert!(deleted_snapshot.tags.is_empty());
+    }
+
+    #[test]
+    fn find_and_grep_code_files_search_repository() {
+        let data_dir = tempdir().expect("find grep tempdir");
+        let repo_path = data_dir.path().join("search.git");
+        create_bare_repository(&repo_path).expect("create bare repository");
+        commit_text_file(
+            &repo_path,
+            None,
+            "src/main.rs",
+            "fn main() {\n    println!(\"Hello World\");\n}\n",
+            "Initial commit",
+            "Tester",
+            "tester@example.com",
+        )
+        .expect("commit main.rs");
+        commit_text_file(
+            &repo_path,
+            None,
+            "README.md",
+            "# Sample Project\nHello World documentation.\n",
+            "Add README",
+            "Tester",
+            "tester@example.com",
+        )
+        .expect("commit README.md");
+
+        let find_all = find_code_files(&repo_path, "master", None)
+            .or_else(|_| find_code_files(&repo_path, "main", None))
+            .expect("find code files all");
+        assert_eq!(find_all.paths.len(), 2);
+        assert!(find_all.paths.contains(&"src/main.rs".to_string()));
+        assert!(find_all.paths.contains(&"README.md".to_string()));
+
+        let find_filtered = find_code_files(&repo_path, &find_all.selected_branch, Some("main"))
+            .expect("find code files filtered");
+        assert_eq!(find_filtered.paths, vec!["src/main.rs".to_string()]);
+
+        let grep_results = grep_code_files(&repo_path, &find_all.selected_branch, "println")
+            .expect("grep code files");
+        assert_eq!(grep_results.matches.len(), 1);
+        assert_eq!(grep_results.matches[0].path, "src/main.rs");
+        assert_eq!(grep_results.matches[0].line_number, 2);
+        assert!(grep_results.matches[0].content.contains("println!"));
+
+        let grep_empty = grep_code_files(&repo_path, &find_all.selected_branch, "nonexistent_keyword")
+            .expect("grep code files empty");
+        assert!(grep_empty.matches.is_empty());
     }
 }

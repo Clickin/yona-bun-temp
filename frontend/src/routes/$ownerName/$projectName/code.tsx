@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useLayoutEffect } from "react";
+import { useState, useLayoutEffect, type FormEvent } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
+import { codeFindFilesQueryOptions, codeGrepFilesQueryOptions } from "../../../api/code";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { codeColors } from "./-code.stylex";
+import { codeColors, searchStyles } from "./-code.stylex";
 
 const styles = stylex.create({
   noHeadPage: { margin: "20px auto 0px" },
@@ -70,6 +71,156 @@ function ProjectCodeScreen({
   return <ProjectCodeBody code={codeQuery.data} project={project} runtimeConfig={runtimeConfig} />;
 }
 
+export function ProjectCodeSearchPanel({
+  ownerName,
+  projectName,
+  branch,
+  runtimeConfig,
+}: {
+  ownerName: string;
+  projectName: string;
+  branch: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const [mode, setMode] = useState<"find" | "grep">("find");
+  const [queryInput, setQueryInput] = useState("");
+  const [activeQuery, setActiveQuery] = useState("");
+
+  const findQuery = useQuery({
+    ...codeFindFilesQueryOptions(runtimeConfig, {
+      branch,
+      enabled: mode === "find" && activeQuery.trim().length > 0,
+      ownerName,
+      projectName,
+      query: activeQuery,
+    }),
+  });
+
+  const grepQuery = useQuery({
+    ...codeGrepFilesQueryOptions(runtimeConfig, {
+      branch,
+      enabled: mode === "grep" && activeQuery.trim().length > 0,
+      ownerName,
+      projectName,
+      query: activeQuery,
+    }),
+  });
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setActiveQuery(queryInput);
+  };
+
+  return (
+    <div {...stylex.props(searchStyles.container)} data-testid="code-search-panel">
+      <div {...stylex.props(searchStyles.header)}>
+        <button
+          type="button"
+          data-testid="code-search-tab-find"
+          {...stylex.props(searchStyles.tabButton, mode === "find" && searchStyles.tabButtonActive)}
+          onClick={() => setMode("find")}
+        >
+          Find File
+        </button>
+        <button
+          type="button"
+          data-testid="code-search-tab-grep"
+          {...stylex.props(searchStyles.tabButton, mode === "grep" && searchStyles.tabButtonActive)}
+          onClick={() => setMode("grep")}
+        >
+          Search in File
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} {...stylex.props(searchStyles.form)}>
+        <input
+          type="text"
+          data-testid="code-search-input"
+          placeholder={
+            mode === "find"
+              ? "Search file path (git ls-tree)..."
+              : "Search file content (git grep)..."
+          }
+          value={queryInput}
+          onChange={(e) => setQueryInput(e.target.value)}
+          {...stylex.props(searchStyles.searchInput)}
+        />
+        <button
+          type="submit"
+          data-testid="code-search-submit"
+          {...stylex.props(searchStyles.searchButton)}
+        >
+          Search
+        </button>
+      </form>
+
+      {mode === "find" ? (
+        <div data-testid="code-search-find-results">
+          {findQuery.isLoading ? (
+            <div {...stylex.props(searchStyles.emptyState)}>Searching files…</div>
+          ) : findQuery.data?.paths && findQuery.data.paths.length > 0 ? (
+            <ul {...stylex.props(searchStyles.resultList)}>
+              {findQuery.data.paths.map((filePath) => (
+                <li
+                  key={filePath}
+                  {...stylex.props(searchStyles.resultItem)}
+                  data-testid="code-search-result-item"
+                >
+                  <Link
+                    to={
+                      `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}/${filePath}` as any
+                    }
+                    {...stylex.props(searchStyles.resultItemPath)}
+                  >
+                    {filePath}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : activeQuery.trim().length > 0 ? (
+            <div {...stylex.props(searchStyles.emptyState)} data-testid="code-search-empty">
+              No matching files found.
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div data-testid="code-search-grep-results">
+          {grepQuery.isLoading ? (
+            <div {...stylex.props(searchStyles.emptyState)}>Searching content…</div>
+          ) : grepQuery.data?.matches && grepQuery.data.matches.length > 0 ? (
+            <ul {...stylex.props(searchStyles.resultList)}>
+              {grepQuery.data.matches.map((item) => (
+                <li
+                  key={`${item.path}:${item.lineNumber}:${item.content}`}
+                  {...stylex.props(searchStyles.resultItem)}
+                  data-testid="code-search-result-item"
+                >
+                  <Link
+                    to={
+                      `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}/${item.path}` as any
+                    }
+                    {...stylex.props(searchStyles.resultItemPath)}
+                  >
+                    {item.path} (line {item.lineNumber})
+                  </Link>
+                  <div {...stylex.props(searchStyles.resultMatchSnippet)}>
+                    <span {...stylex.props(searchStyles.lineNumber)}>L{item.lineNumber}:</span>
+                    {item.content}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : activeQuery.trim().length > 0 ? (
+            <div {...stylex.props(searchStyles.emptyState)} data-testid="code-search-empty">
+              No matching content found.
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProjectCodeBody({
   code,
   project,
@@ -79,10 +230,19 @@ function ProjectCodeBody({
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { ownerName, projectName } = Route.useParams();
+
   if (!code.noHead) {
     return (
       <div className="page-wrap-outer">
-        <div className="project-page-wrap"></div>
+        <div className="project-page-wrap">
+          <ProjectCodeSearchPanel
+            branch={code.selectedBranch || "main"}
+            ownerName={ownerName}
+            projectName={projectName}
+            runtimeConfig={runtimeConfig}
+          />
+        </div>
       </div>
     );
   }

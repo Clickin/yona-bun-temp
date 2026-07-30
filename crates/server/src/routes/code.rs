@@ -27,8 +27,9 @@ use crate::{
     rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
     workspace_avatar_url, ConnectError, MarkdownIssueReference, MarkdownMentionReference,
     PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestCodeArchiveQuery,
-    RestCodeBlameRecord, RestCodeBlameResponse, RestCodeTag, RestCodeTagListResponse,
-    RestCodeTagPermissions, RestCreateCodeTagBody, RestDeleteCodeTagBody, RestIssueReferenceMetadata,
+    RestCodeBlameRecord, RestCodeBlameResponse, RestCodeFindFileResult, RestCodeGrepMatch,
+    RestCodeGrepResult, RestCodeTag, RestCodeTagListResponse, RestCodeTagPermissions,
+    RestCreateCodeTagBody, RestDeleteCodeTagBody, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
 };
 
@@ -402,6 +403,50 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             }),
         )
+        .route(
+            "/projects/{owner_name}/{project_name}/code/{branch}/find",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, branch)): Path<(String, String, String)>,
+                      Query(query): Query<RestCodeSearchQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_code_find_files(
+                            headers,
+                            owner_name,
+                            project_name,
+                            branch,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/code/{branch}/grep",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, branch)): Path<(String, String, String)>,
+                      Query(query): Query<RestCodeSearchQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_code_grep(
+                            headers,
+                            owner_name,
+                            project_name,
+                            branch,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
 }
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
@@ -675,6 +720,13 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                 },
             ),
         )
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestCodeSearchQuery {
+    q: String,
+    query: String,
 }
 
 #[derive(Default, Deserialize)]
@@ -1294,6 +1346,134 @@ pub(crate) async fn rest_read_code_blame(
         path: filepath,
         project_name,
         selected_branch: branch,
+    }))
+}
+
+pub(crate) async fn rest_read_code_find_files(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    branch: String,
+    query: RestCodeSearchQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeFindFileResult>, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("code find requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
+        } else {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
+        };
+    }
+
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let q = if !query.q.is_empty() {
+        query.q
+    } else {
+        query.query
+    };
+    let result = yoram_vcs::find_code_files(&repo_path, &branch, if q.is_empty() { None } else { Some(&q) })
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(RestCodeFindFileResult {
+        owner_name,
+        project_name,
+        selected_branch: result.selected_branch,
+        query: q,
+        paths: result.paths,
+    }))
+}
+
+pub(crate) async fn rest_read_code_grep(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    branch: String,
+    query: RestCodeSearchQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeGrepResult>, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("code grep requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
+        } else {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
+        };
+    }
+
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let q = if !query.q.is_empty() {
+        query.q
+    } else {
+        query.query
+    };
+    let result = yoram_vcs::grep_code_files(&repo_path, &branch, &q)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    let matches = result
+        .matches
+        .into_iter()
+        .map(|m| RestCodeGrepMatch {
+            content: m.content,
+            line_number: m.line_number,
+            path: m.path,
+        })
+        .collect();
+
+    Ok(Json(RestCodeGrepResult {
+        owner_name,
+        project_name,
+        selected_branch: result.selected_branch,
+        query: result.query,
+        matches,
     }))
 }
 

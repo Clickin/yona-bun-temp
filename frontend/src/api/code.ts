@@ -208,3 +208,89 @@ export async function readCommitFileDiff(
     { fetchImpl, method: "GET" },
   );
 }
+
+export type CodeFindFileResult = {
+  ownerName: string;
+  paths: string[];
+  projectName: string;
+  query: string;
+  selectedBranch: string;
+};
+
+export type CodeGrepMatch = {
+  content: string;
+  lineNumber: number;
+  path: string;
+};
+
+export type CodeGrepResult = {
+  matches: CodeGrepMatch[];
+  ownerName: string;
+  projectName: string;
+  query: string;
+  selectedBranch: string;
+};
+
+export async function findCodeFiles(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { branch: string; query?: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeFindFileResult> {
+  const queryParam = input.query ? `?q=${encodeURIComponent(input.query)}` : "";
+  return restFetch<CodeFindFileResult>(
+    runtimeConfig,
+    `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
+      input.projectName,
+    )}/code/${encodeURIComponent(input.branch)}/find${queryParam}`,
+    { fetchImpl, method: "GET" },
+  );
+}
+
+export function codeFindFilesQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { branch: string; query?: string; enabled?: boolean },
+) {
+  return queryOptions({
+    enabled: input.enabled ?? true,
+    queryFn: () => findCodeFiles(runtimeConfig, input),
+    queryKey: [
+      ...apiQueryKeys.project.base(input.ownerName, input.projectName),
+      "code",
+      input.branch,
+      "find",
+      input.query ?? "",
+    ] as const,
+  });
+}
+
+export async function grepCodeFiles(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { branch: string; query: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeGrepResult> {
+  const queryParam = `?q=${encodeURIComponent(input.query)}`;
+  return restFetch<CodeGrepResult>(
+    runtimeConfig,
+    `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
+      input.projectName,
+    )}/code/${encodeURIComponent(input.branch)}/grep${queryParam}`,
+    { fetchImpl, method: "GET" },
+  );
+}
+
+export function codeGrepFilesQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { branch: string; query: string; enabled?: boolean },
+) {
+  return queryOptions({
+    enabled: (input.enabled ?? true) && input.query.trim().length > 0,
+    queryFn: () => grepCodeFiles(runtimeConfig, input),
+    queryKey: [
+      ...apiQueryKeys.project.base(input.ownerName, input.projectName),
+      "code",
+      input.branch,
+      "grep",
+      input.query,
+    ] as const,
+  });
+}
