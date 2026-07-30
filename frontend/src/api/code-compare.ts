@@ -19,7 +19,10 @@ export type CodeCompareFile = {
 export type CodeCompareResponse = {
   commitA: CodeCompareCommit | null;
   commitB: CodeCompareCommit | null;
+  deletions: number;
   files: CodeCompareFile[];
+  filesChanged: number;
+  insertions: number;
   noHead: boolean;
   ownerName: string;
   patch: string;
@@ -38,10 +41,13 @@ function normalizeCompare(response: Partial<CodeCompareResponse>): CodeCompareRe
   return {
     commitA: response.commitA ? { commitId: response.commitA.commitId ?? "" } : null,
     commitB: response.commitB ? { commitId: response.commitB.commitId ?? "" } : null,
+    deletions: response.deletions ?? 0,
     files: (response.files ?? []).map((file) => ({
       patch: file.patch ?? "",
       path: file.path ?? "",
     })),
+    filesChanged: response.filesChanged ?? response.files?.length ?? 0,
+    insertions: response.insertions ?? 0,
     noHead: response.noHead ?? false,
     ownerName: response.ownerName ?? "",
     patch: response.patch ?? "",

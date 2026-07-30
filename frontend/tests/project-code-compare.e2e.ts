@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+// Batch 1118: verify 3-dot merge-base revision compare UI
 import { expect, test, type Page } from "@playwright/test";
 
 const ROUTE_SOURCE = readFileSync(

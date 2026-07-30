@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
+import { useState } from "react";
 import { codeCompareQueryOptions, type CodeCompareResponse } from "../../../../api/code-compare";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -14,6 +15,14 @@ const sx = {
   commitInfo: stylex.props(styles.commitInfo),
   diffBody: stylex.props(styles.diffBody),
   empty: stylex.props(styles.empty),
+  diffStatBar: stylex.props(styles.diffStatBar),
+  diffStatBadgeChanged: stylex.props(styles.diffStatBadgeChanged),
+  diffStatBadgeAdd: stylex.props(styles.diffStatBadgeAdd),
+  diffStatBadgeDelete: stylex.props(styles.diffStatBadgeDelete),
+  fileDiffCard: stylex.props(styles.fileDiffCard),
+  fileHeader: stylex.props(styles.fileHeader),
+  fileHeaderTitle: stylex.props(styles.fileHeaderTitle),
+  fileToggleIcon: stylex.props(styles.fileToggleIcon),
 } as const;
 
 type ParsedDiffLine =
@@ -136,6 +145,17 @@ function ProjectCodeCompareBody({
             @{commitA}..{commitB}
           </strong>
         </p>
+
+        {compare.files.length > 0 ? (
+          <div {...sx.diffStatBar} data-stylex-owner="project-compare-diff-stat-bar">
+            <span {...sx.diffStatBadgeChanged}>
+              {compare.filesChanged} {compare.filesChanged === 1 ? "file" : "files"} changed
+            </span>
+            <span {...sx.diffStatBadgeAdd}>+{compare.insertions}</span>
+            <span {...sx.diffStatBadgeDelete}>-{compare.deletions}</span>
+          </div>
+        ) : null}
+
         {isSvn && compare.patch ? (
           <div data-stylex-owner="project-compare-diff-wrap">
             <div className="diff-body hide" data-commit-origin="true" id="commit">
@@ -184,6 +204,7 @@ function CompareFileDiff({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
+  const [collapsed, setCollapsed] = useState(false);
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const pathA = isNullDiffPath(parsed.pathA) ? "" : parsed.pathA;
   const pathB = isNullDiffPath(parsed.pathB) ? "" : parsed.pathB;
@@ -200,84 +221,106 @@ function CompareFileDiff({
   const shortA = shortenCommitId(commitA);
   const shortB = shortenCommitId(commitB);
 
+  const fileAdditions = parsed.lines.filter((l) => l.kind === "line" && l.type === "add").length;
+  const fileDeletions = parsed.lines.filter((l) => l.kind === "line" && l.type === "remove").length;
+
   return (
-    <div id={fileId} className="diff-partial-outer">
+    <div id={fileId} className="diff-partial-outer" {...sx.fileDiffCard}>
       <div className="diff-partial-inner">
-        <div className="diff-partial-meta">
-          <div className="diff-partial-commit">
-            <div className="diff-partial-commit-id">
-              {commitA && pathA ? (
-                <Link
-                  target="_blank"
-                  title={commitA}
-                  to={projectTo(ownerName, projectName, "code", commitA, pathA)}
-                >
-                  {shortA}
-                </Link>
-              ) : (
-                "\u00a0"
-              )}
-            </div>
-            <div className="diff-partial-commit-id">
-              {commitB && pathB ? (
-                <Link
-                  target="_blank"
-                  title={commitB}
-                  to={projectTo(ownerName, projectName, "code", commitB, pathB)}
-                >
-                  {shortB}
-                </Link>
-              ) : (
-                "\u00a0"
-              )}
-            </div>
-          </div>
-          <div className="diff-partial-file">
+        <button
+          type="button"
+          {...sx.fileHeader}
+          onClick={() => setCollapsed(!collapsed)}
+          data-stylex-owner="compare-file-header"
+        >
+          <div {...sx.fileHeaderTitle}>
+            <span {...sx.fileToggleIcon}>{collapsed ? "▶" : "▼"}</span>
             <span className="filename">{fileHeader}</span>
           </div>
-        </div>
-        <div className="diff-partial-code" data-hashcode={file.path}>
-          <div className="patch-header">
-            {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
-            {pathB ? <div className="path">{`+++ ${pathB}`}</div> : null}
+          <div {...sx.diffStatBar} style={{ marginBottom: 0 }}>
+            {fileAdditions > 0 ? <span {...sx.diffStatBadgeAdd}>+{fileAdditions}</span> : null}
+            {fileDeletions > 0 ? <span {...sx.diffStatBadgeDelete}>-{fileDeletions}</span> : null}
           </div>
-          <table
-            className="diff-container show-comments"
-            data-commit-a={commitA}
-            data-commit-b={commitB}
-            data-file-path={filePath}
-            data-path-a={pathA}
-            data-path-b={pathB}
-          >
-            <tbody>
-              {parsed.lines.length === 0 ? (
-                <tr>
-                  <td colSpan={3}>{t("code.noChanges")}</td>
-                </tr>
-              ) : (
-                parsed.lines.map((line) =>
-                  line.kind === "range" ? (
-                    <tr className="range" key={diffLineKey(line)}>
-                      <td className="linenum">
-                        <div className="line-number" data-line-num="...">
-                          <span className="hidden">...</span>
-                        </div>
-                      </td>
-                      <td className="linenum">
-                        <div className="line-number" data-line-num="...">
-                          <span className="hidden">...</span>
-                        </div>
-                      </td>
-                      <td className="hunk">{line.text}</td>
+        </button>
+        {!collapsed ? (
+          <>
+            <div className="diff-partial-meta">
+              <div className="diff-partial-commit">
+                <div className="diff-partial-commit-id">
+                  {commitA && pathA ? (
+                    <Link
+                      target="_blank"
+                      title={commitA}
+                      to={projectTo(ownerName, projectName, "code", commitA, pathA)}
+                    >
+                      {shortA}
+                    </Link>
+                  ) : (
+                    "\u00a0"
+                  )}
+                </div>
+                <div className="diff-partial-commit-id">
+                  {commitB && pathB ? (
+                    <Link
+                      target="_blank"
+                      title={commitB}
+                      to={projectTo(ownerName, projectName, "code", commitB, pathB)}
+                    >
+                      {shortB}
+                    </Link>
+                  ) : (
+                    "\u00a0"
+                  )}
+                </div>
+              </div>
+              <div className="diff-partial-file">
+                <span className="filename">{fileHeader}</span>
+              </div>
+            </div>
+            <div className="diff-partial-code" data-hashcode={file.path}>
+              <div className="patch-header">
+                {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
+                {pathB ? <div className="path">{`+++ ${pathB}`}</div> : null}
+              </div>
+              <table
+                className="diff-container show-comments"
+                data-commit-a={commitA}
+                data-commit-b={commitB}
+                data-file-path={filePath}
+                data-path-a={pathA}
+                data-path-b={pathB}
+              >
+                <tbody>
+                  {parsed.lines.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>{t("code.noChanges")}</td>
                     </tr>
                   ) : (
-                    <DiffLineView key={diffLineKey(line)} line={line} />
-                  ),
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+                    parsed.lines.map((line) =>
+                      line.kind === "range" ? (
+                        <tr className="range" key={diffLineKey(line)}>
+                          <td className="linenum">
+                            <div className="line-number" data-line-num="...">
+                              <span className="hidden">...</span>
+                            </div>
+                          </td>
+                          <td className="linenum">
+                            <div className="line-number" data-line-num="...">
+                              <span className="hidden">...</span>
+                            </div>
+                          </td>
+                          <td className="hunk">{line.text}</td>
+                        </tr>
+                      ) : (
+                        <DiffLineView key={diffLineKey(line)} line={line} />
+                      ),
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );
