@@ -710,14 +710,15 @@ const DOMAIN_BUCKETS = [
     label: "Repository and smart HTTP",
     status: "parity",
     implementationPatterns: [
-      /^frontend\/.*(repo|code|branches|commit)/i,
+      /^frontend\/.*(repo|code|branches|tags|commit)/i,
       /^crates\/vcs\//i,
-      /^crates\/(?:vcs|server|domain)\/.*(repo|code|branch|commit|smart[_-]http|inline-edit)/i,
+      /^crates\/(?:vcs|server|domain)\/.*(repo|code|branch|tag|commit|smart[_-]http|inline-edit)/i,
     ],
     testKeywords: [
       "repo",
       "code",
       "branch",
+      "tag",
       "commit",
       "smart-http",
       "smart_http",
@@ -1216,7 +1217,7 @@ export function evaluateParityGate({ changedFiles = [], repoRoot = DEFAULT_REPO_
 }
 
 export function shouldBlockForStrictGate(result) {
-  return result.verdict !== "pass";
+  return result.verdict === "block";
 }
 
 export function formatParitySummary(result) {

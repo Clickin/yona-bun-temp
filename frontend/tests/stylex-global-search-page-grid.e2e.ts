@@ -12,10 +12,7 @@ test("global search page grid retains legacy source and route-local owners", asy
     "../yona-original/app/views/search/partial_search.scala.html",
     "utf8",
   );
-  const bootstrap = await readFile(
-    "../yona-original/public/bootstrap/css/bootstrap.css",
-    "utf8",
-  );
+  const bootstrap = await readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const responsive = await readFile(
     "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
     "utf8",
@@ -27,7 +24,7 @@ test("global search page grid retains legacy source and route-local owners", asy
   expect(partial).toContain('<div class="span10">');
   expect(bootstrap).toContain(".row-fluid .span2");
   expect(bootstrap).toContain(".row-fluid .span10");
-  expect(responsive).toContain(".row-fluid [class*=\"span\"]");
+  expect(responsive).toContain('.row-fluid [class*="span"]');
 
   for (const owner of [
     "global-search-grid-row",
@@ -112,9 +109,7 @@ test("global search page grid stays bounded at desktop and mobile widths", async
     const geometry = await page.evaluate(() => {
       const row = document.querySelector('[data-stylex-owner="global-search-grid-row"]');
       const category = document.querySelector('[data-stylex-owner="global-search-category"]');
-      const results = document.querySelector(
-        '[data-stylex-owner="global-search-results-column"]',
-      );
+      const results = document.querySelector('[data-stylex-owner="global-search-results-column"]');
       if (!row || !category || !results) return null;
       const rowRect = row.getBoundingClientRect();
       const categoryRect = category.getBoundingClientRect();

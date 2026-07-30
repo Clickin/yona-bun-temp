@@ -13,7 +13,9 @@ test.use({ locale: "ko-KR" });
 
 async function openMail(page: Page) {
   await page.addInitScript((runtimeBasePath) => {
-    (window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }).__YONA_RUNTIME_CONFIG__ = {
+    (
+      window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
+    ).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
       feedbackUrl: "https://github.com/yona-projects/yona/issues",
       hideProjectListing: false,
@@ -22,7 +24,8 @@ async function openMail(page: Page) {
     };
   }, basePath);
   const session = { isAnonymous: false, isConfirmed: true, isSiteAdmin: true, loginId: "siteboss" };
-  const fulfillSession = (route: Route) => route.fulfill({ contentType: "application/json", json: session });
+  const fulfillSession = (route: Route) =>
+    route.fulfill({ contentType: "application/json", json: session });
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
     await page.route(url, fulfillSession);
   await page.route("**/api/v1/site/update", (route) =>
@@ -43,14 +46,18 @@ test("breadcrumb owns the legacy site manager geometry", () => {
   const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
   const mail = readFileSync("../yona-original/app/views/site/mail.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8");
+  const responsive = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
   expect(mail).toContain("@siteMngLayout(message)");
   expect(layout).toContain('<div class="site-breadcrumb-outer">');
   expect(layout).toContain('<div class="site-breadcrumb-inner">');
   expect(layout).toContain('<h3>@Messages("site.sidebar")</h3>');
   expect(pageLess).toContain("padding: 10px 10px 5px 10px;");
   expect(responsive).toContain("min-width: 10px !important;");
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-stylex-owner="${owner}"`);
+  for (const owner of Object.values(owners))
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
   expect(route).not.toContain('className="site-breadcrumb-outer"');
   expect(route).not.toContain('className="site-breadcrumb-inner"');
   expect(route).not.toContain("globalColors.");
@@ -62,7 +69,8 @@ test("breadcrumb owns the legacy site manager geometry", () => {
     'margin: "0px auto"',
     'lineHeight: "30px"',
     'padding: "10px 10px 5px"',
-  ]) expect(route).toContain(declaration);
+  ])
+    expect(route).toContain(declaration);
 });
 
 for (const viewport of [
@@ -76,12 +84,15 @@ for (const viewport of [
     const inner = page.locator(`[data-stylex-owner="${owners.inner}"]`);
     const heading = page.locator(`[data-stylex-owner="${owners.heading}"]`);
     await expect(outer.locator(`:scope > [data-stylex-owner="${owners.inner}"]`)).toHaveCount(1);
-    await expect(inner.locator(`:scope > h3[data-stylex-owner="${owners.heading}"]`)).toHaveCount(1);
+    await expect(inner.locator(`:scope > h3[data-stylex-owner="${owners.heading}"]`)).toHaveCount(
+      1,
+    );
     await expect(heading).toHaveText("사이트 관리");
     await expect(outer).not.toHaveClass(/\bsite-breadcrumb-outer\b/u);
     await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);
     const actual = await page.evaluate((ownerNames) => {
-      const find = (name: string) => document.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;
+      const find = (name: string) =>
+        document.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;
       const box = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
         return { height: rect.height, width: rect.width, x: rect.x };
@@ -136,7 +147,13 @@ for (const viewport of [
     expect(actual.outerScrollWidth).toBe(viewport.width);
     mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
     const screenshot = await outer.screenshot({
-      path: resolve("..", "output", "playwright", "visual-sweep", `stylex-site-mail-breadcrumb-${viewport.name}.png`),
+      path: resolve(
+        "..",
+        "output",
+        "playwright",
+        "visual-sweep",
+        `stylex-site-mail-breadcrumb-${viewport.name}.png`,
+      ),
     });
     expect(screenshot.byteLength).toBeGreaterThan(0);
   });

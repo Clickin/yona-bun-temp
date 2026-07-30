@@ -3,7 +3,6 @@ import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter(runtimeConfig: RuntimeConfig = readRuntimeConfig()) {
-
   return createRouter({
     basepath: runtimeConfig.basePath,
     routeTree,

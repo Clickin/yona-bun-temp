@@ -26,11 +26,15 @@ async function mockSession(page: Page) {
     route.fulfill({ json: { versionToUpdate: null } }),
   );
   await page.route("**/api/v1/site/mail", (route) =>
-    route.fulfill({ json: { notConfiguredItems: [], sender: "site-admin@yona.local", sent: false } }),
+    route.fulfill({
+      json: { notConfiguredItems: [], sender: "site-admin@yona.local", sent: false },
+    }),
   );
 }
 
-test("site mail configured form owns frozen Bootstrap horizontal and responsive rules", async ({ page }) => {
+test("site mail configured form owns frozen Bootstrap horizontal and responsive rules", async ({
+  page,
+}) => {
   const [route, legacy, responsive, appCssSource] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacyTemplate, "utf8"),
@@ -93,8 +97,8 @@ test("site mail configured form owns frozen Bootstrap horizontal and responsive 
         const controls = element.parentElement?.getBoundingClientRect();
         return Boolean(
           controls &&
-            Math.abs(field.left - controls.left) <= 1 &&
-            Math.abs(field.right - controls.right) <= 1,
+          Math.abs(field.left - controls.left) <= 1 &&
+          Math.abs(field.right - controls.right) <= 1,
         );
       }),
     ),

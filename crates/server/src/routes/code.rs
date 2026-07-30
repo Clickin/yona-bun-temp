@@ -11,7 +11,8 @@ use std::collections::HashMap;
 use yoram_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
-    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
+    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, CodeTagListSnapshot,
+    VcsError,
 };
 
 use crate::persistence::{self, PilotRepository};
@@ -25,7 +26,8 @@ use crate::{
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
     workspace_avatar_url, ConnectError, MarkdownIssueReference, MarkdownMentionReference,
-    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestIssueReferenceMetadata,
+    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestCodeTag, RestCodeTagListResponse,
+    RestCodeTagPermissions, RestCreateCodeTagBody, RestDeleteCodeTagBody, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
 };
 
@@ -284,6 +286,43 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             service,
                         )
                         .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/tags",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_code_tags(headers, owner_name, project_name, service).await
+                    }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestCreateCodeTagBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_code_tag(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestDeleteCodeTagBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_code_tag(headers, owner_name, project_name, body, service)
+                            .await
                     }
                 }
             }),
@@ -2091,6 +2130,142 @@ async fn rest_delete_code_branch(
         snapshot,
         pull_requests,
     )))
+}
+
+async fn rest_read_code_tags(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeTagListResponse>, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "code tags require repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::read_code_tags(&repo_path)
+        .map_err(code_branch_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(code_tag_list_response_from_snapshot(
+        &authorization,
+        snapshot,
+    )))
+}
+
+async fn rest_create_code_tag(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestCreateCodeTagBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeTagListResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "code tags require repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("tag creation is not allowed"),
+        ));
+    }
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::create_code_tag(
+        &repo_path,
+        &body.tag_name,
+        body.target.as_deref(),
+        body.message.as_deref(),
+    )
+    .map_err(code_branch_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(code_tag_list_response_from_snapshot(
+        &authorization,
+        snapshot,
+    )))
+}
+
+async fn rest_delete_code_tag(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestDeleteCodeTagBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeTagListResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "code tags require repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("tag delete is not allowed"),
+        ));
+    }
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::delete_code_tag(&repo_path, &body.tag_name)
+        .map_err(code_branch_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(code_tag_list_response_from_snapshot(
+        &authorization,
+        snapshot,
+    )))
+}
+
+fn code_tag_list_response_from_snapshot(
+    authorization: &crate::persistence::ProjectAuthorizationRecord,
+    snapshot: CodeTagListSnapshot,
+) -> RestCodeTagListResponse {
+    let can_update = project_update_allowed(authorization).unwrap_or(false);
+    RestCodeTagListResponse {
+        tags: snapshot
+            .tags
+            .into_iter()
+            .map(|tag| RestCodeTag {
+                name: tag.name,
+                short_name: tag.short_name,
+                commit_id: tag.commit_id,
+                commit_short_id: tag.commit_short_id,
+                commit_message: tag.commit_message,
+                creator_name: tag.creator_name,
+                creator_email: tag.creator_email,
+                created_date: tag.created_date,
+            })
+            .collect(),
+        no_head: snapshot.no_head,
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        permissions: RestCodeTagPermissions {
+            can_create: can_update,
+            can_delete: can_update,
+        },
+    }
 }
 
 fn code_browser_rest_response_from_snapshot(

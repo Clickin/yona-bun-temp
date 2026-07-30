@@ -9,65 +9,71 @@
  */
 
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('jquery'), require('viewerjs')) :
-        typeof define === 'function' && define.amd ? define(['jquery', 'viewerjs'], factory) :
-            (global = global || self, factory(global.jQuery, global.Viewer));
-}(this, (function ($, Viewer) { 'use strict';
+  typeof exports === "object" && typeof module !== "undefined"
+    ? factory(require("jquery"), require("viewerjs"))
+    : typeof define === "function" && define.amd
+      ? define(["jquery", "viewerjs"], factory)
+      : ((global = global || self), factory(global.jQuery, global.Viewer));
+})(this, function ($, Viewer) {
+  "use strict";
 
-    $ = $ && $.hasOwnProperty('default') ? $['default'] : $;
-    Viewer = Viewer && Viewer.hasOwnProperty('default') ? Viewer['default'] : Viewer;
+  $ = $ && $.hasOwnProperty("default") ? $["default"] : $;
+  Viewer = Viewer && Viewer.hasOwnProperty("default") ? Viewer["default"] : Viewer;
 
-    if ($ && $.fn && Viewer) {
-        var AnotherViewer = $.fn.viewer;
-        var NAMESPACE = 'viewer';
+  if ($ && $.fn && Viewer) {
+    var AnotherViewer = $.fn.viewer;
+    var NAMESPACE = "viewer";
 
-        $.fn.viewer = function jQueryViewer(option) {
-            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-                args[_key - 1] = arguments[_key];
+    $.fn.viewer = function jQueryViewer(option) {
+      for (
+        var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1;
+        _key < _len;
+        _key++
+      ) {
+        args[_key - 1] = arguments[_key];
+      }
+
+      var result;
+      this.each(function (i, element) {
+        var $element = $(element);
+        var isDestroy = option === "destroy";
+        var viewer = $element.data(NAMESPACE);
+
+        if (!viewer) {
+          if (isDestroy) {
+            return;
+          }
+
+          var options = $.extend({}, $element.data(), $.isPlainObject(option) && option);
+          viewer = new Viewer(element, options);
+          $element.data(NAMESPACE, viewer);
+        }
+
+        if (typeof option === "string") {
+          var fn = viewer[option];
+
+          if ($.isFunction(fn)) {
+            result = fn.apply(viewer, args);
+
+            if (result === viewer) {
+              result = undefined;
             }
 
-            var result;
-            this.each(function (i, element) {
-                var $element = $(element);
-                var isDestroy = option === 'destroy';
-                var viewer = $element.data(NAMESPACE);
+            if (isDestroy) {
+              $element.removeData(NAMESPACE);
+            }
+          }
+        }
+      });
+      return result !== undefined ? result : this;
+    };
 
-                if (!viewer) {
-                    if (isDestroy) {
-                        return;
-                    }
+    $.fn.viewer.Constructor = Viewer;
+    $.fn.viewer.setDefaults = Viewer.setDefaults;
 
-                    var options = $.extend({}, $element.data(), $.isPlainObject(option) && option);
-                    viewer = new Viewer(element, options);
-                    $element.data(NAMESPACE, viewer);
-                }
-
-                if (typeof option === 'string') {
-                    var fn = viewer[option];
-
-                    if ($.isFunction(fn)) {
-                        result = fn.apply(viewer, args);
-
-                        if (result === viewer) {
-                            result = undefined;
-                        }
-
-                        if (isDestroy) {
-                            $element.removeData(NAMESPACE);
-                        }
-                    }
-                }
-            });
-            return result !== undefined ? result : this;
-        };
-
-        $.fn.viewer.Constructor = Viewer;
-        $.fn.viewer.setDefaults = Viewer.setDefaults;
-
-        $.fn.viewer.noConflict = function noConflict() {
-            $.fn.viewer = AnotherViewer;
-            return this;
-        };
-    }
-
-})));
+    $.fn.viewer.noConflict = function noConflict() {
+      $.fn.viewer = AnotherViewer;
+      return this;
+    };
+  }
+});

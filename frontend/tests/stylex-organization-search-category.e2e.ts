@@ -45,16 +45,17 @@ test.describe("organization search category geometry", () => {
       );
       const category = page.locator('[data-stylex-owner="organization-search-category-list"]');
       const row = page.locator('[data-stylex-owner="organization-search-grid-row"]');
-      const content = page.locator(
-        '[data-stylex-owner="organization-search-content-column"]',
-      );
+      const content = page.locator('[data-stylex-owner="organization-search-content-column"]');
       await expect(category).toBeVisible();
       await expect(category.locator("li")).toHaveCount(8);
       const boxes = await Promise.all([
         row.boundingBox(),
         category.boundingBox(),
         content.boundingBox(),
-        page.locator('[data-stylex-owner="organization-search-category-item"]').first().boundingBox(),
+        page
+          .locator('[data-stylex-owner="organization-search-category-item"]')
+          .first()
+          .boundingBox(),
       ]);
       expect(boxes[0]).toBeTruthy();
       expect(boxes[1]).toBeTruthy();

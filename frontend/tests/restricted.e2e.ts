@@ -278,8 +278,12 @@ async function expectLegacyAnchor(
 
 async function readDesktopRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-outer"]');
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="restricted-gnb-outer"]',
+    );
+    const gnbInner = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="restricted-gnb-inner"]',
+    );
     const logo = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-brand"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
@@ -333,8 +337,12 @@ async function readDesktopRestrictedMetrics(page: Page) {
 
 async function readMobileRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-outer"]');
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="restricted-gnb-outer"]',
+    );
+    const gnbInner = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="restricted-gnb-inner"]',
+    );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");

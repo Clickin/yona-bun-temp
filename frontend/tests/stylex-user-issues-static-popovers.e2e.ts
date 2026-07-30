@@ -50,12 +50,12 @@ test("user issues keeps legacy control order while StyleX owns conditional mode 
     "-18px",
   );
 
-  await page.locator('#two-column-mode').check();
+  await page.locator("#two-column-mode").check();
   await expect(page.locator('[data-stylex-owner="user-issues-two-column-border"]')).toHaveCSS(
     "background-color",
     "rgb(174, 229, 255)",
   );
-  await page.locator('#toggle-show-subtasks').check();
+  await page.locator("#toggle-show-subtasks").check();
   await expect(page.locator('[data-stylex-owner="user-issues-child-list-visible"]')).toHaveCSS(
     "display",
     "block",
@@ -67,10 +67,10 @@ test("user issues keeps legacy control order while StyleX owns conditional mode 
 
   await page.locator('[data-stylex-owner="user-issues-tabs"] > li:nth-child(2) button').click();
   await expect(page).toHaveURL(/state=closed/);
-  await page.locator('button:has(.authored-by-me)').click();
+  await page.locator("button:has(.authored-by-me)").click();
   await expect(page).toHaveURL(/filter=authored/);
   await page.locator('input[name="filter"]').fill("closed issue");
-  await page.locator('form#search').press("Enter");
+  await page.locator("form#search").press("Enter");
   await expect(page).toHaveURL(/query=closed\+issue|query=closed%20issue/);
   await page.locator("#pagination input[name=pageNum]").fill("2");
   await page.locator("#pagination input[name=pageNum]").press("Enter");
@@ -78,7 +78,7 @@ test("user issues keeps legacy control order while StyleX owns conditional mode 
 
   const boxes = await page.evaluate(() => {
     const tabs = document.querySelector('[data-stylex-owner="user-issues-tabs"]');
-    const controls = document.querySelector('#two-column-mode-checkbox');
+    const controls = document.querySelector("#two-column-mode-checkbox");
     const subtasks = document.querySelector('[data-stylex-owner="user-issues-subtasks-list-item"]');
     if (!tabs || !controls || !subtasks) return null;
     return {

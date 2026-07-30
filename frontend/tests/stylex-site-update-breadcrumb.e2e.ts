@@ -39,10 +39,7 @@ test("update breadcrumb owns the route-local legacy geometry", () => {
   expect(route).not.toContain('className="site-breadcrumb-outer"');
   expect(route).not.toContain('className="site-breadcrumb-inner"');
   expect(route).not.toContain("globalColors.");
-  const headingBlock = route.slice(
-    route.indexOf("breadcrumbHeading: {"),
-    route.indexOf("page: {"),
-  );
+  const headingBlock = route.slice(route.indexOf("breadcrumbHeading: {"), route.indexOf("page: {"));
   for (const declaration of ['lineHeight: "30px"', 'padding: "10px 10px 5px"'])
     expect(headingBlock).toContain(declaration);
   for (const inherited of ["color:", "fontFamily:", "fontSize:", "fontWeight:", "margin:"])
@@ -65,7 +62,9 @@ for (const viewport of [
     const inner = owner(page, owners.inner);
     const heading = owner(page, owners.heading);
     await expect(outer.locator(`:scope > [data-stylex-owner="${owners.inner}"]`)).toHaveCount(1);
-    await expect(inner.locator(`:scope > h3[data-stylex-owner="${owners.heading}"]`)).toHaveCount(1);
+    await expect(inner.locator(`:scope > h3[data-stylex-owner="${owners.heading}"]`)).toHaveCount(
+      1,
+    );
     await expect(heading).toHaveText("Site management");
     await expect(outer).not.toHaveClass(/\bsite-breadcrumb-outer\b/u);
     await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);

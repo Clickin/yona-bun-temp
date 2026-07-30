@@ -211,6 +211,24 @@ pub struct CodeBranchListItemRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeTagListSnapshot {
+    pub tags: Vec<CodeTagListItemRecord>,
+    pub no_head: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeTagListItemRecord {
+    pub name: String,
+    pub short_name: String,
+    pub commit_id: String,
+    pub commit_short_id: String,
+    pub commit_message: String,
+    pub creator_name: String,
+    pub creator_email: String,
+    pub created_date: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GitHttpBackendRequest<'a> {
     pub body: &'a [u8],
     pub content_type: Option<&'a str>,
@@ -2622,6 +2640,71 @@ pub fn delete_branch(
     read_branch_list(repo_path)
 }
 
+pub fn read_code_tags(repo_path: &Path) -> Result<CodeTagListSnapshot, VcsError> {
+    if !repo_path.exists() || !has_head(repo_path) {
+        return Ok(CodeTagListSnapshot {
+            tags: Vec::new(),
+            no_head: true,
+        });
+    }
+    let tags = list_tag_details(repo_path)?;
+    Ok(CodeTagListSnapshot {
+        tags,
+        no_head: false,
+    })
+}
+
+pub fn create_code_tag(
+    repo_path: &Path,
+    tag_name: &str,
+    target: Option<&str>,
+    message: Option<&str>,
+) -> Result<CodeTagListSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let tag_name = normalize_tag_name(tag_name)?;
+    let tags = list_tag_details(repo_path)?;
+    if tags.iter().any(|t| t.name == tag_name) {
+        return Err(VcsError::GitFailed(format!(
+            "tag '{tag_name}' already exists"
+        )));
+    }
+    let target_ref = match target.map(str::trim).filter(|v| !v.is_empty()) {
+        Some(target) => target.to_string(),
+        None => default_branch(repo_path).unwrap_or_else(|| "HEAD".to_string()),
+    };
+
+    let msg_str;
+    if let Some(msg) = message.map(str::trim).filter(|v| !v.is_empty()) {
+        msg_str = msg.to_string();
+        git_output(
+            repo_path,
+            &["tag", "-a", &tag_name, "-m", &msg_str, &target_ref],
+        )?;
+    } else {
+        git_output(repo_path, &["tag", &tag_name, &target_ref])?;
+    }
+    read_code_tags(repo_path)
+}
+
+pub fn delete_code_tag(
+    repo_path: &Path,
+    tag_name: &str,
+) -> Result<CodeTagListSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let tag_name = normalize_tag_name(tag_name)?;
+    let tags = list_tag_details(repo_path)?;
+    if !tags.iter().any(|t| t.name == tag_name) {
+        return Err(VcsError::NotFound);
+    }
+
+    git_output(repo_path, &["tag", "-d", &tag_name])?;
+    read_code_tags(repo_path)
+}
+
 pub fn restore_branch_from_merge(
     source_repo_path: &Path,
     target_repo_path: &Path,
@@ -3093,6 +3176,81 @@ fn normalize_branch_name(branch_name: &str) -> Result<String, VcsError> {
         .strip_prefix("refs/heads/")
         .unwrap_or_else(|| branch_name.trim());
     if trimmed.is_empty() || trimmed.contains('\0') {
+        return Err(VcsError::InvalidBranch);
+    }
+    Ok(trimmed.to_string())
+}
+
+fn list_tag_details(repo_path: &Path) -> Result<Vec<CodeTagListItemRecord>, VcsError> {
+    let output = git_output(
+        repo_path,
+        &[
+            "for-each-ref",
+            "--sort=-creatordate",
+            "--format=%(refname:short)%1f%(objectname)%1f%(objectname:short)%1f%(*objectname)%1f%(*objectname:short)%1f%(contents:subject)%1f%(creatordate:short)%1f%(taggername)%1f%(taggeremail)%1f%(authorname)%1f%(authoremail)",
+            "refs/tags",
+        ],
+    )?;
+    let tags = output
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split('\x1f');
+            let name = parts.next()?.trim().to_string();
+            if name.is_empty() {
+                return None;
+            }
+            let objectname = parts.next().unwrap_or_default().trim().to_string();
+            let objectname_short = parts.next().unwrap_or_default().trim().to_string();
+            let deref_objectname = parts.next().unwrap_or_default().trim().to_string();
+            let deref_objectname_short = parts.next().unwrap_or_default().trim().to_string();
+            let commit_message = parts.next().unwrap_or_default().trim().to_string();
+            let created_date = parts.next().unwrap_or_default().trim().to_string();
+            let taggername = parts.next().unwrap_or_default().trim().to_string();
+            let taggeremail = parts.next().unwrap_or_default().trim().to_string();
+            let authorname = parts.next().unwrap_or_default().trim().to_string();
+            let authoremail = parts.next().unwrap_or_default().trim().to_string();
+
+            let (commit_id, commit_short_id) = if !deref_objectname.is_empty() {
+                (deref_objectname, deref_objectname_short)
+            } else {
+                (objectname, objectname_short)
+            };
+            let creator_name = if !taggername.is_empty() {
+                taggername
+            } else {
+                authorname
+            };
+            let creator_email = if !taggeremail.is_empty() {
+                taggeremail
+            } else {
+                authoremail
+            };
+
+            Some(CodeTagListItemRecord {
+                short_name: name.clone(),
+                name,
+                commit_id,
+                commit_short_id,
+                commit_message,
+                creator_name,
+                creator_email,
+                created_date,
+            })
+        })
+        .collect::<Vec<_>>();
+    Ok(tags)
+}
+
+fn normalize_tag_name(tag_name: &str) -> Result<String, VcsError> {
+    let trimmed = tag_name
+        .trim()
+        .strip_prefix("refs/tags/")
+        .unwrap_or_else(|| tag_name.trim());
+    if trimmed.is_empty()
+        || trimmed.contains('\0')
+        || trimmed.contains(' ')
+        || trimmed.contains("..")
+    {
         return Err(VcsError::InvalidBranch);
     }
     Ok(trimmed.to_string())
@@ -4124,5 +4282,42 @@ mod tests {
             parse_svnlook_history_latest_revision("REVISION   PATH\n--------   ----\n"),
             Err(VcsError::NotFound)
         ));
+    }
+
+    #[test]
+    fn git_tags_crud_operations_work_correctly() {
+        let data_dir = tempdir().expect("tags tempdir");
+        let repo_path = data_dir.path().join("tags.git");
+        create_bare_repository(&repo_path).expect("create bare repository");
+        let commit_id = commit_text_file(
+            &repo_path,
+            None,
+            "README.md",
+            "tag test file\n",
+            "Initial commit for tag test",
+            "Tester Name",
+            "tester@example.com",
+        )
+        .expect("commit test file")
+        .expect("commit id");
+
+        let initial_tags = read_code_tags(&repo_path).expect("read empty tags");
+        assert!(!initial_tags.no_head);
+        assert!(initial_tags.tags.is_empty());
+
+        let created_snapshot = create_code_tag(
+            &repo_path,
+            "v1.0.0",
+            Some("HEAD"),
+            Some("Release v1.0.0"),
+        )
+        .expect("create tag");
+        assert_eq!(created_snapshot.tags.len(), 1);
+        assert_eq!(created_snapshot.tags[0].name, "v1.0.0");
+        assert_eq!(created_snapshot.tags[0].commit_id, commit_id);
+        assert_eq!(created_snapshot.tags[0].commit_message, "Release v1.0.0");
+
+        let deleted_snapshot = delete_code_tag(&repo_path, "v1.0.0").expect("delete tag");
+        assert!(deleted_snapshot.tags.is_empty());
     }
 }

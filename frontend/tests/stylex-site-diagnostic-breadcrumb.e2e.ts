@@ -57,7 +57,9 @@ for (const viewport of [
     const inner = page.locator(`[data-stylex-owner="${owners.inner}"]`);
     const heading = page.locator(`[data-stylex-owner="${owners.heading}"]`);
     await expect(outer).toBeVisible();
-    await expect(inner.locator(`:scope > h3[data-stylex-owner="${owners.heading}"]`)).toHaveCount(1);
+    await expect(inner.locator(`:scope > h3[data-stylex-owner="${owners.heading}"]`)).toHaveCount(
+      1,
+    );
     await expect(heading).toHaveText("Site management");
     await expect(outer).not.toHaveClass(/\bsite-breadcrumb-outer\b/u);
     await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);
@@ -127,7 +129,9 @@ async function installFixture(page: Page) {
     loginId: "siteboss",
   };
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
-    await page.route(url, (route) => route.fulfill({ contentType: "application/json", json: session }));
+    await page.route(url, (route) =>
+      route.fulfill({ contentType: "application/json", json: session }),
+    );
   await page.route("**/api/v1/site/update", (route) =>
     route.fulfill({ contentType: "application/json", json: { versionToUpdate: null } }),
   );

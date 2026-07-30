@@ -45,9 +45,7 @@ test.describe("StyleX anonymous lost-password form", () => {
       readFile(legacyFallbackSource, "utf8"),
     ]);
 
-    expect(route).toMatch(
-      /data-stylex-owner=\{\s*anonymousBaseline\s*\?\s*"lost-password-form"/u,
-    );
+    expect(route).toMatch(/data-stylex-owner=\{\s*anonymousBaseline\s*\?\s*"lost-password-form"/u);
     expect(route).toContain('"lost-password-login-id"');
     expect(route).toContain('"lost-password-submit"');
     expect(route).toContain("className={textInputClassName}");
@@ -237,19 +235,13 @@ test.describe("StyleX anonymous lost-password form", () => {
       });
     });
     await page.goto(`${basePath}/lostPassword`);
-    const authenticated = page.locator(
-      '[data-stylex-owner="lost-password-authenticated-prefill"]',
-    );
+    const authenticated = page.locator('[data-stylex-owner="lost-password-authenticated-prefill"]');
     await expect(authenticated).toBeVisible();
     await expect(
-      authenticated.locator(
-        '[data-stylex-part="lost-password-authenticated-prefill-form-wrap"]',
-      ),
+      authenticated.locator('[data-stylex-part="lost-password-authenticated-prefill-form-wrap"]'),
     ).toBeVisible();
     await expect(
-      authenticated.locator(
-        '[data-stylex-part="lost-password-authenticated-prefill-login-id"]',
-      ),
+      authenticated.locator('[data-stylex-part="lost-password-authenticated-prefill-login-id"]'),
     ).toBeVisible();
     await expect(
       authenticated.locator('[data-stylex-part="lost-password-authenticated-prefill-email"]'),

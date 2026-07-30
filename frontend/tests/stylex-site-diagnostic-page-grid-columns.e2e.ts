@@ -22,7 +22,7 @@ test("site diagnostic page/grid/columns own the active frozen layout declaration
   );
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
 
-  expect(template).toContain('@if(errors.isEmpty())');
+  expect(template).toContain("@if(errors.isEmpty())");
   expect(template).toContain("<li><pre>@error</pre></li>");
   expect(layout).toContain('<div class="page-wrap-outer">');
   expect(layout).toContain('<div class="row-fluid">');
@@ -34,7 +34,7 @@ test("site diagnostic page/grid/columns own the active frozen layout declaration
     ".page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;",
   );
   expect(bootstrap).toContain(".row-fluid {\n  width: 100%;");
-  expect(bootstrap).toContain(".row-fluid [class*=\"span\"] {");
+  expect(bootstrap).toContain('.row-fluid [class*="span"] {');
   expect(bootstrap).toContain(".row-fluid .span10 {\n  width: 82.97872340425532%;");
   expect(bootstrap).toContain(".row-fluid .span2 {\n  width: 14.893617021276595%;");
   expect(bootstrap).toContain(".pull-left {\n  float: left;");
@@ -65,7 +65,11 @@ test("site diagnostic page/grid/columns own the active frozen layout declaration
 
 for (const diagnostic of [
   { errors: [], name: "healthy", titleOwner: "site-diagnostic-no-error-title" },
-  { errors: ["database probe failed", "repository path is unavailable"], name: "error", titleOwner: "site-diagnostic-error-title" },
+  {
+    errors: ["database probe failed", "repository path is unavailable"],
+    name: "error",
+    titleOwner: "site-diagnostic-error-title",
+  },
 ]) {
   for (const viewport of [
     { height: 900, name: "desktop", padding: "0px 10px", width: 1366 },
@@ -86,9 +90,9 @@ for (const diagnostic of [
       if (diagnostic.errors.length === 0) {
         await expect(page.getByText("No errors were found")).toBeVisible();
       } else {
-        await expect(page.locator('[data-stylex-owner="site-diagnostic-error-pre"] > li > pre')).toHaveText(
-          diagnostic.errors,
-        );
+        await expect(
+          page.locator('[data-stylex-owner="site-diagnostic-error-pre"] > li > pre'),
+        ).toHaveText(diagnostic.errors);
       }
 
       const pageOwner = page.locator(`[data-stylex-owner="${OWNERS.page}"]`);

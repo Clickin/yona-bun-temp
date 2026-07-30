@@ -96,7 +96,7 @@ test("authenticated Home content grid has bounded global-theme StyleX ownership"
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams .warning-none {");
   expect(appCss).not.toContain("  .main-stream,\n  .content-container .main-stream {");
   expect(projectRoute).toContain(
-    'className={`${stylex.props(projectHistoryStyles.stream).className} main-stream`}',
+    "className={`${stylex.props(projectHistoryStyles.stream).className} main-stream`}",
   );
   expect(projectRoute).toContain('data-stylex-owner="project-history-stream"');
 });

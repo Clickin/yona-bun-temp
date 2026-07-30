@@ -131,6 +131,25 @@ function ProjectBranchesBody({
                   {t("title.branches")}
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/$ownerName/$projectName/tags"
+                  params={{ ownerName, projectName }}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                >
+                  {t("project.tags") || "Tags"}
+                </Link>
+              </li>
             </ul>
 
             <table

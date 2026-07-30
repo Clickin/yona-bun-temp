@@ -71,9 +71,25 @@ test("site update residual grid owns the frozen row-fluid and content column", a
   }
 
   for (const [name, response] of [
-    ["available", { currentVersion: "1.0.0", error: null, releaseUrl: "https://example.test/v2", versionToUpdate: "2.0.0" }],
+    [
+      "available",
+      {
+        currentVersion: "1.0.0",
+        error: null,
+        releaseUrl: "https://example.test/v2",
+        versionToUpdate: "2.0.0",
+      },
+    ],
     ["current", { currentVersion: "1.0.0", error: null, releaseUrl: null, versionToUpdate: null }],
-    ["error", { currentVersion: "1.0.0", error: "java.lang.IllegalStateException: update feed failed", releaseUrl: null, versionToUpdate: null }],
+    [
+      "error",
+      {
+        currentVersion: "1.0.0",
+        error: "java.lang.IllegalStateException: update feed failed",
+        releaseUrl: null,
+        versionToUpdate: null,
+      },
+    ],
   ] as const) {
     for (const viewport of [
       {

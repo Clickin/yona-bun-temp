@@ -85,9 +85,25 @@ test("site update page shell owns the legacy site-management frame", async ({ pa
   expect(route).toContain(`data-stylex-owner="${owners.sidebarColumn}"`);
 
   for (const [name, response] of [
-    ["available", { currentVersion: "1.0.0", error: null, releaseUrl: "https://example.test/v2", versionToUpdate: "2.0.0" }],
+    [
+      "available",
+      {
+        currentVersion: "1.0.0",
+        error: null,
+        releaseUrl: "https://example.test/v2",
+        versionToUpdate: "2.0.0",
+      },
+    ],
     ["current", { currentVersion: "1.0.0", error: null, releaseUrl: null, versionToUpdate: null }],
-    ["error", { currentVersion: "1.0.0", error: "java.lang.IllegalStateException: update feed failed", releaseUrl: null, versionToUpdate: null }],
+    [
+      "error",
+      {
+        currentVersion: "1.0.0",
+        error: "java.lang.IllegalStateException: update feed failed",
+        releaseUrl: null,
+        versionToUpdate: null,
+      },
+    ],
   ] as const) {
     await page.setViewportSize({ width: 1366, height: 900 });
     await open(page, response);
@@ -114,13 +130,18 @@ test("site update page shell owns the legacy site-management frame", async ({ pa
           if (!page) throw new Error("Missing page shell");
           const pageStyle = getComputedStyle(page);
           return {
-            contentContainsSidebar: sidebarBox.left >= contentBox.left && sidebarBox.right <= contentBox.right,
+            contentContainsSidebar:
+              sidebarBox.left >= contentBox.left && sidebarBox.right <= contentBox.right,
             pageMarginTop: pageStyle.marginTop,
             pageMinHeight: pageStyle.minHeight,
             sidebarRatio: sidebarBox.width / contentBox.width,
           };
         },
-        { contentOwner: owners.content, pageOwner: owners.page, sidebarOwner: owners.sidebarColumn },
+        {
+          contentOwner: owners.content,
+          pageOwner: owners.page,
+          sidebarOwner: owners.sidebarColumn,
+        },
       ),
     ).toMatchObject({
       contentContainsSidebar: true,
@@ -147,8 +168,12 @@ test("site update page shell owns the legacy site-management frame", async ({ pa
           const pageBox = requireBox(`[data-stylex-owner="${pageOwner}"]`);
           const contentBox = requireBox(`[data-stylex-owner="${contentOwner}"]`);
           const sidebarBox = requireBox(`[data-stylex-owner="${sidebarOwner}"]`);
-          const mainBox = requireBox(`[data-stylex-owner="${contentOwner}"] > .row-fluid > .span10`);
-          const sidebar = document.querySelector<HTMLElement>(`[data-stylex-owner="${sidebarOwner}"]`);
+          const mainBox = requireBox(
+            `[data-stylex-owner="${contentOwner}"] > .row-fluid > .span10`,
+          );
+          const sidebar = document.querySelector<HTMLElement>(
+            `[data-stylex-owner="${sidebarOwner}"]`,
+          );
           if (!sidebar) throw new Error("Missing sidebar shell");
           return {
             pageContained: pageBox.left >= 0 && pageBox.right <= window.innerWidth,
@@ -157,7 +182,11 @@ test("site update page shell owns the legacy site-management frame", async ({ pa
             sidebarWidthMatchesContent: Math.abs(sidebarBox.width - contentBox.width) <= 1,
           };
         },
-        { contentOwner: owners.content, pageOwner: owners.page, sidebarOwner: owners.sidebarColumn },
+        {
+          contentOwner: owners.content,
+          pageOwner: owners.page,
+          sidebarOwner: owners.sidebarColumn,
+        },
       ),
     ).toEqual({
       pageContained: true,

@@ -51,7 +51,7 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
-  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
+  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(4);
   await expect(page.locator(".nav-tabs a").nth(0)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main`,

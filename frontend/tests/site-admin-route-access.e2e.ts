@@ -20,7 +20,7 @@ test("site management parent guard retains the legacy siteMngLayout boundary", (
   expect(legacyLayout).toContain('class="site-setting-wrap"');
   expect(legacyLayout).toContain("routes.SiteApp.userList()");
   expect(legacyForbidden).toContain('class="error-wrap"');
-  expect(legacyForbidden).toContain('Messages(messageKey)');
+  expect(legacyForbidden).toContain("Messages(messageKey)");
   expect(routeGuard).toContain('createFileRoute("/sites")');
   expect(routeGuard).toContain("session.isAnonymous || !session.isSiteAdmin");
   expect(routeGuard).toContain("DefaultSearchErrorBody");

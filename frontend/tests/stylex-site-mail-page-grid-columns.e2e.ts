@@ -79,12 +79,28 @@ test("site mail page grid and columns own the frozen site-management layout", as
     ["error", "?errorMessage=validation.invalidEmail"],
   ] as const) {
     for (const viewport of [
-      { expectedMain: 0.8290598290598291, expectedSidebar: 0.1452991452991453, height: 900, name: "desktop", width: 1366 },
-      { expectedMain: 0.8287292817679558, expectedSidebar: 0.143646408839779, height: 844, name: "tablet", width: 900 },
+      {
+        expectedMain: 0.8290598290598291,
+        expectedSidebar: 0.1452991452991453,
+        height: 900,
+        name: "desktop",
+        width: 1366,
+      },
+      {
+        expectedMain: 0.8287292817679558,
+        expectedSidebar: 0.143646408839779,
+        height: 844,
+        name: "tablet",
+        width: 900,
+      },
       { expectedMain: 1, expectedSidebar: 1, height: 844, name: "mobile", width: 390 },
     ]) {
       await page.setViewportSize(viewport);
-      await open(page, { notConfiguredItems: [], sender: "site-admin@yona.local", sent: false }, suffix);
+      await open(
+        page,
+        { notConfiguredItems: [], sender: "site-admin@yona.local", sent: false },
+        suffix,
+      );
       const pageShell = page.locator(`[data-stylex-owner="${owners.page}"]`);
       const content = page.locator(`[data-stylex-owner="${owners.content}"]`);
       const grid = page.locator(`[data-stylex-owner="${owners.grid}"]`);

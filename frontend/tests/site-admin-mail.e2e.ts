@@ -287,8 +287,8 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
         const controlsBox = field.parentElement?.getBoundingClientRect();
         return Boolean(
           controlsBox &&
-            Math.abs(fieldBox.left - controlsBox.left) <= 1 &&
-            Math.abs(fieldBox.right - controlsBox.right) <= 1,
+          Math.abs(fieldBox.left - controlsBox.left) <= 1 &&
+          Math.abs(fieldBox.right - controlsBox.right) <= 1,
         );
       }),
     ),

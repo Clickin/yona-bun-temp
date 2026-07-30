@@ -55,7 +55,9 @@ async function open(page: Page) {
   await expect(page.locator(`[data-stylex-owner="${owners.page}"]`)).toBeVisible();
 }
 
-test("site massmail page grid and columns own the frozen site-management layout", async ({ page }) => {
+test("site massmail page grid and columns own the frozen site-management layout", async ({
+  page,
+}) => {
   const [route, mail, layout, behavior, less, bootstrapResponsive] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(massMailTemplate, "utf8"),

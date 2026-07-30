@@ -2046,3 +2046,64 @@ pub struct UpdateIssueStateRequest {
     #[serde(default)]
     pub state: String,
 }
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeTag {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub short_name: String,
+    #[serde(default)]
+    pub commit_id: String,
+    #[serde(default)]
+    pub commit_short_id: String,
+    #[serde(default)]
+    pub commit_message: String,
+    #[serde(default)]
+    pub creator_name: String,
+    #[serde(default)]
+    pub creator_email: String,
+    #[serde(default)]
+    pub created_date: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeTagPermissions {
+    #[serde(default)]
+    pub can_create: bool,
+    #[serde(default)]
+    pub can_delete: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeTagListResponse {
+    #[serde(default)]
+    pub tags: Vec<RestCodeTag>,
+    #[serde(default)]
+    pub no_head: bool,
+    #[serde(default)]
+    pub owner_name: String,
+    #[serde(default)]
+    pub project_name: String,
+    #[serde(default)]
+    pub permissions: RestCodeTagPermissions,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCreateCodeTagBody {
+    #[serde(default)]
+    pub tag_name: String,
+    pub target: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestDeleteCodeTagBody {
+    #[serde(default)]
+    pub tag_name: String,
+}
