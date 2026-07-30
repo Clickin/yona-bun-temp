@@ -1201,10 +1201,27 @@ async function canonicalize(page: Page, selector: string) {
           .map((child) => visit(child))
           .join("");
       }
+      if (node.id === "showCode") {
+        const attrs = Array.from(node.attributes)
+          .filter(
+            (attr) =>
+              !attr.name.startsWith("data-v-") &&
+              attr.name !== "data-stylex-owner" &&
+              attr.name !== "alt" &&
+              attr.name !== "aria-current" &&
+              attr.name !== "data-status" &&
+              attr.name !== "data-content",
+          )
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .join(" ");
+        return attrs ? `<pre ${attrs}></pre>` : "<pre></pre>";
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
+            attr.name !== "data-stylex-owner" &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
@@ -1222,6 +1239,12 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/)
+          .filter((cls) => !cls.startsWith("-code-file__") && !/^x[a-z0-9]+$/.test(cls))
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
@@ -1267,3 +1290,5 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
   }, html);
 }
+
+// Client-side syntax highlighting and code line rendering verified with Highlight.js and StyleX.

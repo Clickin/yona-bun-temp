@@ -112,3 +112,99 @@ export function codeTagsQueryOptions(runtimeConfig: RuntimeConfig, input: Projec
     queryKey: [...apiQueryKeys.project.base(input.ownerName, input.projectName), "tags"] as const,
   });
 }
+
+export type CodeBlameRecord = {
+  authorAvatarUrl: string;
+  authorDate: string;
+  authorEmail: string;
+  authorName: string;
+  commitId: string;
+  commitMessage: string;
+  commitShortId: string;
+  content: string;
+  lineNumber: number;
+};
+
+export type CodeBlameResponse = {
+  lines: CodeBlameRecord[];
+  ownerName: string;
+  path: string;
+  projectName: string;
+  selectedBranch: string;
+};
+
+export async function readCodeBlame(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { branch: string; filePath: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeBlameResponse> {
+  return restFetch<CodeBlameResponse>(
+    runtimeConfig,
+    `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
+      input.projectName,
+    )}/code/${encodeURIComponent(input.branch)}/blame/${input.filePath}`,
+    { fetchImpl, method: "GET" },
+  );
+}
+
+export function codeBlameQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { branch: string; filePath: string; enabled?: boolean },
+) {
+  return queryOptions({
+    enabled: input.enabled ?? true,
+    queryFn: () => readCodeBlame(runtimeConfig, input),
+    queryKey: [
+      ...apiQueryKeys.project.base(input.ownerName, input.projectName),
+      "code",
+      input.branch,
+      "blame",
+      input.filePath,
+    ] as const,
+  });
+}
+
+export type RestCommitDetail = {
+  branches?: Array<{ name: string }>;
+  breadcrumbs?: Array<{ name: string; path: string }>;
+  commit?: {
+    authorDate: string;
+    authorEmail: string;
+    authorName: string;
+    commentCount: number;
+    commitId: string;
+    commitShortId: string;
+    message: string;
+    shortMessage: string;
+  } | null;
+  deletions: number;
+  files?: Array<{ patch: string; path: string }>;
+  filesChanged: number;
+  insertions: number;
+  isWatching?: boolean;
+  noHead?: boolean;
+  ownerName?: string;
+  parentCommit?: { commitId: string; commitShortId: string } | null;
+  path?: string;
+  permissions?: {
+    canComment: boolean;
+    canUpdateThreadState: boolean;
+  };
+  projectName?: string;
+  selectedBranch?: string;
+};
+
+export async function readCommitFileDiff(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { commitId: string; filepath: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ patch: string; path: string }> {
+  const encodedPath = input.filepath.split("/").map(encodeURIComponent).join("/");
+  return restFetch<{ patch: string; path: string }>(
+    runtimeConfig,
+    `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
+      input.projectName,
+    )}/commit/${encodeURIComponent(input.commitId)}/files/${encodedPath}`,
+    { fetchImpl, method: "GET" },
+  );
+}

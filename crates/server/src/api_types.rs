@@ -2107,3 +2107,58 @@ pub struct RestDeleteCodeTagBody {
     #[serde(default)]
     pub tag_name: String,
 }
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeBlameRecord {
+    #[serde(default)]
+    pub author_avatar_url: String,
+    #[serde(default)]
+    pub author_date: String,
+    #[serde(default)]
+    pub author_email: String,
+    #[serde(default)]
+    pub author_name: String,
+    #[serde(default)]
+    pub commit_id: String,
+    #[serde(default)]
+    pub commit_message: String,
+    #[serde(default)]
+    pub commit_short_id: String,
+    #[serde(default)]
+    pub content: String,
+    #[serde(default)]
+    pub line_number: u32,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeBlameResponse {
+    #[serde(default)]
+    pub lines: Vec<RestCodeBlameRecord>,
+    #[serde(default)]
+    pub owner_name: String,
+    #[serde(default)]
+    pub path: String,
+    #[serde(default)]
+    pub project_name: String,
+    #[serde(default)]
+    pub selected_branch: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCodeArchiveQuery {
+    pub format: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCommitDetail {
+    #[serde(default)]
+    pub files_changed: u32,
+    #[serde(default)]
+    pub insertions: u32,
+    #[serde(default)]
+    pub deletions: u32,
+}

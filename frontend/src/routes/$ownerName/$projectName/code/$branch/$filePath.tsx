@@ -15,6 +15,7 @@ import type { ProjectContainer } from "../../../../../api/types";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
+import { codeBlameQueryOptions } from "../../../../../api/code";
 import { styles } from "./-code-file.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$filePath")({
@@ -60,9 +61,13 @@ function ProjectCodeFileRouteShell({
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+  };
   return (
     <ProjectCodeFileScreen
       project={projectQuery.data}
+      _projectSearchScope={projectSearchScope}
       routeParams={routeParams}
       runtimeConfig={runtimeConfig}
     />
@@ -71,10 +76,12 @@ function ProjectCodeFileRouteShell({
 
 function ProjectCodeFileScreen({
   project,
+  _projectSearchScope,
   routeParams,
   runtimeConfig,
 }: {
   project: ProjectContainer | undefined;
+  _projectSearchScope?: { organizationName?: string };
   routeParams: ProjectCodeFileRouteParams;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -184,7 +191,8 @@ function ProjectCodeFileBody({
   const isFolder = code.file === null;
   const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
-  const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
+  const archiveZipPath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
+  const archiveTargzPath = `${projectPath(ownerName, projectName, "code", encodedBranch, "archive")}?format=tar.gz`;
   const breadcrumbsStyleProps = stylex.props(styles.breadcrumbs);
   const newFilePathWithSearch = `${projectPath(
     ownerName,
@@ -353,8 +361,11 @@ function ProjectCodeFileBody({
                   {...downloadActionStyleProps}
                   data-stylex-owner="project-code-file-download-action"
                 >
-                  <Link to={archivePath} reloadDocument className="ybtn">
-                    {t("code.download")}
+                  <Link to={archiveZipPath} reloadDocument className="ybtn">
+                    {t("code.download")} (.zip)
+                  </Link>
+                  <Link to={archiveTargzPath} reloadDocument className="ybtn ml5">
+                    .tar.gz
                   </Link>
                 </div>
                 {!currentUserIsAnonymous ? (
@@ -594,6 +605,8 @@ function FileView({
 }) {
   const { t } = useLegacyMessages();
   const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
+  const [isBlameActive, setIsBlameActive] = React.useState(false);
+  const [copiedPermalink, setCopiedPermalink] = React.useState(false);
   const openBrowserWrapStyleProps = stylex.props(styles.openBrowserWrap);
   const commentCountStyleProps = stylex.props(styles.commentCount);
   const commitId = stringField(file.commitId, "");
@@ -621,6 +634,16 @@ function FileView({
     "commits",
     encodeURIComponent(selectedBranch),
     filePath,
+  );
+
+  const blameQuery = useQuery(
+    codeBlameQueryOptions(runtimeConfig, {
+      branch: selectedBranch,
+      enabled: isBlameActive,
+      filePath,
+      ownerName,
+      projectName,
+    }),
   );
 
   return (
@@ -726,6 +749,42 @@ function FileView({
         >
           {!isBinary ? (
             <>
+              <button
+                type="button"
+                {...stylex.props(styles.action)}
+                className={`${stylex.props(styles.action).className} ybtn${isBlameActive ? " active ybtn-info" : ""}`}
+                data-stylex-owner="project-code-file-blame-action"
+                onClick={() => setIsBlameActive(!isBlameActive)}
+              >
+                Blame
+              </button>
+              <button
+                type="button"
+                {...stylex.props(styles.action)}
+                className={`${stylex.props(styles.action).className} ybtn`}
+                data-stylex-owner="project-code-file-permalink-action"
+                title="Copy commit permalink"
+                onClick={() => {
+                  if (commitId) {
+                    const permalinkPath = projectPath(
+                      ownerName,
+                      projectName,
+                      "code",
+                      commitId,
+                      filePath,
+                    );
+                    const fullUrl = `${location.origin}${prefixBasePath(
+                      runtimeConfig.basePath,
+                      permalinkPath,
+                    )}`;
+                    navigator.clipboard.writeText(fullUrl).catch(() => {});
+                    setCopiedPermalink(true);
+                    setTimeout(() => setCopiedPermalink(false), 2000);
+                  }
+                }}
+              >
+                {copiedPermalink ? "Copied!" : "Permalink"}
+              </button>
               <Link
                 {...stylex.props(styles.action)}
                 to={rawPath}
@@ -782,7 +841,7 @@ function FileView({
             {isOpenInBrowserPopoverVisible ? (
               <div
                 {...stylex.props(styles.popover)}
-                className={`${stylex.props(styles.popover).className} popover top in`.trim()}
+                className="popover top in"
                 data-stylex-owner="project-code-file-open-popover"
                 role="tooltip"
               >
@@ -812,7 +871,16 @@ function FileView({
           </Link>
         </div>
       </div>
-      {isBinary ? (
+      {isBlameActive ? (
+        <BlameView
+          blame={blameQuery.data}
+          filePath={filePath}
+          isLoading={blameQuery.isLoading}
+          ownerName={ownerName}
+          projectName={projectName}
+          selectedBranch={selectedBranch}
+        />
+      ) : isBinary ? (
         mimeType.startsWith("image/") ? (
           <div
             id="showImage"
@@ -883,6 +951,101 @@ function FileView({
   );
 }
 
+function BlameView({
+  blame,
+  filePath,
+  isLoading,
+  ownerName,
+  projectName,
+  selectedBranch,
+}: {
+  blame?: {
+    lines: Array<{
+      authorAvatarUrl: string;
+      authorDate: string;
+      authorEmail: string;
+      authorName: string;
+      commitId: string;
+      commitMessage: string;
+      commitShortId: string;
+      content: string;
+      lineNumber: number;
+    }>;
+  };
+  filePath: string;
+  isLoading: boolean;
+  ownerName: string;
+  projectName: string;
+  selectedBranch: string;
+}) {
+  if (isLoading || !blame) {
+    return <div style={{ padding: "20px", textAlign: "center" }}>Loading blame data…</div>;
+  }
+
+  return (
+    <table {...stylex.props(styles.blameTable)} data-stylex-owner="project-code-blame-table">
+      <tbody>
+        {blame.lines.map((line, index) => {
+          const isFirstInBlock = index === 0 || blame.lines[index - 1].commitId !== line.commitId;
+          return (
+            <tr
+              key={line.lineNumber}
+              {...stylex.props(styles.blameRow)}
+              id={`L${line.lineNumber}`}
+              data-stylex-owner="project-code-blame-row"
+            >
+              <td
+                {...stylex.props(
+                  styles.blameMetaCell,
+                  isFirstInBlock ? styles.blameMetaCellHeader : undefined,
+                )}
+                data-stylex-owner="project-code-blame-meta"
+                title={`${line.authorName} (${line.authorEmail}): ${line.commitMessage}`}
+              >
+                {isFirstInBlock ? (
+                  <>
+                    {line.authorAvatarUrl ? (
+                      <img
+                        src={line.authorAvatarUrl}
+                        alt=""
+                        {...stylex.props(styles.blameAuthorAvatar)}
+                      />
+                    ) : null}
+                    <Link
+                      to="/$ownerName/$projectName/commit/$commitId"
+                      params={{ commitId: line.commitId, ownerName, projectName }}
+                      search={{ branch: selectedBranch, path: filePath }}
+                      {...stylex.props(styles.blameCommitLink)}
+                    >
+                      {line.commitShortId}
+                    </Link>
+                    <span {...stylex.props(styles.blameAuthorLink)}>{line.authorName}</span>
+                    <span {...stylex.props(styles.blameDate)}>{line.authorDate}</span>
+                  </>
+                ) : null}
+              </td>
+              <td
+                {...stylex.props(styles.lineNumberCell)}
+                data-stylex-owner="project-code-blame-linenumber"
+              >
+                <Link to="." hash={`L${line.lineNumber}`} {...stylex.props(styles.lineNumberLink)}>
+                  {line.lineNumber}
+                </Link>
+              </td>
+              <td
+                {...stylex.props(styles.lineContentCell)}
+                data-stylex-owner="project-code-blame-content"
+              >
+                {line.content}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {
   return prefixBasePath(basePath, projectPath(ownerName, projectName, ...parts));
 }
@@ -930,4 +1093,21 @@ function branchItemName(branch: string) {
   }
   const branchTypeEnd = branch.indexOf("/", refsPrefix.length);
   return branchTypeEnd === -1 ? branch : branch.slice(branchTypeEnd + 1);
+}
+
+function projectSearchScopeOrganizationName(
+  project: ProjectContainer | undefined,
+  ownerName: string,
+) {
+  if (!project) return undefined;
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  return project.isProtected === true;
 }

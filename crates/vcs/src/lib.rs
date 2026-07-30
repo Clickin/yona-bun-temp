@@ -117,6 +117,25 @@ pub struct CodeFileBytesRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeBlameSnapshot {
+    pub lines: Vec<CodeBlameRecord>,
+    pub path: String,
+    pub selected_branch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeBlameRecord {
+    pub author_date: String,
+    pub author_email: String,
+    pub author_name: String,
+    pub commit_id: String,
+    pub commit_message: String,
+    pub commit_short_id: String,
+    pub content: String,
+    pub line_number: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CodeHistorySnapshot {
     pub branches: Vec<CodeBranchRecord>,
     pub breadcrumbs: Vec<CodeBreadcrumbRecord>,
@@ -2084,7 +2103,9 @@ pub fn read_code_browser(
         Some(branch) => branch.to_string(),
         None => default_branch(&repo_path).unwrap_or_else(|| branches[0].name.clone()),
     };
-    if !branches.iter().any(|branch| branch.name == selected_branch) {
+    if !branches.iter().any(|branch| branch.name == selected_branch)
+        && !revision_exists(&repo_path, &selected_branch)
+    {
         return Err(VcsError::NotFound);
     }
 
@@ -2234,6 +2255,149 @@ pub fn read_archive_zip(repo_path: &Path, revision: &str) -> Result<Vec<u8>, Vcs
     git_bytes(repo_path, &["archive", "--format=zip", revision])
 }
 
+pub fn read_archive_targz(repo_path: &Path, revision: &str) -> Result<Vec<u8>, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let revision = revision.trim();
+    if revision.is_empty() || revision.starts_with('-') || !revision_exists(repo_path, revision) {
+        return Err(VcsError::NotFound);
+    }
+
+    git_bytes(repo_path, &["archive", "--format=tar.gz", revision])
+}
+
+pub fn read_code_archive_targz(repo_path: &Path, revision: &str) -> Result<Vec<u8>, VcsError> {
+    read_archive_targz(repo_path, revision)
+}
+
+fn format_epoch_seconds(secs: i64) -> String {
+    let days = secs / 86400;
+    let rem_secs = (secs % 86400).abs();
+    let hours = rem_secs / 3600;
+    let mins = (rem_secs % 3600) / 60;
+    let secs_of_min = rem_secs % 60;
+
+    let z = days + 719468;
+    let era = (if z >= 0 { z } else { z - 146096 }) / 146097;
+    let doe = (z - era * 146097) as u32;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+
+    format!("{y:04}-{m:02}-{d:02} {hours:02}:{mins:02}:{secs_of_min:02}")
+}
+
+pub fn read_code_blame(
+    repo_path: &Path,
+    revision: &str,
+    path: &str,
+) -> Result<CodeBlameSnapshot, VcsError> {
+    use std::collections::HashMap;
+
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let revision = revision.trim();
+    if revision.is_empty() || revision.starts_with('-') || !revision_exists(repo_path, revision) {
+        return Err(VcsError::NotFound);
+    }
+
+    let output_bytes = git_bytes(
+        repo_path,
+        &["blame", "-w", "--porcelain", revision, "--", &clean_path],
+    )?;
+    let output_str = String::from_utf8_lossy(&output_bytes);
+
+    let mut lines = Vec::new();
+    let mut commit_meta_map: HashMap<String, (String, String, String, String)> = HashMap::new();
+    let mut current_commit_id = String::new();
+    let mut current_line_number: u32 = 0;
+    let mut cur_author_name = String::new();
+    let mut cur_author_email = String::new();
+    let mut cur_author_date = String::new();
+    let mut cur_commit_message = String::new();
+
+    for line in output_str.lines() {
+        if let Some(content) = line.strip_prefix('\t') {
+            if let Some((name, email, date, msg)) = commit_meta_map.get(&current_commit_id) {
+                lines.push(CodeBlameRecord {
+                    commit_id: current_commit_id.clone(),
+                    commit_short_id: current_commit_id.chars().take(7).collect(),
+                    author_name: name.clone(),
+                    author_email: email.clone(),
+                    author_date: date.clone(),
+                    commit_message: msg.clone(),
+                    line_number: current_line_number,
+                    content: content.to_string(),
+                });
+            } else {
+                let meta = (
+                    cur_author_name.clone(),
+                    cur_author_email.clone(),
+                    cur_author_date.clone(),
+                    cur_commit_message.clone(),
+                );
+                commit_meta_map.insert(current_commit_id.clone(), meta.clone());
+                lines.push(CodeBlameRecord {
+                    commit_id: current_commit_id.clone(),
+                    commit_short_id: current_commit_id.chars().take(7).collect(),
+                    author_name: meta.0,
+                    author_email: meta.1,
+                    author_date: meta.2,
+                    commit_message: meta.3,
+                    line_number: current_line_number,
+                    content: content.to_string(),
+                });
+            }
+        } else if let Some(name) = line.strip_prefix("author ") {
+            cur_author_name = name.to_string();
+        } else if let Some(email) = line.strip_prefix("author-mail ") {
+            cur_author_email = email.trim_matches(|c| c == '<' || c == '>').to_string();
+        } else if let Some(time_str) = line.strip_prefix("author-time ") {
+            if let Ok(secs) = time_str.trim().parse::<i64>() {
+                cur_author_date = format_epoch_seconds(secs);
+            }
+        } else if let Some(msg) = line.strip_prefix("summary ") {
+            cur_commit_message = msg.to_string();
+        } else {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 3
+                && parts[0].len() >= 7
+                && parts[0].chars().all(|c| c.is_ascii_hexdigit())
+            {
+                current_commit_id = parts[0].to_string();
+                current_line_number = parts[2].parse::<u32>().unwrap_or(0);
+                if let Some((name, email, date, msg)) = commit_meta_map.get(&current_commit_id) {
+                    cur_author_name = name.clone();
+                    cur_author_email = email.clone();
+                    cur_author_date = date.clone();
+                    cur_commit_message = msg.clone();
+                } else {
+                    cur_author_name.clear();
+                    cur_author_email.clear();
+                    cur_author_date.clear();
+                    cur_commit_message.clear();
+                }
+            }
+        }
+    }
+
+    Ok(CodeBlameSnapshot {
+        lines,
+        path: clean_path,
+        selected_branch: revision.to_string(),
+    })
+}
+
 pub fn read_code_history(
     repo_path: &Path,
     branch: Option<&str>,
@@ -2253,7 +2417,9 @@ pub fn read_code_history(
         Some(branch) => branch.to_string(),
         None => default_branch(&repo_path).unwrap_or_else(|| branches[0].name.clone()),
     };
-    if !branches.iter().any(|branch| branch.name == selected_branch) {
+    if !branches.iter().any(|branch| branch.name == selected_branch)
+        && !revision_exists(&repo_path, &selected_branch)
+    {
         return Err(VcsError::NotFound);
     }
 
@@ -2543,10 +2709,94 @@ pub fn read_svn_commit_detail(
     })
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GitDiffStat {
+    pub files_changed: u32,
+    pub insertions: u32,
+    pub deletions: u32,
+}
+
+pub fn parse_git_diff_stat(output: &str) -> GitDiffStat {
+    let mut stat = GitDiffStat::default();
+    for line in output.lines().rev() {
+        let line = line.trim();
+        if line.contains("file changed") || line.contains("files changed") {
+            let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
+            for part in parts {
+                let tokens: Vec<&str> = part.split_whitespace().collect();
+                if !tokens.is_empty() {
+                    if let Ok(val) = tokens[0].parse::<u32>() {
+                        if part.contains("file") {
+                            stat.files_changed = val;
+                        } else if part.contains("insertion") {
+                            stat.insertions = val;
+                        } else if part.contains("deletion") {
+                            stat.deletions = val;
+                        }
+                    }
+                }
+            }
+            return stat;
+        }
+    }
+    stat
+}
+
+pub fn compute_diff_stat_from_files(files: &[CodeCommitFileDiffRecord]) -> GitDiffStat {
+    let mut insertions = 0u32;
+    let mut deletions = 0u32;
+    for file in files {
+        for line in file.patch.lines() {
+            if line.starts_with("--- ") || line.starts_with("+++ ") || line.starts_with("diff --git ") {
+                continue;
+            }
+            if line.starts_with('+') {
+                insertions += 1;
+            } else if line.starts_with('-') {
+                deletions += 1;
+            }
+        }
+    }
+    GitDiffStat {
+        files_changed: files.len() as u32,
+        insertions,
+        deletions,
+    }
+}
+
+pub fn git_merge_base(repo_path: &Path, rev_a: &str, rev_b: &str) -> Result<String, VcsError> {
+    let rev_a = rev_a.trim();
+    let rev_b = rev_b.trim();
+    if rev_a.is_empty() || rev_b.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    if !repo_path.exists() || !has_head(repo_path) {
+        return Err(VcsError::NotFound);
+    }
+    ensure_commit_exists(repo_path, rev_a)?;
+    ensure_commit_exists(repo_path, rev_b)?;
+    let output = git_output(repo_path, &["merge-base", rev_a, rev_b])?;
+    let mb = output.trim().to_string();
+    if mb.is_empty() {
+        Err(VcsError::NotFound)
+    } else {
+        Ok(mb)
+    }
+}
+
 pub fn read_compare_diff(
     repo_path: &Path,
     rev_a: &str,
     rev_b: &str,
+) -> Result<CodeCompareSnapshot, VcsError> {
+    read_compare_diff_ext(repo_path, rev_a, rev_b, false)
+}
+
+pub fn read_compare_diff_ext(
+    repo_path: &Path,
+    rev_a: &str,
+    rev_b: &str,
+    three_dot: bool,
 ) -> Result<CodeCompareSnapshot, VcsError> {
     let rev_a = rev_a.trim();
     let rev_b = rev_b.trim();
@@ -2563,6 +2813,13 @@ pub fn read_compare_diff(
     ensure_commit_exists(repo_path, rev_b)?;
     let commit_a = read_commit_record(repo_path, rev_a)?;
     let commit_b = read_commit_record(repo_path, rev_b)?;
+
+    let base_ref = if three_dot {
+        git_merge_base(repo_path, rev_a, rev_b)?
+    } else {
+        rev_a.to_string()
+    };
+
     let diff = git_output(
         repo_path,
         &[
@@ -2570,7 +2827,7 @@ pub fn read_compare_diff(
             "--find-renames",
             "--patch",
             "--unified=3",
-            rev_a,
+            &base_ref,
             rev_b,
         ],
     )?;
@@ -2582,6 +2839,53 @@ pub fn read_compare_diff(
         rev_a: rev_a.to_string(),
         rev_b: rev_b.to_string(),
     })
+}
+
+pub fn read_commit_file_diff(
+    repo_path: &Path,
+    commit_id: &str,
+    filepath: &str,
+) -> Result<CodeCommitFileDiffRecord, VcsError> {
+    let commit_id = commit_id.trim();
+    let clean_path = normalize_repo_path(filepath)?;
+    if commit_id.is_empty() || clean_path.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    if !repo_path.exists() || !has_head(repo_path) {
+        return Err(VcsError::NotFound);
+    }
+    ensure_commit_exists(repo_path, commit_id)?;
+    let diff = git_output(
+        repo_path,
+        &[
+            "show",
+            "--find-renames",
+            "--patch",
+            "--unified=3",
+            commit_id,
+            "--",
+            &clean_path,
+        ],
+    )?;
+    let files = parse_commit_diff_files(&diff);
+    if let Some(file) = files.into_iter().next() {
+        Ok(file)
+    } else {
+        Ok(CodeCommitFileDiffRecord {
+            path: clean_path,
+            patch: String::new(),
+        })
+    }
+}
+
+pub fn read_commit_diff_stat(repo_path: &Path, commit_id: &str) -> Result<GitDiffStat, VcsError> {
+    let commit_id = commit_id.trim();
+    if commit_id.is_empty() || !repo_path.exists() || !has_head(repo_path) {
+        return Ok(GitDiffStat::default());
+    }
+    ensure_commit_exists(repo_path, commit_id)?;
+    let output = git_output(repo_path, &["show", "--stat", "--format=", commit_id])?;
+    Ok(parse_git_diff_stat(&output))
 }
 
 pub fn read_branch_list(repo_path: &Path) -> Result<CodeBranchListSnapshot, VcsError> {

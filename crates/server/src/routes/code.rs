@@ -26,7 +26,8 @@ use crate::{
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, rewrite_code_browser_markdown_image_links,
     workspace_avatar_url, ConnectError, MarkdownIssueReference, MarkdownMentionReference,
-    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestCodeTag, RestCodeTagListResponse,
+    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestCodeArchiveQuery,
+    RestCodeBlameRecord, RestCodeBlameResponse, RestCodeTag, RestCodeTagListResponse,
     RestCodeTagPermissions, RestCreateCodeTagBody, RestDeleteCodeTagBody, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestReviewThread, RestRouteError,
 };
@@ -82,6 +83,32 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                             project_name,
                             commit_id,
                             query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/files/{*filepath}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, filepath)): Path<(
+                    String,
+                    String,
+                    String,
+                    String,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_code_commit_file_diff(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            filepath,
                             service,
                         )
                         .await
@@ -327,6 +354,54 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             }),
         )
+        .route(
+            "/projects/{owner_name}/{project_name}/code/{branch}/blame/{*filepath}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, branch, filepath)): Path<(
+                    String,
+                    String,
+                    String,
+                    String,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_code_blame(
+                            headers,
+                            owner_name,
+                            project_name,
+                            branch,
+                            filepath,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/code/{branch}/archive",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, branch)): Path<(String, String, String)>,
+                      Query(query): Query<RestCodeArchiveQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_code_archive(
+                            headers,
+                            owner_name,
+                            project_name,
+                            branch,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
 }
 
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
@@ -423,13 +498,15 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             "/{owner}/{project}/code/{revision}/download",
             get(
                 move |headers: HeaderMap,
-                      Path((owner, project, revision)): Path<(String, String, String)>| {
+                      Path((owner, project, revision)): Path<(String, String, String)>,
+                      Query(query): Query<RestCodeArchiveQuery>| {
                     async move {
-                        direct_code_archive(
+                        rest_read_code_archive(
                             headers,
                             owner,
                             project,
                             revision,
+                            query,
                             archive_code_service.clone(),
                         )
                         .await
@@ -712,6 +789,9 @@ struct RestCodeCommitDetailResponse {
     breadcrumbs: Vec<RestCodeBreadcrumb>,
     commit: Option<RestCodeCommit>,
     files: Vec<RestCodeCommitFileDiff>,
+    files_changed: u32,
+    insertions: u32,
+    deletions: u32,
     issue_references: Vec<RestIssueReferenceMetadata>,
     no_head: bool,
     owner_name: String,
@@ -736,6 +816,9 @@ struct RestCodeCompareResponse {
     commit_a: Option<RestCodeCommit>,
     commit_b: Option<RestCodeCommit>,
     files: Vec<RestCodeCommitFileDiff>,
+    files_changed: u32,
+    insertions: u32,
+    deletions: u32,
     no_head: bool,
     owner_name: String,
     project_name: String,
@@ -1083,6 +1166,25 @@ pub(crate) async fn direct_code_archive(
     revision: String,
     service: PilotServiceImpl,
 ) -> Response {
+    rest_read_code_archive(
+        headers,
+        owner_name,
+        project_name,
+        revision,
+        RestCodeArchiveQuery::default(),
+        service,
+    )
+    .await
+}
+
+pub(crate) async fn rest_read_code_archive(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    branch: String,
+    query: RestCodeArchiveQuery,
+    service: PilotServiceImpl,
+) -> Response {
     let actor_id = service
         .session_manager
         .read_session_from_headers(&headers)
@@ -1111,10 +1213,112 @@ pub(crate) async fn direct_code_archive(
     }
 
     let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
-    match yoram_vcs::read_archive_zip(&repo_path, &revision) {
-        Ok(bytes) => direct_code_archive_response(bytes, &project_name, &revision),
-        Err(error) => direct_code_file_error(error),
+    let format = query.format.as_deref().unwrap_or("zip");
+    if format == "tar.gz" || format == "tgz" {
+        match yoram_vcs::read_archive_targz(&repo_path, &branch) {
+            Ok(bytes) => direct_code_archive_targz_response(bytes, &project_name, &branch),
+            Err(error) => direct_code_file_error(error),
+        }
+    } else {
+        match yoram_vcs::read_archive_zip(&repo_path, &branch) {
+            Ok(bytes) => direct_code_archive_response(bytes, &project_name, &branch),
+            Err(error) => direct_code_file_error(error),
+        }
     }
+}
+
+pub(crate) async fn rest_read_code_blame(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    branch: String,
+    filepath: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeBlameResponse>, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("code blame requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
+        } else {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
+        };
+    }
+
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let snapshot = yoram_vcs::read_code_blame(&repo_path, &branch, &filepath)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    let lines = snapshot
+        .lines
+        .into_iter()
+        .map(|line| RestCodeBlameRecord {
+            author_avatar_url: gravatar_url(&line.author_email),
+            author_date: line.author_date,
+            author_email: line.author_email,
+            author_name: line.author_name,
+            commit_id: line.commit_id,
+            commit_message: line.commit_message,
+            commit_short_id: line.commit_short_id,
+            content: line.content,
+            line_number: line.line_number,
+        })
+        .collect();
+
+    Ok(Json(RestCodeBlameResponse {
+        lines,
+        owner_name,
+        path: filepath,
+        project_name,
+        selected_branch: branch,
+    }))
+}
+
+fn direct_code_archive_targz_response(
+    bytes: Vec<u8>,
+    project_name: &str,
+    revision: &str,
+) -> Response {
+    let filename = format!(
+        "{}-{}.tar.gz",
+        sanitize_download_filename(project_name),
+        sanitize_download_filename(revision)
+    );
+    let disposition = format!("attachment; filename=\"{filename}\"");
+    let mut response = bytes.into_response();
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/gzip"),
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    response
 }
 
 fn direct_code_archive_response(bytes: Vec<u8>, project_name: &str, revision: &str) -> Response {
@@ -1970,9 +2174,13 @@ async fn rest_read_code_compare(
     revision_range: String,
     service: PilotServiceImpl,
 ) -> Result<Json<RestCodeCompareResponse>, RestRouteError> {
-    let Some((rev_a, rev_b)) = revision_range.split_once("..") else {
+    let (rev_a, rev_b, three_dot) = if let Some((a, b)) = revision_range.split_once("...") {
+        (a, b, true)
+    } else if let Some((a, b)) = revision_range.split_once("..") {
+        (a, b, false)
+    } else {
         return Err(RestRouteError::bad_request(
-            "compare revision range must use revA..revB",
+            "compare revision range must use revA..revB or revA...revB",
         ));
     };
     let actor_id = service
@@ -2008,7 +2216,7 @@ async fn rest_read_code_compare(
     }
 
     let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yoram_vcs::read_compare_diff(&repo_path, rev_a, rev_b)
+    let snapshot = yoram_vcs::read_compare_diff_ext(&repo_path, rev_a, rev_b, three_dot)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
 
@@ -2017,6 +2225,54 @@ async fn rest_read_code_compare(
         &authorization.project.project_name,
         snapshot,
     )))
+}
+
+async fn rest_read_code_commit_file_diff(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    filepath: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeCommitFileDiff>, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("commit file diff requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
+        } else {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
+        };
+    }
+
+    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let file_diff = yoram_vcs::read_commit_file_diff(&repo_path, &commit_id, &filepath)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(code_commit_file_diff_to_rest(file_diff)))
 }
 
 async fn rest_read_code_branches(
@@ -2409,6 +2665,7 @@ fn code_commit_detail_response_from_snapshot(
     mention_references: &[MarkdownMentionReference],
 ) -> RestCodeCommitDetailResponse {
     let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
+    let diff_stat = yoram_vcs::compute_diff_stat_from_files(&snapshot.files);
     RestCodeCommitDetailResponse {
         branches: snapshot
             .branches
@@ -2429,6 +2686,9 @@ fn code_commit_detail_response_from_snapshot(
             .into_iter()
             .map(code_commit_file_diff_to_rest)
             .collect(),
+        files_changed: diff_stat.files_changed,
+        insertions: diff_stat.insertions,
+        deletions: diff_stat.deletions,
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)
@@ -2464,6 +2724,7 @@ fn code_compare_response_from_snapshot(
     project_name: &str,
     snapshot: CodeCompareSnapshot,
 ) -> RestCodeCompareResponse {
+    let diff_stat = yoram_vcs::compute_diff_stat_from_files(&snapshot.files);
     RestCodeCompareResponse {
         commit_a: snapshot.commit_a.map(code_commit_to_rest),
         commit_b: snapshot.commit_b.map(code_commit_to_rest),
@@ -2472,6 +2733,9 @@ fn code_compare_response_from_snapshot(
             .into_iter()
             .map(code_commit_file_diff_to_rest)
             .collect(),
+        files_changed: diff_stat.files_changed,
+        insertions: diff_stat.insertions,
+        deletions: diff_stat.deletions,
         no_head: snapshot.no_head,
         owner_name: owner_name.to_string(),
         project_name: project_name.to_string(),
