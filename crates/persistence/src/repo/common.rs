@@ -390,9 +390,30 @@ pub(super) fn pure_user_name(display_name: &str) -> String {
     display_name[..bracket_index].trim().to_string()
 }
 
+// Legacy source: yona-original/app/models/enumeration/State.java.
 pub(super) fn issue_state_to_raw(value: &str) -> i32 {
+    issue_state_to_raw_with_encoding(value, legacy_issue_state_encoding())
+}
+
+fn issue_state_to_raw_with_encoding(value: &str, legacy: bool) -> i32 {
     if normalize_identity(value) == "open" {
-        0
+        if legacy { 1 } else { 0 }
+    } else if legacy {
+        2
+    } else {
+        1
+    }
+}
+
+fn legacy_issue_state_encoding() -> bool {
+    std::env::var("YONA_LEGACY_ISSUE_STATE_ENCODING")
+        .map(|value| matches!(normalize_identity(&value).as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+}
+
+pub(super) fn issue_closed_state_raw() -> i32 {
+    if legacy_issue_state_encoding() {
+        2
     } else {
         1
     }
@@ -792,9 +813,13 @@ pub(super) fn looks_like_email_address(value: &str) -> bool {
         && !domain.ends_with('.')
         && domain.contains('.')
 }
-
 pub(super) fn issue_state_from_raw(value: Option<i32>) -> String {
-    if value.unwrap_or(0) == 0 {
+    issue_state_from_raw_with_encoding(value, legacy_issue_state_encoding())
+}
+
+fn issue_state_from_raw_with_encoding(value: Option<i32>, legacy: bool) -> String {
+    let raw = value.unwrap_or(if legacy { 1 } else { 0 });
+    if (legacy && raw == 1) || (!legacy && raw == 0) {
         "open".to_string()
     } else {
         "closed".to_string()
@@ -1103,4 +1128,22 @@ pub(super) fn project_transfer_record_from_model(
         requested: row.requested,
         sender_id: row.sender_id?,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{issue_state_from_raw_with_encoding, issue_state_to_raw_with_encoding};
+
+    #[test]
+    fn issue_state_encoding_matches_canonical_and_legacy_storage() {
+        assert_eq!(issue_state_to_raw_with_encoding("open", false), 0);
+        assert_eq!(issue_state_to_raw_with_encoding("closed", false), 1);
+        assert_eq!(issue_state_from_raw_with_encoding(Some(0), false), "open");
+        assert_eq!(issue_state_from_raw_with_encoding(Some(1), false), "closed");
+
+        assert_eq!(issue_state_to_raw_with_encoding("open", true), 1);
+        assert_eq!(issue_state_to_raw_with_encoding("closed", true), 2);
+        assert_eq!(issue_state_from_raw_with_encoding(Some(1), true), "open");
+        assert_eq!(issue_state_from_raw_with_encoding(Some(2), true), "closed");
+    }
 }

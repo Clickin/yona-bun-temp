@@ -122,6 +122,46 @@ impl AppRepositoryImpl<'_> {
                 total_count: 0,
             });
         };
+        let simple_closed_page = page_size.is_some()
+            && filter
+                .state
+                .as_deref()
+                .is_some_and(|state| normalize_identity(state) == "closed")
+            && filter.assignee_id.is_none()
+            && filter
+                .assignee_login_id
+                .as_deref()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+            && filter.author_id.is_none()
+            && filter
+                .author_login_id
+                .as_deref()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+            && filter.commenter_id.is_none()
+            && filter.due_date.is_none()
+            && filter.draft_author_login_id.is_none()
+            && filter
+                .filter
+                .as_deref()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+            && filter.label_ids.is_empty()
+            && filter.milestone_id.is_none();
+        if simple_closed_page {
+            return self
+                .list_simple_closed_project_issues_page(
+                    &project,
+                    &filter,
+                    page_size.expect("simple closed page size"),
+                )
+                .await;
+        }
+
 
         let models = issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
@@ -295,6 +335,83 @@ impl AppRepositoryImpl<'_> {
             items: records,
             page_num,
             page_size: effective_page_size,
+            total_count,
+        })
+    }
+
+    async fn list_simple_closed_project_issues_page(
+        &self,
+        project: &ProjectRecord,
+        filter: &IssueListFilter,
+        page_size: u32,
+    ) -> Result<ProjectIssueListRecord, DbErr> {
+        let page_num = filter.page_num.max(1);
+        let page_size = page_size.max(1);
+        let descending = normalize_identity(&filter.order_dir) != "asc";
+        let mut query = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .filter(issue::Column::ParentId.is_null())
+            .filter(issue::Column::State.eq(Some(issue_closed_state_raw())))
+            .filter(issue::Column::IsDraft.eq(Some(0)));
+
+        match normalize_identity(&filter.order_by).as_str() {
+            "duedate" => {
+                query = if descending {
+                    query.order_by_desc(issue::Column::DueDate)
+                } else {
+                    query.order_by_asc(issue::Column::DueDate)
+                };
+            }
+            "updateddate" => {
+                query = if descending {
+                    query.order_by_desc(issue::Column::UpdatedDate)
+                } else {
+                    query.order_by_asc(issue::Column::UpdatedDate)
+                };
+            }
+            "numofcomments" => {
+                query = if descending {
+                    query.order_by_desc(issue::Column::NumOfComments)
+                } else {
+                    query.order_by_asc(issue::Column::NumOfComments)
+                };
+            }
+            _ => {
+                query = if descending {
+                    query.order_by_desc(issue::Column::CreatedDate)
+                } else {
+                    query.order_by_asc(issue::Column::CreatedDate)
+                };
+            }
+        }
+        query = if descending {
+            query
+                .order_by_desc(issue::Column::Number)
+                .order_by_desc(issue::Column::Id)
+        } else {
+            query
+                .order_by_asc(issue::Column::Number)
+                .order_by_asc(issue::Column::Id)
+        };
+
+        let total_count = query.clone().count(&self.db).await? as u32;
+        let models = query
+            .paginate(&self.db, page_size as u64)
+            .fetch_page((page_num - 1) as u64)
+            .await?;
+        let mut records = Vec::with_capacity(models.len());
+        for model in models {
+            records.push(
+                self.project_issue_list_item_from_model(model, project)
+                    .await?,
+            );
+        }
+
+        Ok(ProjectIssueListRecord {
+            draft_items: Vec::new(),
+            items: records,
+            page_num,
+            page_size,
             total_count,
         })
     }
