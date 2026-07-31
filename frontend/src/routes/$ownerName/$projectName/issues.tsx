@@ -1745,7 +1745,7 @@ function ProjectIssueItem({
                   `#${issueNumber}`
                 )}
               </span>
-            </Link>
+            </Link>{" "}
             {issueWeight > 0 ? (
               <span className="weight-up-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
                 <i className="yobicon-angle-circled-up"></i>
@@ -1756,24 +1756,30 @@ function ProjectIssueItem({
                 <i className="yobicon-angle-circled-down"></i>
               </span>
             ) : null}
-            {titleParts.prefixes.map((prefix) => (
-              <Link
-                activeProps={legacyRouteLocalActiveProps}
-                className={
-                  hoveredTitlePrefix === prefix ? "title-prefix title-prefix-hover" : "title-prefix"
-                }
-                key={`${issueId}-${prefix}`}
-                to={titlePrefixRoute(prefix)}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onTitlePrefixSearch(prefix);
-                }}
-                onMouseEnter={() => onTitlePrefixHover(prefix)}
-                onMouseLeave={() => onTitlePrefixHover("")}
-              >
-                {prefix}
-              </Link>
+            {issueWeight !== 0 ? " " : null}
+            {titleParts.prefixes.map((prefix, prefixIndex) => (
+              <Fragment key={`${issueId}-${prefix}`}>
+                {prefixIndex > 0 ? " " : null}
+                <Link
+                  activeProps={legacyRouteLocalActiveProps}
+                  className={
+                    hoveredTitlePrefix === prefix
+                      ? "title-prefix title-prefix-hover"
+                      : "title-prefix"
+                  }
+                  to={titlePrefixRoute(prefix)}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onTitlePrefixSearch(prefix);
+                  }}
+                  onMouseEnter={() => onTitlePrefixHover(prefix)}
+                  onMouseLeave={() => onTitlePrefixHover("")}
+                >
+                  {prefix}
+                </Link>
+              </Fragment>
             ))}
+            {titleParts.prefixes.length > 0 ? " " : null}
             <Link
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/$issueNumber"

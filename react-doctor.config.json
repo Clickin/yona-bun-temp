@@ -14,6 +14,7 @@
     ],
     "files": [
       "public/legacy-assets/**/*.js",
+      "src/api/admin.ts",
       "src/gen/**",
       "tests/live-legacy-html-parity.ts",
       "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx"
