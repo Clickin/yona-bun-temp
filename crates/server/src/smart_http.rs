@@ -1,7 +1,6 @@
 use axum::extract::Request;
 use axum::response::{IntoResponse, Response};
 use base64::{engine::general_purpose, Engine as _};
-use bcrypt::verify;
 use http::header::{AUTHORIZATION, WWW_AUTHENTICATE};
 use http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
@@ -12,8 +11,8 @@ use crate::session::SessionManager;
 use crate::{
     absolute_app_url, base_path_href, confirmation_session_required_from_config,
     dispatch_pull_request_webhooks, internal_error, map_project_scope, persistence,
-    project_webhook_type_label, record_project_webhook_delivery, AuthUiConfig, ConnectError,
-    ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
+    project_webhook_type_label, record_project_webhook_delivery, verify_password, AuthUiConfig,
+    ConnectError, ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
     LEGACY_LOGIN_REQUIRED_MESSAGE,
 };
 use yoram_domain::ProjectScope;
@@ -137,6 +136,7 @@ pub(crate) async fn direct_smart_http_request(
         repository,
         &service.auth_ui,
         &service.ldap,
+        service.password_hashing_silent_migration_to_argon2id,
     )
     .await
     {
@@ -381,6 +381,7 @@ pub(crate) async fn smart_http_principal_from_headers(
     repository: &PilotRepository,
     auth_ui: &AuthUiConfig,
     ldap: &crate::LdapRuntimeConfig,
+    silent_migration_to_argon2id: bool,
 ) -> Result<Option<persistence::AppUserRecord>, Response> {
     match parse_basic_authorization(headers) {
         Ok(Some((identifier, secret))) => {
@@ -393,6 +394,7 @@ pub(crate) async fn smart_http_principal_from_headers(
                         repository,
                         &identifier,
                         &secret,
+                        silent_migration_to_argon2id,
                     )
                     .await
                     {
@@ -442,7 +444,10 @@ async fn authenticate_basic_local_user(
     else {
         return Err(smart_http_basic_challenge_response());
     };
-    let password_matches = verify(secret, &user.password_hash).unwrap_or(false);
+    let password_matches = !matches!(
+        verify_password(secret, &user.password_hash, user.password_salt.as_deref()),
+        crate::PasswordVerification::NoMatch
+    );
     let token_matches = basic_auth_token_matches(repository, user.id, secret).await?;
     if password_matches || token_matches {
         Ok(user)

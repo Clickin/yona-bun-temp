@@ -25,6 +25,7 @@ impl AppRepositoryImpl<'_> {
             is_guest: model.is_guest.unwrap_or_default() != 0,
             is_site_admin,
             login_id: model.login_id.unwrap_or_default(),
+            password_salt: model.password_salt,
             password_hash: model.password.unwrap_or_default(),
         })
     }

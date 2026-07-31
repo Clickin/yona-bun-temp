@@ -2242,6 +2242,132 @@ async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_messa
     assert!(missing_password_json.contains("user.login.required"));
 }
 
+const LEGACY_PASSWORD_HASH: &str = "r0egKhZzB4AkoXUp9kRF1BNxv9LWeaLAhV0yhz1lgmU=";
+const LEGACY_PASSWORD_SALT: &str = "c2FsdC1mb3ItdGVzdA==";
+
+async fn seed_legacy_password_user(
+    repository: &AppRepository,
+    db: &DatabaseConnection,
+    login_id: &str,
+) {
+    let user = repository
+        .create_user(yoram_persistence::CreateUserInput {
+            display_name: "Legacy User".to_string(),
+            email_address: format!("{login_id}@example.com"),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: login_id.to_string(),
+            password_hash: LEGACY_PASSWORD_HASH.to_string(),
+        })
+        .await
+        .expect("create legacy user");
+    let model = n4user::Entity::find_by_id(user.id)
+        .one(db)
+        .await
+        .expect("find legacy user")
+        .expect("legacy user model");
+    let mut active = n4user::ActiveModel::from(model);
+    active.password_salt = Set(Some(LEGACY_PASSWORD_SALT.to_string()));
+    active.update(db).await.expect("store legacy password salt");
+}
+
+#[tokio::test]
+async fn legacy_sha256_login_preserves_hash_by_default_and_hides_hash_errors() {
+    let (app, repository, db) = build_auth_router().await;
+    seed_legacy_password_user(&repository, &db, "legacy-default").await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let failed = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"legacy-default\",\"password\":\"wrong\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(failed.status(), StatusCode::UNAUTHORIZED);
+    let failed_body = response_text(failed).await;
+    assert!(failed_body.contains("user.login.invalid"));
+    assert!(!failed_body.contains(LEGACY_PASSWORD_HASH));
+
+    let sign_in = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"legacy-default\",\"password\":\"pass\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in.status(), StatusCode::OK);
+
+    let user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("legacy-default".to_string())))
+        .one(&db)
+        .await
+        .expect("read default migration user")
+        .expect("default migration user");
+    assert_eq!(user.password.as_deref(), Some(LEGACY_PASSWORD_HASH));
+    assert_eq!(user.password_salt.as_deref(), Some(LEGACY_PASSWORD_SALT));
+}
+
+#[tokio::test]
+async fn legacy_sha256_login_silently_migrates_to_argon2id_when_enabled() {
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            password_hashing_silent_migration_to_argon2id: true,
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    seed_legacy_password_user(&repository, &db, "legacy-argon2").await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let sign_in = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"legacy-argon2\",\"password\":\"pass\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in.status(), StatusCode::OK);
+
+    let user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("legacy-argon2".to_string())))
+        .one(&db)
+        .await
+        .expect("read migrated user")
+        .expect("migrated user");
+    assert!(user
+        .password
+        .as_deref()
+        .is_some_and(|hash| hash.starts_with("$argon2id$")));
+    assert_eq!(user.password_salt, None);
+}
+
 #[tokio::test]
 async fn register_rejects_duplicate_login_id_and_email() {
     let (app, _, _) = build_auth_router().await;

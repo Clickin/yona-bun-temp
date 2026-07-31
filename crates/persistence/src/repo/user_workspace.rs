@@ -118,6 +118,7 @@ impl AppRepositoryImpl<'_> {
         };
         let mut active = n4user::ActiveModel::from(model);
         active.password = Set(Some(password_hash.to_string()));
+        active.password_salt = Set(None);
         active.update(&self.db).await?;
         Ok(())
     }

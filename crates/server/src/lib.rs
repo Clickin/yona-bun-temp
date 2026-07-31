@@ -7,10 +7,12 @@ mod mailbox;
 mod markdown;
 mod notification_mail;
 pub mod persistence;
+mod password;
 mod router;
 mod routes;
 mod service;
 mod state;
+pub(crate) use password::{hash_password_with_argon2id, verify_password, PasswordVerification};
 
 pub use app_config::{
     repository_config_from_startup, AppRuntimeConfig, AuthUiConfig, LdapFixtureUser,

@@ -8,22 +8,31 @@ pub struct SourceTableSet {
     pub tables: Vec<(String, Vec<serde_json::Value>)>,
 }
 
+fn auth_headers(token: &str) -> Vec<(&'static str, String)> {
+    // Legacy Yona accepts "Yona-Token" header. New Rust server accepts "Authorization: Bearer".
+    // Send both — legacy ignores Bearer, new server ignores Yona-Token.
+    vec![
+        ("Authorization", format!("Bearer {}", token)),
+        ("Yona-Token", token.to_owned()),
+    ]
+}
+
 /// Read the full site export from a legacy Yona instance.
 ///
 /// GET `{base_url}/sites/export` — returns raw DB table dump.
-/// Requires authentication via `Authorization: Bearer {token}`.
+/// Requires authentication via `Authorization: Bearer {token}` or `Yona-Token {token}`.
 pub fn read_site_export(base_url: &str, token: &str) -> Result<SourceTableSet> {
     let url = format!("{}/sites/export", base_url.trim_end_matches('/'));
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()?;
 
-    let response = client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", token))
-        .header("Accept", "application/json")
-        .send()
-        .context("Failed to fetch site export from legacy Yona")?;
+    let mut req = client.get(&url).header("Accept", "application/json");
+    for (k, v) in auth_headers(token) {
+        req = req.header(k, &v);
+    }
+
+    let response = req.send().context("Failed to fetch site export from legacy Yona")?;
 
     if !response.status().is_success() {
         anyhow::bail!(
@@ -70,12 +79,12 @@ pub fn read_project_export(
 
     let mut last_error = None;
     for url in &paths {
-        match client
-            .get(url)
-            .header("Authorization", format!("Bearer {}", token))
-            .header("Accept", "application/json")
-            .send()
-        {
+        let mut req = client.get(url).header("Accept", "application/json");
+        for (k, v) in auth_headers(token) {
+            req = req.header(k, &v);
+        }
+
+        match req.send() {
             Ok(response) if response.status().is_success() => {
                 return response.json().context("Failed to parse project export JSON");
             }

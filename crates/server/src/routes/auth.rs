@@ -6,7 +6,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -27,7 +27,8 @@ use crate::{
     percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
     rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
     BrowserRuntimeConfig, ConnectError, Context, ErrorCode, LdapFixtureUser, LdapRuntimeConfig,
-    PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError, LEGACY_LOGIN_INVALID_MESSAGE,
+    PasswordVerification, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
+    hash_password_with_argon2id, verify_password, LEGACY_LOGIN_INVALID_MESSAGE,
     LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
@@ -397,10 +398,17 @@ pub(crate) async fn auth_sign_in_with_password(
             repository,
             &identifier,
             &request.password,
+            service.password_hashing_silent_migration_to_argon2id,
         )
         .await?
     } else {
-        authenticate_local_user(repository, &identifier, &request.password).await?
+        authenticate_local_user(
+            repository,
+            &identifier,
+            &request.password,
+            service.password_hashing_silent_migration_to_argon2id,
+        )
+        .await?
     };
 
     if crate::confirmation_session_required_from_config(&service.auth_ui) && !user.is_confirmed {
@@ -435,8 +443,9 @@ async fn authenticate_local_user(
     repository: &PilotRepository,
     identifier: &str,
     password: &str,
+    silent_migration_to_argon2id: bool,
 ) -> Result<AppUserRecord, ConnectError> {
-    let Some(user) = repository
+    let Some(mut user) = repository
         .find_user_by_identifier(identifier)
         .await
         .map_err(crate::internal_error)?
@@ -444,11 +453,24 @@ async fn authenticate_local_user(
         return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
     };
 
-    let verified = verify(password, &user.password_hash).map_err(crate::internal_error)?;
-    if verified {
-        Ok(user)
-    } else {
-        Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE))
+    match verify_password(password, &user.password_hash, user.password_salt.as_deref()) {
+        PasswordVerification::Bcrypt => Ok(user),
+        PasswordVerification::LegacySha256 => {
+            if silent_migration_to_argon2id {
+                let password_hash =
+                    hash_password_with_argon2id(password).map_err(crate::internal_error)?;
+                repository
+                    .update_password_hash_for_user(user.id, &password_hash)
+                    .await
+                    .map_err(crate::internal_error)?;
+                user.password_hash = password_hash;
+                user.password_salt = None;
+            }
+            Ok(user)
+        }
+        PasswordVerification::NoMatch => {
+            Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE))
+        }
     }
 }
 
@@ -465,13 +487,20 @@ pub(crate) async fn authenticate_with_ldap_or_legacy_fallback(
     repository: &PilotRepository,
     identifier: &str,
     password: &str,
+    silent_migration_to_argon2id: bool,
 ) -> Result<AppUserRecord, ConnectError> {
     match authenticate_with_configured_ldap(auth_ui, ldap, repository, identifier, password).await {
         Ok(user) => Ok(user),
         Err(LdapAuthFailure::Authentication | LdapAuthFailure::ConnectionUnavailable)
             if ldap.fallback_to_local_login =>
         {
-            authenticate_local_user(repository, identifier, password).await
+            authenticate_local_user(
+                repository,
+                identifier,
+                password,
+                silent_migration_to_argon2id,
+            )
+            .await
         }
         Err(LdapAuthFailure::Authentication | LdapAuthFailure::ConnectionUnavailable) => {
             Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE))
@@ -544,7 +573,14 @@ async fn provision_or_update_ldap_user(
         .await
         .map_err(crate::internal_error)?
     {
-        if !verify(password, &existing.password_hash).map_err(crate::internal_error)? {
+        if !matches!(
+            verify_password(
+                password,
+                &existing.password_hash,
+                existing.password_salt.as_deref(),
+            ),
+            PasswordVerification::Bcrypt
+        ) {
             repository
                 .update_password_hash_for_user(existing.id, &password_hash)
                 .await

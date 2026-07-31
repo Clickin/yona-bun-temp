@@ -5,7 +5,7 @@ use axum::{
     routing::{get, patch, post},
     Json, Router,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, DEFAULT_COST};
 use http::header::{CONTENT_RANGE, REFERER, SET_COOKIE};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
@@ -26,7 +26,7 @@ use crate::{
     require_authenticated_user, require_session, rest_json_response,
     rest_list_user_issues as rest_list_user_issues_impl,
     rest_read_direct_issue_form_options as rest_read_direct_issue_form_options_impl,
-    user_issue_filter_name, visible_user_issue_items, workspace_avatar_url,
+    user_issue_filter_name, verify_password, visible_user_issue_items, workspace_avatar_url,
     workspace_profile_from_record, ConnectError, Context, PilotBackend, PilotRepository,
     PilotServiceImpl, RestRouteError, TranslationProxyConfig,
 };
@@ -577,7 +577,14 @@ pub(crate) async fn legacy_external_user_token(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
 
-    let password_matches = verify(&body.password, &user.password_hash).unwrap_or(false);
+    let password_matches = !matches!(
+        verify_password(
+            &body.password,
+            &user.password_hash,
+            user.password_salt.as_deref(),
+        ),
+        crate::PasswordVerification::NoMatch
+    );
     if !password_matches {
         return (
             StatusCode::UNAUTHORIZED,

@@ -153,6 +153,8 @@ fn build_router_with_app_config(
     });
     let pilot_service = PilotServiceImpl {
         auth_ui: runtime.auth_ui.clone(),
+        password_hashing_silent_migration_to_argon2id: runtime
+            .password_hashing_silent_migration_to_argon2id,
         base_path: base_path.clone(),
         data_root: runtime.data_root.clone(),
         public_origin: public_origin.clone(),

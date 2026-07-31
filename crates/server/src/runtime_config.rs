@@ -11,6 +11,7 @@ use crate::RuntimeConfig;
 pub struct StartupConfig {
     pub asset_root: Option<String>,
     pub auth_email_verification_enabled: Option<bool>,
+    pub auth_hashing_silent_migration_to_argon2id: Option<bool>,
     pub auth_login_id_placeholder: Option<String>,
     pub auth_password_placeholder: Option<String>,
     pub auth_signup_require_confirm: Option<bool>,
@@ -160,11 +161,17 @@ struct SiteConfigFile {
 #[derive(Default, Deserialize)]
 struct AuthConfigFile {
     email_verification: Option<bool>,
+    hashing: Option<HashingConfigFile>,
     login_id_placeholder: Option<String>,
     password_placeholder: Option<String>,
     signup_require_confirm: Option<bool>,
     social_login_support: Option<Vec<String>>,
     social_login_only: Option<bool>,
+}
+
+#[derive(Default, Deserialize)]
+struct HashingConfigFile {
+    silent_migration_to_argon2id: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
@@ -299,6 +306,7 @@ pub fn load_startup_config(
     let application = file.application.unwrap_or_default();
     let site = file.site.unwrap_or_default();
     let auth = file.auth.unwrap_or_default();
+    let hashing = auth.hashing.unwrap_or_default();
     let database = file.database.unwrap_or_default();
     let issue = file.issue.unwrap_or_default();
     let ldap = file.ldap.unwrap_or_default();
@@ -376,6 +384,9 @@ pub fn load_startup_config(
         .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_API"));
     let translation_header_key = env_string(&env, "YONA_TRANSLATION_HEADER_KEY")
         .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_HEADER_KEY"));
+    let auth_hashing_silent_migration_to_argon2id =
+        env_bool(&env, "YONA_AUTH_HASHING_SILENT_MIGRATION_TO_ARGON2ID")
+            .or(hashing.silent_migration_to_argon2id);
     let translation_header_value = env_string(&env, "YONA_TRANSLATION_HEADER_VALUE")
         .or_else(|| env_string(&env, "APPLICATION_EXTRAS_TRANSLATION_HEADER_VALUE"));
     let show_user_email = env_bool(&env, "YONA_SHOW_USER_EMAIL")
@@ -546,6 +557,7 @@ pub fn load_startup_config(
     Ok(StartupConfig {
         asset_root,
         auth_email_verification_enabled,
+        auth_hashing_silent_migration_to_argon2id,
         auth_login_id_placeholder,
         auth_password_placeholder,
         auth_signup_require_confirm,

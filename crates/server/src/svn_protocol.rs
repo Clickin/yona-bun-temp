@@ -74,6 +74,7 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
         repository,
         &service.auth_ui,
         &service.ldap,
+        service.password_hashing_silent_migration_to_argon2id,
     )
     .await
     {

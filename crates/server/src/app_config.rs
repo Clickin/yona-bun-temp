@@ -30,6 +30,7 @@ impl Default for RuntimeConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppRuntimeConfig {
     pub auth_ui: AuthUiConfig,
+    pub password_hashing_silent_migration_to_argon2id: bool,
     pub data_root: PathBuf,
     pub integrations: IntegrationConfig,
     pub ldap: LdapRuntimeConfig,
@@ -292,6 +293,7 @@ impl Default for AppRuntimeConfig {
     fn default() -> Self {
         Self {
             auth_ui: AuthUiConfig::default(),
+            password_hashing_silent_migration_to_argon2id: false,
             data_root: PathBuf::from(".yona-data"),
             integrations: IntegrationConfig::default(),
             ldap: LdapRuntimeConfig::default(),
@@ -320,6 +322,9 @@ impl AppRuntimeConfig {
     pub fn from_startup(config: &runtime_config::StartupConfig) -> Self {
         Self {
             auth_ui: AuthUiConfig::from_startup(config),
+            password_hashing_silent_migration_to_argon2id: config
+                .auth_hashing_silent_migration_to_argon2id
+                .unwrap_or(false),
             data_root: config
                 .data_root
                 .as_deref()

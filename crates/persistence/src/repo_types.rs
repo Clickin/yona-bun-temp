@@ -15,6 +15,7 @@ pub struct AppUserRecord {
     pub is_guest: bool,
     pub is_site_admin: bool,
     pub login_id: String,
+    pub password_salt: Option<String>,
     pub password_hash: String,
 }
 

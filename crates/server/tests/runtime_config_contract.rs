@@ -80,6 +80,10 @@ fn discovers_default_yoram_toml_and_accepts_legacy_env_alias() {
     fs::write(&default_path, "base_path = \"/default\"\n").expect("write default config");
     let default_config =
         load_startup_config(BTreeMap::new(), dir.path()).expect("load default config");
+    assert_eq!(
+        default_config.auth_hashing_silent_migration_to_argon2id,
+        None
+    );
     assert_eq!(default_config.runtime.base_path, "/");
     assert_eq!(
         default_config.config_source,
@@ -128,6 +132,9 @@ password_placeholder = "Employee password"
 signup_require_confirm = true
 social_login_support = ["github", "google"]
 social_login_only = true
+
+[auth.hashing]
+silent_migration_to_argon2id = true
 
 [oauth.github]
 client_id = "github-file-client"
@@ -240,6 +247,10 @@ draft_time = "1s"
         Some(vec!["ko-KR".to_string(), "en-US".to_string()])
     );
     assert_eq!(config.auth_email_verification_enabled, Some(true));
+    assert_eq!(
+        config.auth_hashing_silent_migration_to_argon2id,
+        Some(true)
+    );
     assert_eq!(
         config.auth_login_id_placeholder.as_deref(),
         Some("Employee ID")

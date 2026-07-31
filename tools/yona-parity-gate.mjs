@@ -752,7 +752,10 @@ const DOMAIN_BUCKETS = [
     id: "second-priority-deferred",
     label: "SVN, LDAP, import/export follow-up scope",
     status: "partial",
-    implementationPatterns: [/(\/|^)(svn|ldap|import|export|migration)(\/|\.|$)/i],
+    implementationPatterns: [
+      /(^|\/)(svn|ldap|import|export|migration)(\/|\.|$)/i,
+      /^crates\/yona-migrate\//i,
+    ],
     testKeywords: ["svn", "ldap", "import", "export", "migration"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
@@ -766,7 +769,7 @@ const DOMAIN_BUCKETS = [
     label: "Rust foundation and runtime bootstrap",
     status: "partial",
     implementationPatterns: [
-      /^(?:\.gitignore|Cargo\.lock|Cargo\.toml|buf(?:\.gen)?\.yaml)$/i,
+      /^(?:\.env\.example|\.gitignore|Cargo\.lock|Cargo\.toml|buf(?:\.gen)?\.yaml)$/i,
       /^frontend\/(?:README\.md|package\.json|pnpm-lock\.yaml|index\.html|tsconfig\.json|vite\.config\.ts)$/i,
       /^crates\/(?:server|domain|search|vcs)\//i,
       /^frontend\/src\/(?:main|router|runtime-config)\.tsx?$/i,

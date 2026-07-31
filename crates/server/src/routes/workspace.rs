@@ -6,7 +6,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, DEFAULT_COST};
 use http::header::SET_COOKIE;
 use std::collections::{HashMap, HashSet};
 
@@ -22,9 +22,9 @@ use crate::{
     anonymous_current_session_response, attach_session_headers, base_path_href, gravatar_url,
     headers_with_form_csrf, internal_error, normalize_identifier, project_logo_url, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf,
-    resolve_current_session_response, rest_json_response, rest_owned_view,
-    send_workspace_email_validation_mail, session, workspace_invalid_argument, ConnectError,
-    Context, PilotBackend, PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    resolve_current_session_response, rest_json_response, rest_owned_view, send_workspace_email_validation_mail,
+    session, verify_password, workspace_invalid_argument, ConnectError, Context, PilotBackend,
+    PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -1178,7 +1178,14 @@ pub(crate) async fn workspace_password_change(
     if normalize_identifier(&request.login_id) != user.login_id {
         return Err(workspace_invalid_argument("user.wrongloginId.alert"));
     }
-    if !verify(&request.old_password, &user.password_hash).map_err(internal_error)? {
+    if matches!(
+        verify_password(
+            &request.old_password,
+            &user.password_hash,
+            user.password_salt.as_deref(),
+        ),
+        crate::PasswordVerification::NoMatch
+    ) {
         return Err(workspace_invalid_argument("user.wrongPassword.alert"));
     }
     if request.password.len() < LEGACY_MIN_PASSWORD_LENGTH {
