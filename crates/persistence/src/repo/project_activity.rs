@@ -683,23 +683,77 @@ impl AppRepositoryImpl<'_> {
             .filter(project_user::Column::UserId.eq(Some(user_id)))
             .all(&self.db)
             .await?;
-        let mut seen = HashSet::new();
-        let mut project_models = Vec::new();
-        for membership in memberships {
-            let Some(project_id) = membership.project_id else {
-                continue;
-            };
-            if !seen.insert(project_id) {
-                continue;
-            }
-            let Some(project_model) = project::Entity::find_by_id(project_id)
-                .one(&self.db)
-                .await?
-            else {
-                continue;
-            };
-            project_models.push(project_model);
+        let project_ids = memberships
+            .into_iter()
+            .filter_map(|membership| membership.project_id)
+            .collect::<HashSet<_>>();
+        if project_ids.is_empty() {
+            return Ok(Vec::new());
         }
+
+        // Keep the legacy ordering below, but load the member project catalog in
+        // sets. The previous implementation performed one project lookup,
+        // organization lookup, member count, watch count, and fork-origin lookup
+        // per membership row.
+        let mut project_models = project::Entity::find()
+            .filter(project::Column::Id.is_in(project_ids.iter().copied()))
+            .all(&self.db)
+            .await?;
+        let organization_ids = project_models
+            .iter()
+            .filter_map(|model| model.organization_id)
+            .collect::<HashSet<_>>();
+        let organization_names = if organization_ids.is_empty() {
+            HashMap::new()
+        } else {
+            organization::Entity::find()
+                .filter(organization::Column::Id.is_in(organization_ids.iter().copied()))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .filter_map(|model| model.name.map(|name| (model.id, name)))
+                .collect::<HashMap<_, _>>()
+        };
+        let member_counts = project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.is_in(project_ids.iter().copied().map(Some)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|membership| membership.project_id)
+            .fold(HashMap::<i64, u32>::new(), |mut counts, project_id| {
+                *counts.entry(project_id).or_default() += 1;
+                counts
+            });
+        let project_resource_ids = project_ids
+            .iter()
+            .map(|project_id| project_id.to_string())
+            .collect::<HashSet<_>>();
+        let watch_counts = watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.is_in(project_resource_ids.iter().cloned().map(Some)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|watch| watch.resource_id)
+            .fold(HashMap::<String, u32>::new(), |mut counts, resource_id| {
+                *counts.entry(resource_id).or_default() += 1;
+                counts
+            });
+        let origin_ids = project_models
+            .iter()
+            .filter_map(|model| model.original_project_id)
+            .collect::<HashSet<_>>();
+        let origin_names = if origin_ids.is_empty() {
+            HashMap::new()
+        } else {
+            project::Entity::find()
+                .filter(project::Column::Id.is_in(origin_ids.iter().copied()))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .filter_map(|model| Some((model.id, (model.owner?, model.name?))))
+                .collect::<HashMap<_, _>>()
+        };
 
         project_models.sort_by(|left, right| {
             let left_name = left.name.clone().unwrap_or_default();
@@ -725,36 +779,24 @@ impl AppRepositoryImpl<'_> {
 
         let mut projects = Vec::new();
         for project_model in project_models {
-            if let Some(record) = self
-                .project_record_from_model(project_model.clone())
-                .await?
-            {
-                let member_count = project_user::Entity::find()
-                    .filter(project_user::Column::ProjectId.eq(Some(project_model.id)))
-                    .count(&self.db)
-                    .await? as u32;
-                let watch_count = watch::Entity::find()
-                    .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
-                    .filter(watch::Column::ResourceId.eq(Some(project_model.id.to_string())))
-                    .count(&self.db)
-                    .await? as u32;
-                let (origin_owner_name, origin_project_name) =
-                    match project_model.original_project_id {
-                        Some(original_project_id) => {
-                            match self.read_project_by_id(original_project_id).await? {
-                                Some(origin_project) => {
-                                    (origin_project.owner_name, origin_project.project_name)
-                                }
-                                None => (String::new(), String::new()),
-                            }
-                        }
-                        None => (String::new(), String::new()),
-                    };
+            if let Some(record) = self.project_record_from_model_with_organization_name(
+                project_model.clone(),
+                project_model
+                    .organization_id
+                    .and_then(|organization_id| organization_names.get(&organization_id).cloned()),
+            ) {
+                let (origin_owner_name, origin_project_name) = project_model
+                    .original_project_id
+                    .and_then(|origin_id| origin_names.get(&origin_id).cloned())
+                    .unwrap_or_default();
 
                 projects.push(WorkspaceMemberProjectRecord {
                     created_label: format_workspace_date_label(project_model.created_date),
                     last_pushed_label: format_workspace_date_label(project_model.last_pushed_date),
-                    member_count,
+                    member_count: member_counts
+                        .get(&project_model.id)
+                        .copied()
+                        .unwrap_or_default(),
                     origin_owner_name,
                     origin_project_name,
                     owner_name: record.owner_name,
@@ -762,7 +804,10 @@ impl AppRepositoryImpl<'_> {
                     project_id: project_model.id,
                     project_name: record.project_name,
                     project_scope: record.project_scope,
-                    watch_count,
+                    watch_count: watch_counts
+                        .get(&project_model.id.to_string())
+                        .copied()
+                        .unwrap_or_default(),
                 });
             }
         }

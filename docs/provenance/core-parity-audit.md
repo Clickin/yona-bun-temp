@@ -1,5 +1,15 @@
 # Core Parity Audit
 
+- 2026-08-01 workspace profile query-parity note: the legacy public profile and
+  member-project projection remain grounded in `yona-original/app/views/user/view.scala.html`
+  and its `user/partial_*.scala.html` streams. Yoram keeps the legacy project
+  ordering, ACL filtering, membership counts, watch state, origin-project
+  projection, and actor fields while batching the member-project reads and
+  starting independent ACL checks concurrently; the result order and error
+  order are preserved. The same real-data `/admin` desktop/mobile sweeps
+  recorded zero DOM/geometry/CSS diff failures after the change. Focused
+  verification: `agent:cargo check -p yoram-persistence`,
+  `agent:cargo check -p yoram-server`, and `agent:cargo-test -p yoram-server --lib`.
 - 2026-07-28 notification parity note: legacy `IssueApp.AddPreviousContent`,
   `BoardApp.AddPreviousContent`, and `NotificationEvent.forComment` make the
   original/previous comment context part of `NEW_COMMENT.oldValue`. Rust now

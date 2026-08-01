@@ -22,9 +22,10 @@ use crate::{
     anonymous_current_session_response, attach_session_headers, base_path_href, gravatar_url,
     headers_with_form_csrf, internal_error, normalize_identifier, project_logo_url, redirect_to,
     require_authenticated_user, require_session, require_valid_csrf,
-    resolve_current_session_response, rest_json_response, rest_owned_view, send_workspace_email_validation_mail,
-    session, verify_password, workspace_invalid_argument, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError, LEGACY_MIN_PASSWORD_LENGTH,
+    resolve_current_session_response, rest_json_response, rest_owned_view,
+    send_workspace_email_validation_mail, session, verify_password, workspace_invalid_argument,
+    ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
+    LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::rest_delete_project_member;
@@ -577,16 +578,19 @@ pub(crate) async fn filter_workspace_issue_items_by_read_acl_for_viewer(
     items: Vec<persistence::WorkspaceIssueListItemRecord>,
 ) -> Result<Vec<WorkspaceIssueItem>, ConnectError> {
     let mut visible = Vec::new();
-
-    for item in items {
-        if workspace_project_read_allowed_for_viewer(
+    let access_results = futures::future::join_all(items.iter().map(|item| async {
+        workspace_project_read_allowed_for_viewer(
             repository,
             viewer_id,
             &item.owner_name,
             &item.project_name,
         )
-        .await?
-        {
+        .await
+    }))
+    .await;
+
+    for (item, access_result) in items.iter().zip(access_results) {
+        if access_result? {
             visible.push(workspace_issue_item_from_record(&item));
         }
     }
@@ -600,16 +604,19 @@ pub(crate) async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
     items: Vec<persistence::WorkspacePullRequestListItemRecord>,
 ) -> Result<Vec<WorkspacePullRequestItem>, ConnectError> {
     let mut visible = Vec::new();
-
-    for item in items {
-        if workspace_project_read_allowed_for_viewer(
+    let access_results = futures::future::join_all(items.iter().map(|item| async {
+        workspace_project_read_allowed_for_viewer(
             repository,
             viewer_id,
             &item.owner_name,
             &item.project_name,
         )
-        .await?
-        {
+        .await
+    }))
+    .await;
+
+    for (item, access_result) in items.iter().zip(access_results) {
+        if access_result? {
             visible.push(workspace_pull_request_item_from_record(&item));
         }
     }
@@ -628,13 +635,16 @@ pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
 ) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
     let mut visible = Vec::new();
     let mut logo_urls = HashMap::new();
-
-    for item in items {
-        let Some(authorization) = repository
+    let authorization_results = futures::future::join_all(items.iter().map(|item| async {
+        repository
             .read_project_authorization(&item.owner_name, &item.project_name, viewer_id)
             .await
-            .map_err(internal_error)?
-        else {
+            .map_err(internal_error)
+    }))
+    .await;
+
+    for (item, authorization_result) in items.iter().zip(authorization_results) {
+        let Some(authorization) = authorization_result? else {
             continue;
         };
         if workspace_project_authorization_read_allowed(&authorization, viewer_id)? {
@@ -647,7 +657,7 @@ pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
                     viewer_login_id,
                     subject_user_id,
                     subject_login_id,
-                    &item,
+                    item,
                     authorization.is_favorited,
                 )
                 .await?,

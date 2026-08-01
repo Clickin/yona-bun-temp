@@ -64,13 +64,21 @@ impl AppRepositoryImpl<'_> {
             None => None,
         };
 
+        Ok(self.project_record_from_model_with_organization_name(model, organization_name))
+    }
+
+    pub(super) fn project_record_from_model_with_organization_name(
+        &self,
+        model: project::Model,
+        organization_name: Option<String>,
+    ) -> Option<ProjectRecord> {
         let owner_name = model.owner.unwrap_or_default();
         let project_name = model.name.unwrap_or_default();
         if owner_name.is_empty() || project_name.is_empty() {
-            return Ok(None);
+            return None;
         }
 
-        Ok(Some(ProjectRecord {
+        Some(ProjectRecord {
             created_date: model.created_date,
             default_reviewer_count: model.default_reviewer_count.unwrap_or_default().max(0) as u32,
             is_code_accessible_member_only: model
@@ -90,7 +98,7 @@ impl AppRepositoryImpl<'_> {
             project_name,
             project_scope: model.project_scope.unwrap_or_else(|| "public".to_string()),
             vcs: model.vcs.unwrap_or_else(|| "GIT".to_string()),
-        }))
+        })
     }
 
     pub(super) async fn issue_record_from_model(

@@ -164,19 +164,24 @@ impl AppRepositoryImpl<'_> {
             .filter(user_credential::Column::UserId.eq(Some(user_id)))
             .all(&self.db)
             .await?;
-        let mut providers = Vec::new();
-
-        for credential in credentials {
-            let linked_accounts = linked_account::Entity::find()
-                .filter(linked_account::Column::UserCredentialId.eq(Some(credential.id)))
-                .all(&self.db)
-                .await?;
-            for account in linked_accounts {
-                if let Some(provider_key) = normalize_optional(account.provider_key.as_deref()) {
-                    providers.push(provider_key);
-                }
-            }
+        let credential_ids = credentials
+            .into_iter()
+            .map(|credential| credential.id)
+            .collect::<Vec<_>>();
+        if credential_ids.is_empty() {
+            return Ok(Vec::new());
         }
+
+        let mut providers = linked_account::Entity::find()
+            .filter(
+                linked_account::Column::UserCredentialId
+                    .is_in(credential_ids.into_iter().map(Some)),
+            )
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|account| normalize_optional(account.provider_key.as_deref()))
+            .collect::<Vec<_>>();
 
         providers.sort();
         providers.dedup();
