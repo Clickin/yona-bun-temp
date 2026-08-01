@@ -5772,6 +5772,28 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     assert_eq!(projects.len(), 1);
     assert_eq!(projects[0]["projectName"], "publicYobi");
 
+    let repeated_profile = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/users/owner/profile?daysAgo=7&selected=projects",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(profile["issueItems"], repeated_profile["issueItems"]);
+    assert_eq!(
+        profile["pullRequestItems"],
+        repeated_profile["pullRequestItems"]
+    );
+    assert_eq!(
+        profile["memberProjects"],
+        repeated_profile["memberProjects"]
+    );
+
     let hidden_email_app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,

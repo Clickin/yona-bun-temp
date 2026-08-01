@@ -178,22 +178,46 @@ async fn rest_read_public_user_profile(
         .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let viewer_login_id = match viewer_id {
-        Some(user_id) => repository
-            .find_user_by_id(user_id)
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?
-            .map(|user| user.login_id)
-            .unwrap_or_default(),
-        None => String::new(),
-    };
     let viewer_can_edit_profile = viewer_id == Some(user.id);
     let days_ago = public_profile_days_ago(query.days_ago);
-    let profile = match repository
-        .read_workspace_profile_for_user(user.id)
-        .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-    {
+
+    let (
+        viewer_login_result,
+        profile_result,
+        issue_result,
+        pull_request_result,
+        member_projects_result,
+    ) = tokio::join!(
+        async {
+            match viewer_id {
+                Some(user_id) => repository
+                    .find_user_by_id(user_id)
+                    .await
+                    .map(|user| user.map(|user| user.login_id).unwrap_or_default()),
+                None => Ok(String::new()),
+            }
+        },
+        repository.read_workspace_profile_for_user(user.id),
+        repository.list_recent_workspace_issues_for_user(user.id, u64::from(days_ago)),
+        repository.list_recent_workspace_pull_requests_for_user(user.id, u64::from(days_ago)),
+        repository.list_member_projects_for_user(user.id),
+    );
+
+    // Keep the legacy sequential error precedence even though the read-only queries above run
+    // concurrently. All of these repository calls are reads, and no result is visible until the
+    // same ACL filtering and response projection below has completed.
+    let viewer_login_id =
+        viewer_login_result.map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let profile_record =
+        profile_result.map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let issue_records =
+        issue_result.map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let pull_request_records =
+        pull_request_result.map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let member_project_records =
+        member_projects_result.map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    let profile = match profile_record {
         Some(record) => {
             let avatar_url = workspace_avatar_url(
                 repository,
@@ -211,23 +235,14 @@ async fn rest_read_public_user_profile(
         }
         None => None,
     };
-    let issue_items = filter_workspace_issue_items_by_read_acl_for_viewer(
-        repository,
-        viewer_id,
-        repository
-            .list_recent_workspace_issues_for_user(user.id, u64::from(days_ago))
+    let issue_items =
+        filter_workspace_issue_items_by_read_acl_for_viewer(repository, viewer_id, issue_records)
             .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
-    )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
+            .map_err(RestRouteError::from_connect_error)?;
     let pull_request_items = filter_workspace_pull_request_items_by_read_acl_for_viewer(
         repository,
         viewer_id,
-        repository
-            .list_recent_workspace_pull_requests_for_user(user.id, u64::from(days_ago))
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
+        pull_request_records,
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
@@ -238,10 +253,7 @@ async fn rest_read_public_user_profile(
         &viewer_login_id,
         user.id,
         &user.login_id,
-        repository
-            .list_member_projects_for_user(user.id)
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?,
+        member_project_records,
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
