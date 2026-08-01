@@ -58,11 +58,14 @@ export function normalizeSql(sql) {
   const tables = [
     ...redacted.matchAll(/\b(?:from|join|update|into|delete\s+from)\s+[`"']?([\w.-]+)/giu),
   ].map((match) => match[1]).filter(Boolean);
-  const where = redacted.match(/\bwhere\b([\s\S]*?)(?=\border\s+by\b|\blimit\b|\boffset\b|$)/iu)?.[1] ?? "";
+  const where = (redacted.match(/\bwhere\b([\s\S]*?)(?=\border\s+by\b|\blimit\b|\boffset\b|$)/iu)?.[1] ?? "")
+    .replace(/[`"]+/gu, "");
   const filters = [
     ...where.matchAll(/\b([a-z_][\w.]*)\s*(?:=|<>|!=|<=|>=|<|>|\blike\b|\bis\b|\bin\b)/giu),
   ].map((match) => match[1]).filter((value, index, values) => values.indexOf(value) === index);
-  const orderBy = [...redacted.matchAll(/\border\s+by\s+([\w.]+)(?:\s+(asc|desc))?/giu)].map((match) => ({
+  const orderByClause = redacted.match(/\border\s+by\s+([\s\S]*?)(?=\blimit\b|\boffset\b|$)/iu)?.[1]
+    ?.replace(/[`"]+/gu, "") ?? "";
+  const orderBy = [...orderByClause.matchAll(/\b([\w.]+)(?:\s+(asc|desc))?/giu)].map((match) => ({
     column: match[1],
     direction: (match[2] ?? "asc").toLowerCase(),
   }));
@@ -96,6 +99,13 @@ function extractPlainSql(line) {
   const plain = String(line ?? "")
     .replace(ANSI_PATTERN, "")
     .replace(/\\n/gu, "\n");
+  const statementMatch = plain.match(/\bdb\.statement\s*=\s*"/iu);
+  if (statementMatch?.index !== undefined) {
+    let sql = plain.slice(statementMatch.index + statementMatch[0].length);
+    const metadataStart = sql.search(/\s+rows_(?:affected|returned)\s*=/iu);
+    if (metadataStart >= 0) sql = sql.slice(0, metadataStart);
+    return sql.replace(/[\s"]+$/gu, "").trim();
+  }
   const matches = [...plain.matchAll(/\b(?:select|insert|update|delete)\b/giu)];
   if (matches.length === 0) return null;
   const sqlStart = matches[0].index;
@@ -226,7 +236,12 @@ function resultComparison({ route, legacyQueries, yoramQueries }) {
     const candidate = yoramList.find((query) => query.tables.join(",") === legacyQuery.tables.join(","));
     if (!candidate) continue;
     const ftsOnlyDifference = !legacyQuery.usesFts && candidate.usesFts;
-    const missingFilters = legacyQuery.filters.filter((filter) => !candidate.filters.includes(filter));
+    const candidateFilterNames = new Set(
+      candidate.filters.map((filter) => filter.split(".").at(-1)),
+    );
+    const missingFilters = legacyQuery.filters.filter(
+      (filter) => !candidateFilterNames.has(filter.split(".").at(-1)),
+    );
     const searchOnlyMissingFilters = missingFilters.every((filter) => /(?:title|body|content|text)/iu.test(filter));
     if (missingFilters.length > 0 && !(ftsOnlyDifference && searchOnlyMissingFilters)) {
       errors.push({

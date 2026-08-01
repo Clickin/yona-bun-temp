@@ -50,6 +50,7 @@ const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PAT
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
 const sweepLocale = "ko-KR";
 const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
+const warmPerformanceRepeat = process.env.YORAM_SWEEP_WARM_REPEAT === "1";
 const sqlCaptureEnabled = process.env.YORAM_SWEEP_SQL_CAPTURE === "1";
 const sweepBatchSize = parseOptionalPositiveInteger(process.env.YORAM_SWEEP_BATCH_SIZE);
 const sweepBatchIndex = parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_BATCH_INDEX);
@@ -1320,7 +1321,10 @@ async function inspectPage(page, baseUrl, path, label) {
   const startedAt = performance.now();
   const requestStartedAt = Date.now();
   const requestMarker = createRouteMarker({ label, path, startedAt: requestStartedAt });
+  const timingStages = {};
+  const requestStartTimes = new Map();
   const trace = (stage) => {
+    timingStages[stage] = Math.round(performance.now() - startedAt);
     if (traceTimings) {
       console.error(
         `[visual-sweep:timing] ${label} ${path} ${stage} ${Math.round(performance.now() - startedAt)}ms`,
@@ -1341,7 +1345,11 @@ async function inspectPage(page, baseUrl, path, label) {
       consoleErrors.push(message.text());
     }
   };
+  const onRequest = (request) => {
+    requestStartTimes.set(request, performance.now());
+  };
   const onRequestFailed = (request) => {
+    requestStartTimes.delete(request);
     const url = request.url();
     const failureText = request.failure()?.errorText ?? "failed";
     if (
@@ -1354,17 +1362,30 @@ async function inspectPage(page, baseUrl, path, label) {
   };
   const onResponse = (response) => {
     try {
+      const request = response.request();
       const requestUrl = new URL(response.url());
+      const requestStartedAt = requestStartTimes.get(request);
       networkSummary.push({
-        method: response.request().method(),
+        method: request.method(),
         path: `${requestUrl.pathname}${requestUrl.search}`,
         status: response.status(),
+        resourceType: request.resourceType(),
+        startOffsetMs:
+          requestStartedAt === undefined
+            ? null
+            : Math.max(0, Math.round(requestStartedAt - startedAt)),
+        durationMs:
+          requestStartedAt === undefined
+            ? null
+            : Math.max(0, Math.round(performance.now() - requestStartedAt)),
       });
+      requestStartTimes.delete(request);
     } catch {
       // Browser-internal URLs are not route evidence.
     }
   };
   page.on("console", onConsole);
+  page.on("request", onRequest);
   page.on("requestfailed", onRequestFailed);
   page.on("response", onResponse);
   await page.setExtraHTTPHeaders({ "x-yona-parity-route-marker": requestMarker });
@@ -1390,6 +1411,7 @@ async function inspectPage(page, baseUrl, path, label) {
     trace("domcontentloaded");
   } catch (error) {
     page.off("console", onConsole);
+    page.off("request", onRequest);
     page.off("requestfailed", onRequestFailed);
     page.off("response", onResponse);
     if (error instanceof Error && error.message.includes("Download is starting")) {
@@ -1404,6 +1426,7 @@ async function inspectPage(page, baseUrl, path, label) {
         requestMarker,
         requestWindow: { startMs: requestStartedAt, endMs: Date.now() },
         networkSummary,
+        timings: timingStages,
         metrics: null,
       };
     }
@@ -1414,6 +1437,7 @@ async function inspectPage(page, baseUrl, path, label) {
       requestMarker,
       requestWindow: { startMs: requestStartedAt, endMs: Date.now() },
       networkSummary,
+      timings: timingStages,
     };
   }
 
@@ -1430,9 +1454,26 @@ async function inspectPage(page, baseUrl, path, label) {
       },
       undefined,
       { timeout: 5_000 },
-    )
+  )
     .catch(() => {});
   trace("body");
+
+  // The public profile route starts with a small shell and fills its profile
+  // through a route query. Waiting for body text alone can capture that shell
+  // before either implementation has reached the comparable DOM state.
+  if (path === "/admin") {
+    await page
+      .waitForSelector(
+        ".user-box, .user-profile-page, [data-stylex-owner='user-profile-page']",
+        {
+        state: "visible",
+        timeout: 10_000,
+        },
+      )
+      .catch(() => {});
+    await waitForRenderedPaint(page);
+    trace("user-profile");
+  }
 
   const localSettledSelector = label === "local" ? localSettledSelectorForPath(path) : null;
   if (localSettledSelector) {
@@ -1668,7 +1709,9 @@ async function inspectPage(page, baseUrl, path, label) {
       // The local route retires the legacy wrapper class after its StyleX
       // boundary is complete; keep the legacy selector for the live target
       // and accept the stable owner marker for the React target.
-      userProfile: selectorState(".user-profile-page, [data-stylex-owner='user-profile-page']"),
+      userProfile: selectorState(
+        ".user-box, .user-profile-page, [data-stylex-owner='user-profile-page']",
+      ),
       isErrorPage: [document.title, body.innerText].some(
         (text) =>
           text.includes("페이지를 찾을 수 없습니다") ||
@@ -1769,6 +1812,7 @@ async function inspectPage(page, baseUrl, path, label) {
     });
   }
   page.off("console", onConsole);
+  page.off("request", onRequest);
   page.off("requestfailed", onRequestFailed);
   page.off("response", onResponse);
   return {
@@ -1785,6 +1829,7 @@ async function inspectPage(page, baseUrl, path, label) {
     requestMarker,
     requestWindow: { startMs: requestStartedAt, endMs: Date.now() },
     networkSummary,
+    timings: timingStages,
     metrics: {
       title: metrics.title,
       bodyTextLength: metrics.bodyTextLength,
@@ -2084,7 +2129,20 @@ async function runTarget(label, baseUrl, pathOverride = null) {
       }
       const routePage = await context.newPage();
       try {
-        results.push(await inspectPageSafely(routePage, baseUrl, path, label));
+        const result = await inspectPageSafely(routePage, baseUrl, path, label);
+        if (warmPerformanceRepeat && result.ok) {
+          const warmResult = await inspectPageSafely(routePage, baseUrl, path, label);
+          result.warmPerformance = {
+            ok: warmResult.ok,
+            errors: warmResult.errors,
+            requestWindow: warmResult.requestWindow,
+            timings: warmResult.timings ?? {},
+            networkSummary: (warmResult.networkSummary ?? []).filter(
+              ({ path: requestPath }) => requestPath === path || requestPath.startsWith("/api/"),
+            ),
+          };
+        }
+        results.push(result);
       } finally {
         await closePageSafely(routePage, `${label} ${path}`);
       }
@@ -2169,11 +2227,35 @@ function sanitizeResultForArtifact(result) {
       : [],
     requestMarker: result.requestMarker ?? null,
     requestWindow: result.requestWindow ?? null,
-    networkSummary: (result.networkSummary ?? []).map(({ method, path, status }) => ({
+    networkSummary: (result.networkSummary ?? []).map(
+      ({ method, path, status, resourceType, startOffsetMs, durationMs }) => ({
       method,
       path,
       status,
-    })),
+      resourceType: resourceType ?? null,
+      startOffsetMs: Number.isFinite(startOffsetMs) ? startOffsetMs : null,
+      durationMs: Number.isFinite(durationMs) ? durationMs : null,
+      }),
+    ),
+    timings: result.timings ?? {},
+    warmPerformance: result.warmPerformance
+      ? {
+          ok: result.warmPerformance.ok === true,
+          errors: (result.warmPerformance.errors ?? []).map(classifyArtifactError),
+          requestWindow: result.warmPerformance.requestWindow ?? null,
+          timings: result.warmPerformance.timings ?? {},
+          networkSummary: (result.warmPerformance.networkSummary ?? []).map(
+            ({ method, path, status, resourceType, startOffsetMs, durationMs }) => ({
+              method,
+              path,
+              status,
+              resourceType: resourceType ?? null,
+              startOffsetMs: Number.isFinite(startOffsetMs) ? startOffsetMs : null,
+              durationMs: Number.isFinite(durationMs) ? durationMs : null,
+            }),
+          ),
+        }
+      : null,
     metrics,
   };
 }

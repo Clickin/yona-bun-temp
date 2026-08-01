@@ -15,6 +15,19 @@ import {
 
 const sweepSource = readFileSync(resolve("scripts/visual-parity-sweep.mjs"), "utf8");
 
+test("sweep waits for public profile readiness before collecting metrics", () => {
+  assert.ok(sweepSource.includes('if (path === "/admin")'));
+  assert.match(
+    sweepSource,
+    /\.user-box, \.user-profile-page, \[data-stylex-owner='user-profile-page'\]/u,
+  );
+});
+
+test("sweep can record a same-context warm route performance sample", () => {
+  assert.match(sweepSource, /YORAM_SWEEP_WARM_REPEAT/u);
+  assert.match(sweepSource, /warmPerformance/u);
+});
+
 test("real-data mode cannot fall back to fixture credentials or bootstrap writes", () => {
   assert.match(sweepSource, /const realDataMode = process\.env\.YORAM_SWEEP_REAL_DATA === "1"/u);
   assert.match(sweepSource, /\(realDataMode \? "" : "admin"\)/u);
@@ -88,6 +101,27 @@ test("plain SQL log parsing strips ANSI and tracing metadata before redaction", 
   const serialized = JSON.stringify(artifact);
   assert.match(serialized, /select id, __sensitive__ from user/iu);
   assert.doesNotMatch(serialized, /db\.statement|rows_affected|\\u001b/iu);
+});
+
+test("plain SQL parsing prefers the complete db.statement over a truncated query field", () => {
+  const records = parseSqlLog({
+    source: "yoram",
+    routeMarker: "route-test",
+    text: 'query="select id from pull_request …" db.statement="select id from pull_request where contributor_id = ? and updated >= ? order by updated desc" rows_affected=0',
+  });
+  assert.equal(records.length, 1);
+  const artifact = buildRouteSqlArtifacts({
+    route: "/admin",
+    requestMarker: "route-test",
+    legacyRecords: [{
+      source: "legacy",
+      routeMarker: "route-test",
+      sql: "SELECT t0.id FROM pull_request t0 WHERE t0.contributor_id = 1 AND t0.updated >= 2 ORDER BY t0.updated DESC",
+    }],
+    yoramRecords: records,
+  });
+  assert.equal(artifact.queries.yoram[0].filters.length, 2);
+  assert.equal(artifact.comparison.errors.length, 0);
 });
 
 test("FTS-only implementation differences are intentional, while missing filters and pagination are errors", () => {

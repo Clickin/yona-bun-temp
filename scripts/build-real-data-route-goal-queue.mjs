@@ -44,7 +44,7 @@ function categoriesFor(path, desktop, mobile) {
   return [...categories].sort();
 }
 
-export function buildRouteGoalQueue({ manifest, desktop, mobile }) {
+export function buildRouteGoalQueue({ manifest, desktop, mobile, sourceArtifacts = null }) {
   const desktopCards = cardIndex(desktop);
   const mobileCards = cardIndex(mobile);
   const authBlocked = [desktop, mobile].every((sweep) =>
@@ -84,7 +84,7 @@ export function buildRouteGoalQueue({ manifest, desktop, mobile }) {
   return {
     generatedAt: new Date().toISOString(),
     mode: "real-data-route-state-queue",
-    sourceArtifacts: ["route-manifest.json", "final-desktop/latest.json", "final-mobile/latest-mobile.json"],
+    sourceArtifacts: sourceArtifacts ?? ["route-manifest.json", "final-desktop/latest.json", "final-mobile/latest-mobile.json"],
     counts: {
       liveLegacyPaths: entries.length,
       classifications: Object.fromEntries([...new Set(entries.map((entry) => entry.classification))].sort().map((key) => [key, entries.filter((entry) => entry.classification === key).length])),
@@ -95,10 +95,14 @@ export function buildRouteGoalQueue({ manifest, desktop, mobile }) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const root = resolve(process.env.YORAM_SWEEP_OUTPUT_DIR ?? defaultRoot);
+  const manifestPath = resolve(process.env.YORAM_ROUTE_MANIFEST ?? root, process.env.YORAM_ROUTE_MANIFEST ? "" : "route-manifest.json");
+  const desktopPath = resolve(process.env.YORAM_ROUTE_DESKTOP_ARTIFACT ?? root, process.env.YORAM_ROUTE_DESKTOP_ARTIFACT ? "" : "final-desktop/latest.json");
+  const mobilePath = resolve(process.env.YORAM_ROUTE_MOBILE_ARTIFACT ?? root, process.env.YORAM_ROUTE_MOBILE_ARTIFACT ? "" : "final-mobile/latest-mobile.json");
   const queue = buildRouteGoalQueue({
-    manifest: readJson(resolve(root, "route-manifest.json")),
-    desktop: readJson(resolve(root, "final-desktop/latest.json")),
-    mobile: readJson(resolve(root, "final-mobile/latest-mobile.json")),
+    manifest: readJson(manifestPath),
+    desktop: readJson(desktopPath),
+    mobile: readJson(mobilePath),
+    sourceArtifacts: [manifestPath, desktopPath, mobilePath].map((path) => path.replace(`${repoRoot}/.agent/real-data-parity/2026-08-01/`, "")),
   });
   mkdirSync(root, { recursive: true });
   const outputPath = resolve(root, "route-goal-queue.json");

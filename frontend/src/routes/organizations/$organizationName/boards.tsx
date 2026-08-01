@@ -82,23 +82,23 @@ type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &
   SearchSchemaInput & {
     "projectNames[]"?: unknown;
   };
-type OrganizationBoardsSearchNavigation = Omit<
-  OrganizationBoardsSearchInput,
-  keyof SearchSchemaInput
->;
-
 const resetLegacyBoardSortSearch = ({
   next,
   search,
 }: {
-  next: (search: OrganizationBoardsSearchNavigation) => OrganizationBoardsSearchNavigation;
-  search: OrganizationBoardsSearchNavigation;
+  next: (search: OrganizationBoardsSearch) => OrganizationBoardsSearch;
+  search: OrganizationBoardsSearch;
 }) => {
   const result = next(search);
   if (result.orderBy === search.orderBy && result.orderDir === search.orderDir) {
     return result;
   }
-  return { orderBy: result.orderBy, orderDir: result.orderDir };
+  return {
+    ...result,
+    filter: "",
+    pageNum: 1,
+    projectNames: [],
+  };
 };
 
 function validateOrganizationBoardsSearch(
@@ -570,7 +570,13 @@ function BoardPagination({
   );
 }
 
-function OrganizationBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
+function OrganizationBoardPost({
+  _basePath,
+  post,
+}: {
+  _basePath: string;
+  post: BoardPostListItem;
+}) {
   const { t } = useLegacyMessages();
   const rowStyleProps = stylex.props(styles.row);
   const avatarStyleProps = stylex.props(styles.rowAvatar);

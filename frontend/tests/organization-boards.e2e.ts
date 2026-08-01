@@ -511,7 +511,7 @@ test("organization boards filter and breadcrumb links preserve legacy hrefs with
     /type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &\s+SearchSchemaInput & \{\s+"projectNames\[\]"\?: unknown;\s+\};/u,
   );
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toMatch(
-    /if \(result\.orderBy === search\.orderBy && result\.orderDir === search\.orderDir\) \{\s+return result;\s+\}\s+return \{ orderBy: result\.orderBy, orderDir: result\.orderDir \};/u,
+    /if \(result\.orderBy === search\.orderBy && result\.orderDir === search\.orderDir\) \{\s+return result;\s+\}\s+return \{\s+\.\.\.result,\s+filter: "",\s+pageNum: 1,\s+projectNames: \[\],\s+\};/u,
   );
   await mockOrganizationBoards(page);
 
