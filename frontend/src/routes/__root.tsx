@@ -32,6 +32,7 @@ const legacyPlainLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 
 const rootNotFoundErrorWrapStyleProps = stylex.props(rootNotFoundStyles.errorWrap);
 const rootNotFoundErrorIconStyleProps = stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl));
@@ -1113,7 +1114,49 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">Yoram authors</span>
+          <span className="provider">
+            Copyright{" "}
+            <Link
+              className="yona-author"
+              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+              rel="noreferrer"
+              target="_blank"
+              to={
+                "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
+              }
+            >
+              Yona authors
+            </Link>{" "}
+            & ©{" "}
+            <Link
+              href="https://navercorp.com"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://navercorp.com" as unknown as ExternalLinkTarget}
+            >
+              NAVER Corp.
+            </Link>{" "}
+            &{" "}
+            <Link
+              className="naver-labs"
+              href="https://naverlabs.com/"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
+            >
+              NAVER LABS
+            </Link>{" "}
+            Supported by{" "}
+            <Link
+              className="naver-cloud-platform"
+              href="https://www.ncloud.com/?referer=yona"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
+            >
+              NAVER CLOUD PLATFORM
+            </Link>
+          </span>
         </div>
       </footer>
     </>

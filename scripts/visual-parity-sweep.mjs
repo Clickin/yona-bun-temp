@@ -9,7 +9,11 @@ import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(new URL("../frontend/package.json", import.meta.url));
 const { chromium } = require("@playwright/test");
-const outputDir = resolve(repoRoot, "output/playwright/visual-sweep");
+const outputDir = resolve(
+  repoRoot,
+  process.env.YORAM_SWEEP_OUTPUT_DIR ?? "output/playwright/visual-sweep",
+);
+const screenshotDir = resolve(outputDir, "screenshots");
 const legacyBaseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://127.0.0.1:9000").replace(
   /\/$/,
   "",
@@ -18,8 +22,24 @@ const localBaseUrl = (process.env.YORAM_BASE_URL ?? "http://127.0.0.1:18101/yona
   /\/$/,
   "",
 );
-const loginId = process.env.YONA_LEGACY_LOGIN_ID ?? "admin";
-const password = process.env.YONA_LEGACY_PASSWORD ?? "admin";
+const realDataMode = process.env.YORAM_SWEEP_REAL_DATA === "1";
+const writeParityMode = process.env.YORAM_SWEEP_WRITE_PARITY === "1";
+const loginId =
+  process.env.REAL_LOGIN_ID ??
+  process.env.YONA_LEGACY_LOGIN_ID ??
+  (realDataMode ? "" : "admin");
+const password =
+  process.env.REAL_PASSWORD ??
+  process.env.YONA_LEGACY_PASSWORD ??
+  (realDataMode ? "" : "admin");
+const localLoginId =
+  process.env.REAL_LOGIN_ID ??
+  process.env.YORAM_LOGIN_ID ??
+  (realDataMode ? "" : loginId);
+const localPassword =
+  process.env.REAL_PASSWORD ??
+  process.env.YORAM_PASSWORD ??
+  (realDataMode ? "" : password);
 const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
 const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
@@ -32,7 +52,6 @@ if ((sweepBatchSize === null) !== (sweepBatchIndex === null)) {
 }
 const sweepIsBatched = sweepBatchSize !== null;
 const sweepScope = requestedSweepPaths.length > 0 ? "focused" : sweepIsBatched ? "batch" : "full";
-const closeTimeoutMs = 5_000;
 const outputPrefix =
   sweepScope === "focused"
     ? "latest-focused"
@@ -44,7 +63,9 @@ const latestOutputName =
     ? `${outputPrefix}.json`
     : `${outputPrefix}-${viewportProfile.name}.json`;
 
+const closeTimeoutMs = 5_000;
 mkdirSync(outputDir, { recursive: true });
+mkdirSync(screenshotDir, { recursive: true });
 
 function parseViewportProfile(input) {
   const name = (input ?? "desktop").trim().toLowerCase();
@@ -536,6 +557,9 @@ function normalizePath(baseUrl, href) {
 }
 
 function sessionPrimerPathForPath(path) {
+  if (realDataMode) {
+    return null;
+  }
   const pathname = path.split(/[?#]/u, 1)[0];
   return pathname === "/user/issues/new" ? "/alice/sample" : null;
 }
@@ -564,6 +588,9 @@ async function primeSessionProjectVisit(page, baseUrl, projectPath, label) {
 }
 
 async function login(page, baseUrl) {
+  if (!loginId || !password) {
+    return false;
+  }
   await page.goto(urlFor(baseUrl, "/users/loginform"), { waitUntil: "domcontentloaded" });
   const loginField = page.locator('input[name="loginIdOrEmail"], input#loginIdOrEmail').first();
   const passwordField = page.locator('input[name="password"], input#password').first();
@@ -1031,7 +1058,42 @@ async function bootstrapLocalAccount(page, baseUrl) {
 }
 
 async function loginLocal(page, baseUrl) {
+  if (realDataMode) {
+    if (!localLoginId || !localPassword) {
+      return false;
+    }
+    return signInLocalAccount(page, baseUrl, localLoginId, localPassword);
+  }
   return bootstrapLocalAccount(page, baseUrl);
+}
+async function discoverRealDataPaths(page, baseUrl) {
+  const queue = [...basePages];
+  const seen = new Set();
+  const discovered = new Set();
+  const maxPages = 250;
+  while (queue.length > 0 && seen.size < maxPages) {
+    const path = queue.shift();
+    if (seen.has(path)) {
+      continue;
+    }
+    seen.add(path);
+    discovered.add(path);
+    await page.goto(urlFor(baseUrl, path), {
+      waitUntil: "domcontentloaded",
+      timeout: 20_000,
+    }).catch(() => {});
+    const hrefs = await page
+      .locator("a[href]")
+      .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? ""))
+      .catch(() => []);
+    for (const href of hrefs) {
+      const normalized = normalizePath(baseUrl, href);
+      if (normalized && !seen.has(normalized) && !queue.includes(normalized)) {
+        queue.push(normalized);
+      }
+    }
+  }
+  return [...discovered].sort();
 }
 
 async function discoverProjectPaths(page, baseUrl) {
@@ -1666,7 +1728,7 @@ async function inspectPage(page, baseUrl, path, label) {
       viewportProfile.name === "desktop" ? label : `${label}-${viewportProfile.name}`;
     await page.screenshot({
       path: resolve(
-        outputDir,
+        screenshotDir,
         `${screenshotLabel}-${path.replace(/[^a-z0-9]+/giu, "_") || "root"}.png`,
       ),
       fullPage: true,
@@ -1901,6 +1963,7 @@ function failedTargetResult(label, baseUrl, error) {
     viewportProfile,
     status: targetFailureStatus(error),
     loggedIn: false,
+    authStatus: "AUTH_BLOCKED",
     total: 0,
     passed: 0,
     failed: 1,
@@ -1923,7 +1986,7 @@ async function launchBrowser() {
   });
 }
 
-async function runTarget(label, baseUrl) {
+async function runTarget(label, baseUrl, pathOverride = null) {
   const browser = await launchBrowser();
   try {
     const context = await browser.newContext({
@@ -1943,24 +2006,34 @@ async function runTarget(label, baseUrl) {
       label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
     const useRequestedPaths = requestedSweepPaths.length > 0 || sweepIsBatched;
     const directApiSurfaces =
-      label === "local" && loggedIn && !useRequestedPaths
+      label === "local" && loggedIn && !useRequestedPaths && !realDataMode
         ? await inspectLocalDirectApiSurfaces(page, baseUrl)
         : null;
     const discoveredProjectPages =
-      loggedIn && !useRequestedPaths ? await discoverProjectPaths(page, baseUrl) : [];
+      loggedIn && !useRequestedPaths && !realDataMode
+        ? await discoverProjectPaths(page, baseUrl)
+        : [];
+    const discoveredRealDataPages =
+      realDataMode && !useRequestedPaths && !pathOverride
+        ? await discoverRealDataPaths(page, baseUrl)
+        : [];
     const legacyAuditPages = legacyAuditDiscoveredPageLinks();
-    const routeSamples = label === "legacy" || useRequestedPaths ? [] : routeTreeSamplePaths();
+    const routeSamples =
+      label === "legacy" || useRequestedPaths || realDataMode ? [] : routeTreeSamplePaths();
     const allPaths =
-      requestedSweepPaths.length > 0
+      pathOverride ??
+      (requestedSweepPaths.length > 0
         ? requestedSweepPaths
-        : [
-            ...new Set([
-              ...basePages,
-              ...legacyAuditPages,
-              ...routeSamples,
-              ...discoveredProjectPages,
-            ]),
-          ];
+        : realDataMode
+          ? discoveredRealDataPages
+          : [
+              ...new Set([
+                ...basePages,
+                ...legacyAuditPages,
+                ...routeSamples,
+                ...discoveredProjectPages,
+              ]),
+            ]);
     const paths = sweepIsBatched
       ? allPaths.slice(sweepBatchIndex * sweepBatchSize, (sweepBatchIndex + 1) * sweepBatchSize)
       : allPaths;
@@ -1979,9 +2052,10 @@ async function runTarget(label, baseUrl) {
       }
     }
     const resultPaths = new Set(results.map((result) => result.path));
-    const missingLegacyAuditPages = useRequestedPaths
-      ? []
-      : legacyAuditPages.filter((path) => !resultPaths.has(path));
+    const missingLegacyAuditPages =
+      useRequestedPaths || realDataMode
+        ? []
+        : legacyAuditPages.filter((path) => !resultPaths.has(path));
     await closePageSafely(page, `${label} session`);
     return {
       label,
@@ -1989,6 +2063,7 @@ async function runTarget(label, baseUrl) {
       viewportProfile,
       status: "ok",
       loggedIn,
+      authStatus: loggedIn ? "authenticated" : "AUTH_BLOCKED",
       total: results.length,
       passed: results.filter((result) => result.ok).length,
       failed: results.filter((result) => !result.ok).length,
@@ -1999,6 +2074,7 @@ async function runTarget(label, baseUrl) {
       missingLegacyAuditPages,
       requestedSweepPaths,
       discoveredProjectPages,
+      discoveredRealDataPages,
       results,
     };
   } finally {
@@ -2006,18 +2082,130 @@ async function runTarget(label, baseUrl) {
   }
 }
 
-async function runTargetSafely(label, baseUrl) {
+async function runTargetSafely(label, baseUrl, pathOverride = null) {
   try {
-    return await runTarget(label, baseUrl);
+    return await runTarget(label, baseUrl, pathOverride);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[visual-sweep] ${label} target failed: ${message}`);
     return failedTargetResult(label, baseUrl, error);
   }
 }
 
+function classifyArtifactError(error) {
+  if (/AUTH_BLOCKED/u.test(error)) return "AUTH_BLOCKED";
+  if (/legacy renders a normal page but local renders an error page/u.test(error)) {
+    return "legacy-normal → Yoram-error";
+  }
+  if (/HTTP \d+/u.test(error) || /status/u.test(error)) return "HTTP status delta";
+  if (/visible selector missing/u.test(error)) return "missing visible selector";
+  if (/geometry/u.test(error)) return "geometry drift";
+  if (/overflow/u.test(error)) return "horizontal overflow";
+  if (/text loss/u.test(error)) return "text-length loss";
+  if (/raw i18n/u.test(error)) return "raw i18n key leak";
+  if (/navigation|global navigation|stylesheet|menu|user menu/u.test(error)) {
+    return "global shell/header/menu drift";
+  }
+  if (/attachment/u.test(error)) return "attachment-excluded";
+  return "categorized error";
+}
+
+function sanitizeResultForArtifact(result) {
+  const metrics = result.metrics
+    ? Object.fromEntries(
+        Object.entries(result.metrics).filter(
+          ([key]) => !["title", "text", "chromeText", "chromeAttributes"].includes(key),
+        ),
+      )
+    : null;
+  return {
+    path: result.path,
+    status: result.status ?? 0,
+    ok: result.ok === true,
+    download: result.download === true,
+    errors: (result.errors ?? []).map(classifyArtifactError),
+    consoleErrors: result.consoleErrors?.length ? ["categorized error"] : [],
+    requestFailures: result.requestFailures?.length ? ["categorized error"] : [],
+    ignoredRequestFailures: result.ignoredRequestFailures?.length
+      ? ["categorized error"]
+      : [],
+    metrics,
+  };
+}
+
+function sanitizeTargetForArtifact(target) {
+  if (!target) return null;
+  return {
+    ...target,
+    targetError: target.targetError ? "categorized error" : null,
+    results: (target.results ?? []).map(sanitizeResultForArtifact),
+    directApiSurfaces: target.directApiSurfaces
+      ? {
+          failed: target.directApiSurfaces.failed,
+          passed: target.directApiSurfaces.passed,
+          total: target.directApiSurfaces.total,
+          results: target.directApiSurfaces.results.map((result) => ({
+            method: result.method,
+            path: result.path,
+            status: result.status,
+            ok: result.ok,
+            contentType: result.contentType,
+            payloadKind: result.payloadKind,
+            payloadKeys: result.payloadKeys,
+            arrayLength: result.arrayLength,
+            errors: result.errors.map(classifyArtifactError),
+          })),
+        }
+      : null,
+  };
+}
+
+function sanitizeComparisonForArtifact(comparison) {
+  return comparison.map((result) => ({
+    ...result,
+    localErrors: (result.localErrors ?? []).map(classifyArtifactError),
+    diffErrors: (result.diffErrors ?? []).map(classifyArtifactError),
+  }));
+}
+function buildWriteParityLedger() {
+  const dumpPath = process.env.REAL_DUMP_PATH;
+  const restoreReady = Boolean(dumpPath && existsSync(dumpPath));
+  const reason = restoreReady
+    ? "RESTORE_REQUIRED: supervised clone restore and retained-service restart are required before writes"
+    : "RESTORE_REQUIRED: REAL_DUMP_PATH is unavailable";
+  const scenarios = [
+    ["issue write", "/projects/{owner}/{project}/issues"],
+    ["comment write", "/projects/{owner}/{project}/issue/{issueNumber}"],
+    ["board write", "/projects/{owner}/{project}/posts"],
+    ["milestone write", "/projects/{owner}/{project}/milestones"],
+    ["label/category write", "/projects/{owner}/{project}/labels"],
+    ["project/member/watch write", "/projects/{owner}/{project}/members"],
+    ["pull-request/review write", "/projects/{owner}/{project}/pullRequests"],
+    ["user/settings write", "/user/editform"],
+  ].map(([action, route]) => ({
+    action,
+    route,
+    requestShape: null,
+    legacy: { status: null, bodyState: null, readBack: null },
+    yoram: { status: null, bodyState: null, readBack: null },
+    checkpointBefore: null,
+    checkpointAfter: null,
+    status: "RESTORE_REQUIRED",
+    reason,
+  }));
+  return {
+    mode: "controlled-write-parity",
+    status: "RESTORE_REQUIRED",
+    restoreReady,
+    scenarios,
+  };
+}
+
 function synchronizePullRequestRepositoryFixture() {
   if (
-    requestedSweepPaths.length > 0 &&
-    !requestedSweepPaths.includes("/admin/sample/newPullRequestForm")
+    realDataMode ||
+    (requestedSweepPaths.length > 0 &&
+      !requestedSweepPaths.includes("/admin/sample/newPullRequestForm"))
   ) {
     return;
   }
@@ -2044,18 +2232,31 @@ function synchronizePullRequestRepositoryFixture() {
     throw new Error(`Unable to synchronize PR parity refs: ${result.stderr.trim()}`);
   }
 }
-
 if (sweepTarget === "both") synchronizePullRequestRepositoryFixture();
-const [legacy, local] = await Promise.all([
-  sweepTarget === "local" ? null : runTargetSafely("legacy", legacyBaseUrl),
-  sweepTarget === "legacy" ? null : runTargetSafely("local", localBaseUrl),
-]);
+let legacy = null;
+let local = null;
+if (realDataMode && sweepTarget === "both") {
+  legacy = await runTargetSafely("legacy", legacyBaseUrl);
+  local = await runTargetSafely(
+    "local",
+    localBaseUrl,
+    legacy?.discoveredRealDataPages ?? [],
+  );
+} else {
+  [legacy, local] = await Promise.all([
+    sweepTarget === "local" ? null : runTargetSafely("legacy", legacyBaseUrl),
+    sweepTarget === "legacy" ? null : runTargetSafely("local", localBaseUrl),
+  ]);
+}
 const comparison = buildVisualComparison({
   legacyResults: legacy?.results ?? [],
   localResults: local?.results ?? [],
 });
+const writeLedger = writeParityMode ? buildWriteParityLedger() : null;
 const summary = {
   checkedAt: new Date().toISOString(),
+  mode: realDataMode ? "real-data-read-only" : "fixture",
+  writeParityRequested: writeParityMode,
   scope: sweepScope,
   batch: sweepIsBatched
     ? {
@@ -2064,12 +2265,16 @@ const summary = {
       }
     : null,
   viewportProfile,
-  legacy,
-  local,
-  comparison,
+  legacy: realDataMode ? sanitizeTargetForArtifact(legacy) : legacy,
+  local: realDataMode ? sanitizeTargetForArtifact(local) : local,
+  comparison: realDataMode ? sanitizeComparisonForArtifact(comparison) : comparison,
   comparisonSummary: summarizeVisualComparison(comparison),
+  writeParity: writeLedger,
 };
 writeFileSync(resolve(outputDir, latestOutputName), `${JSON.stringify(summary, null, 2)}\n`);
+if (writeLedger) {
+  writeFileSync(resolve(outputDir, "write-ledger.json"), `${JSON.stringify(writeLedger, null, 2)}\n`);
+}
 console.log(JSON.stringify(summary, null, 2));
 const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);
 const missingLegacyAuditPages = [legacy, local].flatMap((target) =>

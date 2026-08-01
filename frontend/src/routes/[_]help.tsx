@@ -14,6 +14,8 @@ const faqStyles = stylex.create({
     "--help-faq-sprite": `url(${spriteUrl})`,
   }),
 });
+type ExternalLinkTo = NonNullable<React.ComponentProps<typeof Link>["to"]>;
+const externalLinkTo = (value: string) => value as unknown as ExternalLinkTo;
 
 const styles = stylex.create({
   breadcrumbOuter: {
@@ -253,7 +255,19 @@ function HelpTocScreen({ appName }: { appName: string }) {
         <div {...stylex.props(styles.pageWrap)} data-stylex-owner="help-shell-page-wrap">
           <ul {...stylex.props(styles.faqList)} data-stylex-owner="help-faq-list">
             <HelpFaqRow
-              answer="공개 저장소가 준비되면 설치 안내를 제공할 예정입니다."
+              answer={
+                <>
+                  {appName}를 설치하고자 하면{" "}
+                  <Link
+                    href="https://github.com/doortts/yona#korean"
+                    to={externalLinkTo("https://github.com/doortts/yona#korean")}
+                    reloadDocument
+                  >
+                    https://github.com/doortts/yona#korean
+                  </Link>
+                  를 참고해 주세요.
+                </>
+              }
               index={0}
               isOpen={isQuestionOpen(0)}
               onKeyDown={handleQuestionRowKeyDown}
@@ -361,8 +375,15 @@ function HelpTocScreen({ appName }: { appName: string }) {
             <HelpFaqRow
               answer={
                 <>
-                  {appName}는 Open Source로 진행되고 있습니다. 공개 저장소가 준비되면 이슈 트래커를
-                  통해 버그를 제보하거나 패치를 보내실 수 있습니다.
+                  {appName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
+                  <Link
+                    href="https://github.com/nforge/yobi/issues"
+                    to={externalLinkTo("https://github.com/nforge/yobi/issues")}
+                    reloadDocument
+                  >
+                    {appName} 이슈트래커에 등록
+                  </Link>
+                  해 주시거나 패치를 만들어 보내주시면 됩니다.
                 </>
               }
               index={5}

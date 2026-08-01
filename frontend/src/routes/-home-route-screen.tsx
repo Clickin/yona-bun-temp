@@ -21,6 +21,7 @@ import {
   homeColors,
   rootSidebarMotionStyles,
 } from "./-home-route-screen.stylex";
+type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 
 type LegacyUserLinkSearch = {
   daysAgo: number;
@@ -1737,7 +1738,47 @@ export function SiteLayoutShell({
     <footer {...stylex.props(siteFooterStyles.outer)} data-stylex-owner="site-footer">
       <div {...stylex.props(siteFooterStyles.inner)} data-stylex-owner="site-footer-inner">
         <span {...stylex.props(siteFooterStyles.provider)} data-stylex-owner="site-footer-provider">
-          Yoram authors
+          Copyright{" "}
+          <Link
+            className="yona-author"
+            href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+            rel="noreferrer"
+            target="_blank"
+            to={
+              "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
+            }
+          >
+            Yona authors
+          </Link>{" "}
+          & ©{" "}
+          <Link
+            href="https://navercorp.com"
+            rel="noreferrer"
+            target="_blank"
+            to={"https://navercorp.com" as unknown as ExternalLinkTarget}
+          >
+            NAVER Corp.
+          </Link>{" "}
+          &{" "}
+          <Link
+            className="naver-labs"
+            href="https://naverlabs.com/"
+            rel="noreferrer"
+            target="_blank"
+            to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
+          >
+            NAVER LABS
+          </Link>{" "}
+          Supported by{" "}
+          <Link
+            className="naver-cloud-platform"
+            href="https://www.ncloud.com/?referer=yona"
+            rel="noreferrer"
+            target="_blank"
+            to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
+          >
+            NAVER CLOUD PLATFORM
+          </Link>
         </span>
       </div>
     </footer>

@@ -103,8 +103,7 @@ const EXPECTED_HELP_SCREEN = `
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer">
-            공개 저장소가 준비되면 설치 안내를 제공할 예정입니다.
-          </div>
+            Yoram를 설치하고자 하면 <a href="https://github.com/doortts/yona#korean">https://github.com/doortts/yona#korean</a>를 참고해 주세요.
         </div>
       </li>
       <li class="qa">
@@ -197,7 +196,9 @@ const EXPECTED_HELP_SCREEN = `
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer">
-            Yoram는 Open Source로 진행되고 있습니다. 공개 저장소가 준비되면 이슈 트래커를 통해 버그를 제보하거나 패치를 보내실 수 있습니다.
+            Yoram는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면
+            <a href="https://github.com/nforge/yobi/issues">Yoram이슈트래커에 등록</a>해 주시거나
+            패치를 만들어 보내주시면 됩니다.
           </div>
         </div>
       </li>
@@ -239,9 +240,8 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.title\b/);
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\b(?:globalThis|window)\.document\b/);
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.querySelector\(["'`]title["'`]\)/);
-  expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.head\b/);
+  expect(HELP_ROUTE_SOURCE).toContain("github.com/doortts/yona#korean");
   expect(HELP_ROUTE_SOURCE).not.toMatch(/useEffect[\s\S]{0,200}\btitle\b/);
-  expect(HELP_ROUTE_SOURCE).not.toContain("github.com/doortts/yona");
   expect(HELP_ROUTE_SOURCE).toContain('prefixBasePath(runtimeConfig.basePath, "/")');
   expect(HELP_ROUTE_SOURCE).toContain("handleLayoutRootClickCapture");
   expect(HELP_ROUTE_SOURCE).toContain('target.className !== "logo logo-letter"');
@@ -255,9 +255,8 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
   expect(HELP_ROUTE_SOURCE).not.toContain("useLinkProps");
   expect(HELP_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
   expect(HELP_ROUTE_SOURCE).not.toContain("React.createElement");
-  expect(HELP_ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(HELP_ROUTE_SOURCE).toContain("github.com/nforge/yobi/issues");
   expect(HELP_ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(HELP_ROUTE_SOURCE).not.toContain("github.com/nforge/yobi");
 
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
@@ -294,13 +293,25 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
   await expect(
     page.locator('[data-stylex-owner="help-faq-question-control"]').first(),
   ).toHaveJSProperty("tagName", "BUTTON");
-  await expect(page.locator('[data-stylex-owner="help-faq-answer"] a')).toHaveCount(3);
+  await expect(page.locator('[data-stylex-owner="help-faq-answer"] a')).toHaveCount(5);
   expect(await renderedHelpAnswerLinks(page)).toEqual([
+    {
+      href: "https://github.com/doortts/yona#korean",
+      text: "https://github.com/doortts/yona#korean",
+    },
     { href: `${basePath}/`, text: "메인화면" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: `${basePath}/info`, text: "정보 페이지" },
+    { href: "https://github.com/nforge/yobi/issues", text: "Yoram 이슈트래커에 등록" },
   ]);
   expect(await renderedHelpAnswerLinkActiveMarkers(page)).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: "https://github.com/doortts/yona#korean",
+      text: "https://github.com/doortts/yona#korean",
+    },
     {
       ariaCurrent: null,
       className: null,
@@ -322,8 +333,28 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
       href: `${basePath}/info`,
       text: "정보 페이지",
     },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: "https://github.com/nforge/yobi/issues",
+      text: "Yoram 이슈트래커에 등록",
+    },
   ]);
-  expect(await readExternalAnswerLinkContainment(page)).toEqual([]);
+  expect(await readExternalAnswerLinkContainment(page)).toEqual([
+    {
+      href: "https://github.com/doortts/yona#korean",
+      text: "https://github.com/doortts/yona#korean",
+      containedInAnswer: true,
+      hasVisibleArea: false,
+    },
+    {
+      href: "https://github.com/nforge/yobi/issues",
+      text: "Yoram 이슈트래커에 등록",
+      containedInAnswer: true,
+      hasVisibleArea: false,
+    },
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
