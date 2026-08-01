@@ -4,7 +4,7 @@ impl AppRepositoryImpl<'_> {
     pub async fn count_open_issues_for_project(&self, project_id: i64) -> Result<u32, DbErr> {
         Ok(issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project_id)))
-            .filter(issue::Column::State.eq(Some(0)))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
             .count(&self.db)
             .await? as u32)
     }
@@ -15,7 +15,7 @@ impl AppRepositoryImpl<'_> {
     ) -> Result<u32, DbErr> {
         Ok(issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project_id)))
-            .filter(issue::Column::State.eq(Some(0)))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
             .filter(issue::Column::AssigneeId.is_null())
             .count(&self.db)
             .await? as u32)
@@ -34,7 +34,7 @@ impl AppRepositoryImpl<'_> {
         for assignee in assignees {
             let open_issue_count = issue::Entity::find()
                 .filter(issue::Column::ProjectId.eq(Some(project_id)))
-                .filter(issue::Column::State.eq(Some(0)))
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
                 .filter(issue::Column::AssigneeId.eq(Some(assignee.id)))
                 .count(&self.db)
                 .await? as u32;
@@ -83,7 +83,7 @@ impl AppRepositoryImpl<'_> {
                 issue::Entity::find()
                     .filter(issue::Column::Id.is_in(issue_ids))
                     .filter(issue::Column::ProjectId.eq(Some(project_id)))
-                    .filter(issue::Column::State.eq(Some(0)))
+                    .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
                     .count(&self.db)
                     .await? as u32
             };
@@ -142,12 +142,12 @@ impl AppRepositoryImpl<'_> {
 
         let open_issue_count = issue::Entity::find()
             .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-            .filter(issue::Column::State.eq(Some(0)))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
             .count(&self.db)
             .await? as u32;
         let closed_issue_count = issue::Entity::find()
             .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-            .filter(issue::Column::State.ne(Some(0)))
+            .filter(issue::Column::State.ne(Some(issue_state_to_raw("open"))))
             .count(&self.db)
             .await? as u32;
         let total = open_issue_count + closed_issue_count;
@@ -192,13 +192,13 @@ impl AppRepositoryImpl<'_> {
             let open_issue_count = issue::Entity::find()
                 .filter(issue::Column::ProjectId.eq(Some(project_id)))
                 .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-                .filter(issue::Column::State.eq(Some(0)))
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
                 .count(&self.db)
                 .await? as u32;
             let closed_issue_count = issue::Entity::find()
                 .filter(issue::Column::ProjectId.eq(Some(project_id)))
                 .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-                .filter(issue::Column::State.ne(Some(0)))
+                .filter(issue::Column::State.ne(Some(issue_state_to_raw("open"))))
                 .count(&self.db)
                 .await? as u32;
             let total = open_issue_count + closed_issue_count;
@@ -224,7 +224,7 @@ impl AppRepositoryImpl<'_> {
     ) -> Result<u32, DbErr> {
         Ok(issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project_id)))
-            .filter(issue::Column::State.eq(Some(0)))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
             .filter(issue::Column::MilestoneId.is_null())
             .count(&self.db)
             .await? as u32)

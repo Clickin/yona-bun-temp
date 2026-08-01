@@ -16,6 +16,7 @@ export const issueDetailColors = stylex.defineVars({
   badgeConflict: "#c0392b",
   taskProgressSurface: "#d4d4d4",
   taskProgressRed: "red",
+  taskProgressGreen: "#8bc34a",
 });
 
 export const styles = stylex.create({
@@ -474,19 +475,25 @@ export const styles = stylex.create({
     position: "relative",
     overflow: "visible",
   },
-  taskProgressBar: {
-    backgroundColor: issueDetailColors.taskProgressRed,
+  taskProgressBar: (width: string, complete: boolean) => ({
+    backgroundColor: complete
+      ? issueDetailColors.taskProgressGreen
+      : issueDetailColors.taskProgressRed,
     height: "2px",
     transitionDuration: "0.2s",
-    width: "0px",
-  },
+    width,
+  }),
   tasklist: {
     boxShadow: "none",
     display: "none",
     filter: "none",
     padding: "10px 20px 0px",
   },
+  tasklistVisible: {
+    display: "block",
+  },
   taskTitle: { fontWeight: "500" },
+  taskTitleWidth: (width: string) => ({ width }),
   taskDoneCounter: { marginLeft: "5px" },
   taskProgress: { backgroundColor: issueDetailColors.taskProgressSurface },
   subtaskProgressBar: (width: string) => ({

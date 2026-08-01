@@ -92,6 +92,13 @@ export const styles = stylex.create({
     zIndex: 1010,
   },
   issueRowHoverBackground: (backgroundColor: string) => ({ backgroundColor }),
+  labelPaint: (backgroundColor: string, boxShadow: string, color: string) => ({
+    backgroundColor,
+    boxShadow,
+    color,
+  }),
+  labelButtonReset: { border: 0, cursor: "pointer", fontFamily: "inherit" },
+  labelList: { fontWeight: "normal", padding: "2px 3px" },
   childLabelBackground: (backgroundColor: string) => ({ background: backgroundColor }),
   emptyAvatar: { height: "32px", width: "32px" },
   issueAssigneeRail: { float: "right" },

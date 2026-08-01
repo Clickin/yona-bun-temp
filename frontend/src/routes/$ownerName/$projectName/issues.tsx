@@ -18,6 +18,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
+import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { useLegacyMessages } from "../../../i18n";
 import { styles } from "./-issues.stylex";
 
@@ -1866,18 +1867,31 @@ function ProjectIssueItem({
                 ) : null}
               </span>
             ) : null}
-            {issueLabels.map((label) => (
-              <button
-                type="button"
-                className="label issue-label list-label active"
-                data-category-id={label.categoryId ?? ""}
-                data-label-id={label.id}
-                key={String(label.id)}
-                onClick={(event) => handleIssueLabelClick(event, String(label.id))}
-              >
-                {label.name}
-              </button>
-            ))}
+            {issueLabels.map((label) => {
+              const paint = issueLabelStyle(label.color);
+              const labelPaint = paint
+                ? stylex.props(
+                    styles.labelPaint(
+                      String(paint.backgroundColor ?? ""),
+                      String(paint.boxShadow ?? ""),
+                      String(paint.color ?? ""),
+                    ),
+                  )
+                : undefined;
+              return (
+                <button
+                  type="button"
+                  {...(labelPaint ?? {})}
+                  className={`label issue-label list-label active ${stylex.props(styles.labelButtonReset, styles.labelList).className ?? ""} ${labelPaint?.className ?? ""}`.trim()}
+                  data-category-id={label.categoryId ?? ""}
+                  data-label-id={label.id}
+                  key={String(label.id)}
+                  onClick={(event) => handleIssueLabelClick(event, String(label.id))}
+                >
+                  {label.name}
+                </button>
+              );
+            })}
             <div
               className="child-issue-list hide"
               {...(childIssueListVisible ? stylex.props(styles.childIssueListVisible) : {})}

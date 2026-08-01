@@ -62,6 +62,10 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
+function stripMarkdownComments(markdown: string) {
+  return markdown.replace(/<!--[\s\S]*?-->/gu, "");
+}
+
 type LegacyPopoverTriggerProps = {
   onBlur?: (event: FocusEvent<HTMLElement>) => void;
   onFocus?: (event: FocusEvent<HTMLElement>) => void;
@@ -964,13 +968,15 @@ function IssueDetailBody({
                   </form>
                 </div>
                 <div id={`issue-body-${issueNumber}`}>
-                  <TasklistBar />
+                  <TasklistBar markdown={bodyMarkdown} />
                   <div
                     className={`${stylex.props(styles.content).className} content markdown-wrap`}
                     data-stylex-owner="project-issue-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{bodyMarkdown}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {stripMarkdownComments(bodyMarkdown)}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </>
@@ -1487,7 +1493,9 @@ function IssuePostingHistory({
           <h5 className="nm">{t("change.history")}</h5>
         </div>
         <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {stripMarkdownComments(historyMarkdown)}
+          </ReactMarkdown>
         </div>
         <div
           className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
@@ -3762,7 +3770,7 @@ function IssueCommentRow({
           id={`comment-body-${commentId}`}
           {...(commentEditOpen ? stylex.props(styles.commentBodyHidden) : {})}
         >
-          <TasklistBar />
+          <TasklistBar markdown={contentsMarkdown} />
           <div
             className="comment-body markdown-wrap"
             data-allowed-update={String(canUpdate)}
@@ -3810,10 +3818,11 @@ function OriginalMessageMarkdown({
   viaEmail: boolean;
 }) {
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
-  const originalMessage = viaEmail ? splitOriginalMessage(contentsMarkdown) : null;
+  const sanitizedContentsMarkdown = stripMarkdownComments(contentsMarkdown);
+  const originalMessage = viaEmail ? splitOriginalMessage(sanitizedContentsMarkdown) : null;
 
   if (!originalMessage) {
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{sanitizedContentsMarkdown}</ReactMarkdown>;
   }
 
   return (
@@ -4038,7 +4047,7 @@ function ChildComment({
         data-stylex-owner="project-issue-detail-child-comment-contents"
       >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {stringField(comment.contentsMarkdown)}
+          {stripMarkdownComments(stringField(comment.contentsMarkdown))}
         </ReactMarkdown>
         <span className="subcomment-author hide">
           -{" "}
@@ -4332,29 +4341,62 @@ function MarkdownEditor({
   );
 }
 
-function TasklistBar() {
-  // `issue/view.scala.html` mounts the tasklist partial in both issue-body positions.
+function taskItemsFromMarkdown(markdown: string) {
+  let inCodeFence = false;
+  const items: boolean[] = [];
+  for (const line of stripMarkdownComments(markdown).split(/\r?\n/u)) {
+    if (/^```/u.test(line.trim())) {
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+    if (inCodeFence) {
+      continue;
+    }
+    const match = line.match(/^(?:\s*[-+*]|(?:\d+\.))?\s*\[([ xX])\](?=\s)/u);
+    if (match) {
+      items.push(match[1].toLowerCase() === "x");
+    }
+  }
+  return items;
+}
+
+function TasklistBar({ markdown }: { markdown: string }) {
+  const tasks = taskItemsFromMarkdown(markdown);
+  const completed = tasks.filter(Boolean).length;
+  const hasTasks = tasks.length > 0;
+  const percentage = hasTasks ? (completed / tasks.length) * 100 : 0;
+  const width = `${percentage}%`;
+  const complete = hasTasks && percentage === 100;
+  const tasklistStyles = hasTasks
+    ? stylex.props(styles.tasklist, styles.tasklistVisible)
+    : stylex.props(styles.tasklist);
+  const titleStyles = stylex.props(styles.taskTitle, styles.taskTitleWidth(width));
+  const progressBarStyles = stylex.props(styles.taskProgressBar(width, complete));
   return (
     <div
-      className={`${stylex.props(styles.tasklist).className} tasklist`}
+      className={`${tasklistStyles.className} tasklist task-show`}
       data-stylex-owner="project-issue-detail-tasklist"
     >
       <div
-        className={`${stylex.props(styles.taskTitle).className} task-title`}
+        {...titleStyles}
+        className={`${titleStyles.className} task-title`}
         data-stylex-owner="project-issue-detail-task-title"
       >
         Tasks
         <span
           className={`${stylex.props(styles.taskDoneCounter).className} done-counter`}
           data-stylex-owner="project-issue-detail-task-done-counter"
-        ></span>
+        >
+          {hasTasks ? `(${completed}/${tasks.length})` : null}
+        </span>
       </div>
       <div
         className={`${stylex.props(styles.taskProgress).className} task-progress`}
         data-stylex-owner="project-issue-detail-task-progress"
       >
         <div
-          className={`${stylex.props(styles.taskProgressBar).className} bar red`}
+          {...progressBarStyles}
+          className={`${progressBarStyles.className} bar ${complete ? "green" : "red"}`}
           data-stylex-owner="project-issue-detail-task-progress-bar"
           data-stylex-owner-instance="tasklist"
           title="Tasklist"
