@@ -5,6 +5,11 @@ import { resolve } from "node:path";
 import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
 import { buildVisualComparison, summarizeVisualComparison } from "./visual-parity-comparison.mjs";
 import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
+import {
+  captureRouteSqlFromLogs,
+  createRouteMarker,
+  writeRouteSqlArtifacts,
+} from "./real-data-sql-capture.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(new URL("../frontend/package.json", import.meta.url));
@@ -45,6 +50,7 @@ const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PAT
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
 const sweepLocale = "ko-KR";
 const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
+const sqlCaptureEnabled = process.env.YORAM_SWEEP_SQL_CAPTURE === "1";
 const sweepBatchSize = parseOptionalPositiveInteger(process.env.YORAM_SWEEP_BATCH_SIZE);
 const sweepBatchIndex = parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_BATCH_INDEX);
 if ((sweepBatchSize === null) !== (sweepBatchIndex === null)) {
@@ -1312,6 +1318,8 @@ async function waitForLocalSessionResolution(page, path, sessionResponsePromise)
 
 async function inspectPage(page, baseUrl, path, label) {
   const startedAt = performance.now();
+  const requestStartedAt = Date.now();
+  const requestMarker = createRouteMarker({ label, path, startedAt: requestStartedAt });
   const trace = (stage) => {
     if (traceTimings) {
       console.error(
@@ -1321,6 +1329,7 @@ async function inspectPage(page, baseUrl, path, label) {
   };
   const consoleErrors = [];
   const requestFailures = [];
+  const networkSummary = [];
   const onConsole = (message) => {
     const text = message.text();
     if (
@@ -1343,8 +1352,22 @@ async function inspectPage(page, baseUrl, path, label) {
       requestFailures.push(`${failureText} ${url}`);
     }
   };
+  const onResponse = (response) => {
+    try {
+      const requestUrl = new URL(response.url());
+      networkSummary.push({
+        method: response.request().method(),
+        path: `${requestUrl.pathname}${requestUrl.search}`,
+        status: response.status(),
+      });
+    } catch {
+      // Browser-internal URLs are not route evidence.
+    }
+  };
   page.on("console", onConsole);
   page.on("requestfailed", onRequestFailed);
+  page.on("response", onResponse);
+  await page.setExtraHTTPHeaders({ "x-yona-parity-route-marker": requestMarker });
   const localSessionResponsePromise =
     label === "local" && path === "/" ? waitForNavigationSessionResponse(page, baseUrl) : null;
   let navigationPath = path;
@@ -1368,6 +1391,7 @@ async function inspectPage(page, baseUrl, path, label) {
   } catch (error) {
     page.off("console", onConsole);
     page.off("requestfailed", onRequestFailed);
+    page.off("response", onResponse);
     if (error instanceof Error && error.message.includes("Download is starting")) {
       return {
         path,
@@ -1377,10 +1401,20 @@ async function inspectPage(page, baseUrl, path, label) {
         errors: [],
         consoleErrors,
         requestFailures,
+        requestMarker,
+        requestWindow: { startMs: requestStartedAt, endMs: Date.now() },
+        networkSummary,
         metrics: null,
       };
     }
-    return { path, ok: false, errors: [`navigation failed: ${error.message}`] };
+    return {
+      path,
+      ok: false,
+      errors: [`navigation failed: ${error.message}`],
+      requestMarker,
+      requestWindow: { startMs: requestStartedAt, endMs: Date.now() },
+      networkSummary,
+    };
   }
 
   if (localSessionResponsePromise) {
@@ -1736,6 +1770,7 @@ async function inspectPage(page, baseUrl, path, label) {
   }
   page.off("console", onConsole);
   page.off("requestfailed", onRequestFailed);
+  page.off("response", onResponse);
   return {
     path,
     status,
@@ -1747,6 +1782,9 @@ async function inspectPage(page, baseUrl, path, label) {
       effectiveRequestFailures.length === requestFailures.length
         ? []
         : requestFailures.filter((failure) => isViteDevModuleAbort(failure)),
+    requestMarker,
+    requestWindow: { startMs: requestStartedAt, endMs: Date.now() },
+    networkSummary,
     metrics: {
       title: metrics.title,
       bodyTextLength: metrics.bodyTextLength,
@@ -2129,6 +2167,13 @@ function sanitizeResultForArtifact(result) {
     ignoredRequestFailures: result.ignoredRequestFailures?.length
       ? ["categorized error"]
       : [],
+    requestMarker: result.requestMarker ?? null,
+    requestWindow: result.requestWindow ?? null,
+    networkSummary: (result.networkSummary ?? []).map(({ method, path, status }) => ({
+      method,
+      path,
+      status,
+    })),
     metrics,
   };
 }
@@ -2240,7 +2285,7 @@ if (realDataMode && sweepTarget === "both") {
   local = await runTargetSafely(
     "local",
     localBaseUrl,
-    legacy?.discoveredRealDataPages ?? [],
+    requestedSweepPaths.length === 0 ? legacy?.discoveredRealDataPages ?? [] : null,
   );
 } else {
   [legacy, local] = await Promise.all([
@@ -2252,6 +2297,42 @@ const comparison = buildVisualComparison({
   legacyResults: legacy?.results ?? [],
   localResults: local?.results ?? [],
 });
+let sqlCapture = null;
+if (sqlCaptureEnabled) {
+  const route = requestedSweepPaths.length === 1 ? requestedSweepPaths[0] : "unfocused-sweep";
+  const legacyResult = legacy?.results?.find((result) => result.path === route) ?? null;
+  const localResult = local?.results?.find((result) => result.path === route) ?? null;
+  const isolatedRouteWindow = realDataMode && sweepScope === "focused" && requestedSweepPaths.length === 1;
+  const legacyRequestWindow = legacyResult?.requestWindow
+    ? { ...legacyResult.requestWindow, isolated: isolatedRouteWindow }
+    : null;
+  const yoramRequestWindow = localResult?.requestWindow
+    ? { ...localResult.requestWindow, isolated: isolatedRouteWindow }
+    : null;
+  sqlCapture = captureRouteSqlFromLogs({
+    route,
+    requestMarker: legacyResult?.requestMarker ?? localResult?.requestMarker ?? null,
+    requestWindow: legacyRequestWindow ?? yoramRequestWindow,
+    legacyRequestWindow,
+    yoramRequestWindow,
+    networkSummary: [
+      ...(legacyResult?.networkSummary ?? []),
+      ...(localResult?.networkSummary ?? []),
+    ],
+    env: {
+      ...process.env,
+      ...(requestedSweepPaths.length === 1 ? {} : { YORAM_SQL_TRACE_LOG: "" }),
+    },
+  });
+  if (process.env.YORAM_SWEEP_OUTPUT_DIR) {
+    writeRouteSqlArtifacts({
+      outputDir,
+      legacy: sqlCapture.legacy,
+      yoram: sqlCapture.yoram,
+      comparison: sqlCapture.comparison,
+    });
+  }
+}
 const writeLedger = writeParityMode ? buildWriteParityLedger() : null;
 const summary = {
   checkedAt: new Date().toISOString(),
@@ -2269,6 +2350,7 @@ const summary = {
   local: realDataMode ? sanitizeTargetForArtifact(local) : local,
   comparison: realDataMode ? sanitizeComparisonForArtifact(comparison) : comparison,
   comparisonSummary: summarizeVisualComparison(comparison),
+  sqlCapture,
   writeParity: writeLedger,
 };
 writeFileSync(resolve(outputDir, latestOutputName), `${JSON.stringify(summary, null, 2)}\n`);
@@ -2289,7 +2371,8 @@ if (
   (sweepTarget === "legacy" && (legacy?.failed ?? 0) > 0) ||
   unusableLegacyAuditCorpus ||
   missingLegacyAuditPages.length > 0 ||
-  comparisonFailures.length > 0
+  comparisonFailures.length > 0 ||
+  (sqlCaptureEnabled && sqlCapture?.status !== "captured")
 ) {
   process.exitCode = 1;
 }
