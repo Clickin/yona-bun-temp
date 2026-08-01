@@ -87,6 +87,22 @@ test("SQL records retain route markers while removing literals and sensitive val
   assert.match(serialized, /shapeHash|parameterTypes/u);
 });
 
+test("SQL redaction covers sensitive field-name suffixes", () => {
+  const artifact = buildRouteSqlArtifacts({
+    route: "/admin",
+    requestMarker: "route-admin-redaction",
+    legacyRecords: [{
+      source: "legacy",
+      routeMarker: "route-admin-redaction",
+      sql: "SELECT email_validated, password_hash, image FROM user_credential WHERE user_id = 42",
+    }],
+  });
+  const query = artifact.queries.legacy[0];
+  assert.equal(query.sensitiveFieldsRemoved, true);
+  assert.doesNotMatch(query.shape, /email_validated|password_hash|\bimage\b/iu);
+  assert.match(query.shape, /__sensitive__/u);
+});
+
 test("plain SQL log parsing strips ANSI and tracing metadata before redaction", () => {
   const records = parseSqlLog({
     source: "yoram",

@@ -5,8 +5,8 @@ import { resolve } from "node:path";
 const SQL_START = /\b(?:select|insert|update|delete)\b/iu;
 const SQL_OPERATION = /^(select|insert|update|delete)\b/iu;
 const BACKGROUND_PATTERN = /(?:scheduler|health|heartbeat|notification[_ -]?mail|mailbox|polling)/iu;
-const SENSITIVE_PATTERN = /(?:password|passwd|token|secret|authorization|cookie|session|salt|email|mail|body|content|markdown|attachment)/iu;
-const SENSITIVE_IDENTIFIER_PATTERN = /\b(?:password|password_salt|passwd|token|secret|authorization|cookie|session|salt|email|body|content|markdown|attachment)\b/giu;
+const SENSITIVE_PATTERN = /\b(?:password|passwd|token|secret|authorization|cookie|session|salt|email|body|content|markdown|attachment|image)(?:[_-][a-z0-9_]+)*\b/iu;
+const SENSITIVE_IDENTIFIER_PATTERN = /\b(?:password|passwd|token|secret|authorization|cookie|session|salt|email|body|content|markdown|attachment|image)(?:[_-][a-z0-9_]+)*\b/giu;
 const FTS_PATTERN = /(?:\bmatch\s*\(|\bfulltext\b|\bfts\b|to_tsvector|plainto_tsquery)/iu;
 const ANSI_PATTERN = /\u001b\[[0-?]*[ -/]*[@-~]/gu;
 

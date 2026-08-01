@@ -82,6 +82,7 @@ export default defineConfig(({ mode }) => {
   const includeLegacyFallback = legacyFallbackEnabled(
     env.VITE_DISABLE_LEGACY_FALLBACK ?? process.env.VITE_DISABLE_LEGACY_FALLBACK,
   );
+  const disableRouteGenerationForE2e = process.env.YONA_E2E_DISABLE_ROUTE_GENERATION === "1";
 
   return {
     base:
@@ -97,7 +98,8 @@ export default defineConfig(({ mode }) => {
         generatedRouteTree: "src/routeTree.gen.ts",
         routesDirectory: "src/routes",
         target: "react",
-        autoCodeSplitting: true,
+        enableRouteGeneration: !disableRouteGenerationForE2e,
+        autoCodeSplitting: !disableRouteGenerationForE2e,
       }),
       react(),
       babel({ presets: [reactCompilerPreset()] }),

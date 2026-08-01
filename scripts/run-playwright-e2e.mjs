@@ -52,6 +52,10 @@ function createRuntimeEnv(runtime) {
     ...process.env,
     ...runtime.backendEnv,
     ...runtime.frontendEnv,
+    // Vite 8 can feed TanStack's generated route tree back into the watcher.
+    // E2E uses the committed/generated tree and should exercise the browser
+    // contract without a generator/watch feedback loop.
+    YONA_E2E_DISABLE_ROUTE_GENERATION: process.env.YONA_E2E_DISABLE_ROUTE_GENERATION ?? "1",
     YONA_E2E_MANAGED_SERVERS: "1",
   };
 }
