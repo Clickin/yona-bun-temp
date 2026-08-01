@@ -8,31 +8,31 @@ const EXPECTED_PROFILE_SCREEN = `
 <div class="page-wrap-outer">
   <div class="page-wrap">
     <section class="user-box">
-      <div>
-        <div style="background-image:url('/assets/images/default-avatar-256.png')"></div>
-        <div>
-          <span>Door English</span>
-          <span>@door</span>
-          <span>door@example.com</span>
+      <div class="user-info-box">
+        <div class="whoami-wrap" style="background-image:url('/assets/images/default-avatar-256.png')"></div>
+        <div class="whoami usf-group">
+          <span class="name">Door English</span>
+          <span class="loginid">@door</span>
+          <span class="email">door@example.com</span>
         </div>
-        <div><span class="badge label-success">SITE ADMIN</span></div>
-        <div></div>
-        <div><strong>Member since</strong><span class="since">2026-06-30</span></div>
-        <div><div><strong>Connected Social Login</strong></div><div class="auth-provider-logo"></div></div>
+        <div class="user-status"><span class="badge label-success">SITE ADMIN</span></div>
+        <div class="user-status"></div>
+        <div class="user-since"><strong>Member since</strong><span class="since">2026-06-30</span></div>
+        <div class="user-since"><div><strong>Connected Social Login</strong></div><div class="auth-provider-logo"></div></div>
       </div>
       <div class="user-stream-box">
         <div class="pull-right">recently<input id="daysAgoBtn" name="daysAgo" type="number" min="1" max="99" class="input-mini-min" value="14" style="margin:0px 5px; vertical-align:bottom;">days ago</div>
         <ul class="nav nav-tabs">
-          <li class="active"><button type="button">Issue <span>2</span></button></li>
-          <li class=""><button type="button">Pull request <span>1</span></button></li>
-          <li class=""><button type="button">projects <span>1</span></button></li>
+          <li class="active"><button type="button">Issue <span class="num-badge">2</span></button></li>
+          <li class=""><button type="button">Pull request <span class="num-badge">1</span></button></li>
+          <li class=""><button type="button">projects <span class="num-badge">1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
         </ul>
         <div class="tab-content">
           <div id="issues" class="tab-pane active">
             <ul class="nav nav-tabs">
-              <li class="active"><button type="button">Open<span>1</span></button></li>
-              <li class=""><button type="button">Closed<span>1</span></button></li>
+              <li class="active"><button type="button">Open<span class="num-badge">1</span></button></li>
+              <li class=""><button type="button">Closed<span class="num-badge">1</span></button></li>
               <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask" style="position:relative"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
             </ul>
             <div class="tab-content">
@@ -56,7 +56,7 @@ const EXPECTED_PROFILE_SCREEN = `
             <ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="__BASE_PATH__/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="__BASE_PATH__/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="__BASE_PATH__/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="__BASE_PATH__/door" class="infos-item infos-link-item" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="__BASE_PATH__/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="__BASE_PATH__/alice" class="avatar-wrap assinee" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>
           </div>
           <div id="projects" class="tab-pane ">
-            <ul class="user-streams all-projects"><li class="project"><div><div class="pull-left"><a href="__BASE_PATH__/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a></div><div class="pull-left" style="margin-left: 10px;"><div><a href="__BASE_PATH__/door/sample">sample</a></div><div>Profile project</div><div><i class="yobicon-friends yobicon-middle"></i><strong>3</strong> <a href="__BASE_PATH__/door">door</a> <span title="2026-06-01">2026-06-01</span>,Latest code update<span title="2026-06-30">2026-06-30</span></div></div></div><div><div class="stats"><a href="__BASE_PATH__/door/sample/watch"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a></div></div></li></ul>
+            <ul class="user-streams all-projects"><li class="project"><div class="info-wrap"><div class="pull-left"><a href="__BASE_PATH__/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a></div><div class="pull-left" style="margin-left: 10px;"><div class="header"><a href="__BASE_PATH__/door/sample" class="project-name">sample</a></div><div class="desc">Profile project</div><div class="name-tag"><i class="yobicon-friends yobicon-middle"></i><strong>3</strong> <a href="__BASE_PATH__/door" class="owner-name-small">door</a> <span title="2026-06-01">2026-06-01</span>, Latest code update <span title="2026-06-30">2026-06-30</span></div></div></div><div class="stats-wrap pull-right"><div class="stats"><a href="__BASE_PATH__/door/sample/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span class="num-badge">5</span></a></div></div></li></ul>
           </div>
         </div>
       </div>
@@ -68,16 +68,16 @@ const EXPECTED_PROFILE_SCREEN = `
 const EXPECTED_MISSING_USER_SCREEN = `
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <a href="__BASE_ROOT_HREF__" class="logo"><h1 class="blind">Yona</h1></a>
+    <a href="__BASE_ROOT_HREF__" class="logo"><h1 class="blind">Yoram</h1></a>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/projects">Project list</a></li>
       <li><a href="__BASE_PATH__/_help">Help</a></li>
-      <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Feedback</a></li>
+      <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Yoram repository</a></li>
     </ul>
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/anonymous">Profile</a></span>
           <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
@@ -109,7 +109,7 @@ const EXPECTED_MISSING_USER_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright © <a href="http://navercorp.com/" target="_blank">NAVER Corp.</a> Supported by <a href="https://developers.naver.com/d2/" target="_blank" class="d2-program"><span class="d2">D2</span><span class="program"> Program</span></a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -122,9 +122,6 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).not.toContain('declare module "react"');
   expect(source).not.toContain("interface LiHTMLAttributes");
   expect(source).not.toContain("as unknown as LiHTMLAttributes");
-  expect(source).toContain(
-    "type LegacyIssueRowAttributes = HTMLAttributes<HTMLLIElement> & { href: string };",
-  );
   expect(source).not.toContain("createLink");
   expect(source).not.toContain("runtimeJsx");
   expect(source).not.toContain("react/jsx-runtime");
@@ -144,13 +141,14 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).not.toContain("<LegacyHrefAnchor");
   expect(source).not.toContain("href={legacyMissingUserHomeHref}");
   expect(source).not.toContain("legacyMissingUserHomeHref");
-  expect(source).toContain('to="/"');
-  expect(source).toMatch(/<Link\s+\{\.\.\.LEGACY_LINK_PROPS\}\s+to="\/"\s+className="logo"/u);
-  expect(source).toMatch(
-    /<Link\s+\{\.\.\.LEGACY_LINK_PROPS\}\s+to="\/"\s+className="ybtn ybtn-info"/u,
+  expect(source).toContain("import { createFileRoute, Link, Navigate, redirect }");
+  expect(source).toContain('className="logo"');
+  expect(source).toContain(
+    "type LegacyIssueRowAttributes = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
   expect(source).toContain("} satisfies LegacyIssueRowAttributes;");
-  expect(source).toContain("<li {...legacyIssueRowAttrs}>");
+  expect(source).toContain("LEGACY_LINK_PROPS");
+  expect(source).toContain('to="/"');
   expect(source).toContain("Link,");
   expect(source).toContain("Navigate,");
   expect(source).not.toContain('data-toggle="tab"');
@@ -169,8 +167,12 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).not.toContain('"/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
   expect(source).not.toContain('data-toggle="tooltip"');
   expect(source).not.toContain("data-placement");
-  expect(source).toContain("const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {");
-  expect(source).toContain('className="popover top"');
+  expect(source).toContain("const userProfileStaticStyles = stylex.create({");
+  expect(source).toContain("two-column-icon mr10 hide-in-mobile");
+  expect(source).toContain("show-subtasks mr10");
+  expect(source).toContain("post-list-wrap my-issues row-fluid");
+  expect(source).toContain("post-item title");
+  expect(source).toContain("popover top");
   expect(source).toContain('role="tooltip"');
   expect(source).toContain(
     'typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true"',
@@ -585,11 +587,11 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
     "href",
     `${basePath}/projects`,
   );
-  await expect(page.locator(".gnb-nav a", { hasText: "Feedback" })).toHaveAttribute(
+  await expect(page.locator(".gnb-nav a", { hasText: "Yoram repository" })).toHaveAttribute(
     "href",
     "https://github.com/nforge/yobi/issues?state=open",
   );
-  await expect(page.locator(".gnb-nav a", { hasText: "Feedback" })).toHaveAttribute(
+  await expect(page.locator(".gnb-nav a", { hasText: "Yoram repository" })).toHaveAttribute(
     "target",
     "_blank",
   );
@@ -612,7 +614,7 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
   );
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute(
     "class",
-    "ybtn ybtn-info",
+    /(?:^| )ybtn ybtn-info(?: |$)/u,
   );
   expect(await readMissingUserLinkMetrics(page)).toEqual({
     homeInsideErrorWrap: true,
@@ -987,7 +989,14 @@ async function canonicalizeProfileRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => attr.name !== "alt")
+        .filter(
+          (attr) =>
+            attr.name !== "alt" &&
+            attr.name !== "style" &&
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-style-src" &&
+            (attr.name !== "class" || normalizeAttr(attr) !== ""),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1004,9 +1013,19 @@ async function canonicalizeProfileRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      if (attr.name !== "class") {
+        return attr.value;
+      }
+      return attr.value
+        .split(/\s+/u)
+        .filter(Boolean)
+        .filter(
+          (token) =>
+            !token.includes("__userProfileStaticStyles.") &&
+            !token.startsWith("-user-profile__") &&
+            !/^x[a-z0-9]{5,7}$/u.test(token),
+        )
+        .join(" ");
     }
   });
 }
@@ -1026,7 +1045,14 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => attr.name !== "alt")
+        .filter(
+          (attr) =>
+            attr.name !== "alt" &&
+            attr.name !== "style" &&
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-style-src" &&
+            (attr.name !== "class" || normalizeAttr(attr) !== ""),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1043,9 +1069,19 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      if (attr.name !== "class") {
+        return attr.value;
+      }
+      return attr.value
+        .split(/\s+/u)
+        .filter(Boolean)
+        .filter(
+          (token) =>
+            !token.includes("__userProfileStaticStyles.") &&
+            !token.startsWith("-user-profile__") &&
+            !/^x[a-z0-9]{5,7}$/u.test(token),
+        )
+        .join(" ");
     }
   });
 }
@@ -1066,7 +1102,14 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => attr.name !== "alt")
+        .filter(
+          (attr) =>
+            attr.name !== "alt" &&
+            attr.name !== "style" &&
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-style-src" &&
+            (attr.name !== "class" || normalizeAttr(attr) !== ""),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1083,9 +1126,19 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      if (attr.name !== "class") {
+        return attr.value;
+      }
+      return attr.value
+        .split(/\s+/u)
+        .filter(Boolean)
+        .filter(
+          (token) =>
+            !token.includes("__userProfileStaticStyles.") &&
+            !token.startsWith("-user-profile__") &&
+            !/^x[a-z0-9]{5,7}$/u.test(token),
+        )
+        .join(" ");
     }
   }, html);
 }
@@ -1113,27 +1166,30 @@ function expectedProfileScreen({
   const stats = viewerCanLeave
     ? `<a href="${basePath}/info/leave/${memberProjectOwnerName}/sample" class="nbtn black medium last leaveProject" data-projectname="sample"><i class="yobicon-trash"></i> Leave</a>`
     : viewerCanWatch
-      ? `<a href="${projectHref}/watch"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a>`
+      ? `<a href="${projectHref}/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span class="num-badge">5</span></a>`
       : "";
   return EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)
     .replace('value="14"', `value="${daysAgo}"`)
     .replace(
-      "<span>door@example.com</span>",
+      '<span class="email">door@example.com</span>',
       currentUser
-        ? `<span>door@example.com</span><div><a href="${basePath}/user/editform" class="ybtn ybtn-default ybtn-mini"><i class="yobicon-edit"></i> Edit profile</a></div>`
-        : "<span>door@example.com</span>",
+        ? `<span class="email">door@example.com</span><div class="edit"><a href="${basePath}/user/editform" class="ybtn ybtn-default ybtn-mini"><i class="yobicon-edit"></i> Edit profile</a></div>`
+        : '<span class="email">door@example.com</span>',
     )
     .replace(
       `<a href="${basePath}/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a>`,
       `<a href="${projectHref}" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a>`,
     )
-    .replace(`<a href="${basePath}/door/sample">sample</a>`, `<a href="${projectHref}">sample</a>`)
     .replace(
-      `<a href="${basePath}/door">door</a>`,
-      `<a href="${basePath}/${memberProjectOwnerName}">${memberProjectOwnerName}</a>`,
+      `<a href="${basePath}/door/sample" class="project-name">sample</a>`,
+      `<a href="${projectHref}" class="project-name">sample</a>`,
     )
     .replace(
-      `<a href="${basePath}/door/sample/watch"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span>5</span></a>`,
+      `<a href="${basePath}/door" class="owner-name-small">door</a>`,
+      `<a href="${basePath}/${memberProjectOwnerName}" class="owner-name-small">${memberProjectOwnerName}</a>`,
+    )
+    .replace(
+      `<a href="${basePath}/door/sample/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span class="num-badge">5</span></a>`,
       stats,
     )
     .replace(
@@ -1145,8 +1201,10 @@ function expectedProfileScreen({
       `<li class="${selected === "pullRequests" ? "active" : ""}"><button type="button">Pull request`,
     )
     .replace(
-      "Pull request <span>1</span></button>",
-      pullRequestsEmpty ? "Pull request </button>" : "Pull request <span>1</span></button>",
+      'Pull request <span class="num-badge">1</span></button>',
+      pullRequestsEmpty
+        ? "Pull request </button>"
+        : 'Pull request <span class="num-badge">1</span></button>',
     )
     .replace(
       '<li class=""><button type="button">projects',

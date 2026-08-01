@@ -193,6 +193,23 @@ test("isolated request windows exclude login and startup SQL outside the route",
   assert.equal(artifact.comparison.errors.length, 0);
 });
 
+test("structured SQL timestamps are normalized and remain distinct for route correlation", () => {
+  const artifact = buildRouteSqlArtifacts({
+    route: "/admin",
+    requestMarker: "route-admin",
+    legacyRequestWindow: { startMs: 100, endMs: 200, isolated: true },
+    legacyRecords: [
+      { source: "legacy", timestamp: "50", sql: "SELECT id FROM user" },
+      { source: "legacy", timestamp: "1970-01-01T00:00:00.150Z", sql: "SELECT id FROM user" },
+    ],
+  });
+  assert.deepEqual(
+    artifact.queries.legacy.map((query) => query.correlation),
+    ["excluded", "matched"],
+  );
+  assert.equal(artifact.queries.legacy[1].timestamp, 150);
+});
+
 test("SQL artifacts are written only as structured legacy/yoram/comparison files", () => {
   const outputDir = mkdtempSync(join(tmpdir(), "yona-sql-capture-"));
   const artifact = buildRouteSqlArtifacts({ route: "/projects", requestMarker: "route-test" });

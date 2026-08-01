@@ -52,6 +52,9 @@ const sweepLocale = "ko-KR";
 const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
 const warmPerformanceRepeat = process.env.YORAM_SWEEP_WARM_REPEAT === "1";
 const sqlCaptureEnabled = process.env.YORAM_SWEEP_SQL_CAPTURE === "1";
+const sqlCaptureGraceMs = parseOptionalNonNegativeInteger(
+  process.env.YORAM_SWEEP_SQL_CAPTURE_GRACE_MS,
+) ?? 500;
 const sweepBatchSize = parseOptionalPositiveInteger(process.env.YORAM_SWEEP_BATCH_SIZE);
 const sweepBatchIndex = parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_BATCH_INDEX);
 if ((sweepBatchSize === null) !== (sweepBatchIndex === null)) {
@@ -2386,10 +2389,18 @@ if (sqlCaptureEnabled) {
   const localResult = local?.results?.find((result) => result.path === route) ?? null;
   const isolatedRouteWindow = realDataMode && sweepScope === "focused" && requestedSweepPaths.length === 1;
   const legacyRequestWindow = legacyResult?.requestWindow
-    ? { ...legacyResult.requestWindow, isolated: isolatedRouteWindow }
+    ? {
+        ...legacyResult.requestWindow,
+        endMs: legacyResult.requestWindow.endMs + sqlCaptureGraceMs,
+        isolated: isolatedRouteWindow,
+      }
     : null;
   const yoramRequestWindow = localResult?.requestWindow
-    ? { ...localResult.requestWindow, isolated: isolatedRouteWindow }
+    ? {
+        ...localResult.requestWindow,
+        endMs: localResult.requestWindow.endMs + sqlCaptureGraceMs,
+        isolated: isolatedRouteWindow,
+      }
     : null;
   sqlCapture = captureRouteSqlFromLogs({
     route,

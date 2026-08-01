@@ -95,6 +95,16 @@ function sourceThread(line) {
   return line.match(/\[([^\]]+)\]/u)?.[1] ?? "unknown";
 }
 
+function timestampMs(value) {
+  if (Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    if (/^\d+(?:\.\d+)?$/u.test(value)) return Number(value);
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
+}
+
 function extractPlainSql(line) {
   const plain = String(line ?? "")
     .replace(ANSI_PATTERN, "")
@@ -159,8 +169,9 @@ function isBackground(record) {
 }
 
 function inRequestWindow(timestamp, window) {
-  if (!window || !Number.isFinite(timestamp)) return false;
-  return timestamp >= window.startMs && timestamp <= window.endMs;
+  const normalizedTimestamp = timestampMs(timestamp);
+  if (!window || !Number.isFinite(normalizedTimestamp)) return false;
+  return normalizedTimestamp >= window.startMs && normalizedTimestamp <= window.endMs;
 }
 
 function classifyCorrelation(record, { routeMarker, requestWindow }) {
@@ -187,6 +198,7 @@ export function sanitizeQueryRecord(record, context) {
   const correlation = classifyCorrelation(record, context);
   return {
     ...normalized,
+    timestamp: timestampMs(record.timestamp),
     source: record.source,
     correlation: correlation.correlation,
     correlationEvidence: correlation.correlationEvidence ?? null,

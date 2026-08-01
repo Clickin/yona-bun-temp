@@ -177,13 +177,15 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
                 {t("title.help")}
               </Link>
             </li>
-            {runtimeConfig.feedbackUrl ? (
-              <li>
-                <Link to={runtimeConfig.feedbackUrl} target="_blank">
-                  {t("title.yobi.feedback")}
-                </Link>
-              </li>
-            ) : null}
+            <li>
+              <Link
+                href="https://github.com/nforge/yobi/issues?state=open"
+                to={"https://github.com/nforge/yobi/issues?state=open" as "/"}
+                target="_blank"
+              >
+                {t("title.yobi.feedback")}
+              </Link>
+            </li>
           </ul>
           <div id="mySidenav" className="sidenav">
             <div className="span5 right-menu span-hard-wrap">
@@ -259,6 +261,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
             <Link
               {...stylex.props(userProfileNotFoundStyles.homeButton)}
               {...LEGACY_LINK_PROPS}
+              className={`${stylex.props(userProfileNotFoundStyles.homeButton).className} ybtn ybtn-info`}
               to="/"
               data-stylex-owner="user-profile-notfound-home"
             >
@@ -341,6 +344,7 @@ function PublicProfileBody({
       >
         <div
           {...stylex.props(styles.breadcrumbInner)}
+          className={`${stylex.props(styles.breadcrumbInner).className ?? ""} site-breadcrumb-inner`.trim()}
           data-stylex-owner="user-profile-breadcrumb-inner"
         >
           <h3
@@ -365,10 +369,14 @@ function PublicProfileBody({
             className={`${stylex.props(styles.profile).className} user-box`}
             data-stylex-owner="user-profile-box"
           >
-            <div {...stylex.props(styles.info)} data-stylex-owner="user-profile-info">
+            <div
+              {...stylex.props(styles.info)}
+              className={`${stylex.props(styles.info).className} user-info-box`}
+              data-stylex-owner="user-profile-info"
+            >
               <div
                 {...avatarBackgroundStyle}
-                className={`${stylex.props(userProfileStaticStyles.avatarWrap).className} ${avatarBackgroundStyle.className ?? ""}`.trim()}
+                className={`${stylex.props(userProfileStaticStyles.avatarWrap).className} ${avatarBackgroundStyle.className ?? ""} whoami-wrap`.trim()}
                 data-stylex-owner="user-profile-avatar-background"
               >
                 {profile.isGuest ? (
@@ -385,33 +393,41 @@ function PublicProfileBody({
                   </div>
                 ) : null}
               </div>
-              <div {...stylex.props(styles.whoami)} data-stylex-owner="user-profile-whoami">
+              <div
+                {...stylex.props(styles.whoami)}
+                className={`${stylex.props(styles.whoami).className} whoami usf-group`}
+                data-stylex-owner="user-profile-whoami"
+              >
                 <span
                   {...stylex.props(userProfileStaticStyles.profileName)}
+                  className={`${stylex.props(userProfileStaticStyles.profileName).className} name`}
                   data-stylex-owner="user-profile-identity-name"
                 >
                   {profile.englishName}
                 </span>{" "}
                 <span
                   {...stylex.props(styles.loginId)}
+                  className={`${stylex.props(styles.loginId).className} loginid`}
                   data-stylex-owner="user-profile-identity-loginid"
                 >
                   @{profile.loginId}
                 </span>{" "}
                 {runtimeConfig.showUserEmail && profile.primaryEmailAddress ? (
-                  <span data-stylex-owner="user-profile-identity-email">
+                  <span className="email" data-stylex-owner="user-profile-identity-email">
                     {profile.primaryEmailAddress}
                   </span>
                 ) : null}
                 {profileResponse.viewerCanEditProfile ? (
                   <div
                     {...stylex.props(userProfileStaticStyles.profileEdit)}
+                    className={`${stylex.props(userProfileStaticStyles.profileEdit).className} edit`}
                     data-stylex-owner="user-profile-identity-edit"
                   >
                     <Link
                       to="/user/editform"
                       reloadDocument
                       {...stylex.props(styles.profileEditButton)}
+                      className={`${stylex.props(styles.profileEditButton).className} ybtn ybtn-default ybtn-mini`}
                       data-stylex-owner="user-profile-edit-control"
                     >
                       <i
@@ -427,11 +443,13 @@ function PublicProfileBody({
 
               <div
                 {...stylex.props(styles.userStatus)}
+                className={`${stylex.props(styles.userStatus).className} user-status`}
                 data-stylex-owner="user-profile-user-status"
               >
                 {profile.isSiteAdmin ? (
                   <span
                     {...stylex.props(styles.statusBadge, styles.siteAdminBadge)}
+                    className={`${stylex.props(styles.statusBadge, styles.siteAdminBadge).className} badge label-success`}
                     data-stylex-owner="user-profile-site-admin-badge"
                   >
                     SITE ADMIN
@@ -440,29 +458,44 @@ function PublicProfileBody({
               </div>
               <div
                 {...stylex.props(styles.userStatus)}
+                className={`${stylex.props(styles.userStatus).className} user-status`}
                 data-stylex-owner="user-profile-user-status"
               >
                 {profile.isBlocked ? (
                   <span
                     {...stylex.props(styles.statusBadge, styles.blockedBadge)}
+                    className={`${stylex.props(styles.statusBadge, styles.blockedBadge).className} badge label-important`}
                     data-stylex-owner="user-profile-blocked-badge"
                   >
                     BLOCKED
                   </span>
                 ) : null}
               </div>
-              <div {...stylex.props(styles.userSince)} data-stylex-owner="user-profile-user-since">
+              <div
+                {...stylex.props(styles.userSince)}
+                className={`${stylex.props(styles.userSince).className} user-since`}
+                data-stylex-owner="user-profile-user-since"
+              >
                 <strong>{t("userinfo.since")}</strong>
-                <span {...stylex.props(styles.since)} data-stylex-owner="user-profile-since">
+                <span
+                  {...stylex.props(styles.since)}
+                  className={`${stylex.props(styles.since).className} since`}
+                  data-stylex-owner="user-profile-since"
+                >
                   {profile.sinceLabel}
                 </span>
               </div>
-              <div {...stylex.props(styles.userSince)} data-stylex-owner="user-profile-user-since">
+              <div
+                {...stylex.props(styles.userSince)}
+                className={`${stylex.props(styles.userSince).className} user-since`}
+                data-stylex-owner="user-profile-user-since"
+              >
                 <div>
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>
                 <div
                   {...stylex.props(userProfileStaticStyles.providerLogo)}
+                  className={`${stylex.props(userProfileStaticStyles.providerLogo).className} auth-provider-logo`}
                   data-stylex-owner="user-profile-provider-logo"
                 >
                   {profile.connectedSocialProviders.map((provider) => (
@@ -478,7 +511,7 @@ function PublicProfileBody({
                 data-stylex-owner="user-profile-stream"
               >
                 <div
-                  className={`${stylex.props(styles.daysAgoControls).className}`}
+                  className={`${stylex.props(styles.daysAgoControls).className} pull-right`}
                   data-stylex-owner="user-profile-days-ago-controls"
                 >
                   {t("userinfo.daysAgo.prefix")}
@@ -488,7 +521,7 @@ function PublicProfileBody({
                     type="number"
                     min="1"
                     max="99"
-                    className={stylex.props(styles.daysAgoInput).className}
+                    className={`${stylex.props(styles.daysAgoInput).className} input-mini-min`}
                     defaultValue={daysAgo}
                     data-stylex-owner="user-profile-days-ago-input"
                   />
@@ -523,15 +556,12 @@ function PublicProfileBody({
                 </ul>
 
                 <div
-                  className={stylex.props(styles.tabContent).className}
+                  className={`${stylex.props(styles.tabContent).className} tab-content`}
                   data-stylex-owner="user-profile-tab-content"
                 >
                   <div
                     id="issues"
-                    className={
-                      stylex.props(styles.tabPane, activeTab === "issues" && styles.tabPaneActive)
-                        .className
-                    }
+                    className={`${stylex.props(styles.tabPane, activeTab === "issues" && styles.tabPaneActive).className} tab-pane${activeTab === "issues" ? " active" : ""}`}
                     data-stylex-owner="user-profile-pane-issues"
                   >
                     <ul
@@ -548,6 +578,7 @@ function PublicProfileBody({
                           {t("issue.state.open")}
                           <span
                             {...stylex.props(styles.tabCountBadge)}
+                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
                             data-stylex-owner="user-profile-nested-issue-count-badge"
                           >
                             {openIssues.length}
@@ -564,6 +595,7 @@ function PublicProfileBody({
                           {t("issue.state.closed")}
                           <span
                             {...stylex.props(styles.tabCountBadge)}
+                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
                             data-stylex-owner="user-profile-nested-issue-count-badge"
                           >
                             {closedIssues.length}
@@ -578,17 +610,17 @@ function PublicProfileBody({
                       </li>
                     </ul>
                     <div
-                      className={stylex.props(styles.tabContent).className}
+                      className={`${stylex.props(styles.tabContent).className} tab-content`}
                       data-stylex-owner="user-profile-issue-tab-content"
                     >
                       <div
                         id="openIssues"
-                        className={
+                        className={`${
                           stylex.props(
                             styles.tabPane,
                             activeIssueTab === "openIssues" && styles.tabPaneActive,
                           ).className
-                        }
+                        } tab-pane${activeIssueTab === "openIssues" ? " active" : ""}`}
                         data-stylex-owner="user-profile-pane-open-issues"
                       >
                         {issues.length === 0 ? (
@@ -605,7 +637,7 @@ function PublicProfileBody({
                           </div>
                         ) : null}
                         <ul
-                          className={`${stylex.props(styles.issueList).className} my-issues`}
+                          className={`${stylex.props(styles.issueList).className} post-list-wrap my-issues row-fluid`}
                           data-stylex-owner="user-profile-open-issue-list"
                         >
                           {openIssues.map((issue) => (
@@ -620,12 +652,12 @@ function PublicProfileBody({
                       </div>
                       <div
                         id="closedIssues"
-                        className={
+                        className={`${
                           stylex.props(
                             styles.tabPane,
                             activeIssueTab === "closedIssues" && styles.tabPaneActive,
                           ).className
-                        }
+                        } tab-pane${activeIssueTab === "closedIssues" ? " active" : ""}`}
                         data-stylex-owner="user-profile-pane-closed-issues"
                       >
                         {issues.length === 0 ? (
@@ -642,7 +674,7 @@ function PublicProfileBody({
                           </div>
                         ) : null}
                         <ul
-                          className={`${stylex.props(styles.issueList).className} my-issues`}
+                          className={`${stylex.props(styles.issueList).className} post-list-wrap my-issues row-fluid`}
                           data-stylex-owner="user-profile-closed-issue-list"
                         >
                           {closedIssues.map((issue) => (
@@ -659,12 +691,12 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="pullRequests"
-                    className={
+                    className={`${
                       stylex.props(
                         styles.tabPane,
                         activeTab === "pullRequests" && styles.tabPaneActive,
                       ).className
-                    }
+                    } tab-pane${activeTab === "pullRequests" ? " active" : ""}`}
                     data-stylex-owner="user-profile-pane-pull-requests"
                   >
                     {profileResponse.pullRequestItems.length === 0 ? (
@@ -682,6 +714,7 @@ function PublicProfileBody({
                     ) : null}
                     <ul
                       {...stylex.props(styles.pullRequestList)}
+                      className={`${stylex.props(styles.pullRequestList).className} post-list-wrap row-fluid`}
                       data-stylex-owner="user-profile-pull-request-list"
                     >
                       {profileResponse.pullRequestItems.map((pullRequest) => (
@@ -694,10 +727,7 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="projects"
-                    className={
-                      stylex.props(styles.tabPane, activeTab === "projects" && styles.tabPaneActive)
-                        .className
-                    }
+                    className={`${stylex.props(styles.tabPane, activeTab === "projects" && styles.tabPaneActive).className} tab-pane${activeTab === "projects" ? " active" : ""}`}
                     data-stylex-owner="user-profile-pane-projects"
                   >
                     {profileResponse.memberProjects.length === 0 ? (
@@ -714,7 +744,7 @@ function PublicProfileBody({
                       </div>
                     ) : null}
                     <ul
-                      className={stylex.props(styles.projectsList).className}
+                      className={`${stylex.props(styles.projectsList).className} user-streams all-projects`}
                       data-stylex-owner="user-profile-projects-list"
                     >
                       {profileResponse.memberProjects.map((project, index) => (
@@ -765,6 +795,7 @@ function ProfileTab({
         {badge > 0 ? (
           <span
             {...stylex.props(styles.tabCountBadge)}
+            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
             data-stylex-owner="user-profile-top-tab-count-badge"
           >
             {badge}
@@ -848,28 +879,29 @@ function ProfileIssueRow({
     <li
       {...legacyIssueRowAttrs}
       {...stylex.props(styles.issueRow)}
-      className={`${stylex.props(styles.issueRow).className} title`}
+      className={`${stylex.props(styles.issueRow).className} post-item title`}
       data-stylex-owner="user-profile-issue-row"
     >
       <div
         {...stylex.props(styles.issueGridContent)}
+        className={`${stylex.props(styles.issueGridContent).className} span12 span-hard-wrap`}
         data-stylex-owner="user-profile-issue-grid-content"
       >
         <div
           {...stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper)}
-          className={
-            stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper).className
-          }
+          className={`${stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper).className} span2 project-name-in-my-issues fixed-height-my-issues-list`}
           data-stylex-owner="user-profile-issue-project-name-wrapper"
         >
           <span
             {...stylex.props(styles.issueProjectName)}
+            className={`${stylex.props(styles.issueProjectName).className} infos-item project-name`}
             data-stylex-owner="user-profile-issue-project-name"
           >
             <Link
               {...LEGACY_LINK_PROPS}
               to={projectPath}
               {...stylex.props(styles.issueProjectLink)}
+              className={`${stylex.props(styles.issueProjectLink).className} title project`}
               title={t("project.name")}
               data-stylex-owner="user-profile-issue-project-link"
             >
@@ -878,6 +910,7 @@ function ProfileIssueRow({
           </span>
           <span
             {...stylex.props(styles.issuePostId)}
+            className={`${stylex.props(styles.issuePostId).className} infos-item post-id`}
             data-stylex-owner="user-profile-issue-post-id"
           >
             #{issueNumber}
@@ -885,16 +918,19 @@ function ProfileIssueRow({
         </div>
         <div
           {...stylex.props(styles.issueGridTitleColumn, styles.issueTitleWrap)}
+          className={`${stylex.props(styles.issueGridTitleColumn, styles.issueTitleWrap).className} title-wrap span5`}
           data-stylex-owner="user-profile-issue-title-wrap"
         >
           <span
             {...stylex.props(styles.issueTitleCell)}
+            className={`${stylex.props(styles.issueTitleCell).className} title-cell`}
             data-stylex-owner="user-profile-issue-title-cell"
           >
             <Link
               {...LEGACY_LINK_PROPS}
               to={issuePath}
               {...stylex.props(styles.issueTitleLink)}
+              className={`${stylex.props(styles.issueTitleLink).className} title`}
               data-stylex-owner="user-profile-issue-title-link"
             >
               {stringField(issue, "title")}
@@ -902,6 +938,7 @@ function ProfileIssueRow({
             <ProfileIssueCommentCount issue={issue} issuePath={issuePath} />
             <span
               {...stylex.props(styles.issueSubtaskProgressWrapper)}
+              className={`${stylex.props(styles.issueSubtaskProgressWrapper).className} for-subtask-progressbar`}
               data-stylex-owner="user-profile-issue-subtask-progress-wrapper"
             >
               <ProfileIssueSubtaskSummary
@@ -920,21 +957,8 @@ function ProfileIssueRow({
                 <Link
                   {...LEGACY_LINK_PROPS}
                   {...labelStyleProps}
-                  to="/$ownerName/$projectName/issues"
-                  params={{ ownerName, projectName }}
-                  search={{
-                    assigneeId: "",
-                    authorId: "",
-                    commenterId: "",
-                    dueDate: "",
-                    filter: "",
-                    labelIds: [String(label.id)],
-                    milestoneId: "",
-                    orderBy: "updatedDate",
-                    orderDir: "desc",
-                    pageNum: 1,
-                    state: "open",
-                  }}
+                  to={`${projectPath}/issues?state=open&labelIds=${label.id}` as "/"}
+                  className={`${labelStyleProps.className ?? ""} label issue-label list-label`.trim()}
                   data-label-id={String(label.id)}
                   key={String(label.id)}
                   data-stylex-owner="user-profile-parent-issue-label"
@@ -964,6 +988,13 @@ function ProfileIssueRow({
             styles.issueAuthor,
             styles.issueDesktopPersonVisibility,
           )}
+          className={`${
+            stylex.props(
+              styles.issueGridAuthorColumn,
+              styles.issueAuthor,
+              styles.issueDesktopPersonVisibility,
+            ).className
+          } span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -978,6 +1009,13 @@ function ProfileIssueRow({
             styles.issueAuthor,
             styles.issueDesktopPersonVisibility,
           )}
+          className={`${
+            stylex.props(
+              styles.issueGridAuthorColumn,
+              styles.issueAuthor,
+              styles.issueDesktopPersonVisibility,
+            ).className
+          } span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list`}
           data-stylex-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
@@ -988,14 +1026,17 @@ function ProfileIssueRow({
         </div>
         <div
           {...stylex.props(styles.issueGridMetaColumn, styles.issueMeta)}
+          className={`${stylex.props(styles.issueGridMetaColumn, styles.issueMeta).className} infos span3 meta`}
           data-stylex-owner="user-profile-issue-meta"
         >
           <span
             {...stylex.props(styles.issueMetaCell)}
+            className={`${stylex.props(styles.issueMetaCell).className} meta-cell`}
             data-stylex-owner="user-profile-issue-meta-cell"
           >
             <span
               {...stylex.props(styles.issueMobileAssigneeVisibility)}
+              className={`${stylex.props(styles.issueMobileAssigneeVisibility).className} hide show-in-mobile`}
               data-stylex-owner="user-profile-issue-mobile-assignee"
             >
               <ProfilePersonLink
@@ -1005,6 +1046,7 @@ function ProfileIssueRow({
             </span>
             <span
               {...stylex.props(styles.issueMetadataItem)}
+              className={`${stylex.props(styles.issueMetadataItem).className} infos-item`}
               data-stylex-owner="user-profile-issue-metadata-date"
               title={stringField(issue, "updatedLabel")}
             >
@@ -1013,13 +1055,13 @@ function ProfileIssueRow({
             {milestoneId > 0 && milestoneTitle ? (
               <span
                 {...stylex.props(styles.issueMilestoneTag)}
+                className={`${stylex.props(styles.issueMilestoneTag).className} mileston-tag`}
                 data-stylex-owner="user-profile-issue-metadata-milestone"
               >
                 <Link
                   {...LEGACY_LINK_PROPS}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ ownerName, projectName, milestoneId: String(milestoneId) }}
-                  search={{ state: "open" }}
                   title={t("milestone")}
                 >
                   {milestoneTitle}
@@ -1029,11 +1071,13 @@ function ProfileIssueRow({
             {dueDateLabel ? (
               <span
                 {...stylex.props(styles.issueDueDate, dueDateOverdue && styles.issueDueDateOverdue)}
+                className={`${stylex.props(styles.issueDueDate, dueDateOverdue && styles.issueDueDateOverdue).className} pull-right`}
                 data-stylex-owner="user-profile-issue-due-date"
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
                 <i
                   {...stylex.props(styles.issueDueDateClock)}
+                  className={`${stylex.props(styles.issueDueDateClock).className} yobicon-clock2`}
                   data-stylex-owner="user-profile-issue-due-date-clock"
                 ></i>
                 {issueState === "open" && dueDateOverdue
@@ -1077,6 +1121,14 @@ function ProfileIssueSubtaskSummary({
                 ? styles.issueSubtaskProgressShellComplete
                 : styles.issueSubtaskProgressShellIncomplete,
             )}
+            className={`${
+              stylex.props(
+                styles.issueSubtaskProgressShell,
+                percentage === 100
+                  ? styles.issueSubtaskProgressShellComplete
+                  : styles.issueSubtaskProgressShellIncomplete,
+              ).className
+            } subtask-progress upload-progress red-outline`}
             data-stylex-owner="user-profile-issue-subtask-progress-shell"
           >
             <div
@@ -1087,6 +1139,15 @@ function ProfileIssueSubtaskSummary({
                   : styles.issueSubtaskProgressBarIncomplete,
                 styles.progressBar(`${percentage}%`),
               )}
+              className={`${
+                stylex.props(
+                  styles.issueSubtaskProgressBar,
+                  percentage === 100
+                    ? styles.issueSubtaskProgressBarComplete
+                    : styles.issueSubtaskProgressBarIncomplete,
+                  styles.progressBar(`${percentage}%`),
+                ).className
+              } bar red`}
               data-stylex-owner="user-profile-subtask-progress-bar"
               title="Subtask"
             ></div>
@@ -1096,6 +1157,12 @@ function ProfileIssueSubtaskSummary({
               styles.issueSubtaskCompletionRatio,
               percentage === 100 && styles.issueSubtaskCompletionRatioComplete,
             )}
+            className={`${
+              stylex.props(
+                styles.issueSubtaskCompletionRatio,
+                percentage === 100 && styles.issueSubtaskCompletionRatioComplete,
+              ).className
+            } subtask-progress completion-ratio`}
             data-stylex-owner="user-profile-issue-subtask-completion-ratio"
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
@@ -1176,6 +1243,7 @@ function ProfileIssueChildRow({
         {isClosed ? (
           <i
             {...stylex.props(styles.issueChildCheckmark)}
+            className={`${stylex.props(styles.issueChildCheckmark).className} yobicon-checkmark`}
             data-stylex-owner="user-profile-child-checkmark"
           ></i>
         ) : null}
@@ -1206,6 +1274,7 @@ function ProfileIssueChildRow({
       </Link>
       <span
         {...stylex.props(styles.issueChildCountPair)}
+        className={`${stylex.props(styles.issueChildCountPair).className} font12 no-border-at-child`}
         data-stylex-owner="user-profile-child-count-pair"
       >
         <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
@@ -1267,6 +1336,7 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
   return (
     <span
       {...stylex.props(styles.issueChildCountGroups)}
+      className={`${stylex.props(styles.issueChildCountGroups).className} item-count-groups`}
       data-stylex-owner="user-profile-child-count-groups"
     >
       {commentCount > 0 ? (
@@ -1275,19 +1345,23 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
           to={issuePath}
           hash="comments"
           {...stylex.props(styles.issueChildCountLink, styles.issueChildCommentLink)}
+          className={`${stylex.props(styles.issueChildCountLink, styles.issueChildCommentLink).className} comments-count`}
           data-stylex-owner="user-profile-child-comment-count-link"
         >
           <span
             {...stylex.props(styles.issueChildCountIcon)}
+            className={`${stylex.props(styles.issueChildCountIcon).className} count-groups item-icon`}
             data-stylex-owner="user-profile-child-comment-count-icon"
           >
             <i
               {...stylex.props(styles.issueChildCountGlyph, styles.issueChildCommentGlyph)}
+              className={`${stylex.props(styles.issueChildCountGlyph, styles.issueChildCommentGlyph).className} yobicon-comment2`}
               data-stylex-owner="user-profile-child-comment-count-glyph"
             ></i>
           </span>
           <span
             {...stylex.props(styles.issueChildCountValue)}
+            className={`${stylex.props(styles.issueChildCountValue).className} count-groups item-count`}
             data-stylex-owner="user-profile-child-comment-count-value"
           >
             {commentCount}
@@ -1304,19 +1378,29 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
             styles.issueChildVoteLink,
             commentCount > 0 ? styles.issueChildCountLinkOffset : undefined,
           )}
+          className={`${
+            stylex.props(
+              styles.issueChildCountLink,
+              styles.issueChildVoteLink,
+              commentCount > 0 ? styles.issueChildCountLinkOffset : undefined,
+            ).className
+          } vote-count`}
           data-stylex-owner="user-profile-child-vote-count-link"
         >
           <span
             {...stylex.props(styles.issueChildCountIcon)}
+            className={`${stylex.props(styles.issueChildCountIcon).className} count-groups item-icon`}
             data-stylex-owner="user-profile-child-vote-count-icon"
           >
             <i
               {...stylex.props(styles.issueChildCountGlyph, styles.issueChildVoteGlyph)}
+              className={`${stylex.props(styles.issueChildCountGlyph, styles.issueChildVoteGlyph).className} yobicon-hearts`}
               data-stylex-owner="user-profile-child-vote-count-glyph"
             ></i>
           </span>
           <span
             {...stylex.props(styles.issueChildCountValue, styles.issueChildVoteCountValue)}
+            className={`${stylex.props(styles.issueChildCountValue, styles.issueChildVoteCountValue).className} count-groups item-count`}
             data-stylex-owner="user-profile-child-vote-count-value"
           >
             {voterCount}
@@ -1358,6 +1442,7 @@ function ProfileIssueCommentCount({
   return (
     <span
       {...stylex.props(styles.issueTitleCountGroups)}
+      className={`${stylex.props(styles.issueTitleCountGroups).className} item-count-groups`}
       data-stylex-owner="user-profile-issue-title-count-groups"
     >
       <Link
@@ -1365,19 +1450,23 @@ function ProfileIssueCommentCount({
         to={issuePath}
         hash="comments"
         {...stylex.props(styles.issueCommentCountLink)}
+        className={`${stylex.props(styles.issueCommentCountLink).className} comments-count`}
         data-stylex-owner="user-profile-issue-comment-count-link"
       >
         <span
           {...stylex.props(styles.issueCommentCountIconGroup)}
+          className={`${stylex.props(styles.issueCommentCountIconGroup).className} count-groups item-icon`}
           data-stylex-owner="user-profile-issue-comment-count-icon-group"
         >
           <i
             {...stylex.props(styles.issueCommentCountGlyph)}
+            className={`${stylex.props(styles.issueCommentCountGlyph).className} yobicon-comment2`}
             data-stylex-owner="user-profile-issue-comment-count-glyph"
           ></i>
         </span>
         <span
           {...stylex.props(styles.issueCommentCountValue)}
+          className={`${stylex.props(styles.issueCommentCountValue).className} count-groups item-count`}
           data-stylex-owner="user-profile-issue-comment-count-value"
         >
           {commentCount}
@@ -1421,16 +1510,21 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   );
 
   return (
-    <li {...stylex.props(styles.pullRequestRow)} data-stylex-owner="user-profile-pull-request-row">
+    <li
+      {...stylex.props(styles.pullRequestRow)}
+      className={`${stylex.props(styles.pullRequestRow).className} post-item`}
+      data-stylex-owner="user-profile-pull-request-row"
+    >
       <div
         {...stylex.props(styles.pullRequestContentColumn)}
+        className={`${stylex.props(styles.pullRequestContentColumn).className} span10`}
         data-stylex-owner="user-profile-pull-request-content-column"
       >
         <Link
           {...LEGACY_LINK_PROPS}
           to={projectPath}
           {...stylex.props(styles.pullRequestProjectAvatarLink)}
-          className={stylex.props(styles.pullRequestProjectAvatarLink).className}
+          className={`${stylex.props(styles.pullRequestProjectAvatarLink).className} avatar-wrap mlarge`}
           data-stylex-owner="user-profile-pull-request-project-avatar-rail"
         >
           <img
@@ -1447,23 +1541,21 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </Link>
         <div
           {...stylex.props(styles.pullRequestTitleWrap)}
-          className={stylex.props(styles.pullRequestTitleWrap).className}
+          className={`${stylex.props(styles.pullRequestTitleWrap).className} title-wrap`}
           data-stylex-owner="user-profile-pull-request-title-wrap"
         >
           <Link
             {...LEGACY_LINK_PROPS}
             to={projectPath}
             {...stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink)}
-            className={
-              stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink).className
-            }
+            className={`${stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink).className} title project`}
             data-stylex-owner="user-profile-pull-request-title-link"
           >
             {projectName}
           </Link>
           <span
             {...stylex.props(styles.pullRequestPostId)}
-            className={stylex.props(styles.pullRequestPostId).className}
+            className={`${stylex.props(styles.pullRequestPostId).className} post-id`}
             data-stylex-owner="user-profile-pull-request-post-id"
           >
             {number}
@@ -1472,7 +1564,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             {...LEGACY_LINK_PROPS}
             to={pullRequestPath}
             {...pullRequestTitleStyle}
-            className={pullRequestTitleStyle.className}
+            className={`${pullRequestTitleStyle.className} title${isConflict ? " conflict" : ""}`}
             data-stylex-owner="user-profile-pull-request-title-link"
           >
             {stringField(pullRequest, "title")}
@@ -1480,15 +1572,12 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </div>
         <div
           {...stylex.props(styles.pullRequestInfos)}
-          className={stylex.props(styles.pullRequestInfos).className}
+          className={`${stylex.props(styles.pullRequestInfos).className} infos`}
           data-stylex-owner="user-profile-pull-request-infos"
         >
           {stringField(pullRequest, "contributorLoginId") ? (
             <ProfileTextLink
-              className={
-                stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem)
-                  .className ?? ""
-              }
+              className={`${stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem).className ?? ""} infos-item infos-link-item`}
               label={stringField(pullRequest, "contributorLabel")}
               loginId={stringField(pullRequest, "contributorLoginId")}
               stylexOwner="user-profile-pull-request-infos-author-link"
@@ -1496,7 +1585,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           ) : (
             <span
               {...stylex.props(styles.pullRequestInfosItem)}
-              className={stylex.props(styles.pullRequestInfosItem).className}
+              className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
               data-stylex-owner="user-profile-pull-request-infos-empty-author"
             >
               {t("issue.noAuthor")}
@@ -1504,7 +1593,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           )}
           <span
             {...stylex.props(styles.pullRequestInfosItem)}
-            className={stylex.props(styles.pullRequestInfosItem).className}
+            className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
             data-stylex-owner="user-profile-pull-request-infos-date"
             title={stringField(pullRequest, "updatedLabel")}
           >
@@ -1516,19 +1605,17 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               to={pullRequestPath}
               hash="comments"
               {...stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink)}
-              className={
-                stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink).className
-              }
+              className={`${stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink).className} infos-item infos-icon-link`}
               data-stylex-owner="user-profile-pull-request-infos-comment-link"
             >
               <i
                 {...stylex.props(styles.pullRequestInfosIcon)}
-                className={stylex.props(styles.pullRequestInfosIcon).className}
+                className={`${stylex.props(styles.pullRequestInfosIcon).className} yobicon-comments`}
                 data-stylex-owner="user-profile-pull-request-infos-comment-icon"
               ></i>
               <span
                 {...stylex.props(styles.pullRequestInfosCount)}
-                className={stylex.props(styles.pullRequestInfosCount).className}
+                className={`${stylex.props(styles.pullRequestInfosCount).className} size`}
                 data-stylex-owner="user-profile-pull-request-infos-comment-size"
               >
                 {numberField(pullRequest, "commentCount")}
@@ -1539,11 +1626,12 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
       </div>
       <div
         {...stylex.props(styles.pullRequestReceiverColumn)}
+        className={`${stylex.props(styles.pullRequestReceiverColumn).className} span2`}
         data-stylex-owner="user-profile-pull-request-receiver-column"
       >
         <div
           {...stylex.props(styles.pullRequestReceiverRail)}
-          className={stylex.props(styles.pullRequestReceiverRail).className}
+          className={`${stylex.props(styles.pullRequestReceiverRail).className} mt5 pull-right`}
           data-stylex-owner="user-profile-pull-request-receiver-rail"
         >
           {receiverLoginId ? (
@@ -1552,7 +1640,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               to="/$user"
               params={{ user: receiverLoginId }}
               {...stylex.props(styles.pullRequestReceiverAvatarLink)}
-              className={stylex.props(styles.pullRequestReceiverAvatarLink).className}
+              className={`${stylex.props(styles.pullRequestReceiverAvatarLink).className} avatar-wrap assinee`}
               data-stylex-owner="user-profile-pull-request-receiver-avatar-link"
               title={receiverLabel}
             >
@@ -1569,7 +1657,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           ) : (
             <div
               {...stylex.props(styles.pullRequestEmptyAvatarWrap)}
-              className={stylex.props(styles.pullRequestEmptyAvatarWrap).className}
+              className={`${stylex.props(styles.pullRequestEmptyAvatarWrap).className} empty-avatar-wrap`}
               data-stylex-owner="user-profile-pull-request-empty-avatar-wrap"
             >
               &nbsp;
@@ -1578,7 +1666,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         </div>
         <div
           {...pullRequestStateStyle}
-          className={pullRequestStateStyle.className}
+          className={`${pullRequestStateStyle.className} state ${displayState} pull-right`}
           data-stylex-owner="user-profile-pull-request-state"
         >
           {t(`pullRequest.state.${displayState}`)}
@@ -1604,20 +1692,19 @@ function ProfileProjectRow({
 
   return (
     <li
-      className={
-        stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className
-      }
+      className={`${stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className} project`}
       data-stylex-owner="user-profile-project-row"
     >
-      <div data-stylex-owner="user-profile-project-info-wrap">
+      <div className="info-wrap" data-stylex-owner="user-profile-project-info-wrap">
         <div
-          className={stylex.props(styles.projectAvatarRail).className}
+          className={`${stylex.props(styles.projectAvatarRail).className} pull-left`}
           data-stylex-owner="user-profile-project-avatar-rail"
         >
           <Link
             {...LEGACY_LINK_PROPS}
             to={projectPath}
             {...stylex.props(styles.projectAvatarLink)}
+            className={`${stylex.props(styles.projectAvatarLink).className} avatar-wrap small`}
             data-stylex-owner="user-profile-project-avatar-link"
           >
             <img
@@ -1629,17 +1716,18 @@ function ProfileProjectRow({
           </Link>
         </div>
         <div
-          className={stylex.props(styles.projectInfo).className}
+          className={`${stylex.props(styles.projectInfo).className} pull-left`}
           data-stylex-owner="user-profile-project-info"
         >
           <div
-            className={stylex.props(styles.projectHeader).className}
+            className={`${stylex.props(styles.projectHeader).className} header`}
             data-stylex-owner="user-profile-project-header"
           >
             <Link
               {...LEGACY_LINK_PROPS}
               to={projectPath}
               {...stylex.props(styles.projectTitleLink)}
+              className={`${stylex.props(styles.projectTitleLink).className} project-name`}
               data-stylex-owner="user-profile-project-title-link"
             >
               {project.projectName}
@@ -1647,6 +1735,7 @@ function ProfileProjectRow({
             {project.projectScope === "private" ? (
               <i
                 {...stylex.props(styles.projectPrivateIcon)}
+                className={`${stylex.props(styles.projectPrivateIcon).className} yobicon-lock yobicon-small`}
                 data-stylex-owner="user-profile-project-private-icon"
               ></i>
             ) : null}
@@ -1654,6 +1743,7 @@ function ProfileProjectRow({
               <>
                 <i
                   {...stylex.props(styles.projectForkIcon)}
+                  className={`${stylex.props(styles.projectForkIcon).className} yobicon-split yobicon-white vmiddle`}
                   data-stylex-owner="user-profile-project-fork-icon"
                 ></i>
                 <span>
@@ -1675,17 +1765,18 @@ function ProfileProjectRow({
             ) : null}
           </div>
           <div
-            className={stylex.props(styles.projectDescription).className}
+            className={`${stylex.props(styles.projectDescription).className} desc`}
             data-stylex-owner="user-profile-project-description"
           >
             {project.overview}
           </div>
           <div
-            className={stylex.props(styles.projectNameTag).className}
+            className={`${stylex.props(styles.projectNameTag).className} name-tag`}
             data-stylex-owner="user-profile-project-name-tag"
           >
             <i
               {...stylex.props(styles.projectMemberIcon)}
+              className={`${stylex.props(styles.projectMemberIcon).className} yobicon-friends yobicon-middle`}
               data-stylex-owner="user-profile-project-member-icon"
             ></i>
             <strong>{project.memberCount}</strong>{" "}
@@ -1693,6 +1784,7 @@ function ProfileProjectRow({
               {...LEGACY_LINK_PROPS}
               to={ownerPath}
               {...stylex.props(styles.projectOwnerLink)}
+              className={`${stylex.props(styles.projectOwnerLink).className} owner-name-small`}
               data-stylex-owner="user-profile-project-owner-link"
             >
               {project.ownerName}
@@ -1700,29 +1792,36 @@ function ProfileProjectRow({
             <span title={project.createdLabel}>{project.createdLabel}</span>
             {project.lastPushedLabel ? (
               <>
-                , {t("project.codeUpdate")}{" "}
+                {`, ${t("project.codeUpdate")} `}
                 <span title={project.lastPushedLabel}>{project.lastPushedLabel}</span>
               </>
             ) : null}
           </div>
         </div>
       </div>
-      <div {...stylex.props(styles.projectStats)} data-stylex-owner="user-profile-project-stats">
-        <div>
+      <div
+        {...stylex.props(styles.projectStats)}
+        className={`${stylex.props(styles.projectStats).className} stats-wrap pull-right`}
+        data-stylex-owner="user-profile-project-stats"
+      >
+        <div className="stats">
           {project.viewerCanWatch ? (
             <Link
               to={watchPath}
               reloadDocument
               {...stylex.props(styles.projectWatchButton)}
+              className={`${stylex.props(styles.projectWatchButton).className} ybtn watchBtn`}
               data-stylex-owner="user-profile-project-watch-button"
             >
               <i
                 {...stylex.props(styles.projectWatchIcon)}
+                className={`${stylex.props(styles.projectWatchIcon).className} yobicon-eye-close yobicon-middle yobicon-white`}
                 data-stylex-owner="user-profile-project-watch-icon"
               ></i>
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
               <span
                 {...stylex.props(styles.projectWatchBadge)}
+                className={`${stylex.props(styles.projectWatchBadge).className} num-badge`}
                 data-stylex-owner="user-profile-project-watch-badge"
               >
                 {project.watchCount}
@@ -1735,6 +1834,7 @@ function ProfileProjectRow({
               params={{ ownerName: project.ownerName, projectName: project.projectName }}
               data-projectname={project.projectName}
               {...stylex.props(styles.projectLeaveLink)}
+              className={`${stylex.props(styles.projectLeaveLink).className} nbtn black medium last leaveProject`}
               data-stylex-owner="user-profile-project-leave-link"
               onClick={(event) => {
                 if (
@@ -1749,6 +1849,7 @@ function ProfileProjectRow({
             >
               <i
                 {...stylex.props(styles.projectTrashIcon)}
+                className={`${stylex.props(styles.projectTrashIcon).className} yobicon-trash`}
                 data-stylex-owner="user-profile-project-trash-icon"
               ></i>{" "}
               {t("userinfo.leaveProject")}
@@ -1820,6 +1921,7 @@ function TwoColumnModeCheckbox() {
   return (
     <div
       {...popoverAnchorStyleProps}
+      className={`${popoverAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
       id="two-column-mode-checkbox"
       title={popoverTitle}
       data-stylex-owner="user-profile-two-column-popover-anchor"
@@ -1932,6 +2034,7 @@ function ShowSubtasksCheckbox({
   return (
     <div
       {...popoverAnchorStyleProps}
+      className={`${popoverAnchorStyleProps.className ?? ""} show-subtasks mr10`.trim()}
       id="two-column-mode-checkbox"
       title={popoverTitle}
       data-stylex-owner="user-profile-show-subtasks-popover-anchor"
@@ -1998,6 +2101,7 @@ function ProfilePersonLink({
     return applyAuthorCellStyle ? (
       <span
         {...stylex.props(styles.issueAuthorCell)}
+        className={`${stylex.props(styles.issueAuthorCell).className} infos-item`}
         data-stylex-owner="user-profile-issue-author-cell"
       ></span>
     ) : (
@@ -2008,7 +2112,7 @@ function ProfilePersonLink({
     <ProfileTextLink
       className={
         applyAuthorCellStyle
-          ? (stylex.props(styles.issueAuthorCell).className ?? "")
+          ? `${stylex.props(styles.issueAuthorCell).className ?? ""} infos-item infos-link-item author-cell`
           : "infos-item infos-link-item author-cell"
       }
       label={label}
