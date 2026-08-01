@@ -345,6 +345,67 @@ impl AppRepositoryImpl<'_> {
         Ok(projects)
     }
 
+    pub async fn list_site_projects(
+        &self,
+        filter: &str,
+        page: u32,
+    ) -> Result<SiteProjectListRecord, DbErr> {
+        const PAGE_SIZE: u64 = 25;
+
+        let filter = filter.trim().to_string();
+        let page = page.max(1);
+        let mut query = project::Entity::find()
+            .select_only()
+            .column(project::Column::CreatedDate)
+            .column(project::Column::DefaultReviewerCount)
+            .column(project::Column::Id)
+            .column(project::Column::IsCodeAccessibleMemberOnly)
+            .column(project::Column::IsUsingReviewerCount)
+            .column(project::Column::LastPushedDate)
+            .column(project::Column::Name)
+            .column(project::Column::OriginalProjectId)
+            .column(project::Column::Overview)
+            .column(project::Column::Owner)
+            .column(project::Column::OrganizationId)
+            .column(project::Column::ProjectScope)
+            .column(project::Column::Vcs);
+
+        if filter.is_empty() {
+            query = query.order_by_desc(project::Column::CreatedDate);
+        } else {
+            query = query.filter(project::Column::Name.like(format!("%{filter}%")));
+        }
+
+        let total = query.clone().count(&self.db).await? as u32;
+        let rows = query
+            .into_model::<ProjectRow>()
+            .paginate(&self.db, PAGE_SIZE)
+            .fetch_page((page - 1) as u64)
+            .await?;
+        let mut projects = Vec::with_capacity(rows.len());
+        for row in rows {
+            if let Some(record) = self.project_record_from_row(row).await? {
+                projects.push(record);
+            }
+        }
+
+        let page_size = PAGE_SIZE as u32;
+        let total_pages = if total == 0 {
+            0
+        } else {
+            total.div_ceil(page_size)
+        };
+
+        Ok(SiteProjectListRecord {
+            page,
+            page_size,
+            filter,
+            total,
+            total_pages,
+            projects,
+        })
+    }
+
     pub async fn list_site_postings(&self, page: u32) -> Result<SitePostingListRecord, DbErr> {
         const PAGE_SIZE: u32 = 30;
 

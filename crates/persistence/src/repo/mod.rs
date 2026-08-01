@@ -48,7 +48,7 @@ use crate::repo_types::{
     SearchResultRecord, SearchScope, SiteImportProjectCounterSnapshot, SiteIssueListRecord,
     SiteNoAvatarUserRecord, SitePostingListRecord, SiteUserAvatarFromAttachmentResult,
     SiteAdminToggleResult, SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord,
-    SiteUserRecord,
+    SiteUserRecord, SiteProjectListRecord,
     ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateCommitDiscussionCommentInput,
     UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
     UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,

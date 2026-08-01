@@ -347,6 +347,9 @@ const alwaysScreenshotPaths = new Set([
 
 function localSettledSelectorForPath(path) {
   const pathname = path.split("?", 1)[0];
+  if (pathname.startsWith("/sites/")) {
+    return null;
+  }
   if (/\/milestone\/\d+$/u.test(pathname)) {
     return '[data-stylex-content-ready="true"]';
   }

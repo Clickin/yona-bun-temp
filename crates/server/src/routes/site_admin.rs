@@ -2109,57 +2109,27 @@ async fn rest_read_site_projects(
     query: RestSiteProjectsQuery,
     service: PilotServiceImpl,
 ) -> Result<Json<RestSiteProjectListResponse>, RestRouteError> {
-    const SITE_PROJECT_PAGE_SIZE: usize = 30;
-
     let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
     let filter = query.filter.unwrap_or_default().trim().to_string();
-    let normalized_filter = normalize_identifier(&filter);
     let page = query.page.or(query.page_num).unwrap_or(1).max(1);
-    let mut projects = repository
-        .list_projects()
+    let record = repository
+        .list_site_projects(&filter, page)
         .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-        .into_iter()
-        .filter(|project| {
-            normalized_filter.is_empty()
-                || normalize_identifier(&project.project_name).contains(&normalized_filter)
-        })
-        .collect::<Vec<_>>();
-    projects.sort_by(|left, right| {
-        right
-            .created_date
-            .cmp(&left.created_date)
-            .then_with(|| left.owner_name.cmp(&right.owner_name))
-            .then_with(|| left.project_name.cmp(&right.project_name))
-    });
-
-    let total = projects.len();
-    let offset = ((page - 1) as usize).saturating_mul(SITE_PROJECT_PAGE_SIZE);
-    let mut page_projects = Vec::new();
-    for project in projects
-        .into_iter()
-        .skip(offset)
-        .take(SITE_PROJECT_PAGE_SIZE)
-    {
-        page_projects.push(
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let page_projects =
+        futures::future::try_join_all(record.projects.into_iter().map(|project| {
             rest_site_project_from_record(&repository, &service.base_path, project)
-                .await
-                .map_err(RestRouteError::from_connect_error)?,
-        );
-    }
-    let total_pages = if total == 0 {
-        0
-    } else {
-        total.div_ceil(SITE_PROJECT_PAGE_SIZE)
-    };
+        }))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(RestSiteProjectListResponse {
-        filter,
-        page,
-        page_size: SITE_PROJECT_PAGE_SIZE as u32,
+        filter: record.filter,
+        page: record.page,
+        page_size: record.page_size,
         projects: page_projects,
-        total: total as u32,
-        total_pages: total_pages as u32,
+        total: record.total,
+        total_pages: record.total_pages,
     }))
 }
 

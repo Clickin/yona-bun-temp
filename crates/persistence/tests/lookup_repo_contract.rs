@@ -100,3 +100,50 @@ async fn lookup_predicates_preserve_case_insensitive_and_previous_project_semant
     assert_eq!(previous_alias.id, project.id);
     assert_eq!(previous_alias.project_name, "RenamedProject");
 }
+
+#[tokio::test]
+async fn site_project_list_filters_and_paginates_in_the_database() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let repo = AppRepository::new(db);
+
+    for index in 0..27 {
+        repo.create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "site-owner".to_string(),
+            overview: None,
+            project_name: format!("site-page-{index:02}"),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create site-admin project");
+    }
+
+    let first_page = repo
+        .list_site_projects("", 1)
+        .await
+        .expect("read first site-admin project page");
+    assert_eq!(first_page.page, 1);
+    assert_eq!(first_page.page_size, 25);
+    assert_eq!(first_page.total, 27);
+    assert_eq!(first_page.total_pages, 2);
+    assert_eq!(first_page.projects.len(), 25);
+
+    let second_page = repo
+        .list_site_projects("", 2)
+        .await
+        .expect("read second site-admin project page");
+    assert_eq!(second_page.projects.len(), 2);
+
+    let filtered = repo
+        .list_site_projects("SITE-PAGE-26", 1)
+        .await
+        .expect("read filtered site-admin project page");
+    assert_eq!(filtered.total, 1);
+    assert_eq!(filtered.total_pages, 1);
+    assert_eq!(filtered.projects.len(), 1);
+    assert_eq!(filtered.projects[0].project_name, "site-page-26");
+}

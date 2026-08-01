@@ -53,6 +53,16 @@ pub struct SiteUserListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteProjectListRecord {
+    pub page: u32,
+    pub page_size: u32,
+    pub filter: String,
+    pub total: u32,
+    pub total_pages: u32,
+    pub projects: Vec<ProjectRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SiteNoAvatarUserRecord {
     pub email: String,
     pub login_id: String,
