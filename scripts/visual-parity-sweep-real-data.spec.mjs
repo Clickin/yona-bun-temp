@@ -72,18 +72,18 @@ test("SQL records retain route markers while removing literals and sensitive val
     legacyRecords: [{
       source: "legacy",
       routeMarker: marker,
-      sql: "SELECT id, title FROM issue WHERE owner_id = 42 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
+      sql: "SELECT id, title FROM issue WHERE owner_id = 123456789 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
     }],
     yoramRecords: [{
       source: "yoram",
       routeMarker: marker,
-      sql: "SELECT id, title FROM issue WHERE owner_id = 42 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
+      sql: "SELECT id, title FROM issue WHERE owner_id = 123456789 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
     }],
   });
   const serialized = JSON.stringify(artifact);
   assert.equal(artifact.queries.legacy[0].correlation, "matched");
   assert.equal(artifact.redaction.rawSqlStored, false);
-  assert.doesNotMatch(serialized, /private title|42/u);
+  assert.doesNotMatch(serialized, /private title|123456789/u);
   assert.match(serialized, /shapeHash|parameterTypes/u);
 });
 
@@ -160,6 +160,40 @@ test("FTS-only implementation differences are intentional, while missing filters
   });
   assert.ok(regression.comparison.errors.length >= 1);
   assert.match(regression.comparison.errors[0].evidence, /LIMIT|filter/iu);
+});
+
+test("identity and foreign-key predicate translations are warnings, not false SQL blockers", () => {
+  const marker = "route-identity-translation";
+  const artifact = buildRouteSqlArtifacts({
+    route: "/admin",
+    requestMarker: marker,
+    legacyRecords: [
+      {
+        routeMarker: marker,
+        source: "legacy",
+        sql: "SELECT id FROM n4user t0 WHERE t0.login_id = 'admin'",
+      },
+      {
+        routeMarker: marker,
+        source: "legacy",
+        sql: "SELECT id FROM project t0 WHERE t0.owner = 'admin' AND t0.name = 'sample'",
+      },
+    ],
+    yoramRecords: [
+      {
+        routeMarker: marker,
+        source: "yoram",
+        sql: "SELECT id FROM n4user WHERE id = 42 LIMIT 1",
+      },
+      {
+        routeMarker: marker,
+        source: "yoram",
+        sql: "SELECT id FROM project WHERE id = 42 LIMIT 1",
+      },
+    ],
+  });
+  assert.equal(artifact.comparison.errors.length, 0);
+  assert.ok(artifact.comparison.warnings.length >= 1);
 });
 
 test("background and ambiguous SQL are excluded from route queries", () => {

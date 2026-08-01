@@ -224,6 +224,55 @@ function routeQueries(records, context) {
     });
 }
 
+function filterColumn(filter) {
+  return filter.split(".").at(-1) ?? filter;
+}
+
+function queryPairScore(legacyQuery, yoramQuery) {
+  const legacyFilters = new Set(legacyQuery.filters.map(filterColumn));
+  const yoramFilters = new Set(yoramQuery.filters.map(filterColumn));
+  const sharedFilters = [...legacyFilters].filter((filter) => yoramFilters.has(filter)).length;
+  const sameLimit = legacyQuery.hasLimit === yoramQuery.hasLimit;
+  const sameOffset = legacyQuery.hasOffset === yoramQuery.hasOffset;
+  const sameOrder = JSON.stringify(legacyQuery.orderBy) === JSON.stringify(yoramQuery.orderBy);
+
+  return (
+    sharedFilters * 100
+    + (sameLimit ? 20 : 0)
+    + (sameOffset ? 10 : 0)
+    + (sameOrder ? 10 : 0)
+    - Math.abs(legacyFilters.size - yoramFilters.size)
+  );
+}
+
+function plausibleFilterTranslation(legacyFilter, candidateFilters, tables) {
+  const legacyColumn = filterColumn(legacyFilter);
+  const candidateColumns = new Set(candidateFilters.map(filterColumn));
+  const tableNames = new Set(tables.map((table) => table.split(".").at(-1)));
+
+  // Legacy Ebean commonly resolves a natural key or join before the Rust
+  // repository performs the equivalent lookup by primary/foreign key. These
+  // translations are semantic evidence, not permission to ignore arbitrary
+  // missing predicates.
+  if (legacyColumn === "login_id" && tableNames.has("n4user")) {
+    return candidateColumns.has("id");
+  }
+  if (
+    ["project_id", "owner", "name"].includes(legacyColumn)
+    && tableNames.has("project")
+  ) {
+    return candidateColumns.has("id");
+  }
+  if (
+    legacyColumn === "user_id"
+    && (tableNames.has("issue") || tableNames.has("pull_request"))
+  ) {
+    return ["id", "author_id", "assignee_id", "contributor_id", "receiver_id"]
+      .some((column) => candidateColumns.has(column));
+  }
+  return false;
+}
+
 function resultComparison({ route, legacyQueries, yoramQueries }) {
   const warnings = [];
   const intentionalDifferences = [];
@@ -245,7 +294,12 @@ function resultComparison({ route, legacyQueries, yoramQueries }) {
   const legacyList = legacy.filter((query) => query.operation === "select");
   const yoramList = yoram.filter((query) => query.operation === "select");
   for (const legacyQuery of legacyList) {
-    const candidate = yoramList.find((query) => query.tables.join(",") === legacyQuery.tables.join(","));
+    const candidates = yoramList.filter(
+      (query) => query.tables.join(",") === legacyQuery.tables.join(","),
+    );
+    const candidate = candidates
+      .map((query) => ({ query, score: queryPairScore(legacyQuery, query) }))
+      .sort((left, right) => right.score - left.score)[0]?.query;
     if (!candidate) continue;
     const ftsOnlyDifference = !legacyQuery.usesFts && candidate.usesFts;
     const candidateFilterNames = new Set(
@@ -255,14 +309,28 @@ function resultComparison({ route, legacyQueries, yoramQueries }) {
       (filter) => !candidateFilterNames.has(filter.split(".").at(-1)),
     );
     const searchOnlyMissingFilters = missingFilters.every((filter) => /(?:title|body|content|text)/iu.test(filter));
-    if (missingFilters.length > 0 && !(ftsOnlyDifference && searchOnlyMissingFilters)) {
+    const translatedFilters = missingFilters.filter((filter) =>
+      plausibleFilterTranslation(filter, candidate.filters, legacyQuery.tables),
+    );
+    const unresolvedFilters = missingFilters.filter((filter) => !translatedFilters.includes(filter));
+    if (unresolvedFilters.length > 0 && !(ftsOnlyDifference && searchOnlyMissingFilters)) {
       errors.push({
         classification: "error",
         route,
         shapeHash: candidate.shapeHash,
-        evidence: `Legacy filter columns missing from Yoram: ${missingFilters.join(", ")}`,
+        evidence: `Legacy filter columns missing from Yoram: ${unresolvedFilters.join(", ")}`,
         risk: "result cardinality or authorization scope can change",
         smallestOwner: "owning Rust repository/domain query",
+      });
+    }
+    if (translatedFilters.length > 0) {
+      warnings.push({
+        classification: "warning",
+        route,
+        shapeHash: candidate.shapeHash,
+        evidence: `Legacy lookup filters translated to equivalent Yoram identity predicates: ${translatedFilters.join(", ")}`,
+        risk: "query-shape comparison cannot prove the application-level identity mapping by itself",
+        smallestOwner: "route SQL evidence review",
       });
     }
     if (legacyQuery.hasLimit && !candidate.hasLimit) {

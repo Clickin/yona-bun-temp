@@ -24,10 +24,25 @@ impl AppRepositoryImpl<'_> {
             return Ok(false);
         }
 
-        let rows = organization::Entity::find().all(&self.db).await?;
-        Ok(rows.into_iter().any(|row| {
-            normalize_optional(row.name.as_deref()).as_deref() == Some(normalized.as_str())
-        }))
+        let exact = organization::Entity::find()
+            .filter(organization::Column::Name.eq(normalized.clone()))
+            .one(&self.db)
+            .await?;
+        if exact.is_some() {
+            return Ok(true);
+        }
+
+        Ok(organization::Entity::find()
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(organization::Column::Name)),
+                ))
+                .eq(normalized),
+            )
+            .one(&self.db)
+            .await?
+            .is_some())
     }
 
     pub async fn read_organization_by_name(
@@ -39,14 +54,27 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         }
 
-        let rows = organization::Entity::find().all(&self.db).await?;
-        for row in rows {
-            if normalize_optional(row.name.as_deref()).as_deref() == Some(normalized.as_str()) {
-                return Ok(self.organization_record_from_model(row));
+        let row = organization::Entity::find()
+            .filter(organization::Column::Name.eq(normalized.clone()))
+            .one(&self.db)
+            .await?;
+        let row = match row {
+            Some(row) => Some(row),
+            None => {
+                organization::Entity::find()
+                    .filter(
+                        Expr::expr(sea_orm::sea_query::Func::lower(
+                            sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                                .arg(Expr::col(organization::Column::Name)),
+                        ))
+                        .eq(normalized),
+                    )
+                    .one(&self.db)
+                    .await?
             }
-        }
+        };
 
-        Ok(None)
+        Ok(row.and_then(|row| self.organization_record_from_model(row)))
     }
 
     pub async fn read_organization_by_id(
@@ -233,10 +261,29 @@ impl AppRepositoryImpl<'_> {
         input: UpdateOrganizationInput,
     ) -> Result<Option<OrganizationRecord>, DbErr> {
         let normalized_current = normalize_identity(&input.current_organization_name);
-        let rows = organization::Entity::find().all(&self.db).await?;
-        let Some(current) = rows.into_iter().find(|row| {
-            normalize_optional(row.name.as_deref()).as_deref() == Some(normalized_current.as_str())
-        }) else {
+        if normalized_current.is_empty() {
+            return Ok(None);
+        }
+        let current = organization::Entity::find()
+            .filter(organization::Column::Name.eq(normalized_current.clone()))
+            .one(&self.db)
+            .await?;
+        let current = match current {
+            Some(current) => Some(current),
+            None => {
+                organization::Entity::find()
+                    .filter(
+                        Expr::expr(sea_orm::sea_query::Func::lower(
+                            sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                                .arg(Expr::col(organization::Column::Name)),
+                        ))
+                        .eq(normalized_current),
+                    )
+                    .one(&self.db)
+                    .await?
+            }
+        };
+        let Some(current) = current else {
             return Ok(None);
         };
 

@@ -12,55 +12,91 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         }
 
-        let rows = project::Entity::find()
-            .select_only()
-            .column(project::Column::CreatedDate)
-            .column(project::Column::DefaultReviewerCount)
-            .column(project::Column::Id)
-            .column(project::Column::IsCodeAccessibleMemberOnly)
-            .column(project::Column::IsUsingReviewerCount)
-            .column(project::Column::LastPushedDate)
-            .column(project::Column::Name)
-            .column(project::Column::OriginalProjectId)
-            .column(project::Column::Overview)
-            .column(project::Column::Owner)
-            .column(project::Column::OrganizationId)
-            .column(project::Column::PreviousName)
-            .column(project::Column::PreviousNameChangedTime)
-            .column(project::Column::PreviousOwnerLoginId)
-            .column(project::Column::ProjectScope)
-            .column(project::Column::Vcs)
+        let project_lookup = || {
+            project::Entity::find()
+                .select_only()
+                .column(project::Column::CreatedDate)
+                .column(project::Column::DefaultReviewerCount)
+                .column(project::Column::Id)
+                .column(project::Column::IsCodeAccessibleMemberOnly)
+                .column(project::Column::IsUsingReviewerCount)
+                .column(project::Column::LastPushedDate)
+                .column(project::Column::Name)
+                .column(project::Column::OriginalProjectId)
+                .column(project::Column::Overview)
+                .column(project::Column::Owner)
+                .column(project::Column::OrganizationId)
+                .column(project::Column::PreviousName)
+                .column(project::Column::PreviousNameChangedTime)
+                .column(project::Column::PreviousOwnerLoginId)
+                .column(project::Column::ProjectScope)
+                .column(project::Column::Vcs)
+        };
+
+        let current = project_lookup()
+            .filter(project::Column::Owner.eq(owner_name.clone()))
+            .filter(project::Column::Name.eq(project_name.clone()))
             .into_model::<ProjectRow>()
-            .all(&self.db)
+            .one(&self.db)
             .await?;
-        let mut previous_match: Option<ProjectRow> = None;
-        for row in rows {
-            let owner_matches =
-                normalize_optional(row.owner.as_deref()).as_deref() == Some(owner_name.as_str());
-            let project_matches =
-                normalize_optional(row.name.as_deref()).as_deref() == Some(project_name.as_str());
-            if owner_matches && project_matches {
-                return self.project_record_from_row(row).await;
-            }
-            let previous_owner_matches = normalize_optional(row.previous_owner_login_id.as_deref())
-                .as_deref()
-                == Some(owner_name.as_str());
-            let previous_project_matches = normalize_optional(row.previous_name.as_deref())
-                .as_deref()
-                == Some(project_name.as_str());
-            if previous_owner_matches && previous_project_matches {
-                let should_replace = previous_match
-                    .as_ref()
-                    .and_then(|current| current.previous_name_changed_time)
-                    .unwrap_or_default()
-                    <= row.previous_name_changed_time.unwrap_or_default();
-                if should_replace {
-                    previous_match = Some(row);
-                }
-            }
+        if let Some(row) = current {
+            return self.project_record_from_row(row).await;
         }
 
-        match previous_match {
+        let current = project_lookup()
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(project::Column::Owner)),
+                ))
+                .eq(owner_name.clone()),
+            )
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(project::Column::Name)),
+                ))
+                .eq(project_name.clone()),
+            )
+            .into_model::<ProjectRow>()
+            .one(&self.db)
+            .await?;
+        if let Some(row) = current {
+            return self.project_record_from_row(row).await;
+        }
+
+        let previous = project_lookup()
+            .filter(project::Column::PreviousOwnerLoginId.eq(owner_name.clone()))
+            .filter(project::Column::PreviousName.eq(project_name.clone()))
+            .order_by_desc(project::Column::PreviousNameChangedTime)
+            .into_model::<ProjectRow>()
+            .one(&self.db)
+            .await?;
+        if let Some(row) = previous {
+            return self.project_record_from_row(row).await;
+        }
+
+        let previous = project_lookup()
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(project::Column::PreviousOwnerLoginId)),
+                ))
+                .eq(owner_name),
+            )
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(project::Column::PreviousName)),
+                ))
+                .eq(project_name),
+            )
+            .order_by_desc(project::Column::PreviousNameChangedTime)
+            .into_model::<ProjectRow>()
+            .one(&self.db)
+            .await?;
+
+        match previous {
             Some(row) => self.project_record_from_row(row).await,
             None => Ok(None),
         }

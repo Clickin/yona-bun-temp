@@ -1,0 +1,38 @@
+{
+  "skill_name": "playwright-css-parity",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Compare the legacy Yona issue detail at http://127.0.0.1:9000/admin/WYVE_OCS/issue/3967 with the current React/Yoram issue detail at http://127.0.0.1:3106/admin/WYVE_OCS/issue/3967 at 1440x1000. Use Playwright/Chrome, not image recognition as the acceptance method. Capture deterministic DOM identity, geometry, visibility, and computed CSS for the issue header, project menu, task progress bar, Markdown body, and labels. Save a JSON diff ledger and a concise Markdown report under /tmp/playwright-css-parity-eval-1.",
+      "expected_output": "A reproducible JSON snapshot/diff plus Markdown summary with declared environment and tolerances, per-element mismatch categories, and unknown/auth/data classifications.",
+      "files": [],
+      "expectations": [
+        "The report includes viewport/browser/readiness and an explicit geometry tolerance.",
+        "The comparison uses computed CSS and bounding rectangles for named elements rather than relying on screenshot judgment.",
+        "The JSON separates missing/extra elements from geometry, visibility, paint, typography, and unknown failures."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Our low-resolution screenshot check missed a mobile sidebar overflow regression. Using the running legacy and candidate pages at 390x844, determine whether the sidebar, project menu, search input, and main content are actually present, clipped, hidden, or off-screen. Use Playwright and CDP only if useful. Compare getBoundingClientRect, computed display/visibility/overflow/position, scroll dimensions, z-index, and parent geometry. Produce a deterministic report at /tmp/playwright-css-parity-eval-2 and explain the measured root cause without inventing a visual explanation.",
+      "expected_output": "A mobile CSS/geometry report that distinguishes absent DOM from hidden, clipped, overflowed, and off-screen elements, with measured ancestor evidence.",
+      "files": [],
+      "expectations": [
+        "The report checks both DOM existence and computed visibility/overflow state.",
+        "The report includes ancestor geometry or scroll dimensions that support any clipping/root-cause claim.",
+        "The report does not treat a screenshot or image-model conclusion as proof."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add a focused Playwright parity check for a React route that must preserve a legacy navigation menu. The test should stabilize the browser state, compare stable ownership markers and computed geometry at desktop and mobile, assert the menu's visibility and accessible labels, and emit machine-readable mismatch evidence when it fails. Keep the implementation minimal and reuse the repository's existing Playwright conventions.",
+      "expected_output": "A focused deterministic Playwright test or helper that compares the route at two viewports and reports structured CSS/geometry evidence instead of only screenshots.",
+      "files": [],
+      "expectations": [
+        "The test declares viewport/state stabilization and uses stable element identity.",
+        "The test asserts computed geometry/visibility and accessible labels at both viewports.",
+        "Failure output includes structured measured values sufficient to diagnose the mismatch."
+      ]
+    }
+  ]
+}

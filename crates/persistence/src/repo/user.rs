@@ -102,16 +102,30 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         }
 
-        let users = n4user::Entity::find().all(&self.db).await?;
-        for user in users {
-            let login_matches = normalize_optional(user.login_id.as_deref()).as_deref()
-                == Some(normalized.as_str());
-            if login_matches {
-                return self.app_user_record_from_model(user).await.map(Some);
+        let user = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.eq(normalized.clone()))
+            .one(&self.db)
+            .await?;
+        let user = match user {
+            Some(user) => Some(user),
+            None => {
+                n4user::Entity::find()
+                    .filter(
+                        Expr::expr(sea_orm::sea_query::Func::lower(
+                            sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                                .arg(Expr::col(n4user::Column::LoginId)),
+                        ))
+                        .eq(normalized),
+                    )
+                    .one(&self.db)
+                    .await?
             }
-        }
+        };
 
-        Ok(None)
+        match user {
+            Some(user) => self.app_user_record_from_model(user).await.map(Some),
+            None => Ok(None),
+        }
     }
 
     pub async fn find_user_by_id(&self, user_id: i64) -> Result<Option<AppUserRecord>, DbErr> {
@@ -477,10 +491,25 @@ impl AppRepositoryImpl<'_> {
             return Ok(false);
         }
 
-        let users = n4user::Entity::find().all(&self.db).await?;
-        Ok(users.into_iter().any(|user| {
-            normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
-        }))
+        let exact = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.eq(normalized.clone()))
+            .one(&self.db)
+            .await?;
+        if exact.is_some() {
+            return Ok(true);
+        }
+
+        Ok(n4user::Entity::find()
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(n4user::Column::LoginId)),
+                ))
+                .eq(normalized),
+            )
+            .one(&self.db)
+            .await?
+            .is_some())
     }
 
     pub async fn user_email_exists(&self, email_address: &str) -> Result<bool, DbErr> {

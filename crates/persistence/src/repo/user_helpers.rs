@@ -39,10 +39,24 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         }
 
-        let users = n4user::Entity::find().all(&self.db).await?;
-        Ok(users.into_iter().find(|user| {
-            normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
-        }))
+        let exact = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.eq(normalized.clone()))
+            .one(&self.db)
+            .await?;
+        if exact.is_some() {
+            return Ok(exact);
+        }
+
+        n4user::Entity::find()
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Func::cust(sea_orm::sea_query::Alias::new("TRIM"))
+                        .arg(Expr::col(n4user::Column::LoginId)),
+                ))
+                .eq(normalized),
+            )
+            .one(&self.db)
+            .await
     }
 
     pub(super) async fn find_user_model_by_email(
