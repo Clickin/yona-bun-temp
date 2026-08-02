@@ -1,4 +1,120 @@
 use super::*;
+use sea_query::{Alias, Iden, Query, SimpleExpr};
+
+/// Function name for the per-issue label-id separator join. `string_agg`
+/// (PostgreSQL) needs an explicit int→text cast on the argument;
+/// `group_concat` (SQLite/MySQL) accepts ints directly.
+#[derive(Copy, Clone)]
+enum IssueLabelConcatFunc {
+    Postgres,
+    GroupConcat,
+}
+
+impl Iden for IssueLabelConcatFunc {
+    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
+        match self {
+            Self::Postgres => write!(s, "string_agg").unwrap(),
+            Self::GroupConcat => write!(s, "group_concat").unwrap(),
+        }
+    }
+}
+
+fn issue_label_ids_concat_expr(backend: DatabaseBackend) -> SimpleExpr {
+    let column = Expr::col((issue_issue_label::Entity, issue_issue_label::Column::IssueLabelId));
+    match backend {
+        DatabaseBackend::Postgres => Func::cust(IssueLabelConcatFunc::Postgres)
+            .arg(column.cast_as(Alias::new("text")))
+            .arg(Expr::val(","))
+            .into(),
+        DatabaseBackend::MySql | DatabaseBackend::Sqlite => {
+            Func::cust(IssueLabelConcatFunc::GroupConcat)
+                .arg(column)
+                .arg(Expr::val(","))
+                .into()
+        }
+    }
+}
+
+/// Same fallback semantics as `user_email_for_id_or_login`, served from the
+/// batch maps instead of per-row queries.
+fn user_email_from_maps(
+    user_id: Option<i64>,
+    login_id: &str,
+    users_by_id: &HashMap<i64, n4user::Model>,
+    user_id_by_login: &HashMap<String, i64>,
+) -> String {
+    let email_address = user_id
+        .and_then(|user_id| users_by_id.get(&user_id))
+        .and_then(|user| user.email.clone())
+        .unwrap_or_default();
+    if !email_address.is_empty() || login_id.trim().is_empty() {
+        return email_address;
+    }
+    user_id_by_login
+        .get(&normalize_identity(login_id))
+        .and_then(|user_id| users_by_id.get(user_id))
+        .and_then(|user| user.email.clone())
+        .unwrap_or_default()
+}
+
+fn issue_labels_from_maps(
+    issue_id: i64,
+    label_ids_per_issue: &HashMap<i64, Vec<i64>>,
+    project_labels: &HashMap<i64, IssueLabelRecord>,
+) -> Vec<IssueLabelRecord> {
+    label_ids_per_issue
+        .get(&issue_id)
+        .map(|ids| {
+            ids.iter()
+                .filter_map(|id| project_labels.get(id))
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn assignee_summary_from_maps(
+    assignee_id: Option<i64>,
+    assignees: &[assignee::Model],
+    users_by_id: &HashMap<i64, n4user::Model>,
+) -> (String, String) {
+    let Some(assignee_id) = assignee_id else {
+        return (String::new(), String::new());
+    };
+    let Some(row) = assignees.iter().find(|row| row.id == assignee_id) else {
+        return (String::new(), String::new());
+    };
+    let Some(user_id) = row.user_id else {
+        return (String::new(), String::new());
+    };
+    let Some(user) = users_by_id.get(&user_id) else {
+        return (String::new(), String::new());
+    };
+    (
+        user.login_id.clone().unwrap_or_default(),
+        user.name.clone().unwrap_or_default(),
+    )
+}
+
+fn assignee_email_from_maps(
+    assignee_id: Option<i64>,
+    assignees: &[assignee::Model],
+    users_by_id: &HashMap<i64, n4user::Model>,
+) -> String {
+    let Some(assignee_id) = assignee_id else {
+        return String::new();
+    };
+    let Some(row) = assignees.iter().find(|row| row.id == assignee_id) else {
+        return String::new();
+    };
+    let Some(user_id) = row.user_id else {
+        return String::new();
+    };
+    users_by_id
+        .get(&user_id)
+        .and_then(|user| user.email.clone())
+        .unwrap_or_default()
+}
 
 impl AppRepositoryImpl<'_> {
     pub(super) fn organization_record_from_model(
@@ -781,6 +897,317 @@ impl AppRepositoryImpl<'_> {
             watcher_count: self.count_issue_watchers(model.id).await?,
             weight: model.weight.unwrap_or_default(),
         })
+    }
+
+    /// Set-based equivalent of `project_issue_list_item_from_model`: assembles
+    /// one page of list items with a bounded number of `IN`-queries instead of
+    /// ~8-12 per row. Output order matches the input `rows` order; nested
+    /// children are sorted exactly like `list_issue_child_records`.
+    pub(super) async fn project_issue_list_items_from_rows(
+        &self,
+        rows: &[ProjectIssueListRow],
+        project: &ProjectRecord,
+    ) -> Result<Vec<ProjectIssueListItemRecord>, DbErr> {
+        if rows.is_empty() {
+            return Ok(Vec::new());
+        }
+        let backend = self.db.get_database_backend();
+
+        // Children: same query as list_issue_child_records (a simple find).
+        let child_rows = issue::Entity::find()
+            .filter(issue::Column::ParentId.is_in(rows.iter().map(|row| row.id)))
+            .order_by_asc(issue::Column::State)
+            .order_by_desc(issue::Column::CreatedDate)
+            .order_by_desc(issue::Column::Number)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<ProjectIssueListRow>>();
+        let all_ids = rows
+            .iter()
+            .map(|row| row.id)
+            .chain(child_rows.iter().map(|row| row.id))
+            .collect::<Vec<_>>();
+
+        // Labels: one aggregate link query + the project label list (an
+        // issue's labels are always a subset of its project's labels).
+        let label_ids_per_issue = self
+            .issue_label_ids_by_issue(&all_ids, backend)
+            .await?;
+        let project_labels = self
+            .list_project_labels(&project.owner_name, &project.project_name)
+            .await?
+            .into_iter()
+            .map(|label| (label.id, label))
+            .collect::<HashMap<_, _>>();
+
+        // Assignees + users (one query serves author emails, assignee
+        // summaries, and assignee emails).
+        let assignee_ids = rows
+            .iter()
+            .map(|row| row.assignee_id)
+            .chain(child_rows.iter().map(|row| row.assignee_id))
+            .flatten()
+            .collect::<HashSet<_>>();
+        let assignees = if assignee_ids.is_empty() {
+            Vec::new()
+        } else {
+            assignee::Entity::find()
+                .filter(assignee::Column::Id.is_in(assignee_ids))
+                .all(&self.db)
+                .await?
+        };
+        let user_ids = assignees
+            .iter()
+            .filter_map(|row| row.user_id)
+            .chain(rows.iter().filter_map(|row| row.author_id))
+            .chain(child_rows.iter().filter_map(|row| row.author_id))
+            .collect::<HashSet<_>>();
+        let users = if user_ids.is_empty() {
+            Vec::new()
+        } else {
+            n4user::Entity::find()
+                .filter(n4user::Column::Id.is_in(user_ids))
+                .all(&self.db)
+                .await?
+        };
+        let users_by_id = users
+            .iter()
+            .cloned()
+            .map(|user| (user.id, user))
+            .collect::<HashMap<_, _>>();
+        let user_id_by_login = users
+            .iter()
+            .filter_map(|user| {
+                user.login_id
+                    .as_deref()
+                    .map(normalize_identity)
+                    .map(|login_id| (login_id, user.id))
+            })
+            .collect::<HashMap<_, _>>();
+
+        // Milestones.
+        let milestone_ids = rows
+            .iter()
+            .map(|row| row.milestone_id)
+            .chain(child_rows.iter().map(|row| row.milestone_id))
+            .flatten()
+            .collect::<HashSet<_>>();
+        let milestones = if milestone_ids.is_empty() {
+            Vec::new()
+        } else {
+            milestone::Entity::find()
+                .filter(milestone::Column::Id.is_in(milestone_ids))
+                .all(&self.db)
+                .await?
+        };
+        let milestone_by_id = milestones
+            .iter()
+            .map(|row| (row.id, row.title.clone().unwrap_or_default()))
+            .collect::<HashMap<_, _>>();
+
+        // Parent summaries (page items only).
+        let parent_issue_ids = rows
+            .iter()
+            .filter_map(|row| row.parent_id)
+            .collect::<HashSet<_>>();
+        let parent_issues = if parent_issue_ids.is_empty() {
+            Vec::new()
+        } else {
+            issue::Entity::find()
+                .filter(issue::Column::Id.is_in(parent_issue_ids))
+                .all(&self.db)
+                .await?
+        };
+        let parent_by_id = parent_issues
+            .iter()
+            .map(|row| (row.id, (row.number, row.title.clone().unwrap_or_default())))
+            .collect::<HashMap<_, _>>();
+
+        // Voter + watcher counts across parents and children.
+        let voter_rows = issue_voter::Entity::find()
+            .filter(issue_voter::Column::IssueId.is_in(all_ids.clone()))
+            .all(&self.db)
+            .await?;
+        let mut voter_counts = HashMap::<i64, u32>::new();
+        for row in voter_rows {
+            *voter_counts.entry(row.issue_id).or_insert(0) += 1;
+        }
+        let watcher_rows = watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.is_in(all_ids.iter().map(|id| id.to_string())))
+            .all(&self.db)
+            .await?;
+        let mut watcher_counts = HashMap::<i64, u32>::new();
+        for row in watcher_rows {
+            if let Ok(issue_id) = row.resource_id.as_deref().unwrap_or_default().parse::<i64>() {
+                *watcher_counts.entry(issue_id).or_insert(0) += 1;
+            }
+        }
+
+        let now = DateTimeUtc::from(SystemTime::now()).naive_utc();
+        let mut items = Vec::with_capacity(rows.len());
+        for row in rows {
+            let is_draft = row.is_draft.unwrap_or_default() != 0;
+            let author_id = row.author_id;
+            let author_login_id = row.author_login_id.clone().unwrap_or_default();
+            let author_email_address = user_email_from_maps(
+                author_id,
+                &author_login_id,
+                &users_by_id,
+                &user_id_by_login,
+            );
+            let labels = issue_labels_from_maps(row.id, &label_ids_per_issue, &project_labels);
+            let (assignee_login_id, assignee_label) =
+                assignee_summary_from_maps(row.assignee_id, &assignees, &users_by_id);
+            let assignee_email_address =
+                assignee_email_from_maps(row.assignee_id, &assignees, &users_by_id);
+            let (milestone_id, milestone_title) = match row.milestone_id {
+                Some(milestone_id) => milestone_by_id
+                    .get(&milestone_id)
+                    .map(|title| (Some(milestone_id), title.clone()))
+                    .unwrap_or((None, String::new())),
+                None => (None, String::new()),
+            };
+            let (parent_issue_number, parent_issue_title) = match row.parent_id {
+                Some(parent_id) => parent_by_id
+                    .get(&parent_id)
+                    .map(|(number, title)| (*number, title.clone()))
+                    .unwrap_or((None, String::new())),
+                None => (None, String::new()),
+            };
+            let due_date = row.due_date;
+            let mut child_issues = Vec::new();
+            for child in child_rows.iter().filter(|child| child.parent_id == Some(row.id)) {
+                let child_is_draft = child.is_draft.unwrap_or_default() != 0;
+                if child_is_draft
+                    && child
+                        .author_login_id
+                        .as_deref()
+                        .map(normalize_identity)
+                        .as_deref()
+                        != Some(author_login_id.as_str())
+                {
+                    continue;
+                }
+                child_issues.push(IssueChildRecord {
+                    assignee_label: assignee_summary_from_maps(
+                        child.assignee_id,
+                        &assignees,
+                        &users_by_id,
+                    )
+                    .1,
+                    comment_count: child.num_of_comments.unwrap_or_default().max(0) as u32,
+                    created_label: format_workspace_date_label(child.created_date),
+                    id: child.id,
+                    is_draft: child_is_draft,
+                    issue_number: child.number.unwrap_or_default(),
+                    labels: issue_labels_from_maps(child.id, &label_ids_per_issue, &project_labels),
+                    state: if child_is_draft {
+                        "draft".to_string()
+                    } else {
+                        issue_state_from_raw(child.state)
+                    },
+                    title: child.title.clone().unwrap_or_default(),
+                    voter_count: voter_counts.get(&child.id).copied().unwrap_or_default(),
+                });
+            }
+            child_issues.sort_by(|left, right| {
+                child_issue_state_order(&left.state)
+                    .cmp(&child_issue_state_order(&right.state))
+                    .then_with(|| right.issue_number.cmp(&left.issue_number))
+            });
+            let child_open_count = child_issues
+                .iter()
+                .filter(|child| child.state == "open")
+                .count() as u32;
+            let child_closed_count = child_issues
+                .iter()
+                .filter(|child| child.state == "closed")
+                .count() as u32;
+            items.push(ProjectIssueListItemRecord {
+                assignee_label,
+                assignee_email_address,
+                assignee_login_id,
+                author_email_address,
+                author_label: row.author_name.clone().unwrap_or_default(),
+                child_closed_count,
+                child_issues,
+                child_open_count,
+                author_login_id,
+                comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
+                created_label: format_workspace_date_label(row.created_date),
+                created_title: format_legacy_datetime_title(row.created_date),
+                due_date_label: format_workspace_date_label(due_date),
+                due_date_overdue: due_date.is_some_and(|value| value < now),
+                due_date_text: format_legacy_issue_until_label(due_date),
+                id: row.id,
+                is_draft,
+                issue_number: row.number.unwrap_or_default(),
+                labels,
+                milestone_id,
+                milestone_title,
+                owner_name: project.owner_name.clone(),
+                parent_issue_number,
+                parent_issue_title,
+                project_id: project.id,
+                project_name: project.project_name.clone(),
+                state: if is_draft {
+                    "draft".to_string()
+                } else {
+                    issue_state_from_raw(row.state)
+                },
+                title: row.title.clone().unwrap_or_default(),
+                updated_label: format_workspace_date_label(row.updated_date.or(row.created_date)),
+                voter_count: voter_counts.get(&row.id).copied().unwrap_or_default(),
+                watcher_count: watcher_counts.get(&row.id).copied().unwrap_or_default(),
+                weight: row.weight.unwrap_or_default(),
+            });
+        }
+        Ok(items)
+    }
+
+    /// One aggregate query returning each issue's label ids as a comma-joined
+    /// string (dialect-specific separator join; per-issue label order is not
+    /// part of any pinned contract).
+    async fn issue_label_ids_by_issue(
+        &self,
+        issue_ids: &[i64],
+        backend: DatabaseBackend,
+    ) -> Result<HashMap<i64, Vec<i64>>, DbErr> {
+        let mut stmt = Query::select();
+        stmt.column((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
+            .expr_as(issue_label_ids_concat_expr(backend), "label_ids")
+            .from(issue_issue_label::Entity)
+            .and_where(
+                Expr::col((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
+                    .is_in(issue_ids.iter().copied()),
+            )
+            .group_by_col((issue_issue_label::Entity, issue_issue_label::Column::IssueId));
+        let (sql, values) = stmt.build_any(backend.get_query_builder().as_ref());
+        let rows = self
+            .db
+            .query_all(Statement::from_sql_and_values(backend, sql, values))
+            .await?;
+        let mut per_issue = HashMap::<i64, Vec<i64>>::new();
+        for row in rows {
+            let Some(issue_id) = row.try_get::<i64>("", "issue_id").ok() else {
+                continue;
+            };
+            let ids = row
+                .try_get::<Option<String>>("", "label_ids")
+                .ok()
+                .flatten()
+                .unwrap_or_default();
+            per_issue.insert(
+                issue_id,
+                ids.split(',')
+                    .filter_map(|part| part.parse::<i64>().ok())
+                    .collect(),
+            );
+        }
+        Ok(per_issue)
     }
 
     pub(super) async fn issue_model_matches_text_filter(

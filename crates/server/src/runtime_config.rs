@@ -60,6 +60,7 @@ pub struct StartupConfig {
     pub site_allow_anonymous_access: Option<bool>,
     pub site_hostname: Option<String>,
     pub site_name: Option<String>,
+    pub stable_list_cache: Option<String>,
     pub slack_webhook_colors: BTreeMap<String, String>,
     pub smtp_domain: Option<String>,
     pub smtp_from: Option<String>,
@@ -111,6 +112,7 @@ struct StartupConfigFile {
     schema_policy: Option<String>,
     seed_pilot: Option<bool>,
     session: Option<SessionConfigFile>,
+    stable_list_cache: Option<String>,
     show_user_email: Option<bool>,
     site: Option<SiteConfigFile>,
     slack: Option<BTreeMap<String, String>>,
@@ -351,6 +353,8 @@ pub fn load_startup_config(
     let seed_pilot = env_bool(&env, "YONA_SEED_PILOT")
         .or(file.seed_pilot)
         .unwrap_or(false);
+    let stable_list_cache = env_string(&env, "YONA_STABLE_LIST_CACHE")
+        .or_else(|| non_empty_string(file.stable_list_cache));
     let site_name = env_string(&env, "YONA_SITE_NAME").or_else(|| non_empty_string(site.name));
     let site_allow_anonymous_access =
         env_bool(&env, "YONA_ALLOW_ANONYMOUS_ACCESS").or(site.allow_anonymous_access);
@@ -610,6 +614,7 @@ pub fn load_startup_config(
         site_allow_anonymous_access,
         site_hostname,
         site_name,
+        stable_list_cache,
         slack_webhook_colors,
         smtp_domain,
         smtp_from,

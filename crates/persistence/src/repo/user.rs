@@ -6,9 +6,11 @@ impl AppRepositoryImpl<'_> {
     }
 
     pub fn new_with_config(db: DatabaseConnection, config: RepositoryConfig) -> Self {
+        let stable_lists = StableLists::new(config.stable_list_store());
         Self {
             config,
             db: RepositoryDb::Connection(db),
+            stable_lists,
         }
     }
 
@@ -31,6 +33,9 @@ impl AppRepositoryImpl<'_> {
         AppRepositoryImpl {
             config: self.config.clone(),
             db: RepositoryDb::Transaction(transaction),
+            // Share the parent's store: transaction-scoped mutations must
+            // invalidate the same cache the shared repository reads from.
+            stable_lists: self.stable_lists.clone(),
         }
     }
 

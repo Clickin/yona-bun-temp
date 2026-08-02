@@ -454,6 +454,12 @@ pub fn repository_config_from_startup(config: &runtime_config::StartupConfig) ->
             guest_login_prefix.clone(),
         ));
     }
+    if let Some(stable_list_cache) = &config.stable_list_cache {
+        pairs.push((
+            "YONA_STABLE_LIST_CACHE".to_string(),
+            stable_list_cache.clone(),
+        ));
+    }
     if let Some(notification_draft_time) = &config.notification_draft_time {
         pairs.push((
             "YONA_NOTIFICATION_DRAFT_TIME".to_string(),

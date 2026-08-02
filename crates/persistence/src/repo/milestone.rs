@@ -7,6 +7,20 @@ impl AppRepositoryImpl<'_> {
         project_name: &str,
         filter: MilestoneListFilter,
     ) -> Result<Vec<IssueMilestoneRecord>, DbErr> {
+        let state = normalize_identity(&filter.state);
+        if let Some(records) = self
+            .stable_lists
+            .milestone_options(
+                owner_name,
+                project_name,
+                &state,
+                &filter.order_by,
+                &filter.order_dir,
+            )
+            .await
+        {
+            return Ok(records);
+        }
         let Some(project) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
@@ -15,7 +29,6 @@ impl AppRepositoryImpl<'_> {
         };
         let mut query =
             milestone::Entity::find().filter(milestone::Column::ProjectId.eq(Some(project.id)));
-        let state = normalize_identity(&filter.state);
         if matches!(state.as_str(), "open" | "closed") {
             query = query.filter(milestone::Column::State.eq(Some(issue_state_to_raw(&state))));
         }
@@ -30,7 +43,7 @@ impl AppRepositoryImpl<'_> {
                 .order_by_asc(milestone::Column::Id)
         };
         let rows = query.all(&self.db).await?;
-        Ok(rows
+        let records = rows
             .into_iter()
             .map(|row| IssueMilestoneRecord {
                 attachments: Vec::new(),
@@ -46,7 +59,18 @@ impl AppRepositoryImpl<'_> {
                 state: issue_state_from_raw(row.state),
                 title: row.title.unwrap_or_default(),
             })
-            .collect())
+            .collect::<Vec<_>>();
+        self.stable_lists
+            .insert_milestone_options(
+                owner_name,
+                project_name,
+                &state,
+                &filter.order_by,
+                &filter.order_dir,
+                &records,
+            )
+            .await;
+        Ok(records)
     }
 
     pub async fn list_project_milestones(
@@ -194,6 +218,9 @@ impl AppRepositoryImpl<'_> {
             input.actor_id,
         )
         .await?;
+        self.stable_lists
+            .invalidate_milestones(&input.owner_name, &input.project_name)
+            .await;
         self.issue_milestone_record(created, &project)
             .await
             .map(Some)
@@ -232,6 +259,9 @@ impl AppRepositoryImpl<'_> {
             input.values.actor_id,
         )
         .await?;
+        self.stable_lists
+            .invalidate_milestones(&input.values.owner_name, &input.values.project_name)
+            .await;
         self.issue_milestone_record(updated, &project)
             .await
             .map(Some)
@@ -253,6 +283,9 @@ impl AppRepositoryImpl<'_> {
         let mut active = milestone::ActiveModel::from(row);
         active.state = Set(Some(issue_state_to_raw(state)));
         let updated = active.update(&self.db).await?;
+        self.stable_lists
+            .invalidate_milestones(owner_name, project_name)
+            .await;
         self.issue_milestone_record(updated, &project)
             .await
             .map(Some)
@@ -287,6 +320,9 @@ impl AppRepositoryImpl<'_> {
             .await?;
         milestone::Entity::delete_by_id(row.id).exec(&txn).await?;
         txn.commit().await?;
+        self.stable_lists
+            .invalidate_milestones(owner_name, project_name)
+            .await;
         Ok(true)
     }
 }

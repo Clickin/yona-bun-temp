@@ -6,6 +6,13 @@ impl AppRepositoryImpl<'_> {
         owner_name: &str,
         project_name: &str,
     ) -> Result<Vec<IssueLabelRecord>, DbErr> {
+        if let Some(records) = self
+            .stable_lists
+            .labels(owner_name, project_name)
+            .await
+        {
+            return Ok(records);
+        }
         let Some(project) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
@@ -25,6 +32,9 @@ impl AppRepositoryImpl<'_> {
                 .cmp(&right.category_name)
                 .then_with(|| left.name.cmp(&right.name))
         });
+        self.stable_lists
+            .insert_labels(owner_name, project_name, &records)
+            .await;
         Ok(records)
     }
 
@@ -85,6 +95,9 @@ impl AppRepositoryImpl<'_> {
         }
         .insert(&self.db)
         .await?;
+        self.stable_lists
+            .invalidate_labels(&input.owner_name, &input.project_name)
+            .await;
         Ok(Some((self.issue_label_record(created).await?, true)))
     }
 
@@ -145,6 +158,9 @@ impl AppRepositoryImpl<'_> {
             copied += 1;
         }
 
+        self.stable_lists
+            .invalidate_labels(to_owner_name, to_project_name)
+            .await;
         Ok(Some(CopyProjectLabelsResult {
             copied,
             labels: self
@@ -197,6 +213,9 @@ impl AppRepositoryImpl<'_> {
         active.color = Set(Some(input.label_color));
         active.name = Set(Some(input.label_name.trim().to_string()));
         let updated = active.update(&self.db).await?;
+        self.stable_lists
+            .invalidate_labels(&input.owner_name, &input.project_name)
+            .await;
         self.issue_label_record(updated).await.map(Some)
     }
 
@@ -246,6 +265,9 @@ impl AppRepositoryImpl<'_> {
             }
         }
         txn.commit().await?;
+        self.stable_lists
+            .invalidate_labels(owner_name, project_name)
+            .await;
         Ok(true)
     }
 
@@ -273,6 +295,9 @@ impl AppRepositoryImpl<'_> {
         }
         .insert(&self.db)
         .await?;
+        self.stable_lists
+            .invalidate_labels(&input.owner_name, &input.project_name)
+            .await;
         Ok(Some((issue_label_category_record(created), true)))
     }
 
@@ -309,6 +334,9 @@ impl AppRepositoryImpl<'_> {
         active.name = Set(Some(input.category_name.trim().to_string()));
         active.is_exclusive = Set(Some(bool_to_i16(input.category_is_exclusive)));
         let updated = active.update(&self.db).await?;
+        self.stable_lists
+            .invalidate_labels(&input.owner_name, &input.project_name)
+            .await;
         Ok(Some(issue_label_category_record(updated)))
     }
 
@@ -355,6 +383,9 @@ impl AppRepositoryImpl<'_> {
             .exec(&txn)
             .await?;
         txn.commit().await?;
+        self.stable_lists
+            .invalidate_labels(owner_name, project_name)
+            .await;
         Ok(true)
     }
 }

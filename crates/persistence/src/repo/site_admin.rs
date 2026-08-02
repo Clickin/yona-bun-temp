@@ -235,6 +235,7 @@ impl AppRepositoryImpl<'_> {
         active.last_state_modified_date = Set(Some(current_datetime()));
         let updated = active.update(&self.db).await?;
         let is_site_admin = self.user_is_site_admin(updated.id).await?;
+        self.stable_lists.invalidate_users_all().await;
 
         Ok(Some(site_user_record_from_model(updated, is_site_admin)))
     }

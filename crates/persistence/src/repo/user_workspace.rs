@@ -105,6 +105,8 @@ impl AppRepositoryImpl<'_> {
         active.name = Set(Some(name.trim().to_string()));
         active.email = Set(Some(normalized_email));
         let updated = active.update(&self.db).await?;
+        // Name/email changes appear in every project's user lists.
+        self.stable_lists.invalidate_users_all().await;
         self.app_user_record_from_model(updated).await
     }
 

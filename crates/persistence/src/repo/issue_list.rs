@@ -1,4 +1,5 @@
 use super::*;
+use sea_query::{Order, Query};
 
 #[derive(Debug, FromQueryResult)]
 struct ProjectIssueCountsRow {
@@ -280,14 +281,12 @@ impl AppRepositoryImpl<'_> {
         }
 
 
-        let models = issue::Entity::find()
-            .filter(issue::Column::ProjectId.eq(Some(project.id)))
-            .order_by_desc(issue::Column::CreatedDate)
-            .order_by_desc(issue::Column::Number)
-            .all(&self.db)
-            .await?;
+        let backend = self.db.get_database_backend();
+        let condition = project_issue_list_condition(project.id, &filter, backend);
+        let page_num = filter.page_num.max(1);
 
-        let can_show_drafts = filter.page_num.max(1) == 1
+        // Draft items: unpaginated as today, assembled from a simple find.
+        let can_show_drafts = page_num == 1
             && filter
                 .state
                 .as_deref()
@@ -315,137 +314,132 @@ impl AppRepositoryImpl<'_> {
             .as_deref()
             .map(normalize_identity)
             .filter(|value| !value.is_empty());
-        let mut draft_items = Vec::new();
-        let mut filtered = Vec::new();
-        for model in models {
-            if model.is_draft.unwrap_or_default() != 0 {
-                if can_show_drafts
-                    && draft_author_login_id.as_deref()
-                        == model
-                            .author_login_id
-                            .as_deref()
-                            .map(normalize_identity)
-                            .as_deref()
-                {
-                    draft_items.push(
-                        self.project_issue_list_item_from_model(model, &project)
-                            .await?,
-                    );
-                }
-                continue;
-            }
-            if filter.state.as_deref().is_some_and(|state| {
-                !state.trim().is_empty()
-                    && issue_state_from_raw(model.state) != normalize_identity(state)
-            }) {
-                continue;
-            }
-            if filter.author_login_id.as_deref().is_some_and(|login_id| {
-                !login_id.trim().is_empty()
-                    && model.author_login_id.as_deref().map(normalize_identity)
-                        != Some(normalize_identity(login_id))
-            }) {
-                continue;
-            }
-            if let Some(author_id) = filter.author_id {
-                if author_id > 0 && model.author_id != Some(author_id) {
-                    continue;
-                }
-            }
-            if let Some(commenter_id) = filter.commenter_id {
-                if commenter_id > 0
-                    && !issue_comment::Entity::find()
-                        .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
-                        .filter(issue_comment::Column::AuthorId.eq(Some(commenter_id)))
-                        .one(&self.db)
-                        .await?
-                        .is_some()
-                {
-                    continue;
-                }
-            }
-            if let Some(due_date) = filter.due_date {
-                if model.due_date.map(|value| value.date()) != Some(due_date.date()) {
-                    continue;
-                }
-            }
-            if let Some(text_filter) = filter.filter.as_deref() {
-                if !self
-                    .issue_model_matches_text_filter(&model, text_filter)
-                    .await?
-                {
-                    continue;
-                }
-            }
-            if let Some(milestone_id) = filter.milestone_id {
-                if model.milestone_id != Some(milestone_id) {
-                    continue;
-                }
-            }
-            if let Some(assignee_user_id) = filter.assignee_id {
-                if assignee_user_id <= 0 {
-                    if model.assignee_id.is_some() {
-                        continue;
-                    }
-                } else {
-                    let Some(issue_assignee_id) = model.assignee_id else {
-                        continue;
-                    };
-                    let Some(issue_assignee) = assignee::Entity::find_by_id(issue_assignee_id)
-                        .one(&self.db)
-                        .await?
-                    else {
-                        continue;
-                    };
-                    if issue_assignee.user_id != Some(assignee_user_id) {
-                        continue;
-                    }
-                }
-            }
-            if let Some(assignee_login_id) = filter.assignee_login_id.as_deref() {
-                if !assignee_login_id.trim().is_empty() {
-                    let assignee = self.issue_assignee_summary(model.assignee_id).await?;
-                    if assignee.0 != normalize_identity(assignee_login_id) {
-                        continue;
-                    }
-                }
-            }
-            let labels = self.list_issue_labels(model.id).await?;
-            if !filter.label_ids.is_empty()
-                && !filter
-                    .label_ids
-                    .iter()
-                    .all(|id| labels.iter().any(|label| label.id == *id))
-            {
-                continue;
-            }
-
-            filtered.push(model);
-        }
-
-        sort_issue_models_for_project(&mut filtered, &filter.order_by, &filter.order_dir);
-
-        let page_num = filter.page_num.max(1);
-        let total_count = filtered.len() as u32;
-        let effective_page_size = page_size.unwrap_or(total_count.max(1));
-        let items = if page_size.is_some() {
-            let offset = ((page_num - 1) * effective_page_size) as usize;
-            filtered
+        let draft_items = if can_show_drafts && draft_author_login_id.is_some() {
+            let draft_models = issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(project.id)))
+                .filter(issue::Column::IsDraft.eq(Some(1)))
+                .filter(
+                    Expr::expr(Func::lower(Expr::col(issue::Column::AuthorLoginId)))
+                        .eq(draft_author_login_id.expect("checked above")),
+                )
+                .order_by_desc(issue::Column::CreatedDate)
+                .order_by_desc(issue::Column::Number)
+                .all(&self.db)
+                .await?;
+            let draft_rows = draft_models
                 .into_iter()
-                .skip(offset)
-                .take(effective_page_size as usize)
-                .collect()
+                .map(Into::into)
+                .collect::<Vec<ProjectIssueListRow>>();
+            self.project_issue_list_items_from_rows(&draft_rows, &project)
+                .await?
         } else {
-            filtered
+            Vec::new()
         };
 
-        let mut records = Vec::new();
-        for model in items {
-            records.push(
-                self.project_issue_list_item_from_model(model, &project)
-                    .await?,
+        // Count: one bounded statement, only when paging (export uses rows.len()).
+        let total_count = if page_size.is_some() {
+            let mut count_stmt = Query::select();
+            count_stmt
+                .expr_as(
+                    Func::count(Expr::col((issue::Entity, issue::Column::Id))),
+                    "count",
+                )
+                .from(issue::Entity)
+                .cond_where(condition.clone());
+            let (count_sql, count_values) =
+                count_stmt.build_any(backend.get_query_builder().as_ref());
+            self.db
+                .query_one(Statement::from_sql_and_values(
+                    backend,
+                    count_sql,
+                    count_values,
+                ))
+                .await?
+                .and_then(|row| row.try_get::<i64>("", "count").ok())
+                .unwrap_or(0)
+                .max(0) as u32
+        } else {
+            0
+        };
+
+        // List: one bounded statement projecting only the 16 lean columns.
+        let descending = normalize_identity(&filter.order_dir) != "asc";
+        let mut list_stmt = Query::select();
+        list_stmt
+            .columns([
+                (issue::Entity, issue::Column::Id),
+                (issue::Entity, issue::Column::Title),
+                (issue::Entity, issue::Column::CreatedDate),
+                (issue::Entity, issue::Column::UpdatedDate),
+                (issue::Entity, issue::Column::AuthorId),
+                (issue::Entity, issue::Column::AuthorLoginId),
+                (issue::Entity, issue::Column::AuthorName),
+                (issue::Entity, issue::Column::Number),
+                (issue::Entity, issue::Column::NumOfComments),
+                (issue::Entity, issue::Column::State),
+                (issue::Entity, issue::Column::DueDate),
+                (issue::Entity, issue::Column::MilestoneId),
+                (issue::Entity, issue::Column::AssigneeId),
+                (issue::Entity, issue::Column::ParentId),
+                (issue::Entity, issue::Column::Weight),
+                (issue::Entity, issue::Column::IsDraft),
+            ])
+            .from(issue::Entity)
+            .cond_where(condition);
+        match normalize_identity(&filter.order_by).as_str() {
+            "duedate" => list_stmt.order_by(
+                (issue::Entity, issue::Column::DueDate),
+                if descending { Order::Desc } else { Order::Asc },
+            ),
+            "updateddate" => list_stmt.order_by(
+                (issue::Entity, issue::Column::UpdatedDate),
+                if descending { Order::Desc } else { Order::Asc },
+            ),
+            "numofcomments" => list_stmt.order_by_expr(
+                Expr::cust("COALESCE(num_of_comments, 0)"),
+                if descending { Order::Desc } else { Order::Asc },
+            ),
+            _ => list_stmt.order_by(
+                (issue::Entity, issue::Column::CreatedDate),
+                if descending { Order::Desc } else { Order::Asc },
+            ),
+        };
+        list_stmt
+            .order_by(
+                (issue::Entity, issue::Column::Number),
+                if descending { Order::Desc } else { Order::Asc },
+            )
+            .order_by(
+                (issue::Entity, issue::Column::Id),
+                if descending { Order::Desc } else { Order::Asc },
             );
+        if let Some(page_size) = page_size {
+            list_stmt
+                .limit(page_size as u64)
+                .offset(((page_num - 1) * page_size) as u64);
         }
+        let (list_sql, list_values) = list_stmt.build_any(backend.get_query_builder().as_ref());
+        let rows = self
+            .db
+            .query_all(Statement::from_sql_and_values(
+                backend,
+                list_sql,
+                list_values,
+            ))
+            .await?
+            .into_iter()
+            .map(|row| ProjectIssueListRow::from_query_result(&row, ""))
+            .collect::<Result<Vec<_>, DbErr>>()?;
+
+        let total_count = if page_size.is_some() {
+            total_count
+        } else {
+            rows.len() as u32
+        };
+        let effective_page_size = page_size.unwrap_or(total_count.max(1));
+        let records = self
+            .project_issue_list_items_from_rows(&rows, &project)
+            .await?;
 
         Ok(ProjectIssueListRecord {
             draft_items,
@@ -518,13 +512,13 @@ impl AppRepositoryImpl<'_> {
             .paginate(&self.db, page_size as u64)
             .fetch_page((page_num - 1) as u64)
             .await?;
-        let mut records = Vec::with_capacity(models.len());
-        for model in models {
-            records.push(
-                self.project_issue_list_item_from_model(model, project)
-                    .await?,
-            );
-        }
+        let rows = models
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<ProjectIssueListRow>>();
+        let records = self
+            .project_issue_list_items_from_rows(&rows, project)
+            .await?;
 
         Ok(ProjectIssueListRecord {
             draft_items: Vec::new(),
@@ -703,12 +697,28 @@ impl AppRepositoryImpl<'_> {
             .skip(offset)
             .take(page_size as usize)
             .collect::<Vec<_>>();
-        let mut items = Vec::new();
-        for (row, project) in page_models {
-            items.push(
-                self.project_issue_list_item_from_model(row, &project)
+        let mut rows_by_project = HashMap::<i64, Vec<ProjectIssueListRow>>::new();
+        for (row, project) in &page_models {
+            rows_by_project
+                .entry(project.id)
+                .or_default()
+                .push(row.clone().into());
+        }
+        let mut items_by_project = HashMap::<i64, Vec<ProjectIssueListItemRecord>>::new();
+        for (project_id, rows) in rows_by_project {
+            let project = project_by_id.get(&project_id).expect("page project");
+            items_by_project.insert(
+                project_id,
+                self.project_issue_list_items_from_rows(&rows, project)
                     .await?,
             );
+        }
+        let mut items = Vec::with_capacity(page_models.len());
+        for (_row, project) in page_models {
+            let batch = items_by_project
+                .get_mut(&project.id)
+                .expect("page project batch");
+            items.push(batch.remove(0));
         }
 
         Ok(OrganizationIssueListRecord {
@@ -724,26 +734,176 @@ impl AppRepositoryImpl<'_> {
     }
 }
 
-fn sort_issue_models_for_project(items: &mut [issue::Model], order_by: &str, order_dir: &str) {
-    let descending = normalize_identity(order_dir) != "asc";
-    let normalized_order = normalize_identity(order_by);
-    items.sort_by(|left, right| {
-        let ordering = match normalized_order.as_str() {
-            "duedate" => left.due_date.cmp(&right.due_date),
-            "updateddate" => left.updated_date.cmp(&right.updated_date),
-            "numofcomments" => left
-                .num_of_comments
-                .unwrap_or_default()
-                .cmp(&right.num_of_comments.unwrap_or_default()),
-            _ => left.created_date.cmp(&right.created_date),
+/// Escapes a LIKE pattern so `%`, `_`, and `\` match literally.
+fn escape_like(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '\\' => escaped.push_str("\\\\"),
+            '%' => escaped.push_str("\\%"),
+            '_' => escaped.push_str("\\_"),
+            _ => escaped.push(ch),
         }
-        .then_with(|| left.number.cmp(&right.number))
-        .then_with(|| left.id.cmp(&right.id));
+    }
+    escaped
+}
 
-        if descending {
-            ordering.reverse()
-        } else {
-            ordering
+/// SQL predicate mirroring the legacy Rust-side filter loop of
+/// `list_project_issues_filtered_with_page_size`. Drafts are excluded here
+/// (they are handled by the separate draft query); the non-simple path
+/// deliberately includes subtasks as flat rows — that difference vs. the
+/// simple path is the contract.
+fn project_issue_list_condition(
+    project_id: i64,
+    filter: &IssueListFilter,
+    backend: DatabaseBackend,
+) -> Condition {
+    let mut condition = Condition::all()
+        .add(Expr::col((issue::Entity, issue::Column::ProjectId)).eq(project_id))
+        .add(Expr::col((issue::Entity, issue::Column::IsDraft)).eq(0));
+
+    if let Some(state) = filter.state.as_deref() {
+        if !state.trim().is_empty() {
+            condition = condition
+                .add(Expr::col((issue::Entity, issue::Column::State)).eq(issue_state_to_raw(state)));
         }
-    });
+    }
+    if filter.author_id.is_some_and(|author_id| author_id > 0) {
+        condition = condition.add(
+            Expr::col((issue::Entity, issue::Column::AuthorId)).eq(filter.author_id.unwrap()),
+        );
+    }
+    if let Some(login_id) = filter.author_login_id.as_deref() {
+        if !login_id.trim().is_empty() {
+            condition = condition.add(
+                Expr::expr(Func::lower(Expr::col((
+                    issue::Entity,
+                    issue::Column::AuthorLoginId,
+                ))))
+                .eq(normalize_identity(login_id)),
+            );
+        }
+    }
+    if filter.commenter_id.is_some_and(|commenter_id| commenter_id > 0) {
+        let mut commenter_sub = Query::select();
+        commenter_sub
+            .column((issue_comment::Entity, issue_comment::Column::IssueId))
+            .from(issue_comment::Entity)
+            .and_where(
+                Expr::col((issue_comment::Entity, issue_comment::Column::AuthorId))
+                    .eq(filter.commenter_id.unwrap()),
+            );
+        condition = condition
+            .add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(commenter_sub));
+    }
+    if let Some(due_date) = filter.due_date {
+        let date = due_date.date();
+        let start = date.and_hms_opt(0, 0, 0).expect("midnight");
+        let end = date
+            .succ_opt()
+            .expect("max date has no successor")
+            .and_hms_opt(0, 0, 0)
+            .expect("midnight");
+        condition = condition
+            .add(Expr::col((issue::Entity, issue::Column::DueDate)).gte(start))
+            .add(Expr::col((issue::Entity, issue::Column::DueDate)).lt(end));
+    }
+    if let Some(milestone_id) = filter.milestone_id {
+        condition = condition.add(
+            Expr::col((issue::Entity, issue::Column::MilestoneId)).eq(milestone_id),
+        );
+    }
+    if let Some(assignee_user_id) = filter.assignee_id {
+        if assignee_user_id <= 0 {
+            condition = condition
+                .add(Expr::col((issue::Entity, issue::Column::AssigneeId)).is_null());
+        } else {
+            let mut assignee_sub = Query::select();
+            assignee_sub
+                .column((assignee::Entity, assignee::Column::Id))
+                .from(assignee::Entity)
+                .and_where(
+                    Expr::col((assignee::Entity, assignee::Column::UserId)).eq(assignee_user_id),
+                );
+            condition = condition
+                .add(Expr::col((issue::Entity, issue::Column::AssigneeId)).in_subquery(assignee_sub));
+        }
+    }
+    if let Some(assignee_login_id) = filter.assignee_login_id.as_deref() {
+        if !assignee_login_id.trim().is_empty() {
+            let mut assignee_sub = Query::select();
+            assignee_sub
+                .column((assignee::Entity, assignee::Column::Id))
+                .from(assignee::Entity)
+                .inner_join(
+                    n4user::Entity,
+                    Expr::col((assignee::Entity, assignee::Column::UserId))
+                        .equals((n4user::Entity, n4user::Column::Id)),
+                )
+                .and_where(
+                    Expr::expr(Func::lower(Expr::col((n4user::Entity, n4user::Column::LoginId))))
+                        .eq(normalize_identity(assignee_login_id)),
+                );
+            condition = condition
+                .add(Expr::col((issue::Entity, issue::Column::AssigneeId)).in_subquery(assignee_sub));
+        }
+    }
+    if !filter.label_ids.is_empty() {
+        let mut labeled_sub = Query::select();
+        labeled_sub
+            .column((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
+            .from(issue_issue_label::Entity)
+            .and_where(
+                Expr::col((issue_issue_label::Entity, issue_issue_label::Column::IssueLabelId))
+                    .is_in(filter.label_ids.iter().copied()),
+            )
+            .group_by_col((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
+            .and_having(
+                Expr::expr(Func::count_distinct(Expr::col((
+                    issue_issue_label::Entity,
+                    issue_issue_label::Column::IssueLabelId,
+                ))))
+                .eq(filter.label_ids.len() as u64),
+            );
+        condition = condition
+            .add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(labeled_sub));
+    }
+    if let Some(text_filter) = filter.filter.as_deref() {
+        let needle = normalize_identity(text_filter);
+        if !needle.is_empty() {
+            let placeholder = sql_placeholders(backend, 1)[0].clone();
+            let needle = format!("%{}%", escape_like(&needle));
+            // MySQL processes backslash escapes inside string literals (its
+            // ESCAPE literal needs a doubled backslash); SQLite and PostgreSQL
+            // treat them literally.
+            let escape_literal = match backend {
+                DatabaseBackend::MySql => "\\\\",
+                _ => "\\",
+            };
+            let like_clause = format!("LIKE {placeholder} ESCAPE '{escape_literal}'");
+            let title_like = Expr::cust_with_values(
+                format!("LOWER(TRIM(issue.title)) {like_clause}"),
+                vec![sea_orm::Value::from(needle.clone())],
+            );
+            let body_like = Expr::cust_with_values(
+                format!("LOWER(TRIM(issue.body)) {like_clause}"),
+                vec![sea_orm::Value::from(needle.clone())],
+            );
+            let mut comment_sub = Query::select();
+            comment_sub
+                .column((issue_comment::Entity, issue_comment::Column::IssueId))
+                .from(issue_comment::Entity)
+                .and_where(Expr::cust_with_values(
+                    format!("LOWER(TRIM(contents)) {like_clause}"),
+                    vec![sea_orm::Value::from(needle)],
+                ));
+            condition = condition.add(
+                Condition::any()
+                    .add(title_like)
+                    .add(body_like)
+                    .add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(comment_sub)),
+            );
+        }
+    }
+    condition
 }

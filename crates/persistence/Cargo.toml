@@ -11,12 +11,20 @@ sqlite = ["sea-orm/sqlx-sqlite"]
 postgres = ["sea-orm/sqlx-postgres"]
 mysql = ["sea-orm/sqlx-mysql"]
 db-matrix = ["sqlite", "postgres", "mysql"]
+cache-redis = ["redis"]
 
 [dependencies]
 async-trait.workspace = true
+chrono.workspace = true
+moka.workspace = true
 rand.workspace = true
+redis = { workspace = true, optional = true }
 sea-orm.workspace = true
+sea-query = "0.32"
 serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 yoram-persistence-entities = { path = "../persistence-entities" }
 yoram-search = { path = "../search" }
 

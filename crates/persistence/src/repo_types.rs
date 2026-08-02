@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::DateTime;
-use serde::Serialize;
+use sea_orm::FromQueryResult;
+use serde::{Deserialize, Serialize};
 use yoram_search::SearchSnippet;
 
 mod legacy_external;
@@ -146,7 +147,7 @@ pub struct IssueRecord {
     pub attachments: Vec<IssueAttachmentRecord>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueChildRecord {
     pub assignee_label: String,
     pub comment_count: u32,
@@ -207,7 +208,7 @@ pub struct IssueSharerRecord {
     pub user_label: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueAssignableUserRecord {
     pub avatar_url: String,
     pub display_name: String,
@@ -216,14 +217,14 @@ pub struct IssueAssignableUserRecord {
     pub pure_name_only: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueAssignableUserSearchRecord {
     pub items: Vec<IssueAssignableUserRecord>,
     pub total: u32,
     pub truncated: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectIssueSearchUserRecord {
     pub avatar_url: String,
     pub display_name: String,
@@ -232,7 +233,7 @@ pub struct ProjectIssueSearchUserRecord {
     pub user_id: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectIssueSearchUserListRecord {
     pub items: Vec<ProjectIssueSearchUserRecord>,
 }
@@ -317,7 +318,7 @@ pub struct IssueShareStatus {
     pub inherited_from_parent: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectIssueListItemRecord {
     pub author_email_address: String,
     pub author_label: String,
@@ -351,6 +352,53 @@ pub struct ProjectIssueListItemRecord {
     pub watcher_count: u32,
     pub weight: i16,
     pub labels: Vec<IssueLabelRecord>,
+}
+
+/// Lean projection of the 16 `issue` columns the issue list path reads.
+///
+/// `body`, `history`, and `updated_by_author_id` are never read by the list
+/// path, so the list query selects only these columns.
+#[derive(Clone, Debug, PartialEq, Eq, FromQueryResult)]
+pub struct ProjectIssueListRow {
+    pub id: i64,
+    pub title: Option<String>,
+    pub created_date: Option<DateTime>,
+    pub updated_date: Option<DateTime>,
+    pub author_id: Option<i64>,
+    pub author_login_id: Option<String>,
+    pub author_name: Option<String>,
+    pub number: Option<i64>,
+    pub num_of_comments: Option<i32>,
+    pub state: Option<i32>,
+    pub due_date: Option<DateTime>,
+    pub milestone_id: Option<i64>,
+    pub assignee_id: Option<i64>,
+    pub parent_id: Option<i64>,
+    pub weight: Option<i16>,
+    pub is_draft: Option<i16>,
+}
+
+impl From<crate::issue::Model> for ProjectIssueListRow {
+    fn from(model: crate::issue::Model) -> Self {
+        Self {
+            id: model.id,
+            title: model.title,
+            created_date: model.created_date,
+            updated_date: model.updated_date,
+            author_id: model.author_id,
+            author_login_id: model.author_login_id,
+            author_name: model.author_name,
+            number: model.number,
+            num_of_comments: model.num_of_comments,
+            state: model.state,
+            due_date: model.due_date,
+            milestone_id: model.milestone_id,
+            assignee_id: model.assignee_id,
+            parent_id: model.parent_id,
+            weight: model.weight,
+            is_draft: model.is_draft,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -532,7 +580,7 @@ pub struct UserIssueListRecord {
     pub total_count: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueLabelRecord {
     pub category_id: Option<i64>,
     pub category_is_exclusive: bool,
@@ -660,7 +708,7 @@ pub struct UpdateProjectLabelCategoryInput {
     pub project_name: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueMilestoneRecord {
     pub attachments: Vec<IssueAttachmentRecord>,
     pub closed_issue_count: u32,
@@ -701,7 +749,7 @@ pub struct UpdateMilestoneInput {
     pub values: MilestoneMutationInput,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueAttachmentRecord {
     pub created_at: Option<DateTime>,
     pub hash: String,

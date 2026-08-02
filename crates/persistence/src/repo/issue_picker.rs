@@ -118,6 +118,17 @@ impl AppRepositoryImpl<'_> {
         search_type: &str,
         limit: usize,
     ) -> Result<Option<IssueAssignableUserSearchRecord>, DbErr> {
+        // Cache only the dropdown-open (empty-query) case: keystroke
+        // autocomplete queries have an unbounded key space and bypass the cache.
+        if query.trim().is_empty() {
+            if let Some(records) = self
+                .stable_lists
+                .assignable_users(owner_name, project_name, actor_id)
+                .await
+            {
+                return Ok(Some(records));
+            }
+        }
         let Some(project_record) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
@@ -125,16 +136,22 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         };
 
-        self.list_assignable_users_for_project(
-            &project_record,
-            actor_id,
-            None,
-            query,
-            search_type,
-            limit,
-        )
-        .await
-        .map(Some)
+        let records = self
+            .list_assignable_users_for_project(
+                &project_record,
+                actor_id,
+                None,
+                query,
+                search_type,
+                limit,
+            )
+            .await?;
+        if query.trim().is_empty() {
+            self.stable_lists
+                .insert_assignable_users(owner_name, project_name, actor_id, &records)
+                .await;
+        }
+        Ok(Some(records))
     }
 
     pub async fn list_project_issue_search_users(
@@ -144,6 +161,13 @@ impl AppRepositoryImpl<'_> {
         actor_id: Option<i64>,
         role: &str,
     ) -> Result<Option<ProjectIssueSearchUserListRecord>, DbErr> {
+        if let Some(records) = self
+            .stable_lists
+            .issue_search_users(owner_name, project_name, role, actor_id)
+            .await
+        {
+            return Ok(Some(records));
+        }
         let Some(project_record) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
@@ -186,7 +210,11 @@ impl AppRepositoryImpl<'_> {
         });
         users.dedup_by_key(|user| user.user_id);
 
-        Ok(Some(ProjectIssueSearchUserListRecord { items: users }))
+        let records = ProjectIssueSearchUserListRecord { items: users };
+        self.stable_lists
+            .insert_issue_search_users(owner_name, project_name, role, actor_id, &records)
+            .await;
+        Ok(Some(records))
     }
 
     pub async fn list_issue_assignable_users(

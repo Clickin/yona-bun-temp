@@ -1807,6 +1807,173 @@ async fn project_issue_list_filters_unassigned_issues_by_legacy_assignee_id_zero
 }
 
 #[tokio::test]
+async fn project_issue_list_sql_filters_labels_assignee_commenter() {
+    // Pins the sea-query filter path of the issue list: label-set, commenter,
+    // assignee-login, and author-login filters on the same project.
+    let (app, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "assignee").await;
+    let (commenter_csrf, commenter_cookie, commenter_id) =
+        register_user(app.clone(), "commenter").await;
+
+    let project = rpc(
+        app.clone(),
+        "CreateProject",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        json!({
+            "ownerName": "owner",
+            "projectName": "projectYobi",
+            "overview": "SQL filter parity",
+            "projectScope": "public"
+        }),
+    )
+    .await;
+    response_json(project).await;
+
+    let label_response = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/labels",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "labelName": "bug",
+                "labelColor": "#f00",
+                "categoryName": ""
+            })),
+        )
+        .await,
+    )
+    .await;
+    let label_id = label_response["label"]["id"]
+        .as_i64()
+        .expect("created label id");
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "bodyMarkdown": "labeled",
+                "labelIds": [label_id],
+                "title": "Labeled and commented"
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&commenter_cookie),
+            Some(&commenter_csrf),
+            Some(json!({"contentsMarkdown": "comment body"})),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "assigneeLoginId": "assignee",
+                "bodyMarkdown": "assigned",
+                "title": "Assignee filtered"
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "bodyMarkdown": "plain",
+                "title": "Plain open issue"
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let labeled = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/projectYobi/issues?state=open&labelIds[]={label_id}"),
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(labeled["totalCount"], 1);
+    assert_eq!(labeled["items"][0]["title"], "Labeled and commented");
+
+    let commented = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "/yona/api/v1/projects/owner/projectYobi/issues?state=open&commenterId={commenter_id}"
+            ),
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(commented["totalCount"], 1);
+    assert_eq!(commented["items"][0]["title"], "Labeled and commented");
+
+    let assigned = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open&assigneeLoginId=assignee",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(assigned["totalCount"], 1);
+    assert_eq!(assigned["items"][0]["title"], "Assignee filtered");
+
+    let authored = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open&authorLoginId=owner",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(authored["totalCount"], 3);
+}
+
+#[tokio::test]
 async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     // Guards route-utils-owned authenticated-user and project resource-create authorization for issue routes.
     let (app, repo) = build_app_with_repository().await;

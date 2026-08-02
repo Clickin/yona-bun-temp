@@ -18,6 +18,7 @@ impl AppRepositoryImpl<'_> {
             let mut active = project_user::ActiveModel::from(existing);
             active.role_id = Set(Some(role_id));
             active.update(&self.db).await?;
+            self.invalidate_user_lists_for_project(project_id).await;
             return Ok(());
         }
 
@@ -29,6 +30,7 @@ impl AppRepositoryImpl<'_> {
         }
         .insert(&self.db)
         .await?;
+        self.invalidate_user_lists_for_project(project_id).await;
 
         Ok(())
     }
@@ -48,7 +50,18 @@ impl AppRepositoryImpl<'_> {
                 .exec(&self.db)
                 .await?;
         }
+        self.invalidate_user_lists_for_project(project_id).await;
         Ok(())
+    }
+
+    /// Membership (role) changes affect the assignable/search user lists; the
+    /// methods only carry `project_id`, so resolve the owner/project once.
+    async fn invalidate_user_lists_for_project(&self, project_id: i64) {
+        if let Ok(Some(project)) = self.read_project_by_id(project_id).await {
+            self.stable_lists
+                .invalidate_users(&project.owner_name, &project.project_name)
+                .await;
+        }
     }
 
     pub async fn create_project_member_accept_notification(

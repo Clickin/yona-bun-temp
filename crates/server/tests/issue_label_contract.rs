@@ -538,3 +538,65 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
         .unwrap();
     assert_eq!(delete_response.status(), StatusCode::OK);
 }
+
+#[tokio::test]
+// Documents the stable-list cache: repeated reads are identical, and a create
+// invalidates so the next read reflects the new row immediately.
+async fn issue_label_list_is_served_stably_and_invalidated_on_create() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_public_project(app.clone(), &cookie, &csrf).await;
+
+    async fn list_labels(app: axum::Router, cookie: &str) -> serde_json::Value {
+        response_json(
+            app.oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/yona/api/v1/owners/owner/projects/projectYobi/labels")
+                    .header(http::header::COOKIE, cookie)
+                    .header(http::header::ACCEPT, "application/json")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap(),
+        )
+        .await
+    }
+
+    let first = list_labels(app.clone(), &cookie).await;
+    let second = list_labels(app.clone(), &cookie).await;
+    assert_eq!(first, second, "repeated label reads are identical");
+
+    let created = response_json(
+        app.clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/yona/api/v1/owners/owner/projects/projectYobi/labels")
+                    .header(http::header::COOKIE, &cookie)
+                    .header("x-csrf-token", &csrf)
+                    .header(http::header::ACCEPT, "application/json")
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        r##"{"labelName":"CacheProbe","labelColor":"#123456","categoryName":"Type"}"##,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap(),
+        )
+        .await;
+    assert_eq!(created["label"]["name"], "CacheProbe");
+
+    let after_create = list_labels(app.clone(), &cookie).await;
+    assert_ne!(
+        after_create, second,
+        "create must invalidate the cached label list"
+    );
+    assert!(after_create["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|label| label["name"] == "CacheProbe"));
+}

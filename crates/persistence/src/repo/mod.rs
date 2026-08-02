@@ -31,7 +31,7 @@ use crate::repo_types::{
     ProjectAuthorizationRecord, ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord,
     ProjectDashboardMilestoneRecord, ProjectDashboardPullRequestRecord,
     ProjectEnrollmentRequestRecord, ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectIssueParentOptionRecord, ProjectIssueReferenceRecord,
+    ProjectIssueListRecord, ProjectIssueListRow, ProjectIssueParentOptionRecord, ProjectIssueReferenceRecord,
     ProjectIssueReferenceSearchRecord, ProjectIssueSearchUserListRecord,
     ProjectIssueSearchUserRecord, ProjectListEntry, ProjectMemberDirectoryRecord,
     ProjectMemberRecord, ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord,
@@ -85,6 +85,7 @@ use sea_orm::{
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use yoram_search::{
     keyword_matches, make_snippets, relevance_score, resolve_search_type, SearchSnippet,
@@ -93,11 +94,16 @@ use yoram_search::{
 
 mod app_user;
 mod default_landing;
+mod stable_list_cache;
+
+pub use stable_list_cache::StableListStore;
+use stable_list_cache::{MokaCacheStore, StableLists};
 
 #[derive(Clone)]
 pub struct AppRepositoryImpl<'db> {
     config: RepositoryConfig,
     db: RepositoryDb<'db>,
+    stable_lists: StableLists,
 }
 
 pub type AppRepository = AppRepositoryImpl<'static>;
@@ -289,6 +295,28 @@ impl RepositoryConfig {
         configured_project_default_menu_settings_from_value(
             self.value("YONA_PROJECT_DEFAULT_MENUS"),
         )
+    }
+
+    /// Stable-list cache store selected by `YONA_STABLE_LIST_CACHE`. A shared
+    /// redis/valkey URL requires the `cache-redis` feature; anything else
+    /// (unset or `memory`) uses the in-process moka store.
+    pub fn stable_list_store(&self) -> Arc<dyn StableListStore> {
+        match self.value("YONA_STABLE_LIST_CACHE") {
+            Some(url) if !url.eq_ignore_ascii_case("memory") => {
+                #[cfg(feature = "cache-redis")]
+                {
+                    Arc::new(stable_list_cache::RedisCacheStore::new(url))
+                }
+                #[cfg(not(feature = "cache-redis"))]
+                {
+                    tracing::warn!(
+                        "YONA_STABLE_LIST_CACHE set but cache-redis feature is off; falling back to in-memory cache"
+                    );
+                    Arc::new(MokaCacheStore::new())
+                }
+            }
+            _ => Arc::new(MokaCacheStore::new()),
+        }
     }
 }
 
