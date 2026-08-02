@@ -1,5 +1,6 @@
 use axum::{
-    http::{HeaderMap, HeaderValue, StatusCode},
+    body::Body,
+    http::{header, HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Redirect, Response},
     Json,
 };
@@ -744,6 +745,40 @@ pub(crate) fn append_response_headers(target: &mut HeaderMap, source: &HeaderMap
 
 pub(crate) fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Response {
     let mut response = Json(payload).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
+}
+
+pub(crate) fn rest_json_response_with_etag<T: Serialize>(payload: T, ctx: Context) -> Response {
+    let body = serde_json::to_vec(&payload).expect("REST payload must be serializable");
+    let mut digest = Md5::new();
+    digest.update(&body);
+    let etag_value = format!("\"{:x}\"", digest.finalize());
+    let matches = ctx
+        .headers
+        .get(header::IF_NONE_MATCH)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| {
+            value
+                .split(',')
+                .map(str::trim)
+                .any(|candidate| candidate == "*" || candidate == etag_value)
+        });
+
+    let mut response = if matches {
+        StatusCode::NOT_MODIFIED.into_response()
+    } else {
+        let mut response = Body::from(body).into_response();
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+        response
+    };
+    response.headers_mut().insert(
+        header::ETAG,
+        HeaderValue::from_str(&etag_value).expect("generated REST ETag is valid"),
+    );
     append_response_headers(response.headers_mut(), &ctx.response_headers);
     response
 }

@@ -2,13 +2,12 @@ use super::*;
 
 impl AppRepositoryImpl<'_> {
     pub(super) async fn first_registered_user_id(&self) -> Result<Option<i64>, DbErr> {
-        let mut users = n4user::Entity::find().all(&self.db).await?;
-        users.retain(|user| {
-            normalize_optional(user.login_id.as_deref()).as_deref()
-                != Some(LEGACY_ANONYMOUS_LOGIN_ID)
-        });
-        users.sort_by_key(|user| user.id);
-        Ok(users.first().map(|user| user.id))
+        Ok(n4user::Entity::find()
+            .filter(n4user::Column::LoginId.ne(Some(LEGACY_ANONYMOUS_LOGIN_ID.to_string())))
+            .order_by_asc(n4user::Column::Id)
+            .one(&self.db)
+            .await?
+            .map(|user| user.id))
     }
 
     pub(super) async fn app_user_record_from_model(
@@ -151,15 +150,15 @@ impl AppRepositoryImpl<'_> {
         &self,
         site_admin_ids: &HashSet<i64>,
     ) -> Result<usize, DbErr> {
-        let users = n4user::Entity::find().all(&self.db).await?;
-        Ok(users
-            .into_iter()
-            .filter(|user| site_admin_ids.contains(&user.id))
-            .filter(|user| {
-                normalize_optional(user.login_id.as_deref()).as_deref()
-                    != Some(LEGACY_ANONYMOUS_LOGIN_ID)
-            })
-            .count())
+        if site_admin_ids.is_empty() {
+            return Ok(0);
+        }
+
+        Ok(n4user::Entity::find()
+            .filter(n4user::Column::Id.is_in(site_admin_ids.iter().copied()))
+            .filter(n4user::Column::LoginId.ne(Some(LEGACY_ANONYMOUS_LOGIN_ID.to_string())))
+            .count(&self.db)
+            .await? as usize)
     }
 
     pub(super) async fn user_is_site_admin(&self, user_id: i64) -> Result<bool, DbErr> {

@@ -1,7 +1,8 @@
 use sea_orm::{ActiveModelTrait, Database, NotSet, Set};
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    n4user, AppRepository, CreateOrganizationInput, CreateProjectInput, UpdateProjectInput,
+    n4user, AppRepository, CreateOrganizationInput, CreateProjectInput, CreateUserInput,
+    RepositoryConfig, SiteUserListFilter, UpdateProjectInput,
 };
 
 #[tokio::test]
@@ -146,4 +147,139 @@ async fn site_project_list_filters_and_paginates_in_the_database() {
     assert_eq!(filtered.total_pages, 1);
     assert_eq!(filtered.projects.len(), 1);
     assert_eq!(filtered.projects[0].project_name, "site-page-26");
+}
+
+#[tokio::test]
+async fn site_user_list_filters_and_paginates_in_the_database() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let repo = AppRepository::new_with_config(
+        db,
+        RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "guest-")]),
+    );
+
+    repo.create_user(CreateUserInput {
+        display_name: "Initial User".to_string(),
+        email_address: "initial@example.test".to_string(),
+        is_confirmed: true,
+        is_site_admin: false,
+        login_id: "initial-user".to_string(),
+        password_hash: "hashed".to_string(),
+    })
+    .await
+    .expect("create initial user");
+
+    for index in 0..31 {
+        repo.create_user(CreateUserInput {
+            display_name: if index == 30 {
+                "Needle User".to_string()
+            } else {
+                format!("Active User {index:02}")
+            },
+            email_address: format!("active-{index:02}@example.test"),
+            is_confirmed: true,
+            is_site_admin: index == 0,
+            login_id: if index == 30 {
+                "needle-user".to_string()
+            } else {
+                format!("active-{index:02}")
+            },
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create active user");
+    }
+
+    repo.create_user(CreateUserInput {
+        display_name: "Guest User".to_string(),
+        email_address: "guest@example.test".to_string(),
+        is_confirmed: true,
+        is_site_admin: false,
+        login_id: "guest-account".to_string(),
+        password_hash: "hashed".to_string(),
+    })
+    .await
+    .expect("create guest user");
+    repo.create_user(CreateUserInput {
+        display_name: "Locked User".to_string(),
+        email_address: "locked@example.test".to_string(),
+        is_confirmed: false,
+        is_site_admin: false,
+        login_id: "locked-user".to_string(),
+        password_hash: "hashed".to_string(),
+    })
+    .await
+    .expect("create locked user");
+
+    let active_page = repo
+        .list_site_users(SiteUserListFilter {
+            page: 1,
+            query: String::new(),
+            state: "ACTIVE".to_string(),
+        })
+        .await
+        .expect("read active site-admin user page");
+    assert_eq!(active_page.page_size, 30);
+    assert_eq!(active_page.total, 32);
+    assert_eq!(active_page.total_pages, 2);
+    assert_eq!(active_page.users.len(), 30);
+    assert_eq!(active_page.site_admin_count, 1);
+
+    let active_second_page = repo
+        .list_site_users(SiteUserListFilter {
+            page: 2,
+            query: String::new(),
+            state: "ACTIVE".to_string(),
+        })
+        .await
+        .expect("read second active site-admin user page");
+    assert_eq!(active_second_page.users.len(), 2);
+
+    let filtered = repo
+        .list_site_users(SiteUserListFilter {
+            page: 1,
+            query: "NEEDLE".to_string(),
+            state: "ACTIVE".to_string(),
+        })
+        .await
+        .expect("read filtered site-admin user page");
+    assert_eq!(filtered.total, 1);
+    assert_eq!(filtered.total_pages, 1);
+    assert_eq!(filtered.users.len(), 1);
+    assert_eq!(filtered.users[0].login_id, "needle-user");
+
+    let guest = repo
+        .list_site_users(SiteUserListFilter {
+            page: 1,
+            query: String::new(),
+            state: "GUEST".to_string(),
+        })
+        .await
+        .expect("read guest site-admin user page");
+    assert_eq!(guest.total, 1);
+    assert_eq!(guest.users[0].login_id, "guest-account");
+
+    let locked = repo
+        .list_site_users(SiteUserListFilter {
+            page: 1,
+            query: String::new(),
+            state: "LOCKED".to_string(),
+        })
+        .await
+        .expect("read locked site-admin user page");
+    assert_eq!(locked.total, 1);
+    assert_eq!(locked.users[0].login_id, "locked-user");
+
+    let site_admin = repo
+        .list_site_users(SiteUserListFilter {
+            page: 1,
+            query: String::new(),
+            state: "SITE_ADMIN".to_string(),
+        })
+        .await
+        .expect("read site-admin user page");
+    assert_eq!(site_admin.total, 1);
+    assert_eq!(site_admin.users[0].is_site_admin, true);
 }

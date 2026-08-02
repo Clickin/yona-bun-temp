@@ -11,6 +11,7 @@ import {
   type UserIssueListRestResponse,
 } from "../../auth-workspace-client";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
+import { IssueLabel } from "../../components/issue-label";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -1020,7 +1021,8 @@ function UserIssueItem({
               <IssueSubtaskSummary issue={issue} />
             </span>
             {issue.labels.map((label) => (
-              <Link
+              <IssueLabel
+                as={Link}
                 to="/$ownerName/$projectName/issues"
                 params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
                 search={{
@@ -1036,14 +1038,14 @@ function UserIssueItem({
                   orderDir: "desc",
                   pageNum: 1,
                 }}
-                className={`label issue-label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
-                data-label-id={label.id}
-                {...stylex.props(issueStyles.issueLabelBackground(label.color))}
+                className={`label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
+                color={label.color}
+                labelId={label.id}
                 data-stylex-owner="user-issues-issue-label-background"
                 key={String(label.id)}
               >
                 {label.name}
-              </Link>
+              </IssueLabel>
             ))}
             <div
               {...(showSubtasksAlways || isChildListVisible
@@ -1287,12 +1289,13 @@ function UserIssueChildRow({
         <UserIssueChildCommentAndVotePair issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => (
-        <Link
-          className={`label issue-label list-label active twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
+        <IssueLabel
+          as={Link}
+          className={`label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
+          color={label.color}
           data-category-id={String(label.categoryId ?? "")}
-          data-label-id={String(label.id)}
+          labelId={String(label.id)}
           key={String(label.id)}
-          {...stylex.props(issueStyles.issueLabelBackground(label.color))}
           data-stylex-owner="user-issues-child-issue-label-background"
           to="/$ownerName/$projectName/issues"
           params={{ ownerName, projectName }}
@@ -1311,7 +1314,7 @@ function UserIssueChildRow({
           }}
         >
           {label.name}
-        </Link>
+        </IssueLabel>
       ))}
       <span className="child-issue-date" title={issue.createdLabel}>
         {issue.createdLabel}

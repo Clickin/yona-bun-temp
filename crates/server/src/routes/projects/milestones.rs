@@ -171,14 +171,18 @@ pub(crate) async fn project_milestone_list(
         actor_id,
     )
     .await?;
-    let records = repository
-        .list_project_milestones(
-            &request.owner_name,
-            &request.project_name,
-            milestone_list_filter_from_request(&request),
-        )
-        .await
-        .map_err(internal_error)?;
+    let filter = milestone_list_filter_from_request(&request);
+    let records = if request.include_details == Some(false) {
+        repository
+            .list_project_milestone_options(&request.owner_name, &request.project_name, filter)
+            .await
+            .map_err(internal_error)?
+    } else {
+        repository
+            .list_project_milestones(&request.owner_name, &request.project_name, filter)
+            .await
+            .map_err(internal_error)?
+    };
     let milestones = records
         .iter()
         .map(|record| project_milestone_from_record(record, &service.base_path))

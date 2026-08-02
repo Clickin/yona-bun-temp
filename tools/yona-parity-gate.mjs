@@ -641,6 +641,8 @@ const DOMAIN_BUCKETS = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/project-labels\.ts$/i,
+      /^frontend\/src\/api\/rest-client\.ts$/i,
+      /^frontend\/src\/components\/tab-button\.tsx$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,

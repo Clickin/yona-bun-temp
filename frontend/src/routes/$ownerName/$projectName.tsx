@@ -9,6 +9,7 @@ import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
+import { IssueLabel } from "../../components/issue-label";
 import { styles as projectHomeStyles } from "./$projectName/-project-home.stylex";
 
 const projectHistoryStyles = stylex.create({
@@ -784,6 +785,16 @@ function ProjectHomeRouteShell({
           runtimeConfig={runtimeConfig}
         >
           {null}
+        </SiteLayoutShell>
+      );
+    }
+    if (active === "issue") {
+      return (
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+        >
+          <Outlet />
         </SiteLayoutShell>
       );
     }
@@ -2589,9 +2600,13 @@ function DashboardLabels({
                         issueHref(basePath, ownerName, projectName, `labelIds=${labelId}`),
                       )}
                     >
-                      <span className="issue-label list-label active" data-label-id={labelId}>
+                      <IssueLabel
+                        className="list-label"
+                        color={stringField(label.color, "")}
+                        labelId={labelId}
+                      >
                         {stringField(label.name, "")}
-                      </span>
+                      </IssueLabel>
                     </Link>
                   </div>
                   <div

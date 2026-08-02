@@ -14,6 +14,7 @@ import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, YoramRecord } from "../../../../../api/types";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
+import { TabButton } from "../../../../../components/tab-button";
 import {
   listIssueParentOptions,
   readIssueDetail,
@@ -1046,16 +1047,22 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
       data-stylex-owner="issue-editform-markdown-editor-wrapper"
     >
       <ul className="nav nav-tabs nm small">
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
-            {t("common.editor.preview")}
-          </button>
-        </li>
+        <TabButton
+          active={activeTab === "edit"}
+          size="small"
+          type="button"
+          onClick={() => setActiveTab("edit")}
+        >
+          {t("common.editor.edit")}
+        </TabButton>
+        <TabButton
+          active={activeTab === "preview"}
+          size="small"
+          type="button"
+          onClick={() => setActiveTab("preview")}
+        >
+          {t("common.editor.preview")}
+        </TabButton>
         <li>
           <div className="task-list-button">
             <button

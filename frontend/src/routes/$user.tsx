@@ -16,6 +16,7 @@ import type {
   YoramLabel,
   YoramRecord,
 } from "../api/types";
+import { IssueLabel } from "../components/issue-label";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -948,23 +949,22 @@ function ProfileIssueRow({
               />
             </span>
             {labels.map((label) => {
-              const labelStyleProps = stylex.props(
-                styles.issueLabelPresentation,
-                styles.issueLabelBackground(label.color),
-              );
+              const labelPresentation = stylex.props(styles.issueLabelPresentation);
 
               return (
-                <Link
+                <IssueLabel
+                  as={Link}
                   {...LEGACY_LINK_PROPS}
-                  {...labelStyleProps}
+                  {...labelPresentation}
                   to={`${projectPath}/issues?state=open&labelIds=${label.id}` as "/"}
-                  className={`${labelStyleProps.className ?? ""} label issue-label list-label`.trim()}
-                  data-label-id={String(label.id)}
+                  className={`${labelPresentation.className ?? ""} label list-label`.trim()}
+                  color={label.color}
+                  labelId={String(label.id)}
                   key={String(label.id)}
                   data-stylex-owner="user-profile-parent-issue-label"
                 >
                   {label.name}
-                </Link>
+                </IssueLabel>
               );
             })}
             <div
@@ -1280,16 +1280,15 @@ function ProfileIssueChildRow({
         <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => {
-        const labelStyleProps = stylex.props(
-          styles.issueLabelPresentation,
-          styles.issueLabelBackground(label.color),
-        );
+        const labelPresentation = stylex.props(styles.issueLabelPresentation);
 
         return (
-          <Link
+          <IssueLabel
+            as={Link}
             {...LEGACY_LINK_PROPS}
-            {...labelStyleProps}
-            className={`${labelStyleProps.className ?? ""} twoColumeModeTarget`.trim()}
+            {...labelPresentation}
+            className={`${labelPresentation.className ?? ""} twoColumeModeTarget`.trim()}
+            color={label.color}
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
             search={{
@@ -1306,12 +1305,12 @@ function ProfileIssueChildRow({
               state: "open",
             }}
             data-category-id={String(label.categoryId ?? "")}
-            data-label-id={String(label.id)}
+            labelId={String(label.id)}
             key={String(label.id)}
             data-stylex-owner="user-profile-child-issue-label"
           >
             {label.name}
-          </Link>
+          </IssueLabel>
         );
       })}
       <span

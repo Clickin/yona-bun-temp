@@ -1,5 +1,14 @@
 use super::*;
 
+#[derive(Debug, FromQueryResult)]
+struct ProjectIssueCountsRow {
+    closed_issue_count: Option<i64>,
+    open_issue_count: Option<i64>,
+    assigned_to_me_count: Option<i64>,
+    authored_by_me_count: Option<i64>,
+    commented_by_me_count: Option<i64>,
+}
+
 impl AppRepositoryImpl<'_> {
     pub async fn list_project_issues(
         &self,
@@ -45,6 +54,115 @@ impl AppRepositoryImpl<'_> {
             Some(PAGE_SIZE),
         )
         .await
+    }
+
+    pub async fn count_project_issue_summary(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        state: &str,
+        actor_id: Option<i64>,
+    ) -> Result<(u32, u32, u32, u32, u32), DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok((0, 0, 0, 0, 0));
+        };
+
+        let open_condition = Condition::all()
+            .add(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
+            .add(issue::Column::ParentId.is_null());
+        let closed_condition = Condition::all()
+            .add(issue::Column::State.eq(Some(issue_state_to_raw("closed"))))
+            .add(issue::Column::ParentId.is_null());
+        let assigned_condition = actor_id
+            .map(|actor_id| {
+                Condition::all()
+                    .add(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+                    .add(assignee::Column::UserId.eq(Some(actor_id)))
+                    .add(assignee::Column::ProjectId.eq(Some(project.id)))
+            })
+            .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
+        let authored_condition = actor_id
+            .map(|actor_id| {
+                Condition::all()
+                    .add(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+                    .add(issue::Column::AuthorId.eq(Some(actor_id)))
+            })
+            .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
+        let commented_condition = actor_id
+            .map(|actor_id| {
+                let issue_ids = issue_comment::Entity::find()
+                    .select_only()
+                    .column(issue_comment::Column::IssueId)
+                    .filter(issue_comment::Column::AuthorId.eq(Some(actor_id)))
+                    .into_query();
+                Condition::all()
+                    .add(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+                    .add(issue::Column::Id.in_subquery(issue_ids))
+            })
+            .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
+
+        let row = issue::Entity::find()
+            .select_only()
+            .join(JoinType::LeftJoin, issue::Relation::Assignee.def())
+            .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .filter(issue::Column::IsDraft.eq(Some(0)));
+        let row = row
+            .expr_as(
+                Func::count_distinct(Expr::case(
+                    open_condition,
+                    Expr::col((issue::Entity, issue::Column::Id)),
+                )),
+                "open_issue_count",
+            )
+            .expr_as(
+                Func::count_distinct(Expr::case(
+                    closed_condition,
+                    Expr::col((issue::Entity, issue::Column::Id)),
+                )),
+                "closed_issue_count",
+            )
+            .expr_as(
+                Func::count_distinct(Expr::case(
+                    assigned_condition,
+                    Expr::col((issue::Entity, issue::Column::Id)),
+                )),
+                "assigned_to_me_count",
+            )
+            .expr_as(
+                Func::count_distinct(Expr::case(
+                    authored_condition,
+                    Expr::col((issue::Entity, issue::Column::Id)),
+                )),
+                "authored_by_me_count",
+            )
+            .expr_as(
+                Func::count_distinct(Expr::case(
+                    commented_condition,
+                    Expr::col((issue::Entity, issue::Column::Id)),
+                )),
+                "commented_by_me_count",
+            )
+            .into_model::<ProjectIssueCountsRow>()
+            .one(&self.db)
+            .await?
+            .unwrap_or(ProjectIssueCountsRow {
+                closed_issue_count: Some(0),
+                open_issue_count: Some(0),
+                assigned_to_me_count: Some(0),
+                authored_by_me_count: Some(0),
+                commented_by_me_count: Some(0),
+            });
+
+        Ok((
+            row.open_issue_count.unwrap_or_default().max(0) as u32,
+            row.closed_issue_count.unwrap_or_default().max(0) as u32,
+            row.assigned_to_me_count.unwrap_or_default().max(0) as u32,
+            row.authored_by_me_count.unwrap_or_default().max(0) as u32,
+            row.commented_by_me_count.unwrap_or_default().max(0) as u32,
+        ))
     }
 
     pub async fn list_project_issues_for_export(
@@ -122,11 +240,10 @@ impl AppRepositoryImpl<'_> {
                 total_count: 0,
             });
         };
-        let simple_closed_page = page_size.is_some()
-            && filter
-                .state
-                .as_deref()
-                .is_some_and(|state| normalize_identity(state) == "closed")
+        let simple_state_page = page_size.is_some()
+            && filter.state.as_deref().is_some_and(|state| {
+                matches!(normalize_identity(state).as_str(), "open" | "closed")
+            })
             && filter.assignee_id.is_none()
             && filter
                 .assignee_login_id
@@ -152,9 +269,9 @@ impl AppRepositoryImpl<'_> {
                 .is_empty()
             && filter.label_ids.is_empty()
             && filter.milestone_id.is_none();
-        if simple_closed_page {
+        if simple_state_page {
             return self
-                .list_simple_closed_project_issues_page(
+                .list_simple_project_issues_page(
                     &project,
                     &filter,
                     page_size.expect("simple closed page size"),
@@ -339,7 +456,7 @@ impl AppRepositoryImpl<'_> {
         })
     }
 
-    async fn list_simple_closed_project_issues_page(
+    async fn list_simple_project_issues_page(
         &self,
         project: &ProjectRecord,
         filter: &IssueListFilter,
@@ -351,7 +468,9 @@ impl AppRepositoryImpl<'_> {
         let mut query = issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
             .filter(issue::Column::ParentId.is_null())
-            .filter(issue::Column::State.eq(Some(issue_closed_state_raw())))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                filter.state.as_deref().unwrap_or("open"),
+            ))))
             .filter(issue::Column::IsDraft.eq(Some(0)));
 
         match normalize_identity(&filter.order_by).as_str() {

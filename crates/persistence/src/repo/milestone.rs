@@ -1,6 +1,54 @@
 use super::*;
 
 impl AppRepositoryImpl<'_> {
+    pub async fn list_project_milestone_options(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        filter: MilestoneListFilter,
+    ) -> Result<Vec<IssueMilestoneRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        let mut query =
+            milestone::Entity::find().filter(milestone::Column::ProjectId.eq(Some(project.id)));
+        let state = normalize_identity(&filter.state);
+        if matches!(state.as_str(), "open" | "closed") {
+            query = query.filter(milestone::Column::State.eq(Some(issue_state_to_raw(&state))));
+        }
+        let order_dir = normalize_identity(&filter.order_dir);
+        query = if order_dir == "desc" {
+            query
+                .order_by_desc(milestone::Column::DueDate)
+                .order_by_desc(milestone::Column::Id)
+        } else {
+            query
+                .order_by_asc(milestone::Column::DueDate)
+                .order_by_asc(milestone::Column::Id)
+        };
+        let rows = query.all(&self.db).await?;
+        Ok(rows
+            .into_iter()
+            .map(|row| IssueMilestoneRecord {
+                attachments: Vec::new(),
+                closed_issue_count: 0,
+                completion_percent: 0,
+                contents_markdown: String::new(),
+                due_date: row.due_date,
+                due_date_label: format_workspace_date_label(row.due_date),
+                id: row.id,
+                open_issues: Vec::new(),
+                open_issue_count: 0,
+                closed_issues: Vec::new(),
+                state: issue_state_from_raw(row.state),
+                title: row.title.unwrap_or_default(),
+            })
+            .collect())
+    }
+
     pub async fn list_project_milestones(
         &self,
         owner_name: &str,

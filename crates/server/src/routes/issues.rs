@@ -34,7 +34,8 @@ use crate::{
     persistence, project_logo_url, project_read_allowed, project_resource_create_allowed,
     project_update_allowed, redirect_to, require_authenticated_user, require_project_authorization,
     require_project_read, require_project_resource_create, require_session, require_valid_csrf,
-    rest_json_response, rest_owned_view, user_issue_filter_name, user_issue_state,
+    rest_json_response, rest_json_response_with_etag, rest_owned_view, user_issue_filter_name,
+    user_issue_state,
     visible_projects_for_organization, ConnectError, Context, MarkdownIssueReference,
     MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
     ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
@@ -2800,77 +2801,17 @@ async fn rest_list_project_issues(
             .map_err(RestRouteError::from_connect_error)?
             .map(|user| user.login_id);
     }
-    let record = repository
-        .list_project_issues_filtered(&owner_name, &project_name, filter)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-
-    let count_filter = persistence::IssueListFilter {
-        assignee_id: None,
-        assignee_login_id: None,
-        author_id: None,
-        author_login_id: None,
-        commenter_id: None,
-        due_date: None,
-        draft_author_login_id: None,
-        filter: None,
-        label_ids: Vec::new(),
-        milestone_id: None,
-        order_by: "updatedDate".to_string(),
-        order_dir: "desc".to_string(),
-        page_num: 1,
-        state: None,
-    };
-    let mut open_filter = count_filter.clone();
-    open_filter.state = Some("open".to_string());
-    let open_issue_count = repository
-        .list_project_issues_filtered(&owner_name, &project_name, open_filter)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .total_count;
-    let mut closed_filter = count_filter.clone();
-    closed_filter.state = Some("closed".to_string());
-    let closed_issue_count = repository
-        .list_project_issues_filtered(&owner_name, &project_name, closed_filter)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .total_count;
-    let (assigned_to_me_count, authored_by_me_count, commented_by_me_count) =
-        if let Some(actor_id) = actor_id {
-            let mut assigned_filter = count_filter.clone();
-            assigned_filter.assignee_id = Some(actor_id);
-            assigned_filter.state = Some(count_state.to_string());
-            let assigned = repository
-                .list_project_issues_filtered(&owner_name, &project_name, assigned_filter)
-                .await
-                .map_err(internal_error)
-                .map_err(RestRouteError::from_connect_error)?
-                .total_count;
-            let mut authored_filter = count_filter.clone();
-            authored_filter.author_id = Some(actor_id);
-            authored_filter.state = Some(count_state.to_string());
-            let authored = repository
-                .list_project_issues_filtered(&owner_name, &project_name, authored_filter)
-                .await
-                .map_err(internal_error)
-                .map_err(RestRouteError::from_connect_error)?
-                .total_count;
-            let mut commented_filter = count_filter;
-            commented_filter.commenter_id = Some(actor_id);
-            commented_filter.state = Some(count_state.to_string());
-            let commented = repository
-                .list_project_issues_filtered(&owner_name, &project_name, commented_filter)
-                .await
-                .map_err(internal_error)
-                .map_err(RestRouteError::from_connect_error)?
-                .total_count;
-            (assigned, authored, commented)
-        } else {
-            (0, 0, 0)
-        };
+    let (record, (open_issue_count, closed_issue_count, assigned_to_me_count, authored_by_me_count, commented_by_me_count)) = tokio::try_join!(
+        repository.list_project_issues_filtered(&owner_name, &project_name, filter),
+        repository.count_project_issue_summary(
+            &owner_name,
+            &project_name,
+            count_state,
+            actor_id,
+        ),
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(RestProjectIssueListResponse {
         assigned_to_me_count,

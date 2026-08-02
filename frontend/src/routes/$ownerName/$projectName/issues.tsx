@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -18,7 +18,8 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
-import { issueLabelStyle } from "../../../legacy-issue-label-style";
+import { IssueLabel } from "../../../components/issue-label";
+import { TabButton } from "../../../components/tab-button";
 import { useLegacyMessages } from "../../../i18n";
 import { styles } from "./-issues.stylex";
 
@@ -129,6 +130,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const issuesQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listProjectIssues(runtimeConfig, ownerName, projectName, {
         assigneeId: idSearch(search.assigneeId),
@@ -210,26 +212,11 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     queryKey: ["project", ownerName, projectName, "issue-search-users", "assignee"],
   });
 
-  if (
-    !projectQuery.data ||
-    !sessionQuery.data ||
-    !issuesQuery.data ||
-    !openMilestonesQuery.data ||
-    !closedMilestonesQuery.data ||
-    !labelsQuery.data ||
-    !assignableUsersQuery.data ||
-    !issueAuthorsQuery.data ||
-    !issueAssigneesQuery.data
-  ) {
-    return (
-      <div
-        className="page-wrap-outer"
-        data-stylex-owner="project-issues-loading-shell"
-        data-stylex-content-ready="false"
-        aria-busy="true"
-      />
-    );
+  if (!projectQuery.data || !sessionQuery.data) {
+    return <ProjectIssuesWireframe ownerName={ownerName} projectName={projectName} />;
   }
+
+  const issues = issuesQuery.data ?? emptyProjectIssueList(ownerName, projectName);
 
   return (
     <>
@@ -242,7 +229,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         type="text/css"
       />
       <ProjectIssuesBody
-        assignableUsers={assignableUsersQuery.data.items}
+        assignableUsers={assignableUsersQuery.data?.items ?? []}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
@@ -251,14 +238,17 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
             ? location.searchStr
             : globalThis.location.search
         }
-        issues={issuesQuery.data}
-        issueAssignees={issueAssigneesQuery.data.items}
-        issueAuthors={issueAuthorsQuery.data.items}
-        labels={labelsQuery.data.labels}
+        issues={issues}
+        issuesReady={Boolean(issuesQuery.data)}
+        issueAssignees={issueAssigneesQuery.data?.items ?? []}
+        issueAuthors={issueAuthorsQuery.data?.items ?? []}
+        labels={labelsQuery.data?.labels ?? []}
+        labelsPending={labelsQuery.isPending}
         milestones={{
-          closed: closedMilestonesQuery.data.milestones,
-          open: openMilestonesQuery.data.milestones,
+          closed: closedMilestonesQuery.data?.milestones ?? [],
+          open: openMilestonesQuery.data?.milestones ?? [],
         }}
+        milestonesPending={openMilestonesQuery.isPending || closedMilestonesQuery.isPending}
         ownerName={ownerName}
         project={projectQuery.data}
         projectName={projectName}
@@ -269,6 +259,153 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   );
 }
 
+function emptyProjectIssueList(
+  ownerName: string,
+  projectName: string,
+): ProjectIssueListRestResponse {
+  return {
+    assignedToMeCount: 0,
+    authoredByMeCount: 0,
+    closedIssueCount: 0,
+    commentedByMeCount: 0,
+    draftItems: [],
+    items: [],
+    openIssueCount: 0,
+    ownerName,
+    pageNum: 1,
+    pageSize: 15,
+    projectName,
+    totalCount: 0,
+  };
+}
+
+function ProjectIssuesWireframe({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { runtimeConfig } = Route.useRouteContext();
+  const { t } = useLegacyMessages();
+  const search = Route.useSearch();
+  const issues = emptyProjectIssueList(ownerName, projectName);
+
+  return (
+    <div
+      className="page-wrap-outer"
+      data-stylex-owner="project-issues-page-wireframe"
+      data-stylex-content-ready="false"
+      data-wireframe="project-issues"
+      aria-busy="true"
+    >
+      <div className="project-page-wrap">
+        <div className="row-fluid issue-list-wrap">
+          <div className="left-menu span2 span-hard-wrap">
+            <QuickSearch
+              currentUserId="0"
+              isAnonymous={false}
+              issues={issues}
+              onQuickSearch={() => undefined}
+              search={search}
+              state={search.state}
+            />
+            <IssueSearchForm
+              basePath={runtimeConfig.basePath}
+              currentUserId="0"
+              issueAssignees={[]}
+              issueAuthors={[]}
+              issues={[]}
+              isAnonymous={false}
+              labels={[]}
+              labelsPending
+              labelControls={{ showEditLink: false, showManageLink: false }}
+              milestones={{ closed: [], open: [] }}
+              milestonesPending
+              ownerName={ownerName}
+              onSearchSubmit={() => undefined}
+              projectName={projectName}
+              search={search}
+              showAssigneeCurrentUserOption={false}
+              showAuthorCurrentUserOption={false}
+            />
+          </div>
+          <div
+            className={`${stylex.props(styles.results).className} span10 span-hard-wrap`}
+            id="span10"
+          >
+            <div
+              {...stylex.props(styles.newIssueAction)}
+              data-stylex-owner="project-issues-new-issue-action"
+            >
+              <Link
+                to="/$ownerName/$projectName/issueform"
+                params={{ ownerName, projectName }}
+                className="ybtn ybtn-success"
+              >
+                {t("issue.menu.new")}
+              </Link>
+            </div>
+            <ul className="nav nav-tabs nm">
+              <StateTab
+                active={search.state === "open"}
+                count={0}
+                label="열림"
+                to={projectIssuesRoutePath(ownerName, projectName, { ...search, state: "open" })}
+              />
+              <StateTab
+                active={search.state === "closed"}
+                count={0}
+                label="닫힘"
+                to={projectIssuesRoutePath(ownerName, projectName, { ...search, state: "closed" })}
+              />
+              <li>
+                <TwoColumnModeCheckbox checked={false} onToggle={() => undefined} />
+              </li>
+              <li className="show-subtasks-li">
+                <ShowSubtasksCheckbox checked={false} onToggle={() => undefined} />
+              </li>
+            </ul>
+            <ProjectIssuesListWireframe />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectIssuesListWireframe() {
+  const wireframeRows = ["issue-slot-a", "issue-slot-b", "issue-slot-c"];
+
+  return (
+    <div
+      data-wireframe="project-issues-results"
+      data-wireframe-slot="project-issues-results"
+      aria-label="이슈 목록을 불러오는 중"
+    >
+      <div className="filter-wrap board">
+        <IssueFilters orderBy="updatedDate" orderDir="desc" onSortChange={() => undefined} />
+      </div>
+      <ul className="post-list-wrap row-fluid" aria-hidden="true">
+        {wireframeRows.map((rowKey) => (
+          <li className="post-item title" data-wireframe-slot="project-issue-row" key={rowKey}>
+            <div className="span9 span-hard-wrap">
+              <div className="issue-item-row">
+                <div className="title-wrap">
+                  <span className="title">&nbsp;</span>
+                </div>
+                <div className="infos">
+                  <span className="infos-item">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ProjectIssuesBody({
   assignableUsers,
   currentUserId,
@@ -276,10 +413,13 @@ function ProjectIssuesBody({
   currentSearchString,
   isAnonymous,
   issues,
+  issuesReady,
   issueAssignees,
   issueAuthors,
   labels,
+  labelsPending,
   milestones,
+  milestonesPending,
   ownerName,
   project,
   projectName,
@@ -292,13 +432,16 @@ function ProjectIssuesBody({
   currentSearchString: string;
   isAnonymous: boolean;
   issues: ProjectIssueListRestResponse;
+  issuesReady: boolean;
   issueAssignees: ProjectIssueSearchUserOptionSource[];
   issueAuthors: ProjectIssueSearchUserOptionSource[];
   labels: Array<Record<string, unknown>>;
+  labelsPending: boolean;
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
   };
+  milestonesPending: boolean;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -308,7 +451,7 @@ function ProjectIssuesBody({
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
   const currentPageItems = issues.items;
-  const currentPageHasItems = currentPageItems.length > 0;
+  const currentPageHasItems = issuesReady && currentPageItems.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
@@ -470,7 +613,9 @@ function ProjectIssuesBody({
     <div
       className="page-wrap-outer"
       data-stylex-owner="project-issues-page"
-      data-stylex-content-ready="true"
+      data-stylex-content-ready={issuesReady ? "true" : "false"}
+      data-wireframe={issuesReady ? undefined : "project-issues"}
+      aria-busy={!issuesReady}
     >
       <div className="project-page-wrap" data-stylex-owner="project-issues-list">
         <div className="row-fluid issue-list-wrap" onKeyDownCapture={handleIssueListKeyDownCapture}>
@@ -495,7 +640,9 @@ function ProjectIssuesBody({
               issues={currentPageItems}
               isAnonymous={isAnonymous}
               labels={labels}
+              labelsPending={labelsPending}
               milestones={milestones}
+              milestonesPending={milestonesPending}
               ownerName={ownerName}
               projectName={projectName}
               search={search}
@@ -577,7 +724,9 @@ function ProjectIssuesBody({
                 />
               </li>
             </ul>
-            {!currentPageHasItems ? (
+            {!issuesReady ? (
+              <ProjectIssuesListWireframe />
+            ) : !currentPageHasItems ? (
               <>
                 <div
                   {...stylex.props(styles.errorWrap)}
@@ -1512,9 +1661,9 @@ function LabelMassUpdateGroup({
             {...stylex.props(styles.massUpdateOptionButton)}
             onClick={(event) => handleMassUpdateOptionClick(event, label.id)}
           >
-            <span className="issue-label active list-label" data-label-id={label.id}>
+            <IssueLabel className="list-label" color={label.color} labelId={label.id}>
               {label.name}
-            </span>
+            </IssueLabel>
           </button>
         </li>
       ))}
@@ -1868,28 +2017,21 @@ function ProjectIssueItem({
               </span>
             ) : null}
             {issueLabels.map((label) => {
-              const paint = issueLabelStyle(label.color);
-              const labelPaint = paint
-                ? stylex.props(
-                    styles.labelPaint(
-                      String(paint.backgroundColor ?? ""),
-                      String(paint.boxShadow ?? ""),
-                      String(paint.color ?? ""),
-                    ),
-                  )
-                : undefined;
               return (
-                <button
+                <IssueLabel
+                  as="button"
+                  className="label list-label"
+                  color={label.color}
+                  labelId={label.id}
                   type="button"
-                  {...(labelPaint ?? {})}
-                  className={`label issue-label list-label active ${stylex.props(styles.labelButtonReset, styles.labelList).className ?? ""} ${labelPaint?.className ?? ""}`.trim()}
                   data-category-id={label.categoryId ?? ""}
-                  data-label-id={label.id}
                   key={String(label.id)}
-                  onClick={(event) => handleIssueLabelClick(event, String(label.id))}
+                  onClick={(event: ReactMouseEvent<HTMLElement>) =>
+                    handleIssueLabelClick(event, String(label.id))
+                  }
                 >
                   {label.name}
-                </button>
+                </IssueLabel>
               );
             })}
             <div
@@ -2114,22 +2256,21 @@ function IssueChildRow({
         <IssueChildCommentAndVotePair issue={issue} issueParams={issueParams} />
       </span>
       {labels.map((label) => (
-        <Link
+        <IssueLabel
+          as={Link}
           activeProps={legacyRouteLocalActiveProps}
           to={childLabelRoutePath(String(label.id))}
-          className="label issue-label list-label active twoColumeModeTarget"
+          className="label list-label twoColumeModeTarget"
+          color={childIssueLabelStyle(label.color)}
+          labelId={label.id}
           data-category-id={label.categoryId ?? ""}
-          data-label-id={label.id}
           key={String(label.id)}
-          onClick={(event) =>
+          onClick={(event: ReactMouseEvent<HTMLElement>) =>
             handleChildLabelClick(event, String(label.id), childLabelHref(String(label.id)))
           }
-          {...(childIssueLabelStyle(label.color)
-            ? stylex.props(styles.childLabelBackground(childIssueLabelStyle(label.color)!))
-            : {})}
         >
           {label.name}
-        </Link>
+        </IssueLabel>
       ))}
       <span
         className={`child-issue-date ${stylex.props(hovered ? styles.childDateVisible : styles.childDate).className}`}
@@ -2500,8 +2641,10 @@ function IssueSearchForm({
   issues,
   isAnonymous,
   labels,
+  labelsPending,
   labelControls,
   milestones,
+  milestonesPending,
   ownerName,
   onSearchSubmit,
   projectName,
@@ -2516,6 +2659,7 @@ function IssueSearchForm({
   issues: RestIssueListItem[];
   isAnonymous: boolean;
   labels: Array<Record<string, unknown>>;
+  labelsPending: boolean;
   labelControls: {
     showEditLink: boolean;
     showManageLink: boolean;
@@ -2524,6 +2668,7 @@ function IssueSearchForm({
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
   };
+  milestonesPending: boolean;
   ownerName: string;
   onSearchSubmit: (search: ProjectIssuesSearch) => void;
   projectName: string;
@@ -2537,7 +2682,8 @@ function IssueSearchForm({
   const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>());
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
-  const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
+  const hasMilestones =
+    milestonesPending || milestones.open.length > 0 || milestones.closed.length > 0;
   const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
   const authorHasCurrentUserOption = issueSearchUserOptionsIncludeUser(authors, currentUserId);
   const assigneeHasCurrentUserOption = issueSearchUserOptionsIncludeUser(assignees, currentUserId);
@@ -2800,6 +2946,7 @@ function IssueSearchForm({
           ) : null}
           <IssueSearchLabelSelect
             labels={labels}
+            labelsPending={labelsPending}
             ownerName={ownerName}
             projectName={projectName}
             search={search}
@@ -2931,12 +3078,14 @@ function selectedSearchMilestone(
 
 function IssueSearchLabelSelect({
   labels,
+  labelsPending,
   ownerName,
   projectName,
   search,
   showLabelEdit,
 }: {
   labels: Array<Record<string, unknown>>;
+  labelsPending: boolean;
   ownerName: string;
   projectName: string;
   search: ProjectIssuesSearch;
@@ -2964,7 +3113,25 @@ function IssueSearchLabelSelect({
   };
 
   if (groupedLabels.length === 0) {
-    return null;
+    return labelsPending ? (
+      <dl className="issue-option" data-wireframe-slot="project-issues-label-filter">
+        <dt>{t("label")}</dt>
+        <dd>
+          <div className="select2-container select2-container-multi issue-labels bordered fullsize">
+            <ul className="select2-choices">
+              <li className="select2-search-field">
+                <input
+                  type="text"
+                  className="textbox full"
+                  placeholder={t("label.select")}
+                  disabled
+                />
+              </li>
+            </ul>
+          </div>
+        </dd>
+      </dl>
+    ) : null;
   }
 
   return (
@@ -2998,9 +3165,9 @@ function IssueSearchLabelSelect({
             {selectedLabels.map((label) => (
               <li className="select2-search-choice" key={label.id}>
                 <div>
-                  <div className="label issue-label active static" data-label-id={label.id}>
+                  <IssueLabel className="label static" labelId={label.id}>
                     {label.name}
-                  </div>
+                  </IssueLabel>
                 </div>
                 <span
                   className="select2-search-choice-close"
@@ -3091,12 +3258,9 @@ function IssueSearchLabelSelect({
                             }}
                           >
                             <div className="select2-result-label">
-                              <div
-                                className="label issue-label active static"
-                                data-label-id={label.id}
-                              >
+                              <IssueLabel className="label static" labelId={label.id}>
                                 {label.name}
-                              </div>
+                              </IssueLabel>
                             </div>
                           </li>
                         );
@@ -3159,16 +3323,16 @@ function StateTab({
   to: string;
 }) {
   return (
-    <li className={active ? "active" : undefined}>
-      <Link
-        activeOptions={legacyRouteLocalActiveOptions}
-        activeProps={legacyRouteLocalActiveProps}
-        to={to}
-      >
-        {label}
-        <span className="num-badge">{count}</span>
-      </Link>
-    </li>
+    <TabButton
+      as={Link}
+      active={active}
+      activeOptions={legacyRouteLocalActiveOptions}
+      activeProps={legacyRouteLocalActiveProps}
+      to={to}
+    >
+      {label}
+      <span className="num-badge">{count}</span>
+    </TabButton>
   );
 }
 

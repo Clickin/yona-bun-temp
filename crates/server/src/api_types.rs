@@ -1285,6 +1285,8 @@ pub struct ListProjectMilestonesRequest {
     pub order_by: String,
     #[serde(default)]
     pub order_dir: String,
+    #[serde(default)]
+    pub include_details: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]

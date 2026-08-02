@@ -15,30 +15,48 @@ impl AppRepositoryImpl<'_> {
         let page = filter.page.max(1);
         let initial_user_id = self.first_registered_user_id().await?;
         let site_admin_ids = self.site_admin_user_ids().await?;
-        let mut users: Vec<n4user::Model> = n4user::Entity::find()
-            .all(&self.db)
+        let mut user_query = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.ne(Some(LEGACY_ANONYMOUS_LOGIN_ID.to_string())))
+            .order_by_desc(n4user::Column::CreatedDate)
+            .order_by_desc(n4user::Column::Id);
+        if let Some(initial_user_id) = initial_user_id {
+            user_query = user_query.filter(n4user::Column::Id.ne(Some(initial_user_id)));
+        }
+        match state.as_str() {
+            "GUEST" => {
+                user_query = user_query.filter(n4user::Column::IsGuest.ne(Some(0)));
+            }
+            "SITE_ADMIN" => {
+                let admin_ids = if site_admin_ids.is_empty() {
+                    vec![-1]
+                } else {
+                    site_admin_ids.iter().copied().collect()
+                };
+                user_query = user_query.filter(n4user::Column::Id.is_in(admin_ids));
+            }
+            _ => {
+                user_query =
+                    user_query.filter(n4user::Column::State.eq(Some(state.to_ascii_lowercase())));
+            }
+        }
+        let normalized_query = normalize_identity(&query);
+        if !normalized_query.is_empty() {
+            let pattern = format!("%{normalized_query}%");
+            user_query = user_query.filter(
+                Condition::any()
+                    .add(n4user::Column::LoginId.like(pattern.clone()))
+                    .add(n4user::Column::Name.like(pattern.clone()))
+                    .add(n4user::Column::EnglishName.like(pattern.clone()))
+                    .add(n4user::Column::Email.like(pattern)),
+            );
+        }
+
+        let total = user_query.clone().count(&self.db).await? as usize;
+        let users = user_query
+            .paginate(&self.db, SITE_USER_PAGE_SIZE as u64)
+            .fetch_page((page - 1) as u64)
             .await?
             .into_iter()
-            .filter(|user| {
-                normalize_optional(user.login_id.as_deref()).as_deref()
-                    != Some(LEGACY_ANONYMOUS_LOGIN_ID)
-            })
-            .filter(|user| site_user_state_matches(user, &state, &site_admin_ids))
-            .filter(|user| site_user_query_matches(user, &query))
-            .collect();
-        users.sort_by(|left, right| {
-            right
-                .created_date
-                .cmp(&left.created_date)
-                .then_with(|| left.login_id.cmp(&right.login_id))
-        });
-
-        let total = users.len();
-        let offset = ((page - 1) as usize).saturating_mul(SITE_USER_PAGE_SIZE);
-        let users = users
-            .into_iter()
-            .skip(offset)
-            .take(SITE_USER_PAGE_SIZE)
             .map(|user| {
                 let is_site_admin = site_admin_ids.contains(&user.id);
                 site_user_record_from_model(user, is_site_admin)

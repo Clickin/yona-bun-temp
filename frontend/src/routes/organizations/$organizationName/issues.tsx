@@ -19,6 +19,7 @@ import {
 } from "../../../auth-workspace-client";
 import { apiQueryKeys } from "../../../api/query-keys";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
+import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-organization-issues.stylex";
@@ -882,7 +883,8 @@ function OrganizationIssueItem({
             #{issue.issueNumber}
           </span>
           {issue.labels.map((label) => (
-            <Link
+            <IssueLabel
+              as={Link}
               to="/$ownerName/$projectName/issues"
               params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
               search={{
@@ -898,13 +900,13 @@ function OrganizationIssueItem({
                 pageNum: 1,
                 state: state === "closed" ? "closed" : "open",
               }}
-              {...stylex.props(styles.issueLabelBackground(label.color))}
-              className={`${stylex.props(styles.issueLabelBackground(label.color)).className} label issue-label list-label`}
-              data-label-id={label.id}
+              className="label list-label"
+              color={label.color}
+              labelId={label.id}
               key={String(label.id)}
             >
               {label.name}
-            </Link>
+            </IssueLabel>
           ))}
         </div>
       </div>

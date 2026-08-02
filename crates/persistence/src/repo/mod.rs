@@ -77,10 +77,10 @@ use crate::{
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use sea_orm::{
-    sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseBackend,
+    sea_query::{Expr, Func}, ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseBackend,
     DatabaseConnection, DatabaseTransaction, DbBackend, DbErr, EntityTrait, ExecResult,
     FromQueryResult, NotSet, PaginatorTrait, QueryFilter, QueryOrder, QueryResult, QuerySelect,
-    Set, Statement, TransactionTrait,
+    JoinType, QueryTrait, RelationTrait, Set, Statement, TransactionTrait,
 };
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::future::Future;

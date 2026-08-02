@@ -3,7 +3,9 @@ import type {
   ProjectMilestoneDeleteResponse,
   ProjectMilestoneMutationResponse,
 } from "./types";
+import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
+import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 type ProjectScope = {
@@ -11,11 +13,31 @@ type ProjectScope = {
   projectName: string;
 };
 
-type ProjectMilestoneListOptions = {
+export type ProjectMilestoneListOptions = {
+  includeDetails?: boolean;
   orderBy?: string;
   orderDir?: string;
   state?: string;
 };
+
+export function listProjectMilestonesQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScope & ProjectMilestoneListOptions,
+) {
+  const options = {
+    includeDetails: input.includeDetails ?? true,
+    orderBy: input.orderBy ?? "dueDate",
+    orderDir: input.orderDir ?? "asc",
+    state: input.state ?? "open",
+  };
+  return queryOptions({
+    gcTime: 15 * 60_000,
+    queryFn: () =>
+      listProjectMilestonesRest(runtimeConfig, input.ownerName, input.projectName, options),
+    queryKey: apiQueryKeys.project.milestones(input.ownerName, input.projectName, options),
+    staleTime: 5 * 60_000,
+  });
+}
 
 type ProjectMilestoneInput = ProjectScope & {
   attachmentIds?: Array<bigint | number>;
@@ -118,6 +140,9 @@ export function listProjectMilestonesRest(
     orderDir: input.orderDir ?? "asc",
     state: input.state ?? "open",
   });
+  if (input.includeDetails !== undefined) {
+    searchParams.set("includeDetails", String(input.includeDetails));
+  }
   return restFetch<ListProjectMilestonesResponse>(
     runtimeConfig,
     `${projectPath(ownerName, projectName)}/milestones?${searchParams.toString()}`,

@@ -363,6 +363,7 @@ export interface CodeBrowserOptions {
 }
 
 export interface ProjectMilestoneListOptions {
+  includeDetails?: boolean;
   orderBy?: string;
   orderDir?: string;
   state?: string;

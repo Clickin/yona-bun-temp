@@ -16,6 +16,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
+import { listProjectMilestonesQueryOptions } from "../../../../api/milestones";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
@@ -27,7 +28,6 @@ import {
   deleteIssue,
   massUpdateIssues,
   readIssueDetail,
-  listProjectMilestones,
   readSessionBootstrap,
   toggleFavoriteIssue,
   unwatchIssue,
@@ -41,8 +41,10 @@ import {
 } from "../../../../auth-workspace-client";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
+import { SiteLayoutShell } from "../../../-home-route-screen";
 import { useRootToast } from "../../../__root";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
+import { IssueLabel } from "../../../../components/issue-label";
 import "../../../../yobicon-font.css";
 import { styles } from "./-issue-detail.stylex";
 
@@ -163,30 +165,35 @@ export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig
     },
     retryOnMount: false,
   });
-  const labelsQuery = useQuery(
-    listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const labelsQuery = useQuery({
+    ...listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: Boolean(issueQuery.data),
+  });
   const openMilestonesQuery = useQuery({
-    queryFn: () =>
-      listProjectMilestones(runtimeConfig, ownerName, projectName, {
-        orderBy: "dueDate",
-        orderDir: "asc",
-        state: "open",
-      }),
-    queryKey: ["project", ownerName, projectName, "milestones", "open", "issue-detail"],
+    ...listProjectMilestonesQueryOptions(runtimeConfig, {
+      includeDetails: false,
+      orderBy: "dueDate",
+      orderDir: "asc",
+      ownerName,
+      projectName,
+      state: "open",
+    }),
+    enabled: Boolean(projectQuery.data && issueQuery.data),
   });
   const closedMilestonesQuery = useQuery({
-    queryFn: () =>
-      listProjectMilestones(runtimeConfig, ownerName, projectName, {
-        orderBy: "dueDate",
-        orderDir: "asc",
-        state: "closed",
-      }),
-    queryKey: ["project", ownerName, projectName, "milestones", "closed", "issue-detail"],
+    ...listProjectMilestonesQueryOptions(runtimeConfig, {
+      includeDetails: false,
+      orderBy: "dueDate",
+      orderDir: "asc",
+      ownerName,
+      projectName,
+      state: "closed",
+    }),
+    enabled: Boolean(projectQuery.data && issueQuery.data),
   });
 
   if (!projectQuery.data || !sessionQuery.data) {
-    return null;
+    return <ProjectIssueDetailWireframe runtimeConfig={runtimeConfig} />;
   }
 
   if (restApiErrorStatus(issueQuery.error) === 404) {
@@ -198,13 +205,8 @@ export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig
     );
   }
 
-  if (
-    !issueQuery.data ||
-    !labelsQuery.data ||
-    !openMilestonesQuery.data ||
-    !closedMilestonesQuery.data
-  ) {
-    return null;
+  if (!issueQuery.data) {
+    return <ProjectIssueDetailWireframe runtimeConfig={runtimeConfig} />;
   }
 
   const detailContent = (
@@ -226,11 +228,12 @@ export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig
         currentUserLoginId={stringField(sessionQuery.data.loginId)}
         currentUserIsAnonymous={booleanField(sessionQuery.data.isAnonymous)}
         issue={issueQuery.data}
-        labels={labelsQuery.data.labels}
+        labels={labelsQuery.data?.labels ?? []}
         milestones={{
-          closed: closedMilestonesQuery.data.milestones,
-          open: openMilestonesQuery.data.milestones,
+          closed: closedMilestonesQuery.data?.milestones ?? [],
+          open: openMilestonesQuery.data?.milestones ?? [],
         }}
+        milestonesPending={openMilestonesQuery.isPending || closedMilestonesQuery.isPending}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
@@ -238,6 +241,69 @@ export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig
   );
 
   return detailContent;
+}
+
+function ProjectIssueDetailWireframe({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div
+        className={`${stylex.props(styles.page).className} page-wrap-outer`}
+        data-stylex-owner="project-issue-detail-page"
+        data-wireframe="project-issue-detail"
+        aria-busy="true"
+      >
+        <div className="project-page-wrap board-view issue-detail-page">
+          <div
+            className={`${stylex.props(styles.header).className} board-header issue`}
+            data-stylex-owner="project-issue-detail-header"
+          >
+            <div
+              {...stylex.props(styles.title)}
+              className={`${stylex.props(styles.title).className} title`}
+              aria-hidden="true"
+            >
+              {"\u00a0"}
+            </div>
+          </div>
+          <div
+            className={`${stylex.props(styles.body).className} board-body row-fluid`}
+            data-stylex-owner="project-issue-detail-body"
+          >
+            <div className="span9 span-left-pane">
+              <div
+                className={`${stylex.props(styles.author).className} author-info`}
+                aria-hidden="true"
+              >
+                {"\u00a0"}
+              </div>
+              <div
+                className={`${stylex.props(styles.content).className} content markdown-wrap`}
+                aria-hidden="true"
+              >
+                {"\u00a0"}
+              </div>
+            </div>
+            <div
+              className={`${stylex.props(styles.sidebar).className} span3 span-right-pane`}
+              aria-hidden="true"
+            >
+              <div
+                {...stylex.props(styles.issueInfo)}
+                className={`${stylex.props(styles.issueInfo).className} issue-info`}
+              >
+                <dl {...stylex.props(styles.sidebarMetaDl)}>
+                  <dt>{"\u00a0"}</dt>
+                  <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
+                  <dt>{"\u00a0"}</dt>
+                  <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SiteLayoutShell>
+  );
 }
 
 function ProjectIssueDetailTitle({
@@ -531,6 +597,7 @@ function IssueDetailBody({
   issue,
   labels: projectLabels,
   milestones,
+  milestonesPending,
   project,
   runtimeConfig,
 }: {
@@ -543,6 +610,7 @@ function IssueDetailBody({
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
   };
+  milestonesPending: boolean;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1249,7 +1317,9 @@ function IssueDetailBody({
                       {...stylex.props(styles.sidebarMetaDd)}
                       data-stylex-owner="issue-detail-sidebar-dd"
                     >
-                      {hasProjectMilestones ? (
+                      {milestonesPending ? (
+                        stringField(issue.milestoneTitle) || t("issue.noMilestone")
+                      ) : hasProjectMilestones ? (
                         canUpdate ? (
                           <IssueMilestoneSelect
                             milestones={milestones}
@@ -2262,16 +2332,16 @@ function LegacyLabelControl({
               key={stringField(label.id)}
             >
               <div>
-                <strong
-                  {...stylex.props(
-                    styles.labelGeometry,
-                    styles.labelColor(stringField(label.color)),
-                  )}
-                  className={`${stylex.props(styles.labelGeometry, styles.labelColor(stringField(label.color))).className} label issue-label active static`}
+                <IssueLabel
+                  as="strong"
+                  {...stylex.props(styles.labelGeometry)}
+                  className="label static"
+                  color={stringField(label.color)}
+                  labelId={stringField(label.id)}
                   data-stylex-owner="project-issue-detail-label-geometry"
                 >
                   {stringField(label.name)}
-                </strong>
+                </IssueLabel>
               </div>
               <span
                 {...stylex.props(styles.labelChoiceClose)}
@@ -2319,13 +2389,14 @@ function LegacyLabelControl({
                     onClick={() => toggle(id)}
                     onKeyDown={(event) => activateLegacyControl(event, () => toggle(id))}
                   >
-                    <span
-                      {...stylex.props(styles.labelColor(stringField(label.color)))}
-                      className={`${stylex.props(styles.labelColor(stringField(label.color))).className} label`}
+                    <IssueLabel
+                      className="label"
+                      color={stringField(label.color)}
+                      labelId={id}
                       data-stylex-owner="project-issue-detail-label-color"
                     >
                       {stringField(label.name)}
-                    </span>
+                    </IssueLabel>
                   </div>
                 </li>
               );
@@ -2363,9 +2434,10 @@ function IssueSelectedLabels({
       <dt>{t("issue.label")}</dt>
       <dd>
         {labels.map((label) => (
-          <Link
+          <IssueLabel
+            as={Link}
             {...LEGACY_LINK_PROPS}
-            {...stylex.props(styles.labelColor(stringField(label.color)))}
+            {...stylex.props(styles.labelGeometry)}
             to={listPath}
             params={{ ownerName, projectName }}
             search={{
@@ -2381,12 +2453,14 @@ function IssueSelectedLabels({
               orderDir: "desc",
               pageNum: 1,
             }}
-            className={`${stylex.props(styles.labelGeometry, styles.labelColor(stringField(label.color))).className} label issue-label active static`}
+            className="label static"
+            color={stringField(label.color)}
+            labelId={String(label.id)}
             data-stylex-owner="project-issue-detail-label-geometry"
             key={String(label.id)}
           >
             {label.name}
-          </Link>
+          </IssueLabel>
         ))}
       </dd>
     </dl>
@@ -2569,9 +2643,10 @@ function IssueChildIssue({
         />
       </span>
       {labels.map((label) => (
-        <Link
+        <IssueLabel
+          as={Link}
           {...LEGACY_LINK_PROPS}
-          {...stylex.props(styles.labelGeometry, styles.labelColor(stringField(label.color)))}
+          {...stylex.props(styles.labelGeometry)}
           to="/$ownerName/$projectName/issues"
           params={{ ownerName, projectName }}
           search={{
@@ -2587,14 +2662,15 @@ function IssueChildIssue({
             orderDir: "desc",
             pageNum: 1,
           }}
-          className={`${stylex.props(styles.labelGeometry, styles.labelColor(stringField(label.color))).className} label issue-label list-label active twoColumeModeTarget`}
+          className="label list-label twoColumeModeTarget"
+          color={stringField(label.color)}
+          labelId={stringField(label.id)}
           data-stylex-owner="project-issue-detail-label-geometry"
           key={String(label.id)}
           data-category-id={stringField(label.categoryId)}
-          data-label-id={stringField(label.id)}
         >
           {label.name}
-        </Link>
+        </IssueLabel>
       ))}
       <span className="child-issue-date" title={stringField(child.createdLabel)}>
         {stringField(child.createdLabel)}
@@ -4922,13 +4998,16 @@ function issueEventLabelBox(value: string, labels: RestIssueDetailResponse["labe
     return labelName;
   }
   return (
-    <div
-      {...stylex.props(styles.labelGeometry, styles.labelColor(stringField(label.color)))}
-      className={`${stylex.props(styles.labelGeometry, styles.labelColor(stringField(label.color))).className} label issue-label`}
+    <IssueLabel
+      as="div"
+      {...stylex.props(styles.labelGeometry)}
+      className="label"
+      color={stringField(label.color)}
+      labelId={String(label.id)}
       data-stylex-owner="project-issue-detail-label-geometry"
     >
       {labelName}
-    </div>
+    </IssueLabel>
   );
 }
 

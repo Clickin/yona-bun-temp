@@ -20,8 +20,8 @@ import {
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
+import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
-import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-posts.stylex";
 
@@ -707,29 +707,19 @@ function ProjectBoardPost({
           </Link>
         </span>
         {post.labels.map((label) => {
-          // API-provided label paint uses Dynamic StyleX carriers; literal inline declarations stay retired.
-          const paint = issueLabelStyle(label.color);
-          const labelPaint = paint
-            ? stylex.props(
-                styles.labelPaint(
-                  String(paint.backgroundColor ?? ""),
-                  String(paint.boxShadow ?? ""),
-                  String(paint.color ?? ""),
-                ),
-              )
-            : undefined;
           return (
-            <button
+            <IssueLabel
+              as="button"
+              className="label list-label"
+              color={label.color}
+              labelId={label.id}
               type="button"
-              {...(labelPaint ?? {})}
-              className={`label issue-label list-label active ${stylex.props(styles.labelButtonReset, styles.labelList).className ?? ""} ${labelPaint?.className ?? ""}`.trim()}
               data-category-id={label.categoryId}
-              data-label-id={label.id}
               data-stylex-owner="project-posts-label-button"
               key={label.id}
             >
               {label.name}
-            </button>
+            </IssueLabel>
           );
         })}
       </div>

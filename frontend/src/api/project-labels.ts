@@ -89,8 +89,10 @@ export function listProjectLabelsRest(
 
 export function listProjectLabelsQueryOptions(runtimeConfig: RuntimeConfig, input: ProjectScope) {
   return queryOptions({
+    gcTime: 15 * 60_000,
     queryFn: () => listProjectLabelsRest(runtimeConfig, input.ownerName, input.projectName),
     queryKey: apiQueryKeys.project.labels(input.ownerName, input.projectName),
+    staleTime: 5 * 60_000,
   });
 }
 

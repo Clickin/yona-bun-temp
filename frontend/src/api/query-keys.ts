@@ -114,6 +114,21 @@ export const apiQueryKeys = {
     ) => [...apiQueryKeys.project.base(ownerName, projectName), "reviews", input] as const,
     labels: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "labels"] as const,
+    milestones: (
+      ownerName: string,
+      projectName: string,
+      input: { includeDetails?: boolean; orderBy: string; orderDir: string; state: string },
+    ) =>
+      [
+        ...apiQueryKeys.project.base(ownerName, projectName),
+        "milestones",
+        {
+          includeDetails: input.includeDetails ?? true,
+          orderBy: input.orderBy,
+          orderDir: input.orderDir,
+          state: input.state,
+        },
+      ] as const,
     members: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "members"] as const,
     changeVcs: (ownerName: string, projectName: string) =>

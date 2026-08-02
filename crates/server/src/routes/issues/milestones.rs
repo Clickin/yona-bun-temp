@@ -6,6 +6,7 @@ pub(super) struct RestMilestoneListQuery {
     order_by: String,
     order_dir: String,
     state: String,
+    include_details: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -49,6 +50,7 @@ pub(super) async fn rest_list_project_milestones(
         } else {
             query.state
         },
+        include_details: query.include_details,
         ..Default::default()
     };
     let request = rest_owned_view::<ListProjectMilestonesRequestView<'static>>(&request)?;
@@ -56,7 +58,7 @@ pub(super) async fn rest_list_project_milestones(
         .list_project_milestones(Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(rest_json_response(payload, ctx))
+    Ok(rest_json_response_with_etag(payload, ctx))
 }
 
 pub(super) async fn rest_read_project_milestone(

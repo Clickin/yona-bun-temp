@@ -27,6 +27,13 @@ export interface RestFetchOptions {
   method?: string;
 }
 
+type RestResponseCacheEntry = {
+  etag: string;
+  payload: unknown;
+};
+
+const restResponseCache = new Map<string, RestResponseCacheEntry>();
+
 function apiV1Url(runtimeConfig: RuntimeConfig, path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${runtimeConfig.apiBaseUrl}/v1${normalizedPath}`;
@@ -77,12 +84,21 @@ export async function restFetch<T>(
     headers.set("x-csrf-token", options.csrfToken);
   }
 
-  const response = await (options.fetchImpl ?? fetch)(apiV1Url(runtimeConfig, path), {
+  const requestUrl = apiV1Url(runtimeConfig, path);
+  const cachedResponse = method === "GET" ? restResponseCache.get(requestUrl) : undefined;
+  if (cachedResponse) {
+    headers.set("If-None-Match", cachedResponse.etag);
+  }
+
+  const response = await (options.fetchImpl ?? fetch)(requestUrl, {
     body,
     credentials: "same-origin",
     headers,
     method,
   });
+  if (response.status === 304 && cachedResponse) {
+    return cachedResponse.payload as T;
+  }
   const payload = await parseJson(response);
 
   if (!response.ok) {
@@ -99,6 +115,13 @@ export async function restFetch<T>(
       },
       response.status,
     );
+  }
+
+  if (method === "GET") {
+    const etag = response.headers.get("ETag");
+    if (etag) {
+      restResponseCache.set(requestUrl, { etag, payload });
+    }
   }
 
   return payload as T;

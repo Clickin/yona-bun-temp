@@ -196,32 +196,6 @@ pub(super) fn site_user_state_label(user: &n4user::Model) -> String {
         .to_ascii_uppercase()
 }
 
-pub(super) fn site_user_query_matches(user: &n4user::Model, query: &str) -> bool {
-    let normalized_query = normalize_identity(query);
-    if normalized_query.is_empty() {
-        return true;
-    }
-    let contains_query = |value: Option<&str>| {
-        normalize_optional(value).is_some_and(|value| value.contains(&normalized_query))
-    };
-    contains_query(user.login_id.as_deref())
-        || contains_query(user.name.as_deref())
-        || contains_query(user.english_name.as_deref())
-        || contains_query(user.email.as_deref())
-}
-
-pub(super) fn site_user_state_matches(
-    user: &n4user::Model,
-    state: &str,
-    site_admin_ids: &HashSet<i64>,
-) -> bool {
-    match state {
-        "GUEST" => user.is_guest.unwrap_or_default() != 0,
-        "SITE_ADMIN" => site_admin_ids.contains(&user.id),
-        _ => site_user_state_label(user) == state,
-    }
-}
-
 pub(super) fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
     let normalized = normalize_identity(state).to_ascii_uppercase();
     let normalized = if normalized.is_empty() {
@@ -409,14 +383,6 @@ fn legacy_issue_state_encoding() -> bool {
     std::env::var("YONA_LEGACY_ISSUE_STATE_ENCODING")
         .map(|value| matches!(normalize_identity(&value).as_str(), "1" | "true" | "yes"))
         .unwrap_or(false)
-}
-
-pub(super) fn issue_closed_state_raw() -> i32 {
-    if legacy_issue_state_encoding() {
-        2
-    } else {
-        1
-    }
 }
 
 pub(super) const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[

@@ -5246,20 +5246,33 @@ async fn rest_site_user_list_from_record(
     base_path: &str,
     record: persistence::SiteUserListRecord,
 ) -> Result<RestSiteUserListResponse, ConnectError> {
-    let mut users = Vec::new();
-    for user in record.users {
-        users.push(rest_site_user_from_record(repository, base_path, user).await?);
-    }
+    let persistence::SiteUserListRecord {
+        initial_user_id,
+        page,
+        page_size,
+        query,
+        site_admin_count,
+        state,
+        total,
+        total_pages,
+        users: user_records,
+    } = record;
+    let users = futures::future::try_join_all(
+        user_records
+            .into_iter()
+            .map(|user| rest_site_user_from_record(repository, base_path, user)),
+    )
+    .await?;
 
     Ok(RestSiteUserListResponse {
-        initial_user_id: record.initial_user_id,
-        page: record.page,
-        page_size: record.page_size,
-        query: record.query,
-        site_admin_count: record.site_admin_count,
-        state: record.state,
-        total: record.total,
-        total_pages: record.total_pages,
+        initial_user_id,
+        page,
+        page_size,
+        query,
+        site_admin_count,
+        state,
+        total,
+        total_pages,
         users,
     })
 }

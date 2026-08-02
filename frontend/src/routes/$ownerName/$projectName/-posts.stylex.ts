@@ -92,14 +92,7 @@ export const styles = stylex.create({
     verticalAlign: "top",
   },
   keymap: { float: "left", marginLeft: "55px", padding: "10px 0" },
-  labelPaint: (backgroundColor: string, boxShadow: string, color: string) => ({
-    backgroundColor,
-    boxShadow,
-    color,
-  }),
   keymapOpen: { display: "block" },
-  labelButtonReset: { border: 0, cursor: "pointer", fontFamily: "inherit" },
-  labelList: { fontWeight: "normal", padding: "2px 3px" },
   paginationWrap: {
     clear: "both",
     width: "100%",

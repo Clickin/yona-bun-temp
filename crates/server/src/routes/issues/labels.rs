@@ -473,7 +473,7 @@ pub(super) async fn rest_list_project_labels(
         .list_project_labels(Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(rest_json_response(payload, ctx))
+    Ok(rest_json_response_with_etag(payload, ctx))
 }
 
 pub(super) async fn rest_list_project_label_categories(

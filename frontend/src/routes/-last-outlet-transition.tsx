@@ -18,7 +18,7 @@ export function LastOutletTransition({ routeId }: { routeId: string }) {
         <m.div
           key={pathname}
           data-last-outlet-transition="true"
-          initial={{ opacity: 0, scale: 0.98 }}
+          initial={false}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.15, ease: "easeInOut" }}

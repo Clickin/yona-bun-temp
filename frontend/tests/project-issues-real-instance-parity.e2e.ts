@@ -147,3 +147,54 @@ test("closed project issues keep the legacy responsive row ownership", async ({ 
   expect(mobile.rowWidth).toBeLessThanOrEqual(mobile.contentWidth + 1);
   expect(mobile.assigneeDisplay).toBe("none");
 });
+
+test("switching issue state preserves the fixed shell and replaces only the result data", async ({
+  page,
+}) => {
+  const openRoute = "/admin/WYVE_OCS/issues?orderBy=updatedDate&orderDir=desc&pageNum=1&state=open";
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${localBasePath}${openRoute}`, { waitUntil: "networkidle" });
+  await expectScreenLoaded(page);
+
+  const fixedShellSelectors = {
+    quickSearch: "#search",
+    results: "#span10",
+    tabs: "#span10 > .nav-tabs",
+    twoColumn: "#two-column-mode",
+    subtasks: "#toggle-show-subtasks",
+    resultList: "#span10 > .post-list-wrap",
+  } as const;
+  const fixedShellTokens = await page.evaluate((selectors) => {
+    const tokens: Record<string, string> = {};
+    for (const [name, selector] of Object.entries(selectors)) {
+      const element = document.querySelector(selector);
+      if (!element) continue;
+      const token = `warm-transition-${name}`;
+      element.setAttribute("data-parity-transition-token", token);
+      tokens[name] = token;
+    }
+    return tokens;
+  }, fixedShellSelectors);
+
+  const closedIssuesResponse = page.waitForResponse((response) => {
+    if (!response.url().includes("/api/v1/projects/admin/WYVE_OCS/issues")) return false;
+    if (response.request().method() !== "GET" || response.status() !== 200) return false;
+    return new URL(response.url()).searchParams.get("state") === "closed";
+  });
+  await page.locator("#span10 > .nav-tabs > li").nth(1).locator("a").click();
+  const response = await closedIssuesResponse;
+  expect(response.status()).toBe(200);
+
+  await expect(page).toHaveURL(/state=closed/u);
+  await expect(page.locator("#span10 > .post-list-wrap > .post-item")).toHaveCount(15);
+  await expect(page.locator("#span10 > .nav-tabs > li.active")).toContainText("닫힘");
+  await expect(page.locator("#span10 > .nav-tabs > li").nth(0)).toContainText("157");
+  await expect(page.locator("#span10 > .nav-tabs > li").nth(1)).toContainText("3560");
+  await expect(page.locator("[data-wireframe]")).toHaveCount(0);
+
+  for (const [name, token] of Object.entries(fixedShellTokens)) {
+    await expect(
+      page.locator(fixedShellSelectors[name as keyof typeof fixedShellSelectors]),
+    ).toHaveAttribute("data-parity-transition-token", token);
+  }
+});

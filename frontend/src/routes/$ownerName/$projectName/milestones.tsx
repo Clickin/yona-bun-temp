@@ -11,6 +11,7 @@ import type {
 } from "../../../api/types";
 import { listProjectMilestones } from "../../../auth-workspace-client";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
+import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-milestones.stylex";
@@ -574,20 +575,17 @@ function MilestoneIssueLink({
           {titleText}
           {sortLabels(issue.labels).map((label) =>
             (() => {
-              const labelColor = stylex.props(
-                styles.labelColor(cssBackgroundColor(stringField(label.color))),
-              );
               return (
-                <span
+                <IssueLabel
                   key={stringField(label.id)}
                   {...sx.label}
-                  {...labelColor}
-                  className={`${sx.label.className} ${labelColor.className} label issue-label list-label active`}
+                  className={`${sx.label.className} label list-label`}
+                  color={cssBackgroundColor(stringField(label.color))}
+                  labelId={stringField(label.id)}
                   data-category-id={stringField(label.categoryId)}
-                  data-label-id={stringField(label.id)}
                 >
                   {stringField(label.name)}
-                </span>
+                </IssueLabel>
               );
             })(),
           )}
