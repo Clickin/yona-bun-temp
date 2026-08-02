@@ -1,5 +1,32 @@
 import * as React from "react";
 import { useIsFetching } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
+
+// Legacy NProgress top bar look (yona-original/public/javascripts/lib/nprogress/nprogress.css),
+// owned by StyleX so the runtime cascade stays layered.
+const progressStyles = stylex.create({
+  nprogress: {
+    pointerEvents: "none",
+  },
+  bar: {
+    backgroundColor: "#27abe1",
+    position: "fixed",
+    zIndex: 1031,
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: 3,
+  },
+  peg: {
+    display: "block",
+    position: "absolute",
+    right: 0,
+    width: 3,
+    height: "100%",
+    boxShadow: "0 0 10px #fe6431, 0 0 5px #f3f3f3",
+    opacity: 1,
+  },
+});
 
 /**
  * Root progress statusbar (legacy NProgress top bar).
@@ -138,9 +165,12 @@ export function RootProgressStatusBarProvider({ children }: { children: React.Re
   return (
     <RootProgressStatusBarContext.Provider value={value}>
       {isBarActive ? (
-        <div id="nprogress" aria-hidden="true">
-          <div className="bar" role="presentation">
-            <div className="peg" />
+        <div id="nprogress" aria-hidden="true" {...stylex.props(progressStyles.nprogress)}>
+          <div
+            role="presentation"
+            className={["bar", stylex.props(progressStyles.bar).className].join(" ")}
+          >
+            <div {...stylex.props(progressStyles.peg)} />
           </div>
         </div>
       ) : null}
