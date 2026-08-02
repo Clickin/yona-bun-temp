@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useIsFetching } from "@tanstack/react-query";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
 
 // Legacy NProgress top bar look (yona-original/public/javascripts/lib/nprogress/nprogress.css),
@@ -58,6 +58,21 @@ type RootProgressStatusBar = {
   isBarActive: boolean;
   /** A registered content fetch group is in flight: event triggers are dropped. */
   isLocked: boolean;
+  /**
+   * Arms the lock synchronously at the triggering click. The derived lock only
+   * engages once the navigated-to query actually starts fetching, which lags
+   * the click by a render cycle — fast local queries can start and settle
+   * inside that gap, so the fetch group would never be observed in flight.
+   * Holding from the click covers the whole transition window.
+   */
+  armTransitionLock: () => void;
+  /**
+   * Releases the click-armed hold. The content route calls this from a layout
+   * effect once its list has been committed to the DOM with settled data, so
+   * the block never drops between the query settling and the next render tick
+   * (the window where the DOM still shows the previous list).
+   */
+  releaseTransitionLock: () => void;
   registerPrefix: (prefix: QueryKeyPrefix) => () => void;
   runLocked: (action: () => void) => boolean;
 };
@@ -140,11 +155,45 @@ export function RootProgressStatusBarProvider({ children }: { children: React.Re
 
   const isBarActive = useIsFetching() > 0;
 
-  const isLocked =
+  const fetchGroupActive =
     useIsFetching({
       predicate: (query) =>
         registeredPrefixesRef.current.some((prefix) => keyStartsWithPrefix(query.queryKey, prefix)),
     }) > 0;
+
+  const queryClient = useQueryClient();
+  const [transitionLock, setTransitionLock] = React.useState(false);
+  const armTransitionLock = React.useCallback(() => setTransitionLock(true), []);
+  const releaseTransitionLock = React.useCallback(() => setTransitionLock(false), []);
+  const isLocked = transitionLock || fetchGroupActive;
+
+  // Fallback release for clicks that never reach a content commit (e.g. a
+  // same-state tab click that does not re-render): one frame later the
+  // navigation has committed, so if no registered-prefix query is fetching or
+  // pending, nothing is transitioning and the hold drops. The content route's
+  // release signal is the primary path and always fires first (layout effect
+  // runs before paint, which precedes this frame callback).
+  React.useEffect(() => {
+    if (!transitionLock) {
+      return;
+    }
+    if (fetchGroupActive) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const pending = queryClient.getQueryCache().findAll({
+        predicate: (query) =>
+          registeredPrefixesRef.current.some((prefix) =>
+            keyStartsWithPrefix(query.queryKey, prefix),
+          ) &&
+          (query.state.fetchStatus === "fetching" || query.state.status === "pending"),
+      });
+      if (pending.length === 0) {
+        setTransitionLock(false);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [transitionLock, fetchGroupActive, queryClient]);
 
   const isLockedRef = React.useRef(isLocked);
   isLockedRef.current = isLocked;
@@ -158,8 +207,15 @@ export function RootProgressStatusBarProvider({ children }: { children: React.Re
   }, []);
 
   const value = React.useMemo(
-    () => ({ isBarActive, isLocked, registerPrefix, runLocked }),
-    [isBarActive, isLocked, registerPrefix, runLocked],
+    () => ({
+      armTransitionLock,
+      isBarActive,
+      isLocked,
+      registerPrefix,
+      releaseTransitionLock,
+      runLocked,
+    }),
+    [armTransitionLock, isBarActive, isLocked, registerPrefix, releaseTransitionLock, runLocked],
   );
 
   return (

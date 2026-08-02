@@ -4,6 +4,7 @@ import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react
 import {
   Fragment,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -169,6 +170,20 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       search.state,
     ],
   });
+  const { releaseTransitionLock } = useRootProgressStatusBar();
+  const issuesListSettled = !issuesQuery.isFetching;
+  // Not an event handler: this is the DOM-commit signal (layout effects run
+  // after the mutation, before paint), which no DOM event exposes.
+  // react-doctor-disable-next-line react-doctor/no-effect-event-handler
+  useLayoutEffect(() => {
+    // Release the click-armed transition lock only after this screen has
+    // committed its list content to the DOM with settled data, so the block
+    // cannot drop in the gap between the query settling and the next render
+    // tick (while the DOM still shows the previous list).
+    if (issuesListSettled) {
+      releaseTransitionLock();
+    }
+  }, [issuesListSettled, releaseTransitionLock]);
   const openMilestonesQuery = useQuery({
     queryFn: () =>
       listProjectMilestones(runtimeConfig, ownerName, projectName, {
@@ -3348,13 +3363,22 @@ function StateTab({
   to: string;
 }) {
   const lockedLinkClick = useLockedLinkClick();
+  const { armTransitionLock } = useRootProgressStatusBar();
   return (
     <TabButton
       as={Link}
       active={active}
       activeOptions={legacyRouteLocalActiveOptions}
       activeProps={legacyRouteLocalActiveProps}
-      onClick={lockedLinkClick}
+      onClick={(event: ReactMouseEvent<HTMLElement>) => {
+        lockedLinkClick(event);
+        if (!event.defaultPrevented) {
+          // Arm the lock at the triggering click: the derived fetch-group
+          // lock only engages after the navigated-to query starts, which can
+          // lag fast local queries past their entire lifetime.
+          armTransitionLock();
+        }
+      }}
       to={to}
     >
       {label}

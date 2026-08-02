@@ -176,6 +176,12 @@ test("rapid open/closed toggling drops triggers while the fetch group is in flig
   await expect(page.getByRole("link", { name: "Ship v1.0" })).toBeVisible();
   await expect(page.locator("#nprogress .bar")).toHaveCount(0);
   await expect.poll(() => currentState(page)).toBe("closed");
+
+  // once the closed list is committed to the DOM, the block has released and
+  // the toggle works again
+  await page.locator(".nav-tabs a", { hasText: "Open" }).click();
+  await expect(page.getByRole("link", { name: "Fix flaky issue" })).toBeVisible();
+  await expect.poll(() => currentState(page)).toBe("open");
 });
 
 test("every route gets the top progress bar without registering (global visibility)", async ({
