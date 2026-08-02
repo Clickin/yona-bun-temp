@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
 import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
@@ -1053,6 +1053,7 @@ export function projectPullRequestListQueryOptions(
   input: ProjectScopeInput & PullRequestListQuery,
 ) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => listProjectPullRequests(runtimeConfig, input),
     queryKey: apiQueryKeys.project.pullRequestList(input.ownerName, input.projectName, {
       category: input.category || "open",
@@ -1123,6 +1124,7 @@ export function organizationPullRequestListQueryOptions(
   input: { organizationName: string } & OrganizationPullRequestListQuery,
 ) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => listOrganizationPullRequests(runtimeConfig, input),
     queryKey: apiQueryKeys.organization.pullRequestList(input.organizationName, {
       category: input.category || "open",
@@ -1168,6 +1170,7 @@ export function projectReviewsQueryOptions(
   input: ProjectScopeInput & ReviewThreadListQuery,
 ) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => listProjectReviews(runtimeConfig, input),
     queryKey: apiQueryKeys.project.reviewList(input.ownerName, input.projectName, {
       authorId: input.authorId ?? 0,

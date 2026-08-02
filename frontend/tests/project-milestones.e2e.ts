@@ -146,6 +146,79 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestones?state=closed`);
 });
 
+test("milestone state transitions preserve the page shell while replacing the list", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestones(page);
+
+  let releaseClosedResponse: (() => void) | undefined;
+  const closedResponseGate = new Promise<void>((resolve) => {
+    releaseClosedResponse = resolve;
+  });
+  const milestonesEndpoint = "**/api/v1/owners/admin/projects/sample/milestones**";
+  await page.unroute(milestonesEndpoint);
+  await page.route(milestonesEndpoint, async (route) => {
+    const state = new URL(route.request().url()).searchParams.get("state");
+    if (state === "closed") {
+      await closedResponseGate;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ milestones: [allStateMilestones()[1]] }),
+      });
+      return;
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ milestones: openStateMilestones() }),
+    });
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestones?state=open`);
+  await expect(page.locator('[data-stylex-owner="project-milestones-tabs"]')).toBeVisible();
+  const fixedShellSelectors = {
+    page: '[data-stylex-owner="project-milestones-page"]',
+    shell: '[data-stylex-owner="project-milestones-shell"]',
+    tabWrap: '[data-stylex-owner="project-milestones-tab-wrap"]',
+    tabs: '[data-stylex-owner="project-milestones-tabs"]',
+    list: '[data-stylex-owner="project-milestones-list"]',
+  } as const;
+  const fixedShellTokens = await page.evaluate((selectors) => {
+    const tokens: Record<string, string> = {};
+    for (const [name, selector] of Object.entries(selectors)) {
+      const element = document.querySelector(selector);
+      if (!element) continue;
+      const token = `milestone-transition-${name}`;
+      element.setAttribute("data-parity-transition-token", token);
+      tokens[name] = token;
+    }
+    return tokens;
+  }, fixedShellSelectors);
+
+  const closedRequest = page.waitForRequest(
+    (request) =>
+      request.url().includes("/api/v1/owners/admin/projects/sample/milestones") &&
+      new URL(request.url()).searchParams.get("state") === "closed",
+  );
+  await page.locator('[data-stylex-owner="project-milestones-tab-link"]').nth(1).click();
+  await closedRequest;
+  await expect(page.locator('[data-stylex-owner="project-milestones-loading-tabs"]')).toHaveCount(
+    0,
+  );
+  await expect(page.locator('[data-stylex-owner="project-milestones-item"]')).toHaveCount(2);
+
+  releaseClosedResponse?.();
+  await expect(page.locator('[data-stylex-owner="project-milestones-item"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="project-milestones-tabs"] li.active')).toHaveText(
+    "Closed",
+  );
+  for (const [name, token] of Object.entries(fixedShellTokens)) {
+    await expect(
+      page.locator(fixedShellSelectors[name as keyof typeof fixedShellSelectors]),
+    ).toHaveAttribute("data-parity-transition-token", token);
+  }
+});
+
 test("project milestones route uses direct typed Link targets", () => {
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
   const parentRouteSource = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");

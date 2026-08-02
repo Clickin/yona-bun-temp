@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -80,6 +80,7 @@ function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const search = organizationIssuesSearchFromString(location.searchStr);
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const issuesQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listOrganizationIssues(runtimeConfig, organizationName, {
         assigneeId: idSearch(search.assigneeId),

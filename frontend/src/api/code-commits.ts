@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
 import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
@@ -445,6 +445,7 @@ export function codeHistoryQueryOptions(
   input: { branch?: string; ownerName: string; page?: number; path?: string; projectName: string },
 ) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => readCodeHistoryRest(runtimeConfig, input),
     queryKey: apiQueryKeys.project.codeHistory(input.ownerName, input.projectName, {
       branch: input.branch ?? "",

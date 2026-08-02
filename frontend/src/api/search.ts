@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
@@ -149,6 +149,7 @@ function normalizedSearchKey(input: SearchInput) {
 export function globalSearchQueryOptions(runtimeConfig: RuntimeConfig, input: SearchInput) {
   const keyInput = normalizedSearchKey(input);
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => readGlobalSearch(runtimeConfig, keyInput),
     queryKey: apiQueryKeys.search.global(keyInput),
   });
@@ -157,6 +158,7 @@ export function globalSearchQueryOptions(runtimeConfig: RuntimeConfig, input: Se
 export function projectSearchQueryOptions(runtimeConfig: RuntimeConfig, input: ProjectSearchInput) {
   const keyInput = normalizedSearchKey(input);
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       readProjectSearch(runtimeConfig, {
         ...keyInput,
@@ -173,6 +175,7 @@ export function organizationSearchQueryOptions(
 ) {
   const keyInput = normalizedSearchKey(input);
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       readOrganizationSearch(runtimeConfig, {
         ...keyInput,

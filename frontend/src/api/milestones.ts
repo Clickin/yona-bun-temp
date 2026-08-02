@@ -3,7 +3,7 @@ import type {
   ProjectMilestoneDeleteResponse,
   ProjectMilestoneMutationResponse,
 } from "./types";
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
@@ -32,6 +32,7 @@ export function listProjectMilestonesQueryOptions(
   };
   return queryOptions({
     gcTime: 15 * 60_000,
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listProjectMilestonesRest(runtimeConfig, input.ownerName, input.projectName, options),
     queryKey: apiQueryKeys.project.milestones(input.ownerName, input.projectName, options),

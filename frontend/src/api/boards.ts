@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import type {
   CommitReferenceMetadata,
@@ -778,6 +778,7 @@ export function listProjectPostsQueryOptions(
   input: ProjectPostsInput,
 ) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => listProjectPostsRest(runtimeConfig, input),
     queryKey: apiQueryKeys.project.posts(
       input.ownerName,
@@ -829,6 +830,7 @@ export function listOrganizationBoardsQueryOptions(
   input: OrganizationBoardsInput,
 ) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => listOrganizationBoardsRest(runtimeConfig, input),
     queryKey: apiQueryKeys.organization.boards(
       input.organizationName,

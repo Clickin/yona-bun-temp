@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import type { FormEvent, HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
@@ -75,6 +75,7 @@ function UserIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const search = Route.useSearch();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const issuesQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listUserIssues(runtimeConfig, {
         filter: search.filter,

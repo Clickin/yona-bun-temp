@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type {
@@ -103,6 +103,7 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const orderBy = search.orderBy ?? "dueDate";
   const orderDir = search.orderDir ?? "asc";
   const milestonesQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listProjectMilestones(runtimeConfig, ownerName, projectName, {
         orderBy,

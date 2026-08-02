@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
@@ -140,6 +140,7 @@ export function deleteCodeBranchRest(
 
 export function codeBranchesQueryOptions(runtimeConfig: RuntimeConfig, input: ProjectScopeInput) {
   return queryOptions({
+    placeholderData: keepPreviousData,
     queryFn: () => readCodeBranches(runtimeConfig, input),
     queryKey: apiQueryKeys.project.codeBranches(input.ownerName, input.projectName),
   });
