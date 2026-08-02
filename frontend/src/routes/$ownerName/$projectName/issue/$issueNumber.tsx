@@ -23,6 +23,7 @@ import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
 import { resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
+import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../../api/types";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
@@ -160,6 +161,7 @@ export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  useWireframeContentProgress([["project-issue-detail", ownerName, projectName]]);
   const issueQuery = useQuery({
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project-issue-detail", ownerName, projectName, numericIssueNumber],

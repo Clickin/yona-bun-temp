@@ -19,6 +19,11 @@ import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../components/issue-label";
+import {
+  useLockedLinkClick,
+  useRootProgressStatusBar,
+  useWireframeContentProgress,
+} from "../../../components/route-fetch-lock";
 import { TabButton } from "../../../components/tab-button";
 import { useLegacyMessages } from "../../../i18n";
 import { styles } from "./-issues.stylex";
@@ -129,6 +134,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  useWireframeContentProgress([["project", ownerName, projectName, "issues"]]);
   const issuesQuery = useQuery({
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -450,6 +456,7 @@ function ProjectIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
+  const { runLocked } = useRootProgressStatusBar();
   const currentPageItems = issues.items;
   const currentPageHasItems = issuesReady && currentPageItems.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
@@ -496,23 +503,27 @@ function ProjectIssuesBody({
     });
   }, [visibleMassUpdateIssueIds]);
   const handleSortChange = (orderBy: string, orderDir: string) => {
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        orderBy,
-        orderDir,
-        pageNum: 1,
+    void runLocked(() =>
+      navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          orderBy,
+          orderDir,
+          pageNum: 1,
+        }),
       }),
-    });
+    );
   };
   const handleTitlePrefixSearch = (filter: string) => {
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        filter,
-        pageNum: 1,
+    void runLocked(() =>
+      navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          filter,
+          pageNum: 1,
+        }),
       }),
-    });
+    );
   };
   const titlePrefixRoute = (filter: string) =>
     projectIssuesRoutePath(ownerName, projectName, {
@@ -521,12 +532,14 @@ function ProjectIssuesBody({
       pageNum: 1,
     });
   const handlePageChange = (pageNum: number) => {
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        pageNum,
+    void runLocked(() =>
+      navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          pageNum,
+        }),
       }),
-    });
+    );
   };
   const applyTwoColumnLocation = (issueId: string, href: string, title: string) => {
     const nextState = {
@@ -545,13 +558,15 @@ function ProjectIssuesBody({
     setHighlightedIssueId(issueId);
   };
   const handleIssueLabelSearch = (labelId: string) => {
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        labelIds: [...search.labelIds, labelId],
-        pageNum: 1,
+    void runLocked(() =>
+      navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          labelIds: [...search.labelIds, labelId],
+          pageNum: 1,
+        }),
       }),
-    });
+    );
   };
   const revealChildIssueList = (issueId: string) => {
     setRevealedChildIssueIds((previousIds) => {
@@ -625,9 +640,11 @@ function ProjectIssuesBody({
               isAnonymous={isAnonymous}
               issues={issues}
               onQuickSearch={(nextSearch) => {
-                void navigate({
-                  to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
-                });
+                void runLocked(() =>
+                  navigate({
+                    to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
+                  }),
+                );
               }}
               search={search}
               state={search.state}
@@ -649,9 +666,11 @@ function ProjectIssuesBody({
               showAssigneeCurrentUserOption={showAssigneeCurrentUserSearchOption}
               showAuthorCurrentUserOption={showAuthorCurrentUserSearchOption}
               onSearchSubmit={(nextSearch) => {
-                void navigate({
-                  to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
-                });
+                void runLocked(() =>
+                  navigate({
+                    to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
+                  }),
+                );
               }}
               labelControls={{
                 showEditLink: showLabelEdit,
@@ -1734,6 +1753,7 @@ function ProjectIssueItem({
   useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const lockedLinkClick = useLockedLinkClick();
   const issueId = stringField(issue.id, String(issue.issueNumber));
   const issueNumber = stringField(issue.issueNumber, issueId);
   const issueParams = { issueNumber, ownerName, projectName };
@@ -1876,6 +1896,7 @@ function ProjectIssueItem({
           >
             <Link
               activeProps={legacyRouteLocalActiveProps}
+              onClick={lockedLinkClick}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
               className={`title ${stylex.props(styles.issueTitle).className}`}
@@ -1932,6 +1953,7 @@ function ProjectIssueItem({
             {titleParts.prefixes.length > 0 ? " " : null}
             <Link
               activeProps={legacyRouteLocalActiveProps}
+              onClick={lockedLinkClick}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
               className={`title ${stylex.props(styles.issueTitle).className}`}
@@ -3093,6 +3115,7 @@ function IssueSearchLabelSelect({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
+  const { runLocked } = useRootProgressStatusBar();
   const [open, setOpen] = useState(false);
   const groupedLabels = groupProjectLabels(labels);
   const labelOptions = groupedLabels.flatMap((category) => category.labels);
@@ -3103,13 +3126,15 @@ function IssueSearchLabelSelect({
 
   const updateSelectedLabels = (labelIds: string[]) => {
     setOpen(false);
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        labelIds,
-        pageNum: 1,
+    void runLocked(() =>
+      navigate({
+        to: projectIssuesRoutePath(ownerName, projectName, {
+          ...search,
+          labelIds,
+          pageNum: 1,
+        }),
       }),
-    });
+    );
   };
 
   if (groupedLabels.length === 0) {
@@ -3322,12 +3347,14 @@ function StateTab({
   label: string;
   to: string;
 }) {
+  const lockedLinkClick = useLockedLinkClick();
   return (
     <TabButton
       as={Link}
       active={active}
       activeOptions={legacyRouteLocalActiveOptions}
       activeProps={legacyRouteLocalActiveProps}
+      onClick={lockedLinkClick}
       to={to}
     >
       {label}

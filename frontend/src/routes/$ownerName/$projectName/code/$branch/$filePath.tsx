@@ -19,6 +19,10 @@ import { readProjectContainerQueryOptions } from "../../../../../api/org-project
 import { currentSessionQueryOptions } from "../../../../../api/session";
 import type { ProjectContainer } from "../../../../../api/types";
 import { useLegacyMessages } from "../../../../../i18n";
+import {
+  useLockedLinkClick,
+  useWireframeContentProgress,
+} from "../../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { codeBlameQueryOptions } from "../../../../../api/code";
@@ -92,6 +96,9 @@ function ProjectCodeFileScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { branch, filePath, ownerName, projectName } = routeParams;
+  useWireframeContentProgress([
+    ["api", "v1", "owners", ownerName, "projects", projectName, "code"],
+  ]);
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { branch, ownerName, path: filePath, projectName }),
   );
@@ -189,6 +196,7 @@ function ProjectCodeFileBody({
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
+  const lockedLinkClick = useLockedLinkClick();
   const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = code.selectedBranch || branch;
   const selectedBranchItemName = branchItemName(selectedBranch);
@@ -325,6 +333,7 @@ function ProjectCodeFileBody({
               data-stylex-owner="project-code-file-breadcrumbs"
             >
               <Link
+                onClick={lockedLinkClick}
                 to="/$ownerName/$projectName/code/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
                 activeOptions={{
@@ -344,6 +353,7 @@ function ProjectCodeFileBody({
               {code.breadcrumbs.map((item) => (
                 <Link
                   key={item.path}
+                  onClick={lockedLinkClick}
                   to={projectPath(ownerName, projectName, "code", encodedBranch, item.path)}
                   activeOptions={{
                     exact: true,
@@ -513,6 +523,7 @@ function FolderListEntry({
   selectedBranch: string;
 }) {
   const rowId = `cb-${listPath}${entry.name}`;
+  const lockedLinkClick = useLockedLinkClick();
   const encodedBranch = encodeURIComponent(selectedBranch);
 
   return (
@@ -539,6 +550,7 @@ function FolderListEntry({
             className: undefined,
             "data-status": undefined,
           }}
+          onClick={lockedLinkClick}
           to={projectPath(ownerName, projectName, "code", encodedBranch, entry.path)}
           hash={entry.kind === "folder" ? rowId : undefined}
           className={entry.kind === "folder" ? "folder" : "file"}
@@ -951,12 +963,12 @@ function FileView({
             {fileText}
           </div>
           <pre
-              id="showCode"
-              className={`${stylex.props(styles.code).className} code-wrap`}
-              data-stylex-owner="project-code-file-source"
-              data-mimetype={mimeType}
-              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-            ></pre>
+            id="showCode"
+            className={`${stylex.props(styles.code).className} code-wrap`}
+            data-stylex-owner="project-code-file-source"
+            data-mimetype={mimeType}
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+          ></pre>
         </>
       )}
     </div>

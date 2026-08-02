@@ -12,6 +12,7 @@ import type {
 import { listProjectMilestones } from "../../../auth-workspace-client";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../components/issue-label";
+import { useLockedLinkClick } from "../../../components/route-fetch-lock";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-milestones.stylex";
@@ -366,6 +367,7 @@ function MilestoneRow({
   isLast: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const lockedLinkClick = useLockedLinkClick();
   const openCount = numberField(milestone.openIssueCount);
   const closedCount = numberField(milestone.closedIssueCount);
   const totalCount = openCount + closedCount;
@@ -392,6 +394,7 @@ function MilestoneRow({
           <strong className="version"></strong>
           <Link
             {...LEGACY_MILESTONE_LIST_LINK_PROPS}
+            onClick={lockedLinkClick}
             to="/$ownerName/$projectName/milestone/$milestoneId"
             params={{ ownerName, projectName, milestoneId: stringField(milestone.id) }}
             search={{}}

@@ -25,6 +25,7 @@ import {
   readSessionBootstrap,
 } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
+import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { styles } from "./-milestone-detail.stylex";
 
@@ -117,6 +118,7 @@ export function ProjectMilestoneDetailIndexScreen({
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  useWireframeContentProgress([["project", ownerName, projectName, "milestones"]]);
   const milestoneQuery = useQuery({
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
     queryKey: ["project", ownerName, projectName, "milestones", numericMilestoneId],

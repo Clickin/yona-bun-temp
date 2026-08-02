@@ -5,7 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test.use({ locale: "ko-KR" });
 
-test("issue editform owns static label picker geometry", async ({ page }) => {
+test("issue editform owns dynamic selected label color and picker geometry", async ({ page }) => {
   const route = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
     "utf8",
@@ -83,7 +83,7 @@ async function mockIssueEditForm(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/labels", (route: Route) =>
+  await page.route("**/api/v1/owners/weblabs/projects/demo/labels*", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
@@ -103,7 +103,7 @@ async function mockIssueEditForm(page: Page) {
   await page.route("**/api/v1/projects/**/issues/parent-options**", (route: Route) =>
     route.fulfill({ contentType: "application/json", json: { items: [] } }),
   );
-  await page.route("**/api/v1/projects/**/issues/1", (route: Route) =>
+  await page.route("**/api/v1/projects/weblabs/demo/issues/1*", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

@@ -9,6 +9,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest } from "../api/auth";
+import { RootProgressStatusBarProvider } from "../components/route-fetch-lock";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
@@ -417,7 +418,9 @@ function RootResetShell() {
 
   const rootShellContent = (
     <>
-      <Outlet key={authenticatedRevision} />
+      <RootProgressStatusBarProvider>
+        <Outlet key={authenticatedRevision} />
+      </RootProgressStatusBarProvider>
       {rendersPlainResponseState ? null : (
         <>
           <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>

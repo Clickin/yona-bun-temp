@@ -22,6 +22,7 @@ import type { ProjectContainer } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
+import { useLockedLinkClick } from "../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-posts.stylex";
 
@@ -618,6 +619,7 @@ function ProjectBoardPost({
   post: BoardPostListItem;
 }) {
   const { t } = useLegacyMessages();
+  const lockedLinkClick = useLockedLinkClick();
   const titleParts = splitHeaderWordsInBrackets(post.title);
   const postRoutePath = `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`;
   const authorRoutePath = `/${post.authorLoginId}`;
@@ -674,7 +676,12 @@ function ProjectBoardPost({
             {prefix}
           </LegacyTitlePrefixButton>
         ))}
-        <Link to={postRoutePath} activeProps={legacyRouteLocalActiveProps} className="title">
+        <Link
+          to={postRoutePath}
+          activeProps={legacyRouteLocalActiveProps}
+          className="title"
+          onClick={lockedLinkClick}
+        >
           {titleParts.title}
         </Link>
       </div>

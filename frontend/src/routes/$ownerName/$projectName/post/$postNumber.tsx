@@ -37,6 +37,7 @@ import type { ProjectContainer } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import type { CommitReferenceMetadata } from "../../../../api/issue-meta";
 import { useLegacyMessages } from "../../../../i18n";
+import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
@@ -201,6 +202,9 @@ export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig:
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  useWireframeContentProgress([
+    ["api", "v1", "owners", ownerName, "projects", projectName, "posts"],
+  ]);
   const postQuery = useQuery({
     ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
     retry(failureCount, error) {
