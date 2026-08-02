@@ -4,22 +4,33 @@ import { useIsFetching } from "@tanstack/react-query";
 /**
  * Root progress statusbar (legacy NProgress top bar).
  *
- * Screens that paint a wireframe first and then fetch their content submit the
- * content query key prefixes here via `useWireframeContentProgress`; while any
- * registered query is fetching, the legacy top progress bar is shown and
- * `isActive` holds, so the whole mechanism is fetch-driven and works the same
- * for direct URL entry, back/forward history, and in-app navigation alike.
+ * Two concerns, split deliberately:
  *
- * `runLocked` drops a data-changing event trigger while a registered fetch
- * group is in flight so rapid issue-list open/closed toggling cannot restart
- * queries underneath a stale DOM; the bar re-enables triggers once everything
- * settles (allSettled semantics — the group stays active until the last query
- * in it finishes).
+ * 1. Bar visibility is GLOBAL: while any active query is fetching, the legacy
+ *    top progress bar shows. Every route and component gets the indicator for
+ *    free — exactly like legacy Yona's NProgress, which fired on any AJAX
+ *    navigation — so no per-screen registration is needed just to see it.
+ *
+ * 2. The event lock is SCOPED to registered content fetch groups. Screens that
+ *    paint a wireframe first and then fetch their content submit the content
+ *    query key prefixes via `useWireframeContentProgress`; while a registered
+ *    group is fetching, `isLocked` holds and `useLockedLinkClick`/`runLocked`
+ *    drop plain left-click triggers so rapid open/closed toggling cannot
+ *    restart queries underneath a stale DOM. The group stays locked until the
+ *    last query in it settles (allSettled semantics). A global drop would
+ *    swallow legitimate clicks during unrelated background refetches, so the
+ *    lock is deliberately not global.
+ *
+ * The whole mechanism is fetch-driven, so it behaves identically for direct
+ * URL entry, back/forward history, and in-app navigation alike.
  */
 type QueryKeyPrefix = readonly unknown[];
 
 type RootProgressStatusBar = {
-  isActive: boolean;
+  /** Any active query is fetching: the top progress bar is visible. */
+  isBarActive: boolean;
+  /** A registered content fetch group is in flight: event triggers are dropped. */
+  isLocked: boolean;
   registerPrefix: (prefix: QueryKeyPrefix) => () => void;
   runLocked: (action: () => void) => boolean;
 };
@@ -48,7 +59,8 @@ function keyStartsWithPrefix(queryKey: readonly unknown[], prefix: readonly unkn
 
 /**
  * One-call helper for wireframe screens: registers the content query key
- * prefixes with the root progress statusbar for the screen's lifetime.
+ * prefixes so the event lock is scoped to this screen's content fetch group
+ * for the screen's lifetime. The bar itself needs no registration.
  */
 export function useWireframeContentProgress(prefixes: readonly QueryKeyPrefix[]): void {
   const { registerPrefix } = useRootProgressStatusBar();
@@ -61,18 +73,19 @@ export function useWireframeContentProgress(prefixes: readonly QueryKeyPrefix[])
 }
 
 /**
- * onClick for a data-fetch-triggering Link: drops the click while a registered
- * content fetch group is in flight. Direct URL entry, back/forward history,
- * and open-in-new-tab clicks (middle button or any modifier) bypass the router
- * entirely and are never blocked here: only plain left clicks honor the lock.
+ * onClick for a data-fetch-triggering Link: drops the click while the screen's
+ * registered content fetch group is in flight. Direct URL entry, back/forward
+ * history, and open-in-new-tab clicks (middle button or any modifier) bypass
+ * the router entirely and are never blocked here: only plain left clicks honor
+ * the lock.
  */
 export function useLockedLinkClick(): (event: React.MouseEvent<HTMLElement>) => void {
-  const { isActive } = useRootProgressStatusBar();
+  const { isLocked } = useRootProgressStatusBar();
   return (event) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
     }
-    if (isActive) {
+    if (isLocked) {
       event.preventDefault();
     }
   };
@@ -98,17 +111,19 @@ export function RootProgressStatusBarProvider({ children }: { children: React.Re
     };
   }, []);
 
-  const isActive =
+  const isBarActive = useIsFetching() > 0;
+
+  const isLocked =
     useIsFetching({
       predicate: (query) =>
         registeredPrefixesRef.current.some((prefix) => keyStartsWithPrefix(query.queryKey, prefix)),
     }) > 0;
 
-  const isActiveRef = React.useRef(isActive);
-  isActiveRef.current = isActive;
+  const isLockedRef = React.useRef(isLocked);
+  isLockedRef.current = isLocked;
 
   const runLocked = React.useCallback((action: () => void): boolean => {
-    if (isActiveRef.current) {
+    if (isLockedRef.current) {
       return false;
     }
     action();
@@ -116,13 +131,13 @@ export function RootProgressStatusBarProvider({ children }: { children: React.Re
   }, []);
 
   const value = React.useMemo(
-    () => ({ isActive, registerPrefix, runLocked }),
-    [isActive, registerPrefix, runLocked],
+    () => ({ isBarActive, isLocked, registerPrefix, runLocked }),
+    [isBarActive, isLocked, registerPrefix, runLocked],
   );
 
   return (
     <RootProgressStatusBarContext.Provider value={value}>
-      {isActive ? (
+      {isBarActive ? (
         <div id="nprogress" aria-hidden="true">
           <div className="bar" role="presentation">
             <div className="peg" />

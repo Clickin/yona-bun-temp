@@ -178,6 +178,71 @@ test("rapid open/closed toggling drops triggers while the fetch group is in flig
   await expect.poll(() => currentState(page)).toBe("closed");
 });
 
+test("every route gets the top progress bar without registering (global visibility)", async ({
+  page,
+}) => {
+  // project home is NOT a registered content group; the bar must still show
+  // while its container fetch is in flight because bar visibility is global.
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-issue-lock" },
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: OWNER,
+        userLabel: "관리자",
+      }),
+    });
+  });
+  await page.route(`**/api/v1/owners/${OWNER}/projects/${PROJECT}/container**`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        backgroundImageUrl: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+        boardCount: 0,
+        enrolledUsers: [],
+        id: 9,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        isWatching: true,
+        logoUrl: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+        openIssueCount: 1,
+        openPullRequestCount: 0,
+        ownerName: OWNER,
+        postCount: 0,
+        projectId: 9,
+        projectName: PROJECT,
+        reviewCount: 0,
+        showBoard: true,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        vcs: "Git",
+        viewerCanUpdate: true,
+        viewerCanWatch: true,
+        viewerIsProjectMember: true,
+        watchCount: 1,
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/${OWNER}/${PROJECT}`);
+  await expect(page.locator("#nprogress .bar")).toBeVisible();
+  await expect(page.locator(".project-page-wrap")).toBeVisible();
+  await expect(page.locator("#nprogress .bar")).toHaveCount(0);
+});
+
 test("modifier clicks are never blocked while the lock is held", async ({ page }) => {
   await mockProjectIssuesLock(page, 900);
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/issues?state=open`);
