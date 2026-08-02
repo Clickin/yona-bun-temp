@@ -1,13 +1,15 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   type ChangeEvent,
   useEffect,
+  useId,
   useRef,
   useState,
+  use,
   type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
@@ -42,6 +44,7 @@ import {
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { SiteLayoutShell } from "../../../-home-route-screen";
+import { ProjectNestedShellContext } from "../../$projectName";
 import { useRootToast } from "../../../__root";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../../components/issue-label";
@@ -244,66 +247,74 @@ export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig
 }
 
 function ProjectIssueDetailWireframe({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  return (
-    <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <div
-        className={`${stylex.props(styles.page).className} page-wrap-outer`}
-        data-stylex-owner="project-issue-detail-page"
-        data-wireframe="project-issue-detail"
-        aria-busy="true"
-      >
-        <div className="project-page-wrap board-view issue-detail-page">
+  // Inside the project layout the shell already owns the global and project
+  // navbars; rendering another SiteLayoutShell here stacks a second navbar
+  // while the issue data loads. Keep the body-only wireframe when nested.
+  const nestedProjectShell = use(ProjectNestedShellContext);
+  const body = (
+    <div
+      className={`${stylex.props(styles.page).className} page-wrap-outer`}
+      data-stylex-owner="project-issue-detail-page"
+      data-wireframe="project-issue-detail"
+      aria-busy="true"
+    >
+      <div className="project-page-wrap board-view issue-detail-page">
+        <div
+          className={`${stylex.props(styles.header).className} board-header issue`}
+          data-stylex-owner="project-issue-detail-header"
+        >
           <div
-            className={`${stylex.props(styles.header).className} board-header issue`}
-            data-stylex-owner="project-issue-detail-header"
+            {...stylex.props(styles.title)}
+            className={`${stylex.props(styles.title).className} title`}
+            aria-hidden="true"
           >
+            {"\u00a0"}
+          </div>
+        </div>
+        <div
+          className={`${stylex.props(styles.body).className} board-body row-fluid`}
+          data-stylex-owner="project-issue-detail-body"
+        >
+          <div className="span9 span-left-pane">
             <div
-              {...stylex.props(styles.title)}
-              className={`${stylex.props(styles.title).className} title`}
+              className={`${stylex.props(styles.author).className} author-info`}
+              aria-hidden="true"
+            >
+              {"\u00a0"}
+            </div>
+            <div
+              className={`${stylex.props(styles.content).className} content markdown-wrap`}
               aria-hidden="true"
             >
               {"\u00a0"}
             </div>
           </div>
           <div
-            className={`${stylex.props(styles.body).className} board-body row-fluid`}
-            data-stylex-owner="project-issue-detail-body"
+            className={`${stylex.props(styles.sidebar).className} span3 span-right-pane`}
+            aria-hidden="true"
           >
-            <div className="span9 span-left-pane">
-              <div
-                className={`${stylex.props(styles.author).className} author-info`}
-                aria-hidden="true"
-              >
-                {"\u00a0"}
-              </div>
-              <div
-                className={`${stylex.props(styles.content).className} content markdown-wrap`}
-                aria-hidden="true"
-              >
-                {"\u00a0"}
-              </div>
-            </div>
             <div
-              className={`${stylex.props(styles.sidebar).className} span3 span-right-pane`}
-              aria-hidden="true"
+              {...stylex.props(styles.issueInfo)}
+              className={`${stylex.props(styles.issueInfo).className} issue-info`}
             >
-              <div
-                {...stylex.props(styles.issueInfo)}
-                className={`${stylex.props(styles.issueInfo).className} issue-info`}
-              >
-                <dl {...stylex.props(styles.sidebarMetaDl)}>
-                  <dt>{"\u00a0"}</dt>
-                  <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
-                  <dt>{"\u00a0"}</dt>
-                  <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
-                </dl>
-              </div>
+              <dl {...stylex.props(styles.sidebarMetaDl)}>
+                <dt>{"\u00a0"}</dt>
+                <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
+                <dt>{"\u00a0"}</dt>
+                <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
+              </dl>
             </div>
           </div>
         </div>
       </div>
-    </SiteLayoutShell>
+    </div>
   );
+
+  if (nestedProjectShell) {
+    return body;
+  }
+
+  return <SiteLayoutShell runtimeConfig={runtimeConfig}>{body}</SiteLayoutShell>;
 }
 
 function ProjectIssueDetailTitle({
@@ -2030,10 +2041,12 @@ function LegacySingleSelectControl({
   selectedValue: string;
   setOpen: (open: boolean) => void;
 }) {
+  const listboxId = useId();
   return (
     <div
       className={`select2-container ${className}${open ? " select2-dropdown-open" : ""}`}
       role="combobox"
+      aria-controls={listboxId}
       aria-label={ariaLabel}
       aria-expanded={open}
     >
@@ -2050,7 +2063,7 @@ function LegacySingleSelectControl({
         </span>
       </div>
       <div className={`select2-drop${open ? " select2-drop-active" : " select2-display-none"}`}>
-        <ul className="select2-results" role="listbox">
+        <ul className="select2-results" role="listbox" id={listboxId}>
           {options.map((option) => (
             <li
               key={option.value}
@@ -4421,7 +4434,7 @@ function taskItemsFromMarkdown(markdown: string) {
   let inCodeFence = false;
   const items: boolean[] = [];
   for (const line of stripMarkdownComments(markdown).split(/\r?\n/u)) {
-    if (/^```/u.test(line.trim())) {
+    if (line.trim().startsWith("```")) {
       inCodeFence = !inCodeFence;
       continue;
     }

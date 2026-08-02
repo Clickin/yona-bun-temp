@@ -19,7 +19,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
-import { SiteLayoutShell } from "../../-home-route-screen";
 import { styles } from "./-organization-search.stylex";
 import {
   DefaultSearchErrorBody,
@@ -133,34 +132,30 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 
   if (search.routeInvalid) {
     return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <DefaultSearchErrorBody
-          iconClassName="ico-404"
-          messageKey="error.badrequest"
-          runtimeConfig={runtimeConfig}
-          ybtnClassName="ybtn ybtn-info"
-        />
-      </SiteLayoutShell>
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
     );
   }
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
-    return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <RequestTextTooLargeErrorBody />
-      </SiteLayoutShell>
-    );
+    // The organization layout owns the global and organization navbars; a
+    // nested SiteLayoutShell here would stack a second navbar.
+    return <RequestTextTooLargeErrorBody />;
   }
 
   if (isDefaultInternalServerError(searchQuery.error)) {
+    // The organization layout owns the global and organization navbars; a
+    // nested SiteLayoutShell here would stack a second navbar.
     return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <DefaultSearchErrorBody
-          iconClassName="ico-404"
-          messageKey="error.internalServerError"
-          runtimeConfig={runtimeConfig}
-        />
-      </SiteLayoutShell>
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.internalServerError"
+        runtimeConfig={runtimeConfig}
+      />
     );
   }
 

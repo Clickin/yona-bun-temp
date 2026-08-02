@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode, SyntheticEvent } from "react";
@@ -252,6 +252,12 @@ const legacyProjectShellLinkActiveProps = {
 
 export const ProjectNestedShellContext = createContext(false);
 export const ProjectLayoutContext = createContext<ProjectContainer | null>(null);
+/**
+ * Effective project-home tab while the next tab's container is still loading.
+ * The shell keeps the previously loaded tab visible (legacy page-load parity)
+ * so a tab switch never collapses the project shell or blanks the pane.
+ */
+export const ProjectHomeTabContext = createContext<ProjectContainerTabId | null>(null);
 
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
@@ -493,12 +499,23 @@ function ProjectHomeRouteShell({
       projectName,
       tabId: projectContainerTabId,
     }),
+    // Legacy renders the whole home page for the requested tab, so a tab
+    // switch is a full page load. Keep the previous tab's container visible
+    // while the next tab settles instead of collapsing the project shell.
+    placeholderData: keepPreviousData,
     retry(failureCount, error) {
       const status = projectRouteErrorStatus(error);
       return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
     },
     retryOnMount: false,
   });
+  const homeLoadedTabRef = useRef<ProjectContainerTabId>("readme");
+  if (active === "home" && query.data && !query.isPlaceholderData) {
+    homeLoadedTabRef.current = projectContainerTabId;
+  }
+  const effectiveHomeTabId: ProjectContainerTabId = query.isPlaceholderData
+    ? homeLoadedTabRef.current
+    : projectContainerTabId;
   const membersQuery = useQuery({
     ...readProjectMembersQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: active === "members",
@@ -843,6 +860,7 @@ function ProjectHomeRouteShell({
     >
       <ProjectLayoutScreen
         active={active}
+        homeTabId={active === "home" ? effectiveHomeTabId : undefined}
         project={query.data}
         pullRequestDetailForbidden={
           active === "pullRequestDetail" &&
@@ -1036,6 +1054,7 @@ function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig:
 
 function ProjectLayoutScreen({
   active,
+  homeTabId,
   project,
   pullRequestDetailForbidden,
   pullRequestFormBadRequest,
@@ -1076,6 +1095,7 @@ function ProjectLayoutScreen({
     | "transfer"
     | "watchers"
     | "webhooks";
+  homeTabId?: ProjectContainerTabId;
   project: ProjectContainer;
   pullRequestDetailForbidden: boolean;
   pullRequestFormBadRequest: boolean;
@@ -1210,13 +1230,15 @@ function ProjectLayoutScreen({
       ) : null}
       <ProjectNestedShellContext value>
         <ProjectLayoutContext value={project}>
-          {active === "home" ? (
-            <div data-stylex-owner="project-home-page">
+          <ProjectHomeTabContext value={homeTabId ?? null}>
+            {active === "home" ? (
+              <div data-stylex-owner="project-home-page">
+                <LastOutletTransition routeId={Route.id} />
+              </div>
+            ) : (
               <LastOutletTransition routeId={Route.id} />
-            </div>
-          ) : (
-            <LastOutletTransition routeId={Route.id} />
-          )}
+            )}
+          </ProjectHomeTabContext>
         </ProjectLayoutContext>
       </ProjectNestedShellContext>
     </>
@@ -1458,6 +1480,14 @@ export function ProjectHomeBody({
   const leaveModalOpen = leaveModalPhase === "open";
   const leaveModalAriaHidden =
     leaveModalPhase === "initial" ? undefined : leaveModalOpen ? "false" : "true";
+  const leaveModalStyleClass =
+    leaveModalPhase === "open"
+      ? stylex.props(projectHeaderStyles.leaveModalOpen).className
+      : leaveModalPhase === "closed"
+        ? stylex.props(projectHeaderStyles.leaveModalClosed).className
+        : undefined;
+  const leaveModalClassName =
+    `${leaveModalOpen ? "modal hide in" : "modal hide"}${leaveModalStyleClass ? ` ${leaveModalStyleClass}` : ""}`.trim();
   const openLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateProjectHomeModalButtonClick(event);
     setLeaveModalPhase("open");
@@ -1805,13 +1835,8 @@ export function ProjectHomeBody({
           </div>
           <div
             id="alertLeave"
-            className={leaveModalOpen ? "modal hide in" : "modal hide"}
+            className={leaveModalClassName}
             aria-hidden={leaveModalAriaHidden}
-            {...(leaveModalPhase === "open"
-              ? stylex.props(projectHeaderStyles.leaveModalOpen)
-              : leaveModalPhase === "closed"
-                ? stylex.props(projectHeaderStyles.leaveModalClosed)
-                : {})}
             data-stylex-owner="project-home-leave-modal"
           >
             <div className="modal-header">

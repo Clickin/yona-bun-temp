@@ -1,4 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
+import { compareComputedParity } from "./helpers/computed-css-parity";
+
+async function expectComputedParity(page: Page, selector: string, legacyHtml: string) {
+  await page.waitForSelector(selector, { state: "attached" });
+  const result = await compareComputedParity(page, selector, legacyHtml);
+  const summary = result.mismatches
+    .map((m) => `${m.identity} ${m.field}: legacy=${m.reference} react=${m.candidate}`)
+    .join("\n");
+  expect(result.mismatches, `computed parity ${selector}\n${summary}`).toEqual([]);
+}
 import { readFile } from "node:fs/promises";
 
 const EXPECTED_PROJECT_HISTORY = `
@@ -18,15 +28,16 @@ test("project home History tab matches legacy partial_history.scala.html DOM", a
   await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
   await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("History");
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_HISTORY.replaceAll("__BASE_PATH__", basePath).replace(
-        '<span id="project-description" class="markdown-wrap">Sample overview</span>',
-        '<span id="project-description" class="markdown-wrap"><p>Sample overview</p></span>',
-      ),
-    ),
+  const expectedHistoryHtml = EXPECTED_PROJECT_HISTORY.replaceAll(
+    "__BASE_PATH__",
+    basePath,
+  ).replace(
+    '<span id="project-description" class="markdown-wrap">Sample overview</span>',
+    '<span id="project-description" class="markdown-wrap"><p>Sample overview</p></span>',
   );
+  for (const selector of [".project-header-outer", ".project-menu-outer", ".page-wrap-outer"]) {
+    await expectComputedParity(page, selector, expectedHistoryHtml);
+  }
 });
 
 test("project home History tab drops clone URL clipboard marker", async ({ page }) => {
@@ -356,111 +367,4 @@ async function projectHistoryLayoutMetrics(page: Page) {
       wherePadding: style(".activity-desc .whereis .where").padding,
     };
   });
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => normalizeSerializedAttr(node, attr))
-        .filter(Boolean)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-
-    function normalizeSerializedAttr(node: Element, attr: Attr) {
-      if (attr.name === "aria-current" || attr.name === "data-status") {
-        return "";
-      }
-      if (
-        node.matches(".user-project-list") &&
-        (attr.name === "role" || attr.name === "tabindex")
-      ) {
-        return "";
-      }
-      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const legacyPluginAttributes = new Set([
-      "data-dismiss",
-      "data-href",
-      "data-placement",
-      "data-toggle",
-    ]);
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .filter((root) => !root.matches(".gnb-outer"))
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            !legacyPluginAttributes.has(attr.name),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  }, html);
 }

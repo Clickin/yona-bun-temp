@@ -1074,6 +1074,14 @@
     font-weight: normal;
   }
 
+  /* Legacy list templates separate label anchors with template whitespace
+     (one space at the .infos 12px font). React buttons drop that whitespace,
+     so restore the measured legacy gap for list-label buttons; the existing
+     :last-of-type reset keeps the trailing label flush. */
+  button.issue-label.list-label:not(:last-of-type) {
+    margin-right: 3px;
+  }
+
   .issue-label.active {
     border-radius: 1px;
   }

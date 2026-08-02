@@ -1,4 +1,19 @@
 import { expect, test, type Page } from "@playwright/test";
+import { compareComputedParity } from "./helpers/computed-css-parity";
+
+async function expectComputedParity(
+  page: Page,
+  selector: string,
+  legacyHtml: string,
+  compareGeometry = true,
+) {
+  await page.waitForSelector(selector, { state: "attached" });
+  const result = await compareComputedParity(page, selector, legacyHtml, compareGeometry);
+  const summary = result.mismatches
+    .map((m) => `${m.identity} ${m.field}: legacy=${m.reference} react=${m.candidate}`)
+    .join("\n");
+  expect(result.mismatches, `computed parity ${selector}\n${summary}`).toEqual([]);
+}
 import { readFile } from "node:fs/promises";
 
 const EXPECTED_PROJECT_DASHBOARD = `
@@ -18,9 +33,10 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
   await expect(page.locator(".project-overview-home")).toBeVisible();
   await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("Dashboard");
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_DASHBOARD.replaceAll("__BASE_PATH__", basePath)),
-  );
+  const expectedDashboardHtml = EXPECTED_PROJECT_DASHBOARD.replaceAll("__BASE_PATH__", basePath);
+  for (const selector of [".project-header-outer", ".project-menu-outer", ".page-wrap-outer"]) {
+    await expectComputedParity(page, selector, expectedDashboardHtml);
+  }
   expect(await dashboardLabelMetrics(page)).toEqual({
     countColumnPaddingRight: 15,
     countColumnTextAlign: "right",
@@ -232,11 +248,11 @@ test("project home Dashboard tab follows legacy non-empty row filters and pull r
     "title",
     "Dev Member (@dev)",
   );
-  expect(await canonicalizeLocator(page, ".overview-pullrequest")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<div class="overview-pullrequest"><div class="row-fluid"><div class="span9 title"><a href="${basePath}/admin/sample/pullRequests?contributorId=2" class="usf-group"><span class="avatar-wrap smaller" title="Dev Member (@dev)"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span></a><a href="${basePath}/admin/sample/pullRequest/11">Ready PR</a></div><div class="span3 num" style="color:rgb(153,153,153);text-align:right">Jul 1, 2026</div></div><div class="mt5" style="margin-right:17px;text-align:right"><a href="${basePath}/admin/sample/pullRequests">See <strong>3</strong> more</a></div></div>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".overview-pullrequest",
+    `<div class="overview-pullrequest"><div class="row-fluid"><div class="span9 title"><a href="${basePath}/admin/sample/pullRequests?contributorId=2" class="usf-group"><span class="avatar-wrap smaller" title="Dev Member (@dev)"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span></a><a href="${basePath}/admin/sample/pullRequest/11">Ready PR</a></div><div class="span3 num" style="color:rgb(153,153,153);text-align:right">Jul 1, 2026</div></div><div class="mt5" style="margin-right:17px;text-align:right"><a href="${basePath}/admin/sample/pullRequests">See <strong>3</strong> more</a></div></div>`,
+    false,
   );
 });
 
@@ -360,17 +376,17 @@ test("project home Dashboard tab matches the localhost SVN dashboard branch", as
   await expect(page.locator(".project-overview-home")).toBeVisible();
   await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("대시보드");
 
-  expect(await canonicalizeLocator(page, "#project-description")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<span id="project-description" class="markdown-wrap"><p>Parity seed Subversion project for localhost checks</p></span>`,
-    ),
+  await expectComputedParity(
+    page,
+    "#project-description",
+    `<span id="project-description" class="markdown-wrap"><p>Parity seed Subversion project for localhost checks</p></span>`,
+    false,
   );
-  expect(await canonicalizeLocator(page, ".project-overview-home")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<div class="project-overview-home row-fluid"><div class="span6"><h5>담당자별 열린 이슈</h5><div class="overview-assignee"><div class="empty"><p>등록된 이슈가 없습니다.</p><a href="${basePath}/admin/svnplayground/issueform" target="_blank" class="ybtn ybtn-small">새 이슈</a></div></div><hr><h5>마일스톤별 열린 이슈</h5><div class="overview-milestone"><div class="empty"><p>등록된 마일스톤이 없습니다</p><a href="${basePath}/admin/svnplayground/newMilestoneForm" target="_blank" class="ybtn ybtn-small">새 마일스톤</a></div></div></div><div class="span6"><h5>라벨별 열린 이슈</h5><link rel="stylesheet" href="${basePath}/admin/svnplayground/issue/labels.css" type="text/css"></div></div>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-overview-home",
+    `<div class="project-overview-home row-fluid"><div class="span6"><h5>담당자별 열린 이슈</h5><div class="overview-assignee"><div class="empty"><p>등록된 이슈가 없습니다.</p><a href="${basePath}/admin/svnplayground/issueform" target="_blank" class="ybtn ybtn-small">새 이슈</a></div></div><hr><h5>마일스톤별 열린 이슈</h5><div class="overview-milestone"><div class="empty"><p>등록된 마일스톤이 없습니다</p><a href="${basePath}/admin/svnplayground/newMilestoneForm" target="_blank" class="ybtn ybtn-small">새 마일스톤</a></div></div></div><div class="span6"><h5>라벨별 열린 이슈</h5><link rel="stylesheet" href="${basePath}/admin/svnplayground/issue/labels.css" type="text/css"></div></div>`,
+    false,
   );
 
   await expect(page.locator(".project-menu-nav.project-menu-gruop .menu-name")).toHaveText([
@@ -651,99 +667,6 @@ async function collectDashboardLayoutMetrics(page: Page, mode: "desktop" | "mobi
   }, mode);
 }
 
-async function canonicalizeLocator(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      }
-      return attr.value;
-    }
-  });
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => normalizeSerializedAttr(node, attr))
-        .filter(Boolean)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      }
-      return attr.value;
-    }
-
-    function normalizeSerializedAttr(node: Element, attr: Attr) {
-      if (attr.name === "aria-current" || attr.name === "data-status") {
-        return "";
-      }
-      if (
-        node.matches(".user-project-list") &&
-        (attr.name === "role" || attr.name === "tabindex")
-      ) {
-        return "";
-      }
-      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
-    }
-  });
-}
-
 async function dashboardLabelMetrics(page: Page) {
   return page.evaluate(() => {
     const heading = requireElement(".project-overview-home .span6:nth-child(2) > h5");
@@ -831,57 +754,4 @@ async function dashboardAssigneeEmptyMetrics(page: Page) {
       return element;
     }
   });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const legacyPluginAttributes = new Set([
-      "data-dismiss",
-      "data-href",
-      "data-placement",
-      "data-toggle",
-    ]);
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .filter((root) => !root.matches(".gnb-outer"))
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            !legacyPluginAttributes.has(attr.name),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      }
-      return attr.value;
-    }
-  }, html);
 }

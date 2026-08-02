@@ -21,7 +21,7 @@
     ],
     "overrides": [
       {
-        "files": ["tests/**/*.e2e.ts"],
+        "files": ["tests/**/*.e2e.ts", "tests/helpers/**"],
         "rules": ["knip/files", "react-doctor/async-await-in-loop", "react-doctor/async-parallel"]
       },
       {

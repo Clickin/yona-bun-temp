@@ -1,5 +1,20 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { compareComputedParity } from "./helpers/computed-css-parity";
+
+async function expectComputedParity(
+  page: Page,
+  selector: string,
+  legacyHtml: string,
+  compareGeometry = true,
+) {
+  await page.waitForSelector(selector, { state: "attached" });
+  const result = await compareComputedParity(page, selector, legacyHtml, compareGeometry);
+  const summary = result.mismatches
+    .map((m) => `${m.identity} ${m.field}: legacy=${m.reference} react=${m.candidate}`)
+    .join("\n");
+  expect(result.mismatches, `computed parity ${selector}\n${summary}`).toEqual([]);
+}
 
 const EXPECTED_PROJECT_HOME = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -40,9 +55,10 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   await expect(page.locator(".milestone-info .due-date strong")).toHaveText("Jul 5, 2026");
   await expect(page.locator(".milestone-info .progress-info strong")).toHaveText("1 / 2");
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, expectedProjectHomeHtml(basePath), SCREEN_ROOT_SELECTOR),
-  );
+  const expectedHomeHtml = expectedProjectHomeHtml(basePath);
+  for (const selector of SCREEN_ROOT_SELECTOR.split(", ")) {
+    await expectComputedParity(page, selector, expectedHomeHtml);
+  }
 });
 
 test("project home paints the framed shell before its delayed container settles", async ({
@@ -107,6 +123,45 @@ test("project home paints the framed shell before its delayed container settles"
   expect(finalGeometry).not.toBeNull();
   expect(finalGeometry!.menuTop).toBeGreaterThanOrEqual(finalGeometry!.headerBottom);
   expect(finalGeometry!.homeTop).toBeGreaterThanOrEqual(finalGeometry!.menuBottom);
+});
+
+test("project home keeps the current tab while the next tab container settles", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let historyStarted!: () => void;
+  const historyStartedPromise = new Promise<void>((resolve) => {
+    historyStarted = resolve;
+  });
+  let releaseHistory!: () => void;
+  const historyResponse = new Promise<void>((resolve) => {
+    releaseHistory = resolve;
+  });
+  await mockProjectHome(page, {
+    containerTabGates: {
+      history: { onStart: historyStarted, response: historyResponse },
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".bubble-wrap.gray.readme")).toBeVisible();
+
+  // Legacy home.scala.html is a full page load per tab, so the SPA must keep
+  // the previous tab's shell and pane painted while the next tab container
+  // is still in flight instead of collapsing to the bare global navbar.
+  await page.locator(".span-left-pane .nav-tabs a", { hasText: "History" }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("tabId")).toBe("history");
+  await historyStartedPromise;
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".bubble-wrap.gray.readme")).toBeVisible();
+  await expect(page.locator(".span-left-pane .nav-tabs li.active a")).toHaveText("README");
+
+  releaseHistory();
+  await expect(page.locator(".activity-streams")).toHaveCount(1);
+  await expect(page.locator(".bubble-wrap.gray.readme")).toHaveCount(0);
+  await expect(page.locator(".span-left-pane .nav-tabs li.active a")).toHaveText("History");
 });
 
 test("unavailable project routes immediately render legacy container error screens", async ({
@@ -341,7 +396,7 @@ test("protected org-owned project home restores the legacy browser title", async
   expect(await page.locator("head > title").first().textContent()).toBe("portal - Home");
 
   const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
-  expect(routeSource).toContain('<title>{`${projectName} - ${t("menu.home")}`}</title>');
+  expect(routeSource).toContain('`${projectName} - ${t("menu.home")}`');
   expect(routeSource).not.toContain("useProjectHomeDocumentTitle");
   expect(routeSource).not.toContain("document.title");
 });
@@ -774,15 +829,12 @@ test("project home README tab renders README Markdown instead of compatibility H
     '<div class="bubble-wrap gray readme"><p class="default"><span>README.md will be shown here if you add it to the code repository\'s root directory.</span><br><br><a href="__BASE_PATH__/admin/sample/postform?readme=true" class="ybtn">create README</a></p></div>',
     '<div class="bubble-wrap gray readme"><div class="readme-wrap"><header><i class="yobicon-book-open vmiddle"></i><strong class="vmiddle"> README.md</strong><a href="__BASE_PATH__/admin/sample/postform?readme=true" class="ybtn vmiddle ml5">Edit</a></header><div class="readme-body markdown-wrap"><p>Project <strong>README</strong></p></div></div></div>',
   );
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      expected
-        .replace(EXPECTED_GENERIC_GNB, EXPECTED_PROJECT_SCOPED_GNB)
-        .replaceAll("__BASE_PATH__", basePath),
-      SCREEN_ROOT_SELECTOR,
-    ),
-  );
+  const expectedHomeHtml = expected
+    .replace(EXPECTED_GENERIC_GNB, EXPECTED_PROJECT_SCOPED_GNB)
+    .replaceAll("__BASE_PATH__", basePath);
+  for (const selector of SCREEN_ROOT_SELECTOR.split(", ")) {
+    await expectComputedParity(page, selector, expectedHomeHtml);
+  }
   await expect(page.locator(".readme-body")).not.toContainText("Server HTML should not render");
 });
 
@@ -880,11 +932,11 @@ test("project home README tab treats an empty README file as an existing README"
   await expect(page.locator(".readme-wrap")).toBeVisible();
   await expect(page.locator(".readme-body.markdown-wrap")).toBeVisible();
 
-  expect(await canonicalizeLocator(page, ".bubble-wrap.gray.readme")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<div class="bubble-wrap gray readme"><div class="readme-wrap"><header><i class="yobicon-book-open vmiddle"></i><strong class="vmiddle"> README.md</strong><a href="${basePath}/admin/sample/postform?readme=true" class="ybtn vmiddle ml5">Edit</a></header><div class="readme-body markdown-wrap"></div></div></div>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".bubble-wrap.gray.readme",
+    `<div class="bubble-wrap gray readme"><div class="readme-wrap"><header><i class="yobicon-book-open vmiddle"></i><strong class="vmiddle"> README.md</strong><a href="${basePath}/admin/sample/postform?readme=true" class="ybtn vmiddle ml5">Edit</a></header><div class="readme-body markdown-wrap"></div></div></div>`,
+    false,
   );
   await expect(page.locator(".bubble-wrap.gray.readme p.default")).toHaveCount(0);
 });
@@ -901,7 +953,7 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   await expect(page.locator("#alertLeave")).not.toHaveAttribute("aria-hidden", /.+/);
   await expect(page.locator("#alertLeave")).not.toHaveAttribute("style", /display/u);
   expect(await dispatchCancelableClick(page.locator("#projectLeaveBtn"))).toBe(false);
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/u);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator('#alertLeave [data-dismiss="modal"]')).toHaveCount(0);
@@ -916,7 +968,7 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   ).toBe(false);
   await expect(page.locator("#alertLeave")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "true");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", /display:\s*none/u);
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-leave-modal");
@@ -924,7 +976,7 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
 
   await page.locator("#projectLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/u);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -933,14 +985,14 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   );
   await expect(page.locator("#alertLeave")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "true");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", /display:\s*none/u);
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(leaveRequests).toEqual([]);
   await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
 
   await page.locator("#projectLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/u);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -948,14 +1000,14 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   await page.locator(".modal-backdrop.in").click({ position: { x: 1, y: 1 } });
   await expect(page.locator("#alertLeave")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "true");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", /display:\s*none/u);
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(leaveRequests).toEqual([]);
   await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
 
   await page.locator("#projectLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/u);
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -975,12 +1027,13 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   expect(leaveModalSource).toContain('leaveModalPhase === "closed"');
   expect(leaveModalSource).toContain('setLeaveModalPhase("open");');
   expect(leaveModalSource).toContain('setLeaveModalPhase("closed");');
-  expect(leaveModalSource).toContain('className={leaveModalOpen ? "modal hide in" : "modal hide"}');
+  expect(leaveModalSource).toContain("className={leaveModalClassName}");
+  expect(leaveModalSource).toContain('"modal hide in"');
+  expect(leaveModalSource).toContain("leaveModalStyleClass");
   expect(leaveModalSource).toContain("aria-hidden={leaveModalAriaHidden}");
-  expect(leaveModalSource).toContain("style={leaveModalStyle}");
   expect(leaveModalSource).toContain('className="modal-backdrop in"');
   expect(leaveModalSource).toContain("onClick={closeLeaveModal}");
-  expect(leaveModalSource).toContain("onKeyDown={closeLeaveModal}");
+  expect(leaveModalSource).toContain("onKeyDown={(event)");
   expect(leaveModalSource).not.toContain("data-href");
   expect(leaveModalSource).not.toContain('data-dismiss="modal"');
   expect(leaveModalSource).not.toContain("document.");
@@ -1157,11 +1210,11 @@ test("project home header renders legacy watch utility for watchable projects", 
 
   await page.goto(`${basePath}/admin/sample`);
 
-  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-util",
+    `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
+    false,
   );
 
   const watchItem = page.locator(".project-util > li").first();
@@ -1207,11 +1260,11 @@ test("project home header renders and posts legacy enrollment utility for guest 
 
   await page.goto(`${basePath}/admin/sample`);
 
-  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-util",
+    `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
+    false,
   );
 
   const enrollmentItem = page.locator(".project-util > li").first();
@@ -1245,11 +1298,11 @@ test("project home header renders and posts legacy enrollment utility for guest 
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-enroll");
   await expect.poll(() => projectHomeDropdownDocumentBridgeAuditHits(page)).toEqual([]);
-  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button"><i class="yobicon-addfriend"></i></button><div class="dropdown-menu flat right title"><div class="pop-title">You have sent a sign-up request for the sample project.</div><div class="pop-content">You will be a member of this project when the project manager or other members accept your request.</div><div class="pop-content btn-wrap"><button class="ybtn enrollBtn" id="enrollBtn" type="button"><i class="yobicon-removefriend"></i> Cancel sign-up request</button></div></div></li></ul>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-util",
+    `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button"><i class="yobicon-addfriend"></i></button><div class="dropdown-menu flat right title"><div class="pop-title">You have sent a sign-up request for the sample project.</div><div class="pop-content">You will be a member of this project when the project manager or other members accept your request.</div><div class="pop-content btn-wrap"><button class="ybtn enrollBtn" id="enrollBtn" type="button"><i class="yobicon-removefriend"></i> Cancel sign-up request</button></div></div></li></ul>`,
+    false,
   );
 });
 
@@ -1285,11 +1338,11 @@ test("project home header enrollment utility cancels pending guest request", asy
   await expect(enrollmentItem).not.toHaveClass(/open/);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-cancel-enroll");
-  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-util",
+    `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
+    false,
   );
 });
 
@@ -1328,11 +1381,11 @@ test("project home header watch action posts and renders watching branch", async
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-watch");
   await expect.poll(() => projectHomeDropdownDocumentBridgeAuditHits(page)).toEqual([]);
-  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Unwatch</button></div></li></ul>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-util",
+    `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Unwatch</button></div></li></ul>`,
+    false,
   );
   await expect(page.locator(".project-util .watcher-count[data-toggle='tooltip']")).toHaveCount(0);
   await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
@@ -1376,11 +1429,11 @@ test("project home header unwatch action deletes and renders not-watching branch
   await expect(watchItem).not.toHaveClass(/open/);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-unwatch");
-  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-util",
+    `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
+    false,
   );
   await expect(page.locator(".project-util .watcher-count[data-toggle='tooltip']")).toHaveCount(0);
   await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
@@ -1405,11 +1458,11 @@ test("project home admin cog badge uses enrolled-user count instead of request c
 
   await expect(page.locator(".project-setting .project-menu-count")).toHaveText("3");
   await expect(page.locator(".project-setting .project-menu-count")).not.toHaveText("7");
-  expect(await canonicalizeLocator(page, ".project-setting")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">3</span></a></li></ul></div>`,
-    ),
+  await expectComputedParity(
+    page,
+    ".project-setting",
+    `<div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">3</span></a></li></ul></div>`,
+    false,
   );
 });
 
@@ -1445,8 +1498,12 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain("createFileRoute, Link, Outlet");
   expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
   expect(source).toContain("function HistoryLink(");
-  expect(source).toContain('<HistoryLink basePath={basePath} href={actorUrl} className="actor">');
-  expect(source).toContain('<HistoryLink basePath={basePath} href={itemUrl} className="where">');
+  expect(source).toContain(
+    "className={`actor ${stylex.props(projectHistoryStyles.actor).className}`}",
+  );
+  expect(source).toContain(
+    "className={`where ${stylex.props(projectHistoryStyles.where).className}`}",
+  );
   expect(source).not.toContain('<Link href={actorUrl} className="actor">');
   expect(source).not.toContain('<Link href={itemUrl} className="where">');
   expect(source).toContain("function toRoutePath(basePath: string, href: string)");
@@ -1475,8 +1532,8 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain("onClick={() => overviewMutation.mutate(descriptionDraft)}");
   expect(source).toContain("setDescriptionDraft(overviewText);");
   expect(source).toContain("window.setTimeout(() => descriptionInputRef.current?.focus());");
-  expect(source).toContain('className={projectUtilDropdown === "enrollment" ? "open" : undefined}');
-  expect(source).toContain('className={projectUtilDropdown === "watch" ? "open" : undefined}');
+  expect(source).toContain('projectUtilDropdown === "enrollment" ? " open" : ""');
+  expect(source).toContain('projectUtilDropdown === "watch" ? " open" : ""');
   expect(source).not.toMatch(
     /className="ybtn ybtn-small(?: ybtn-info)? dropdown-toggle"(?:(?!<\/button>)[\s\S])*data-toggle="dropdown"/u,
   );
@@ -1617,6 +1674,7 @@ async function mockProjectHome(
   overrides: Partial<{
     containerRequests: string[];
     containerGate: { onStart: () => void; response: Promise<void> };
+    containerTabGates: Partial<Record<string, { onStart: () => void; response: Promise<void> }>>;
     containerStatus: number;
     enrollmentRequestCount: number;
     enrollRequests: { hasCsrfToken: boolean; method: string }[];
@@ -1756,6 +1814,14 @@ async function mockProjectHome(
       if (overrides.containerGate) {
         overrides.containerGate.onStart();
         await overrides.containerGate.response;
+      }
+      const tabGate =
+        overrides.containerTabGates?.[
+          new URL(route.request().url()).searchParams.get("tabId") ?? ""
+        ];
+      if (tabGate) {
+        tabGate.onStart();
+        await tabGate.response;
       }
       if (overrides.containerStatus) {
         overrides.containerRequests?.push(`${overrides.containerStatus}`);
@@ -2044,169 +2110,4 @@ async function projectHomeNavbarSearchMetrics(page: Page) {
   });
 }
 
-async function canonicalizeLocator(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            !attr.name.startsWith("data-stylex-") &&
-            attr.name !== "alt",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => normalizeSerializedAttr(node, attr))
-        .filter(Boolean)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-
-    function normalizeSerializedAttr(node: Element, attr: Attr) {
-      if (attr.name === "aria-current" || attr.name === "data-status") {
-        return "";
-      }
-      if (node.matches("#mySidenav .user-menu > a") && attr.name === "class") {
-        const className = attr.value
-          .split(/\s+/u)
-          .filter((name) => name && name !== "active")
-          .join(" ");
-        return className ? `${attr.name}=${JSON.stringify(className)}` : "";
-      }
-      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
-    }
-  });
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(".project-header-outer, .project-menu-outer, .page-wrap-outer"),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            !attr.name.startsWith("data-stylex-") &&
-            attr.name !== "alt",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => normalizeSerializedAttr(node, attr))
-        .filter(Boolean)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      }
-      return attr.name === "href"
-        ? attr.value.replace("?commentId=&parentIssueId=", "")
-        : attr.value;
-    }
-
-    function normalizeSerializedAttr(node: Element, attr: Attr) {
-      if (attr.name === "aria-current" || attr.name === "data-status") {
-        return "";
-      }
-      if (node.matches("#mySidenav .user-menu > a") && attr.name === "class") {
-        const className = attr.value
-          .split(/\s+/u)
-          .filter((name) => name && name !== "active")
-          .join(" ");
-        return className ? `${attr.name}=${JSON.stringify(className)}` : "";
-      }
-      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
-    }
-  });
-}
-
 const SCREEN_ROOT_SELECTOR = ".project-header-outer, .project-menu-outer, .page-wrap-outer";
-
-async function canonicalizeHtml(page: Page, html: string, rootSelector?: string) {
-  return page.evaluate(
-    ({ input, rootSelector }) => {
-      const template = document.createElement("template");
-      template.innerHTML = input;
-      const roots = rootSelector
-        ? Array.from(template.content.querySelectorAll(rootSelector))
-        : Array.from(template.content.children);
-      return roots.map((root) => visit(root)).join("");
-
-      function visit(node: Node): string {
-        if (node.nodeType === Node.TEXT_NODE) {
-          return normalizeText(node.textContent ?? "");
-        }
-        if (!(node instanceof Element)) {
-          return "";
-        }
-        const attrs = Array.from(node.attributes)
-          .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-          .sort((left, right) => left.name.localeCompare(right.name))
-          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-          .join(" ");
-        const open = attrs
-          ? `<${node.tagName.toLowerCase()} ${attrs}>`
-          : `<${node.tagName.toLowerCase()}>`;
-        return `${open}${Array.from(node.childNodes)
-          .map((child) => visit(child))
-          .join("")}</${node.tagName.toLowerCase()}>`;
-      }
-
-      function normalizeText(text: string) {
-        return text.replace(/\s+/g, " ").trim();
-      }
-
-      function normalizeAttr(attr: Attr) {
-        if (attr.name === "style") {
-          return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-        }
-        return attr.name === "href"
-          ? attr.value.replace("?commentId=&parentIssueId=", "")
-          : attr.value;
-      }
-    },
-    { input: html, rootSelector },
-  );
-}
