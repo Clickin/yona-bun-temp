@@ -28,53 +28,6 @@ const styles = stylex.create({
     lineHeight: "30px",
     padding: "10px 10px 5px",
   },
-  page: {
-    marginTop: "10px",
-    minHeight: "450px",
-    "@media all and (max-width: 720px)": {
-      boxSizing: "border-box",
-      minWidth: "10px",
-      padding: "0px",
-      width: "100%",
-    },
-  },
-  content: { margin: "0px auto" },
-  grid: {
-    width: "100%",
-    "::before": { content: '\"\"', display: "table", lineHeight: "0px" },
-    "::after": { clear: "both", content: '\"\"', display: "table", lineHeight: "0px" },
-  },
-  sidebarColumn: {
-    boxSizing: "border-box",
-    display: "block",
-    float: "left",
-    marginLeft: "0px",
-    minHeight: "30px",
-    width: {
-      default: "14.893617021276595%",
-      "@media (min-width: 1200px)": "14.52991452991453%",
-      "@media (min-width: 768px) and (max-width: 979px)": "14.3646408839779%",
-      "@media (max-width: 767px)": "100%",
-    },
-    "@media (max-width: 767px)": { float: "none" },
-  },
-  contentColumn: {
-    boxSizing: "border-box",
-    display: "block",
-    float: "left",
-    marginLeft: "2.127659574468085%",
-    minHeight: "30px",
-    width: "82.97872340425532%",
-    "@media (min-width: 1200px)": {
-      marginLeft: "2.564102564102564%",
-      width: "82.90598290598291%",
-    },
-    "@media (min-width: 768px) and (max-width: 979px)": {
-      marginLeft: "2.7624309392265194%",
-      width: "82.87292817679558%",
-    },
-    "@media (max-width: 767px)": { float: "none", marginLeft: "0px", width: "100%" },
-  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -94,29 +47,6 @@ const styles = stylex.create({
   sidebarActiveItem: {
     borderLeftColor: siteUpdateColors.sidebarActiveBorder,
     fontWeight: "bold",
-  },
-  sidebarLink: {
-    color: "inherit",
-    display: "block",
-    outline: {
-      default: "none",
-      ":hover": "none",
-      ":focus": "none",
-    },
-    padding: "5px 10px",
-    textDecoration: {
-      default: "none",
-      ":hover": "none",
-      ":focus": "none",
-    },
-    backgroundColor: {
-      ":hover": siteUpdateColors.sidebarHoverSurface,
-    },
-  },
-  sidebarActiveLink: {
-    backgroundColor: {
-      ":hover": "transparent",
-    },
   },
   sidebarBadge: {
     backgroundColor: siteUpdateColors.badgeSurface,
@@ -172,7 +102,6 @@ const styles = stylex.create({
     fontSize: "14px",
     lineHeight: "20px",
     marginBottom: "0px",
-    marginLeft: "0.3em",
     outline: "0 none",
     padding: "4px 12px",
     position: "relative",
@@ -237,25 +166,38 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return (
     <>
       <SiteUpdateTitle />
-      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-update-breadcrumb-outer">
-        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-update-breadcrumb-inner">
+      <div
+        {...breadcrumbOuterStyleProps}
+        className={`site-breadcrumb-outer ${breadcrumbOuterStyleProps.className ?? ""}`}
+        data-stylex-owner="site-update-breadcrumb-outer"
+      >
+        <div
+          {...breadcrumbInnerStyleProps}
+          className={`site-breadcrumb-inner ${breadcrumbInnerStyleProps.className ?? ""}`}
+          data-stylex-owner="site-update-breadcrumb-inner"
+        >
           <h3 {...breadcrumbHeadingStyleProps} data-stylex-owner="site-update-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>
       </div>
-      <div {...stylex.props(styles.page)} data-stylex-owner="site-update-page">
-        <div {...stylex.props(styles.content)} data-stylex-owner="site-update-content">
-          <div {...stylex.props(styles.grid)} data-stylex-owner="site-update-setting-grid">
-            <div {...stylex.props(styles.sidebarColumn)} data-stylex-owner="site-update-sidebar-column">
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid">
+            <div className="span2">
               <SiteAdminSidebar showUpdateBadge={Boolean(query.data?.versionToUpdate)} />
             </div>
-            <div
-              {...stylex.props(styles.contentColumn)}
-              data-stylex-owner="site-update-setting-content-column"
-            >
-              <div {...titleAreaStyleProps} data-stylex-owner="site-update-title-strip">
-                <h2 {...titleStyleProps} data-stylex-owner="site-update-title-heading">
+            <div className="span10">
+              <div
+                {...titleAreaStyleProps}
+                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
+                data-stylex-owner="site-update-title-strip"
+              >
+                <h2
+                  {...titleStyleProps}
+                  className={`pull-left ${titleStyleProps.className ?? ""}`}
+                  data-stylex-owner="site-update-title-heading"
+                >
                   <LegacyMessage messageKey="site.sidebar.update" />
                 </h2>
               </div>
@@ -270,14 +212,17 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
-    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-update-sidebar">
+    <ul
+      {...stylex.props(styles.sidebar)}
+      className={`site-setting-nav ${stylex.props(styles.sidebar).className}`}
+      data-stylex-owner="site-update-sidebar"
+    >
       <li
         {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
         data-stylex-owner="site-update-sidebar-item"
       >
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/userList"
         >
@@ -287,7 +232,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/postList"
         >
@@ -297,7 +241,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/issueList"
         >
@@ -307,7 +250,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/projectList"
         >
@@ -317,7 +259,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/mail"
         >
@@ -327,7 +268,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/massmail"
         >
@@ -336,11 +276,11 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       </li>
       <li
         {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
+        className={`active ${stylex.props(styles.sidebarItem, styles.sidebarActiveItem).className}`}
         data-stylex-owner="site-update-sidebar-item"
       >
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
           data-stylex-owner="site-update-sidebar-link"
           search={legacyUpdateSidebarSearch}
           to="/sites/update"
@@ -359,7 +299,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-update-sidebar-link"
           to="/sites/diagnostic"
         >
@@ -376,12 +315,14 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
     return null;
   }
   const releaseUrl = response.releaseUrl?.trim();
+  const downloadTarget = releaseUrl;
 
   return (
     <>
       {response.versionToUpdate ? (
         <p
           {...stylex.props(styles.availableParagraph)}
+          style={{ lineHeight: "20px" }}
           data-stylex-owner="site-update-available-message"
         >
           <strong
@@ -395,7 +336,7 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
               {" "}
               <Link
                 href={releaseUrl}
-                to="/"
+                to={downloadTarget}
                 {...stylex.props(styles.downloadAction)}
                 data-stylex-owner="site-update-download-action"
               >
@@ -406,18 +347,26 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
         </p>
       ) : null}
       {response.currentVersion ? (
-        <p {...noUpdateParagraphStyleProps} data-stylex-owner="site-update-current-version">
+        <p
+          {...noUpdateParagraphStyleProps}
+          style={{ lineHeight: "20px" }}
+          data-stylex-owner="site-update-current-version"
+        >
           {t("site.update.currentVersion", { args: [response.currentVersion] })}
         </p>
       ) : null}
       {!response.versionToUpdate && !response.error ? (
-        <p {...noUpdateParagraphStyleProps} data-stylex-owner="site-update-latest-version">
+        <p
+          {...noUpdateParagraphStyleProps}
+          style={{ lineHeight: "20px" }}
+          data-stylex-owner="site-update-latest-version"
+        >
           {t("site.update.isNotNecessary", { args: [response.currentVersion] })}
         </p>
       ) : null}
       {response.error ? (
         <>
-          <p>{t("site.update.error")}</p>
+          <p style={{ lineHeight: "20px" }}>{t("site.update.error")}</p>
           <pre {...stylex.props(styles.errorPre)} data-stylex-owner="site-update-error-pre">
             {response.error}
           </pre>

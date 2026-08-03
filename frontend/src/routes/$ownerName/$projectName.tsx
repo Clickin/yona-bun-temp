@@ -491,6 +491,7 @@ function ProjectHomeRouteShell({
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const codePath = `/${ownerName}/${projectName}/code`;
+  const branchesPath = `/${ownerName}/${projectName}/branches`;
   const projectContainerTabId: ProjectContainerTabId =
     active === "home" ? projectHomeTabId(locationHref) : "readme";
   const query = useQuery({
@@ -826,7 +827,8 @@ function ProjectHomeRouteShell({
     projectVcs === "GIT" || projectVcs === "SVN" || projectVcs === "SUBVERSION";
   if (
     (active === "pullRequest" && projectVcs !== "GIT") ||
-    (active === "code" && pathname === codePath && !codeRootVcsSupported)
+    (active === "code" && pathname === codePath && !codeRootVcsSupported) ||
+    (pathname === branchesPath && projectVcs !== "GIT")
   ) {
     return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }

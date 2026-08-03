@@ -2197,8 +2197,8 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
-            !(owner && owner in legacyClassesByOwner && attr.name === "data-style-src") &&
-            !(owner && owner in legacyClassesByOwner && attr.name === "data-stylex-owner") &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner" &&
             attr.name !== "alt" &&
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-login" &&
@@ -2273,8 +2273,10 @@ async function canonicalizeScreenRoots(page: Page) {
             (className) =>
               className &&
               className !== "pin" &&
-              !className.startsWith("x") &&
-              !className.includes("-home-route-screen__"),
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
           )
           .join(" ");
       }
@@ -2284,6 +2286,19 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
         return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.value.replace(/\s+/g, " ").trim();
     }
@@ -2330,8 +2345,8 @@ async function canonicalizeLocator(page: Page, selector: string) {
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
-            !(owner && owner in legacyClassesByOwner && attr.name === "data-style-src") &&
-            !(owner && owner in legacyClassesByOwner && attr.name === "data-stylex-owner") &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner" &&
             attr.name !== "alt" &&
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-login" &&
@@ -2379,8 +2394,10 @@ async function canonicalizeLocator(page: Page, selector: string) {
             (className) =>
               className &&
               className !== "pin" &&
-              !className.startsWith("x") &&
-              !className.includes("-home-route-screen__"),
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
           )
           .join(" ");
       }
@@ -2390,6 +2407,19 @@ async function canonicalizeLocator(page: Page, selector: string) {
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
         return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.value.replace(/\s+/g, " ").trim();
     }
@@ -2696,10 +2726,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-placement" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
-            !(
-              attr.name === "data-style-src" &&
-              node.closest('[data-stylex-owner="global-sidebar-open-pin"]')
-            ) &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner" &&
             !(
               node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
               (attr.name === "type" || attr.name === "data-stylex-owner")
@@ -2790,8 +2818,10 @@ async function canonicalizeHtml(page: Page, html: string) {
             (className) =>
               className &&
               className !== "pin" &&
-              !className.startsWith("x") &&
-              !className.includes("-home-route-screen__"),
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
           )
           .join(" ");
       }
@@ -2801,6 +2831,19 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
         return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.value.replace(/\s+/g, " ").trim();
     }

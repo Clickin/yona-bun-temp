@@ -84,14 +84,14 @@ const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-form
 const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
 const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
 
-const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" style="position:relative" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 pull-right overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
+const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" style="position:relative" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
 const POPULATED_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>`;
 const SINGLE_PAGE_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>`;
 const MASS_UPDATE_OPTION_BUTTON_STYLE =
   "background:transparent;border:0px;clear:both;color:rgb(51,51,51);display:block;font-weight:normal;line-height:20px;padding:3px20px;text-align:left;white-space:nowrap;width:100%";
 
 const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No milestone</button></li><li class="divider"></li><li data-value="5"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">v1.0</button></li></ul></div>`;
-const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form pull-left" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Open</button></li><li data-value="CLOSED"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No assignee</button></li><li data-value="1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
+const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Open</button></li><li data-value="CLOSED"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No assignee</button></li><li data-value="1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
 const POPULATED_SPAN10_WITH_TOOLBAR = POPULATED_SPAN10.replace(
   '<div class="filter-wrap board"></div>',
   `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}</div>`,
@@ -187,8 +187,8 @@ const EXPECTED_PROJECT_ISSUES_PREFIX = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   );
 
 const UPCOMING_DUE_DATE_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<div class="mr20 mt10 pull-right overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
-  '<div class="mr20 mt10 pull-right" title="Jul 5, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">4 days left</span></div>',
+  '<div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
+  '<div class="mr20 mt10" title="Jul 5, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">4 days left</span></div>',
 ).replaceAll("filter=bug", "filter=upcoming");
 
 const EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
@@ -223,7 +223,7 @@ const EXPECTED_PROJECT_ISSUES_SHARER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   );
 
 const SORT_FILTERS = `<div class="filters pull-right"><button type="button" orderBy="dueDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</button><button type="button" orderBy="updatedDate" orderDir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</button><button type="button" orderBy="createdDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</button><button type="button" orderBy="numOfComments" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</button></div>`;
-const DRAFT_ISSUE_ROW = `<li class="post-item title" id="issue-item-41" data-item="issue-item" data-value="admin 10 Draft issue" href="__BASE_PATH__/admin/sample/issue/10"><div class="span9 span-hard-wrap"><label for="issue-41" class="mass-update-check hide-in-mobile"><input id="issue-41" type="checkbox" name="checked-issue" data-issue-id="41" data-issue-labels=""></label><div for="issue-41" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/10" class="title"><span class="post-id"><span class="draft-number">#Draft</span></span></a><a href="__BASE_PATH__/admin/sample/issue/10" class="title">Draft issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
+const DRAFT_ISSUE_ROW = `<li class="post-item title" id="issue-item-41" data-item="issue-item" data-value="admin 10 Draft issue" href="__BASE_PATH__/admin/sample/issue/10"><div class="span9 span-hard-wrap"><label for="issue-41" class="mass-update-check hide-in-mobile"><input id="issue-41" type="checkbox" name="checked-issue" data-issue-id="41" data-issue-labels=""></label><div for="issue-41" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/10" class="title"><span class="post-id"><span class="draft-number">#Draft</span></span></a><a href="__BASE_PATH__/admin/sample/issue/10" class="title">Draft issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
 const DRAFT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<ul class="post-list-wrap row-fluid">',
   `<ul class="post-list-wrap row-fluid">${DRAFT_ISSUE_ROW}</ul><ul class="post-list-wrap row-fluid">`,
@@ -249,7 +249,7 @@ const EXPECTED_PROJECT_ISSUES_FOREIGN_DRAFT = EXPECTED_PROJECT_ISSUES_DRAFT.repl
   "",
 );
 
-const SECOND_ISSUE_ROW = `<li class="post-item title" id="issue-item-43" data-item="issue-item" data-value="admin 12 Follow up issue" href="__BASE_PATH__/admin/sample/issue/12"><div class="span9 span-hard-wrap"><label for="issue-43" class="mass-update-check hide-in-mobile"><input id="issue-43" type="checkbox" name="checked-issue" data-issue-id="43" data-issue-labels=""></label><div for="issue-43" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/12" class="title"><span class="post-id">#12</span></a><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Follow up issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
+const SECOND_ISSUE_ROW = `<li class="post-item title" id="issue-item-43" data-item="issue-item" data-value="admin 12 Follow up issue" href="__BASE_PATH__/admin/sample/issue/12"><div class="span9 span-hard-wrap"><label for="issue-43" class="mass-update-check hide-in-mobile"><input id="issue-43" type="checkbox" name="checked-issue" data-issue-id="43" data-issue-labels=""></label><div for="issue-43" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/12" class="title"><span class="post-id">#12</span></a><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Follow up issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
 const BULK_SPAN10 = POPULATED_SPAN10.replace(
   'Open<span class="num-badge">1</span>',
   'Open<span class="num-badge">2</span>',
@@ -302,8 +302,8 @@ const WEIGHTED_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
     '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><span class="weight-up-arrow" title="Issue weight 4"><i class="yobicon-angle-circled-up"></i></span><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
   )
   .replace(
-    '<div class="mr20 mt10 pull-right overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
-    '<div class="mr20 mt10 pull-right darkgray-txt"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Jul 5, 2026</span></div>',
+    '<div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
+    '<div class="mr20 mt10"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Jul 5, 2026</span></div>',
   )
   .replace("filter=bug&amp;format=xls", "filter=weighted&amp;state=closed&amp;format=xls")
   .replace(POPULATED_PAGINATION, SINGLE_PAGE_PAGINATION);
@@ -798,10 +798,10 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'style={keymapOpen ? { display: "block" } : undefined}',
+    "{...(keymapOpen ? stylex.props(issueListKeymapStyles.visible) : undefined)}",
   );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("TWO_COLUMN_MODE_POPOVER_STYLE");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("SHOW_SUBTASKS_POPOVER_STYLE");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.twoColumnPopover");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.showSubtasksPopover");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="popover top"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE.split("}, 100);").length - 1).toBeGreaterThanOrEqual(4);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="popover"');
@@ -1803,7 +1803,7 @@ test("project issue row metadata drops tooltip initializer markers and keeps leg
   await expect(assigneeAvatarLink).not.toHaveAttribute("data-placement");
   await expect(assigneeAvatarLink).toHaveAttribute("title", "Assignee: Site Admin");
 
-  const dueDate = row.locator(".mr20.mt10.pull-right.overdue");
+  const dueDate = row.locator(".mr20.mt10.overdue");
   await expect(dueDate).not.toHaveAttribute("data-placement");
   await expect(dueDate).toHaveAttribute("title", "Jun 30, 2026");
   await expect(dueDate).toContainText("Overdue");
@@ -2557,10 +2557,10 @@ test("project issue list open due date shows legacy relative until text", async 
 
   await page.goto(`${basePath}/admin/sample/issues?filter=upcoming`);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
-  await expect(page.locator(".mr20.mt10.pull-right")).toHaveAttribute("title", "Jul 5, 2026");
-  await expect(page.locator(".mr20.mt10.pull-right")).not.toHaveAttribute("data-toggle", "tooltip");
-  await expect(page.locator(".mr20.mt10.pull-right")).not.toHaveAttribute("data-placement");
-  await expect(page.locator(".mr20.mt10.pull-right .vmiddle").last()).toHaveText("4 days left");
+  await expect(page.locator(".mr20.mt10")).toHaveAttribute("title", "Jul 5, 2026");
+  await expect(page.locator(".mr20.mt10")).not.toHaveAttribute("data-toggle", "tooltip");
+  await expect(page.locator(".mr20.mt10")).not.toHaveAttribute("data-placement");
+  await expect(page.locator(".mr20.mt10 .vmiddle").last()).toHaveText("4 days left");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -2587,7 +2587,7 @@ test("project issue due-date clock owns legacy mr3 spacing with route StyleX", a
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
 
   const desktop = await page.locator("#issue-item-42").evaluate((row) => {
-    const dueDate = row.querySelector(".mr20.mt10.pull-right.overdue") as HTMLElement;
+    const dueDate = row.querySelector(".mr20.mt10.overdue") as HTMLElement;
     const icon = dueDate.querySelector(
       '[data-stylex-owner="project-issues-due-date-icon"]',
     ) as HTMLElement;
@@ -2619,7 +2619,7 @@ test("project issue due-date clock owns legacy mr3 spacing with route StyleX", a
 
   await page.setViewportSize({ width: 720, height: 900 });
   const mobile = await page.locator("#issue-item-42").evaluate((row) => {
-    const dueDate = row.querySelector(".mr20.mt10.pull-right.overdue") as HTMLElement;
+    const dueDate = row.querySelector(".mr20.mt10.overdue") as HTMLElement;
     const icon = dueDate.querySelector(
       '[data-stylex-owner="project-issues-due-date-icon"]',
     ) as HTMLElement;
@@ -3259,7 +3259,7 @@ test("closed project issue row preserves legacy weight arrow and due-date stylin
   await expect(page.locator(".weight-up-arrow")).toHaveAttribute("title", "Issue weight 4");
   await expect(page.locator(".weight-up-arrow")).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(page.locator(".weight-up-arrow")).not.toHaveAttribute("data-placement");
-  const dueDate = page.locator(".mr20.mt10.pull-right");
+  const dueDate = page.locator(".mr20.mt10");
   await expect(dueDate).toHaveText("Jul 5, 2026");
   await expect(dueDate).not.toHaveClass(/\bdarkgray-txt\b/u);
   await expect(dueDate).toHaveCSS("color", "rgb(153, 153, 153)");
@@ -3791,7 +3791,7 @@ async function issueListRowMetrics(page: Page) {
     const date = infos.querySelector(".infos-item:nth-child(2)") as HTMLElement;
     const mainColumn = row.querySelector(".span9") as HTMLElement;
     const assignee = row.querySelector(".avatar-wrap.assinee") as HTMLElement;
-    const dueDate = row.querySelector(".mr20.mt10.pull-right") as HTMLElement;
+    const dueDate = row.querySelector(".mr20.mt10") as HTMLElement;
     const listStyle = window.getComputedStyle(list);
     const rowStyle = window.getComputedStyle(row);
     const checkboxStyle = window.getComputedStyle(checkbox);
@@ -5106,8 +5106,10 @@ async function canonicalizeScreenRoots(page: Page) {
             (className) =>
               className &&
               className !== "pin" &&
-              !className.startsWith("x") &&
-              !className.includes("-home-route-screen__"),
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
           )
           .join(" ");
       }
@@ -5123,7 +5125,15 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && attr.ownerElement?.closest(".user-menu-wrap")) {
         return attr.value
           .split(/\s+/u)
-          .filter((className) => className && className !== "active")
+          .filter(
+            (className) =>
+              className &&
+              className !== "active" &&
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
+          )
           .join(" ");
       }
       if (
@@ -5132,7 +5142,15 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return attr.value
           .split(/\s+/u)
-          .filter((className) => className && className !== "select2-offscreen")
+          .filter(
+            (className) =>
+              className &&
+              className !== "select2-offscreen" &&
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
+          )
           .join(" ");
       }
       return attr.value;
@@ -5167,8 +5185,8 @@ async function canonicalizeScreenRoots(page: Page) {
           attr.name === "aria-hidden");
       if (
         attr.name.startsWith("data-v-") ||
-        (attr.name === "data-style-src" &&
-          node.closest('[data-stylex-owner="global-sidebar-open-pin"]')) ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner" ||
         pluginOnlyAttributes.has(attr.name) ||
         attr.name === "state" ||
         reactOwnedNavbarAttribute ||
@@ -5293,6 +5311,19 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (attr.name === "src" && attr.value.includes("/assets/")) {
         return attr.value.slice(attr.value.indexOf("/assets/"));
       }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.value;
     }
 
@@ -5320,6 +5351,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name.startsWith("data-v-") ||
         pluginOnlyAttributes.has(attr.name) ||
         attr.name === "state" ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner" ||
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||

@@ -36,6 +36,10 @@ impl AppRepositoryImpl<'_> {
                 };
                 user_query = user_query.filter(n4user::Column::Id.is_in(admin_ids));
             }
+            "NOT_DELETED" => {
+                user_query =
+                    user_query.filter(n4user::Column::State.ne(Some("deleted".to_string())));
+            }
             _ => {
                 user_query =
                     user_query.filter(n4user::Column::State.eq(Some(state.to_ascii_lowercase())));

@@ -7158,7 +7158,9 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
-            (node.tagName !== "A" || !attr.name.startsWith("data-")),
+            (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7176,6 +7178,19 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
@@ -7199,7 +7214,9 @@ async function canonicalizeAll(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
-            (node.tagName !== "A" || !attr.name.startsWith("data-")),
+            (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7217,6 +7234,19 @@ async function canonicalizeAll(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
@@ -7270,6 +7300,19 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
 

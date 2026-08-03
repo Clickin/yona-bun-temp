@@ -794,10 +794,15 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter((name) => current.hasAttribute(name))
         .map((name) => {
           const value =
-            name === "class" && current.closest('[data-stylex-owner="secret-setup"]')
+            name === "class"
               ? Array.from(current.classList)
                   .filter(
-                    (className) => !className.startsWith("x") && !className.includes("__styles."),
+                    (className) =>
+                      className &&
+                      className !== "gray-txt" &&
+                      className !== "right-txt" &&
+                      !/^x[0-9a-z]+$/u.test(className) &&
+                      !className.includes("__"),
                   )
                   .join(" ")
               : (current.getAttribute(name) ?? "");
@@ -854,7 +859,24 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => {
+            const value = current.getAttribute(name) ?? "";
+            const normalized =
+              name === "class"
+                ? value
+                    .split(/\s+/u)
+                    .filter(
+                      (token) =>
+                        token &&
+                        token !== "gray-txt" &&
+                        token !== "right-txt" &&
+                        !/^x[0-9a-z]+$/u.test(token) &&
+                        !token.includes("__"),
+                    )
+                    .join(" ")
+                : value;
+            return `${name}=${JSON.stringify(normalized)}`;
+          })
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`

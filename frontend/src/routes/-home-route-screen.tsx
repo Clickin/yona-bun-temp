@@ -1884,6 +1884,12 @@ export function SiteLayoutShell({
                       globalGnbProjectListStyles.item,
                       activeMenu === "projects" && globalGnbProjectListStyles.activeItem,
                     )}
+                    className={
+                      stylex.props(
+                        globalGnbProjectListStyles.item,
+                        activeMenu === "projects" && globalGnbProjectListStyles.activeItem,
+                      ).className
+                    }
                     data-stylex-owner="global-gnb-project-list-item"
                   >
                     <Link
@@ -1892,6 +1898,7 @@ export function SiteLayoutShell({
                       to="/projects"
                       search={LEGACY_PROJECTS_LINK_SEARCH}
                       {...stylex.props(globalGnbProjectListStyles.link)}
+                      className={`show-progress-bar ${stylex.props(globalGnbProjectListStyles.link).className}`}
                       data-stylex-owner="global-gnb-project-list-link"
                     >
                       {t("title.list")}
@@ -1899,6 +1906,7 @@ export function SiteLayoutShell({
                   </li>
                   <li
                     {...stylex.props(globalGnbProjectListDividerStyles.root)}
+                    className={`divider ${stylex.props(globalGnbProjectListDividerStyles.root).className}`}
                     data-stylex-owner="global-gnb-project-list-divider"
                   />
                 </>
@@ -2016,7 +2024,6 @@ export function SiteLayoutShell({
                       globalGnbSearchBoxStyles.box,
                       hasScopedSearch && globalGnbSearchBoxStyles.scoped,
                     )}
-                    className={`search-box${hasScopedSearch ? " select" : ""}`}
                     data-stylex-owner="global-gnb-search-box"
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
@@ -5243,9 +5250,13 @@ function AuthenticatedSiteUserMenu({
         >
           <div
             {...stylex.props(authenticatedSidenavAccountActionStyles.row)}
+            className={`row-fluid user-menu-wrap ${stylex.props(authenticatedSidenavAccountActionStyles.row).className}`}
             data-stylex-owner="authenticated-sidenav-account-actions"
           >
-            <span {...stylex.props(authenticatedSidenavAccountActionStyles.menu)}>
+            <span
+              {...stylex.props(authenticatedSidenavAccountActionStyles.menu)}
+              className={`user-menu ${stylex.props(authenticatedSidenavAccountActionStyles.menu).className}`}
+            >
               <Link
                 activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                 activeProps={{
@@ -5260,7 +5271,10 @@ function AuthenticatedSiteUserMenu({
                 {t("userinfo.profile")}
               </Link>
             </span>{" "}
-            <span {...stylex.props(authenticatedSidenavAccountActionStyles.menu)}>
+            <span
+              {...stylex.props(authenticatedSidenavAccountActionStyles.menu)}
+              className={`user-menu ${stylex.props(authenticatedSidenavAccountActionStyles.menu).className}`}
+            >
               <Link
                 activeProps={{
                   "aria-current": undefined,
@@ -5424,12 +5438,12 @@ function AuthenticatedSiteUserMenu({
         >
           <button
             type="button"
-            className={
+            className={`gnb-dropdown-toggle ${
               stylex.props(
                 authenticatedSiteUserMenuStyles.dropdownButton,
                 authenticatedSiteUserMenuStyles.dropdownToggle,
               ).className
-            }
+            }`}
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
             aria-controls="mySidenav"
             aria-expanded={isSidebarOpen}
@@ -5450,13 +5464,13 @@ function AuthenticatedSiteUserMenu({
         >
           <button
             type="button"
-            className={
+            className={`gnb-dropdown-toggle dropdwon-box-btn ${
               stylex.props(
                 authenticatedSiteUserMenuStyles.dropdownButton,
                 authenticatedSiteUserMenuStyles.dropdownToggle,
                 authenticatedSiteUserMenuStyles.createButton,
               ).className
-            }
+            }`}
             onClick={handleCreateMenuToggleClick}
           >
             <i className="yobicon-plus"></i>{" "}

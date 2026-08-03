@@ -206,7 +206,6 @@ function ProjectCodeFileBody({
   const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
   const archiveZipPath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
-  const archiveTargzPath = `${projectPath(ownerName, projectName, "code", encodedBranch, "archive")}?format=tar.gz`;
   const breadcrumbsStyleProps = stylex.props(styles.breadcrumbs);
   const newFilePathWithSearch = `${projectPath(
     ownerName,
@@ -293,7 +292,7 @@ function ProjectCodeFileBody({
               id="branches"
               data-format="branch"
               data-dropdown-css-class="branches"
-              className={`${branchPickerStyleProps.className}${isFolder ? "" : " mb10"}`}
+              className={`pull-left ${branchPickerStyleProps.className}${isFolder ? "" : " mb10"}`}
               data-stylex-owner="project-code-file-branch-picker"
               defaultValue={projectHref(
                 runtimeConfig.basePath,
@@ -375,18 +374,17 @@ function ProjectCodeFileBody({
               <>
                 <div
                   {...downloadActionStyleProps}
+                  className={`pull-right ${downloadActionStyleProps.className}`}
                   data-stylex-owner="project-code-file-download-action"
                 >
                   <Link to={archiveZipPath} reloadDocument className="ybtn">
-                    {t("code.download")} (.zip)
-                  </Link>
-                  <Link to={archiveTargzPath} reloadDocument className="ybtn ml5">
-                    .tar.gz
+                    {t("code.download")}
                   </Link>
                 </div>
                 {!currentUserIsAnonymous ? (
                   <div
                     {...newFileActionStyleProps}
+                    className={`pull-right ${newFileActionStyleProps.className}`}
                     data-stylex-owner="project-code-file-new-file-action"
                   >
                     <Link
@@ -416,7 +414,7 @@ function ProjectCodeFileBody({
           <div className="code-viewer-wrap">
             <div
               id="spin"
-              {...stylex.props(styles.spinner)}
+              style={{ left: "50%", position: "fixed", top: "50%" }}
               data-stylex-owner="project-code-file-spinner"
             ></div>
             {isFolder ? (
@@ -729,9 +727,8 @@ function FileView({
           </span>
           <span id="revisionNo" className="revision" data-stylex-owner="project-code-file-revision">
             <Link
-              to="/$ownerName/$projectName/commit/$commitId"
-              params={{ commitId, ownerName, projectName }}
-              search={{ branch: selectedBranch, path: filePath }}
+              to={projectPath(ownerName, projectName, "commit", commitId)}
+              search={{ branch: selectedBranch }}
               hash={filePath}
               activeOptions={{
                 exact: true,

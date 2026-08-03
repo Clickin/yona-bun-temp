@@ -41,6 +41,7 @@ fn notification_outbox_lock() -> &'static Mutex<()> {
 fn notification_delivery_config() -> NotificationMailDeliveryConfig {
     NotificationMailDeliveryConfig {
         reply_to_address: Some("noreply@yona.example".to_string()),
+        site_name: "Yona".to_string(),
         ..NotificationMailDeliveryConfig::default()
     }
 }

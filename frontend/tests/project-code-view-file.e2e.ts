@@ -626,7 +626,7 @@ test("project code file route source keeps backend links as reload-document Link
   expect(routeSource).not.toContain("to={archivePath as never}");
   expect(routeSource).not.toContain("to={rawPath as never}");
   expect(routeSource).not.toContain("to={openPath as never}");
-  expect(routeSource).toContain("<Link to={archivePath} reloadDocument");
+  expect(routeSource).toContain("<Link to={archiveZipPath} reloadDocument");
   expect(routeSource).toContain("<Link to={rawPath} reloadDocument");
   expect(routeSource).toContain("to={openPath}");
   expect(routeSource).not.toContain("href={archiveHref}");
@@ -684,7 +684,9 @@ test("project code file wrapper marker is not React-owned DOM", () => {
   const fileViewBlock = routeSource.match(/function FileView\([\s\S]*?function projectHref/u)?.[0];
 
   expect(fileViewBlock).toBeTruthy();
-  expect(fileViewBlock).toContain('<div className="file-wrap">');
+  expect(fileViewBlock).toContain(
+    "className={`${stylex.props(styles.fileWrap).className} file-wrap`}",
+  );
   expect(fileViewBlock).not.toContain('className="file-wrap" data-type="file"');
   expect(fileViewBlock).not.toContain('<div className="file-wrap" data-type');
 });
@@ -1225,7 +1227,8 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
-            attr.name !== "data-content",
+            attr.name !== "data-content" &&
+            attr.name !== "data-style-src",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1242,7 +1245,14 @@ async function canonicalize(page: Page, selector: string) {
       if (attr.name === "class") {
         return attr.value
           .split(/\s+/)
-          .filter((cls) => !cls.startsWith("-code-file__") && !/^x[a-z0-9]+$/.test(cls))
+          .filter(
+            (cls) =>
+              cls &&
+              cls !== "gray-txt" &&
+              cls !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(cls) &&
+              !cls.includes("__"),
+          )
           .join(" ");
       }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
@@ -1272,7 +1282,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
-            attr.name !== "data-content",
+            attr.name !== "data-content" &&
+            attr.name !== "data-style-src",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1286,6 +1297,19 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   }, html);

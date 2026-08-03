@@ -4453,7 +4453,11 @@ async function canonicalizeScreenRoots(page: Page) {
                 !retiredTokens.includes(token) &&
                 !token.startsWith("x") &&
                 !token.includes("-home-route-screen__") &&
-                values.indexOf(token) === index,
+                values.indexOf(token) === index &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
             )
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
@@ -4488,7 +4492,15 @@ async function canonicalizeScreenRoots(page: Page) {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
-          .filter((value) => !value.startsWith("x") && !value.includes("-home-route-screen__"))
+          .filter(
+            (value) =>
+              !value.startsWith("x") &&
+              !value.includes("-home-route-screen__") &&
+              value !== "gray-txt" &&
+              value !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(value) &&
+              !value.includes("__"),
+          )
           .filter(
             (value) =>
               value !== "admin-logged-in-affix" &&
@@ -4615,7 +4627,12 @@ async function canonicalizeSelector(page: Page, selector: string) {
           .filter(
             (value) =>
               (!isFavoriteStylexOwned && !isProjectTabStylexOwned && !isRecentTabStylexOwned) ||
-              (!value.startsWith("x") && !value.includes("-home-route-screen__")),
+              (!value.startsWith("x") &&
+                !value.includes("-home-route-screen__") &&
+                value !== "gray-txt" &&
+                value !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(value) &&
+                !value.includes("__")),
           )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
@@ -4724,7 +4741,11 @@ async function canonicalizeHtml(page: Page, html: string) {
                 token &&
                 !token.startsWith("x") &&
                 !token.includes("-home-route-screen__") &&
-                values.indexOf(token) === index,
+                values.indexOf(token) === index &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
             )
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
@@ -4757,7 +4778,15 @@ async function canonicalizeHtml(page: Page, html: string) {
           ]);
           const className = value
             .split(/\s+/u)
-            .filter((token) => token && !retiredNotificationTokens.has(token))
+            .filter(
+              (token) =>
+                token &&
+                !retiredNotificationTokens.has(token) &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
+            )
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
         }
@@ -4919,7 +4948,15 @@ async function canonicalizeHtml(page: Page, html: string) {
               (value) =>
                 !(isAuthenticatedHomeIntroGuideCta && ["ybtn", "ybtn-success"].includes(value)),
             )
-            .filter((value) => !value.startsWith("x") && !value.includes("-home-route-screen__"))
+            .filter(
+              (value) =>
+                !value.startsWith("x") &&
+                !value.includes("-home-route-screen__") &&
+                value !== "gray-txt" &&
+                value !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(value) &&
+                !value.includes("__"),
+            )
             .filter(
               (value) =>
                 value !== "admin-logged-in-affix" &&

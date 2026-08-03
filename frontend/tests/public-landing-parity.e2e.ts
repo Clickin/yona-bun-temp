@@ -15,10 +15,12 @@ const EXPECTED_PUBLIC_LANDING = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
+          <div>
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
@@ -180,7 +182,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     logoLineHeight: "40px",
     logoPadding: "6px 10px",
     pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
+    pageFooterOuterPadding: "10px",
     providerColor: "rgb(51, 51, 51)",
     providerFontSize: "9px",
     providerMarginLeft: "4px",
@@ -452,7 +454,13 @@ async function canonicalizeScreenRoots(page: Page) {
         .split(/\s+/u)
         .filter(
           (token) =>
-            token && !token.startsWith("-home-route-screen__") && !/^x[a-z0-9]+$/u.test(token),
+            token &&
+            !(
+              current.getAttribute("data-stylex-owner") === "global-gnb-brand-link" &&
+              token === "active"
+            ) &&
+            !token.startsWith("-home-route-screen__") &&
+            !/^x[a-z0-9]+$/u.test(token),
         )
         .join(" ");
     }

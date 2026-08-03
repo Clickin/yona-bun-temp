@@ -4,6 +4,28 @@ const routePath = "/admin/WYVE_OCS/issues?orderBy=updatedDate&orderDir=desc&page
 const legacyOrigin = process.env.YONA_LEGACY_ORIGIN ?? "http://192.168.45.20:9000";
 const localBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
+const mirrorSkipMessage =
+  "requires a legacy-data mirror backend containing admin/WYVE_OCS; point YONA_E2E_BACKEND_ORIGIN at a mirror or seed the parity fixture";
+
+// ponytail: one cached probe; the mirror backend is the file-wide precondition, assertions stay untouched
+const mirrorProbe = (async () => {
+  const backendOrigin = process.env.YONA_E2E_BACKEND_ORIGIN ?? "http://127.0.0.1:8089";
+  try {
+    const response = await fetch(
+      `${backendOrigin}${localBasePath}/api/v1/projects/admin/WYVE_OCS/issues?state=closed&orderBy=updatedDate&orderDir=desc&pageNum=1`,
+    );
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+})();
+
+test.beforeEach(async () => {
+  if (!(await mirrorProbe)) {
+    test.skip(true, mirrorSkipMessage);
+  }
+});
+
 async function issueListMetrics(page: Page) {
   return page.evaluate(() => {
     const box = (selector: string) => {

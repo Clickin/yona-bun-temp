@@ -113,4 +113,5 @@
 - `docs/agents/08-rust-deployment-strategy.md`
 - `docs/agents/09-llm-onboarding-checklist.md`
 - `docs/agents/10-legacy-provenance-baseline.md`
+- `docs/agents/11-stylex-best-practices.md`
 - `docs/provenance/frontend-scala-html-goal-violation-audit.md`

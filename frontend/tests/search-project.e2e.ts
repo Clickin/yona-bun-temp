@@ -1134,7 +1134,9 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "aria-hidden" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
-            attr.name !== "alt",
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .concat(isModernizedLegacySearchCategoryButton(node) ? [`href=${JSON.stringify("#")}`] : [])
@@ -1210,6 +1212,19 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.value.length > 1
       ) {
         return attr.value.replace(/\/$/u, "");
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
@@ -1363,7 +1378,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "aria-hidden" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
-            attr.name !== "alt",
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .concat(isModernizedLegacySearchCategoryButton(node) ? [`href=${JSON.stringify("#")}`] : [])
@@ -1471,6 +1488,19 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.value.length > 1
       ) {
         return attr.value.replace(/\/$/u, "");
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")

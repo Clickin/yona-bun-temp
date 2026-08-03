@@ -4379,6 +4379,24 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
     let (app, repository, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
+    // The first registered user is promoted to site admin; register one first
+    // so "door" stays a regular user and the 403/private branches are live.
+    let register_admin = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"Admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"adminpass1\",\"retypedPassword\":\"adminpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register_admin.status(), StatusCode::OK);
+
     let register = app
         .clone()
         .oneshot(
@@ -4653,6 +4671,24 @@ async fn update_profile_replaces_existing_avatar_attachment() {
 async fn workspace_overview_reads_and_updates_default_landing() {
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    // The first registered user is promoted to site admin; register one first
+    // so "door" stays a regular user and private content stays hidden.
+    let register_admin = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"Admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"adminpass1\",\"retypedPassword\":\"adminpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register_admin.status(), StatusCode::OK);
 
     let _ = app
         .clone()

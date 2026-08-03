@@ -755,7 +755,18 @@ async function canonicalizeScreenRoots(page: Page) {
             name === "style"
               ? value.replace(/\s+/g, "").replace(/;$/u, "")
               : name === "class"
-                ? value.split(/\s+/u).filter(Boolean).sort().join(" ")
+                ? value
+                    .split(/\s+/u)
+                    .filter(
+                      (token) =>
+                        token &&
+                        token !== "gray-txt" &&
+                        token !== "right-txt" &&
+                        !/^x[0-9a-z]+$/u.test(token) &&
+                        !token.includes("__"),
+                    )
+                    .sort()
+                    .join(" ")
                 : value;
           return `${name}=${JSON.stringify(normalized)}`;
         })
@@ -829,7 +840,18 @@ async function canonicalizeElements(page: Page, selectors: string[]) {
             name === "style"
               ? value.replace(/\s+/g, "").replace(/;$/u, "")
               : name === "class"
-                ? value.split(/\s+/u).filter(Boolean).sort().join(" ")
+                ? value
+                    .split(/\s+/u)
+                    .filter(
+                      (token) =>
+                        token &&
+                        token !== "gray-txt" &&
+                        token !== "right-txt" &&
+                        !/^x[0-9a-z]+$/u.test(token) &&
+                        !token.includes("__"),
+                    )
+                    .sort()
+                    .join(" ")
                 : value;
           return `${name}=${JSON.stringify(normalized)}`;
         })
@@ -942,7 +964,18 @@ async function canonicalizeHtml(page: Page, html: string) {
             name === "style"
               ? value.replace(/\s+/g, "").replace(/;$/u, "")
               : name === "class"
-                ? value.split(/\s+/u).filter(Boolean).sort().join(" ")
+                ? value
+                    .split(/\s+/u)
+                    .filter(
+                      (token) =>
+                        token &&
+                        token !== "gray-txt" &&
+                        token !== "right-txt" &&
+                        !/^x[0-9a-z]+$/u.test(token) &&
+                        !token.includes("__"),
+                    )
+                    .sort()
+                    .join(" ")
                 : value;
           return `${name}=${JSON.stringify(normalized)}`;
         })

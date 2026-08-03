@@ -965,7 +965,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !isModernizedTanStackRouterAttr(attr) && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -982,6 +988,19 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
@@ -1009,7 +1028,13 @@ async function canonicalizePageWrap(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !isModernizedTanStackRouterAttr(attr) && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1026,6 +1051,19 @@ async function canonicalizePageWrap(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
@@ -1189,7 +1227,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !isModernizedTanStackRouterAttr(attr) && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1206,6 +1250,19 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;

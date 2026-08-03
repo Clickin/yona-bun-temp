@@ -623,6 +623,38 @@ impl AppRepositoryImpl<'_> {
         Ok(threads)
     }
 
+    /// Lists review threads attached directly to the given commits (no pull
+    /// request link) in the project, matching legacy commit-discussion threads
+    /// shown on the pull request changes surface.
+    pub async fn list_project_commit_scoped_review_threads(
+        &self,
+        project_id: i64,
+        commit_ids: &[String],
+    ) -> Result<Vec<ReviewThreadRecord>, DbErr> {
+        if commit_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let commit_ids = commit_ids
+            .iter()
+            .cloned()
+            .map(Some)
+            .collect::<Vec<Option<String>>>();
+        let rows = comment_thread::Entity::find()
+            .filter(comment_thread::Column::ProjectId.eq(Some(project_id)))
+            .filter(comment_thread::Column::PullRequestId.is_null())
+            .filter(comment_thread::Column::CommitId.is_in(commit_ids))
+            .order_by_asc(comment_thread::Column::CreatedDate)
+            .order_by_asc(comment_thread::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut threads = Vec::new();
+        for row in rows {
+            let comments = self.list_review_comments(row.id).await?;
+            threads.push(self.review_thread_record(row, comments).await?);
+        }
+        Ok(threads)
+    }
+
     pub(super) async fn list_review_comments(
         &self,
         thread_id: i64,

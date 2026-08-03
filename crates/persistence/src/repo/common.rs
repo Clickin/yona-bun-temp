@@ -204,7 +204,9 @@ pub(super) fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
         normalized
     };
     match normalized.as_str() {
-        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" => Ok(normalized),
+        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" | "NOT_DELETED" => {
+            Ok(normalized)
+        }
         _ => Err(DbErr::Custom("invalid site user state".to_string())),
     }
 }

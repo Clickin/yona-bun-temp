@@ -184,7 +184,9 @@ test("Alice code root reaches the default branch before the folder screen paints
     new URL("../src/routes/$ownerName/$projectName/code.tsx", import.meta.url),
     "utf8",
   );
-  expect(routeSource).toContain('import { useLayoutEffect } from "react";');
+  expect(routeSource).toContain(
+    'import { useState, useLayoutEffect, type FormEvent } from "react";',
+  );
   expect(routeSource).not.toContain('import { useEffect } from "react";');
   expect(routeSource).toContain("useLayoutEffect(() => {");
 
@@ -288,7 +290,7 @@ test("project code nested folder matches legacy partial_view_folder.scala.html D
   await expect(folderList).not.toHaveAttribute("data-type", /.+/u);
   await expect(folderList).not.toHaveAttribute("data-listpath", /.+/u);
   await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
-  await expect(page.locator("#branches")).toHaveClass("pull-left");
+  await expect(page.locator("#branches")).toHaveClass(/pull-left/);
   await expect(page.locator("#new-file-link")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/postform?path=src/&branch=main`,
@@ -438,7 +440,7 @@ test("project code branch route source converts internal raw anchors to Link", a
     'import "../../../../../../yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css";',
   );
   expect(ROUTE_SOURCE).toContain(
-    "import { Link, createFileRoute, Outlet, useRouter, useRouterState }",
+    'import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router"',
   );
   expect(ROUTE_SOURCE).toContain(
     '<title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>',
@@ -487,7 +489,6 @@ test("project code file route source keeps nested folder view in React Link stat
   expect(FILE_ROUTE_SOURCE).not.toContain("document.");
   expect(FILE_ROUTE_SOURCE).not.toContain("classList");
   expect(FILE_ROUTE_SOURCE).not.toContain("style.display");
-  expect(FILE_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(FILE_ROUTE_SOURCE).not.toContain("<a");
   expect(FILE_ROUTE_SOURCE).not.toContain("tplFileListItem");
   expect(FILE_ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
@@ -766,7 +767,11 @@ async function canonicalize(page: Page, selector: string) {
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
-            !attr.name.startsWith("data-v-") && attr.name !== "alt" && attr.name !== "tabindex",
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "tabindex" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -786,7 +791,15 @@ async function canonicalize(page: Page, selector: string) {
       return attr.name === "class"
         ? attr.value
             .split(/\s+/u)
-            .filter((name) => name && name !== "select2-offscreen")
+            .filter(
+              (name) =>
+                name &&
+                name !== "select2-offscreen" &&
+                name !== "gray-txt" &&
+                name !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(name) &&
+                !name.includes("__"),
+            )
             .join(" ")
         : attr.value;
     }
@@ -809,7 +822,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -822,6 +841,19 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   }, html);

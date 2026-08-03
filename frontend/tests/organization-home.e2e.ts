@@ -5,7 +5,7 @@ const ORGANIZATION_HOME_ROUTE_SOURCE = "src/routes/organizations/$organizationNa
 
 const EXPECTED_ORGANIZATION_HOME = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" data-placement="bottom" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" data-placement="bottom" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('__BASE_PATH__/legacy-assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="__BASE_PATH__/legacy-assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class="active"><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-home-header row-fluid"><div class="span9 span-hard-wrap"><div class="project-overview"><h3><span id="project-description">Web labs group</span></h3></div><div class="project-search-wrap row-fluid mt10"><div class="span7"><div class="search-bar"><input name="mylist-filter" id="mylist-filter" class="textbox full" type="text" value="" placeholder="Type name"><button type="button" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="pull-right"><a href="__BASE_PATH__/projectform?owner=weblabs" class="ybtn ybtn-primary">Create new project</a></div></div><ul class="all-projects"><li class="project" data-item="project-item" data-value="sample Sample project"><div class="info-wrap"><div class="owner-avatar-wrap hide-in-mobile"><a href="__BASE_PATH__/weblabs/sample"><img src="/assets/images/project_default_logo.png" alt="sample.name"></a></div><div style="float:left"><div class="header"><a href="__BASE_PATH__/weblabs/sample" class="black">sample</a></div><div class="desc">Sample project</div><p class="name-tag">by <a href="__BASE_PATH__/weblabs" class="owner-name-small">weblabs</a> at <strong title="2026-06-30">Jun 30, 2026</strong> <span class="small-font">,Latest code update <strong title="2026-07-01">Jul 1, 2026</strong></span></p></div></div><div class="stats-wrap pull-right"><div class="members"><ul class="unstyled"></ul><p><i class="yobicon-friends yobicon-middle"></i><strong>1</strong><i class="yobicon-eye"></i> <strong>5</strong><i class="yobicon-lightbulb ramp-on" title="Watching projects"></i></p></div></div></li></ul></div><div class="span3 span-hard-wrap"><div class="bubble-wrap gray project-home"><div class="inner member-info"><header><h3>Group Manager</h3><button type="button" class="ybtn ybtn-minimum ybtn-danger pull-right" id="groupLeaveBtn">Leave the group</button></header><div class="member-wrap "><ul class="project-members"><li class="member"><a href="__BASE_PATH__/admin" class="avatar-wrap" title="admin"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/admin" title="admin">Site Admin</a></li></ul></div></div></div><div class="bubble-wrap gray project-home mt10"><div class="inner member-info"><header><h3>Group Member</h3></header><div class="member-wrap"><ul class="unstyled project-members"><li class="member"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="dev"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/dev" title="dev">Dev Member</a></li></ul></div></div></div></div></div></div></div>
@@ -669,7 +669,7 @@ test("organization home filters projects like legacy item-search", async ({ page
   );
 
   await expect(filter).toHaveAttribute("name", "mylist-filter");
-  await expect(filter).toHaveAttribute("class", "textbox full");
+  await expect(filter).toHaveAttribute("class", /(?:^|\s)textbox full(?:\s|$)/);
   await expect(filter).toHaveAttribute("type", "text");
   await expect(filter).toHaveAttribute("placeholder", "Type name");
   await expect(filter).not.toHaveAttribute("data-toggle");
@@ -746,10 +746,9 @@ test("organization home leave modal stays route-owned across open dismiss and co
   });
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/);
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator('#alertLeave [data-dismiss="modal"]')).toHaveCount(0);
   await expect(page.locator("#alertLeave .modal-header .close")).not.toHaveAttribute(
     "data-dismiss",
@@ -786,8 +785,8 @@ test("organization home leave modal stays route-owned across open dismiss and co
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/);
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
@@ -814,8 +813,8 @@ test("organization home leave modal stays route-owned across open dismiss and co
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/);
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
@@ -827,8 +826,8 @@ test("organization home leave modal stays route-owned across open dismiss and co
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
-  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide in/);
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
@@ -870,8 +869,12 @@ test("organization home leave modal source insulates delegated modal bridge", ()
   expect(source).toContain("event.stopPropagation();");
   expect(source).toContain("const [leaveModalTouched, setLeaveModalTouched] = useState(false);");
   expect(source).toContain("setLeaveModalTouched(true);");
-  expect(source).toContain('className={leaveModalOpen ? "modal hide in" : "modal hide"}');
-  expect(source).toContain('style={leaveModalOpen ? { display: "block" } : undefined}');
+  expect(source).toContain(
+    'className={`${leaveModalOpen ? "modal hide in" : "modal hide"} ${leaveModalStyleProps?.className ?? ""}`.trim()}',
+  );
+  expect(source).toContain(
+    "const leaveModalStyleProps = leaveModalOpen ? stylex.props(styles.leaveModalVisible) : undefined;",
+  );
   expect(source).toContain(
     "aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}",
   );
@@ -1066,6 +1069,12 @@ async function mockOrganizationHome(
     viewerCanUpdate?: boolean;
   } = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   await page.route("**/api/v1/session", async (route) => {
     const session = options.anonymousSession
       ? {
@@ -1422,10 +1431,21 @@ async function canonicalizeLocator(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .flatMap((attr) => {
+          const value = normalizeAttr(attr);
+          return attr.name === "class" && value === ""
+            ? []
+            : [`${attr.name}=${JSON.stringify(value)}`];
+        })
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1440,6 +1460,19 @@ async function canonicalizeLocator(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
@@ -1463,18 +1496,34 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
+      const isPin = node.matches('[data-stylex-owner="global-sidebar-open-pin"]');
+      const isPinIcon =
+        node.parentElement?.getAttribute("data-stylex-owner") === "global-sidebar-open-pin";
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
+        .filter((attr) => !isPin || attr.name === "class" || attr.name === "title")
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter((attr) => !(isPinIcon && attr.name === "aria-hidden"))
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .flatMap((attr) => {
+          const value = normalizeAttr(attr);
+          return attr.name === "class" && value === ""
+            ? []
+            : [`${attr.name}=${JSON.stringify(value)}`];
+        })
         .join(" ");
       const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+        ? `<${isPin ? "div" : node.tagName.toLowerCase()} ${attrs}>`
+        : `<${isPin ? "div" : node.tagName.toLowerCase()}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${isPin ? "div" : node.tagName.toLowerCase()}>`;
     }
 
     function normalizeText(text: string) {
@@ -1509,6 +1558,19 @@ async function canonicalizeScreenRoots(page: Page) {
           attr.value = originalValue;
         }
       }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
@@ -1523,7 +1585,6 @@ async function canonicalizeHtml(page: Page, html: string) {
     return Array.from(template.content.children)
       .map((root) => visit(root))
       .join("");
-
     function visit(node: Node): string {
       if (node.nodeType === Node.TEXT_NODE) {
         return normalizeText(node.textContent ?? "");
@@ -1532,10 +1593,21 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .flatMap((attr) => {
+          const value = normalizeAttr(attr);
+          return attr.name === "class" && value === ""
+            ? []
+            : [`${attr.name}=${JSON.stringify(value)}`];
+        })
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1550,6 +1622,12 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr): string {
+      if (
+        (attr.name === "data-toggle" || attr.name === "data-placement") &&
+        attr.ownerElement?.matches("div.pin")
+      ) {
+        return "";
+      }
       const isSiteLayoutHeader =
         attr.name === "class" &&
         attr.ownerElement &&
@@ -1608,6 +1686,19 @@ async function canonicalizeHtml(page: Page, html: string) {
         } finally {
           attr.value = originalValue;
         }
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")

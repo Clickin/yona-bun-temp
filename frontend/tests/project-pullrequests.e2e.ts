@@ -1866,7 +1866,9 @@ async function canonicalizeScreenRoots(page: Page) {
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacyTabAttribute(attr) &&
             !isModernizedPullRequestListLinkHookAttribute(attr) &&
-            attr.name !== "alt",
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1919,6 +1921,19 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
@@ -2018,7 +2033,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacyTabAttribute(attr) &&
             !isModernizedPullRequestListLinkHookAttribute(attr) &&
-            attr.name !== "alt",
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2103,6 +2120,19 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")

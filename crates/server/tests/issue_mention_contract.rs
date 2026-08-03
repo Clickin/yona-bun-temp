@@ -817,7 +817,12 @@ async fn issue_mention_contract_indexes_comment_mentions_and_replaces_them_on_up
     .await;
     assert_eq!(guest_notifications["total"], 1);
     assert_eq!(guest_notifications["items"][0]["eventType"], "NEW_COMMENT");
-    assert_eq!(guest_notifications["items"][0]["message"], "hello @guest");
+    let guest_message = guest_notifications["items"][0]["message"]
+        .as_str()
+        .expect("notification message");
+    assert!(guest_message.starts_with("hello @guest"));
+    assert!(guest_message.contains("Original issue from @owner"));
+    assert!(guest_message.contains("body"));
     assert_eq!(guest_notifications["items"][0]["typeIcon"], "comment2");
 
     let guest_mentioned = response_json(

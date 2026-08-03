@@ -461,17 +461,18 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
   const normalizedFilter = filter.trim().toLowerCase();
   const hidden = normalizedFilter ? !dataValue.toLowerCase().includes(normalizedFilter) : false;
+  const projectCardStyleProps = stylex.props(
+    styles.project,
+    organizationProjectCardMigrationStyles.card,
+    hidden && styles.projectHidden,
+  );
 
   return (
     <li
-      className="project"
       data-item="project-item"
       data-value={dataValue}
-      {...stylex.props(
-        styles.project,
-        organizationProjectCardMigrationStyles.card,
-        hidden && styles.projectHidden,
-      )}
+      {...projectCardStyleProps}
+      className={`project ${projectCardStyleProps.className}`}
       data-stylex-owner="organization-home-project-filter-item"
     >
       <div className="info-wrap">

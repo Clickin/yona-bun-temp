@@ -112,6 +112,7 @@ function ProjectCodeBranchHistoryRouteShell({
   runtimeConfig: RuntimeConfig;
 }) {
   const { branch, ownerName, projectName } = routeParams;
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -121,14 +122,17 @@ function ProjectCodeBranchHistoryRouteShell({
   const project = projectQuery.data;
   if (!project || !historyQuery.data) return null;
   return (
-    <ProjectCodeHistoryBody
-      history={historyQuery.data}
-      ownerName={ownerName}
-      project={project}
-      projectName={projectName}
-      requestedBranch={branch}
-      runtimeConfig={runtimeConfig}
-    />
+    <>
+      <title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>
+      <ProjectCodeHistoryBody
+        history={historyQuery.data}
+        ownerName={ownerName}
+        project={project}
+        projectName={projectName}
+        requestedBranch={branch}
+        runtimeConfig={runtimeConfig}
+      />
+    </>
   );
 }
 
@@ -424,30 +428,58 @@ export function ProjectCodeHistoryBody({
 
           <div className="actrow margin-top-20" data-stylex-owner="project-commits-pagination">
             {history.hasNewer ? (
-              <Link
-                to="/$ownerName/$projectName/commits"
-                params={{ ownerName, projectName }}
-                search={{ page: Math.max(0, history.page - 1) }}
-                activeOptions={legacyCodeHistoryLinkActiveOptions}
-                activeProps={legacyCodeHistoryLinkActiveProps}
-                className={`${stylex.props(styles.paginationLink).className} ybtn`}
-                data-stylex-owner="project-commits-newer"
-              >
-                {t("code.newer")}
-              </Link>
+              requestedBranch ? (
+                <Link
+                  to="/$ownerName/$projectName/commits/$branch/$"
+                  params={{ _splat: "/", branch: requestedBranch, ownerName, projectName }}
+                  search={{ page: Math.max(0, history.page - 1) }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
+                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
+                  data-stylex-owner="project-commits-newer"
+                >
+                  {t("code.newer")}
+                </Link>
+              ) : (
+                <Link
+                  to="/$ownerName/$projectName/commits"
+                  params={{ ownerName, projectName }}
+                  search={{ page: Math.max(0, history.page - 1) }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
+                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
+                  data-stylex-owner="project-commits-newer"
+                >
+                  {t("code.newer")}
+                </Link>
+              )
             ) : null}
             {history.hasOlder ? (
-              <Link
-                to="/$ownerName/$projectName/commits"
-                params={{ ownerName, projectName }}
-                search={{ page: history.page + 1 }}
-                activeOptions={legacyCodeHistoryLinkActiveOptions}
-                activeProps={legacyCodeHistoryLinkActiveProps}
-                className={`${stylex.props(styles.paginationLink).className} ybtn`}
-                data-stylex-owner="project-commits-older"
-              >
-                {t("code.older")}
-              </Link>
+              requestedBranch ? (
+                <Link
+                  to="/$ownerName/$projectName/commits/$branch/$"
+                  params={{ _splat: "/", branch: requestedBranch, ownerName, projectName }}
+                  search={{ page: history.page + 1 }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
+                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
+                  data-stylex-owner="project-commits-older"
+                >
+                  {t("code.older")}
+                </Link>
+              ) : (
+                <Link
+                  to="/$ownerName/$projectName/commits"
+                  params={{ ownerName, projectName }}
+                  search={{ page: history.page + 1 }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
+                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
+                  data-stylex-owner="project-commits-older"
+                >
+                  {t("code.older")}
+                </Link>
+              )
             ) : null}
           </div>
         </div>

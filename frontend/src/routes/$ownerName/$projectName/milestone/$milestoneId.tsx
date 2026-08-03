@@ -170,11 +170,6 @@ export function ProjectMilestoneDetailIndexScreen({
         ownerName={ownerName}
         projectName={projectName}
       />
-      <MilestoneDetailAssets
-        basePath={runtimeConfig.basePath}
-        ownerName={ownerName}
-        projectName={projectName}
-      />
       <ProjectMilestoneDetailBody
         currentUser={currentUser}
         milestone={milestoneQuery.data.milestone}
@@ -263,25 +258,6 @@ export function ProjectMilestoneNotFoundBody() {
         </div>
       </div>
     </div>
-  );
-}
-
-function MilestoneDetailAssets({
-  basePath,
-  ownerName,
-  projectName,
-}: {
-  basePath: string;
-  ownerName: string;
-  projectName: string;
-}) {
-  const projectPath = `/${ownerName}/${projectName}`;
-  return (
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href={prefixBasePath(basePath, `${projectPath}/issue/labels.css`)}
-    />
   );
 }
 
@@ -417,9 +393,14 @@ function ProjectMilestoneDetailBody({
             </small>
           </h4>
 
-          <div {...sx.progress} data-stylex-owner="milestone-detail-progress">
+          <div
+            {...sx.progress}
+            className={`progress progress-success ${sx.progress.className}`}
+            data-stylex-owner="milestone-detail-progress"
+          >
             <div
               {...sx.progressBar(`${completionPercent}%`)}
+              className={`bar ${sx.progressBar(`${completionPercent}%`).className}`}
               data-stylex-owner="milestone-detail-progress-bar"
             ></div>
           </div>
@@ -519,7 +500,7 @@ function ProjectMilestoneDetailBody({
                     }
                   >
                     {t(`issue.state.${tabState}`)}
-                    <span {...sx.tabBadge}>
+                    <span {...sx.tabBadge} className={`num-badge ${sx.tabBadge.className}`}>
                       {tabState === "open"
                         ? openIssueCount
                         : tabState === "closed"
@@ -1293,7 +1274,7 @@ function MilestoneIssueRow({
             numberField(issue.sharerCount) ? (
               <span
                 {...sx.issueCountGroups}
-                className={`${sx.issueCountGroups.className} item-count-groups`}
+                className={`${sx.issueCountGroups.className} infos-item item-count-groups`}
                 data-stylex-owner="milestone-detail-issue-count-groups"
               >
                 {numberField(issue.commentCount) ? (

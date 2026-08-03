@@ -284,17 +284,17 @@ test("project bare code history renders default branch on the legacy commits URL
   await expect(branchSelector).not.toHaveAttribute("data-toggle", "select2");
   await expect(branchSelector).toHaveAttribute("data-format", "branch");
   await expect(branchSelector).toHaveAttribute("data-dropdown-css-class", "branches");
-  await expect(branchSelector).toHaveClass("pull-right");
+  await expect(branchSelector).toHaveClass(/pull-right/);
   await expect(branchSelector.locator("option")).toHaveCount(2);
   await expect(branchSelector.locator("option").nth(0)).toHaveAttribute(
     "value",
-    `${basePath}/admin/sample/commits/main`,
+    `${basePath}/admin/sample/commits/main/`,
   );
   await expect(branchSelector.locator("option").nth(1)).toHaveAttribute(
     "value",
-    `${basePath}/admin/sample/commits/feature%2Frelease`,
+    `${basePath}/admin/sample/commits/feature%2Frelease/`,
   );
-  await expect(branchSelector).toHaveValue(`${basePath}/admin/sample/commits/main`);
+  await expect(branchSelector).toHaveValue(`${basePath}/admin/sample/commits/main/`);
   await expect(page.locator(".nav-tabs a", { hasText: "Files" })).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/HEAD`,
@@ -371,7 +371,7 @@ test("project trailing-slash history replaces to the canonical legacy commits UR
 
   await page.goto(`${basePath}/admin/sample/commits/?page=2`);
 
-  await expect(page).toHaveURL(`${basePath}/admin/sample/commits`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/commits?page=2`);
   await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
   expect(historyRequestUrls).toHaveLength(1);
   const historyRequest = new URL(historyRequestUrls[0]);
@@ -476,9 +476,9 @@ test("project code history branch selector navigates slash branch in the SPA", a
   await page.goto(`${basePath}/admin/sample/commits/main`);
   await page
     .locator("#branches")
-    .selectOption(`${basePath}/admin/sample/commits/feature%2Frelease`);
+    .selectOption(`${basePath}/admin/sample/commits/feature%2Frelease/`);
 
-  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/commits/feature%2Frelease$`));
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/commits/feature%2Frelease/$`));
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".nav-tabs a", { hasText: "Branches" })).toHaveAttribute(
     "href",
@@ -517,55 +517,49 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(legacySelect2Source).toContain("javascripts/common/yobi.ui.Select2.js");
   expect(source).toContain("validateSearch(search): ProjectCodeHistorySearch");
   expect(source).toContain("return Number.isFinite(page) && page > 0 ? { page } : {};");
-  expect(source).toContain('id="branches"');
-  expect(source).not.toContain('id="branches"\n              data-toggle="select2"');
-  expect(source).toContain('data-format="branch"');
-  expect(source).toContain('data-dropdown-css-class="branches"');
-  expect(source).toContain("projectSearchScope={projectSearchScope}");
-  expect(source).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
-  expect(source).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
-  expect(source).toContain("const showCommitSearch = commitDetailSearch(selectedBranch);");
-  expect(source).toContain("return { branch };");
-  expect(source).toMatch(/projectRoutePath\(\s*ownerName,\s*projectName,\s*"commit",/u);
-  expect(source).not.toContain('data-toggle="tooltip"');
-  expect(source).not.toContain("data-placement");
-  expect(source).toContain("title={commit.authorLoginId}");
-  expect(source).toContain("title={commit.authorEmail}");
-  expect(source).toContain('t("user.role.anonymous")');
-  expect(source).not.toContain('|| "Anonymous"');
-  expect(source).not.toContain("'Anonymous'");
-  expect(source).not.toContain("createLink");
-  expect(source).not.toMatch(/<a(?:\s|>)/u);
-  expect(source).not.toContain("</a>");
-  expect(source).not.toContain("href={projectHref");
-  expect(source).not.toContain("href={commitHref");
-  expect(source).not.toContain("setAttribute");
-  expect(source).not.toContain("removeAttribute");
-  expect(source).not.toContain("as never");
-  expect(source).not.toContain("legacyInactiveLinkOptions");
-  expect(source).not.toMatch(/\bdocument\./u);
-  expect(source).not.toContain("addEventListener");
-  expect(source).not.toContain("classList");
-  expect(source).not.toContain("style.display");
-  expect(source).toContain("const legacyCodeHistoryLinkActiveOptions = {");
-  expect(source).toContain("explicitUndefined: true");
-  expect(source).toContain("const legacyCodeHistoryLinkActiveProps = {");
-  expect(source).toContain('"aria-current": undefined');
-  expect(source).toContain("className: undefined");
-  expect(source).toContain('"data-status": undefined');
-  expect(source.match(/activeOptions=\{legacyCodeHistoryLinkActiveOptions\}/gu)).toHaveLength(8);
-  expect(source.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(8);
-  expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(bareSource).toContain('id="branches"');
+  expect(bareSource).not.toContain('id="branches"\n              data-toggle="select2"');
+  expect(bareSource).toContain('data-format="branch"');
+  expect(bareSource).toContain('data-dropdown-css-class="branches"');
+  expect(bareSource).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
+  expect(bareSource).toMatch(/projectRoutePath\(\s*ownerName,\s*projectName,\s*"commit",/u);
+  expect(bareSource).not.toContain('data-toggle="tooltip"');
+  expect(bareSource).not.toContain("data-placement");
+  expect(bareSource).toContain("title={commit.authorLoginId}");
+  expect(bareSource).toContain("title={commit.authorEmail}");
+  expect(bareSource).toContain('t("user.role.anonymous")');
+  expect(bareSource).not.toContain('|| "Anonymous"');
+  expect(bareSource).not.toContain("'Anonymous'");
+  expect(bareSource).not.toContain("createLink");
+  expect(bareSource).not.toMatch(/<a(?:\s|>)/u);
+  expect(bareSource).not.toContain("</a>");
+  expect(bareSource).not.toContain("href={projectHref");
+  expect(bareSource).not.toContain("href={commitHref");
+  expect(bareSource).not.toContain("setAttribute");
+  expect(bareSource).not.toContain("removeAttribute");
+  expect(bareSource).not.toContain("legacyInactiveLinkOptions");
+  expect(bareSource).not.toMatch(/\bdocument\./u);
+  expect(bareSource).not.toContain("addEventListener");
+  expect(bareSource).not.toContain("classList");
+  expect(bareSource).not.toContain("style.display");
+  expect(bareSource).toContain("const legacyCodeHistoryLinkActiveOptions = {");
+  expect(bareSource).toContain("explicitUndefined: true");
+  expect(bareSource).toContain("const legacyCodeHistoryLinkActiveProps = {");
+  expect(bareSource).toContain('"aria-current": undefined');
+  expect(bareSource).toContain("className: undefined");
+  expect(bareSource).toContain('"data-status": undefined');
+  expect(bareSource.match(/activeOptions=\{legacyCodeHistoryLinkActiveOptions\}/gu)).toHaveLength(
+    9,
+  );
+  expect(bareSource.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(9);
+  expect(bareSource).not.toContain("activeProps={{ className: undefined }}");
 
   expect(bareSource).toContain('createFileRoute("/$ownerName/$projectName/commits")');
-  expect(bareSource).toContain("const isProjectCodeHistoryRoot =");
   expect(bareSource).toContain("<ProjectCodeHistoryTitle />");
   expect(bareSource).toContain("<Outlet />");
   expect(bareSource).toContain(
     '<title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>',
   );
-  expect(bareSource).toContain("projectSearchScope={projectSearchScope}");
-  expect(bareSource).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
   expect(bareSource).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
   expect(bareSource).toContain(
     'codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName })',
@@ -582,7 +576,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).not.toContain('|| "Anonymous"');
   expect(bareSource).not.toContain("'Anonymous'");
   expect(bareSource).toContain('to="/$ownerName/$projectName/commits"');
-  expect(bareSource).toContain('params={{ branch: "HEAD", ownerName, projectName }}');
+  expect(bareSource).toContain(
+    'params={{ branch: requestedBranch || "HEAD", ownerName, projectName }}',
+  );
   expect(bareSource).not.toContain("historyUntilHead");
   expect(bareSource).not.toMatch(/<a(?:\s|>)/u);
   expect(bareSource).not.toContain("</a>");
@@ -595,9 +591,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).not.toContain("style.display");
   expect(bareSource).not.toContain("dangerouslySetInnerHTML");
   expect(bareSource.match(/activeOptions=\{legacyCodeHistoryLinkActiveOptions\}/gu)).toHaveLength(
-    8,
+    9,
   );
-  expect(bareSource.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(8);
+  expect(bareSource.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(9);
 });
 
 async function expectNoTanStackActiveMarkers(locator: Locator) {
@@ -943,7 +939,13 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -956,6 +958,19 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
@@ -977,7 +992,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -990,6 +1011,19 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   }, html);

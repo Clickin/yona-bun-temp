@@ -15,12 +15,12 @@ const EXPECTED_LOGIN_SCREEN = `
     </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><a href="__BASE_PATH__/projects">List All</a></li>
-      <li></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
+          <div>
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>

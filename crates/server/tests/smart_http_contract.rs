@@ -8,6 +8,7 @@ use serde_json::json;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
@@ -25,6 +26,11 @@ use yoram_server::{
 use yoram_vcs::MAX_SMART_HTTP_RPC_BYTES;
 
 mod rest_test_support;
+
+fn webhook_outbox_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_app_with_data_root(
     data_root: &Path,
@@ -778,6 +784,7 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
 #[tokio::test]
 // Guards Smart HTTP webhook payload reuse of the route-utils-owned absolute app URL helper.
 async fn smart_http_push_records_legacy_post_receive_side_effects() {
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, db) = build_app_with_data_root(data_dir.path()).await;
@@ -913,6 +920,7 @@ async fn smart_http_push_records_legacy_post_receive_side_effects() {
 
 #[tokio::test]
 async fn smart_http_push_records_pull_request_commit_changed_side_effects() {
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, db) = build_app_with_data_root(data_dir.path()).await;

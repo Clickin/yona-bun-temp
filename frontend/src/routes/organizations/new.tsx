@@ -89,23 +89,6 @@ const styles = stylex.create({
     height: "40px",
     resize: "vertical",
   },
-  validationRoot: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: "700",
-    lineHeight: "20px",
-    margin: "0",
-    padding: "0",
-  },
-  validationText: {
-    color: organizationNewColors.warningText,
-    fontSize: "13px",
-    fontWeight: "700",
-    lineHeight: "20px",
-  },
-  hidden: {
-    display: "none",
-  },
   actions: {
     position: "relative",
     textAlign: "center",
@@ -189,9 +172,6 @@ const legendStyleProps = stylex.props(styles.legend);
 const labelStyleProps = stylex.props(styles.label);
 const nameFieldStyleProps = stylex.props(styles.field, styles.nameField);
 const descriptionFieldStyleProps = stylex.props(styles.field, styles.descriptionField);
-const validationRootStyleProps = stylex.props(styles.validationRoot);
-const validationTextStyleProps = stylex.props(styles.validationText);
-const hiddenValidationTextStyleProps = stylex.props(styles.validationText, styles.hidden);
 const actionsStyleProps = stylex.props(styles.actions);
 const createActionStyleProps = stylex.props(
   styles.action,
@@ -298,7 +278,7 @@ function OrganizationNewScreen({
           <div className="project-page-wrap">
             <div
               {...frameStyleProps}
-              className={frameStyleProps.className}
+              className={`form-wrap new-project ${frameStyleProps.className}`}
               data-stylex-owner="organization-new-form"
             >
               <form
@@ -306,7 +286,7 @@ function OrganizationNewScreen({
                 action={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}
                 method="post"
                 name="new-org"
-                className={formStyleProps.className}
+                className={`frm-wrap ${formStyleProps.className}`}
                 data-stylex-owner="organization-new-form"
                 onSubmit={handleSubmit}
               >
@@ -327,42 +307,16 @@ function OrganizationNewScreen({
                     className={termStyleProps.className}
                     data-stylex-owner="organization-new-form"
                   >
-                    <div
-                      {...validationRootStyleProps}
-                      className={validationRootStyleProps.className}
-                      data-errtype="name"
-                      data-stylex-owner="organization-new-validation"
-                    >
-                      <div
-                        {...validationRootStyleProps}
-                        className={validationRootStyleProps.className}
-                        data-stylex-owner="organization-new-validation"
-                      >
-                        {serverNameError || warning ? (
-                          <span
-                            {...(nameError
-                              ? hiddenValidationTextStyleProps
-                              : validationTextStyleProps)}
-                            className={
-                              nameError
-                                ? hiddenValidationTextStyleProps.className
-                                : validationTextStyleProps.className
-                            }
-                            data-stylex-owner="organization-new-validation"
-                          >
+                    <div className="n-alert" data-errtype="name">
+                      <div className="orange-txt">
+                        {!nameError && (serverNameError || warning) ? (
+                          <span className="warning">
                             {serverNameError || (warning ? t(warning) : "")}
                           </span>
                         ) : null}
                         <span
-                          {...(nameError
-                            ? validationTextStyleProps
-                            : hiddenValidationTextStyleProps)}
-                          className={
-                            nameError
-                              ? validationTextStyleProps.className
-                              : hiddenValidationTextStyleProps.className
-                          }
-                          data-stylex-owner="organization-new-validation"
+                          className="msg wrongName"
+                          style={nameError ? undefined : { display: "none" }}
                         >
                           {nameError}
                         </span>
@@ -388,7 +342,7 @@ function OrganizationNewScreen({
                       id="name"
                       type="text"
                       name="name"
-                      className={nameFieldStyleProps.className}
+                      className={`text ${nameFieldStyleProps.className}`}
                       data-stylex-owner="organization-new-field"
                       placeholder=""
                       maxLength={250}
@@ -419,20 +373,21 @@ function OrganizationNewScreen({
                       {...descriptionFieldStyleProps}
                       id="descr"
                       name="descr"
-                      className={descriptionFieldStyleProps.className}
+                      className={`text textarea.span4 ${descriptionFieldStyleProps.className}`}
                       data-stylex-owner="organization-new-field"
                       defaultValue=""
+                      style={{ resize: "vertical" }}
                     />
                   </dd>
                 </dl>
                 <div
                   {...actionsStyleProps}
-                  className={actionsStyleProps.className}
+                  className={`actions ${actionsStyleProps.className}`}
                   data-stylex-owner="organization-new-actions"
                 >
                   <button
                     {...createActionStyleProps}
-                    className={createActionStyleProps.className}
+                    className={`ybtn ybtn-success ${createActionStyleProps.className}`}
                     data-stylex-owner="organization-new-actions"
                     disabled={createMutation.isPending}
                   >
@@ -441,7 +396,7 @@ function OrganizationNewScreen({
                   <Link
                     {...cancelActionStyleProps}
                     to="/"
-                    className={cancelActionStyleProps.className}
+                    className={`ybtn ${cancelActionStyleProps.className}`}
                     data-stylex-owner="organization-new-actions"
                     activeOptions={{ exact: true }}
                     activeProps={legacyAnchorActiveProps}

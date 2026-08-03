@@ -527,10 +527,10 @@ pub(crate) async fn legacy_external_users(
     };
     let users = match repository
         .list_site_users(persistence::SiteUserListFilter {
-            exclude_site_manager: true,
+            exclude_site_manager: false,
             page: 1,
             query: query.query,
-            state: "active".to_string(),
+            state: "not_deleted".to_string(),
         })
         .await
     {

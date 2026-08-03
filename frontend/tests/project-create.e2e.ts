@@ -560,6 +560,19 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return value;
     }
 
@@ -729,6 +742,19 @@ async function canonicalizeHtml(page: Page, html: string) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== retiredToken)
+          .join(" ");
+      }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
       }
       return value;

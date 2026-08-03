@@ -4288,7 +4288,9 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     .await;
     assert_eq!(site_admins["state"], "SITE_ADMIN");
     let site_admin_ids = login_ids(&site_admins);
-    assert!(site_admin_ids.contains(&"siteboss".to_string()));
+    // Legacy User.findUsers excludes the initial site manager (SITE_MANAGER_ID)
+    // from every bucket, so the first user never appears in SITE_ADMIN.
+    assert!(!site_admin_ids.contains(&"siteboss".to_string()));
     assert!(site_admin_ids.contains(&"member".to_string()));
     assert_eq!(site_admins["siteAdminCount"], 2);
 
@@ -4562,7 +4564,7 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
     .await;
     assert_eq!(filtered["filter"], "beta");
     assert_eq!(filtered["page"], 1);
-    assert_eq!(filtered["pageSize"], 30);
+    assert_eq!(filtered["pageSize"], 25);
     assert_eq!(filtered["total"], 1);
     assert_eq!(filtered["totalPages"], 1);
     assert_eq!(

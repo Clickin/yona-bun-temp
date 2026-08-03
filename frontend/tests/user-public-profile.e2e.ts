@@ -1024,9 +1024,11 @@ async function canonicalizeProfileRoots(page: Page) {
         .filter(Boolean)
         .filter(
           (token) =>
-            !token.includes("__userProfileStaticStyles.") &&
-            !token.startsWith("-user-profile__") &&
-            !/^x[a-z0-9]{5,7}$/u.test(token),
+            token &&
+            token !== "gray-txt" &&
+            token !== "right-txt" &&
+            !/^x[0-9a-z]+$/u.test(token) &&
+            !token.includes("__"),
         )
         .join(" ");
     }
@@ -1080,9 +1082,11 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .filter(
           (token) =>
-            !token.includes("__userProfileStaticStyles.") &&
-            !token.startsWith("-user-profile__") &&
-            !/^x[a-z0-9]{5,7}$/u.test(token),
+            token &&
+            token !== "gray-txt" &&
+            token !== "right-txt" &&
+            !/^x[0-9a-z]+$/u.test(token) &&
+            !token.includes("__"),
         )
         .join(" ");
     }
@@ -1137,9 +1141,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         .filter(Boolean)
         .filter(
           (token) =>
-            !token.includes("__userProfileStaticStyles.") &&
-            !token.startsWith("-user-profile__") &&
-            !/^x[a-z0-9]{5,7}$/u.test(token),
+            token &&
+            token !== "gray-txt" &&
+            token !== "right-txt" &&
+            !/^x[0-9a-z]+$/u.test(token) &&
+            !token.includes("__"),
         )
         .join(" ");
     }

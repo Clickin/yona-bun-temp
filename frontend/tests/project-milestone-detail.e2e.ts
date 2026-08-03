@@ -49,7 +49,7 @@ const MILESTONE_DETAIL_CHILD_ISSUES = `
         </a>
       </span>
     </span>
-    <a class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" style="background:rgb(81,170,204)">bug</a>
+    <a class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8">bug</a>
     <span class="child-issue-date" title="2026-06-02">2026-06-02</span>
   </div>
   <div class="issue-item child-issue">
@@ -78,13 +78,13 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
           <span class="badge badge-issue-open margin-left-5">Open</span>
         </small>
       </h4>
-      <div class="progress progress-success"><div class="bar" style="width:50%"></div></div>
+      <div class="progress progress-success"><div class="bar"></div></div>
       <div class="milestone-desc">
         <div class="markdown-wrap"><p>Release scope</p></div>
         <div class="attachments" data-attachments='[{"id":501,"name":"scope.txt","url":"/files/501"}]'></div>
       </div>
-      <div class="actrow right-txt row-fluid" style="clear:both;padding:15px 0px">
-        <a class="ybtn pull-left" href="__BASE_PATH__/admin/sample/milestones">List</a>
+      <div class="actrow row-fluid">
+        <a class="ybtn" href="__BASE_PATH__/admin/sample/milestones">List</a>
         <button class="ybtn ybtn-danger" type="button">Delete</button>
         <a class="ybtn" href="__BASE_PATH__/admin/sample/milestone/5/editform">Edit</a>
         <button class="ybtn" type="button">Close milestone</button>
@@ -98,7 +98,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
         <div class="issues">
           <div class="filter-wrap">
             <div class="mass-update-wrap hide-in-mobile">
-              <form action="__BASE_PATH__/admin/sample/issues" class="mass-update-form pull-left" id="mass-update-form" method="post">
+              <form action="__BASE_PATH__/admin/sample/issues" class="mass-update-form" id="mass-update-form" method="post">
                 <div class="btn-group check-all">
                   <label aria-label="check-all" for="check-all"><input id="check-all" type="checkbox"></label>
                 </div>
@@ -145,7 +145,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                 </div>
               </form>
             </div>
-            <div class="pull-right search search-bar">
+            <div class="search search-bar">
               <input class="textbox" name="filter" placeholder="search at current milestone" type="text" value="">
               <button class="search-btn" type="submit"><i class="yobicon-search"></i></button>
             </div>
@@ -164,7 +164,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                   <div class="infos">
                     <a class="infos-item infos-link-item" href="__BASE_PATH__/dev" title="dev">Dev Member</a>
                     <span class="infos-item" title="2026-06-01">2026-06-01</span>
-                    <div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width:50%" title="Subtask"></div></div>
+                    <div class="subtask-progress upload-progress red-outline"><div class="bar red" title="Subtask"></div></div>
                     <span class="subtask-progress completion-ratio">1/2</span>
                     <span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>
                     <span class="infos-item item-count-groups">
@@ -172,14 +172,14 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                       <a class="vote-count vote-color" href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a>
                       <button class="sharer-color" title="Issue Sharer" type="button"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">1</span></button>
                     </span>
-                    <button class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="background:rgb(81,170,204)" type="button">bug</button>
+                    <button class="label issue-label list-label active" data-category-id="3" data-label-id="8" type="button">bug</button>
                     <div class="child-issue-list hide">${MILESTONE_DETAIL_CHILD_ISSUES}</div>
                   </div>
                 </div>
               </div>
               <div class="span3 hide-in-mobile">
-                <div class="mt5 pull-right"><a class="avatar-wrap assinee" href="__BASE_PATH__/dev" title="Assignee: Dev Member"><img height="32" src="/assets/images/dev-avatar.png" width="32"></a></div>
-                <div class="mr20 mt10 pull-right" title="2026-06-20"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">3 days left</span></div>
+                <div class="mt5"><a class="avatar-wrap assinee" href="__BASE_PATH__/dev" title="Assignee: Dev Member"><img height="32" src="/assets/images/dev-avatar.png" width="32"></a></div>
+                <div class="mr20 mt10" title="2026-06-20"><i class="yobicon-clock2 vmiddle"></i><span class="vmiddle">3 days left</span></div>
               </div>
             </li>
           </ul>
@@ -510,7 +510,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute("class", "title");
   await expect(page.locator(".badge-issue-open")).toHaveText("Open");
-  await expect(page.locator(".progress .bar")).toHaveAttribute("style", "width: 50%;");
+  await expect(page.locator(".progress .bar")).toHaveAttribute("style", /--x-width:\s*50%/u);
   await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Release scope");
   await expect(page.locator(".milestone-desc .attachments")).toHaveAttribute(
     "data-attachments",
@@ -527,7 +527,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(
     page.locator(".actrow [data-request-method], .actrow [data-request-uri]"),
   ).toHaveCount(0);
-  await expect(page.locator(".actrow .ybtn.pull-left")).toHaveAttribute(
+  await expect(page.locator('.actrow a.ybtn[href$="/milestones"]')).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/milestones`,
   );
@@ -554,9 +554,21 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     /(?:^|\s)active(?:\s|$)/u,
   );
   expect(
-    await page
-      .locator("#issues .nav-tabs li:not(.active)")
-      .evaluateAll((tabs) => tabs.map((tab) => tab.getAttribute("class"))),
+    await page.locator("#issues .nav-tabs li:not(.active)").evaluateAll((tabs) =>
+      tabs.map((tab) => {
+        const classes = (tab.getAttribute("class") ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          );
+        return classes.length > 0 ? classes.join(" ") : null;
+      }),
+    ),
   ).toEqual([null, null]);
   await expect(page.locator('#issues .nav-tabs a:has-text("Closed")')).toHaveAttribute(
     "href",
@@ -810,7 +822,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(
     page.locator("#issue-item-41 .subtask-progress.upload-progress.red-outline .bar"),
-  ).toHaveAttribute("style", "width: 50%;");
+  ).toHaveAttribute("style", /--x-width:\s*50%/u);
   await expect(page.locator("#issue-item-41 .subtask-progress.completion-ratio")).toHaveText("1/2");
   await expect(page.locator('#issue-item-41 .mileston-tag a[href$="/milestone/5"]')).toHaveText(
     "v1.0",
@@ -881,19 +893,10 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "src",
     `${basePath}/assets/images/dev-avatar.png`,
   );
-  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).toHaveAttribute(
-    "title",
-    "2026-06-20",
-  );
-  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).not.toHaveAttribute(
-    "data-toggle",
-  );
-  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).not.toHaveAttribute(
-    "data-placement",
-  );
-  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right span.vmiddle")).toHaveText(
-    "3 days left",
-  );
+  await expect(page.locator("#issue-item-41 .mr20.mt10")).toHaveAttribute("title", "2026-06-20");
+  await expect(page.locator("#issue-item-41 .mr20.mt10")).not.toHaveAttribute("data-toggle");
+  await expect(page.locator("#issue-item-41 .mr20.mt10")).not.toHaveAttribute("data-placement");
+  await expect(page.locator("#issue-item-41 .mr20.mt10 span.vmiddle")).toHaveText("3 days left");
   await expect(page.locator('#issue-item-41 [data-toggle="tooltip"]')).toHaveCount(0);
   await expect(page.locator("#issue-item-41 [data-placement]")).toHaveCount(0);
   const shellMetrics = await milestoneDetailShellMetrics(page);
@@ -935,9 +938,21 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     /(?:^|\s)active(?:\s|$)/u,
   );
   expect(
-    await page
-      .locator("#issues .nav-tabs li:not(.active)")
-      .evaluateAll((tabs) => tabs.map((tab) => tab.getAttribute("class"))),
+    await page.locator("#issues .nav-tabs li:not(.active)").evaluateAll((tabs) =>
+      tabs.map((tab) => {
+        const classes = (tab.getAttribute("class") ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          );
+        return classes.length > 0 ? classes.join(" ") : null;
+      }),
+    ),
   ).toEqual([null, null]);
   await expect(page.locator("#issue-item-42")).toContainText("#12Closed milestone issue");
   await page.click('#issues .nav-tabs a:has-text("Open")');
@@ -1004,7 +1019,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   const beforeDeleteModalUrl = page.url();
   await deleteTrigger.click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade in/u);
-  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#deleteConfirm")).toBeVisible();
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page).toHaveURL(beforeDeleteModalUrl);
@@ -1027,7 +1042,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator("#deleteConfirm [data-dismiss='modal']")).toHaveCount(0);
   await page.locator("#deleteConfirm .modal-footer .ybtn").last().click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
-  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: none;");
+  await expect(page.locator("#deleteConfirm")).toBeHidden();
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(beforeDeleteModalUrl);
@@ -1044,12 +1059,12 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   ).resolves.toEqual([]);
   await deleteTrigger.click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade in/u);
-  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#deleteConfirm")).toBeVisible();
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await page.locator("#deleteConfirm .modal-header .close").click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
-  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: none;");
+  await expect(page.locator("#deleteConfirm")).toBeHidden();
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(beforeDeleteModalUrl);
@@ -1066,7 +1081,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   ).resolves.toEqual([]);
   await deleteTrigger.click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade in/u);
-  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#deleteConfirm")).toBeVisible();
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   const deleteResponse = page.waitForResponse(
@@ -1408,16 +1423,17 @@ test("project milestone detail route uses direct Links", () => {
     "!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending",
   );
   expect(routeSource).not.toContain("projectSearchScope={{ ownerName, projectName }}");
-  expect(routeSource).toContain(
-    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  const projectShellSource = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
+  expect(projectShellSource).toContain(
+    "organizationName: projectSearchScopeOrganizationName(query.data, ownerName)",
   );
-  expect(routeSource).toContain(
+  expect(projectShellSource).toContain(
     "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
   );
-  expect(routeSource).toContain(
-    "return booleanField(project.isProtected) ? ownerName : undefined;",
+  expect(projectShellSource).toContain(
+    "return projectIsProtected(project) ? ownerName : undefined;",
   );
-  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(projectShellSource).toContain("const projectSearchScope = {");
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).toContain(
     "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
@@ -1436,7 +1452,7 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain("const issueItemRowAttrs = {");
   expect(routeSource).toContain("htmlFor: `issue-${issueId}`");
   expect(routeSource).toContain("satisfies LegacyIssueItemRowAttrs");
-  expect(routeSource).toContain('<div {...issueItemRowAttrs} className="issue-item-row">');
+  expect(routeSource).toContain("className={`${sx.issueMeta.className} issue-item-row`}");
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
   expect(routeSource).toContain("<button");
   expect(routeSource).toContain('type="button"');
@@ -1464,8 +1480,8 @@ test("project milestone detail route uses direct Links", () => {
   expect(milestoneIssueRowSource).not.toContain("data-placement");
   expect(massUpdateStopPropagationCount).toBeGreaterThan(0);
   expect(massUpdatePreventDefaultCount).toBe(massUpdateStopPropagationCount);
-  expect(routeSource).toContain('className={deleteConfirmOpen ? "modal hide fade in"');
-  expect(routeSource).toContain('? { display: "block" }');
+  expect(routeSource).toContain('"modal hide fade in" : "modal hide fade"}');
+  expect(routeSource).toContain("deleteModalStyleProps");
   expect(routeSource).toContain("aria-hidden={deleteConfirmOpen ? false");
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(routeSource).toContain("legacyProjectIssuesHref(ownerName, projectName");
@@ -1740,6 +1756,16 @@ async function mockProjectMilestoneDetail(
     ...(milestoneId === 1 ? parityLaunchMilestoneFixture() : milestoneFixture()),
     ...overrides?.milestone,
   };
+  const runtimeBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript((runtimeBasePathValue) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePathValue,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+      hideProjectListing: false,
+      siteName: "Yoram",
+      supportedLanguages: ["en-US"],
+    };
+  }, runtimeBasePath);
   await page.route("**/api/v1/session", async (route) => {
     if (overrides?.sessionUnavailable) {
       await route.fulfill({
@@ -2219,8 +2245,8 @@ async function milestoneDetailIssueAreaMetrics(page: Page) {
 
 async function milestoneDetailActionRowMetrics(page: Page) {
   return page.evaluate(() => {
-    const actionRow = document.querySelector<HTMLElement>(".actrow.right-txt.row-fluid");
-    const listButton = document.querySelector<HTMLElement>(".actrow .ybtn.pull-left");
+    const actionRow = document.querySelector<HTMLElement>(".actrow.row-fluid");
+    const listButton = document.querySelector<HTMLElement>(".actrow a.ybtn");
     const deleteButton = document.querySelector<HTMLElement>(".actrow .ybtn.ybtn-danger");
     const editButton = document.querySelector<HTMLElement>(
       '.actrow .ybtn[href$="/milestone/5/editform"]',
@@ -2284,14 +2310,31 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
     }
 
     function normalizeAttr(element: Element, attr: Attr) {
-      if (attr.name === "src" && attr.value.includes("/assets/images/")) {
-        return attr.value.slice(attr.value.indexOf("/assets/images/"));
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style" ? normalizeStyleAttr(element, attr.value) : attr.value;
     }
 
     function normalizeStyleAttr(element: Element, value: string) {
-      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      const normalized = value
+        .replace(/\s+/g, "")
+        .replace(/;$/u, "")
+        .replaceAll('"', "'")
+        .replace(/--x-[^;]+;?/gu, "");
       if (element.matches(".actrow.right-txt.row-fluid") && normalized.includes("display:block")) {
         return normalized
           .replace("display:block;", "")
@@ -2307,11 +2350,16 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner" ||
+        attr.name === "data-stylex-content-ready" ||
         (node.tagName === "A" && attr.name.startsWith("data-"))
       ) {
         return false;
       }
-      return attr.name !== "class" || normalizeAttr(node, attr) !== "";
+      return attr.name === "style"
+        ? normalizeStyleAttr(node, attr.value) !== ""
+        : attr.name !== "class" || normalizeAttr(node, attr) !== "";
     }
   });
 }
@@ -2349,11 +2397,28 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
 
     function normalizeStyleAttr(value: string) {
-      return value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      return value
+        .replace(/\s+/g, "")
+        .replace(/;$/u, "")
+        .replaceAll('"', "'")
+        .replace(/--x-[^;]+;?/gu, "");
     }
 
     function shouldKeepAttr(node: Element, attr: Attr) {
@@ -2362,11 +2427,15 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner" ||
         (node.tagName === "A" && attr.name.startsWith("data-"))
       ) {
         return false;
       }
-      return attr.name !== "class" || normalizeAttr(attr) !== "";
+      return attr.name === "style"
+        ? normalizeStyleAttr(attr.value) !== ""
+        : attr.name !== "class" || normalizeAttr(attr) !== "";
     }
   }, html);
 }

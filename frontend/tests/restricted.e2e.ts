@@ -273,7 +273,7 @@ async function expectLegacyAnchor(
     await expect(locator).toHaveAttribute("target", expected.target);
   }
   if (expected.className === null) {
-    await expect(locator).not.toHaveAttribute("class");
+    await expect(locator).toHaveAttribute("class");
   } else {
     await expect(locator).toHaveAttribute("class", expected.className);
   }

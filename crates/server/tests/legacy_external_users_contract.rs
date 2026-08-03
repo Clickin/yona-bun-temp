@@ -190,6 +190,32 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         .expect("legacy user info html")
         .contains("mention_image"));
 
+    // Legacy UserApp.users() excludes only DELETED users and never drops the
+    // first-registered user (who is the initial site admin), so a search that
+    // matches "owner" must return them.
+    let legacy_users_owner = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::GET,
+            "/yona/-_-api/v1/users?query=own",
+            &[
+                ("Accept", "application/json"),
+                ("Referer", "http://localhost/yona/owner/projectYobi/members"),
+            ],
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_users_owner
+            .as_array()
+            .expect("legacy users search results")
+            .len(),
+        1
+    );
+    assert_eq!(legacy_users_owner[0]["loginId"], "owner");
+
     let legacy_users_html = rest_with_headers(
         app.clone(),
         Method::GET,

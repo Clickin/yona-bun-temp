@@ -250,6 +250,27 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         )}
         type="text/css"
       />
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(
+          runtimeConfig.basePath,
+          "/assets/javascripts/lib/moment-with-langs.min.js",
+        )}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(runtimeConfig.basePath, "/assets/javascripts/lib/pikaday/pikaday.js")}
+      ></script>
+      <script
+        defer
+        type="text/javascript"
+        src={prefixBasePath(
+          runtimeConfig.basePath,
+          "/assets/javascripts/common/yobi.ui.Calendar.js",
+        )}
+      ></script>
       <ProjectIssuesBody
         assignableUsers={assignableUsersQuery.data?.items ?? []}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
@@ -3203,15 +3224,14 @@ function IssueSearchLabelSelect({
           <ul className="select2-choices">
             {selectedLabels.map((label) => (
               <li className="select2-search-choice" key={label.id}>
-                <div>
-                  <span
-                    className="label issue-label active static"
-                    data-label-id={String(label.id)}
-                    style={{ border: 0, borderStyle: "none", borderWidth: 0 }}
-                  >
-                    {label.name}
-                  </span>
-                </div>
+                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy select2 formatSelection renders a display-only href-less chip anchor; the delete action lives on the adjacent close span (role=button, Enter/Space handled). */}
+                <a
+                  className="label issue-label active static"
+                  data-label-id={String(label.id)}
+                  style={{ border: 0, borderStyle: "none", borderWidth: 0 }}
+                >
+                  {label.name}
+                </a>
                 <span
                   className="select2-search-choice-close"
                   aria-label={`${t("button.delete")} ${label.name}`}

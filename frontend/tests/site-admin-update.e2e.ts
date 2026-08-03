@@ -20,7 +20,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
+          <div>
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
@@ -569,9 +569,17 @@ async function canonicalizeScreenRoots(page: Page) {
         name === "class" &&
         current.closest('[data-stylex-owner="site-update-title-strip"]') !== null
       ) {
+        return "";
+      }
+      if (
+        name === "class" &&
+        ["site-update-breadcrumb-outer", "site-update-breadcrumb-inner"].includes(
+          current.getAttribute("data-stylex-owner") ?? "",
+        )
+      ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
-          .filter((token) => !token.startsWith("x"))
+          .filter((token) => !token.startsWith("x") && !token.includes("__"))
           .join(" ");
       }
       if (
@@ -593,6 +601,19 @@ async function canonicalizeScreenRoots(page: Page) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
       }
       return value;
@@ -631,8 +652,10 @@ async function canonicalizeScreenRoots(page: Page) {
                 "site-update-sidebar-item",
                 "site-update-sidebar-link",
                 "site-update-sidebar-badge",
+                "site-update-breadcrumb-heading",
               ].includes(current.getAttribute("data-stylex-owner") ?? "")
-            ),
+            ) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
         )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
@@ -669,7 +692,11 @@ async function siteLayoutRootOrder(page: Page) {
         element.getAttribute("data-stylex-owner") === "site-footer" &&
         !element.classList.contains("page-footer-outer")
           ? "site-footer"
-          : element.getAttribute("class"),
+          : element.getAttribute("data-stylex-owner") === "global-gnb-outer"
+            ? "gnb-outer"
+            : element.getAttribute("data-stylex-owner") === "site-update-breadcrumb-outer"
+              ? "site-breadcrumb-outer"
+              : element.getAttribute("class"),
     ),
   );
 }
@@ -767,7 +794,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )

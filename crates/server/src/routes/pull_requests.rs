@@ -3044,6 +3044,21 @@ pub(crate) async fn rest_read_pull_request_changes(
         (commits, files)
     };
     let mut threads = detail.threads.clone();
+    // Legacy commit-discussion threads (no pull request link) on the pull
+    // request's own commits are part of the changes surface review cards.
+    let commit_ids = detail
+        .commits
+        .iter()
+        .map(|commit| commit.commit_id.clone())
+        .collect::<Vec<_>>();
+    let commit_threads = repository
+        .list_project_commit_scoped_review_threads(authorization.project.id, &commit_ids)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(|thread| rest_review_thread_from_record(thread, &service.base_path));
+    threads.extend(commit_threads);
     for thread in &mut threads {
         thread.is_outdated = rest_review_thread_is_outdated(thread, &detail);
     }

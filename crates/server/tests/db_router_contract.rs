@@ -170,7 +170,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", csrf)
-                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\",\"state\":\"closed\"}"))
+                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":1,\"state\":\"closed\"}"))
                 .unwrap(),
         )
         .await
@@ -184,7 +184,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
                 .uri("/yona/api/v1/_pilot/ReadIssueDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    "{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\"}",
+                    "{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":1}",
                 ))
                 .unwrap(),
         )

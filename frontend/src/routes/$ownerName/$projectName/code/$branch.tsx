@@ -311,7 +311,7 @@ function ProjectCodeFolderBody({
             {isGit ? (
               <>
                 <div
-                  className={stylex.props(styles.downloadAction).className}
+                  className={`pull-right ${stylex.props(styles.downloadAction).className}`}
                   data-stylex-owner="project-code-branch-download-action"
                 >
                   <Link
@@ -335,7 +335,7 @@ function ProjectCodeFolderBody({
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
                   <div
-                    className={stylex.props(styles.newFileAction).className}
+                    className={`pull-right ${stylex.props(styles.newFileAction).className}`}
                     data-stylex-owner="project-code-branch-new-file-action"
                   >
                     <Link

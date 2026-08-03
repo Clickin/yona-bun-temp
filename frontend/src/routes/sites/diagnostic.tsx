@@ -234,6 +234,12 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
                 {...(hasNoDiagnosticErrors
                   ? stylex.props(styles.noErrorTitleArea)
                   : stylex.props(styles.errorTitleArea))}
+                className={`title_area ${
+                  (hasNoDiagnosticErrors
+                    ? stylex.props(styles.noErrorTitleArea)
+                    : stylex.props(styles.errorTitleArea)
+                  ).className
+                }`}
                 data-stylex-owner={
                   hasNoDiagnosticErrors
                     ? "site-diagnostic-no-error-title"
@@ -244,6 +250,12 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
                   {...(hasNoDiagnosticErrors
                     ? stylex.props(styles.noErrorHeading)
                     : stylex.props(styles.errorHeading))}
+                  className={`pull-left ${
+                    (hasNoDiagnosticErrors
+                      ? stylex.props(styles.noErrorHeading)
+                      : stylex.props(styles.errorHeading)
+                    ).className
+                  }`}
                 >
                   <LegacyMessage messageKey="site.sidebar.diagnostics" />
                 </h2>
@@ -259,14 +271,17 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
-    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-diagnostic-sidebar">
+    <ul
+      {...stylex.props(styles.sidebar)}
+      className={`site-setting-nav ${stylex.props(styles.sidebar).className}`}
+      data-stylex-owner="site-diagnostic-sidebar"
+    >
       <li
         {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
         data-stylex-owner="site-diagnostic-sidebar-item"
       >
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/userList"
         >
@@ -276,7 +291,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/postList"
         >
@@ -286,7 +300,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/issueList"
         >
@@ -296,7 +309,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/projectList"
         >
@@ -306,7 +318,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/mail"
         >
@@ -316,7 +327,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/massmail"
         >
@@ -326,7 +336,6 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           to="/sites/update"
         >
@@ -343,11 +352,11 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       </li>
       <li
         {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
+        className={`active ${stylex.props(styles.sidebarItem, styles.sidebarActiveItem).className}`}
         data-stylex-owner="site-diagnostic-sidebar-item"
       >
         <Link
           {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
           data-stylex-owner="site-diagnostic-sidebar-link"
           search={legacyDiagnosticSidebarSearch}
           to="/sites/diagnostic"

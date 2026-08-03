@@ -791,15 +791,21 @@ pub(super) async fn rest_read_project_webhooks(
     let actor_id = service
         .session_manager
         .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id);
+        .and_then(|session| session.user_id)
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated session",
+            ))
+        })?;
     let PilotBackend::Repository(repository) = &service.backend else {
         return Err(RestRouteError::not_implemented(
             "project webhooks require repository backend",
         ));
     };
-    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    // Legacy ProjectApp.webhooks() is @IsAllowed(Operation.UPDATE).
+    let authorization =
+        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id))
+            .await?;
     let webhooks = repository
         .list_project_webhooks(authorization.project.id)
         .await

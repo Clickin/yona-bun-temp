@@ -9,7 +9,7 @@ export const milestoneDetailColors = stylex.defineVars({
   descriptionBorder: "#dddddd",
   descriptionSurface: "#f7f7f7",
   descriptionShadow: "inset 0 0 5px #ffffff",
-  progress: "#fd6956",
+  progress: "#5eb95e",
   searchBorder: "#cccccc",
   dueDateClosedText: "#999",
 });
@@ -48,7 +48,7 @@ export const styles = stylex.create({
   labelColor: (backgroundColor: string) => ({ backgroundColor }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   wrap: { color: milestoneDetailColors.bodyText },
-  progress: { backgroundColor: "#f5f5f5", borderRadius: "4px", height: "8px", overflow: "hidden" },
+  progress: { backgroundColor: "#b6da54", borderRadius: "4px", height: "8px", overflow: "hidden" },
   progressBar: (width: string) => ({
     backgroundColor: milestoneDetailColors.progress,
     height: "100%",

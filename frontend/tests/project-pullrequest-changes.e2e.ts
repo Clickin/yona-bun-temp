@@ -2276,7 +2276,9 @@ async function canonicalizeAll(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2289,6 +2291,19 @@ async function canonicalizeAll(page: Page, selector: string) {
 
     function normalizeAttr(attr: Attr) {
       const value = attr.value.replace(/;\s*$/u, "");
+      if (attr.name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
     }
 
@@ -2320,7 +2335,9 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2333,6 +2350,19 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
 
     function normalizeAttr(attr: Attr) {
       const value = attr.value.replace(/;\s*$/u, "");
+      if (attr.name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
     }
 

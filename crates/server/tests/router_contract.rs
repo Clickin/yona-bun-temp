@@ -309,7 +309,7 @@ async fn list_projects_works_over_connect_json() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json = String::from_utf8(body.to_vec()).unwrap();
     assert!(json.contains("\"ownerName\":\"pilot\""));
-    assert!(json.contains("\"projectName\":\"yona\""));
+    assert!(json.contains("\"projectName\":\"yoram\""));
     assert!(json.contains("\"projectScope\":\"public\""));
 }
 
@@ -357,7 +357,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
                 .uri("/yona/api/v1/_pilot/ReadIssueDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    "{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"0\"}",
+                    "{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":0}",
                 ))
                 .unwrap(),
         )
@@ -372,7 +372,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
                 .uri("/yona/api/v1/_pilot/ReadIssueDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    "{\"ownerName\":\"missing\",\"projectName\":\"yona\",\"issueNumber\":\"1\"}",
+                    "{\"ownerName\":\"missing\",\"projectName\":\"yona\",\"issueNumber\":1}",
                 ))
                 .unwrap(),
         )
@@ -397,7 +397,7 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
                 .method(Method::POST)
                 .uri("/yona/api/v1/_pilot/UpdateIssueState")
                 .header(http::header::CONTENT_TYPE, "application/json")
-                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\",\"state\":\"closed\"}"))
+                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":1,\"state\":\"closed\"}"))
                 .unwrap(),
         )
         .await
@@ -447,7 +447,7 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", "wrong-csrf")
-                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\",\"state\":\"closed\"}"))
+                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":1,\"state\":\"closed\"}"))
                 .unwrap(),
         )
         .await
@@ -462,7 +462,7 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", csrf)
-                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\",\"state\":\"closed\"}"))
+                .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":1,\"state\":\"closed\"}"))
                 .unwrap(),
         )
         .await
@@ -617,7 +617,7 @@ async fn runtime_config_registry_scopes_app_config_without_env_mutation() {
     assert_eq!(migration.status(), StatusCode::FORBIDDEN);
     let body = migration.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!(json["message"], "error.forbidden.or.not.allowed");
+    assert_eq!(json["error"]["message"], "error.forbidden.or.not.allowed");
 }
 
 #[tokio::test]

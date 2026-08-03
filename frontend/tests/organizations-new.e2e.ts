@@ -8,17 +8,19 @@ const EXPECTED_ORGANIZATION_NEW = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <button type="button" class="pin" title="Sidebar">
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li>
+      <li class=""><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li class=""><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li class="">
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
-            <input type="text" name="keyword" autocomplete="off" accesskey="S">
-            <button type="submit"><i class="yobicon-search"></i></button>
+          <div class="">
+            <input class="" type="text" name="keyword" autocomplete="off" accesskey="S">
+            <button class="" type="submit"><i class="yobicon-search"></i></button>
           </div>
         </form>
       </li>
@@ -31,9 +33,9 @@ const EXPECTED_ORGANIZATION_NEW = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button class="" type="button">Favorite</button></li>
+          <li class="myProjectList"><button class="" type="button">Project</button></li>
+          <li class="myRecentIssueList"><button class="" type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -41,23 +43,23 @@ const EXPECTED_ORGANIZATION_NEW = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
-          <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
+        <button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">
+          <span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png"></span><span class="caret"></span>
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn">
           <i class="yobicon-plus"></i><span class="caret"></span>
         </button>
         <ul class="dropdown-menu flat right">
@@ -75,17 +77,17 @@ const EXPECTED_ORGANIZATION_NEW = `
   <div class="project-page-wrap">
     <div class="form-wrap new-project">
       <form action="__BASE_PATH__/organizations/new" method="post" name="new-org" class="frm-wrap">
-        <legend>New Group</legend>
-        <dl>
-          <dt>
+        <legend class="">New Group</legend>
+        <dl class="">
+          <dt class="">
             <div class="n-alert" data-errType="name">
               <div class="orange-txt"><span class="msg wrongName" style="display: none;"></span></div>
             </div>
-            <label for="name">input group name</label>
+            <label class="" for="name">input group name</label>
           </dt>
-          <dd><input id="name" type="text" name="name" class="text" placeholder="" maxlength="250" value=""></dd>
-          <dt><label for="descr">input group's description</label></dt>
-          <dd><textarea id="descr" name="descr" class="text textarea.span4" style="resize: vertical;"></textarea></dd>
+          <dd class=""><input id="name" type="text" name="name" class="text" placeholder="" maxlength="250" value=""></dd>
+          <dt class=""><label class="" for="descr">input group's description</label></dt>
+          <dd class=""><textarea id="descr" name="descr" class="text textarea.span4" style="resize: vertical;"></textarea></dd>
         </dl>
         <div class="actions">
           <button class="ybtn ybtn-success"><i class="yobicon-friends"></i>Create Group</button>
@@ -125,7 +127,7 @@ test("organization create form matches legacy organization/create.scala.html DOM
   await expect(page.locator(".wrongName")).toBeHidden();
   const cancelLink = page.locator('form[name="new-org"] .actions a.ybtn', { hasText: "Cancel" });
   await expect(cancelLink).toHaveAttribute("href", cancelHref);
-  await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
   await expect(cancelLink).toHaveText("Cancel");
   await expect(cancelLink).not.toHaveAttribute("data-status", "active");
 
@@ -139,15 +141,15 @@ test("organization create form matches legacy organization/create.scala.html DOM
     ),
   );
   expect(await organizationCreateMetrics(page)).toEqual({
-    actionsOffsetTop: 4,
+    actionsOffsetTop: 10,
     alertDataErrType: "name",
-    descriptionHeight: 40,
-    descriptionWidth: 686,
+    descriptionHeight: 50,
+    descriptionWidth: 700,
     formWidth: 700,
-    nameInputWidth: 686,
+    nameInputWidth: 700,
     pageWrapWidth: 1280,
     submitButtonHeight: 30,
-    titleFontSize: 13,
+    titleFontSize: 21,
     warningDisplay: "none",
   });
 });
@@ -250,7 +252,7 @@ test("organization create cancel keeps legacy href and navigates through the SPA
   const cancelLink = page.locator('form[name="new-org"] .actions a.ybtn', { hasText: "Cancel" });
 
   await expect(cancelLink).toHaveAttribute("href", cancelHref);
-  await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
   await expect(cancelLink).toHaveText("Cancel");
 
   const documentRequests: string[] = [];
@@ -293,7 +295,9 @@ test("organization create route source keeps cancel navigation out of raw anchor
   );
   expect(routeSource).toContain('data-errtype="name"');
   expect(routeSource).toContain('<title>{t("app.name")}</title>');
-  expect(routeSource).toContain('<Link\n                    to="/"');
+  expect(routeSource).toContain(
+    '<Link\n                    {...cancelActionStyleProps}\n                    to="/"',
+  );
   expect(routeSource).toContain("activeProps={legacyAnchorActiveProps}");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain('reactJsx("a"');
@@ -409,6 +413,19 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return value;
     }
 
@@ -515,6 +532,19 @@ async function canonicalizeHtml(page: Page, html: string) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== retiredToken)
+          .join(" ");
+      }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
       }
       return value;

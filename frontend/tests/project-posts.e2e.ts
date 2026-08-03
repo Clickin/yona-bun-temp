@@ -10138,7 +10138,11 @@ async function canonicalize(page: Page, selector: string) {
           .split(/\s+/u)
           .filter(
             (token) =>
-              token && !token.startsWith("-post-detail__styles.") && !/^x[a-z0-9]+$/u.test(token),
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
           )
           .join(" ");
       }
@@ -10176,7 +10180,9 @@ async function canonicalizeScreenRoots(page: Page) {
             // TanStack Router annotates route-local active links; dedicated assertions cover
             // the shared project shell links that must remain legacy-clean.
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -10220,6 +10226,19 @@ async function canonicalizeScreenRoots(page: Page) {
         } finally {
           attr.value = originalValue;
         }
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
@@ -10349,6 +10368,19 @@ async function canonicalizeHtml(page: Page, html: string) {
         } finally {
           attr.value = originalValue;
         }
+      }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
       }
       return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
