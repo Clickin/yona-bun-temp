@@ -56,6 +56,24 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
   expect(await canonicalizeAuthPublicRoots(page)).toEqual(resetPasswordRoots);
 });
 
+test("invalid credentials render the translated login error, not the raw message key", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/users/loginform`);
+  await page.fill("#loginIdOrEmailD", "no-such-user");
+  await page.fill("#password", "wrong-password");
+  await page.click(`.login-form-wrap form[action='${basePath}/users/login'] button[type='submit']`);
+  // The server returns the legacy message KEY (user.login.invalid); the form
+  // must translate it via the i18n dictionary, never display the key itself.
+  // The managed e2e context defaults to en-US, so the en dictionary value is
+  // the deterministic expectation (ko-KR renders the Korean copy instead).
+  await expect(page.locator(".error-message")).toHaveText(
+    "Your log in ID, E-mail or password is not valid.",
+  );
+});
+
 test("legacy GET /users/login renders the index screen at the original URL", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 

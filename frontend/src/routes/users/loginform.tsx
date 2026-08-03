@@ -105,7 +105,10 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       });
     },
     onError(error) {
-      setSubmitError(error instanceof Error ? error.message : t("user.login.failed"));
+      // Server REST errors carry legacy message KEYS (e.g. user.login.invalid);
+      // translate them like the legacy Messages() helper did (unknown keys pass
+      // through unchanged).
+      setSubmitError(error instanceof Error ? t(error.message) : t("user.login.failed"));
     },
     async onSuccess(session) {
       const defaultLandingPath =

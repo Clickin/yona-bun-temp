@@ -202,11 +202,12 @@ Evidence:
   translate and concrete server strings pass through.
 
 Fix:
-1. `loginform.tsx` → `setSubmitError(error instanceof Error ? t(error.message) : t("user.login.failed"))`.
-2. Audit all ~28 `error.message` display sites (grep
-   `error.message` under `frontend/src`), apply `t(error.message)` to every
-   user-visible error message (mutation `onError` handlers, `window.alert`
-   failures). Keep raw only where the message is a debug/developer surface.
+1. **DONE (2026-08-03)**: `loginform.tsx` → `setSubmitError(error instanceof Error ? t(error.message) : t("user.login.failed"))`; verified in-browser on the release build — wrong-password login now shows the translated copy (en: "Your log in ID, E-mail or password is not valid."), not the raw key.
+2. Audit all remaining `error.message` display sites (grep
+   `error.message` under `frontend/src` — ~27 sites besides the login form), apply
+   `t(error.message)` to every user-visible error message (mutation `onError`
+   handlers, `window.alert` failures). Keep raw only where the message is a
+   debug/developer surface.
 3. e2e/contract pin: extend `auth-aliases.e2e.ts` (or the login e2e) to assert
    the invalid-login error shows the TRANSLATED copy (ko-KR), not the key;
    `auth_workspace_contract` already pins the key in the API response.
