@@ -52,15 +52,16 @@ Status: draft — handoff plan for a fresh agent context.
 >    identity), NOT screenshot diffing. Screenshots may remain only as
 >    non-gating artifacts. Reuse the repo's existing metric-parity e2e pattern
 >    (`playwright-css-parity` skill, `stylex-*` e2e specs).
-> 5. **Fix the i18n defects** (Workstream 6 below) — (a) server error message
->    KEYS must be translated at the display site (`t(error.message)`, matching
->    the existing `organizations/new.tsx` pattern) in every form, starting with
->    the login form's `user.login.invalid`; (b) the frontend i18n must OWN its
->    message dictionaries (committed message files under the frontend), with
->    `yona-original/conf/messages*` used only as the one-time import source —
->    remove the build-time `?raw` imports in `frontend/src/i18n.tsx` and the
->    server's `include_str!` of `yona-original/conf/messages*` in
->    `crates/server/src/routes/messages.rs`.
+> 5. **Fix the i18n defects** (Workstream 6 below):
+>    (a) the login form's `user.login.invalid` raw-key display is ALREADY FIXED
+>    (commit `e326e7ce3` — `t(error.message)` + e2e pin). Audit the REMAINING
+>    `error.message` display sites (~27) and apply `t(error.message)` to every
+>    user-visible error message, matching the `organizations/new.tsx` pattern;
+>    (b) the frontend i18n must OWN its message dictionaries (committed message
+>    files under the frontend), with `yona-original/conf/messages*` used only as
+>    the one-time import source — remove the build-time `?raw` imports in
+>    `frontend/src/i18n.tsx` and the server's `include_str!` of
+>    `yona-original/conf/messages*` in `crates/server/src/routes/messages.rs`.
 > 6. **Explicit rebranding is a separate, later phase** — after the parity lock
 >    is green, write a dedicated plan for the Yoram footer/GNB identity. Do not
 >    mix it into this pass.
