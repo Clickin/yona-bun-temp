@@ -62,7 +62,23 @@ Status: draft — handoff plan for a fresh agent context.
 >    the one-time import source — remove the build-time `?raw` imports in
 >    `frontend/src/i18n.tsx` and the server's `include_str!` of
 >    `yona-original/conf/messages*` in `crates/server/src/routes/messages.rs`.
-> 6. **Explicit rebranding is a separate, later phase** — after the parity lock
+> 6. **SQLite production profile + write-path optimizations** (Workstream 7
+>    below) — (a) replace the full-row `MAX()` number allocation in
+>    `next_issue_number`/`next_posting_number`/`next_pull_request_number`
+>    (`issue_relation_helpers.rs:509-555`) with a DB aggregate or atomic
+>    `UPDATE project SET last_*_number = ... RETURNING`, and add the missing
+>    `UNIQUE (to_project_id, number)` index on `pull_request`; (b) configure the
+>    SQLite connection (`Database::connect` → `ConnectOptions` +
+>    `map_sqlx_sqlite_opts`): WAL, `synchronous=FULL` (durable default) /
+>    NORMAL (balanced), `busy_timeout=5000`, `foreign_keys=ON`,
+>    `journal_size_limit=64MiB`, `cache_size=-8192`, pool min=1/max=4,
+>    connect/acquire timeout 5s; (c) add a repository-wide
+>    `SqliteWriteCoordinator` (tokio Mutex) serializing write transactions
+>    (never held across Git/SMTP/webhook/external calls); (d) document the
+>    operational profile, metrics, and `VACUUM INTO`/online-backup policy;
+>    (e) gate: 30+ min WAL/FULL soak test before declaring SQLite the
+>    production default (ordering: SQLite → PostgreSQL → MariaDB/MySQL).
+> 7. **Explicit rebranding is a separate, later phase** — after the parity lock
 >    is green, write a dedicated plan for the Yoram footer/GNB identity. Do not
 >    mix it into this pass.
 >
@@ -243,7 +259,89 @@ Fix:
 4. Record in provenance: message-key ownership moved to the frontend crate;
    yona-original/conf/messages becomes import-source-only (frozen, unmodified).
 
-## 8. Workstream 5 — explicit rebranding (deferred, separate phase)
+## 8. Workstream 7 — SQLite production profile + write-path optimizations
+
+Context: Yoram's default deployment DB should be SQLite (single node, ~100
+users, simple install); PostgreSQL for multi-instance/HA; MariaDB/MySQL for
+legacy-Yona migration compatibility. The repo already defaults to SQLite with
+PostgreSQL/MySQL as opt-in features, and the 62-table schema matrix is verified.
+Before SQLite can be declared the production default, three prerequisites must
+land (7.1, 7.2, 7.3 below) plus a 30+ minute WAL/FULL soak test.
+
+### 7.1 Remove full-row materialization in number allocation (verified)
+
+Current code materializes every row of the project's issue/posting/PR tables in
+Rust and takes `max()` in application code — inside the write transaction,
+holding the SQLite writer:
+- `crates/persistence/src/repo/issue_relation_helpers.rs:509-524`
+  `next_issue_number` → `.all()` + Rust `.max()`
+- `:527-542` `next_posting_number` → same
+- `:545-555` `next_pull_request_number` → same (and does NOT consult a project
+  counter at all — `project.last_pull_request_number` does not exist)
+
+Fix (per verified schema):
+1. Replace with a DB aggregate, e.g.
+   `SELECT COALESCE(MAX(number),0)+1 FROM issue WHERE project_id = ?` — or
+   better, atomic counter increments on the project row:
+   `UPDATE project SET last_issue_number = COALESCE(last_issue_number,0)+1
+   WHERE id = ? RETURNING last_issue_number` (SQLite/PG; MySQL/MariaDB needs a
+   separate implementation). `issue(project_id,number)` and
+   `posting(project_id,number)` unique indexes already exist as the final
+   guard (`uq_issue_1`, `uq_posting_1`).
+2. Add the missing `UNIQUE (to_project_id, number)` index on `pull_request`
+   (verified: no unique key exists; `issue`/`posting` have theirs).
+3. Keep the `project.last_issue_number`/`last_posting_number` reconciliation
+   semantics (see `site_import_rollback.rs`) working with the atomic update.
+
+### 7.2 SQLite connection profile (verified: no pragmas/pool configured)
+
+`crates/server/src/main.rs:34` calls `sea_orm::Database::connect(&startup.database_url)`
+— no `ConnectOptions`, no pool sizing, no PRAGMAs. Add a SQLite profile via
+SeaORM 1.1 `ConnectOptions` + `map_sqlx_sqlite_opts`:
+
+- `journal_mode=WAL` (required), `synchronous=FULL` (default, `durable`
+  profile) / `NORMAL` (`balanced` profile, operator accepts recent-commit loss
+  on power failure) — never OFF.
+- `busy_timeout=5000`, `foreign_keys=ON`, `wal_autocheckpoint=1000` (keep),
+  `journal_size_limit=67108864` (64 MiB), `cache_size=-8192` (~8 MiB/conn),
+  `mmap_size` 0 default (benchmark before 128 MiB), `temp_store` DEFAULT,
+  `auto_vacuum` NONE.
+- Pool: min=1, max=4, connect_timeout=5s, acquire_timeout=5s; grow to 8 only
+  if read-load tests show pool acquire waits.
+- Long-lived connections: `PRAGMA optimize=0x10002` at startup, `PRAGMA
+  optimize` once daily.
+
+### 7.3 Serialize SQLite writes (single writer)
+
+SQLite's deferred transactions that read then upgrade to write can hit
+`SQLITE_BUSY`/`SQLITE_BUSY_SNAPSHOT`; busy_timeout cannot retry a dead snapshot.
+Single-process Yoram: add a repository-wide `SqliteWriteCoordinator`
+(`tokio::sync::Mutex<()>`) around every write transaction:
+acquire mutex → BEGIN → DB work only → COMMIT → release → then Git/SMTP/
+webhook/file work. Never hold the mutex across Git clone/fetch/push, SMTP
+sends, webhook HTTP calls, large file copies, or external auth calls.
+Multi-process on the same SQLite file is out of scope (BEGIN IMMEDIATE or
+PostgreSQL instead).
+
+### 7.4 Operational profile, metrics, backup
+
+- Support matrix: ≤100 registered users / 10-30 active, human-created issues,
+  sustained ≤5 write tx/s (bursts 10-20/s ok) → SQLite; continuous dozens/s
+  automated writes → load-test first; multi-replica/HA/NFS → PostgreSQL; NFS/
+  SMB/distributed FS for the DB file → unsupported (WAL index must be shared
+  on one host).
+- Metrics: `sqlite_write_transaction_duration`, `sqlite_busy_total`,
+  `sqlite_busy_snapshot_total`, `sqlite_write_queue_wait`, `sqlite_wal_bytes`,
+  `sqlite_checkpoint_busy`, `db_pool_acquire_duration`; watch write tx p99
+  (alert >100-200ms).
+- Backup: never copy the live `.sqlite` file; use `VACUUM INTO` or the online
+  backup API. Daily backup + `PRAGMA optimize`; weekly `PRAGMA quick_check`;
+  monthly restore test; replicate to separate storage.
+- Final gate: 30+ minute load/soak test on a real Yoram scenario with
+  WAL/FULL before declaring SQLite the production default; document the
+  SQLite → PostgreSQL → MariaDB ordering in the root canonical docs.
+
+## 9. Workstream 5 — explicit rebranding (deferred, separate phase)
 
 After the parity lock is green: a dedicated plan replaces the legacy
 footer/GNB identity (Yoram product identity per the approved rebrand —
