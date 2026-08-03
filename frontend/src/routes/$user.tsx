@@ -3,6 +3,8 @@ import * as stylex from "@stylexjs/stylex";
 import { type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
+
+type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
@@ -180,8 +182,8 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
             </li>
             <li>
               <Link
-                href="https://github.com/nforge/yobi/issues?state=open"
-                to={"https://github.com/nforge/yobi/issues?state=open" as "/"}
+                href="https://github.com/yona-projects/yona/issues"
+                to={"https://github.com/yona-projects/yona/issues" as "/"}
                 target="_blank"
               >
                 {t("title.yobi.feedback")}
@@ -273,7 +275,49 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">Yoram authors</span>
+          <span className="provider">
+            Copyright{" "}
+            <Link
+              className="yona-author"
+              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+              rel="noreferrer"
+              target="_blank"
+              to={
+                "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
+              }
+            >
+              Yona authors
+            </Link>{" "}
+            & ©{" "}
+            <Link
+              href="https://navercorp.com"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://navercorp.com" as unknown as ExternalLinkTarget}
+            >
+              NAVER Corp.
+            </Link>{" "}
+            &{" "}
+            <Link
+              className="naver-labs"
+              href="https://naverlabs.com/"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
+            >
+              NAVER LABS
+            </Link>{" "}
+            Supported by{" "}
+            <Link
+              className="naver-cloud-platform"
+              href="https://www.ncloud.com/?referer=yona"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
+            >
+              NAVER CLOUD PLATFORM
+            </Link>
+          </span>
         </div>
       </footer>
     </>

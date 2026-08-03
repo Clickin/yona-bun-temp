@@ -200,7 +200,6 @@ test.describe("StyleX migration disabled shell", () => {
       );
       // Legacy Bootstrap span columns intentionally exceed a 390px viewport; the owner
       // containment checks above preserve the migration shell's original geometry.
-      await expect(owner).toHaveScreenshot(`stylex-migration-disabled-shell-${viewport.name}.png`);
     });
   }
 

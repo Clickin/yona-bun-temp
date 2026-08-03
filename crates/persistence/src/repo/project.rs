@@ -105,7 +105,7 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         };
         let next_vcs = next_project_vcs(row.vcs.as_deref().unwrap_or("GIT"));
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         for posting in posting::Entity::find()
             .filter(posting::Column::ProjectId.eq(Some(project_id)))
             .filter(posting::Column::Readme.eq(Some(1)))
@@ -119,7 +119,8 @@ impl AppRepositoryImpl<'_> {
         let mut active = project::ActiveModel::from(row);
         active.vcs = Set(Some(next_vcs));
         let updated = active.update(&txn).await?;
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
 
         self.project_record_from_model(updated).await
     }

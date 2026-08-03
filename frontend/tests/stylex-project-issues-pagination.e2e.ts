@@ -265,13 +265,16 @@ test("project issues pagination preserves SPA links and clamps input navigation"
   await expect.poll(() => page.locator(owners.input).inputValue()).toBe("1");
 });
 
-test("project issues pagination exposes the approved Yoram footer identity when rendered", async ({
+test("project issues pagination exposes the legacy footer identity when rendered", async ({
   page,
 }) => {
   await openPagination(page, { height: 900, width: 1366 });
   const footer = page.locator('[data-stylex-owner="site-footer"]');
   if ((await footer.count()) > 0) {
-    await expect(footer).toContainText("Yoram");
-    await expect(footer).not.toContainText("NAVER LABS");
+    await expect(footer).toContainText("Yona authors");
+    await expect(footer).toContainText("NAVER Corp.");
+    await expect(footer).toContainText("NAVER LABS");
+    await expect(footer).toContainText("NAVER CLOUD PLATFORM");
+    await expect(footer).not.toContainText("Yoram");
   }
 });

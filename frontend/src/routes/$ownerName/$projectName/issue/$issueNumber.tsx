@@ -23,6 +23,7 @@ import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
 import { resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
+import type { ProjectIssuesSearch } from "../issues";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../../api/types";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
@@ -2449,33 +2450,26 @@ function IssueSelectedLabels({
       <dt>{t("issue.label")}</dt>
       <dd>
         {labels.map((label) => (
-          <IssueLabel
-            as={Link}
+          <Link
             {...LEGACY_LINK_PROPS}
-            {...stylex.props(styles.labelGeometry)}
             to={listPath}
             params={{ ownerName, projectName }}
-            search={{
-              state: issueState === "closed" ? "closed" : "open",
-              assigneeId: "",
-              authorId: "",
-              commenterId: "",
-              dueDate: "",
-              filter: "",
-              labelIds: [String(label.id)],
-              milestoneId: "",
-              orderBy: "updatedDate",
-              orderDir: "desc",
-              pageNum: 1,
-            }}
-            className="label static"
-            color={stringField(label.color)}
-            labelId={String(label.id)}
+            search={
+              {
+                state: issueState === "closed" ? "closed" : "open",
+                // ponytail: partial search; missing fields get route defaults. Single label
+                // id serializes raw as `labelIds=8` (arrays would JSON-encode).
+                labelIds: String(label.id),
+              } as unknown as ProjectIssuesSearch
+            }
+            className="label issue-label active static"
+            style={{ background: stringField(label.color) }}
+            data-label-id={String(label.id)}
             data-stylex-owner="project-issue-detail-label-geometry"
             key={String(label.id)}
           >
             {label.name}
-          </IssueLabel>
+          </Link>
         ))}
       </dd>
     </dl>

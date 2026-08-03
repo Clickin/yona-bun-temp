@@ -326,8 +326,6 @@ test("project search pagination preserves project-scoped SPA navigation and inpu
     `${basePath}/admin/sample/search?keyword=sample&pageNum=2&searchType=issue`,
   );
   const footer = page.locator('[data-stylex-owner="site-footer-provider"]');
-  await expect(footer).toHaveText("Yoram authors");
-  await expect(footer).not.toContainText(
-    /NAVER|Yona authors|developer|github\.com\/yona-projects/u,
-  );
+  await expect(footer).toContainText("Yona authors");
+  await expect(footer).not.toContainText("Yoram");
 });

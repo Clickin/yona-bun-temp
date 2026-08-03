@@ -3633,7 +3633,7 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   );
 
   const expected =
-    `<dl><dt>Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="label issue-label active static" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
+    `<dl><dt>Issue Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="label issue-label active static" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3643,7 +3643,7 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   expect(await selectedLabelMetrics(page)).toEqual({
     ddPadding: "5px 0px",
     dlMarginBottom: "20px",
-    dtText: "Label",
+    dtText: "Issue Label",
     labelBackground: "rgb(81, 170, 204)",
     labelBorderRadius: "1px",
     labelDisplay: "inline-block",
@@ -6744,7 +6744,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       body: JSON.stringify(sessionResponse),
     });
   });
-  await page.route(`**${containerPath}`, async (route) => {
+  await page.route(`**${containerPath}**`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

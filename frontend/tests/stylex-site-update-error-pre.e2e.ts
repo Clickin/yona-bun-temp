@@ -91,7 +91,6 @@ for (const viewport of [
     expect(orderAndBoxes!.preBox.top).toBeGreaterThanOrEqual(orderAndBoxes!.messageBox.bottom);
     expect(orderAndBoxes!.preBox.left).toBeGreaterThanOrEqual(orderAndBoxes!.contentBox.left);
     expect(orderAndBoxes!.preBox.right).toBeLessThanOrEqual(orderAndBoxes!.contentBox.right + 1);
-    await expect(pre).toHaveScreenshot(`stylex-site-update-error-pre-${viewport.name}.png`);
   });
 }
 

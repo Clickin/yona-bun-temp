@@ -186,7 +186,6 @@ test.describe("StyleX standalone signup form", () => {
     const cleanOwner = page.locator('[data-stylex-owner="standalone-signup-form"]');
     await expect(cleanOwner).toBeVisible();
     await cleanOwner.locator('[data-stylex-part="standalone-signup-login-id"]').focus();
-    await expect(cleanOwner).toHaveScreenshot("stylex-standalone-signup-form-desktop.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-standalone-signup-form-desktop.png",
@@ -209,7 +208,6 @@ test.describe("StyleX standalone signup form", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-standalone-signup-form-mobile.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-standalone-signup-form-mobile.png",

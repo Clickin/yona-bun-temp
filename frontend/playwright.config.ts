@@ -13,12 +13,21 @@ const traceMode =
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: /.*\.e2e\.ts/,
+  testMatch: /\.*\.e2e\.ts/,
+  // Test-level ceiling: no spec hangs past this (specs may raise via test.setTimeout).
   timeout: 30_000,
+  expect: {
+    // Assertions/polls fail within this window instead of hanging.
+    timeout: 10_000,
+  },
   use: {
     baseURL: frontendOrigin,
     channel: browserChannel,
     trace: traceMode,
+    // Per-action and per-navigation ceilings: Playwright defaults these to 0 (unbounded),
+    // which lets a stalled click/waitForLoadState hang the whole worker.
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
   },
   webServer: wrapperManagesServers
     ? []

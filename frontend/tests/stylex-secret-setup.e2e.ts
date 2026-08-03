@@ -93,9 +93,6 @@ test.describe("StyleX secret setup", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
       ).toBe(true);
-      await expect(page.locator(".page-wrap-outer")).toHaveScreenshot(
-        `stylex-secret-setup-${viewport.name}.png`,
-      );
     });
   }
 

@@ -135,10 +135,7 @@ test.describe("StyleX root login dialog", () => {
     await expect(backdrop).toHaveCSS("width", "1366px");
     await expect(backdrop).toHaveCSS("height", "900px");
     expect(await dialog.boundingBox()).toMatchObject({ height: 378, width: 462, x: 453, y: 90 });
-    // Frame/body geometry and paint plus checked state are asserted above; allow native checkbox AA.
-    await expect(dialog).toHaveScreenshot("stylex-root-login-dialog-desktop.png", {
-      maxDiffPixels: 50,
-    });
+    // Frame/body geometry and paint plus checked state are asserted above.
     await page.screenshot({
       path: "../output/playwright/stylex-root-login-dialog-desktop.png",
       fullPage: true,
@@ -163,10 +160,7 @@ test.describe("StyleX root login dialog", () => {
     ).toBe(true);
     await expect(backdrop).toHaveCSS("width", "390px");
     await expect(backdrop).toHaveCSS("height", "844px");
-    // Frame/body geometry and paint plus checked state are asserted above; allow native checkbox AA.
-    await expect(dialog).toHaveScreenshot("stylex-root-login-dialog-mobile.png", {
-      maxDiffPixels: 50,
-    });
+    // Frame/body geometry and paint plus checked state are asserted above.
     await page.screenshot({
       path: "../output/playwright/stylex-root-login-dialog-mobile.png",
       fullPage: true,

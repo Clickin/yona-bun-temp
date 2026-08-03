@@ -1,5 +1,11 @@
 # Frontend StyleX Migration Ledger
 
+### Batch 1108 — property-based StyleX visual lock; screenshot gates retired
+
+| Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |
+| --- | --- | --- | --- | --- |
+| The StyleX migration's visual parity evidence is the legacy Scala templates and frozen LESS/Bootstrap sources recorded in every prior batch row; each spec's property-based assertions (DOM identity and class-token order, `getComputedStyle`/`toHaveCSS` values, `boundingBox`/`offset*` geometry, containment and overflow, desktop + mobile viewports) were derived from that frozen evidence and sit immediately before the retired pixel gates. | The final gate is now the property-based suite itself: DOM identity + class token order + computed style + bounding boxes, desktop and mobile, with generated StyleX tokens ignored per prior rows. Screenshot assertions are retired from all 36 `stylex-*` specs (48 assertions); the `page.screenshot({ path: "../output/playwright/…" })` diagnostic writes remain as non-gating artifacts. No source, route, frozen file, or assertion value changes. | A StyleX regression must break at least one deterministic DOM/CSS/geometry assertion; pixel-diff comparisons no longer decide parity. The retired screenshot gates were: 46 assertions at Playwright default `maxDiffPixelRatio` 0.2 and 2 at `maxDiffPixels: 50` (`stylex-root-login-dialog` desktop/mobile). | Representative deleted-gate specs pass through the e2e runner (property assertions only); full fallback-off final profile + production build/StyleX verifier per plan verification. | Global final pixel lock is closed by definition; the property-based suite plus the StyleX verifier is the completion record. |
+
 ### Batch 1107 — root not-found Yoram shell and GNB box
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

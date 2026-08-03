@@ -332,10 +332,16 @@ function SiteMailScreen({
       <div {...stylex.props(styles.page)} data-stylex-owner="site-mail-page">
         <div {...stylex.props(styles.content)} data-stylex-owner="site-mail-content">
           <div {...stylex.props(styles.grid)} data-stylex-owner="site-mail-setting-grid">
-            <div {...stylex.props(styles.sidebarColumn)} data-stylex-owner="site-mail-sidebar-column">
+            <div
+              {...stylex.props(styles.sidebarColumn)}
+              data-stylex-owner="site-mail-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div {...stylex.props(styles.contentColumn)} data-stylex-owner="site-mail-setting-content-column">
+            <div
+              {...stylex.props(styles.contentColumn)}
+              data-stylex-owner="site-mail-setting-content-column"
+            >
               <MailBody
                 errorMessageBySearch={errorMessageBySearch}
                 response={query.data}
@@ -522,7 +528,7 @@ function MailBody({
           <p>
             {errorMessageBySearch
               ? renderLegacyHtmlMessage(t(errorMessageBySearch))
-              : mutationErrorMessage}
+              : t(mutationErrorMessage)}
           </p>
         </div>
       ) : null}
@@ -569,7 +575,11 @@ function MailBody({
           }}
         >
           <div {...controlGroupStyleProps} data-stylex-owner="site-mail-form-group">
-            <label {...{ name: "from" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
+            <label
+              {...{ name: "from" }}
+              {...controlLabelStyleProps}
+              data-stylex-owner="site-mail-form-label"
+            >
               {t("site.mail.from")}
             </label>
             <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
@@ -586,7 +596,11 @@ function MailBody({
           </div>
 
           <div {...controlGroupStyleProps} data-stylex-owner="site-mail-form-group">
-            <label {...{ name: "to" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
+            <label
+              {...{ name: "to" }}
+              {...controlLabelStyleProps}
+              data-stylex-owner="site-mail-form-label"
+            >
               {t("site.mail.to")}
             </label>
             <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
@@ -601,17 +615,38 @@ function MailBody({
             </div>
           </div>
 
-          <div {...wideControlGroupStyleProps} data-stylex-owner="site-mail-form-group" data-variant="wide">
-            <label {...{ name: "subject" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
+          <div
+            {...wideControlGroupStyleProps}
+            data-stylex-owner="site-mail-form-group"
+            data-variant="wide"
+          >
+            <label
+              {...{ name: "subject" }}
+              {...controlLabelStyleProps}
+              data-stylex-owner="site-mail-form-label"
+            >
               {t("site.mail.subject")}
             </label>
             <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
-              <input {...wideFieldStyleProps} data-stylex-owner="site-mail-form-field" type="text" name="subject" />
+              <input
+                {...wideFieldStyleProps}
+                data-stylex-owner="site-mail-form-field"
+                type="text"
+                name="subject"
+              />
             </div>
           </div>
 
-          <div {...wideControlGroupStyleProps} data-stylex-owner="site-mail-form-group" data-variant="wide">
-            <label {...{ name: "body" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
+          <div
+            {...wideControlGroupStyleProps}
+            data-stylex-owner="site-mail-form-group"
+            data-variant="wide"
+          >
+            <label
+              {...{ name: "body" }}
+              {...controlLabelStyleProps}
+              data-stylex-owner="site-mail-form-label"
+            >
               {t("site.mail.body")}
             </label>
             <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">

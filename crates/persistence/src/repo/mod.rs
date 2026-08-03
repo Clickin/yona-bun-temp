@@ -104,6 +104,11 @@ pub struct AppRepositoryImpl<'db> {
     config: RepositoryConfig,
     db: RepositoryDb<'db>,
     stable_lists: StableLists,
+    /// Single-writer coordinator for file-backed SQLite. When `Some`, every
+    /// top-level write transaction is serialized through this mutex so
+    /// concurrent writers cannot interleave on the WAL. `None` for in-memory
+    /// SQLite (unit/contract tests) and non-SQLite backends.
+    sqlite_write_coordinator: Option<std::sync::Arc<tokio::sync::Mutex<()>>>,
 }
 
 pub type AppRepository = AppRepositoryImpl<'static>;
@@ -239,6 +244,100 @@ impl Default for RepositoryConfig {
             values: BTreeMap::new(),
         }
     }
+}
+
+impl AppRepositoryImpl<'_> {
+    pub fn with_sqlite_write_coordinator(
+        mut self,
+        coordinator: std::sync::Arc<tokio::sync::Mutex<()>>,
+    ) -> Self {
+        self.sqlite_write_coordinator = Some(coordinator);
+        self
+    }
+
+    /// Begin a write transaction serialized through the single-writer
+    /// coordinator (file-backed SQLite only). Returns the guard, the
+    /// transaction, and the instant the transaction began (for commit-duration
+    /// logging). The guard MUST be released immediately after commit — never
+    /// held across the notifications/webhook/file work that follows.
+    ///
+    /// `RepositoryDb::Transaction` (nested transaction) and non-SQLite
+    /// backends return `None` for the guard: serializing there would
+    /// self-deadlock when the outer write already holds the coordinator.
+    pub async fn begin_serialized_write(
+        &self,
+    ) -> Result<
+        (
+            Option<tokio::sync::OwnedMutexGuard<()>>,
+            DatabaseTransaction,
+            std::time::Instant,
+        ),
+        DbErr,
+    > {
+        let acquire_started_at = std::time::Instant::now();
+        let guard = match (&self.sqlite_write_coordinator, &self.db) {
+            (Some(lock), RepositoryDb::Connection(_)) => {
+                Some(std::sync::Arc::clone(lock).lock_owned().await)
+            }
+            _ => None,
+        };
+        if guard.is_some() {
+            tracing::debug!(
+                target: "yoram_persistence::sqlite_write",
+                sqlite_write_queue_wait_ms = acquire_started_at.elapsed().as_millis() as u64,
+                "sqlite write coordinator acquired"
+            );
+        }
+        let txn_started_at = std::time::Instant::now();
+        let txn = self.db.begin().await;
+        match txn {
+            Ok(txn) => Ok((guard, txn, txn_started_at)),
+            Err(error) => {
+                if sqlite_busy_error(&error) {
+                    tracing::warn!(
+                        target: "yoram_persistence::sqlite_write",
+                        error = %error,
+                        "sqlite busy while beginning write transaction"
+                    );
+                }
+                Err(error)
+            }
+        }
+    }
+
+    /// Commit a serialized write transaction, log its duration, and release
+    /// the coordinator guard (dropped immediately after commit, even on error).
+    pub async fn commit_serialized_write(
+        &self,
+        txn: DatabaseTransaction,
+        _write_guard: Option<tokio::sync::OwnedMutexGuard<()>>,
+        txn_started_at: std::time::Instant,
+    ) -> Result<(), DbErr> {
+        let result = txn.commit().await;
+        if let Err(error) = &result {
+            if sqlite_busy_error(error) {
+                tracing::warn!(
+                    target: "yoram_persistence::sqlite_write",
+                    error = %error,
+                    "sqlite busy while committing write transaction"
+                );
+            }
+        }
+        tracing::debug!(
+            target: "yoram_persistence::sqlite_write",
+            sqlite_write_transaction_duration_ms = txn_started_at.elapsed().as_millis() as u64,
+            "sqlite write transaction finished"
+        );
+        drop(_write_guard);
+        result
+    }
+}
+
+fn sqlite_busy_error(error: &DbErr) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    message.contains("database is locked")
+        || message.contains("sqlite_busy")
+        || message.contains("busy_snapshot")
 }
 
 impl RepositoryConfig {

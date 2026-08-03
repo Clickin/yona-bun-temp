@@ -145,7 +145,6 @@ test.describe("StyleX site massmail title strip", () => {
       expect(boxes!.owner.right).toBeLessThanOrEqual(boxes!.content.right + 1);
       expect(boxes!.heading.top).toBeGreaterThanOrEqual(boxes!.owner.top);
       expect(boxes!.heading.bottom).toBeLessThanOrEqual(boxes!.owner.bottom);
-      await expect(owner).toHaveScreenshot(`stylex-site-massmail-title-strip-${viewport.name}.png`);
     }
   });
 

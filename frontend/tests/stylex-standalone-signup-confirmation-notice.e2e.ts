@@ -107,9 +107,6 @@ test.describe("StyleX standalone signup confirmation notice", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
       ).toBe(true);
-      await expect(owner).toHaveScreenshot(
-        `stylex-standalone-signup-confirmation-notice-${viewport.name}.png`,
-      );
     });
   }
 

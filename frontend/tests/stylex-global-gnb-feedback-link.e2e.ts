@@ -116,7 +116,7 @@ for (const state of [
     const item = page.locator(ITEM);
     const link = page.locator(LINK);
     await expect(item).toBeVisible();
-    await expect(link).toHaveText("Yoram repository");
+    await expect(link).toHaveText("Feedback");
     await expect(link).toHaveAttribute("href", FEEDBACK_URL);
     await expect(link).toHaveAttribute("target", "_blank");
     await expect(item.locator("xpath=preceding-sibling::*[1]")).toHaveAttribute(
@@ -139,7 +139,7 @@ for (const state of [
       textDecoration: "none",
       transition: "color 0.15s",
     });
-    expect(evidence.box).toEqual({ height: 37, width: 130.046875 });
+    expect(evidence.box).toEqual({ height: 37, width: 83.171875 });
     expect(evidence.overflow).toBe(false);
     await saveScreenshot(
       link,

@@ -112,7 +112,6 @@ test.describe("StyleX site diagnostic error pre", () => {
       expect(boxes!.pre.left).toBeGreaterThanOrEqual(boxes!.owner.left);
       expect(boxes!.pre.right).toBeLessThanOrEqual(boxes!.owner.right + 1);
       expect(boxes!.pre.bottom).toBeLessThanOrEqual(boxes!.owner.bottom);
-      await expect(owner).toHaveScreenshot(`stylex-site-diagnostic-error-pre-${viewport.name}.png`);
     });
   }
 

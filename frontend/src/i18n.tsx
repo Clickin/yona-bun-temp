@@ -1,9 +1,9 @@
 import * as React from "react";
-import legacyMessagesEn from "../../yona-original/conf/messages?raw";
-import legacyMessagesJa from "../../yona-original/conf/messages.ja-JP?raw";
-import legacyMessagesKo from "../../yona-original/conf/messages.ko-KR?raw";
-import legacyMessagesRu from "../../yona-original/conf/messages.ru-RU?raw";
-import legacyMessagesUz from "../../yona-original/conf/messages.uz-UZ?raw";
+import legacyMessagesEn from "./i18n/messages/en-US.json";
+import legacyMessagesJa from "./i18n/messages/ja-JP.json";
+import legacyMessagesKo from "./i18n/messages/ko-KR.json";
+import legacyMessagesRu from "./i18n/messages/ru-RU.json";
+import legacyMessagesUz from "./i18n/messages/uz-UZ.json";
 
 export const LEGACY_DEFAULT_LANGUAGE = "en-US";
 
@@ -25,36 +25,26 @@ export interface LegacyI18nContextValue {
   t: (key: string, options?: TranslateOptions) => string;
 }
 
-function parseLegacyMessages(source: string): LegacyMessageDictionary {
-  const messages: LegacyMessageDictionary = {};
-  for (const line of source.split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (trimmed === "" || trimmed.startsWith("#")) {
-      continue;
-    }
-    const messageMatch = /^([^=]+)=(.*)$/u.exec(trimmed);
-    if (!messageMatch) {
-      continue;
-    }
-    const key = messageMatch[1].trim();
-    messages[key] = rebrandLegacyMessageValue(key, messageMatch[2].trim());
+function rebrandDictionary(dictionary: LegacyMessageDictionary): LegacyMessageDictionary {
+  const rebranded: LegacyMessageDictionary = {};
+  for (const [key, value] of Object.entries(dictionary)) {
+    rebranded[key] = rebrandLegacyMessageValue(key, value);
   }
-  return messages;
+  return rebranded;
 }
 
 function rebrandLegacyMessageValue(key: string, value: string): string {
-  if (key === "title.yobi.feedback") {
-    return "Yoram repository";
-  }
+  // ponytail: feedback label stays 100% legacy ("Feedback") — rebranding of the
+  // GNB identity is deferred to its dedicated phase.
   return value.replace(/\b(?:naver|yobi|yona)\b/giu, "Yoram");
 }
 
 const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {
-  "en-US": parseLegacyMessages(legacyMessagesEn),
-  "ja-JP": parseLegacyMessages(legacyMessagesJa),
-  "ko-KR": parseLegacyMessages(legacyMessagesKo),
-  "ru-RU": parseLegacyMessages(legacyMessagesRu),
-  "uz-UZ": parseLegacyMessages(legacyMessagesUz),
+  "en-US": rebrandDictionary(legacyMessagesEn),
+  "ja-JP": rebrandDictionary(legacyMessagesJa),
+  "ko-KR": rebrandDictionary(legacyMessagesKo),
+  "ru-RU": rebrandDictionary(legacyMessagesRu),
+  "uz-UZ": rebrandDictionary(legacyMessagesUz),
 };
 
 export function normalizeLegacyLanguageCode(input: string): LegacyLanguageCode | null {

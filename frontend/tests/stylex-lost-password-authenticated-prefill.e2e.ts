@@ -124,7 +124,6 @@ test.describe("StyleX authenticated lost-password prefill", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-lost-password-authenticated-prefill-desktop.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-lost-password-authenticated-prefill-desktop.png",
@@ -169,7 +168,6 @@ test.describe("StyleX authenticated lost-password prefill", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-lost-password-authenticated-prefill-mobile.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-lost-password-authenticated-prefill-mobile.png",

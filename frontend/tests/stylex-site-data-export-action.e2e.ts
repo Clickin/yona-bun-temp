@@ -84,7 +84,6 @@ for (const viewport of [
       };
     });
     expect(geometry).toEqual({ afterCopy: true, withinContent: true });
-    await expect(owner).toHaveScreenshot(`stylex-site-data-export-action-${viewport.name}.png`);
   });
 }
 

@@ -50,7 +50,10 @@ const EXPECTED_RESTRICTED_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Yoram authors</span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -140,16 +143,15 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
     .toBe("1");
 });
 
-test("restricted footer renders the approved Yoram attribution without upstream links", async ({
-  page,
-}) => {
+test("restricted footer renders the legacy attribution with upstream links", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockRestrictedSession(page);
 
   await page.goto(`${basePath}/restricted`);
 
-  await expect(page.locator(".page-footer .provider")).toHaveText("Yoram authors");
-  await expect(page.locator(".page-footer .provider a")).toHaveCount(0);
+  await expect(page.locator(".page-footer .provider")).toContainText("Yona authors");
+  await expect(page.locator(".page-footer .provider")).not.toContainText("Yoram");
+  await expect(page.locator(".page-footer .provider a")).toHaveCount(4);
 });
 
 test("restricted route source keeps internal navigation out of raw anchors", async () => {
@@ -189,12 +191,15 @@ test("restricted route source renders legacy site title without imperative mutat
   );
 });
 
-test("restricted route source keeps the approved plain Yoram footer attribution", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('<span className="provider">Yoram authors</span>');
-  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("github.com/yona-projects/yona");
-  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("navercorp.com");
-  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("naverlabs.com");
-  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("ncloud.com");
+test("restricted route source keeps the legacy footer attribution", async () => {
+  expect(RESTRICTED_ROUTE_SOURCE).toContain(
+    '<span className="provider">\n            Copyright{" "}\n            <Link',
+  );
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("Yona authors");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("github.com/yona-projects/yona/blob/master/AUTHORS");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("navercorp.com");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("naverlabs.com");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("ncloud.com");
 });
 
 test("restricted route source drops route-owned tooltip initializer marker", async () => {

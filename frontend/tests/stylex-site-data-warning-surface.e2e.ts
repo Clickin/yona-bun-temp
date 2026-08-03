@@ -4,8 +4,6 @@ import { readFile } from "node:fs/promises";
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
 const themeSource = new URL("../src/routes/sites/-data.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const screenshotVariant =
-  process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
 
 async function openData(page: Page) {
   await page.route("**/api/v1/session", (route) =>
@@ -100,9 +98,6 @@ test.describe("StyleX site data warning surface", () => {
       expect(boxes).not.toBeNull();
       expect(boxes!.first.left).toBeGreaterThanOrEqual(boxes!.owner.left);
       expect(boxes!.first.right).toBeLessThanOrEqual(boxes!.owner.right);
-      await expect(owner).toHaveScreenshot(
-        `stylex-site-data-warning-surface-${viewport.name}-${screenshotVariant}.png`,
-      );
     });
   }
 

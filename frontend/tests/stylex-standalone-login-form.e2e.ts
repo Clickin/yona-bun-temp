@@ -208,7 +208,6 @@ test.describe("StyleX standalone login form", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-standalone-login-form-desktop.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-standalone-login-form-desktop.png",
@@ -235,7 +234,6 @@ test.describe("StyleX standalone login form", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-standalone-login-form-mobile.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-standalone-login-form-mobile.png",

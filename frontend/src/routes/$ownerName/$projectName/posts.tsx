@@ -20,8 +20,8 @@ import {
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
-import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
+import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { useLockedLinkClick } from "../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-posts.stylex";
@@ -715,18 +715,22 @@ function ProjectBoardPost({
         </span>
         {post.labels.map((label) => {
           return (
-            <IssueLabel
-              as="button"
-              className="label list-label"
-              color={label.color}
-              labelId={label.id}
+            <button
               type="button"
+              className="label issue-label list-label active"
               data-category-id={label.categoryId}
+              data-label-id={String(label.id)}
               data-stylex-owner="project-posts-label-button"
               key={label.id}
+              style={{
+                ...issueLabelStyle(label.color),
+                border: 0,
+                borderStyle: "none",
+                borderWidth: 0,
+              }}
             >
               {label.name}
-            </IssueLabel>
+            </button>
           );
         })}
       </div>

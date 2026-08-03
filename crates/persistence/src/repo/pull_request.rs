@@ -603,30 +603,49 @@ impl AppRepositoryImpl<'_> {
             .await?
             .map(|user| user.id)
             .unwrap_or(input.actor_id);
-        let pull_request_number = self.next_pull_request_number(to_project.id).await?;
-        let now = current_datetime();
-        let created = pull_request::ActiveModel {
-            id: NotSet,
-            title: Set(Some(input.values.title.trim().to_string())),
-            to_project_id: Set(Some(to_project.id)),
-            from_project_id: Set(Some(from_project.id)),
-            to_branch: Set(Some(to_branch)),
-            from_branch: Set(Some(from_branch)),
-            contributor_id: Set(Some(input.actor_id)),
-            receiver_id: Set(Some(receiver_id)),
-            created: Set(Some(now)),
-            updated: Set(Some(now)),
-            received: Set(None),
-            state: Set(Some(1)),
-            is_conflict: Set(Some(0)),
-            is_merging: Set(Some(0)),
-            last_commit_id: Set(None),
-            merged_commit_id_from: Set(None),
-            merged_commit_id_to: Set(None),
-            number: Set(Some(pull_request_number)),
+        // Re-allocate the number on unique-number conflict: two concurrent
+        // creates can compute the same `MAX(number)+1`, so retry until the
+        // (to_project_id, number) unique index admits the insert.
+        let mut created = None;
+        for _attempt in 0..32 {
+            let pull_request_number = self.next_pull_request_number(to_project.id).await?;
+            let now = current_datetime();
+            let insert_result = pull_request::ActiveModel {
+                id: NotSet,
+                title: Set(Some(input.values.title.trim().to_string())),
+                to_project_id: Set(Some(to_project.id)),
+                from_project_id: Set(Some(from_project.id)),
+                to_branch: Set(Some(to_branch.clone())),
+                from_branch: Set(Some(from_branch.clone())),
+                contributor_id: Set(Some(input.actor_id)),
+                receiver_id: Set(Some(receiver_id)),
+                created: Set(Some(now)),
+                updated: Set(Some(now)),
+                received: Set(None),
+                state: Set(Some(1)),
+                is_conflict: Set(Some(0)),
+                is_merging: Set(Some(0)),
+                last_commit_id: Set(None),
+                merged_commit_id_from: Set(None),
+                merged_commit_id_to: Set(None),
+                number: Set(Some(pull_request_number)),
+            }
+            .insert(&self.db)
+            .await;
+            match insert_result {
+                Ok(row) => {
+                    created = Some(row);
+                    break;
+                }
+                Err(error) if is_unique_pull_request_number_conflict(&error) => continue,
+                Err(error) => return Err(error),
+            }
         }
-        .insert(&self.db)
-        .await?;
+        let Some(created) = created else {
+            return Err(DbErr::Custom(
+                "pull request number allocation conflicted after retries".to_string(),
+            ));
+        };
         self.write_text_column(
             "pull_request",
             "body",

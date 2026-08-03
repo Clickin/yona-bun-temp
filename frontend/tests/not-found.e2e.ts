@@ -76,7 +76,10 @@ const EXPECTED_NOT_FOUND_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Yoram authors</span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -122,7 +125,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim();");
   expect(routeSource).toContain("feedbackUrl ? (");
   expect(routeSource).not.toContain("github.com/nforge/yobi");
-  expect(routeSource).not.toContain("navercorp.com");
+  expect(routeSource).toContain("https://navercorp.com");
   expect(routeSource).not.toContain("developers.naver.com");
 
   await page.goto(`${basePath}/missing-legacy-route/unknown/screen`);
@@ -144,7 +147,8 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
   await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Project list", "Help"]);
   await expect(page.locator('.gnb-nav a[href*="github.com/nforge/yobi"]')).toHaveCount(0);
   await expect(page.locator(`#mySidenav a[href="${basePath}/anonymous"]`)).toHaveText("Profile");
-  await expect(page.locator(".page-footer .provider")).toHaveText("Yoram authors");
+  await expect(page.locator(".page-footer .provider")).toContainText("Yona authors");
+  await expect(page.locator(".page-footer .provider")).not.toContainText("Yoram");
   for (const attribute of ["data-toggle", "data-login", "data-placement"]) {
     await expect(page.locator(`.gnb-outer [${attribute}]`)).toHaveCount(0);
   }

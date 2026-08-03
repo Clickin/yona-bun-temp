@@ -85,7 +85,10 @@ const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Yoram authors</span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -472,8 +475,9 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
     href: legacyRootHref(basePath),
     text: "Home",
   });
-  await expect(page.locator(".page-footer .provider")).toHaveText("Yoram authors");
-  await expect(page.locator(".page-footer .provider a")).toHaveCount(0);
+  await expect(page.locator(".page-footer .provider")).toContainText("Yona authors");
+  await expect(page.locator(".page-footer .provider")).not.toContainText("Yoram");
+  await expect(page.locator(".page-footer .provider a")).toHaveCount(4);
 
   await page.evaluate(() => {
     (
@@ -532,9 +536,12 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain("runtimeConfig.feedbackUrl ? (");
   expect(SECRET_ROUTE_SOURCE).toContain("to={runtimeConfig.feedbackUrl}");
   expect(SECRET_ROUTE_SOURCE).not.toContain('to="/"\n                  target="_blank"');
-  expect(SECRET_ROUTE_SOURCE).toContain('className="provider">Yoram authors</span>');
+  expect(SECRET_ROUTE_SOURCE).toContain(
+    '<span className="provider">\n            Copyright{" "}\n            <Link',
+  );
+  expect(SECRET_ROUTE_SOURCE).toContain("Yona authors");
   expect(SECRET_ROUTE_SOURCE).not.toContain("github.com/nforge/yobi");
-  expect(SECRET_ROUTE_SOURCE).not.toContain("navercorp.com");
+  expect(SECRET_ROUTE_SOURCE).toContain("https://navercorp.com");
   expect(SECRET_ROUTE_SOURCE).not.toContain("developers.naver.com");
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bas\s+never\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);

@@ -21,7 +21,6 @@ import {
   homeColors,
   rootSidebarMotionStyles,
 } from "./-home-route-screen.stylex";
-type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 
 type LegacyUserLinkSearch = {
   daysAgo: number;
@@ -245,7 +244,9 @@ function HomeScreen({
       return response.json() as Promise<{ defaultLoginPage: string }>;
     },
     onError(error) {
-      window.alert(`set Default page failed: ${error instanceof Error ? error.message : error}`);
+      window.alert(
+        `set Default page failed: ${t(error instanceof Error ? error.message : String(error))}`,
+      );
     },
     onSuccess(_data, path) {
       void queryClient.invalidateQueries({
@@ -1744,9 +1745,7 @@ export function SiteLayoutShell({
             href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
             rel="noreferrer"
             target="_blank"
-            to={
-              "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
-            }
+            to={"https://github.com/yona-projects/yona/blob/master/AUTHORS" as string}
           >
             Yona authors
           </Link>{" "}
@@ -1755,7 +1754,7 @@ export function SiteLayoutShell({
             href="https://navercorp.com"
             rel="noreferrer"
             target="_blank"
-            to={"https://navercorp.com" as unknown as ExternalLinkTarget}
+            to={"https://navercorp.com" as string}
           >
             NAVER Corp.
           </Link>{" "}
@@ -1765,7 +1764,7 @@ export function SiteLayoutShell({
             href="https://naverlabs.com/"
             rel="noreferrer"
             target="_blank"
-            to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
+            to={"https://naverlabs.com/" as string}
           >
             NAVER LABS
           </Link>{" "}
@@ -1775,7 +1774,7 @@ export function SiteLayoutShell({
             href="https://www.ncloud.com/?referer=yona"
             rel="noreferrer"
             target="_blank"
-            to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
+            to={"https://www.ncloud.com/?referer=yona" as string}
           >
             NAVER CLOUD PLATFORM
           </Link>
@@ -5769,6 +5768,7 @@ function SidebarFavoriteButton({
   const usesLeftDirectProjectOwner = variant === "left-direct-project";
   const usesLeftFavoriteOrganizationOwner = variant === "left-favorite-organization";
   const usesLeftFavoriteNestedProjectOwner = variant === "left-favorite-nested-project";
+  const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const [isFavorited, setIsFavorited] = React.useState(initialFavorited);
   const requestPending = React.useRef(false);
@@ -5780,7 +5780,7 @@ function SidebarFavoriteButton({
         : toggleFavoriteOrganizationRest(runtimeConfig, csrfToken, target.organizationName);
     },
     onError(error) {
-      window.alert(`Update failed: ${error instanceof Error ? error.message : String(error)}`);
+      window.alert(`Update failed: ${t(error instanceof Error ? error.message : String(error))}`);
     },
     onSettled() {
       requestPending.current = false;

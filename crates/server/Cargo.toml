@@ -16,6 +16,8 @@ sqlite = [
     "sea-orm/sqlx-sqlite",
     "yoram-persistence/sqlite",
     "yoram-migration/sqlite",
+    "dep:sqlx",
+    "sqlx/sqlite",
 ]
 postgres = [
     "sea-orm/sqlx-postgres",
@@ -54,6 +56,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha1 = "0.10"
 sha2.workspace = true
+sqlx = { version = "0.8", default-features = false, optional = true }
 thiserror.workspace = true
 tokio.workspace = true
 tower.workspace = true
@@ -70,6 +73,7 @@ yoram-search = { path = "../search" }
 yoram-vcs = { path = "../vcs" }
 
 [dev-dependencies]
+chrono.workspace = true
 tempfile.workspace = true
 testcontainers-modules = { version = "0.15", features = ["postgres", "mariadb"] }
 

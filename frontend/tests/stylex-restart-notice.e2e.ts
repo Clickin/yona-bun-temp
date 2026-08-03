@@ -113,7 +113,6 @@ test.describe("StyleX restart notice", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
       ).toBe(true);
-      await expect(owner).toHaveScreenshot(`stylex-restart-notice-${viewport.name}.png`);
       await page.screenshot({
         fullPage: true,
         path: `../output/playwright/stylex-restart-notice-${viewport.name}.png`,

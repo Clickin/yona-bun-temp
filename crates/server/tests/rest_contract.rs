@@ -613,6 +613,8 @@ async fn rest_issue_create_update_persists_legacy_due_date() {
 #[tokio::test]
 async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
     // Guards issue route-owned project list helper, REST string/number parsing, filters, and row payloads.
+    let future_due_date =
+        (chrono::Utc::now() + chrono::Duration::days(1)).format("%Y-%m-%d").to_string();
     let (app, _, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
@@ -629,7 +631,7 @@ async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
                 "title": "Weighted due issue",
                 "bodyMarkdown": "Weighted due issue body",
                 "assigneeLoginId": "owner",
-                "dueDate": "2026-08-01"
+                "dueDate": future_due_date
             }),
         )
         .await,
@@ -707,7 +709,7 @@ async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
         .as_str()
         .unwrap_or_default()
         .contains("gravatar"));
-    assert_eq!(item["dueDateLabel"], "2026-08-01");
+    assert_eq!(item["dueDateLabel"], future_due_date.as_str());
     assert_eq!(item["dueDateOverdue"], false);
     assert_eq!(item["weight"], 3);
     assert_eq!(item["childOpenCount"], 1);
@@ -6249,7 +6251,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
         Some(json!({
             "labels": [
                     {
-                        "category": "Kind",
+                        "category": "UX",
                         "isExclusive": false,
                         "labelColor": "#00ff00",
                         "labelName": "LegacyFeature"
@@ -6268,7 +6270,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
     let legacy_created_labels = response_json(legacy_created_response).await;
     assert_eq!(legacy_created_labels[0]["status"], 201);
     assert_eq!(legacy_created_labels[0]["label"], "LegacyFeature");
-    assert_eq!(legacy_created_labels[0]["category"], "Kind");
+    assert_eq!(legacy_created_labels[0]["category"], "UX");
     assert_eq!(legacy_created_labels[0]["labelColor"], "#00ff00");
     assert_eq!(legacy_created_labels[0]["isExclusive"], true);
     assert_eq!(legacy_created_labels[1]["status"], 409);
@@ -6286,11 +6288,11 @@ async fn rest_label_routes_manage_labels_and_categories() {
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
-            "import": {
+                "import": {
                 "labels": [
                     {
                         "meta": {
-                            "category": "Nested",
+                            "category": "Zed",
                             "isExclusive": false
                         },
                         "style": {
@@ -6309,7 +6311,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
     let legacy_nested_labels = response_json(legacy_nested_labels_response).await;
     assert_eq!(legacy_nested_labels[0]["status"], 201);
     assert_eq!(legacy_nested_labels[0]["label"], "NestedFeature");
-    assert_eq!(legacy_nested_labels[0]["category"], "Nested");
+    assert_eq!(legacy_nested_labels[0]["category"], "Zed");
     assert_eq!(legacy_nested_labels[0]["labelColor"], "#0099ff");
     assert_eq!(legacy_nested_labels[0]["isExclusive"], true);
 

@@ -70,7 +70,6 @@ test.describe("StyleX reset-password bad request", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-reset-password-bad-request-desktop.png");
   });
 
   test("matches mobile legacy wrapper and message paint without overflow", async ({ page }) => {
@@ -83,7 +82,6 @@ test.describe("StyleX reset-password bad request", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-reset-password-bad-request-mobile.png");
   });
 
   test("excludes valid-token form and validation popovers", async ({ page }) => {

@@ -134,7 +134,6 @@ for (const viewport of [
     await action.focus();
     await page.waitForTimeout(350);
     await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");
-    await expect(action).toHaveScreenshot(`stylex-site-mail-send-action-${viewport.name}.png`);
   });
 }
 

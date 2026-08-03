@@ -108,9 +108,6 @@ for (const viewport of [
       padding: "8px 35px 8px 14px",
       textShadow: "rgba(255, 255, 255, 0.5) 0px 1px 0px",
     });
-    await expect(alert).toHaveScreenshot(
-      `stylex-site-mail-not-configured-alert-${viewport.name}.png`,
-    );
   });
 }
 

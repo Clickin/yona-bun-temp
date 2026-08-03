@@ -527,6 +527,7 @@ pub(crate) async fn legacy_external_users(
     };
     let users = match repository
         .list_site_users(persistence::SiteUserListFilter {
+            exclude_site_manager: true,
             page: 1,
             query: query.query,
             state: "active".to_string(),
@@ -870,6 +871,7 @@ pub(crate) async fn legacy_external_admin_users(
     loop {
         let record = match repository
             .list_site_users(persistence::SiteUserListFilter {
+                exclude_site_manager: false,
                 page,
                 query: String::new(),
                 state: "active".to_string(),

@@ -65,7 +65,7 @@ test("SiteLayout footer has complete global-theme StyleX ownership", () => {
   expect(footer).not.toContain("page-footer-outer");
   expect(footer).not.toContain('className="page-footer"');
   expect(footer).not.toContain('className="provider"');
-  expect(footer).toContain("Yoram authors");
+  expect(footer).toContain("Yona authors");
   expect(appCss).toContain(".page-footer-outer {");
   expect(appCss).toContain(".page-footer-outer .page-footer {");
   expect(appCss).toContain(".page-footer-outer .provider {");
@@ -120,7 +120,8 @@ for (const viewport of [
     const provider = inner.locator(`:scope > ${PROVIDER}`);
     await expect(outer).toBeVisible();
     await expect(inner).toHaveCount(1);
-    await expect(provider).toHaveText("Yoram authors");
+    await expect(provider).toContainText("Yona authors");
+    await expect(provider).not.toContainText("Yoram");
     await expect(outer).not.toHaveClass(/(?:^|\s)page-footer-outer(?:\s|$)/u);
     await expect(inner).not.toHaveClass(/(?:^|\s)page-footer(?:\s|$)/u);
     await expect(provider).not.toHaveClass(/(?:^|\s)provider(?:\s|$)/u);
@@ -192,7 +193,8 @@ for (const viewport of [
     expect(evidence.boxes.outer.height).toBe(evidence.boxes.inner.height + 20);
     expect(evidence.boxes.inner.width).toBe(viewport.width - 20);
     expect(evidence.boxes.inner.x).toBe(10);
-    expect(evidence.boxes.inner.height).toBe(36);
+    // Legacy composition wraps to two 36px line boxes on mobile (390px); single line on desktop.
+    expect(evidence.boxes.inner.height).toBe(viewport.width <= 720 ? 72 : 36);
     expect(evidence.contained).toBe(true);
     expect(evidence.overflow).toBe(false);
 

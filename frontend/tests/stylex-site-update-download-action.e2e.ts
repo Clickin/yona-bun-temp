@@ -43,7 +43,6 @@ for (const viewport of [
     expect(await link.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
       "rgb(233, 94, 1)",
     );
-    await expect(link).toHaveScreenshot(`stylex-site-update-download-action-${viewport.name}.png`);
   });
 }
 

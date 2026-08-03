@@ -156,9 +156,10 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
   expect(source).toContain('to="/$user"');
   expect(source).toContain("<RootYoramToast");
   expect(source).not.toContain("toast.innerHTML");
-  expect(source).toContain('<span className="provider">Yoram authors</span>');
+  expect(source).toContain('<span className="provider">');
+  expect(source).toContain("Yona authors");
   expect(source).not.toContain("github.com/nforge/yobi");
-  expect(source).not.toContain("navercorp.com");
+  expect(source).toContain("https://navercorp.com");
   expect(source).not.toContain("developers.naver.com");
   expect(source).not.toContain('to="/logout"');
   expect(source).not.toContain('<a href="/projects"');

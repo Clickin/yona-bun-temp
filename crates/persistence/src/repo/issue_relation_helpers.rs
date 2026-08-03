@@ -506,52 +506,49 @@ impl AppRepositoryImpl<'_> {
         Ok(())
     }
 
-    pub(super) async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
-        let project_row = project::Entity::find_by_id(project_id)
-            .one(&self.db)
+    /// Next number for a per-project sequence, computed from the actual rows
+    /// (`MAX(number) + 1`) instead of materializing every row. Reads real rows
+    /// so deleted/rolled-back numbers are reused; the `last_*_number` counter
+    /// writes in the mutation paths stay untouched (they track the allocated
+    /// high-water mark).
+    async fn next_number_for_table(
+        &self,
+        table: &str,
+        column: &str,
+        filter_column: &str,
+        filter_value: i64,
+    ) -> Result<i64, DbErr> {
+        let backend = self.db.get_database_backend();
+        let sql = format!(
+            "SELECT COALESCE(MAX({column}), 0) + 1 AS next_number FROM {table} WHERE {filter_column} = {}",
+            sql_placeholders(backend, 1)[0]
+        );
+        let row = self
+            .db
+            .query_one(Statement::from_sql_and_values(
+                backend,
+                sql,
+                vec![filter_value.into()],
+            ))
             .await?;
-        let project_last = project_row
-            .and_then(|row| row.last_issue_number)
-            .unwrap_or_default();
-        let max_existing = issue::Entity::find()
-            .filter(issue::Column::ProjectId.eq(Some(project_id)))
-            .all(&self.db)
-            .await?
-            .into_iter()
-            .filter_map(|row| row.number)
-            .max()
-            .unwrap_or_default();
-        Ok(project_last.max(max_existing) + 1)
+        Ok(row
+            .and_then(|row| row.try_get::<i64>("", "next_number").ok())
+            .unwrap_or(1))
+    }
+
+    pub(super) async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
+        self.next_number_for_table("issue", "number", "project_id", project_id)
+            .await
     }
 
     pub(super) async fn next_posting_number(&self, project_id: i64) -> Result<i64, DbErr> {
-        let project_row = project::Entity::find_by_id(project_id)
-            .one(&self.db)
-            .await?;
-        let project_last = project_row
-            .and_then(|row| row.last_posting_number)
-            .unwrap_or_default();
-        let max_existing = posting::Entity::find()
-            .filter(posting::Column::ProjectId.eq(Some(project_id)))
-            .all(&self.db)
-            .await?
-            .into_iter()
-            .filter_map(|row| row.number)
-            .max()
-            .unwrap_or_default();
-        Ok(project_last.max(max_existing) + 1)
+        self.next_number_for_table("posting", "number", "project_id", project_id)
+            .await
     }
 
     pub(super) async fn next_pull_request_number(&self, project_id: i64) -> Result<i64, DbErr> {
-        let max_existing = pull_request::Entity::find()
-            .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
-            .all(&self.db)
-            .await?
-            .into_iter()
-            .filter_map(|row| row.number)
-            .max()
-            .unwrap_or_default();
-        Ok(max_existing + 1)
+        self.next_number_for_table("pull_request", "number", "to_project_id", project_id)
+            .await
     }
 
     pub(super) async fn find_duplicate_open_pull_request(

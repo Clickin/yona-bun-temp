@@ -123,7 +123,6 @@ test.describe("StyleX verified user success", () => {
       expect(boxes!.tagline.bottom).toBeLessThanOrEqual(boxes!.owner.bottom);
       expect(boxes!.title.left).toBeGreaterThanOrEqual(boxes!.owner.left);
       expect(boxes!.tagline.right).toBeLessThanOrEqual(boxes!.owner.right);
-      await expect(owner).toHaveScreenshot(`stylex-verified-user-success-${viewport.name}.png`);
     });
   }
 

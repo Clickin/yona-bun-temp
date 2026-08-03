@@ -371,7 +371,8 @@ pub fn load_startup_config(
         .or(site.langs);
     let feedback_url = env_string(&env, "YONA_FEEDBACK_URL")
         .or_else(|| env_string(&env, "application.feedback.url"))
-        .or_else(|| non_empty_string(site.feedback_url));
+        .or_else(|| non_empty_string(site.feedback_url))
+        .or_else(|| Some("https://github.com/yona-projects/yona/issues".to_string()));
     let hide_project_listing = env_bool(&env, "YONA_HIDE_PROJECT_LISTING")
         .or_else(|| env_bool(&env, "application.hide.project.listing"))
         .or(site.hide_project_listing);

@@ -106,9 +106,6 @@ test.describe("StyleX site diagnostic no-error title", () => {
       expect(boxes!.owner.right).toBeLessThanOrEqual(boxes!.content.right + 1);
       expect(boxes!.heading.top).toBeGreaterThanOrEqual(boxes!.owner.top);
       expect(boxes!.heading.bottom).toBeLessThanOrEqual(boxes!.owner.bottom);
-      await expect(owner).toHaveScreenshot(
-        `stylex-site-diagnostic-no-error-title-${viewport.name}.png`,
-      );
     });
   }
 

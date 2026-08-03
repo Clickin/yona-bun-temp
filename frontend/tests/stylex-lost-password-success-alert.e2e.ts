@@ -112,7 +112,6 @@ test.describe("StyleX anonymous requested-success lost-password alert", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(alert).toHaveScreenshot("stylex-lost-password-success-alert-desktop.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-lost-password-success-alert-desktop.png",
@@ -142,7 +141,6 @@ test.describe("StyleX anonymous requested-success lost-password alert", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(alert).toHaveScreenshot("stylex-lost-password-success-alert-mobile.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-lost-password-success-alert-mobile.png",

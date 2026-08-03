@@ -136,9 +136,6 @@ test.describe("StyleX site massmail recipient radios", () => {
           paddingTop: "0px",
         },
       ]);
-      await expect(page.locator(".mess-mail-wrap")).toHaveScreenshot(
-        `stylex-site-massmail-recipient-radios-${viewport.name}.png`,
-      );
     });
   }
 

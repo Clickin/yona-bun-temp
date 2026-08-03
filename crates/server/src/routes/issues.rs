@@ -3336,8 +3336,8 @@ async fn rest_create_issue(
         preferred_language_from_headers(&headers, &service.supported_languages).as_deref(),
         "issue.derived",
     );
-    let transaction = repository
-        .begin_transaction()
+    let (_write_guard, transaction, txn_started_at) = repository
+        .begin_serialized_write()
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -3397,8 +3397,8 @@ async fn rest_create_issue(
     };
     let (issue, derived_source) = match transaction_result {
         Ok(result) => {
-            transaction
-                .commit()
+            repository
+                .commit_serialized_write(transaction, _write_guard, txn_started_at)
                 .await
                 .map_err(internal_error)
                 .map_err(RestRouteError::from_connect_error)?;

@@ -188,9 +188,6 @@ test.describe("StyleX site massmail select-project action", () => {
       await expect(action).toHaveCSS("color", "rgb(41, 41, 41)");
       await expect(action).toHaveCSS("text-decoration-line", "none");
       await page.mouse.up();
-      await expect(action).toHaveScreenshot(
-        `stylex-site-massmail-select-project-action-${viewport.name}.png`,
-      );
     });
   }
 

@@ -1278,7 +1278,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .expect("issue detail author avatar url");
     assert!(
         issue_author_avatar_url.starts_with("https://www.gravatar.com/avatar/")
-            && issue_author_avatar_url.ends_with("?s=256&d=identicon"),
+            && issue_author_avatar_url.ends_with("?s=256&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png"),
         "{issue_author_avatar_url}"
     );
     let issue_assignee_avatar_url = detail["assigneeAvatarUrl"]
@@ -1286,7 +1286,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .expect("issue detail assignee avatar url");
     assert!(
         issue_assignee_avatar_url.starts_with("https://www.gravatar.com/avatar/")
-            && issue_assignee_avatar_url.ends_with("?s=256&d=identicon"),
+            && issue_assignee_avatar_url.ends_with("?s=256&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png"),
         "{issue_assignee_avatar_url}"
     );
 
@@ -1311,7 +1311,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .expect("issue comment author avatar url");
     assert!(
         author_avatar_url.starts_with("https://www.gravatar.com/avatar/")
-            && author_avatar_url.ends_with("?s=256&d=identicon"),
+            && author_avatar_url.ends_with("?s=256&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png"),
         "{author_avatar_url}"
     );
     assert_eq!(

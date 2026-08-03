@@ -780,7 +780,7 @@ impl AppRepositoryImpl<'_> {
             return Ok(SiteUserAvatarFromAttachmentResult::Ignored);
         }
 
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         attachment::Entity::delete_many()
             .filter(
                 attachment::Column::ContainerType
@@ -794,7 +794,8 @@ impl AppRepositoryImpl<'_> {
         active.container_type = Set(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string()));
         active.container_id = Set(user.id);
         active.update(&txn).await?;
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
 
         Ok(SiteUserAvatarFromAttachmentResult::Applied)
     }

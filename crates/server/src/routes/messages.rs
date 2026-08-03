@@ -1,11 +1,83 @@
+use std::collections::BTreeMap;
+use std::sync::OnceLock;
+
 use axum::{response::IntoResponse, routing::get, Router};
 
-const LEGACY_DEFAULT_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages");
+// Frontend-owned i18n dictionaries (see scripts/generate-i18n-dictionaries.mjs).
+// Values are verbatim legacy message values; Play/MessageFormat unescaping is
+// applied at parse time (see play_unescape_message_value) so every output path
+// serves the same unescaped copy legacy `play.i18n.Messages.get` produces.
+const LEGACY_DEFAULT_MESSAGES: &str = include_str!("../../../../frontend/src/i18n/messages/en-US.json");
 const LEGACY_JAPANESE_MESSAGES: &str =
-    include_str!("../../../../yona-original/conf/messages.ja-JP");
-const LEGACY_KOREAN_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages.ko-KR");
-const LEGACY_RUSSIAN_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages.ru-RU");
-const LEGACY_UZBEK_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages.uz-UZ");
+    include_str!("../../../../frontend/src/i18n/messages/ja-JP.json");
+const LEGACY_KOREAN_MESSAGES: &str = include_str!("../../../../frontend/src/i18n/messages/ko-KR.json");
+const LEGACY_RUSSIAN_MESSAGES: &str =
+    include_str!("../../../../frontend/src/i18n/messages/ru-RU.json");
+const LEGACY_UZBEK_MESSAGES: &str = include_str!("../../../../frontend/src/i18n/messages/uz-UZ.json");
+
+static EN_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+static JA_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+static KO_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+static RU_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+static UZ_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+
+fn en_messages() -> &'static BTreeMap<String, String> {
+    EN_MESSAGES.get_or_init(|| parse_legacy_message_json(LEGACY_DEFAULT_MESSAGES))
+}
+
+fn ja_messages() -> &'static BTreeMap<String, String> {
+    JA_MESSAGES.get_or_init(|| parse_legacy_message_json(LEGACY_JAPANESE_MESSAGES))
+}
+
+fn ko_messages() -> &'static BTreeMap<String, String> {
+    KO_MESSAGES.get_or_init(|| parse_legacy_message_json(LEGACY_KOREAN_MESSAGES))
+}
+
+fn ru_messages() -> &'static BTreeMap<String, String> {
+    RU_MESSAGES.get_or_init(|| parse_legacy_message_json(LEGACY_RUSSIAN_MESSAGES))
+}
+
+fn uz_messages() -> &'static BTreeMap<String, String> {
+    UZ_MESSAGES.get_or_init(|| parse_legacy_message_json(LEGACY_UZBEK_MESSAGES))
+}
+
+fn parse_legacy_message_json(source: &str) -> BTreeMap<String, String> {
+    let raw: BTreeMap<String, String> = serde_json::from_str(source)
+        .expect("frontend i18n dictionary JSON must parse");
+    raw.into_iter()
+        .map(|(key, value)| (key, play_unescape_message_value(&value)))
+        .collect()
+}
+
+/// Applies the escapes legacy Play serves over `play.i18n.Messages.get` values:
+/// Java-properties escapes (`\n`/`\t`/`\r`/`\\`) and Play apostrophe quoting
+/// (`''` → `'`). `js_string_literal` re-escapes the first set for the JS
+/// payload, mirroring legacy `jsmessages.JsMessages.generate()`.
+fn play_unescape_message_value(value: &str) -> String {
+    let mut unescaped = String::with_capacity(value.len());
+    let mut chars = value.chars();
+    while let Some(current) = chars.next() {
+        match current {
+            '\\' => match chars.next() {
+                Some('n') => unescaped.push('\n'),
+                Some('t') => unescaped.push('\t'),
+                Some('r') => unescaped.push('\r'),
+                Some('\\') => unescaped.push('\\'),
+                Some(other) => {
+                    unescaped.push('\\');
+                    unescaped.push(other);
+                }
+                None => unescaped.push('\\'),
+            },
+            '\'' if chars.clone().next() == Some('\'') => {
+                unescaped.push('\'');
+                chars.next();
+            }
+            current => unescaped.push(current),
+        }
+    }
+    unescaped
+}
 
 pub(crate) fn routes() -> Router {
     Router::new().route("/messages.js", get(legacy_js_messages))
@@ -13,7 +85,7 @@ pub(crate) fn routes() -> Router {
 
 async fn legacy_js_messages() -> impl IntoResponse {
     let mut entries = String::new();
-    for (key, value) in parse_legacy_messages(LEGACY_DEFAULT_MESSAGES) {
+    for (key, value) in en_messages() {
         entries.push_str("    ");
         entries.push_str(&js_string_literal(key));
         entries.push_str(": ");
@@ -57,37 +129,18 @@ pub(crate) fn legacy_message(language: Option<&str>, key: &str) -> String {
         .to_ascii_lowercase()
         .as_str()
     {
-        "ja" => Some(LEGACY_JAPANESE_MESSAGES),
-        "ko" => Some(LEGACY_KOREAN_MESSAGES),
-        "ru" => Some(LEGACY_RUSSIAN_MESSAGES),
-        "uz" => Some(LEGACY_UZBEK_MESSAGES),
+        "ja" => Some(ja_messages()),
+        "ko" => Some(ko_messages()),
+        "ru" => Some(ru_messages()),
+        "uz" => Some(uz_messages()),
         _ => None,
     };
     localized_messages
-        .and_then(|source| legacy_message_value(source, key))
-        .or_else(|| legacy_message_value(LEGACY_DEFAULT_MESSAGES, key))
+        .and_then(|messages| messages.get(key))
+        .or_else(|| en_messages().get(key))
+        .map(String::as_str)
         .unwrap_or(key)
         .to_string()
-}
-
-fn legacy_message_value<'a>(source: &'a str, key: &str) -> Option<&'a str> {
-    parse_legacy_messages(source)
-        .into_iter()
-        .find_map(|(candidate, value)| (candidate == key).then_some(value))
-}
-
-fn parse_legacy_messages(source: &str) -> Vec<(&str, &str)> {
-    source
-        .lines()
-        .filter_map(|line| {
-            let trimmed = line.trim();
-            if trimmed.is_empty() || trimmed.starts_with('#') {
-                return None;
-            }
-            let (key, value) = trimmed.split_once('=')?;
-            Some((key.trim(), value.trim()))
-        })
-        .collect()
 }
 
 fn js_string_literal(value: &str) -> String {
@@ -114,27 +167,30 @@ fn js_string_literal(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        js_string_literal, legacy_message, parse_legacy_messages, LEGACY_DEFAULT_MESSAGES,
-    };
+    use super::{en_messages, js_string_literal, legacy_message, play_unescape_message_value};
 
     #[test]
     fn parses_legacy_default_messages_without_new_keyspace() {
-        let messages = parse_legacy_messages(LEGACY_DEFAULT_MESSAGES);
-        assert!(messages
-            .iter()
-            .any(|(key, value)| { *key == "title.no.results" && *value == "No results" }));
-        assert!(messages
-            .iter()
-            .any(|(key, value)| { *key == "button.login" && *value == "Log in" }));
+        let messages = en_messages();
+        assert_eq!(messages.get("title.no.results").map(String::as_str), Some("No results"));
+        assert_eq!(messages.get("button.login").map(String::as_str), Some("Log in"));
         assert!(!messages
-            .iter()
-            .any(|(key, _)| key.starts_with("yoram.") || key.starts_with("react.")));
+            .keys()
+            .any(|key| key.starts_with("yoram.") || key.starts_with("react.")));
     }
 
     #[test]
     fn escapes_message_values_for_javascript() {
         assert_eq!(js_string_literal("a\"b\\c\n"), "\"a\\\"b\\\\c\\n\"");
+    }
+
+    #[test]
+    fn unescapes_play_apostrophe_quoting_and_properties_escapes() {
+        assert_eq!(play_unescape_message_value("user''s"), "user's");
+        assert_eq!(
+            play_unescape_message_value("a\\nb\\tc\\rd\\\\e"),
+            "a\nb\tc\rd\\e"
+        );
     }
 
     #[test]

@@ -241,7 +241,7 @@ impl AppRepositoryImpl<'_> {
             return Ok(false);
         }
         let category_id = label.category_id;
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         issue_issue_label::Entity::delete_many()
             .filter(issue_issue_label::Column::IssueLabelId.eq(label_id))
             .exec(&txn)
@@ -264,7 +264,8 @@ impl AppRepositoryImpl<'_> {
                     .await?;
             }
         }
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
         self.stable_lists
             .invalidate_labels(owner_name, project_name)
             .await;
@@ -365,7 +366,7 @@ impl AppRepositoryImpl<'_> {
             .filter(issue_label::Column::CategoryId.eq(Some(category_id)))
             .all(&self.db)
             .await?;
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         for label in labels {
             issue_issue_label::Entity::delete_many()
                 .filter(issue_issue_label::Column::IssueLabelId.eq(label.id))
@@ -382,7 +383,8 @@ impl AppRepositoryImpl<'_> {
         issue_label_category::Entity::delete_by_id(category_id)
             .exec(&txn)
             .await?;
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
         self.stable_lists
             .invalidate_labels(owner_name, project_name)
             .await;

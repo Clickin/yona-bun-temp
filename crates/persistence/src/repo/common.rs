@@ -920,6 +920,20 @@ pub(super) fn is_unique_posting_number_conflict(error: &DbErr) -> bool {
         && (message.contains("number") || message.contains("uq_posting_1"))
 }
 
+pub(super) fn is_unique_issue_number_conflict(error: &DbErr) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    (message.contains("unique") || message.contains("duplicate"))
+        && message.contains("issue")
+        && (message.contains("number") || message.contains("uq_issue_1"))
+}
+
+pub(super) fn is_unique_pull_request_number_conflict(error: &DbErr) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    (message.contains("unique") || message.contains("duplicate"))
+        && message.contains("pull_request")
+        && (message.contains("number") || message.contains("uq_pull_request_1"))
+}
+
 pub(super) fn issue_label_category_record(
     row: issue_label_category::Model,
 ) -> IssueLabelCategoryRecord {

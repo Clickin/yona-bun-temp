@@ -1,6 +1,10 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
+
+// ponytail: external footer links use `to` typed via ExternalLinkTarget (Link
+// requires `to`; plain URL literals are not route types).
+type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 import { prefixBasePath } from "../runtime-config";
 import * as sx from "./-UIKit.stylex";
 
@@ -226,7 +230,49 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">Yoram authors</span>
+          <span className="provider">
+            Copyright{" "}
+            <Link
+              className="yona-author"
+              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+              rel="noreferrer"
+              target="_blank"
+              to={
+                "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
+              }
+            >
+              Yona authors
+            </Link>{" "}
+            & ©{" "}
+            <Link
+              href="https://navercorp.com"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://navercorp.com" as unknown as ExternalLinkTarget}
+            >
+              NAVER Corp.
+            </Link>{" "}
+            &{" "}
+            <Link
+              className="naver-labs"
+              href="https://naverlabs.com/"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
+            >
+              NAVER LABS
+            </Link>{" "}
+            Supported by{" "}
+            <Link
+              className="naver-cloud-platform"
+              href="https://www.ncloud.com/?referer=yona"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
+            >
+              NAVER CLOUD PLATFORM
+            </Link>
+          </span>
         </div>
       </footer>
     </>

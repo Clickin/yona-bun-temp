@@ -2162,8 +2162,14 @@ test("project issue unchanged blur keeps URL and skips issue-list GET like legac
       .catch(() => false);
   };
 
+  const settledIssuesResponse = page.waitForResponse(
+    (response) =>
+      response.status() === 200 &&
+      new URL(response.url()).pathname.endsWith("/api/v1/projects/admin/sample/issues"),
+  );
   await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3&state=open`);
-  await page.waitForLoadState("networkidle");
+  await settledIssuesResponse;
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
   const initialUrl = page.url();
 
   const filterInput = page.locator("#search input[name='filter']");

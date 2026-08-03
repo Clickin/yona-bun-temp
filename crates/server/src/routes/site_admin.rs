@@ -1912,6 +1912,7 @@ async fn rest_read_site_users(
     let state = rest_site_user_state(query.state)?;
     let record = repository
         .list_site_users(persistence::SiteUserListFilter {
+            exclude_site_manager: true,
             page: query.page.unwrap_or(1).max(1),
             query: query.query.unwrap_or_default(),
             state,
@@ -2298,8 +2299,8 @@ async fn rest_import_site_data_payload(
     let mut checkpoint = RestSiteImportCheckpoint::from_payload(&payload);
     checkpoint.mark_all_validated();
 
-    let transaction = repository
-        .begin_transaction()
+    let (_write_guard, transaction, txn_started_at) = repository
+        .begin_serialized_write()
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
     let transaction_repository = repository.with_transaction(&transaction);
@@ -2314,7 +2315,11 @@ async fn rest_import_site_data_payload(
     .await;
     match result {
         Ok(response) => {
-            if let Err(error) = transaction.commit().await {
+            if let Err(error) =
+                repository
+                    .commit_serialized_write(transaction, _write_guard, txn_started_at)
+                    .await
+            {
                 rollback.cleanup_staged_uploads();
                 return Err(RestRouteError::internal(error.to_string()));
             }
@@ -4820,6 +4825,7 @@ async fn rest_export_site_users(
         loop {
             let record = repository
                 .list_site_users(persistence::SiteUserListFilter {
+                    exclude_site_manager: true,
                     page,
                     query: String::new(),
                     state: state.to_string(),

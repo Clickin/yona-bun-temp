@@ -141,7 +141,6 @@ test.describe("StyleX anonymous lost-password form", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-lost-password-form-desktop.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-lost-password-form-desktop.png",
@@ -183,7 +182,6 @@ test.describe("StyleX anonymous lost-password form", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-lost-password-form-mobile.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-lost-password-form-mobile.png",

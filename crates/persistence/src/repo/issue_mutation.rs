@@ -98,7 +98,6 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(None);
         };
-        let issue_number = self.next_issue_number(project_record.id).await?;
         let is_draft = input.values.is_draft;
         let assignee_id = self
             .resolve_assignee_id(project_record.id, input.values.assignee_login_id.as_deref())
@@ -106,33 +105,54 @@ impl AppRepositoryImpl<'_> {
         let parent_id = self
             .resolve_issue_parent_id(project_record.id, input.values.parent_issue_id, None)
             .await?;
-        let now = current_datetime();
-        let created = issue::ActiveModel {
-            id: NotSet,
-            title: Set(Some(input.values.title.trim().to_string())),
-            created_date: Set(Some(now)),
-            updated_date: Set(Some(now)),
-            author_id: Set(Some(input.actor_id)),
-            author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
-            author_name: Set(Some(input.actor_display_name)),
-            project_id: Set(Some(project_record.id)),
-            number: Set(Some(issue_number)),
-            num_of_comments: Set(Some(0)),
-            state: Set(Some(issue_state_to_raw(if is_draft {
-                "draft"
-            } else {
-                "open"
-            }))),
-            due_date: Set(input.values.due_date),
-            milestone_id: Set(input.values.milestone_id.filter(|value| *value > 0)),
-            assignee_id: Set(assignee_id),
-            parent_id: Set(parent_id),
-            weight: Set(None),
-            updated_by_author_id: Set(Some(input.actor_id)),
-            is_draft: Set(Some(if is_draft { 1 } else { 0 })),
+        // Re-allocate the number on unique-number conflict: two concurrent
+        // creates can compute the same `MAX(number)+1`, so retry until the
+        // (project_id, number) unique index admits the insert.
+        let mut issue_number = 0i64;
+        let mut created = None;
+        for _attempt in 0..32 {
+            issue_number = self.next_issue_number(project_record.id).await?;
+            let now = current_datetime();
+            let insert_result = issue::ActiveModel {
+                id: NotSet,
+                title: Set(Some(input.values.title.trim().to_string())),
+                created_date: Set(Some(now)),
+                updated_date: Set(Some(now)),
+                author_id: Set(Some(input.actor_id)),
+                author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
+                author_name: Set(Some(input.actor_display_name.clone())),
+                project_id: Set(Some(project_record.id)),
+                number: Set(Some(issue_number)),
+                num_of_comments: Set(Some(0)),
+                state: Set(Some(issue_state_to_raw(if is_draft {
+                    "draft"
+                } else {
+                    "open"
+                }))),
+                due_date: Set(input.values.due_date),
+                milestone_id: Set(input.values.milestone_id.filter(|value| *value > 0)),
+                assignee_id: Set(assignee_id),
+                parent_id: Set(parent_id),
+                weight: Set(None),
+                updated_by_author_id: Set(Some(input.actor_id)),
+                is_draft: Set(Some(if is_draft { 1 } else { 0 })),
+            }
+            .insert(&self.db)
+            .await;
+            match insert_result {
+                Ok(row) => {
+                    created = Some(row);
+                    break;
+                }
+                Err(error) if is_unique_issue_number_conflict(&error) => continue,
+                Err(error) => return Err(error),
+            }
         }
-        .insert(&self.db)
-        .await?;
+        let Some(created) = created else {
+            return Err(DbErr::Custom(
+                "issue number allocation conflicted after retries".to_string(),
+            ));
+        };
         self.write_text_column("issue", "body", created.id, &input.values.body_markdown)
             .await?;
         if is_draft {

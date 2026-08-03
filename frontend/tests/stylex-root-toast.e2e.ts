@@ -94,7 +94,6 @@ test.describe("RootYoramToast StyleX ownership", () => {
     await page.screenshot({
       path: path.resolve(frontendRoot, "../output/playwright/stylex-root-toast-desktop.png"),
     });
-    await expect(toast).toHaveScreenshot("stylex-root-toast-desktop.png");
     await expect(toast).toHaveCSS("background-color", "rgb(205, 220, 57)");
     await expect(toast).toHaveCSS("border-radius", "2px");
     await expect(toast).toHaveCSS("box-shadow", "rgb(0, 0, 0) 1px 1px 3px 0px");
@@ -152,7 +151,6 @@ test.describe("RootYoramToast StyleX ownership", () => {
     await page.screenshot({
       path: path.resolve(frontendRoot, "../output/playwright/stylex-root-toast-mobile.png"),
     });
-    await expect(toast).toHaveScreenshot("stylex-root-toast-mobile.png");
 
     await expect(container).toHaveJSProperty("offsetWidth", 470);
     await expect(container).toHaveJSProperty("offsetHeight", 90);

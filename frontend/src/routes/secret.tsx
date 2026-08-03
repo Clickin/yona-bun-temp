@@ -2,6 +2,8 @@ import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+
+type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
 import { RestApiError } from "../api/rest-client";
@@ -411,7 +413,49 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">Yoram authors</span>
+          <span className="provider">
+            Copyright{" "}
+            <Link
+              className="yona-author"
+              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+              rel="noreferrer"
+              target="_blank"
+              to={
+                "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
+              }
+            >
+              Yona authors
+            </Link>{" "}
+            & ©{" "}
+            <Link
+              href="https://navercorp.com"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://navercorp.com" as unknown as ExternalLinkTarget}
+            >
+              NAVER Corp.
+            </Link>{" "}
+            &{" "}
+            <Link
+              className="naver-labs"
+              href="https://naverlabs.com/"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
+            >
+              NAVER LABS
+            </Link>{" "}
+            Supported by{" "}
+            <Link
+              className="naver-cloud-platform"
+              href="https://www.ncloud.com/?referer=yona"
+              rel="noreferrer"
+              target="_blank"
+              to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
+            >
+              NAVER CLOUD PLATFORM
+            </Link>
+          </span>
         </div>
       </footer>
     </>

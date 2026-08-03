@@ -19,8 +19,10 @@ impl AppRepositoryImpl<'_> {
             .filter(n4user::Column::LoginId.ne(Some(LEGACY_ANONYMOUS_LOGIN_ID.to_string())))
             .order_by_desc(n4user::Column::CreatedDate)
             .order_by_desc(n4user::Column::Id);
-        if let Some(initial_user_id) = initial_user_id {
-            user_query = user_query.filter(n4user::Column::Id.ne(Some(initial_user_id)));
+        if filter.exclude_site_manager {
+            if let Some(initial_user_id) = initial_user_id {
+                user_query = user_query.filter(n4user::Column::Id.ne(Some(initial_user_id)));
+            }
         }
         match state.as_str() {
             "GUEST" => {
@@ -290,7 +292,7 @@ impl AppRepositoryImpl<'_> {
             .map(|row| row.id)
             .collect();
 
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         if !assignee_ids.is_empty() {
             issue::Entity::update_many()
                 .filter(issue::Column::AssigneeId.is_in(assignee_ids.iter().copied().map(Some)))
@@ -324,7 +326,8 @@ impl AppRepositoryImpl<'_> {
         active.email = Set(Some(format!("deleted-{login_id}@noreply.yona.io")));
         active.remember_me = Set(Some(0));
         let updated = active.update(&txn).await?;
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
 
         Ok(SiteUserDeleteResult::Deleted(site_user_record_from_model(
             updated,

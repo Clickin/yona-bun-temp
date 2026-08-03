@@ -267,7 +267,6 @@ function OrganizationBoardsBody({
                 >
                   {boards.notices.map((post) => (
                     <OrganizationBoardPost
-                      basePath={runtimeConfig.basePath}
                       key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
                       post={post}
                     />
@@ -281,7 +280,6 @@ function OrganizationBoardsBody({
               >
                 {boards.items.map((post) => (
                   <OrganizationBoardPost
-                    basePath={runtimeConfig.basePath}
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
                     post={post}
                   />
@@ -570,13 +568,7 @@ function BoardPagination({
   );
 }
 
-function OrganizationBoardPost({
-  _basePath,
-  post,
-}: {
-  _basePath: string;
-  post: BoardPostListItem;
-}) {
+function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
   const { t } = useLegacyMessages();
   const rowStyleProps = stylex.props(styles.row);
   const avatarStyleProps = stylex.props(styles.rowAvatar);

@@ -775,23 +775,31 @@ const paginationDelimiterStyleProps = stylex.props(
 );
 const paginationInputStyleProps = stylex.props(styles.paginationInput);
 const paginationPrevIconStyleProps = (spriteUrl: string) =>
-  stylex.props(styles.paginationIcon, styles.paginationPrevIcon, styles.paginationSprite(spriteUrl));
+  stylex.props(
+    styles.paginationIcon,
+    styles.paginationPrevIcon,
+    styles.paginationSprite(spriteUrl),
+  );
 const paginationPrevDisabledIconStyleProps = (spriteUrl: string) =>
   stylex.props(
-  styles.paginationIcon,
-  styles.paginationPrevIcon,
-  styles.paginationPrevIconDisabled,
-  styles.paginationSprite(spriteUrl),
-);
+    styles.paginationIcon,
+    styles.paginationPrevIcon,
+    styles.paginationPrevIconDisabled,
+    styles.paginationSprite(spriteUrl),
+  );
 const paginationNextIconStyleProps = (spriteUrl: string) =>
-  stylex.props(styles.paginationIcon, styles.paginationNextIcon, styles.paginationSprite(spriteUrl));
+  stylex.props(
+    styles.paginationIcon,
+    styles.paginationNextIcon,
+    styles.paginationSprite(spriteUrl),
+  );
 const paginationNextDisabledIconStyleProps = (spriteUrl: string) =>
   stylex.props(
-  styles.paginationIcon,
-  styles.paginationNextIcon,
-  styles.paginationNextIconDisabled,
-  styles.paginationSprite(spriteUrl),
-);
+    styles.paginationIcon,
+    styles.paginationNextIcon,
+    styles.paginationNextIconDisabled,
+    styles.paginationSprite(spriteUrl),
+  );
 const paginationLabelStyleProps = stylex.props(styles.paginationLabel);
 const paginationDisabledLabelStyleProps = stylex.props(
   styles.paginationLabel,
@@ -967,7 +975,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     onError(error, loginId) {
       clearPasswordResetAlert(loginId);
       // oxlint-disable-next-line no-alert -- legacy site/userList.scala.html uses $yobi.alert for reset-password failures.
-      window.alert(`password change failed: ${error.message}`);
+      window.alert(`password change failed: ${t(error.message)}`);
     },
   });
   const toggleUserMutation = useMutation({

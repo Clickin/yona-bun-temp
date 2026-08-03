@@ -250,7 +250,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       return registerWithPasswordRest(runtimeConfig, csrfToken, input);
     },
     onError(error) {
-      setSubmitError(error instanceof Error ? error.message : t("user.enroll.failed"));
+      setSubmitError(error instanceof Error ? t(error.message) : t("user.enroll.failed"));
     },
     async onSuccess(response) {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });

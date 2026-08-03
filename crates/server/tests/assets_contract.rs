@@ -710,7 +710,6 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     for path in [
         "/yona/_import",
         "/yona/notification?from=0&limit=20",
-        "/yona/sites/mail",
         "/yona/owner/projectYobi/members",
     ] {
         let response = app
@@ -736,6 +735,24 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         let html = String::from_utf8(body.to_vec()).unwrap();
         assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"), "{path}");
     }
+
+    let site_mail_anonymous = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/sites/mail")
+                .header(http::header::ACCEPT, "text/html")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        site_mail_anonymous.status(),
+        StatusCode::UNAUTHORIZED,
+        "site mail route enforces site-admin auth"
+    );
 }
 
 #[tokio::test]
@@ -901,7 +918,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains("\"common.attachment\": \"Attachment\""));
     assert!(script.contains("\"common.comment.delete\": \"Delete comment\""));
     assert!(script.contains(
-        "\"common.comment.beforeunload.confirm\": \" Would you like to exit this page without submitting comment?\""
+        "\"common.comment.beforeunload.confirm\": \"Would you like to exit this page without submitting comment?\""
     ));
     assert!(script.contains("\"code.closeCommentBox\": \"Close comment box\""));
     assert!(script.contains("\"code.copyUrl.copied\": \"URL is copied\""));
@@ -1029,7 +1046,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
         "\"project.transfer.alert\": \"You should agree with the transfer of this project.\""
     ));
     assert!(script.contains(
-        "\"project.transfer.error\": \" User or group not available. Please check whether the user's login id or the gorup's name is correct.\""
+        "\"project.transfer.error\": \"User or group not available. Please check whether the user's login id or the gorup's name is correct.\""
     ));
     assert!(script.contains("\"project.unwatch\": \"Unwatch\""));
     assert!(script.contains("\"project.watch\": \"Watch\""));
@@ -1058,7 +1075,7 @@ async fn legacy_messages_js_returns_global_messages_function_under_base_path() {
     assert!(script.contains(
         "\"pullRequest.watch.start\": \"You will receive notifications of this pull request\""
     ));
-    assert!(script.contains("\"post.comment.empty\": \"Comment should not be empty. \""));
+    assert!(script.contains("\"post.comment.empty\": \"Comment should not be empty.\""));
     assert!(script.contains("\"site.mail.sended\": \"Mail has been sent.\""));
     assert!(script.contains(
         "\"site.resetPasswordEmail.invalidRequest\": \"Invalid password reset request\""

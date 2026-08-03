@@ -491,7 +491,7 @@ export function ProjectIssueFormProjectScreen({
               data-stylex-owner="project-issue-form-load-error"
               role="alert"
             >
-              {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
+              {t(firstError instanceof Error ? firstError.message : "error.internalServerError")}
             </div>
           </div>
         </div>
@@ -531,7 +531,7 @@ export function ProjectIssueFormProjectScreen({
               data-stylex-owner="project-issue-form-load-error"
               role="alert"
             >
-              {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
+              {t(firstError instanceof Error ? firstError.message : "error.internalServerError")}
             </div>
           </div>
         </div>
@@ -806,7 +806,7 @@ function ProjectIssueFormBody({
     },
     onError(error) {
       allowNavigationRef.current = false;
-      setSubmitError(error instanceof Error ? error.message : t("error.internalServerError"));
+      setSubmitError(error instanceof Error ? t(error.message) : t("error.internalServerError"));
     },
     async onSuccess(issue) {
       const targetOwnerName = stringField(issue.ownerName, ownerName);
@@ -982,7 +982,7 @@ function ProjectIssueFormBody({
               ),
             );
           } catch (error) {
-            const message = error instanceof Error ? error.message : "Attachment upload failed.";
+            const message = error instanceof Error ? t(error.message) : "Attachment upload failed.";
             if (uploadRow.placeholder) {
               replaceBodyMarker(uploadRow.placeholder, "");
             }
@@ -1013,7 +1013,7 @@ function ProjectIssueFormBody({
       draftTouchedRef.current = true;
       setUploadRows((current) => current.filter((candidate) => candidate.key !== row.key));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Attachment delete failed.";
+      const message = error instanceof Error ? t(error.message) : "Attachment delete failed.";
       setUploadRows((current) =>
         current.map((candidate) =>
           candidate.key === row.key

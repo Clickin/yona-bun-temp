@@ -72,7 +72,7 @@ const EXPECTED_MISSING_USER_SCREEN = `
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/projects">Project list</a></li>
       <li><a href="__BASE_PATH__/_help">Help</a></li>
-      <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Yoram repository</a></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
     </ul>
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
@@ -109,7 +109,10 @@ const EXPECTED_MISSING_USER_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Yoram authors</span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -587,11 +590,11 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
     "href",
     `${basePath}/projects`,
   );
-  await expect(page.locator(".gnb-nav a", { hasText: "Yoram repository" })).toHaveAttribute(
+  await expect(page.locator(".gnb-nav a", { hasText: "Feedback" })).toHaveAttribute(
     "href",
-    "https://github.com/nforge/yobi/issues?state=open",
+    "https://github.com/yona-projects/yona/issues",
   );
-  await expect(page.locator(".gnb-nav a", { hasText: "Yoram repository" })).toHaveAttribute(
+  await expect(page.locator(".gnb-nav a", { hasText: "Feedback" })).toHaveAttribute(
     "target",
     "_blank",
   );

@@ -22,6 +22,7 @@ pub struct AppUserRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SiteUserListFilter {
+    pub exclude_site_manager: bool,
     pub page: u32,
     pub query: String,
     pub state: String,

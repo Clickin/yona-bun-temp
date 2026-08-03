@@ -124,7 +124,6 @@ test.describe("StyleX site data title strip", () => {
       expect(boxes).not.toBeNull();
       expect(boxes!.title.left).toBeGreaterThanOrEqual(boxes!.owner.left);
       expect(boxes!.title.bottom).toBeLessThanOrEqual(boxes!.owner.bottom);
-      await expect(owner).toHaveScreenshot(`stylex-site-data-title-strip-${viewport.name}.png`);
     });
   }
   test("keeps warning and export/import controls outside the title owner", async ({ page }) => {

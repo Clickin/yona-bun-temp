@@ -72,11 +72,11 @@ async fn ensure_runtime_schema_is_a_noop_when_the_current_baseline_is_already_ap
         .all(&db)
         .await
         .expect("applied migrations");
-    assert_eq!(applied.len(), 1);
-    assert_eq!(
-        applied[0].version,
-        "m20260409_000001_create_legacy_start_schema"
-    );
+    assert_eq!(applied.len(), 2);
+    let versions: std::collections::BTreeSet<&str> =
+        applied.iter().map(|row| row.version.as_str()).collect();
+    assert!(versions.contains("m20260409_000001_create_legacy_start_schema"));
+    assert!(versions.contains("m20260803_000001_add_pull_request_number_unique_index"));
 }
 
 #[tokio::test]
@@ -159,11 +159,11 @@ async fn adopt_policy_accepts_precreated_runtime_schema_and_marks_current_baseli
         .all(&db)
         .await
         .expect("applied migrations");
-    assert_eq!(applied.len(), 1);
-    assert_eq!(
-        applied[0].version,
-        "m20260409_000001_create_legacy_start_schema"
-    );
+    assert_eq!(applied.len(), 2);
+    let versions: std::collections::BTreeSet<&str> =
+        applied.iter().map(|row| row.version.as_str()).collect();
+    assert!(versions.contains("m20260409_000001_create_legacy_start_schema"));
+    assert!(versions.contains("m20260803_000001_add_pull_request_number_unique_index"));
     validate_manifest_schema(&db).await;
 }
 
@@ -298,11 +298,11 @@ async fn p0b_legacy_like_sqlite_fixture_validates_without_write_then_adopts_pres
         .all(&db)
         .await
         .expect("applied migrations after adopt");
-    assert_eq!(applied.len(), 1);
-    assert_eq!(
-        applied[0].version,
-        "m20260409_000001_create_legacy_start_schema"
-    );
+    assert_eq!(applied.len(), 2);
+    let versions: std::collections::BTreeSet<&str> =
+        applied.iter().map(|row| row.version.as_str()).collect();
+    assert!(versions.contains("m20260409_000001_create_legacy_start_schema"));
+    assert!(versions.contains("m20260803_000001_add_pull_request_number_unique_index"));
     assert_eq!(scalar_count(&db, "project").await, 1);
     assert_eq!(scalar_count(&db, "issue").await, 1);
     assert_eq!(scalar_count(&db, "issue_comment").await, 1);

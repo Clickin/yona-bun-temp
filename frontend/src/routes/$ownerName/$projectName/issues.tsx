@@ -27,6 +27,7 @@ import {
 } from "../../../components/route-fetch-lock";
 import { TabButton } from "../../../components/tab-button";
 import { useLegacyMessages } from "../../../i18n";
+import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { styles } from "./-issues.stylex";
 
 const issueListKeymapStyles = stylex.create({ visible: { display: "block" } });
@@ -44,7 +45,7 @@ import {
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
 
-type ProjectIssuesSearch = {
+export type ProjectIssuesSearch = {
   assigneeId: string;
   authorId: string;
   commenterId: string;
@@ -2055,20 +2056,18 @@ function ProjectIssueItem({
             ) : null}
             {issueLabels.map((label) => {
               return (
-                <IssueLabel
-                  as="button"
-                  className="label list-label"
-                  color={label.color}
-                  labelId={label.id}
+                <button
                   type="button"
+                  className="label issue-label list-label active"
                   data-category-id={label.categoryId ?? ""}
+                  data-label-id={String(label.id)}
                   key={String(label.id)}
                   onClick={(event: ReactMouseEvent<HTMLElement>) =>
                     handleIssueLabelClick(event, String(label.id))
                   }
                 >
                   {label.name}
-                </IssueLabel>
+                </button>
               );
             })}
             <div
@@ -3205,9 +3204,13 @@ function IssueSearchLabelSelect({
             {selectedLabels.map((label) => (
               <li className="select2-search-choice" key={label.id}>
                 <div>
-                  <IssueLabel className="label static" labelId={label.id}>
+                  <span
+                    className="label issue-label active static"
+                    data-label-id={String(label.id)}
+                    style={{ border: 0, borderStyle: "none", borderWidth: 0 }}
+                  >
                     {label.name}
-                  </IssueLabel>
+                  </span>
                 </div>
                 <span
                   className="select2-search-choice-close"

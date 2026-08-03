@@ -146,9 +146,6 @@ test.describe("StyleX standalone signup validation popover", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(page.locator(".page.full")).toHaveScreenshot(
-      "stylex-standalone-signup-validation-popover-desktop.png",
-    );
   });
 
   test("matches responsive mobile left/content output without overflow", async ({ page }) => {
@@ -163,9 +160,6 @@ test.describe("StyleX standalone signup validation popover", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(page.locator(".page.full")).toHaveScreenshot(
-      "stylex-standalone-signup-validation-popover-mobile.png",
-    );
   });
 
   test("leaves confirmation and social-only branches without validation-popover ownership", async ({

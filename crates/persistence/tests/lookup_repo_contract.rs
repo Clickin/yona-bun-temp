@@ -215,6 +215,7 @@ async fn site_user_list_filters_and_paginates_in_the_database() {
 
     let active_page = repo
         .list_site_users(SiteUserListFilter {
+            exclude_site_manager: true,
             page: 1,
             query: String::new(),
             state: "ACTIVE".to_string(),
@@ -229,6 +230,7 @@ async fn site_user_list_filters_and_paginates_in_the_database() {
 
     let active_second_page = repo
         .list_site_users(SiteUserListFilter {
+            exclude_site_manager: true,
             page: 2,
             query: String::new(),
             state: "ACTIVE".to_string(),
@@ -239,6 +241,7 @@ async fn site_user_list_filters_and_paginates_in_the_database() {
 
     let filtered = repo
         .list_site_users(SiteUserListFilter {
+            exclude_site_manager: true,
             page: 1,
             query: "NEEDLE".to_string(),
             state: "ACTIVE".to_string(),
@@ -252,6 +255,7 @@ async fn site_user_list_filters_and_paginates_in_the_database() {
 
     let guest = repo
         .list_site_users(SiteUserListFilter {
+            exclude_site_manager: true,
             page: 1,
             query: String::new(),
             state: "GUEST".to_string(),
@@ -263,6 +267,7 @@ async fn site_user_list_filters_and_paginates_in_the_database() {
 
     let locked = repo
         .list_site_users(SiteUserListFilter {
+            exclude_site_manager: true,
             page: 1,
             query: String::new(),
             state: "LOCKED".to_string(),
@@ -274,6 +279,7 @@ async fn site_user_list_filters_and_paginates_in_the_database() {
 
     let site_admin = repo
         .list_site_users(SiteUserListFilter {
+            exclude_site_manager: true,
             page: 1,
             query: String::new(),
             state: "SITE_ADMIN".to_string(),

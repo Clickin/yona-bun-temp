@@ -153,7 +153,9 @@ function UserIssuesBody({
       return response.json() as Promise<{ defaultLoginPage: string }>;
     },
     onError(error) {
-      window.alert(`set Default page failed: ${error instanceof Error ? error.message : error}`);
+      window.alert(
+        `set Default page failed: ${t(error instanceof Error ? error.message : String(error))}`,
+      );
     },
     onSuccess(_data, path) {
       void queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });

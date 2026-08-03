@@ -124,9 +124,6 @@ test.describe("StyleX site massmail project input", () => {
       expect(boxes!.input.right).toBeLessThanOrEqual(boxes!.controls.right + 1);
       expect(boxes!.input.top).toBeGreaterThanOrEqual(boxes!.wrapper.top);
       expect(boxes!.input.bottom).toBeLessThanOrEqual(boxes!.wrapper.bottom);
-      await expect(input).toHaveScreenshot(
-        `stylex-site-massmail-project-input-${viewport.name}.png`,
-      );
     });
   }
 

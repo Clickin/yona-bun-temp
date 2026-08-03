@@ -13,6 +13,7 @@ pub mod entity_schema;
 pub mod import_checkpoint;
 pub mod legacy_external;
 mod m20260409_000001_create_legacy_start_schema;
+mod m20260803_000001_add_pull_request_number_unique_index;
 
 pub struct Migrator;
 
@@ -84,9 +85,10 @@ impl FromStr for RuntimeSchemaPolicy {
 #[async_trait::async_trait]
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        vec![Box::new(
-            m20260409_000001_create_legacy_start_schema::Migration,
-        )]
+        vec![
+            Box::new(m20260409_000001_create_legacy_start_schema::Migration),
+            Box::new(m20260803_000001_add_pull_request_number_unique_index::Migration),
+        ]
     }
 }
 

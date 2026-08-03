@@ -177,7 +177,10 @@ const EXPECTED_MIGRATION_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Yoram authors</span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -308,8 +311,11 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
     1,
   );
   await expect(page.locator(`#mySidenav a[href="${basePath}/anonymous"]`)).toHaveText("Profile");
-  await expect(page.locator('[data-stylex-owner="site-footer-provider"]')).toHaveText(
-    "Yoram authors",
+  await expect(page.locator('[data-stylex-owner="site-footer-provider"]')).toContainText(
+    "Yona authors",
+  );
+  await expect(page.locator('[data-stylex-owner="site-footer-provider"]')).not.toContainText(
+    "Yoram",
   );
   for (const attribute of ["data-login", "data-placement", "data-toggle"]) {
     await expect(page.locator(`[data-stylex-owner="global-gnb-outer"] [${attribute}]`)).toHaveCount(

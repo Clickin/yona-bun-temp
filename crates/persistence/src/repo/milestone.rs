@@ -303,7 +303,7 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(false);
         };
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         issue::Entity::update_many()
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
             .filter(issue::Column::MilestoneId.eq(Some(row.id)))
@@ -319,7 +319,8 @@ impl AppRepositoryImpl<'_> {
             .exec(&txn)
             .await?;
         milestone::Entity::delete_by_id(row.id).exec(&txn).await?;
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
         self.stable_lists
             .invalidate_milestones(owner_name, project_name)
             .await;

@@ -31,13 +31,19 @@ async fn main() -> anyhow::Result<()> {
         redact_database_url(&startup.database_url),
         asset_mode_label(&startup)
     );
-    let db = sea_orm::Database::connect(&startup.database_url).await?;
+    let db = connect_database(&startup.database_url).await?;
     Migrator::ensure_runtime_schema_with_policy(&db, startup.schema_policy).await?;
     if startup.seed_pilot {
         seed_pilot_data(&db).await?;
     }
 
-    let repository = PilotRepository::new_with_config(db, repository_config);
+    let mut repository = PilotRepository::new_with_config(db, repository_config);
+    #[cfg(feature = "sqlite")]
+    if is_file_sqlite(&startup.database_url) {
+        repository = repository.with_sqlite_write_coordinator(std::sync::Arc::new(
+            tokio::sync::Mutex::new(()),
+        ));
+    }
     reconcile_site_import_staging_uploads_for_startup(&app_config.data_root, &repository)
         .await
         .map_err(anyhow::Error::msg)?;
@@ -87,6 +93,44 @@ fn asset_mode_label(startup: &yoram_server::runtime_config::StartupConfig) -> &'
         "filesystem"
     } else {
         "none"
+    }
+}
+
+/// File-backed SQLite only: `sqlite::memory:` (unit/contract tests, dev) and
+/// every non-SQLite backend keep the plain connect path — no WAL, no pragmas,
+/// no pool tuning, no write coordinator.
+fn is_file_sqlite(url: &str) -> bool {
+    url.starts_with("sqlite:") && !url.contains(":memory:")
+}
+
+async fn connect_database(url: &str) -> Result<sea_orm::DatabaseConnection, sea_orm::DbErr> {
+    if !is_file_sqlite(url) {
+        return sea_orm::Database::connect(url).await;
+    }
+
+    #[cfg(feature = "sqlite")]
+    {
+        let mut options = sea_orm::ConnectOptions::new(url);
+        options
+            .max_connections(4)
+            .min_connections(1)
+            .connect_timeout(std::time::Duration::from_secs(5))
+            .acquire_timeout(std::time::Duration::from_secs(5))
+            .map_sqlx_sqlite_opts(|opts| {
+                opts.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
+                    .synchronous(sqlx::sqlite::SqliteSynchronous::Full) // durable default; NORMAL = balanced profile (see ops doc)
+                    .busy_timeout(std::time::Duration::from_millis(5000))
+                    .foreign_keys(true)
+                    .pragma("wal_autocheckpoint", "1000")
+                    .pragma("journal_size_limit", (64 * 1024 * 1024).to_string())
+                    .pragma("cache_size", "-8192")
+            });
+        sea_orm::Database::connect(options).await
+    }
+
+    #[cfg(not(feature = "sqlite"))]
+    {
+        sea_orm::Database::connect(url).await
     }
 }
 

@@ -11,6 +11,7 @@ impl AppRepositoryImpl<'_> {
             config,
             db: RepositoryDb::Connection(db),
             stable_lists,
+            sqlite_write_coordinator: None,
         }
     }
 
@@ -36,6 +37,7 @@ impl AppRepositoryImpl<'_> {
             // Share the parent's store: transaction-scoped mutations must
             // invalidate the same cache the shared repository reads from.
             stable_lists: self.stable_lists.clone(),
+            sqlite_write_coordinator: self.sqlite_write_coordinator.clone(),
         }
     }
 

@@ -150,7 +150,7 @@ impl AppRepositoryImpl<'_> {
         let mut assignee_changes = Vec::new();
         let mut milestone_changes = Vec::new();
         let mut label_changes = Vec::new();
-        let txn = self.db.begin().await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         for (project_record, model, next_assignee_id) in &targets {
             let previous_state = issue_state_from_raw(model.state);
             let was_draft = model.is_draft.unwrap_or_default() != 0;
@@ -237,7 +237,8 @@ impl AppRepositoryImpl<'_> {
                 ));
             }
         }
-        txn.commit().await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
 
         for (project_record, model, old_state, new_state) in state_changes {
             self.create_issue_event(

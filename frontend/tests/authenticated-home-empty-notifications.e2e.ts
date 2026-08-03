@@ -130,7 +130,10 @@ const EXPECTED_AUTHENTICATED_HOME = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Yoram authors</span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -593,7 +596,7 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).toContain("<footer {...stylex.props(siteFooterStyles.outer)}");
   expect(routeSource).toContain("{sharedSiteFooterWithStyleProps}");
   expect(routeSource).toContain('data-stylex-owner="site-footer-provider"');
-  expect(routeSource).toContain("Yoram authors");
+  expect(routeSource).toContain("Yona authors");
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
   expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
   expect(routeSource).toContain("to={navbarCustomLinkUrl}");
@@ -1157,7 +1160,7 @@ test("shared shell only renders the configured feedback link", async ({ page }) 
   await page.goto(`${basePath}/`);
 
   const feedbackLink = page.locator('[data-stylex-owner="global-gnb-nav"] a', {
-    hasText: "Yoram repository",
+    hasText: "Feedback",
   });
   await expect(feedbackLink).toHaveAttribute("href", "https://feedback.example.test/yoram");
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
