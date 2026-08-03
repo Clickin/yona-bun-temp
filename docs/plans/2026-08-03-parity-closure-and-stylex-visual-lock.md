@@ -52,7 +52,16 @@ Status: draft — handoff plan for a fresh agent context.
 >    identity), NOT screenshot diffing. Screenshots may remain only as
 >    non-gating artifacts. Reuse the repo's existing metric-parity e2e pattern
 >    (`playwright-css-parity` skill, `stylex-*` e2e specs).
-> 5. **Explicit rebranding is a separate, later phase** — after the parity lock
+> 5. **Fix the i18n defects** (Workstream 6 below) — (a) server error message
+>    KEYS must be translated at the display site (`t(error.message)`, matching
+>    the existing `organizations/new.tsx` pattern) in every form, starting with
+>    the login form's `user.login.invalid`; (b) the frontend i18n must OWN its
+>    message dictionaries (committed message files under the frontend), with
+>    `yona-original/conf/messages*` used only as the one-time import source —
+>    remove the build-time `?raw` imports in `frontend/src/i18n.tsx` and the
+>    server's `include_str!` of `yona-original/conf/messages*` in
+>    `crates/server/src/routes/messages.rs`.
+> 6. **Explicit rebranding is a separate, later phase** — after the parity lock
 >    is green, write a dedicated plan for the Yoram footer/GNB identity. Do not
 >    mix it into this pass.
 >
@@ -173,25 +182,85 @@ property-based gate:
    global run + production build + StyleX verifier + property-based suite is.
 4. Document the retired screenshot thresholds in the stylex migration ledger.
 
-## 7. Workstream 5 — explicit rebranding (deferred, separate phase)
+## 7. Workstream 6 — i18n defects (reported from MariaDB login testing, 2026-08-03)
+
+### 6.1 Server error message keys displayed raw (login form)
+
+Evidence:
+- Server returns the message KEY, not the translation:
+  `crates/server/src/routes/auth.rs:415` → `ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE)`
+  with `LEGACY_LOGIN_INVALID_MESSAGE = "user.login.invalid"` (`state.rs:275`); the
+  REST contract intentionally returns keys (`auth_workspace_contract.rs:2222,2298`
+  assert `"user.login.invalid"` in the JSON body).
+- `frontend/src/routes/users/loginform.tsx:108` displays it raw:
+  `setSubmitError(error instanceof Error ? error.message : t("user.login.failed"))`
+  → the browser shows the literal `user.login.invalid`.
+- The established correct pattern already exists in
+  `frontend/src/routes/organizations/new.tsx:264` and
+  `.../settingform.tsx:109`: `t(error.message)` — `lookupLegacyMessage` returns
+  the key unchanged when unknown (legacy `Messages()` semantics), so known keys
+  translate and concrete server strings pass through.
+
+Fix:
+1. `loginform.tsx` → `setSubmitError(error instanceof Error ? t(error.message) : t("user.login.failed"))`.
+2. Audit all ~28 `error.message` display sites (grep
+   `error.message` under `frontend/src`), apply `t(error.message)` to every
+   user-visible error message (mutation `onError` handlers, `window.alert`
+   failures). Keep raw only where the message is a debug/developer surface.
+3. e2e/contract pin: extend `auth-aliases.e2e.ts` (or the login e2e) to assert
+   the invalid-login error shows the TRANSLATED copy (ko-KR), not the key;
+   `auth_workspace_contract` already pins the key in the API response.
+
+### 6.2 i18n must own the message dictionaries (stop referencing yona-original)
+
+Evidence:
+- `frontend/src/i18n.tsx:2-6` bundles the legacy files at build time:
+  `import legacyMessagesEn from "../../yona-original/conf/messages?raw"` (×5).
+- `crates/server/src/routes/messages.rs:4-8` `include_str!`s the same five files
+  and serves `/messages.js` (the legacy global `Messages()`), and
+  `assets_contract.rs:1105` pins the served content.
+
+Design (per user direction): the Rust frontend owns its message keys; the
+legacy files are the one-time import source only.
+
+Fix:
+1. Generate committed dictionaries into the frontend (e.g.
+   `frontend/src/i18n/messages/{en-US,ja-JP,ko-KR,ru-RU,uz-UZ}.ts` — a one-time
+   import from `yona-original/conf/messages*`, kept verbatim, with the rebrand
+   value overrides applied as today). `frontend/src/i18n.tsx` imports its own
+   files; no `yona-original` paths remain in frontend build inputs.
+2. Server `/messages.js`: keep the route for legacy-compat parity, but source it
+   from the same owned dictionaries (generate a JS artifact in the crate or
+   serve from a shared owned source) instead of `include_str!` on
+   `yona-original/conf/`. Alternatively, document why the legacy include stays
+   (it is a legacy-compat route; the owned-dictionary rule applies to the
+   application i18n).
+3. `assets_contract.rs:1105` assertion stays (the served content must remain
+   the legacy messages — the legacy JS consumers depend on it); only the SOURCE
+   of that content changes.
+4. Record in provenance: message-key ownership moved to the frontend crate;
+   yona-original/conf/messages becomes import-source-only (frozen, unmodified).
+
+## 8. Workstream 5 — explicit rebranding (deferred, separate phase)
 
 After the parity lock is green: a dedicated plan replaces the legacy
 footer/GNB identity (Yoram product identity per the approved rebrand —
 `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`) with its own tests,
 including the feedback link destination decision. Nothing in this pass rebrands.
 
-## 8. Follow-up (recorded, not in this pass)
+## 9. Follow-up (recorded, not in this pass)
 
 - notification/webhook mail-timing flakes (3 deterministic + rotating set).
 - release-binary embedded-asset hygiene: stale chunks from earlier builds were
   served (orphaned, unreferenced); make the embed step clean the asset tree.
 - base-path runtime-injection test (deferred per prior decision).
 
-## 9. Verification gates (this pass)
+## 10. Verification gates (this pass)
 
 1. `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server --test issue_core_contract --test rest_contract --test assets_contract` — green.
 2. e2e: `stylex-project-issues-pagination`, `project-issues-empty`,
    `project-issues-real-instance-parity` — green via managed runner.
-3. `pnpm --dir frontend build` + `tsc --noEmit` — clean.
+3. Login invalid-account flow: translated `user.login.invalid` copy (ko-KR),
+   never the raw key; `pnpm --dir frontend build` + `tsc --noEmit` clean.
 4. Turn-commit hook passes; scala-html-goal history audit clean (baseline
    `186433797..HEAD`); route TSX changes carry a complete audit row.
