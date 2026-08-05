@@ -484,7 +484,7 @@ export class Locator {
           );
           for (let i = 0; i < result.snapshotLength; i += 1) {
             const node = result.snapshotItem(i);
-            if (node instanceof Element) elements.push(node);
+            if (node !== null && node.nodeType === 1) elements.push(node as Element);
           }
         } else {
           elements.push(...Array.from(base.querySelectorAll(this.scopedChild)));
@@ -513,7 +513,7 @@ export class Locator {
       const elements: Element[] = [];
       for (let i = 0; i < result.snapshotLength; i += 1) {
         const node = result.snapshotItem(i);
-        if (node instanceof Element) elements.push(node);
+        if (node !== null && node.nodeType === 1) elements.push(node as Element);
       }
       return elements;
     }
@@ -694,7 +694,7 @@ export class Locator {
             const elements: Element[] = [];
             for (let i = 0; i < xpathResult.snapshotLength; i += 1) {
               const node = xpathResult.snapshotItem(i);
-              if (node instanceof Element) elements.push(node);
+              if (node !== null && node.nodeType === 1) elements.push(node as Element);
             }
             return elements;
           }
@@ -706,9 +706,44 @@ export class Locator {
       })(page, base.selector, undefined);
       return options?.hasText === undefined ? result : result.filterByText(options.hasText);
     }
+    if (childSelector.startsWith("xpath=")) {
+      // Plain parent + xpath child: evaluate the expression against each
+      // resolved parent element.
+      const page = this.page;
+      const base = this;
+      const expression = childSelector.slice("xpath=".length);
+      const result = new (class extends Locator {
+        hasCustomResolver = true;
+        resolveElements(): Element[] {
+          const elements: Element[] = [];
+          for (const parent of base.resolveElements()) {
+            const doc = parent.ownerDocument;
+            const xpathResult = doc.evaluate(
+              expression,
+              parent,
+              null,
+              XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+              null,
+            );
+            for (let i = 0; i < xpathResult.snapshotLength; i += 1) {
+              const node = xpathResult.snapshotItem(i);
+              if (node !== null && node.nodeType === 1) elements.push(node as Element);
+            }
+          }
+          return elements;
+        }
+      })(page, base.selector, undefined);
+      let resultWithOptions: Locator = result;
+      if (options?.hasText !== undefined)
+        resultWithOptions = resultWithOptions.filterByText(options.hasText);
+      if (options?.has !== undefined)
+        resultWithOptions = resultWithOptions.filterWithHas(options.has);
+      return resultWithOptions;
+    }
+    const childParts = childSelector.split(",").map((part) => part.trim());
     const combined = this.selector
       .split(",")
-      .map((part) => `${part.trim()} ${childSelector}`)
+      .flatMap((parentPart) => childParts.map((childPart) => `${parentPart.trim()} ${childPart}`))
       .join(", ");
     const plain = new Locator(this.page, combined, this.index);
     let result = plain;
@@ -720,6 +755,7 @@ export class Locator {
   async evaluateAll<T>(fn: (elements: Element[]) => T): Promise<T> {
     if (
       this.hasCustomResolver ||
+      this.scopedChild !== undefined ||
       this.selector.includes(":has-text(") ||
       this.selector.includes(":text(") ||
       this.selector.includes(":visible") ||
@@ -912,6 +948,16 @@ export class Locator {
   async press(key: string): Promise<void> {
     const element = await this.waitForElement();
     const parsed = parseKeyCombo(key);
+    if (parsed.key === "Tab") {
+      // Real Tab moves focus — the previously focused element blurs (apps
+      // hide popovers on onBlur). Synthesize the focus transition on the
+      // active element; full focus traversal is out of scope.
+      const doc = element.ownerDocument;
+      const active = doc.activeElement as HTMLElement | null;
+      active?.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
+      active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+      active?.blur();
+    }
     for (const type of ["keydown", "keyup"]) {
       element.dispatchEvent(new KeyboardEvent(type, { ...parsed, bubbles: true }));
     }
@@ -1037,6 +1083,7 @@ export class Locator {
     // top-realm and run there.
     if (
       this.hasCustomResolver ||
+      this.scopedChild !== undefined ||
       this.selector.includes(":has-text(") ||
       this.selector.includes(":text(") ||
       this.selector.includes(":visible") ||
@@ -1081,8 +1128,16 @@ class PageFacade {
     press: async (key: string) => {
       const doc = this.document();
       const target = (doc.activeElement as HTMLElement) ?? doc.body;
-      target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
-      target.dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
+      const parsed = parseKeyCombo(key);
+      if (parsed.key === "Tab") {
+        // Real Tab moves focus — blur the active element (popover onBlur).
+        const active = doc.activeElement as HTMLElement | null;
+        active?.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
+        active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+        active?.blur();
+      }
+      target.dispatchEvent(new KeyboardEvent("keydown", { ...parsed, bubbles: true }));
+      target.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
       await sleep(20);
     },
     type: async (text: string) => {
@@ -1300,10 +1355,20 @@ class PageFacade {
       const mockFetch = (window as unknown as Record<string, unknown>).__wtrMockFetch as
         | ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>)
         | undefined;
-      if (mockFetch) {
-        return await mockFetch(url, { method: "GET" });
-      }
-      return await fetch(url);
+      const response = mockFetch ? await mockFetch(url, { method: "GET" }) : await fetch(url);
+      // Playwright-style APIResponse facade: status()/ok()/headers()/url()/body().
+      return {
+        status: () => response.status,
+        ok: () => response.status >= 200 && response.status < 300,
+        headers: () => Object.fromEntries(response.headers.entries()),
+        url: () => response.url,
+        body: async () => new Uint8Array(await response.arrayBuffer()),
+        json: async () => {
+          const text = await response.text();
+          return text ? JSON.parse(text) : null;
+        },
+        text: async () => response.text(),
+      };
     },
   };
 
@@ -1321,6 +1386,7 @@ class PageFacade {
   // Playwright's clock control: fix Date to a timestamp via an init hook
   // (replayed on every iframe load like addInitScript).
   readonly clock = {
+    install: (): void => {},
     setFixedTime: (date: string | number | Date): void => {
       const timestamp = new Date(date).getTime();
       initHooks.push({
@@ -2319,9 +2385,17 @@ expect.poll = (fn: () => unknown) => ({
     await expectPoll(
       async () => {
         const actual = await fn();
-        return typeof actual === "string" && typeof expected === "string"
-          ? actual.includes(expected)
-          : actual === expected;
+        if (typeof actual === "string" && typeof expected === "string") {
+          return actual.includes(expected);
+        }
+        if (Array.isArray(actual)) {
+          return actual.some((item) =>
+            typeof expected === "string" && typeof item === "string"
+              ? item.includes(expected)
+              : asymmetricEquals(item, expected),
+          );
+        }
+        return actual === expected;
       },
       `poll().toContain(${String(expected)})`,
     );
@@ -2375,6 +2449,42 @@ expect.poll = (fn: () => unknown) => ({
   },
   toBeNull: async () => {
     await expectPoll(async () => (await fn()) === null, "poll().toBeNull()");
+  },
+  // Lazy negation: expect.poll(fn).not.<matcher>
+  get not() {
+    return {
+      toMatch: async (expected: RegExp) => {
+        await expectPoll(async () => !expected.test(String(await fn())), "poll().not.toMatch()");
+      },
+      toBe: async (expected: unknown) => {
+        await expectPoll(async () => {
+          const actual = await fn();
+          const matches =
+            typeof expected === "string" && typeof actual === "string"
+              ? normalizeText(actual) === normalizeText(expected)
+              : actual === expected;
+          return !matches;
+        }, "poll().not.toBe()");
+      },
+      toContain: async (expected: unknown) => {
+        await expectPoll(async () => {
+          const actual = await fn();
+          const contains =
+            typeof actual === "string" && typeof expected === "string"
+              ? actual.includes(expected)
+              : Array.isArray(actual) && expected !== null && typeof expected === "object"
+                ? actual.some((item) => asymmetricEquals(item, expected))
+                : actual === expected;
+          return !contains;
+        }, "poll().not.toContain()");
+      },
+      toEqual: async (expected: unknown) => {
+        await expectPoll(
+          async () => !asymmetricEquals(await fn(), expected),
+          "poll().not.toEqual()",
+        );
+      },
+    };
   },
 });
 
