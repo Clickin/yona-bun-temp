@@ -280,3 +280,28 @@ pins fixed in copies (gnb-outer template-literal className, framed-site-shell
 sha256 8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6,
 project-shell input color 51,51,51, recent-shell empty heights, subtabs
 height family 46->44 etc).
+
+## Wave 8 — committed `d67e0aba8` (26 files, +6.8k)
+
+Specs (24): stylex-global-gnb-search-submit, stylex-global-search-{category,page-grid,pagination,result-owners,
+results}, stylex-global-sidebar-open-pin, stylex-gray-text-retirement, stylex-help-{faq,shell},
+stylex-home-notification-expanded-height, stylex-home-sidebar-legacy-popover, stylex-left-sidebar-{account-actions,
+close-pin,direct-project-rows,favorite-nested-project-rows,favorite-organization-rows,favorite-shell,footer,motion,
+outer-shell,profile-identity,project-shell,project-subtabs}.
+
+Suite: 195 files, 1206 passed / 510 failed / 1 skipped (~23 min).
+
+Shim additions: placeholder in accessible-name candidates, display:contents +
+position:fixed visibility (rect fallback), Space/Enter button activation
+(parseKeyCombo Space->" "; cross-realm tagName), printable-key insertion
+restricted to INPUT/TEXTAREA, Locator.waitFor, click hit-test for
+pointerup/click (wrapper li > Link), ../docs/ mapping + /docs fixture root,
+implicit ARIA roles (complementary/navigation/main/region/list/listitem).
+
+Residual families (all PW-verified): CSS :hover ceiling (brand/feedback links,
+List All, scope-menu, close-pin cursor:default auto/:hover pointer, favorite
+rows); retained legacy classes (search-box, pin, input-prepend — PW
+byte-identical); yobicon @font-face dropped by fallback-off build (fav-org
+logo collapse 3vs23, footer hearts 16x0); dist sidebar offset/collapse;
+stale pins fixed in copies (search category listStyle, favorite-shell empty
+heights 72->70/20->18, help-shell margin 143 PW-identical stale).
