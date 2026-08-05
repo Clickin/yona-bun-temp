@@ -411,6 +411,12 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
 // Locator
 // ---------------------------------------------------------------------------
 
+// Element handles: Playwright JSHandles snapshot an element; our handles are
+// registry refs the iframe-side eval resolves via parent.__wtrHandleRegistry.
+const wtrHandleRegistry = new Map<number, Element>();
+let nextHandleId = 1;
+(window as unknown as Record<string, unknown>).__wtrHandleRegistry = wtrHandleRegistry;
+
 const POLL_INTERVAL_MS = 40;
 let lastMouseX = 0;
 let lastMouseY = 0;
@@ -711,6 +717,25 @@ export class Locator {
       const result = new (class extends Locator {
         hasCustomResolver = true;
         resolveElements(): Element[] {
+          if (child.startsWith("xpath=")) {
+            const expression = child.slice("xpath=".length);
+            const elements: Element[] = [];
+            for (const parent of base.resolveElements()) {
+              const doc = parent.ownerDocument;
+              const xpathResult = doc.evaluate(
+                expression,
+                parent,
+                null,
+                XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+                null,
+              );
+              for (let i = 0; i < xpathResult.snapshotLength; i += 1) {
+                const node = xpathResult.snapshotItem(i);
+                if (node !== null && node.nodeType === 1) elements.push(node as Element);
+              }
+            }
+            return elements;
+          }
           return base
             .resolveElements()
             .flatMap((element) => Array.from(element.querySelectorAll(child)));
@@ -858,11 +883,28 @@ export class Locator {
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
-    return this.locator(roleSelectorFor(role)).filterByText(options?.name, options?.exact);
+    // Playwright's role engine excludes elements hidden from the a11y tree
+    // (display:none subtrees) — the always-mounted root dialog must not match.
+    const page = this.page;
+    const scoped = this.locator(roleSelectorFor(role)).filterWithPredicate((element) => {
+      let node: Element | null = element;
+      while (node) {
+        const style = page.window().getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+        node = node.parentElement;
+      }
+      return true;
+    });
+    return scoped.filterByText(options?.name, options?.exact);
   }
 
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator {
     return this.locator("*").filterByText(text, options?.exact, true);
+  }
+
+  getByPlaceholder(placeholder: string): Locator {
+    const escaped = placeholder.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return this.locator(`[placeholder="${escaped}"]`);
   }
 
   getByTestId(testId: string): Locator {
@@ -963,9 +1005,29 @@ export class Locator {
     return this.resolveElements().length;
   }
 
+  async screenshot(_options?: Record<string, unknown>): Promise<void> {
+    // Screenshots are artifact-only in WTR; PageFacade.screenshot records a
+    // marker. Locator-level screenshots accept and drop the options.
+    await this.page.screenshot(_options);
+  }
+
   async textContent(): Promise<string | null> {
     const element = this.current();
     return element?.textContent ?? null;
+  }
+
+  async innerText(): Promise<string> {
+    const element = this.current();
+    if (!element) return "";
+    // The element lives in the iframe realm; use its own innerText (rendered
+    // text, hidden content excluded) via the realm's prototype.
+    const view = element.ownerDocument.defaultView as Window & typeof globalThis;
+    const proto = view.HTMLElement.prototype;
+    const getter = Object.getOwnPropertyDescriptor(proto, "innerText")?.get;
+    if (getter) {
+      return (getter.call(element) as string).replace(/\s+/g, " ").trim();
+    }
+    return normalizeText(element.textContent ?? "");
   }
 
   async allTextContents(): Promise<string[]> {
@@ -1184,6 +1246,15 @@ export class Locator {
     await sleep(10);
   }
 
+  async elementHandle(): Promise<unknown> {
+    const element = await this.waitForElement();
+    if (!element) return null;
+    const id = nextHandleId;
+    nextHandleId += 1;
+    wtrHandleRegistry.set(id, element);
+    return { __wtrHandleRef: id };
+  }
+
   async evaluate<T>(fn: (element: Element, arg: never) => T, arg?: unknown): Promise<T> {
     const callWithArg = (element: Element) => fn(element, arg as never);
     // Custom resolvers (filter/.. /nth-scoped chains) and translated pseudos
@@ -1209,7 +1280,20 @@ export class Locator {
       const argJson = arg === undefined ? "undefined" : JSON.stringify(arg);
       // eslint-disable-next-line no-eval
       return target.eval(
-        `(function () { const el = parent.__wtrEvalElement; if (!el) return undefined; return (${fn.toString()})(el, ${argJson}); })()`,
+        `(function () {
+          const __wtrResolve = (v) => {
+  if (v && typeof v === "object" && "__wtrHandleRef" in v) return parent.__wtrHandleRegistry.get(v.__wtrHandleRef);
+  if (Array.isArray(v)) return v.map(__wtrResolve);
+  if (v && typeof v === "object") {
+    for (const key of Object.keys(v)) v[key] = __wtrResolve(v[key]);
+    return v;
+  }
+  return v;
+};
+          const el = parent.__wtrEvalElement;
+          if (!el) return undefined;
+          return (${fn.toString()})(el, __wtrResolve(${argJson}));
+        })()`,
       ) as T;
     }
     // Plain selectors: run inside the iframe realm so `element instanceof
@@ -1220,7 +1304,21 @@ export class Locator {
     const argJson = arg === undefined ? "undefined" : JSON.stringify(arg);
     // eslint-disable-next-line no-eval
     return target.eval(
-      `(function () { const elements = document.querySelectorAll(${selector}); const el = elements[${index}]; if (!el) return undefined; return (${fn.toString()})(el, ${argJson}); })()`,
+      `(function () {
+        const __wtrResolve = (v) => {
+  if (v && typeof v === "object" && "__wtrHandleRef" in v) return parent.__wtrHandleRegistry.get(v.__wtrHandleRef);
+  if (Array.isArray(v)) return v.map(__wtrResolve);
+  if (v && typeof v === "object") {
+    for (const key of Object.keys(v)) v[key] = __wtrResolve(v[key]);
+    return v;
+  }
+  return v;
+};
+        const elements = document.querySelectorAll(${selector});
+        const el = elements[${index}];
+        if (!el) return undefined;
+        return (${fn.toString()})(el, __wtrResolve(${argJson}));
+      })()`,
     ) as T;
   }
 }
@@ -1486,11 +1584,25 @@ class PageFacade {
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
-    return new Locator(this, roleSelectorFor(role)).filterByText(options?.name, options?.exact);
+    const scoped = new Locator(this, roleSelectorFor(role)).filterWithPredicate((element) => {
+      let node: Element | null = element;
+      while (node) {
+        const style = this.window().getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+        node = node.parentElement;
+      }
+      return true;
+    });
+    return scoped.filterByText(options?.name, options?.exact);
   }
 
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator {
     return new Locator(this, "body *").filterByText(text, options?.exact, true);
+  }
+
+  getByPlaceholder(placeholder: string): Locator {
+    const escaped = placeholder.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return new Locator(this, `[placeholder="${escaped}"]`);
   }
 
   getByLabel(label: string): Locator {
@@ -2524,6 +2636,15 @@ expect.objectContaining = (expected: Record<string, unknown>) => ({
     Object.entries(expected).every(([key, value]) =>
       asymmetricEquals((actual as Record<string, unknown>)[key], value),
     ),
+});
+expect.closeTo = (expected: number, precision = 2) => ({
+  asymmetricMatch: (actual: unknown) => {
+    if (typeof actual !== "number") return false;
+    const tolerance = 0.5 * 10 ** -precision;
+    return Math.abs(actual - expected) < tolerance;
+  },
+  _closeToExpected: expected,
+  _closeToPrecision: precision,
 });
 expect.arrayContaining = (expected: unknown[]) => ({
   asymmetricMatch: (actual: unknown) =>
