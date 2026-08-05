@@ -177,3 +177,53 @@ API 404 via context.status, fixture-before-esbuild plugin order.
 - iframe `window.fetch` assignment is wiped on navigation — inject the override
   into the served document (`parent.__wtrMockFetch`).
 - Glob→regex: escape AFTER protecting wildcards.
+
+## Wave 4 — committed `302c4d9ff` (25 files, +13.6k)
+
+Specs (24): project-code-{search,svn-head,svn-main,svn-main-trailing-slash,svn-missing-readme,tags,view-file,view-folder},
+project-commits-svn-{main,root,root-trailing-slash}, project-deleteform-svn, project-create, project-fork-form,
+project-home-{history,dashboard}, project-pullrequests, project-reviews, project-statistics, projects-list,
+public-landing-parity, register-alias, reset-password{alias,}, root-reset-password-alias.
+
+Suite: 99 files, 872 passed / 394 failed / 1 skipped (~18 min). Fresh PW per spec; remaining failures are
+PW-identical app-parity gaps (bucket 2: stylex shells, geometry drift, source pins) + bucket-3 copy fixes applied.
+
+Shim additions: expect.poll(fn).not.<matcher>, page.request.get APIResponse facade, xpath cross-realm
+(nodeType===1), plain-parent xpath compose, child-comma-split compose, Tab blur/focusout in Locator.press AND
+keyboard.press, evaluate/evaluateAll bridge routing for scopedChild, page.clock.install no-op, poll().toContain
+array membership, Locator.press printable-key insertion (click-select replace; type=number has no readable
+selection — click records data-wtr-click-selected), click()/press() focus the element, route.fallback()
+(next handler, else real fetch), page.emulateMedia({reducedMotion}) via iframe matchMedia patch,
+page.waitForLoadState, waitForEvent("framenavigated") on every iframe load, async readFile path mapping +
+raw .txt suffix, getByText innermost-only (text= semantics), filterWithPredicate filters the FULL resolved
+chain (never re-resolves the raw selector — fixes nth(1).locator("a",{hasText}) resolving null), scoped
+compose for indexed/custom parents, "A >> nth=N" chain selector.
+
+## Wave 5 — committed `b4557b4f7` (25 files, +20.2k)
+
+Specs (24): search-global, search-organization, search-project, search-shared-dead-consumer, secret-setup,
+restart, restricted, site-admin-{data,diagnostic,forbidden,issue-list,mail,massmail,post-list,project-list,
+route-access,update,user-list}, spa-shell-transition, stylex-alert-danger-bridge, stylex-anonymous-home-
+{features,hero,intro-background}.
+
+Suite: 123 files, 1011 passed / 408 failed / 1 skipped (~18.5 min). Search batch 67/2 (2 bucket-2 MATCH:
+global search search-box-wrap class drop src/routes/search.tsx:328; sidebar rowWidth 360-vs-350).
+Admin batch: mostly bucket-2 MATCH (site-setting-wrap family — app stylex owners vs legacy
+siteMngLayout.scala.html:40; logo-href `${basePath}/` family; TanStack aria-current family).
+
+Known residuals:
+- CSS :hover ceiling (bucket 1, documented): site-admin-user-list delete-modal + reset-password-alert
+  hover-state assertions fail WTR-only (PW real-pointer passes). Stylex `opacity: { default: 0.2, ":hover": 0.4 }`
+  (userList.tsx:510) is unsynthesizable without CDP — the 3am upgrade path is a CDP Input.dispatchMouseEvent
+  bridge in the WTR runner, not page-side JS.
+- site-admin-user-list populated DOM `.site-setting-wrap` toBeVisible — bucket 2 (app never renders the class;
+  userList.tsx has no site-setting-wrap; mail.tsx:335/update.tsx:187 do).
+- site-admin-mail active-sidebar ariaCurrent/dataStatus — bucket 2 (PW-verified identical).
+- PW cold-start goto timeouts and first-run browser-disconnects remain harness noise (re-run).
+
+## Wave 6+ candidates (alphabetical remainder)
+
+stylex-anonymous-* suite, stylex-* login/signup/user-menu/auth-home screens, support-* docs, user-*
+profile screens, project-code-* remainder, yobi-svn-* / vcs-* / weblabs-* screens, org-* remainder,
+milestone-*, issue-* remainder, project-issue-* remainder. Recompute `comm -23` against the live
+`frontend/tests/wtr/` list each wave; ~750 remain.
