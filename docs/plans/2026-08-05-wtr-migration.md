@@ -132,9 +132,32 @@ dist affecting toHaveCSS/geometry probes), bucket-3 stale pins (pin
 stale ORIGINAL pins already corrected in the converted copies) documented per
 spec in the verification reports.
 
+## Wave 2 (2026-08-05, committed a5c9bce9f)
+
+25 more specs converted (auth aliases, home empty-notifications, global shell,
+help, project boards, org nested layout, org create, code browser cluster).
+52 specs total: **456 passed / 175 failed / 1 skipped** (~8 min full suite).
+Fresh Playwright ground truth per spec. WTR-only deltas bucketed:
+app stylex/layer gaps, WTR layout artifacts (sidemenu flex overflow on
+favorite-tab geometry), stale pins fixed in the converted copies, PW
+cold-start noise documented. `authenticated-home-empty-notifications` went
+13/22 → 29/4 with the deep-probe round (dual-render hypothesis disproven —
+shim index-loss bugs; 4 residuals are app-side WTR artifacts with evidence).
+
+Shim additions in wave 2: typed dispatchEvent (MouseEvent with button=0 —
+TanStack Link bails on generic Event clicks), toHaveURL Playwright semantics
+(relative resolution + *-only globs), order-insensitive toEqual/toContainEqual,
+toBeTruthy/toBeFalsy/toBeDisabled/toHaveAccessibleName, evaluate 2-arg,
+allTextContents, selectText, globSync (fs.globSync endpoint, zero deps),
+test.setTimeout/skip, getByRole implicit roles + accessible-name fallback,
+:has-text single quotes, :visible/:hidden, chained :scope with index,
+retry-through-strict in actions AND polls, mouse.click cancelable,
+hover→lastHovered, tree-wide mouse leave, per-goto document request events,
+API 404 via context.status, fixture-before-esbuild plugin order.
+
 ## Next steps
 
-1. Convert the remaining ~830 specs in waves (24-32 per wave), reusing the
+1. Convert the remaining ~780 specs in waves (24-32 per wave), reusing the
    wave-1 loop: convert → run → apply shim gaps → verify against PW baseline.
 2. Batch conversions with subagents (specs are mechanical; shared-file fixes
    batched per wave like the parity work). Keep Playwright copies in `tests/`
