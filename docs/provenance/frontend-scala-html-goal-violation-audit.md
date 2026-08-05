@@ -4529,3 +4529,5 @@ Manual evidence-only exception note: historical commit ad2386988cefc263c8b6fc0d3
 Manual evidence-only exception note: historical commit cf203d4e736b4779d64d71c65da99e425c1c3cc0 (feat(e2e): WTR wave 7 — 24 stylex gnb/sidenav specs, doc-request + subset matchers) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit 747c0434a2cf94b424d437bac25035c73125ab9d (feat(e2e): WTR wave 8 — 24 stylex search/sidebar/help specs, a11y fidelity) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 72e93182b20735bc8d11ebe75997526254aeb4de (feat(e2e): WTR wave 9 — 24 stylex lost-password/org/sidebar specs, native key actions) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.

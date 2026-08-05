@@ -1082,7 +1082,7 @@ export class Locator {
     });
   }
 
-  filter(options: { hasText?: string | RegExp; has?: Locator }): Locator {
+  filter(options: { hasText?: string | RegExp; has?: Locator; visible?: boolean }): Locator {
     return this.filterWithPredicate((element) => {
       if (options.hasText !== undefined) {
         const ownText = normalizeText(element.textContent ?? "");
@@ -1095,6 +1095,10 @@ export class Locator {
       if (options.has !== undefined) {
         const hasSelector = options.has.selector;
         if (element.querySelector(hasSelector) === null) return false;
+      }
+      if (options.visible !== undefined) {
+        const visible = isElementVisible(element as HTMLElement);
+        if (visible !== options.visible) return false;
       }
       return true;
     });
@@ -1285,6 +1289,22 @@ export class Locator {
       if (isButton && (parsed.key === " " || parsed.key === "Enter")) {
         // Enter activates on keydown, Space on keyup — both dispatch click.
         this.page.dispatch(element, "click");
+      } else if (
+        (tag === "INPUT" &&
+          (element as HTMLInputElement).type === "checkbox" &&
+          parsed.key === " ") ||
+        (tag === "INPUT" && (element as HTMLInputElement).type === "radio" && parsed.key === " ")
+      ) {
+        // Native default: Space toggles checkboxes / checks radios on keyup.
+        (element as HTMLInputElement).click();
+      } else if (tag === "INPUT" && parsed.key === "Enter") {
+        // Implicit form submission: Enter on a text input submits the form.
+        const form = (element as HTMLInputElement).form;
+        if (form && typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        } else if (form) {
+          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        }
       }
     }
     await sleep(20);
@@ -1412,51 +1432,15 @@ export class Locator {
   }
 
   async evaluate<T>(fn: (element: Element, arg: never) => T, arg?: unknown): Promise<T> {
-    const callWithArg = (element: Element) => fn(element, arg as never);
-    // Custom resolvers (filter/.. /nth-scoped chains) and translated pseudos
-    // can't be rebuilt inside the iframe from the selector alone — resolve
-    // top-realm and run there.
-    if (
-      this.hasCustomResolver ||
-      this.scopedChild !== undefined ||
-      this.selector.includes(":has-text(") ||
-      this.selector.includes(":text(") ||
-      this.selector.includes(":visible") ||
-      this.selector.includes(":hidden") ||
-      this.selector.startsWith("xpath=")
-    ) {
-      // Resolve through the translated resolver, then run fn INSIDE the
-      // iframe realm with the resolved element passed across the bridge —
-      // `element instanceof Element` stays valid for the callback.
-      const element = this.currentSafe();
-      if (!element) return undefined as T;
-      const top = window as unknown as Record<string, unknown>;
-      top.__wtrEvalElement = element;
-      const target = this.page.window();
-      const argJson = arg === undefined ? "undefined" : JSON.stringify(arg);
-      // eslint-disable-next-line no-eval
-      return target.eval(
-        `(function () {
-          const __wtrResolve = (v) => {
-  if (v && typeof v === "object" && "__wtrHandleRef" in v) return parent.__wtrHandleRegistry.get(v.__wtrHandleRef);
-  if (Array.isArray(v)) return v.map(__wtrResolve);
-  if (v && typeof v === "object") {
-    for (const key of Object.keys(v)) v[key] = __wtrResolve(v[key]);
-    return v;
-  }
-  return v;
-};
-          const el = parent.__wtrEvalElement;
-          if (!el) return undefined;
-          return (${fn.toString()})(el, __wtrResolve(${argJson}));
-        })()`,
-      ) as T;
-    }
-    // Plain selectors: run inside the iframe realm so `element instanceof
-    // Element` resolves against the app's own globals.
+    // Playwright's locator.evaluate waits for the element (post-navigation
+    // re-renders, transient detaches) — resolve through waitForElement, then
+    // run fn INSIDE the iframe realm via the bridge so `element instanceof
+    // Element` stays valid for the callback.
+    const element = await this.waitForElement();
+    if (!element) return undefined as T;
+    const top = window as unknown as Record<string, unknown>;
+    top.__wtrEvalElement = element;
     const target = this.page.window();
-    const selector = JSON.stringify(this.selector);
-    const index = this.index ?? 0;
     const argJson = arg === undefined ? "undefined" : JSON.stringify(arg);
     // eslint-disable-next-line no-eval
     return target.eval(
@@ -1470,8 +1454,7 @@ export class Locator {
   }
   return v;
 };
-        const elements = document.querySelectorAll(${selector});
-        const el = elements[${index}];
+        const el = parent.__wtrEvalElement;
         if (!el) return undefined;
         return (${fn.toString()})(el, __wtrResolve(${argJson}));
       })()`,
@@ -1517,11 +1500,23 @@ class PageFacade {
       }
       target.dispatchEvent(new KeyboardEvent("keydown", { ...parsed, bubbles: true }));
       target.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
-      if (parsed.key === " " || parsed.key === "Enter") {
-        const tag = target.tagName;
-        const isButton =
-          tag === "BUTTON" || tag === "A" || target.getAttribute("role") === "button";
-        if (isButton) this.dispatch(target, "click");
+      const kbTag = target.tagName;
+      const kbIsButton =
+        kbTag === "BUTTON" || kbTag === "A" || target.getAttribute("role") === "button";
+      if (kbIsButton && (parsed.key === " " || parsed.key === "Enter")) {
+        this.dispatch(target, "click");
+      } else if (kbTag === "INPUT" && parsed.key === " ") {
+        const input = target as HTMLInputElement;
+        if (input.type === "checkbox" || input.type === "radio") {
+          input.click();
+        }
+      } else if (kbTag === "INPUT" && parsed.key === "Enter") {
+        const form = (target as HTMLInputElement).form;
+        if (form && typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        } else if (form) {
+          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        }
       }
       await sleep(20);
     },
