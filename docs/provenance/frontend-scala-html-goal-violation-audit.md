@@ -4517,3 +4517,5 @@ Manual evidence-only exception note: historical commit 62cbb1b776652c20cae11f32b
 Manual evidence-only exception note: historical commit 9809cffe5182bdda45fa754f0efdeeee287b4339 (feat(e2e): WTR wave 1 — 27 converted specs, dist-aware shim, PW baseline parity) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit 7c5975cc7849ca94eaf37555e300c69f95b5ae81 (feat(e2e): WTR wave 2 — 25 more specs converted, fidelity shim round) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 17b039f85fb481d48ec1f43e2b83a1d3896651d5 (feat(e2e): WTR wave 3 — 23 more specs, raw fixtures, :text/xpath/hooks fidelity) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.

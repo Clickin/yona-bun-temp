@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distDir = join(repoRoot, "frontend", "dist");
 const srcDir = join(repoRoot, "frontend", "src");
+const frontendDir = join(repoRoot, "frontend");
 const legacyDir = join(repoRoot, "yona-original");
 const basePath = "/yona";
 
@@ -19,7 +20,7 @@ const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:
 const FETCH_MOCK_SCRIPT = `<script>
   window.fetch = function (...args) { return parent.__wtrMockFetch.apply(parent, args); };
   try { for (const hook of parent.__wtrInitHooks ?? []) { eval("(" + hook.source + ")(" + (hook.argJson || "") + ")"); } } catch (e) {}
-  window.confirm = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); return true; };
+  window.confirm = (msg) => { parent.__wtrEmit("dialog", { type: () => "confirm", message: () => msg, accept: () => {}, dismiss: () => {} }); return true; };
   window.alert = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); };
   window.prompt = () => null;
   if (typeof PerformanceObserver !== "undefined") {
@@ -70,6 +71,31 @@ function serveIndex(context) {
   return html;
 }
 
+function stripTxtSuffix(parts) {
+  if (parts.length === 0) return parts;
+  const last = parts[parts.length - 1];
+  if (/\.(ts|tsx|js|mjs)\.txt$/i.test(last)) {
+    return [...parts.slice(0, -1), last.replace(/\.txt$/i, "")];
+  }
+  return parts;
+}
+
+function fixtureContentTypeFor(filePath) {
+  // FIXTURE code sources must stay raw: a text/javascript response goes
+  // through the esbuild transform and corrupts source-snapshot pins (the
+  // specs themselves are served by esbuildPlugin — this function is only
+  // used for readFileSync fixture responses).
+  switch (extname(filePath)) {
+    case ".ts":
+    case ".tsx":
+    case ".mjs":
+    case ".js":
+      return "text/plain";
+    default:
+      return contentTypeFor(filePath);
+  }
+}
+
 function contentTypeFor(filePath) {
   switch (extname(filePath)) {
     case ".ts":
@@ -114,26 +140,58 @@ const fixturePlugin = {
   name: "yona-fixture-sources",
   serve(context) {
     const pathname = context.url.split("?")[0];
+    if (pathname.startsWith("/tests/")) {
+      // eslint-disable-next-line no-console
+      console.log("FIXSERVE", pathname.slice(0, 80));
+    }
+    if (pathname.startsWith("/tests/frontend/")) {
+      const rel = stripTxtSuffix(
+        pathname
+          .replace(/^\/tests\/frontend\//, "")
+          .split("/")
+          .filter(Boolean),
+      );
+      const diskPath = join(frontendDir, ...rel.map((part) => part.replace(/\.\./g, "")));
+      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
+        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
+      }
+      return undefined;
+    }
+    if (pathname.startsWith("/tests/root/")) {
+      let rel = pathname
+        .replace(/^\/tests\/root\//, "")
+        .split("/")
+        .filter(Boolean);
+      rel = stripTxtSuffix(rel);
+      const diskPath = join(frontendDir, ...rel.map((part) => part.replace(/\.\./g, "")));
+      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
+        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
+      }
+      return undefined;
+    }
     if (pathname.startsWith("/tests/") && pathname.includes("/src/")) {
       const srcMarker = pathname.indexOf("/src/");
-      const rel = pathname
+      let rel = pathname
         .slice(srcMarker + "/src/".length)
         .split("/")
         .filter(Boolean);
+      rel = stripTxtSuffix(rel);
       const diskPath = join(srcDir, ...rel.map((part) => part.replace(/\.\./g, "")));
       if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: contentTypeFor(diskPath) };
+        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
       }
       return undefined;
     }
     if (pathname.startsWith("/yona-original/")) {
-      const rel = pathname
-        .replace(/^\/yona-original\//, "")
-        .split("/")
-        .filter(Boolean);
+      const rel = stripTxtSuffix(
+        pathname
+          .replace(/^\/yona-original\//, "")
+          .split("/")
+          .filter(Boolean),
+      );
       const diskPath = join(legacyDir, ...rel.map((part) => part.replace(/\.\./g, "")));
       if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: contentTypeFor(diskPath) };
+        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
       }
       return undefined;
     }

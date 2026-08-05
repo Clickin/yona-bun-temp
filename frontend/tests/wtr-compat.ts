@@ -26,6 +26,7 @@ export type Page = any;
 // browser has no process — provide the same value the app is built with.
 (globalThis as { process?: unknown }).process = {
   env: { YONA_DEV_BASE_PATH: "/yona", VITE_DISABLE_LEGACY_FALLBACK: "1" },
+  cwd: () => "/",
 };
 
 // Minimal Buffer polyfill: specs call Buffer.from(...) for upload fixtures.
@@ -126,7 +127,23 @@ export function globSync(pattern: string, _options?: { nodir?: boolean }): strin
 }
 
 export function readFileSync(source: URL | string): string {
-  const href = typeof source === "string" ? new URL(source, import.meta.url).href : source.href;
+  let resolved = source;
+  if (typeof source === "string" && source.startsWith("../frontend/")) {
+    resolved = `/tests/frontend/${source.slice("../frontend/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("../yona-original/")) {
+    resolved = `/yona-original/${source.slice("../yona-original/".length)}`;
+  } else if (typeof source === "string" && !source.startsWith(".") && !source.startsWith("/")) {
+    // node:fs resolves bare relative strings against the cwd (frontend/);
+    // map them to the /tests/root/ fixture root.
+    resolved = `/tests/root/${source}`;
+  }
+  // Fixture .ts/.tsx/.js sources must arrive RAW: the dev-server re-detects
+  // the content type from the URL extension and esbuild-transforms any
+  // application/javascript response. A .txt suffix keeps them plain; the
+  // fixture server strips it when resolving the disk path.
+  const raw =
+    typeof resolved === "string" ? resolved.replace(/\.(ts|tsx|js|mjs)$/i, ".$1.txt") : resolved;
+  const href = typeof raw === "string" ? new URL(raw, import.meta.url).href : raw.href;
   const cached = fileCache.get(href);
   if (cached !== undefined) return cached;
   const request = new XMLHttpRequest();
@@ -144,22 +161,71 @@ export function readFileSync(source: URL | string): string {
 // Glob -> regex (Playwright "**/api/v1/*" patterns)
 // ---------------------------------------------------------------------------
 
-// Playwright's `:has-text("X")` pseudo has no CSS counterpart. Translate
-// `A:has-text("X") B` to `A B` + a filter on the ancestor's text, per comma part.
+// Playwright's `:has-text("X")` / `:text("X")` / `:has(A:text("X"))` pseudos
+// have no CSS counterpart. Translate to CSS + a text filter, per comma part.
 function translateHasText(
   selector: string,
 ): { parts: Array<{ base: string; filter: (element: Element) => boolean }> } | null {
-  if (!selector.includes(":has-text(")) return null;
+  if (
+    !selector.includes(":has-text(") &&
+    !selector.includes(":text(") &&
+    !/:has\([^)]*:text\(/u.test(selector)
+  ) {
+    return null;
+  }
   const parts = selector.split(",").map((part) => {
-    const match = /^([^:]*):has-text\(["']([^"']*)["']\)(.*)$/.exec(part.trim());
-    if (!match) return { base: part.trim(), filter: null };
-    const [, before, text, after] = match;
-    const base = `${before}${after}`.trim();
-    const filter = (element: Element) => {
-      const target = after ? element.closest(before) : element;
-      return (target?.textContent ?? "").includes(text);
+    let text: string | null = null;
+    let hasInside: string | null = null;
+    let hasScope: string | null = null;
+    let base = part.trim();
+    // :has(A:text('X')) -> :has(A) + filter on the A descendant's exact text.
+    const hasTextMatch = /:has\(([^)]*):text\(["']([^"']*)["']\)\)/u.exec(base);
+    if (hasTextMatch) {
+      hasInside = hasTextMatch[1].trim();
+      text = hasTextMatch[2];
+      base = base.replace(hasTextMatch[0], `:has(${hasInside})`);
+      // For `X:has(A:text('Y')) > Z` the text filter must be anchored at the
+      // :has scope X (the matched Z's ancestor), not the matched element.
+      const scopeMatch = /^(.+?:has\([^)]*\))(\s*>.*)?$/u.exec(base);
+      hasScope = scopeMatch?.[1]?.trim() ?? null;
+    } else {
+      const hasTextMatch2 = /^([^:]*):has-text\(["']([^"']*)["']\)(.*)$/u.exec(base);
+      if (hasTextMatch2) {
+        const [, before, textValue, after] = hasTextMatch2;
+        text = textValue;
+        base = `${before}${after}`.trim();
+        const targetSelector = before;
+        const filter = (element: Element) => {
+          const target = after ? element.closest(targetSelector) : element;
+          return (target?.textContent ?? "").includes(textValue);
+        };
+        return { base, filter };
+      }
+      const textPseudo = /:text\(["']([^"']*)["']\)/u.exec(base);
+      if (textPseudo) {
+        text = textPseudo[1];
+        base = base.replace(textPseudo[0], "");
+      }
+    }
+    if (text === null) return { base, filter: null };
+    const expected = text;
+    const inside = hasInside;
+    const scope = hasScope;
+    return {
+      base,
+      filter: (element: Element) => {
+        if (inside) {
+          const anchor = scope ? element.closest(scope) : element;
+          if (!anchor) return false;
+          const descendant = Array.from(anchor.querySelectorAll(inside)).find((candidate) => {
+            // Playwright's :text() is a whitespace-normalized SUBSTRING match.
+            return normalizeText(candidate.textContent ?? "").includes(normalizeText(expected));
+          });
+          return descendant !== undefined;
+        }
+        return normalizeText(element.textContent ?? "").includes(normalizeText(expected));
+      },
     };
-    return { base, filter };
   });
   return { parts: parts.map((part) => ({ base: part.base, filter: part.filter })) };
 }
@@ -266,6 +332,8 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
           url: requestFacade.url(),
           resourceType: () => "fetch",
           method: () => requestFacade.method(),
+          postData: requestFacade.postData,
+          postDataJSON: requestFacade.postDataJSON,
         });
         const { promise, resolve } = Promise.withResolvers<Response>();
         try {
@@ -314,6 +382,25 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
 const POLL_INTERVAL_MS = 40;
 let lastMouseX = 0;
 let lastMouseY = 0;
+
+function parseKeyCombo(key: string): {
+  key: string;
+  shiftKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean;
+} {
+  const parts = key.split("+");
+  if (parts.length === 1) return { key };
+  const modifiers = new Set(parts.slice(0, -1));
+  return {
+    key: parts[parts.length - 1],
+    shiftKey: modifiers.has("Shift"),
+    ctrlKey: modifiers.has("Control") || modifiers.has("Ctrl"),
+    altKey: modifiers.has("Alt"),
+    metaKey: modifiers.has("Meta"),
+  };
+}
 
 function createTypedEvent(
   type: string,
@@ -386,7 +473,22 @@ export class Locator {
     if (this.scopedChild !== undefined) {
       const elements: Element[] = [];
       for (const base of doc.querySelectorAll(this.selector)) {
-        elements.push(...Array.from(base.querySelectorAll(this.scopedChild)));
+        if (this.scopedChild.startsWith("xpath=")) {
+          const expression = this.scopedChild.slice("xpath=".length);
+          const result = doc.evaluate(
+            expression,
+            base,
+            null,
+            XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+            null,
+          );
+          for (let i = 0; i < result.snapshotLength; i += 1) {
+            const node = result.snapshotItem(i);
+            if (node instanceof Element) elements.push(node);
+          }
+        } else {
+          elements.push(...Array.from(base.querySelectorAll(this.scopedChild)));
+        }
       }
       return elements;
     }
@@ -398,6 +500,22 @@ export class Locator {
         result.push(...(part.filter ? matched.filter(part.filter) : matched));
       }
       return Array.from(new Set(result));
+    }
+    if (this.selector.startsWith("xpath=")) {
+      const expression = this.selector.slice("xpath=".length);
+      const result = doc.evaluate(
+        expression,
+        doc,
+        null,
+        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+        null,
+      );
+      const elements: Element[] = [];
+      for (let i = 0; i < result.snapshotLength; i += 1) {
+        const node = result.snapshotItem(i);
+        if (node instanceof Element) elements.push(node);
+      }
+      return elements;
     }
     if (this.selector.includes(":visible") || this.selector.includes(":hidden")) {
       const base = this.selector.replace(/:visible/g, "").replace(/:hidden/g, "");
@@ -498,7 +616,7 @@ export class Locator {
     return this.withIndex(Math.max(0, this.resolveElements().length - 1));
   }
 
-  locator(childSelector: string, options?: { hasText?: string | RegExp }): Locator {
+  locator(childSelector: string, options?: { hasText?: string | RegExp; has?: Locator }): Locator {
     if (childSelector.trim() === "..") {
       const page = this.page;
       const base = this;
@@ -563,6 +681,26 @@ export class Locator {
         resolveElements(): Element[] {
           const parent = base.resolveElements()[base.index ?? 0];
           if (!parent) return [];
+          if (child.startsWith("xpath=")) {
+            const expression = child.slice("xpath=".length);
+            const doc = parent.ownerDocument;
+            const xpathResult = doc.evaluate(
+              expression,
+              parent,
+              null,
+              XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+              null,
+            );
+            const elements: Element[] = [];
+            for (let i = 0; i < xpathResult.snapshotLength; i += 1) {
+              const node = xpathResult.snapshotItem(i);
+              if (node instanceof Element) elements.push(node);
+            }
+            return elements;
+          }
+          if (child.trim() === "..") {
+            return parent.parentElement ? [parent.parentElement] : [];
+          }
           return Array.from(parent.querySelectorAll(child));
         }
       })(page, base.selector, undefined);
@@ -573,11 +711,31 @@ export class Locator {
       .map((part) => `${part.trim()} ${childSelector}`)
       .join(", ");
     const plain = new Locator(this.page, combined, this.index);
-    return options?.hasText === undefined ? plain : plain.filterByText(options.hasText);
+    let result = plain;
+    if (options?.hasText !== undefined) result = result.filterByText(options.hasText);
+    if (options?.has !== undefined) result = result.filterWithHas(options.has);
+    return result;
   }
 
   async evaluateAll<T>(fn: (elements: Element[]) => T): Promise<T> {
-    return fn(this.resolveElements());
+    if (
+      this.hasCustomResolver ||
+      this.selector.includes(":has-text(") ||
+      this.selector.includes(":text(") ||
+      this.selector.includes(":visible") ||
+      this.selector.includes(":hidden") ||
+      this.selector.startsWith("xpath=")
+    ) {
+      // Custom resolvers / translated pseudos run top-realm (they can't be
+      // serialized into the iframe's querySelectorAll).
+      return fn(this.resolveElements());
+    }
+    const target = this.page.window();
+    const selector = JSON.stringify(this.selector);
+    // eslint-disable-next-line no-eval
+    return target.eval(
+      `(function () { const elements = document.querySelectorAll(${selector}); return (${fn.toString()})(Array.from(elements)); })()`,
+    ) as T;
   }
 
   async boundingBox(): Promise<{ x: number; y: number; width: number; height: number } | null> {
@@ -598,9 +756,6 @@ export class Locator {
   getByTestId(testId: string): Locator {
     return this.locator(`[data-testid="${testId}"]`);
   }
-
-  // Artifact-only: screenshots are not part of assertion outcomes.
-  async screenshot(_options?: Record<string, unknown>): Promise<void> {}
 
   getByLabel(label: string): Locator {
     return this.locator(`[aria-label="${label}"], label:has-text("${label}") input`);
@@ -625,6 +780,15 @@ export class Locator {
             : candidate.includes(text)
           : text.test(candidate);
       return candidates.some(matchesCandidate);
+    });
+  }
+
+  filterWithHas(has?: Locator): Locator {
+    if (has === undefined) return this;
+    const hasSelector = has.selector;
+    return this.filterWithPredicate((element) => {
+      if (element.querySelector(hasSelector) === null) return false;
+      return true;
     });
   }
 
@@ -701,13 +865,13 @@ export class Locator {
   }
 
   async isVisible(): Promise<boolean> {
-    const element = this.current();
+    // Playwright's isVisible does NOT enforce strict-mode — first match.
+    const element = this.currentSafe();
     if (!element) return false;
     const style = this.page.window().getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
     return (
-      style.display !== "none" &&
-      style.visibility !== "hidden" &&
-      element.getClientRects().length > 0
+      style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0
     );
   }
 
@@ -747,16 +911,10 @@ export class Locator {
 
   async press(key: string): Promise<void> {
     const element = await this.waitForElement();
-    const keyMap: Record<string, string> = {
-      Enter: "Enter",
-      Escape: "Escape",
-      Tab: "Tab",
-      " ": " ",
-      Backspace: "Backspace",
-    };
-    const keyValue = keyMap[key] ?? key;
-    element.dispatchEvent(new KeyboardEvent("keydown", { key: keyValue, bubbles: true }));
-    element.dispatchEvent(new KeyboardEvent("keyup", { key: keyValue, bubbles: true }));
+    const parsed = parseKeyCombo(key);
+    for (const type of ["keydown", "keyup"]) {
+      element.dispatchEvent(new KeyboardEvent(type, { ...parsed, bubbles: true }));
+    }
     await sleep(20);
   }
 
@@ -843,10 +1001,21 @@ export class Locator {
 
   async dispatchEvent(type: string, init?: Record<string, unknown>): Promise<void> {
     const element = await this.waitForElement();
+    // Resolve evaluateHandle markers to real iframe-realm objects (e.g. a
+    // DataTransfer the app's drop handler reads files from).
+    const resolvedInit: Record<string, unknown> = { ...init };
+    for (const [key, value] of Object.entries(resolvedInit)) {
+      const marker = value as { __wtrHandleSource?: string } | null;
+      if (marker && typeof marker.__wtrHandleSource === "string") {
+        resolvedInit[key] = this.page
+          .window()
+          .eval(`(function () { return (${marker.__wtrHandleSource})(); })()`);
+      }
+    }
     // Playwright dispatches TYPED events (a "click" is a MouseEvent with
     // button=0 — TanStack Link's onClick checks event.button and bails when
     // it's undefined on a generic Event).
-    const event = createTypedEvent(type, element.ownerDocument, init);
+    const event = createTypedEvent(type, element.ownerDocument, resolvedInit);
     element.dispatchEvent(event);
     await sleep(10);
   }
@@ -863,12 +1032,30 @@ export class Locator {
 
   async evaluate<T>(fn: (element: Element, arg: never) => T, arg?: unknown): Promise<T> {
     const callWithArg = (element: Element) => fn(element, arg as never);
-    // Custom resolvers (filter/.. /nth-scoped chains) can't be rebuilt inside
-    // the iframe from the selector alone — resolve top-realm and run there.
-    if (this.hasCustomResolver) {
-      const element = this.current();
+    // Custom resolvers (filter/.. /nth-scoped chains) and translated pseudos
+    // can't be rebuilt inside the iframe from the selector alone — resolve
+    // top-realm and run there.
+    if (
+      this.hasCustomResolver ||
+      this.selector.includes(":has-text(") ||
+      this.selector.includes(":text(") ||
+      this.selector.includes(":visible") ||
+      this.selector.includes(":hidden") ||
+      this.selector.startsWith("xpath=")
+    ) {
+      // Resolve through the translated resolver, then run fn INSIDE the
+      // iframe realm with the resolved element passed across the bridge —
+      // `element instanceof Element` stays valid for the callback.
+      const element = this.currentSafe();
       if (!element) return undefined as T;
-      return callWithArg(element);
+      const top = window as unknown as Record<string, unknown>;
+      top.__wtrEvalElement = element;
+      const target = this.page.window();
+      const argJson = arg === undefined ? "undefined" : JSON.stringify(arg);
+      // eslint-disable-next-line no-eval
+      return target.eval(
+        `(function () { const el = parent.__wtrEvalElement; if (!el) return undefined; return (${fn.toString()})(el, ${argJson}); })()`,
+      ) as T;
     }
     // Plain selectors: run inside the iframe realm so `element instanceof
     // Element` resolves against the app's own globals.
@@ -1058,14 +1245,21 @@ class PageFacade {
     await sleep(300);
   }
 
-  locator(selector: string, options?: { hasText?: string | RegExp }): Locator {
+  locator(selector: string, options?: { hasText?: string | RegExp; has?: Locator }): Locator {
     const locator = new Locator(this, selector);
-    if (options?.hasText === undefined) return locator;
-    return locator.filterByText(options.hasText);
+    if (options?.hasText !== undefined) {
+      return locator.filterByText(options.hasText).filterWithHas(options.has);
+    }
+    if (options?.has !== undefined) return locator.filterWithHas(options.has);
+    return locator;
   }
 
   async fill(selector: string, value: string): Promise<void> {
     await this.locator(selector).fill(value);
+  }
+
+  async selectOption(selector: string, value: string): Promise<void> {
+    await this.locator(selector).selectOption(value);
   }
 
   async click(selector: string, options?: { force?: boolean }): Promise<void> {
@@ -1074,6 +1268,10 @@ class PageFacade {
 
   async check(selector: string): Promise<void> {
     await this.locator(selector).check();
+  }
+
+  async uncheck(selector: string): Promise<void> {
+    await this.locator(selector).uncheck();
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
@@ -1088,6 +1286,27 @@ class PageFacade {
     return this.locator(`[aria-label="${label}"]`);
   }
 
+  // Artifact-only: screenshots are not part of assertion outcomes.
+  async screenshot(_options?: Record<string, unknown>): Promise<void> {}
+
+  async close(): Promise<void> {}
+
+  context(): { newPage: () => Promise<Page> } {
+    return { newPage: async () => this as unknown as Page };
+  }
+
+  readonly request = {
+    get: async (url: string) => {
+      const mockFetch = (window as unknown as Record<string, unknown>).__wtrMockFetch as
+        | ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>)
+        | undefined;
+      if (mockFetch) {
+        return await mockFetch(url, { method: "GET" });
+      }
+      return await fetch(url);
+    },
+  };
+
   url(): string {
     return this.iframe?.contentWindow?.location.href ?? "";
   }
@@ -1098,6 +1317,28 @@ class PageFacade {
       argJson: arg === undefined ? "" : JSON.stringify(arg),
     });
   }
+
+  // Playwright's clock control: fix Date to a timestamp via an init hook
+  // (replayed on every iframe load like addInitScript).
+  readonly clock = {
+    setFixedTime: (date: string | number | Date): void => {
+      const timestamp = new Date(date).getTime();
+      initHooks.push({
+        source: `function () {
+          const fixed = ${timestamp};
+          const RealDate = Date;
+          const FixedDate = class extends RealDate {
+            constructor(...args) {
+              if (args.length > 0) { super(...args); } else { super(fixed); }
+            }
+            static now() { return fixed; }
+          };
+          window.Date = FixedDate;
+        }`,
+        argJson: "",
+      });
+    },
+  };
 
   async waitForResponse(predicate: ResponseWatcher): Promise<ResponseFacade> {
     const { promise, resolve } = Promise.withResolvers<ResponseFacade>();
@@ -1131,6 +1372,8 @@ class PageFacade {
         url: string | (() => string);
         method?: string | (() => string);
         resourceType?: string | (() => string);
+        postData?: string | (() => string);
+        postDataJSON?: () => unknown;
       };
       const urlValue = constOf(request.url);
       if (
@@ -1150,6 +1393,11 @@ class PageFacade {
           url: urlValue,
           method: request.method === undefined ? () => "GET" : constOf(request.method),
           headers: () => ({}),
+          postData: request.postData === undefined ? () => undefined : constOf(request.postData),
+          postDataJSON:
+            request.postDataJSON === undefined
+              ? () => undefined
+              : (request.postDataJSON as () => unknown),
         });
       }
     };
@@ -1174,7 +1422,14 @@ class PageFacade {
     await expectPoll(
       async () => {
         const actual = this.url();
-        return typeof url === "string" ? actual.includes(url) : url.test(actual);
+        if (typeof url !== "string") return url.test(actual);
+        const relative = !/^[a-z]+:/i.test(url) && !url.startsWith("//");
+        if (url.includes("*")) {
+          const pattern = relative ? new URL(url, actual).href : url;
+          return globToRegExp(pattern).test(actual);
+        }
+        if (relative) return actual === new URL(url, actual).href;
+        return actual === url;
       },
       `waitForURL(${String(url)})`,
     );
@@ -1221,6 +1476,11 @@ class PageFacade {
       this.iframe.style.width = `${size.width}px`;
       this.iframe.style.height = `${size.height}px`;
     }
+  }
+
+  async evaluateHandle(fn: () => unknown): Promise<unknown> {
+    // Lazy iframe-realm handle: resolved when passed into dispatchEvent init.
+    return { __wtrHandleSource: fn.toString() };
   }
 
   async evaluate<T>(fn: (arg: never) => T, arg?: unknown): Promise<T> {
@@ -1307,6 +1567,10 @@ interface ExpectResult {
   toBeNull(options?: { timeout?: number }): Promise<void>;
   toBeEmpty(options?: { timeout?: number }): Promise<void>;
   toBeDisabled(options?: { timeout?: number }): Promise<void>;
+  toBeEnabled(options?: { timeout?: number }): Promise<void>;
+  toHaveValues(expected: string[], options?: { timeout?: number }): Promise<void>;
+  toBeDefined(options?: { timeout?: number }): Promise<void>;
+  toHaveProperty(name: string, options?: { timeout?: number }): Promise<void>;
   toBeTruthy(options?: { timeout?: number }): Promise<void>;
   toBeFalsy(options?: { timeout?: number }): Promise<void>;
   resolves: {
@@ -1474,6 +1738,42 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       const element = target.current();
       return element !== null && (element as HTMLInputElement).disabled === true;
     }, "toBeDisabled"),
+    toBeEnabled: make(async () => {
+      if (!(target instanceof Locator)) return false;
+      const element = target.current();
+      return element !== null && (element as HTMLInputElement).disabled === false;
+    }, "toBeEnabled"),
+    toHaveValues: async (expected: string[], options?: { timeout?: number }) => {
+      const actualValues = async () => {
+        if (!(target instanceof Locator)) return [];
+        const element = target.currentSafe() as HTMLSelectElement | null;
+        if (!element) return [];
+        return Array.from(element.selectedOptions).map((option) => option.value);
+      };
+      await expectPoll(
+        async () => {
+          const actual = await actualValues();
+          const matches =
+            expected.length === actual.length &&
+            expected.every((value, index) => value === actual[index]);
+          return negate ? !matches : matches;
+        },
+        `toHaveValues(${JSON.stringify(expected)}) — actual: ${JSON.stringify(await actualValues())}`,
+        options?.timeout,
+      );
+    },
+    toBeDefined: make(async () => {
+      if (!(target instanceof Locator)) return false;
+      return target.currentSafe() !== null;
+    }, "toBeDefined"),
+    toHaveProperty: make(async () => {
+      if (target instanceof Locator) {
+        const element = target.currentSafe();
+        return element !== null && name in element;
+      }
+      const value = stringTarget?.();
+      return value !== undefined && value !== null && name in value;
+    }, "toHaveProperty"),
     resolves: {
       toBe: async (expected: unknown) => {
         if (stringTarget === null) return;
@@ -1760,11 +2060,28 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       const expectedList = Array.isArray(expected) ? expected : [expected];
       await expectPoll(
         async () => {
+          if (Array.isArray(expected) && target instanceof Locator) {
+            // Multi-element locator: compare element-wise (Playwright).
+            const classNames = await target.evaluateAll((elements) =>
+              elements.map((element) => element.className),
+            );
+            const matches =
+              classNames.length === expectedList.length &&
+              expectedList.every((entry, index) => matchClass(classNames[index] ?? "", entry));
+            return negate ? !matches : matches;
+          }
           const actual = await actualClass();
           const matches = expectedList.every((entry) => matchClass(actual, entry));
           return negate ? !matches : matches;
         },
-        `toHaveClass(${String(expected)}) — actual: ${await actualClass()}`,
+        (() => {
+          try {
+            const element = target instanceof Locator ? target.currentSafe() : null;
+            return `toHaveClass(${String(expected)}) — actual: ${element?.className ?? ""}`;
+          } catch {
+            return `toHaveClass(${String(expected)})`;
+          }
+        })(),
         options?.timeout,
       );
     },
@@ -1962,6 +2279,19 @@ expect.stringContaining = (expected: string) => ({
 expect.stringMatching = (expected: RegExp) => ({
   asymmetricMatch: (actual: unknown) => typeof actual === "string" && expected.test(actual),
 });
+expect.objectContaining = (expected: Record<string, unknown>) => ({
+  asymmetricMatch: (actual: unknown) =>
+    actual !== null &&
+    typeof actual === "object" &&
+    Object.entries(expected).every(([key, value]) =>
+      asymmetricEquals((actual as Record<string, unknown>)[key], value),
+    ),
+});
+expect.arrayContaining = (expected: unknown[]) => ({
+  asymmetricMatch: (actual: unknown) =>
+    Array.isArray(actual) &&
+    expected.every((item) => actual.some((candidate) => asymmetricEquals(candidate, item))),
+});
 expect.any = (constructor: unknown) => ({
   asymmetricMatch: (actual: unknown) => {
     if (constructor === String) return typeof actual === "string";
@@ -2027,8 +2357,20 @@ expect.poll = (fn: () => unknown) => ({
   },
   toEqual: async (expected: unknown) => {
     await expectPoll(
-      async () => JSON.stringify(await fn()) === JSON.stringify(expected),
+      async () => asymmetricEquals(await fn(), expected),
       `poll().toEqual(${JSON.stringify(expected)})`,
+    );
+  },
+  toMatchObject: async (expected: Record<string, unknown>) => {
+    await expectPoll(
+      async () => {
+        const actual = (await fn()) as Record<string, unknown>;
+        if (actual === null || typeof actual !== "object") return false;
+        return Object.entries(expected).every(([key, value]) =>
+          asymmetricEquals(actual[key], value),
+        );
+      },
+      `poll().toMatchObject(${JSON.stringify(expected)})`,
     );
   },
   toBeNull: async () => {
@@ -2079,6 +2421,61 @@ function installDefaultMocks(page: PageFacade): void {
   );
 }
 
+// Playwright hooks receive the page fixture; mocha's raw hooks don't. Wrap
+// them so `{ page }` destructuring works — registrations (route mocks,
+// initHooks) are module-global, so they carry into the test body.
+function withHookFixture(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
+  return async function (this: MochaContext) {
+    const fixturePage = new PageFacade();
+    if (configuredViewport) {
+      void fixturePage.setViewportSize(configuredViewport);
+    }
+    currentPage = fixturePage;
+    try {
+      await fn({ page: fixturePage as unknown as Page });
+    } catch (error) {
+      if (error instanceof Error && error.message === "__WTR_SKIP__") {
+        this.skip();
+        return;
+      }
+      throw error;
+    } finally {
+      fixturePage.iframe?.remove();
+      currentPage = null;
+    }
+  };
+}
+
+const globalHookApi = globalThis as unknown as {
+  beforeEach?: (fn: (fixture?: Fixture) => void | Promise<void>) => void;
+  afterEach?: (fn: (fixture?: Fixture) => void | Promise<void>) => void;
+};
+// Bare `beforeEach(async ({ page }) => ...)` calls must also get the fixture.
+// Capture the pristine mocha hooks at module scope (NOT inside the wrapper —
+// that would recurse into the reassigned global).
+const originalBeforeEach = globalHookApi.beforeEach;
+const originalAfterEach = globalHookApi.afterEach;
+if (typeof originalBeforeEach === "function") {
+  globalHookApi.beforeEach = (fn: (fixture?: Fixture) => void | Promise<void>) => {
+    originalBeforeEach(function (this: MochaContext) {
+      if (fn.length > 0) {
+        return withHookFixture(fn as (f: Fixture) => void | Promise<void>).call(this);
+      }
+      return (fn as () => void | Promise<void>)();
+    });
+  };
+}
+if (typeof originalAfterEach === "function") {
+  globalHookApi.afterEach = (fn: (fixture?: Fixture) => void | Promise<void>) => {
+    originalAfterEach(function (this: MochaContext) {
+      if (fn.length > 0) {
+        return withHookFixture(fn as (f: Fixture) => void | Promise<void>).call(this);
+      }
+      return (fn as () => void | Promise<void>)();
+    });
+  };
+}
+
 function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
   return async function (this: MochaContext) {
     const fixturePage = new PageFacade();
@@ -2086,18 +2483,6 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
       void fixturePage.setViewportSize(configuredViewport);
     }
     currentPage = fixturePage;
-    mockRegistry.length = 0;
-    initHooks.length = 0;
-    eventListeners.clear();
-    eventWaiters.clear();
-    responseWatchers.length = 0;
-    // Same-origin iframe shares the WTR page's storage; isolate per test.
-    try {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    } catch {
-      // Storage may be unavailable in some contexts.
-    }
     installDefaultMocks(fixturePage);
     try {
       await fn({ page: fixturePage as unknown as Page });
@@ -2108,6 +2493,20 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
       }
       throw error;
     } finally {
+      // Clear registrations at the END (not the start): mocha runs
+      // beforeEach BEFORE the body, so start-of-body clears would wipe the
+      // hook-registered mocks/initHooks right before they're needed.
+      mockRegistry.length = 0;
+      initHooks.length = 0;
+      eventListeners.clear();
+      eventWaiters.clear();
+      responseWatchers.length = 0;
+      try {
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+      } catch {
+        // Storage may be unavailable in some contexts.
+      }
       fixturePage.iframe?.remove();
       currentPage = null;
     }
@@ -2131,8 +2530,10 @@ export const test: {
   },
   {
     describe,
-    beforeEach,
-    afterEach,
+    beforeEach: (fn: (fixture: Fixture) => void | Promise<void>) =>
+      globalHookApi.beforeEach?.(withHookFixture(fn)),
+    afterEach: (fn: (fixture: Fixture) => void | Promise<void>) =>
+      globalHookApi.afterEach?.(withHookFixture(fn)),
     use: (options: { viewport?: { width: number; height: number } }) => {
       if (options.viewport) configuredViewport = options.viewport;
     },
