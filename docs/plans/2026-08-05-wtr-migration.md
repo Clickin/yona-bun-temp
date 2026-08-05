@@ -329,3 +329,27 @@ fallback-off collapse; dist sidebar offset; stale pins fixed in copies
 (recent-shell empty heights 97->95/55->53/20->18, sidebar tabs
 yobicon-refresh template literal, members role-menu hover rule retired
 886bddf47, lost-password heading 20->18, directory sprite hashed).
+
+## Wave 10 — committed `659caedc7` (24 files, +5.7k)
+
+Specs (24): stylex-organization-boards-{pagination,search-float}, stylex-organization-home-{leave-modal,
+project-filter}, stylex-organization-home, stylex-organization-issues-{action-floats,due-date-mr20-mt10,
+header-background,inline-residual,label-color,pagination,quicksearch,two-column-margin}, stylex-organization-issues,
+stylex-organization-list, stylex-organization-member-panel-{avatar,inner,mt10}, stylex-organization-members-
+{delete-modal,error-wrap,inline-residual,list}, stylex-organization-menu-{active-pseudo,group}.
+
+Suite: 243 files, 1320 passed / 524 failed / 1 skipped (~24 min). 16/24 specs
+fully green; no new shim gaps (wtr-compat unchanged this wave).
+
+Residuals: CSS :hover ceiling (org menu active pseudo rgb(218,218,218));
+data-style-src DEV-only stylex attribute (bucket-2 dist divergence — dist
+runtime emits src metadata only for compiled props); stale pins fixed in
+copies + PW-verified: yobicon-middle retirement (project-filter icons),
+member-panel singular owner refactor b33f5bc84, member-list enrollment
+avatarWrapOwner/detailsOwner props + onAccept (loginId, userId) param order,
+issue label Dynamic StyleX color={label.color}, sprite dist-hashed family.
+
+Fixture-server gotcha (waves 9-10): URL-object fixture reads (fileURLToPath)
+bypass the .txt raw-suffix mapping and get esbuild-transformed (trailing
+commas dropped in multi-line stylex source pins) — always pass fixture paths
+as STRINGS so the .txt suffix serves them raw.
