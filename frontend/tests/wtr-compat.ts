@@ -25,7 +25,7 @@ export type Page = any;
 // The specs read process.env.YONA_DEV_BASE_PATH at module top level; the
 // browser has no process — provide the same value the app is built with.
 (globalThis as { process?: unknown }).process = {
-  env: { YONA_DEV_BASE_PATH: "/yona" },
+  env: { YONA_DEV_BASE_PATH: "/yona", VITE_DISABLE_LEGACY_FALLBACK: "1" },
 };
 
 // Minimal Buffer polyfill: specs call Buffer.from(...) for upload fixtures.
@@ -110,6 +110,21 @@ wireCrossRealmBridge();
 
 const fileCache = new Map<string, string>();
 
+// Synchronous glob over the fixture server (mirrors node:fs globSync; the
+// server-side endpoint returns the matched paths as JSON lines).
+export function globSync(pattern: string, _options?: { nodir?: boolean }): string[] {
+  const href = `/__wtr_glob__/${encodeURIComponent(pattern)}`;
+  const request = new XMLHttpRequest();
+  request.open("GET", href, false);
+  request.send();
+  if (request.status !== 200) throw new Error(`wtr globSync: ${request.status} for ${pattern}`);
+  const text = request.responseText;
+  const entries = text.split("\n").filter(Boolean);
+  // Paths are served relative to the app source root (same convention as
+  // readFileSync("src/...") URLs).
+  return entries;
+}
+
 export function readFileSync(source: URL | string): string {
   const href = typeof source === "string" ? new URL(source, import.meta.url).href : source.href;
   const cached = fileCache.get(href);
@@ -136,7 +151,7 @@ function translateHasText(
 ): { parts: Array<{ base: string; filter: (element: Element) => boolean }> } | null {
   if (!selector.includes(":has-text(")) return null;
   const parts = selector.split(",").map((part) => {
-    const match = /^([^:]*):has-text\("([^"]*)"\)(.*)$/.exec(part.trim());
+    const match = /^([^:]*):has-text\(["']([^"']*)["']\)(.*)$/.exec(part.trim());
     if (!match) return { base: part.trim(), filter: null };
     const [, before, text, after] = match;
     const base = `${before}${after}`.trim();
@@ -147,6 +162,27 @@ function translateHasText(
     return { base, filter };
   });
   return { parts: parts.map((part) => ({ base: part.base, filter: part.filter })) };
+}
+
+// Playwright resolves implicit ARIA roles (a[href] -> link, button -> button,
+// input -> textbox, ...) in addition to explicit [role=...] attributes.
+const ROLE_SELECTORS: Record<string, string> = {
+  link: 'a[href], [role="link"]',
+  button: 'button, input[type="button"], input[type="submit"], [role="button"]',
+  heading: 'h1, h2, h3, h4, h5, h6, [role="heading"]',
+  textbox: 'input[type="text"], input[type="search"], textarea, [role="textbox"]',
+  checkbox: 'input[type="checkbox"], [role="checkbox"]',
+  radio: 'input[type="radio"], [role="radio"]',
+  tab: '[role="tab"], [data-toggle="tab"]',
+  option: "option, [role='option']",
+  listbox: "select, [role='listbox']",
+  menuitem: "[role='menuitem']",
+  dialog: "[role='dialog']",
+  img: "img, [role='img']",
+};
+
+function roleSelectorFor(role: string): string {
+  return ROLE_SELECTORS[role] ?? `[role="${role}"]`;
 }
 
 function globToRegExp(pattern: string): RegExp {
@@ -279,6 +315,30 @@ const POLL_INTERVAL_MS = 40;
 let lastMouseX = 0;
 let lastMouseY = 0;
 
+function createTypedEvent(
+  type: string,
+  documentRef: Document,
+  init?: Record<string, unknown>,
+): Event {
+  const options = { bubbles: true, cancelable: true, ...init };
+  if (type.startsWith("mouse") || type === "click" || type === "contextmenu") {
+    return new MouseEvent(type, options as MouseEventInit);
+  }
+  if (type.startsWith("pointer")) {
+    return new PointerEvent(type, options as PointerEventInit);
+  }
+  if (type.startsWith("key")) {
+    return new KeyboardEvent(type, options as KeyboardEventInit);
+  }
+  if (type.startsWith("touch")) {
+    return new TouchEvent(type, options as TouchEventInit);
+  }
+  if (type.startsWith("focus") || type === "blur") {
+    return new FocusEvent(type, options as FocusEventInit);
+  }
+  return new Event(type, options as EventInit);
+}
+
 function sleep(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, ms);
@@ -339,6 +399,18 @@ export class Locator {
       }
       return Array.from(new Set(result));
     }
+    if (this.selector.includes(":visible") || this.selector.includes(":hidden")) {
+      const base = this.selector.replace(/:visible/g, "").replace(/:hidden/g, "");
+      const visible = !this.selector.includes(":hidden");
+      return Array.from(doc.querySelectorAll(base)).filter((element) => {
+        const style = this.page.window().getComputedStyle(element);
+        const isVisible =
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          (element as HTMLElement).offsetParent !== null;
+        return visible ? isVisible : !isVisible;
+      });
+    }
     return Array.from(doc.querySelectorAll(this.selector));
   }
 
@@ -359,13 +431,35 @@ export class Locator {
   // 15s instead of throwing on the first miss.
   private async waitForElement(timeoutMs = 15000): Promise<HTMLElement> {
     const deadline = Date.now() + timeoutMs;
-    let element = this.current();
-    while (!element && Date.now() < deadline) {
+    let lastError: unknown = null;
+    while (Date.now() < deadline) {
+      try {
+        const element = this.current();
+        if (element) return element;
+      } catch (error) {
+        // Playwright actions retry through transient strict-mode violations
+        // (dual-render mounts from route transitions) until they settle.
+        lastError = error;
+      }
       await sleep(50);
-      element = this.current();
     }
-    if (!element) throw new Error(`${this.selector}: element not found`);
-    return element;
+    if (lastError !== null && this.currentSafe() === null) {
+      // Only report the strict violation if the element never settles.
+      try {
+        this.current();
+      } catch (error) {
+        throw error;
+      }
+    }
+    throw new Error(`${this.selector}: element not found`);
+  }
+
+  private currentSafe(): HTMLElement | null {
+    try {
+      return this.current();
+    } catch {
+      return null;
+    }
   }
 
   all(): Locator[] {
@@ -404,7 +498,7 @@ export class Locator {
     return this.withIndex(Math.max(0, this.resolveElements().length - 1));
   }
 
-  locator(childSelector: string): Locator {
+  locator(childSelector: string, options?: { hasText?: string | RegExp }): Locator {
     if (childSelector.trim() === "..") {
       const page = this.page;
       const base = this;
@@ -423,13 +517,33 @@ export class Locator {
       })(page, base.selector, undefined, base.scopedChild);
     }
     if (childSelector.trim().startsWith(":scope")) {
+      if (this.hasCustomResolver || this.scopedChild !== undefined) {
+        // Compose: scope the child within THIS locator's resolved elements
+        // (a prior :scope/nth/filter chain), not the document base.
+        const page = this.page;
+        const base = this;
+        const child = childSelector.trim();
+        return new (class extends Locator {
+          hasCustomResolver = true;
+          resolveElements(): Element[] {
+            const parents =
+              base.index === undefined
+                ? base.resolveElements()
+                : (() => {
+                    const all = base.resolveElements();
+                    return all[base.index ?? 0] ? [all[base.index ?? 0]] : [];
+                  })();
+            return parents.flatMap((element) => Array.from(element.querySelectorAll(child)));
+          }
+        })(page, base.selector, undefined);
+      }
       return new Locator(this.page, this.selector, this.index, childSelector.trim());
     }
     if (this.hasCustomResolver) {
       const page = this.page;
       const base = this;
       const child = childSelector;
-      return new (class extends Locator {
+      const result = new (class extends Locator {
         hasCustomResolver = true;
         resolveElements(): Element[] {
           return base
@@ -437,13 +551,14 @@ export class Locator {
             .flatMap((element) => Array.from(element.querySelectorAll(child)));
         }
       })(page, base.selector, undefined);
+      return options?.hasText === undefined ? result : result.filterByText(options.hasText);
     }
     if (this.index !== undefined) {
       // nth(i).locator(child): scope children within the indexed parent.
       const page = this.page;
       const base = this;
       const child = childSelector;
-      return new (class extends Locator {
+      const result = new (class extends Locator {
         hasCustomResolver = true;
         resolveElements(): Element[] {
           const parent = base.resolveElements()[base.index ?? 0];
@@ -451,12 +566,14 @@ export class Locator {
           return Array.from(parent.querySelectorAll(child));
         }
       })(page, base.selector, undefined);
+      return options?.hasText === undefined ? result : result.filterByText(options.hasText);
     }
     const combined = this.selector
       .split(",")
       .map((part) => `${part.trim()} ${childSelector}`)
       .join(", ");
-    return new Locator(this.page, combined, this.index);
+    const plain = new Locator(this.page, combined, this.index);
+    return options?.hasText === undefined ? plain : plain.filterByText(options.hasText);
   }
 
   async evaluateAll<T>(fn: (elements: Element[]) => T): Promise<T> {
@@ -471,7 +588,7 @@ export class Locator {
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
-    return this.locator(`[role="${role}"]`).filterByText(options?.name, options?.exact);
+    return this.locator(roleSelectorFor(role)).filterByText(options?.name, options?.exact);
   }
 
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator {
@@ -492,12 +609,22 @@ export class Locator {
   private filterByText(text: string | RegExp | undefined, exact?: boolean): Locator {
     if (text === undefined) return this;
     return this.filterWithPredicate((element) => {
-      const ownText = normalizeText(element.textContent ?? "");
-      return typeof text === "string"
-        ? exact
-          ? ownText === text
-          : ownText.includes(text)
-        : text.test(ownText);
+      // Accessible-name matching: aria-label > content > title (Playwright
+      // resolves the accessible name; title covers icon-only buttons).
+      const candidates = [
+        element.getAttribute("aria-label") ?? "",
+        normalizeText(element.textContent ?? ""),
+        element.getAttribute("title") ?? "",
+      ]
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const matchesCandidate = (candidate: string) =>
+        typeof text === "string"
+          ? exact
+            ? candidate === text
+            : candidate.includes(text)
+          : text.test(candidate);
+      return candidates.some(matchesCandidate);
     });
   }
 
@@ -555,6 +682,14 @@ export class Locator {
     return element?.textContent ?? null;
   }
 
+  async allTextContents(): Promise<string[]> {
+    const texts: string[] = [];
+    for (const element of this.resolveElements()) {
+      texts.push(element.textContent ?? "");
+    }
+    return texts;
+  }
+
   async inputValue(): Promise<string> {
     const element = this.current() as HTMLInputElement | null;
     return element?.value ?? "";
@@ -583,8 +718,18 @@ export class Locator {
 
   async click(options?: { force?: boolean; position?: { x: number; y: number } }): Promise<void> {
     const element = await this.waitForElement();
+    // Playwright clicks the topmost element at the target point (an inner
+    // <button> inside an <li> receives the click, not the <li>).
+    let target: HTMLElement = element;
+    if (!options?.force) {
+      const rect = element.getBoundingClientRect();
+      const x = options?.position?.x ?? rect.left + rect.width / 2;
+      const y = options?.position?.y ?? rect.top + rect.height / 2;
+      const topmost = this.page.document().elementFromPoint(x, y) as HTMLElement | null;
+      if (topmost && element.contains(topmost)) target = topmost;
+    }
     for (const type of ["pointerdown", "mousedown"]) {
-      this.page.dispatch(element, type, options?.position);
+      this.page.dispatch(target, type, options?.position);
     }
     await sleep(10);
     this.page.dispatch(element, "pointerup", options?.position);
@@ -669,6 +814,9 @@ export class Locator {
     this.page.dispatch(element, "mouseover", options?.position);
     this.page.dispatch(element, "mouseenter", options?.position);
     this.page.dispatch(element, "mousemove", options?.position);
+    // Record the hover so a later page.mouse.move synthesizes the leave
+    // events the app needs to hide popovers.
+    (this.page as unknown as { lastHovered: Element | null }).lastHovered = element;
     await sleep(30);
   }
 
@@ -695,26 +843,42 @@ export class Locator {
 
   async dispatchEvent(type: string, init?: Record<string, unknown>): Promise<void> {
     const element = await this.waitForElement();
-    element.dispatchEvent(new Event(type, { bubbles: true, ...init }));
+    // Playwright dispatches TYPED events (a "click" is a MouseEvent with
+    // button=0 — TanStack Link's onClick checks event.button and bails when
+    // it's undefined on a generic Event).
+    const event = createTypedEvent(type, element.ownerDocument, init);
+    element.dispatchEvent(event);
     await sleep(10);
   }
 
-  async evaluate<T>(fn: (element: Element) => T): Promise<T> {
+  async selectText(): Promise<void> {
+    const element = await this.waitForElement();
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(element);
+    const selection = element.ownerDocument.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    await sleep(10);
+  }
+
+  async evaluate<T>(fn: (element: Element, arg: never) => T, arg?: unknown): Promise<T> {
+    const callWithArg = (element: Element) => fn(element, arg as never);
     // Custom resolvers (filter/.. /nth-scoped chains) can't be rebuilt inside
     // the iframe from the selector alone — resolve top-realm and run there.
     if (this.hasCustomResolver) {
       const element = this.current();
       if (!element) return undefined as T;
-      return fn(element);
+      return callWithArg(element);
     }
     // Plain selectors: run inside the iframe realm so `element instanceof
     // Element` resolves against the app's own globals.
     const target = this.page.window();
     const selector = JSON.stringify(this.selector);
     const index = this.index ?? 0;
+    const argJson = arg === undefined ? "undefined" : JSON.stringify(arg);
     // eslint-disable-next-line no-eval
     return target.eval(
-      `(function () { const elements = document.querySelectorAll(${selector}); const el = elements[${index}]; if (!el) return undefined; return (${fn.toString()})(el); })()`,
+      `(function () { const elements = document.querySelectorAll(${selector}); const el = elements[${index}]; if (!el) return undefined; return (${fn.toString()})(el, ${argJson}); })()`,
     ) as T;
   }
 }
@@ -752,7 +916,9 @@ class PageFacade {
     click: async (x: number, y: number) => {
       const element = this.document().elementFromPoint(x, y);
       if (element) {
-        element.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: x, clientY: y }));
+        element.dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }),
+        );
       }
       await sleep(20);
     },
@@ -793,15 +959,21 @@ class PageFacade {
       // element; the app hides popovers on mouseleave (+100ms timer).
       if (element !== this.lastHovered) {
         if (this.lastHovered) {
-          for (const type of ["mouseout", "mouseleave"]) {
-            this.lastHovered.dispatchEvent(
-              new MouseEvent(type, {
-                bubbles: true,
-                clientX: x,
-                clientY: y,
-                relatedTarget: element,
-              }),
-            );
+          // The pointer leaves every descendant too — the browser fires
+          // mouseout/mouseleave down the tree (React onMouseLeave handlers on
+          // popovers/children live on those descendants).
+          const leaving = [this.lastHovered, ...Array.from(this.lastHovered.querySelectorAll("*"))];
+          for (const node of leaving) {
+            for (const type of ["mouseout", "mouseleave"]) {
+              node.dispatchEvent(
+                new MouseEvent(type, {
+                  bubbles: true,
+                  clientX: x,
+                  clientY: y,
+                  relatedTarget: element,
+                }),
+              );
+            }
           }
         }
         if (element) {
@@ -859,6 +1031,13 @@ class PageFacade {
     };
     this.iframe.addEventListener("load", onLoad);
     await promise;
+    // Emit exactly one document request per navigation (Playwright fires one
+    // per full document load; SPA pushState redirects do NOT fire one).
+    emitWtrEvent("request", {
+      url: () => absolute,
+      method: () => "GET",
+      resourceType: () => "document",
+    });
     // Let the SPA boot past its first fetch round-trips before assertions poll.
     await sleep(250);
   }
@@ -898,7 +1077,7 @@ class PageFacade {
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
-    return new Locator(this, `[role="${role}"]`).filterByText(options?.name, options?.exact);
+    return new Locator(this, roleSelectorFor(role)).filterByText(options?.name, options?.exact);
   }
 
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator {
@@ -1127,6 +1306,9 @@ interface ExpectResult {
   toHaveLength(expected: number, options?: { timeout?: number }): Promise<void>;
   toBeNull(options?: { timeout?: number }): Promise<void>;
   toBeEmpty(options?: { timeout?: number }): Promise<void>;
+  toBeDisabled(options?: { timeout?: number }): Promise<void>;
+  toBeTruthy(options?: { timeout?: number }): Promise<void>;
+  toBeFalsy(options?: { timeout?: number }): Promise<void>;
   resolves: {
     toBe(expected: unknown): Promise<void>;
     toEqual(expected: unknown): Promise<void>;
@@ -1146,11 +1328,21 @@ function expectPoll(
   const deadline = Date.now() + (timeout ?? DEFAULT_TIMEOUT_MS);
   return (async () => {
     let last = false;
+    let lastError: unknown = null;
     while (Date.now() < deadline) {
-      last = await condition();
+      try {
+        last = await condition();
+        lastError = null;
+      } catch (error) {
+        // Playwright retries through transient errors (strict-mode
+        // violations on dual-render states, detached elements, ...).
+        lastError = error;
+        last = false;
+      }
       if (last) return;
       await sleep(POLL_INTERVAL_MS);
     }
+    if (lastError !== null) throw lastError;
     throw new Error(`expect: ${message}`);
   })();
 }
@@ -1277,6 +1469,11 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         (element.textContent ?? "").trim() === ""
       );
     }, "toBeEmpty"),
+    toBeDisabled: make(async () => {
+      if (!(target instanceof Locator)) return false;
+      const element = target.current();
+      return element !== null && (element as HTMLInputElement).disabled === true;
+    }, "toBeDisabled"),
     resolves: {
       toBe: async (expected: unknown) => {
         if (stringTarget === null) return;
@@ -1363,6 +1560,34 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           return negate ? !matches : matches;
         },
         "toBeNull",
+        options?.timeout,
+      );
+    },
+    toBeTruthy: (options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        syncAssert(Boolean(stringTarget()), "toBeTruthy");
+        return;
+      }
+      return expectPoll(
+        async () => {
+          const matches = Boolean(await textOf());
+          return negate ? !matches : matches;
+        },
+        "toBeTruthy",
+        options?.timeout,
+      );
+    },
+    toBeFalsy: (options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        syncAssert(!stringTarget(), "toBeFalsy");
+        return;
+      }
+      return expectPoll(
+        async () => {
+          const matches = !(await textOf());
+          return negate ? !matches : matches;
+        },
+        "toBeFalsy",
         options?.timeout,
       );
     },
@@ -1664,10 +1889,21 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
     toHaveURL: async (expected: string | RegExp, options?: { timeout?: number }) => {
       const actual = () =>
         target instanceof Locator ? "" : (target as unknown as PageFacade).url();
-      const matchesUrl = (url: string) =>
-        typeof expected === "string"
-          ? url === expected || url.endsWith(expected) || url.includes(expected)
-          : expected.test(url);
+      const matchesUrl = (url: string) => {
+        if (typeof expected !== "string") return expected.test(url);
+        const relative = !/^[a-z]+:/i.test(expected) && !expected.startsWith("//");
+        if (expected.includes("*")) {
+          // Playwright globs only use * / **; ? is a literal. A relative glob
+          // resolves against the current URL first, then matches the full URL.
+          const pattern = relative ? new URL(expected, url).href : expected;
+          return globToRegExp(pattern).test(url);
+        }
+        // Relative strings resolve against the current URL and compare exactly.
+        if (relative) {
+          return url === new URL(expected, url).href;
+        }
+        return url === expected;
+      };
       await expectPoll(
         async () => {
           const matches = matchesUrl(actual());
@@ -1690,7 +1926,29 @@ function asymmetricEquals(actual: unknown, expected: unknown): boolean {
     return matcher.asymmetricMatch(actual);
   }
   if (typeof expected === "number" || typeof actual === "number") return actual === expected;
-  return JSON.stringify(actual) === JSON.stringify(expected);
+  if (Array.isArray(expected) || Array.isArray(actual)) {
+    if (!Array.isArray(expected) || !Array.isArray(actual)) return false;
+    if (expected.length !== actual.length) return false;
+    return expected.every((item, index) => asymmetricEquals((actual as unknown[])[index], item));
+  }
+  if (
+    typeof expected === "object" &&
+    expected !== null &&
+    typeof actual === "object" &&
+    actual !== null
+  ) {
+    const expectedKeys = Object.keys(expected).sort();
+    const actualKeys = Object.keys(actual).sort();
+    if (expectedKeys.length !== actualKeys.length) return false;
+    if (!expectedKeys.every((key, index) => key === actualKeys[index])) return false;
+    return expectedKeys.every((key) =>
+      asymmetricEquals(
+        (actual as Record<string, unknown>)[key],
+        (expected as Record<string, unknown>)[key],
+      ),
+    );
+  }
+  return actual === expected;
 }
 
 export function expect(target: ExpectTarget): ExpectResult {
@@ -1822,7 +2080,7 @@ function installDefaultMocks(page: PageFacade): void {
 }
 
 function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
-  return async () => {
+  return async function (this: MochaContext) {
     const fixturePage = new PageFacade();
     if (configuredViewport) {
       void fixturePage.setViewportSize(configuredViewport);
@@ -1843,6 +2101,12 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
     installDefaultMocks(fixturePage);
     try {
       await fn({ page: fixturePage as unknown as Page });
+    } catch (error) {
+      if (error instanceof Error && error.message === "__WTR_SKIP__") {
+        this.skip();
+        return;
+      }
+      throw error;
     } finally {
       fixturePage.iframe?.remove();
       currentPage = null;
@@ -1859,6 +2123,8 @@ export const test: {
   afterEach: (fn: () => void | Promise<void>) => void;
   use: (options: { viewport?: { width: number; height: number } }) => void;
   info: () => { title: () => string };
+  setTimeout: (ms: number) => void;
+  skip: (condition: boolean, reason?: string) => void;
 } = Object.assign(
   (name: string, fn: (fixture: Fixture) => void | Promise<void>) => {
     it(name, runWithPage(fn));
@@ -1876,5 +2142,12 @@ export const test: {
       annotations: [],
       attach: async (_name: string, _options?: { body?: string; contentType?: string }) => {},
     }),
+    // WTR's per-test ceiling comes from the config (30s); a spec-side timeout
+    // override is a no-op here.
+    setTimeout: (_ms: number) => {},
+    // Skip with a reason: mocha supports this.skip() inside the test body.
+    skip: (condition: boolean, _reason?: string) => {
+      if (condition) throw new Error("__WTR_SKIP__");
+    },
   },
 );

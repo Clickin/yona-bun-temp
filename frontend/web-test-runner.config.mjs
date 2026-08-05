@@ -4,7 +4,7 @@
 // in a same-origin iframe via the compat harness; this server serves the
 // legacy fixture sources + route sources the specs read via readFileSync.
 import { esbuildPlugin } from "@web/dev-server-esbuild";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, existsSync, statSync, globSync } from "node:fs";
 import { resolve, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -36,6 +36,7 @@ const FETCH_MOCK_SCRIPT = `<script>
               if (initiator === "img") return "image";
               if (initiator === "script") return "script";
               if (initiator === "xmlhttprequest" || initiator === "fetch") return "fetch";
+              if (initiator === "navigation") return "document";
               return initiator;
             },
           });
@@ -136,9 +137,29 @@ const fixturePlugin = {
       }
       return undefined;
     }
+    // globSync support: /__wtr_glob__/<url-encoded pattern> -> JSON line list.
+    if (pathname.startsWith("/__wtr_glob__/")) {
+      const pattern = decodeURIComponent(pathname.slice("/__wtr_glob__/".length));
+      let root = srcDir;
+      let relPattern = pattern;
+      if (pattern.startsWith("src/")) {
+        relPattern = pattern.slice("src/".length);
+      } else if (pattern.startsWith("../")) {
+        root = repoRoot;
+        relPattern = pattern.slice(3);
+      }
+      const matches = globSync(relPattern, { cwd: root, onlyFiles: true, dot: false });
+      const prefixed = matches.map((match) =>
+        pattern.startsWith("src/") ? `src/${match}` : match,
+      );
+      return { body: prefixed.join("\n"), type: "text/plain" };
+    }
     // API paths must 404 (the compat harness fetch-mocks them; a 200 index.html
     // response would desync the app's JSON parsing).
     if (pathname.startsWith(`${basePath}/api/`)) {
+      // @web/dev-server drops the `status` field of a serve() return object;
+      // set it on the context instead (serveIndex pattern).
+      context.status = 404;
       return {
         body: '{"error":{"code":"not_found","status":404}}',
         type: "application/json",
@@ -162,7 +183,7 @@ const fixturePlugin = {
 };
 
 export default {
-  plugins: [esbuildPlugin({ ts: true }), fixturePlugin],
+  plugins: [fixturePlugin, esbuildPlugin({ ts: true })],
   files: ["tests/wtr/**/*.e2e.ts"],
   mimeTypes: { "**/*.ts": "text/javascript" },
   port: 8128,
