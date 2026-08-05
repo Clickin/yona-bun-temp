@@ -209,7 +209,14 @@ const PARITY_SLICES = [
     id: "shared-ui-components",
     label: "Shared legacy parity UI components",
     status: "parity",
-    implementationPatterns: [/^frontend\/src\/components\/[\w-]+\.(?:tsx|stylex\.ts)$/i],
+    implementationPatterns: [
+      /^frontend\/src\/components\/[\w-]+\.(?:tsx|stylex\.ts)$/i,
+      // In-browser e2e harness (WTR migration): runner config, knip ignore,
+      // and the browser-side Playwright-compat shim are parity tooling.
+      /^frontend\/web-test-runner\.config\.mjs$/i,
+      /^frontend\/knip\.json$/i,
+      /^frontend\/tests\/wtr\/wtr-compat\.ts$/i,
+    ],
     testKeywords: [
       "stylex-project",
       "project-posts",
@@ -219,6 +226,9 @@ const PARITY_SLICES = [
       "user-public-profile",
       "enrollment",
       "issueform",
+      "not-found",
+      "loginform",
+      "wtr",
     ],
     provenanceDocs: ["docs/provenance/frontend-scala-html-goal-violation-audit.md"],
   },
