@@ -305,3 +305,27 @@ byte-identical); yobicon @font-face dropped by fallback-off build (fav-org
 logo collapse 3vs23, footer hearts 16x0); dist sidebar offset/collapse;
 stale pins fixed in copies (search category listStyle, favorite-shell empty
 heights 72->70/20->18, help-shell margin 143 PW-identical stale).
+
+## Wave 9 — committed `339b3d1b3` (25 files, +4.9k)
+
+Specs (24): stylex-left-sidebar-{recent-issue-rows,recent-shell,tab-panel,tabs}, stylex-lost-password-
+{authenticated-error-alert,authenticated-prefill,authenticated-success-alert,error-alert,form,success-alert},
+stylex-members-{role-menu-hover,role-menu-item}, stylex-migration-disabled-shell, stylex-orange-text-retirement,
+stylex-org-directory-inline-residual, stylex-organization-boards-{inline-residual,two-column-margin,
+two-column-popover,}, stylex-organization-boards, stylex-organization-{delete-form,directory-error-wrap,
+home-action-floats,home-header-menu,home-inline-residual}.
+
+Suite: 219 files, 1265 passed / 522 failed / 1 skipped (~24 min).
+
+Shim additions: Space toggles checkboxes/radios, Enter on form inputs
+requestSubmit, Locator.evaluate waits for the element (bridge for all
+selectors — plain branch raced post-navigation re-renders), locator.filter
+({visible}).
+
+Residual families (all PW-verified): CSS :hover ceiling (recent-issue popover,
+sidebar tabs colors, success-alert dismiss, org-home header menu); retained
+legacy classes (orange-txt settingform.tsx:270 — PW-identical); yobicon
+fallback-off collapse; dist sidebar offset; stale pins fixed in copies
+(recent-shell empty heights 97->95/55->53/20->18, sidebar tabs
+yobicon-refresh template literal, members role-menu hover rule retired
+886bddf47, lost-password heading 20->18, directory sprite hashed).
