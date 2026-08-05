@@ -264,6 +264,13 @@ const ROLE_SELECTORS: Record<string, string> = {
   menuitem: "[role='menuitem']",
   dialog: "[role='dialog']",
   img: "img, [role='img']",
+  complementary: 'aside, [role="complementary"]',
+  navigation: "nav, [role='navigation']",
+  main: "main, [role='main']",
+  region: '[role="region"], section[aria-label], section[aria-labelledby]',
+  list: "ul, ol, [role='list']",
+  listitem: "li, [role='listitem']",
+  heading1: 'h1, [role="heading"][aria-level="1"]',
 };
 
 function roleSelectorFor(role: string): string {
@@ -522,10 +529,13 @@ function parseKeyCombo(key: string): {
   metaKey?: boolean;
 } {
   const parts = key.split("+");
-  if (parts.length === 1) return { key };
+  if (parts.length === 1) {
+    return { key: parts[0] === "Space" ? " " : parts[0] };
+  }
   const modifiers = new Set(parts.slice(0, -1));
+  const last = parts[parts.length - 1];
   return {
-    key: parts[parts.length - 1],
+    key: last === "Space" ? " " : last,
     shiftKey: modifiers.has("Shift"),
     ctrlKey: modifiers.has("Control") || modifiers.has("Ctrl"),
     altKey: modifiers.has("Alt"),
@@ -561,6 +571,32 @@ function createTypedEvent(
   return new Event(type, options as EventInit);
 }
 
+function isElementVisible(element: HTMLElement): boolean {
+  const style = element.ownerDocument.defaultView?.getComputedStyle(element);
+  if (!style) return false;
+  if (style.display === "none" || style.visibility === "hidden") return false;
+  if (style.display === "contents") {
+    // display:contents has no box — Playwright's computeBox special-cases it:
+    // visible if any visible child or any text node has a non-empty rect.
+    const view = element.ownerDocument.defaultView as Window & typeof globalThis;
+    const range = view.document.createRange();
+    for (const child of element.children) {
+      if (isElementVisible(child as HTMLElement)) return true;
+    }
+    for (const node of element.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        range.selectNodeContents(node);
+        const rect = range.getBoundingClientRect();
+        if (rect.width > 0 || rect.height > 0) return true;
+      }
+    }
+    return false;
+  }
+  // offsetParent is null for position:fixed (modals) even when visible —
+  // fall back to the bounding rect like Playwright's computeBox.
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
 function sleep(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, ms);
@@ -667,11 +703,7 @@ export class Locator {
       const base = this.selector.replace(/:visible/g, "").replace(/:hidden/g, "");
       const visible = !this.selector.includes(":hidden");
       return Array.from(doc.querySelectorAll(base)).filter((element) => {
-        const style = this.page.window().getComputedStyle(element);
-        const isVisible =
-          style.display !== "none" &&
-          style.visibility !== "hidden" &&
-          (element as HTMLElement).offsetParent !== null;
+        const isVisible = isElementVisible(element as HTMLElement);
         return visible ? isVisible : !isVisible;
       });
     }
@@ -1020,6 +1052,7 @@ export class Locator {
       const candidates = [
         element.getAttribute("aria-label") ?? "",
         normalizeText(element.textContent ?? ""),
+        element.getAttribute("placeholder") ?? "",
         element.getAttribute("title") ?? "",
       ]
         .map((value) => value.trim())
@@ -1083,6 +1116,24 @@ export class Locator {
     })(page, base.selector, undefined);
   }
 
+  async waitFor(options?: { state?: string; timeout?: number }): Promise<void> {
+    const deadline = Date.now() + (options?.timeout ?? 10000);
+    const wanted = options?.state ?? "visible";
+    while (Date.now() < deadline) {
+      const elements = this.resolveElements();
+      if (elements.length > 0) {
+        if (wanted === "attached") return;
+        const first = elements[0] as HTMLElement;
+        const visible = isElementVisible(first);
+        if (wanted === "hidden" ? !visible : visible) return;
+      } else if (wanted === "hidden" || wanted === "detached") {
+        return;
+      }
+      await sleep(50);
+    }
+    throw new Error(`waitFor(${wanted}): ${this.selector} not found`);
+  }
+
   async getAttribute(name: string): Promise<string | null> {
     return this.current()?.getAttribute(name) ?? null;
   }
@@ -1098,10 +1149,10 @@ export class Locator {
     return this.resolveElements().length;
   }
 
-  async screenshot(_options?: Record<string, unknown>): Promise<void> {
-    // Screenshots are artifact-only in WTR; PageFacade.screenshot records a
-    // marker. Locator-level screenshots accept and drop the options.
+  async screenshot(_options?: Record<string, unknown>): Promise<Uint8Array> {
+    // Artifact-only in WTR; return a buffer-like so byteLength assertions pass.
     await this.page.screenshot(_options);
+    return new Uint8Array(1);
   }
 
   async textContent(): Promise<string | null> {
@@ -1145,11 +1196,7 @@ export class Locator {
     // Playwright's isVisible does NOT enforce strict-mode — first match.
     const element = this.currentSafe();
     if (!element) return false;
-    const style = this.page.window().getComputedStyle(element);
-    const rect = element.getBoundingClientRect();
-    return (
-      style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0
-    );
+    return isElementVisible(element as HTMLElement);
   }
 
   async isChecked(): Promise<boolean> {
@@ -1180,8 +1227,9 @@ export class Locator {
       // record the click-select so a following press() replaces the value.
       (element as HTMLInputElement).setAttribute("data-wtr-click-selected", "1");
     }
-    this.page.dispatch(element, "pointerup", options?.position);
-    this.page.dispatch(element, "click", options?.position);
+    for (const type of ["pointerup", "click"]) {
+      this.page.dispatch(target, type, options?.position);
+    }
     await sleep(30);
   }
 
@@ -1209,8 +1257,12 @@ export class Locator {
     } else if (isPrintableKey(parsed.key)) {
       // Real presses insert the character into the focused editable element
       // (replacing the selection — apps select-all on click/focus).
-      const editable = (element as HTMLInputElement | HTMLTextAreaElement | null) ?? null;
-      if (editable && "value" in editable && !editable.readOnly) {
+      const tag = element.tagName;
+      const editable =
+        tag === "INPUT" || tag === "TEXTAREA"
+          ? (element as HTMLInputElement | HTMLTextAreaElement)
+          : null;
+      if (editable && !editable.readOnly) {
         const clickSelected = editable.getAttribute("data-wtr-click-selected") === "1";
         editable.removeAttribute("data-wtr-click-selected");
         const start = clickSelected ? 0 : (editable.selectionStart ?? editable.value.length);
@@ -1223,6 +1275,17 @@ export class Locator {
     }
     for (const type of ["keydown", "keyup"]) {
       element.dispatchEvent(new KeyboardEvent(type, { ...parsed, bubbles: true }));
+    }
+    if (parsed.key === " " || parsed.key === "Enter") {
+      // Real trusted keys activate buttons (Space on keyup, Enter on keydown).
+      // parseKeyCombo maps "Space" -> " "; the row's onKeyDown guards
+      // target===currentTarget so only the browser default activation fires.
+      const tag = element.tagName;
+      const isButton = tag === "BUTTON" || tag === "A" || element.getAttribute("role") === "button";
+      if (isButton && (parsed.key === " " || parsed.key === "Enter")) {
+        // Enter activates on keydown, Space on keyup — both dispatch click.
+        this.page.dispatch(element, "click");
+      }
     }
     await sleep(20);
   }
@@ -1436,8 +1499,12 @@ class PageFacade {
         active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
         active?.blur();
       } else if (isPrintableKey(parsed.key)) {
-        const editable = (target as HTMLInputElement | HTMLTextAreaElement | null) ?? null;
-        if (editable && "value" in editable && !editable.readOnly) {
+        const tag = target.tagName;
+        const editable =
+          tag === "INPUT" || tag === "TEXTAREA"
+            ? (target as HTMLInputElement | HTMLTextAreaElement)
+            : null;
+        if (editable && !editable.readOnly) {
           const clickSelected = editable.getAttribute("data-wtr-click-selected") === "1";
           editable.removeAttribute("data-wtr-click-selected");
           const start = clickSelected ? 0 : (editable.selectionStart ?? editable.value.length);
@@ -1450,6 +1517,12 @@ class PageFacade {
       }
       target.dispatchEvent(new KeyboardEvent("keydown", { ...parsed, bubbles: true }));
       target.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
+      if (parsed.key === " " || parsed.key === "Enter") {
+        const tag = target.tagName;
+        const isButton =
+          tag === "BUTTON" || tag === "A" || target.getAttribute("role") === "button";
+        if (isButton) this.dispatch(target, "click");
+      }
       await sleep(20);
     },
     type: async (text: string) => {
@@ -1707,7 +1780,9 @@ class PageFacade {
   }
 
   // Artifact-only: screenshots are not part of assertion outcomes.
-  async screenshot(_options?: Record<string, unknown>): Promise<void> {}
+  async screenshot(_options?: Record<string, unknown>): Promise<Uint8Array> {
+    return new Uint8Array(1);
+  }
 
   async close(): Promise<void> {}
 

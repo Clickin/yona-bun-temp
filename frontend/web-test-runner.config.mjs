@@ -182,6 +182,19 @@ const fixturePlugin = {
       }
       return undefined;
     }
+    if (pathname.startsWith("/docs/")) {
+      const rel = stripTxtSuffix(
+        pathname
+          .replace(/^\/docs\//, "")
+          .split("/")
+          .filter(Boolean),
+      );
+      const diskPath = join(repoRoot, "docs", ...rel.map((part) => part.replace(/\.\./g, "")));
+      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
+        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
+      }
+      return undefined;
+    }
     if (pathname.startsWith("/yona-original/")) {
       const rel = stripTxtSuffix(
         pathname
