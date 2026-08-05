@@ -4525,3 +4525,5 @@ Manual evidence-only exception note: historical commit d17c1577bede924dbb027bd09
 Manual evidence-only exception note: historical commit 65e07c7dff9615c3d97270efd9120ea9be0d7550 (feat(e2e): WTR wave 5 — 24 more specs, scoped compose/filter-chain fidelity) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit ad2386988cefc263c8b6fc0d3ef79124c342fa71 (feat(e2e): WTR wave 6 — 24 stylex auth-home/sidenav specs, handle bridge) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit cf203d4e736b4779d64d71c65da99e425c1c3cc0 (feat(e2e): WTR wave 7 — 24 stylex gnb/sidenav specs, doc-request + subset matchers) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
