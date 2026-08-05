@@ -146,7 +146,7 @@ test("Projects residual member, watch, and trash icons are direct StyleX owners"
 
   const projectRowSource = route.slice(
     route.indexOf("function ProfileProjectRow("),
-    route.indexOf("function TwoColumnModeCheckbox("),
+    route.indexOf("function ShowSubtasksCheckbox("),
   );
   for (const owner of [
     "user-profile-project-member-icon",

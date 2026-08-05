@@ -1,9 +1,10 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets positive tabindex values on the edit form controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BoardPostFileUploader } from "../../../../../components/file-uploader";
+import { BoardPostMarkdownEditor } from "../../../../../components/markdown-editor";
 import * as stylex from "@stylexjs/stylex";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import {
   readProjectPostQueryOptions,
   updateProjectPostRest,
@@ -145,11 +146,31 @@ function ProjectBoardEditFormBody({
                   <BoardPostMarkdownEditor
                     focusRequest={bodyFocusRequest}
                     value={post.bodyMarkdown}
+                    wrapperClassName={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
+                    tabListStyle={stylex.props(styles.editorTabs)}
+                    tabContentClassName={`${stylex.props(styles.editorContent).className} tab-content`}
+                    notificationStyle={stylex.props(styles.notificationReceiver)}
+                    owners={{
+                      wrapper: "post-edit-form-markdown-editor-wrapper",
+                      tabs: "post-edit-form-editor-tabs",
+                      tabContent: "post-edit-form-editor-content",
+                      notification: "post-edit-form-notification",
+                    }}
                   />
                 </dd>
               </dl>
 
-              <BoardPostFileUploader resourceId={String(post.id)} />
+              <BoardPostFileUploader
+                resourceId={String(post.id)}
+                wrapperStyleProps={stylex.props(styles.upload)}
+                pasteHelpStyleProps={stylex.props(styles.pasteHelpVisible)}
+                helpClassName={`${stylex.props(styles.uploadSaveHelp).className} help`}
+                owners={{
+                  wrapper: "post-edit-form-uploader",
+                  pasteHelp: "post-edit-form-paste-help",
+                  saveHelp: "post-edit-form-upload-save-help",
+                }}
+              />
 
               <div
                 className={`${stylex.props(styles.options).className} mt10 mb10`}
@@ -211,150 +232,6 @@ function HistoryBackLink({ children }: { children: string }) {
     <button type="button" className="ybtn" tabIndex={4} onClick={() => router.history.back()}>
       {children}
     </button>
-  );
-}
-
-function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number; value: string }) {
-  const { t } = useLegacyMessages();
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (focusRequest > 0) {
-      bodyRef.current?.focus();
-    }
-  }, [focusRequest]);
-  return (
-    <div
-      className={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
-      data-stylex-owner="post-edit-form-markdown-editor-wrapper"
-    >
-      <ul
-        className={`${stylex.props(styles.editorTabs).className} nav nav-tabs nm small`}
-        data-stylex-owner="post-edit-form-editor-tabs"
-      >
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <Link
-            to="."
-            search={(previous) => previous}
-            hash="edit-body"
-            onClick={() => setActiveTab("edit")}
-          >
-            {t("common.editor.edit")}
-          </Link>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <Link
-            to="."
-            search={(previous) => previous}
-            hash="preview-body"
-            onClick={() => setActiveTab("preview")}
-          >
-            {t("common.editor.preview")}
-          </Link>
-        </li>
-        <li>
-          <div className="task-list-button">
-            <button
-              type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-            >
-              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li>
-          <div className="editor-clear-temporary">
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div className="editor-notice-label"></div>
-        </li>
-      </ul>
-      <div
-        className={`${stylex.props(styles.editorContent).className} tab-content`}
-        data-stylex-owner="post-edit-form-editor-content"
-      >
-        <LegacyMarkdownHelp />
-        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div className="textarea-box">
-            <textarea
-              ref={bodyRef}
-              tabIndex={2}
-              name="body"
-              className="editorSeries content comment nm"
-              data-editor-mode="content-body"
-              id="editor-body-body"
-              defaultValue={value}
-              {...{ markdown: "true" }}
-            ></textarea>
-          </div>
-        </div>
-        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
-        </div>
-        <div
-          className={`${stylex.props(styles.notificationReceiver).className} notification-receiver`}
-          data-stylex-owner="post-edit-form-notification"
-        >
-          <span className="notification-receiver-title">
-            {t("notification.receiver.list.title")}
-          </span>
-          <span className="notification-receiver-list"></span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BoardPostFileUploader({ resourceId }: { resourceId: string }) {
-  const { t } = useLegacyMessages();
-  const pasteSupported =
-    typeof document !== "undefined" &&
-    "onpaste" in document &&
-    typeof FormData !== "undefined" &&
-    typeof FileReader !== "undefined";
-  return (
-    <div
-      id="upload"
-      className={`${stylex.props(styles.upload).className} upload-wrap content-footer`}
-      data-stylex-owner="post-edit-form-uploader"
-      data-resource-type="BOARD_POST"
-      data-resource-id={resourceId}
-    >
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span
-          className="help help-pastable"
-          {...(pasteSupported ? stylex.props(styles.pasteHelpVisible) : {})}
-          data-stylex-owner="post-edit-form-paste-help"
-        >
-          {t("common.attach.pastehere")}
-        </span>
-      </div>
-      <ul className="attached-files unstyled"></ul>
-      <p
-        className={`${stylex.props(styles.uploadSaveHelp).className} help`}
-        data-stylex-owner="post-edit-form-upload-save-help"
-      >
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
-    </div>
   );
 }
 

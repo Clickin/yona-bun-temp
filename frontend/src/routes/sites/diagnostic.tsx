@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { siteDiagnosticsQueryOptions, siteUpdateQueryOptions } from "../../api/site-admin";
@@ -224,7 +226,24 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
               {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
               data-stylex-owner="site-diagnostic-sidebar-column"
             >
-              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
+              <SiteAdminSidebar
+                activeItemClassName="active"
+                activeTo="/sites/diagnostic"
+                badgeOwner="site-diagnostic-sidebar-badge"
+                baseLinkProps={legacySiteSidebarLinkProps}
+                linkPropsByTo={{ "/sites/diagnostic": { search: legacyDiagnosticSidebarSearch } }}
+                navOwner="site-diagnostic-sidebar"
+                ownerPrefix="site-diagnostic-sidebar"
+                showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
+                  badge: [styles.sidebarBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
+                  item: [styles.sidebarItem],
+                  nav: [styles.sidebar],
+                }}
+                ulClassName="site-setting-nav"
+              />
             </div>
             <div
               {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
@@ -269,105 +288,6 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
   );
 }
 
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  return (
-    <ul
-      {...stylex.props(styles.sidebar)}
-      className={`site-setting-nav ${stylex.props(styles.sidebar).className}`}
-      data-stylex-owner="site-diagnostic-sidebar"
-    >
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
-        data-stylex-owner="site-diagnostic-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/userList"
-        >
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/postList"
-        >
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/issueList"
-        >
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/projectList"
-        >
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/mail"
-        >
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/massmail"
-        >
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-diagnostic-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          to="/sites/update"
-        >
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? (
-            <span
-              {...stylex.props(styles.sidebarBadge)}
-              data-stylex-owner="site-diagnostic-sidebar-badge"
-            >
-              1
-            </span>
-          ) : null}
-        </Link>
-      </li>
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
-        className={`active ${stylex.props(styles.sidebarItem, styles.sidebarActiveItem).className}`}
-        data-stylex-owner="site-diagnostic-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-diagnostic-sidebar-link"
-          search={legacyDiagnosticSidebarSearch}
-          to="/sites/diagnostic"
-        >
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
-    </ul>
-  );
-}
-
 function DiagnosticBody({
   diagnosticErrors,
 }: {
@@ -390,9 +310,4 @@ function DiagnosticBody({
       </ul>
     </>
   );
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }

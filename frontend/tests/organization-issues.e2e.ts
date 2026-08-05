@@ -8,7 +8,7 @@ const ORGANIZATION_ISSUES_ROUTE_SOURCE = new URL(
 
 const EXPECTED_ORGANIZATION_ISSUES = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer project-header"><div class="gnb-inner"><button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="page-wrap"><div class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-assignee-id="" data-author-id="" data-mention-id="" data-project-names="" data-milestone-id="">All issues</button></li><li class=""><button type="button" data-author-id="" data-assignee-id="1" data-project-names="" data-milestone-id="" data-mention-id="">Assigned</button></li><li class=""><button type="button" data-author-id="1" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="">Created</button></li><li class=""><button type="button" data-author-id="" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="1">Mentioned</button></li></ul><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/issues" method="get"><select id="projects" name="projectNames[]" multiple="" data-placeholder="Choose projects" data-container-css-class="fullsize" style="width:100%"><option value="sample">sample</option><option value="playground">playground</option></select><hr><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="authorId" value=""><input type="hidden" name="assigneeId" value=""><input type="hidden" name="mentionId" value=""><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="bug"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><ul class="post-list-wrap"><li class="post-item title" id="issue-item-42" href="__BASE_PATH__/weblabs/sample/issue/11"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item mileston-tag"><a href="__BASE_PATH__/weblabs/sample/milestone/5" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/weblabs/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id margin-right-5">#11</span><a href="__BASE_PATH__/weblabs/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label" data-label-id="8" style="background:rgb(81,170,204)">bug</a></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" title="Jun 30, 2026"><i class="yobicon-clock2"></i>Overdue</div></div></li></ul><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/organizations/weblabs/issues?filter=bug&amp;orderBy=createdDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div></div></div></div>
@@ -147,19 +147,13 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
     "alt",
     "Site Admin",
   );
-  await expect(page.locator("#issue-item-42 .mr20.mt10.pull-right.overdue")).not.toHaveAttribute(
-    "data-toggle",
+  const issueDueDate = page.locator(
+    '#issue-item-42 [data-stylex-owner="organization-issues-due-date"]',
   );
-  await expect(page.locator("#issue-item-42 .mr20.mt10.pull-right.overdue")).not.toHaveAttribute(
-    "data-placement",
-  );
-  await expect(page.locator("#issue-item-42 .mr20.mt10.pull-right.overdue")).toHaveAttribute(
-    "title",
-    "Jun 30, 2026",
-  );
-  await expect(page.locator("#issue-item-42 .mr20.mt10.pull-right.overdue")).toContainText(
-    "Overdue",
-  );
+  await expect(issueDueDate).not.toHaveAttribute("data-toggle");
+  await expect(issueDueDate).not.toHaveAttribute("data-placement");
+  await expect(issueDueDate).toHaveAttribute("title", "Jun 30, 2026");
+  await expect(issueDueDate).toContainText("Overdue");
   await expect(page.locator('#issue-item-42 [data-toggle="tooltip"]')).toHaveCount(0);
   await expect(page.locator("#issue-item-42 [data-placement]")).toHaveCount(0);
   await expect(page.locator(".issue-list-wrap")).not.toHaveAttribute("pjax-container");
@@ -217,13 +211,12 @@ test("organization issue row tooltip markers are not React-owned DOM", async ({ 
     "title",
     "Assignee: Site Admin",
   );
-  await expect(page.locator("#issue-item-42 .mr20.mt10.pull-right.overdue")).toHaveAttribute(
-    "title",
-    "Jun 30, 2026",
-  );
-  await expect(page.locator("#issue-item-42 .mr20.mt10.pull-right.overdue")).toContainText(
-    "Overdue",
-  );
+  await expect(
+    page.locator('#issue-item-42 [data-stylex-owner="organization-issues-due-date"]'),
+  ).toHaveAttribute("title", "Jun 30, 2026");
+  await expect(
+    page.locator('#issue-item-42 [data-stylex-owner="organization-issues-due-date"]'),
+  ).toContainText("Overdue");
 });
 
 test("organization issues two-column checkbox renders React popover and localStorage toggle", async ({
@@ -238,7 +231,7 @@ test("organization issues two-column checkbox renders React popover and localSto
 
   const wrapper = page.locator("#two-column-mode-checkbox");
   const toggle = page.locator("#two-column-mode");
-  await expect(wrapper).toHaveClass("two-column-icon mr10 hide-in-mobile");
+  await expect(wrapper).toHaveClass(/two-column-icon mr10 hide-in-mobile/);
   await expect(wrapper).toHaveAttribute("title", "Two Column Mode");
   await expect(wrapper).not.toHaveAttribute("data-content");
   await expect(wrapper.locator("label.checkbox")).toHaveCount(1);
@@ -623,7 +616,7 @@ test("organization issues two-column source keeps React popover cleanup", () => 
   expect(twoColumnSource).toContain('localStorage.setItem("useTwoColumnMode", String(checked))');
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(true), 100)");
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
-  expect(twoColumnSource).toContain('className="popover top"');
+  expect(twoColumnSource).toContain("popover top");
   expect(twoColumnSource).toContain('role="tooltip"');
   expect(twoColumnSource).not.toContain("data-content=");
   expect(twoColumnSource).not.toContain("document.");
@@ -639,11 +632,12 @@ test("organization issues top menu source uses direct Link targets", () => {
   expect(source).not.toContain("organizationHref(");
   expect(source).not.toContain("OrganizationRouteLink");
   expect(source).toContain("function OrganizationHeader");
-  expect(source).toContain("to={`/organizations/${organizationName}`}");
-  expect(source).toContain("to={`/organizations/${organizationName}/issues`}");
-  expect(source).toContain("to={`/organizations/${organizationName}/boards`}");
-  expect(source).toContain("to={`/organizations/${organizationName}/pullrequests`}");
-  expect(source).toContain("to={`/organizations/${organizationName}/settingform`}");
+  expect(source).toContain('to="/organizations/$organizationName"');
+  expect(source).toContain('to="/organizations/$organizationName/issues"');
+  expect(source).toContain('to="/organizations/$organizationName/boards"');
+  expect(source).toContain('to="/organizations/$organizationName/pullrequests"');
+  expect(source).toContain('to="/organizations/$organizationName/settingform"');
+  expect(source).toContain("params={{ organizationName }}");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
 });
@@ -928,6 +922,12 @@ async function mockOrganizationIssues(
   options: { isAnonymous?: boolean; itemCount?: number; viewerCanUpdate?: boolean } = {},
 ) {
   const issueRequestUrls: string[] = [];
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1079,7 +1079,8 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1137,9 +1138,20 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
   });
 }
@@ -1165,7 +1177,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1255,9 +1268,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
   }, html);
 }

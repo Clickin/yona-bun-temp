@@ -247,7 +247,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
   expect(route).toContain('data-stylex-owner="user-profile-project-owner-link"');
   const projectRowSource = route.slice(
     route.indexOf("function ProfileProjectRow("),
-    route.indexOf("function TwoColumnModeCheckbox("),
+    route.indexOf("function ShowSubtasksCheckbox("),
   );
   expect(projectRowSource).not.toContain(
     "className={`${stylex.props(styles.projectTitleLink).className} project-name`}",

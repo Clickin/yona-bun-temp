@@ -9,6 +9,7 @@ test("organization boards owns the two-column anchor position with route-local S
   page,
 }) => {
   const route = readFileSync("src/routes/organizations/$organizationName/boards.tsx", "utf8");
+  const sharedComponent = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
   const legacy = readFileSync(
     "../yona-original/app/views/organization/group_board_list.scala.html",
     "utf8",
@@ -32,7 +33,8 @@ test("organization boards owns the two-column anchor position with route-local S
   expect(control).toContain('id="two-column-mode-checkbox"');
   expect(pageLess).toContain(".two-column-icon, .show-subtasks");
   expect(twoColumnJs).toContain("delay: { show: 100, hide: 100 }");
-  expect(route).toContain('data-stylex-owner="organization-boards-two-column-anchor"');
+  expect(route).toContain('anchorOwner="organization-boards-two-column-anchor"');
+  expect(sharedComponent).toContain("data-stylex-owner={anchorOwner}");
   expect(route).toContain('twoColumnAnchor: { marginRight: "10px", position: "relative" }');
   expect(route).not.toContain('style={{ position: "relative" }}');
 

@@ -393,7 +393,10 @@ test("issueform legacy insert bridge has no app.css arms", () => {
   }
   expect(appCss).toContain(".attached-file.complete .progress {");
   expect(readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8")).toContain(
-    'className={`btn-insert-copy ${stylex.props(issueFormStyles.attachedFileInsertCopy).className ?? ""}`.trim()}',
+    "attachedFileInsertCopy: issueFormStyles.attachedFileInsertCopy",
+  );
+  expect(readFileSync("src/components/file-uploader.tsx", "utf8")).toContain(
+    'className={`btn-insert-copy ${styles.attachedFileInsertCopy ? stylex.props(styles.attachedFileInsertCopy).className ?? "" : ""}`.trim()}',
   );
 });
 
@@ -763,7 +766,7 @@ test("pull-request tab button bridge has no app.css arms", () => {
 test("uneditable-input width bridge has no current React consumer", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".uneditable-input");
-  expect(appCss).toContain("input,\ntextarea {\n  width: 206px;\n}");
+  expect(appCss).toContain("input,\n  textarea {\n    width: 206px;");
 });
 
 test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
@@ -771,7 +774,7 @@ test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
   expect(appCss).not.toContain(".btn-primary {");
   expect(appCss).not.toContain(".btn-primary:hover,");
   expect(appCss).not.toContain(".btn-primary:focus");
-  expect(appCss).toContain(".ybtn-primary,\n.ybtn-success {");
+  expect(appCss).toContain(".ybtn-primary,\n  .ybtn-success {");
   expect(appCss).toContain(".ybtn-success:focus {");
 });
 
@@ -1062,8 +1065,8 @@ test("authenticated user-menu dropdown declaration bridge has no app.css arms", 
 test("authenticated user-menu item bridge keeps only the live standalone arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".gnb-nav > li,\n.gnb-usermenu > li {");
-  expect(appCss).toContain(".gnb-nav > li {\n  float: left;\n  position: relative;");
-  expect(appCss).toContain(".gnb-usermenu > li {\n  position: relative;\n  float: left;");
+  expect(appCss).toContain(".gnb-nav > li {\n    float: left;\n    position: relative;");
+  expect(appCss).toContain(".gnb-usermenu > li {\n    position: relative;\n    float: left;");
 });
 
 test("site mail form-horizontal bridge has no app.css arms", () => {

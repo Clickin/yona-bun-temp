@@ -1004,7 +1004,8 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1030,7 +1031,20 @@ async function canonicalize(page: Page, selector: string) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
+      return attr.name === "style" ? normalizeStyleAttr(value) : value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/gu, "");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function normalizeText(value: string) {
@@ -1059,7 +1073,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1085,7 +1100,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
+      return attr.name === "style" ? normalizeStyleAttr(value) : value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/gu, "");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function normalizeText(value: string) {

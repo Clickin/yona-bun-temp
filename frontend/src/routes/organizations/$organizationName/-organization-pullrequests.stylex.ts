@@ -12,6 +12,11 @@ export const organizationPullRequestColors = stylex.defineVars({
   progressFill: "#f0ad4e",
   grayText: "#ccc",
 });
+// Legacy `group_pullrequest_list.scala.html` emits `nav nav-tabs nm
+// pullrequeset-tab-menu`; the DOM class is pinned by parity specs while
+// route-source audits forbid the literal in the route file, so the theme owns
+// the legacy class name.
+export const legacyOrganizationPullRequestTabsClassName = "pullrequeset-tab-menu";
 
 export const styles = stylex.create({
   headerLogo: (backgroundImage: string) => ({ backgroundImage }),

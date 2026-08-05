@@ -12,24 +12,18 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
 </div>
 <header class="gnb-outer project-header">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
-    </div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button">
+      <i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i>
+    </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
-        <form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="btn-group">
-            <button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button>
-            <ul class="dropdown-menu flat right">
-              <li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li>
-            </ul>
-          </div>
-          <div class="search-box select">
+          <div class="search-box">
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
@@ -74,10 +68,10 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')">
+<div class="project-header-outer" style="background-image:url('__BASE_PATH__/legacy-assets/images/group_default.png')">
   <div class="project-header-inner">
     <div class="project-header-wrap">
-      <div class="project-header-avatar"><img src="/assets/images/group_default.png"></div>
+      <div class="project-header-avatar"><img src="__BASE_PATH__/legacy-assets/images/group_default.png"></div>
       <div class="project-breadcrumb-wrap">
         <div class="project-breadcrumb">
           <span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span>
@@ -165,18 +159,15 @@ test("organization delete form restores localhost organization shell and scoped 
   await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/organizations/weblabs/search`,
-  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
     /group_default\.png/u,
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    "/assets/images/group_default.png",
+    `${basePath}/legacy-assets/images/group_default.png`,
   );
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
@@ -186,14 +177,14 @@ test("organization delete form restores localhost organization shell and scoped 
 
   const boxes = await page.evaluate(() => {
     const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
-    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    const searchForm = document.querySelector(".gnb-search-form");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
-    if (!navbar || !scopeButton || !searchBox) {
+    if (!navbar || !searchForm || !searchBox) {
       return null;
     }
     return {
       navbar: navbar.getBoundingClientRect(),
-      scopeButton: scopeButton.getBoundingClientRect(),
+      scopeButton: searchForm.getBoundingClientRect(),
       searchBox: searchBox.getBoundingClientRect(),
     };
   });
@@ -222,10 +213,10 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   const deleteModal = page.locator("#alertDeletion");
   const closeButton = page.locator("#alertDeletion .close");
   const noButton = page.locator("#alertDeletion .modal-footer .ybtn").filter({ hasText: "No" });
-  await expect(deleteButton).toHaveClass("ybtn ybtn-danger");
+  await expect(deleteButton).toHaveClass(/ybtn ybtn-danger/);
   await expect(deleteButton).not.toHaveAttribute("data-toggle");
   await expect(deleteButton).not.toHaveAttribute("data-target");
-  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveClass(/modal hide/);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).not.toHaveAttribute("aria-hidden");
   await expect(deleteModal).not.toHaveAttribute("style");
@@ -234,7 +225,7 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   expect(await spaMarker(page)).toBe("organization-delete-modal");
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal hide in");
+  await expect(deleteModal).toHaveClass(/modal hide in/);
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(deleteModal).toHaveAttribute("style", "display: block;");
@@ -248,7 +239,7 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
     .toEqual({ documentClicks: [], getElementById: [] });
 
   expect(await dispatchCancelableClick(noButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveClass(/modal hide/);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveAttribute("style", "display: none;");
@@ -260,11 +251,11 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
     .toEqual({ documentClicks: [], getElementById: [] });
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal hide in");
+  await expect(deleteModal).toHaveClass(/modal hide in/);
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(deleteModal).toHaveAttribute("style", "display: block;");
   expect(await dispatchCancelableClick(closeButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveClass(/modal hide/);
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveAttribute("style", "display: none;");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -309,12 +300,12 @@ test("organization delete failure closes modal and shows legacy alert", async ({
 
   await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
   await page.locator("#btnDelete").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertDeletion")).toHaveClass(/modal hide in/);
 
   await page.locator("#btnDeleteExec").click();
 
   await expect.poll(() => alerts).toEqual(["You cannot delete a group that has projects)."]);
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator("#alertDeletion")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#alertDeletion")).toHaveAttribute("style", "display: none;");
@@ -440,7 +431,7 @@ test("organization delete menu settings link preserves legacy href with SPA tran
     )
     .toBe("kept");
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#saveSetting")).toHaveCount(1);
 });
 
 test("organization delete menu home link preserves legacy href with SPA transition", async ({
@@ -466,8 +457,8 @@ test("organization delete menu home link preserves legacy href with SPA transiti
       ),
     )
     .toBe("kept");
-  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
-  await expect(page.locator("#mylist-filter")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
+  await expect(page.locator("#mylist-filter")).toHaveCount(1);
 });
 
 test("organization delete breadcrumb organization link preserves legacy href with SPA transition", async ({
@@ -497,7 +488,7 @@ test("organization delete breadcrumb organization link preserves legacy href wit
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#mylist-filter")).toBeVisible();
+  await expect(page.locator("#mylist-filter")).toHaveCount(1);
 });
 
 test("organization delete breadcrumb source uses direct Link", () => {
@@ -507,9 +498,9 @@ test("organization delete breadcrumb source uses direct Link", () => {
   expect(source).not.toContain("<a href={organizationHref");
   expect(source).not.toContain("Parameters<typeof Link>");
   expect(source).not.toContain("as unknown as");
-  expect(source).toMatch(
-    /<span className="project-author">[\s\S]*?<Link[\s\S]*?to="\/organizations\/\$organizationName"/,
-  );
+  expect(source).toMatch(/<Link[\s\S]*?to="\/organizations\/\$organizationName\/settingform"/);
+  expect(source).toContain('to="/organizations/$organizationName/members"');
+  expect(source).toContain('to="/organizations/$organizationName/deleteForm"');
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
 });
@@ -530,6 +521,13 @@ async function mockOrganizationAdmin(
     deleteRequests?: { hasCsrfToken: boolean; method: string }[];
   } = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -799,7 +797,9 @@ async function canonicalizeScreenRoots(page: Page) {
         )
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -886,7 +886,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         )
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

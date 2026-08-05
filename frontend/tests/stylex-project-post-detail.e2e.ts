@@ -17,7 +17,7 @@ test("records board post detail owners and responsive containment", async ({ pag
   expect(template).toContain('class="board-header issue"');
   expect(template).toContain('class="board-body row-fluid"');
   expect(route).toContain('data-stylex-owner="post-detail-content"');
-  const editorIndex = route.indexOf('editorMode="comment-body"');
+  const editorIndex = route.indexOf('postDetailMarkdownEditorProps("comment-body"');
   const wrapIndex = route.indexOf("write-comment-wrap");
   const uploadIndex = route.indexOf('data-stylex-owner="post-detail-comment-upload-wrap"');
   const actionsIndex = route.indexOf('data-stylex-owner="post-detail-comment-actions"');
@@ -73,22 +73,51 @@ async function mockPost(page: Page) {
   await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
-      json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },
+      json: {
+        id: 7,
+        ownerName: "weblabs",
+        projectName: "demo",
+        projectScope: "PUBLIC",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        vcs: "GIT",
+        viewerCanUpdate: true,
+        showBoard: true,
+      },
     }),
   );
   await page.route("**/api/v1/owners/**/projects/**/posts/1", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
-        postNumber: 1,
+        postNumber: "1",
         title: "Post",
         bodyMarkdown: "Body",
         authorLabel: "admin",
         authorLoginId: "admin",
         authorAvatarUrl: "",
+        createdLabel: "Jul 1, 2026",
         attachments: [],
         comments: [],
+        labels: [],
         isWatching: false,
+        permissions: {
+          canComment: true,
+          canCreate: true,
+          canDelete: false,
+          canRead: true,
+          canSetNotice: false,
+          canUpdate: false,
+          canWatch: true,
+        },
+        historyHtml: "",
+        historyMarkdown: "",
       },
     }),
   );

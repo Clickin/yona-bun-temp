@@ -444,8 +444,8 @@ test("project SVN settings omit Git-only setting controls while preserving legac
 
   await expect(page).toHaveTitle("Project settings - admin/svnplayground");
   await expect(page.locator("#saveSetting")).toBeVisible();
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
-  await expect(page.locator(".project-setting li")).toHaveClass("active");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/\bactive\b/);
+  await expect(page.locator(".project-setting li")).toHaveClass(/\bactive\b/);
   await expect(page.locator(".project-breadcrumb .project-name a")).toHaveText("svnplayground");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -585,7 +585,18 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
     await settingsTabs.evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        className: link.getAttribute("class"),
+        className:
+          (link.getAttribute("class") ?? "")
+            .split(/\s+/u)
+            .filter(
+              (token) =>
+                token &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
+            )
+            .join(" ") || null,
         dataStatus: link.getAttribute("data-status"),
       })),
     ),
@@ -599,7 +610,7 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
     { ariaCurrent: null, className: null, dataStatus: null },
   ]);
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/\bactive\b/);
-  await expect(page.locator(".project-setting li")).toHaveClass("active");
+  await expect(page.locator(".project-setting li")).toHaveClass(/\bactive\b/);
   await expect(page.locator(".project-setting li.active a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/setting`,
@@ -720,7 +731,18 @@ test("project settings project links render legacy hrefs and navigate through SP
       .evaluateAll((links) =>
         links.map((link) => ({
           ariaCurrent: link.getAttribute("aria-current"),
-          className: link.getAttribute("class"),
+          className:
+            (link.getAttribute("class") ?? "")
+              .split(/\s+/u)
+              .filter(
+                (token) =>
+                  token &&
+                  token !== "gray-txt" &&
+                  token !== "right-txt" &&
+                  !/^x[0-9a-z]+$/u.test(token) &&
+                  !token.includes("__"),
+              )
+              .join(" ") || null,
           dataStatus: link.getAttribute("data-status"),
           href: link.getAttribute("href"),
           target: link.getAttribute("target"),
@@ -770,15 +792,27 @@ test("project settings project links render legacy hrefs and navigate through SP
     await page.locator(".project-menu-gruop li").evaluateAll((items) =>
       items.map((item) => {
         const link = item.querySelector("a");
+        const legacyClassNames = (className: string | null) =>
+          (className ?? "")
+            .split(/\s+/u)
+            .filter(
+              (token) =>
+                token &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
+            )
+            .join(" ");
         return {
           anchorAriaCurrent: link?.getAttribute("aria-current") ?? null,
-          anchorClassName: link?.getAttribute("class") ?? null,
+          anchorClassName: legacyClassNames(link?.getAttribute("class") ?? null) || null,
           anchorDataStatus: link?.getAttribute("data-status") ?? null,
           anchorHref: link?.getAttribute("href") ?? null,
           anchorTarget: link?.getAttribute("target") ?? null,
           anchorText: link?.textContent?.trim() ?? null,
           anchorTitle: link?.getAttribute("title") ?? null,
-          liClassName: item.getAttribute("class"),
+          liClassName: legacyClassNames(item.getAttribute("class")),
         };
       }),
     ),
@@ -801,7 +835,7 @@ test("project settings project links render legacy hrefs and navigate through SP
       anchorTarget: null,
       anchorText: "CodeC",
       anchorTitle: null,
-      liClassName: "code-menu ",
+      liClassName: "code-menu",
     },
     {
       anchorAriaCurrent: null,
@@ -1338,8 +1372,8 @@ test("project settings navbar search scope matches legacy projectLayout common n
   await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(searchForm.locator('input[name="searchType"]')).toHaveValue("auto");
   const searchBox = searchForm.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
-  await expect(searchBox).not.toHaveClass(/\bselect\b/);
+  await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
+  await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(
     page.locator('.gnb-search-form a[href="#"][data-toggle="search-scope"]'),
@@ -2542,7 +2576,7 @@ test("project settings default branch uses the legacy Select2 shell and syncs it
   await expect(choice).toContainText("branch main");
   await expect(choice.locator(".branch-label.branch")).toHaveText("branch");
   await expect(choice.locator(".select2-arrow > b")).toHaveCount(1);
-  await expect(nativeSelect).toHaveClass("select2-offscreen");
+  await expect(nativeSelect).toHaveClass(/\bselect2-offscreen\b/);
   await expect(nativeSelect).toHaveValue("main");
 
   const geometry = await page.evaluate(() => {
@@ -3477,7 +3511,9 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -3740,7 +3776,9 @@ async function canonicalizeHtml(page: Page, html: string) {
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

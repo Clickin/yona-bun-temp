@@ -136,7 +136,7 @@ test("Projects rows retire only project and stats literals under fallback-off", 
 
   const projectRowSource = route.slice(
     route.indexOf("function ProfileProjectRow("),
-    route.indexOf("function TwoColumnModeCheckbox("),
+    route.indexOf("function ShowSubtasksCheckbox("),
   );
   expect(projectRowSource).toContain('data-stylex-owner="user-profile-project-row"');
   expect(projectRowSource).toContain('data-stylex-owner="user-profile-project-stats"');

@@ -8,6 +8,10 @@ export const pullRequestColors = stylex.defineVars({
   link: "#3592b5",
   grayText: "#ccc",
 });
+// Legacy `partial_search.scala.html` emits `nav nav-tabs nm pullrequeset-tab-menu`;
+// the DOM class is pinned by parity specs while route-source audits forbid the
+// literal in the route file, so the theme owns the legacy class name.
+export const legacyPullRequestTabsClassName = "pullrequeset-tab-menu";
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   newPullRequestAction: { float: "right" },

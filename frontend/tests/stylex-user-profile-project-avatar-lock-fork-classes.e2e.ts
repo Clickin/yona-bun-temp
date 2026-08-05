@@ -258,7 +258,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
 
   const projectRowSource = route.slice(
     route.indexOf("function ProfileProjectRow("),
-    route.indexOf("function TwoColumnModeCheckbox("),
+    route.indexOf("function ShowSubtasksCheckbox("),
   );
   expect(styles).toContain("projectAvatarLink: {");
   expect(styles).toContain('width: "24px"');

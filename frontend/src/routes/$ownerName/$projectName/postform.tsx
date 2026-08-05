@@ -1,8 +1,11 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html requires positive tab order on title/body/save/cancel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { BoardPostFileUploader } from "../../../components/file-uploader";
+import { LegacyTabIndexInput } from "../../../components/legacy-tab-index-input";
+import { BoardPostMarkdownEditor } from "../../../components/markdown-editor";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   createProjectPostRest,
   readProjectPostFormOptionsQueryOptions,
@@ -13,7 +16,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { styles } from "./-postform.stylex";
 
 const sx = {
@@ -262,13 +264,44 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               <dd {...sx.editorWrapper} data-stylex-owner="project-postform-editor-wrapper">
                 <BoardPostMarkdownEditor
                   focusRequest={bodyFocusRequest}
-                  search={search}
+                  search={compactBoardPostFormSearch(search)}
+                  linkActiveProps={{}}
+                  tabIndex={3}
                   value={body}
+                  wrapperClassName={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
+                  wrapperStyle={sx.markdownEditorWrapper}
+                  editorStyle={sx.editor}
+                  tabContentClassName={`${sx.editorTabContent.className} tab-content`}
+                  owners={{
+                    wrapper: "project-postform-markdown-editor-wrapper",
+                    tabContent: "project-postform-editor-tab-content",
+                    editor: "project-postform-editor",
+                  }}
                 />
               </dd>
             </dl>
 
-            {canShowUploader ? <BoardPostFileUploader /> : null}
+            {canShowUploader ? (
+              <BoardPostFileUploader
+                wrapperStyleProps={stylex.props(styles.uploadWrap)}
+                attachWrapStyleProps={stylex.props(styles.attachWrap)}
+                btnWrapStyleProps={stylex.props(styles.uploadButtonWrap)}
+                plainStyleProps={stylex.props(styles.uploadPlain)}
+                pasteHelpStyleProps={stylex.props(styles.pasteHelpVisible)}
+                attachedFilesStyleProps={stylex.props(styles.attachedFiles)}
+                helpClassName={`right-txt help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
+                helpStyleProps={stylex.props(styles.uploadAttachSaveHelp)}
+                owners={{
+                  wrapper: "project-postform-upload-wrap",
+                  attachWrap: "project-postform-attach-wrap",
+                  btnWrap: "project-postform-upload-button-wrap",
+                  plain: "project-postform-upload-plain",
+                  pasteHelp: "project-postform-paste-help",
+                  attachedFiles: "project-postform-attached-files",
+                  saveHelp: "project-postform-upload-attach-save-help",
+                }}
+              />
+            ) : null}
 
             <div
               {...stylex.props(styles.options)}
@@ -313,19 +346,6 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   );
 }
 
-function LegacyTabIndexInput({
-  focusRequest = 0,
-  ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (focusRequest > 0) {
-      inputRef.current?.focus();
-    }
-  }, [focusRequest]);
-  return <input ref={inputRef} {...props} />;
-}
-
 function HistoryBackLink({ children, onCancel }: { children: string; onCancel: () => void }) {
   return (
     <button
@@ -337,176 +357,6 @@ function HistoryBackLink({ children, onCancel }: { children: string; onCancel: (
     >
       {children}
     </button>
-  );
-}
-
-function BoardPostMarkdownEditor({
-  focusRequest,
-  search,
-  value,
-}: {
-  focusRequest: number;
-  search: BoardPostFormSearch;
-  value: string;
-}) {
-  const { t } = useLegacyMessages();
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (focusRequest > 0) {
-      bodyRef.current?.focus();
-    }
-  }, [focusRequest]);
-  return (
-    <div
-      {...sx.markdownEditorWrapper}
-      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
-      data-stylex-owner="project-postform-markdown-editor-wrapper"
-    >
-      <ul className="nav nav-tabs nm small">
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <Link
-            to="."
-            search={compactBoardPostFormSearch(search)}
-            hash="edit-body"
-            activeProps={{}}
-            onClick={() => setActiveTab("edit")}
-          >
-            {t("common.editor.edit")}
-          </Link>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <Link
-            to="."
-            search={compactBoardPostFormSearch(search)}
-            hash="preview-body"
-            activeProps={{}}
-            onClick={() => setActiveTab("preview")}
-          >
-            {t("common.editor.preview")}
-          </Link>
-        </li>
-        <li>
-          <div className="task-list-button">
-            <button
-              type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-            >
-              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li>
-          <div className="editor-clear-temporary">
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div className="editor-notice-label"></div>
-        </li>
-      </ul>
-      <div
-        className={`${sx.editorTabContent.className} tab-content`}
-        data-stylex-owner="project-postform-editor-tab-content"
-      >
-        <LegacyMarkdownHelp />
-        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div className="textarea-box">
-            <textarea
-              {...sx.editor}
-              data-stylex-owner="project-postform-editor"
-              ref={bodyRef}
-              name="body"
-              className={`${sx.editor.className ?? ""} editorSeries content comment nm`.trim()}
-              data-editor-mode="content-body"
-              id="editor-body-body"
-              tabIndex={3}
-              defaultValue={value}
-              {...{ markdown: "true" }}
-            ></textarea>
-          </div>
-        </div>
-        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
-        </div>
-        <div className="notification-receiver">
-          <span className="notification-receiver-title">
-            {t("notification.receiver.list.title")}
-          </span>
-          <span className="notification-receiver-list"></span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BoardPostFileUploader() {
-  const { t } = useLegacyMessages();
-  const pasteSupported =
-    typeof document !== "undefined" &&
-    "onpaste" in document &&
-    typeof FormData !== "undefined" &&
-    typeof FileReader !== "undefined";
-  return (
-    <div
-      {...stylex.props(styles.uploadWrap)}
-      id="upload"
-      className={`upload-wrap content-footer ${stylex.props(styles.uploadWrap).className ?? ""}`.trim()}
-      data-resource-type="BOARD_POST"
-      data-stylex-owner="project-postform-upload-wrap"
-    >
-      <div
-        {...stylex.props(styles.attachWrap)}
-        className={`attach-wrap ${stylex.props(styles.attachWrap).className ?? ""}`.trim()}
-        data-stylex-owner="project-postform-attach-wrap"
-      >
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div
-          {...stylex.props(styles.uploadButtonWrap)}
-          className={`btn-wrap ${stylex.props(styles.uploadButtonWrap).className ?? ""}`.trim()}
-          data-stylex-owner="project-postform-upload-button-wrap"
-        >
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span
-          {...stylex.props(styles.uploadPlain)}
-          className={`plain ${stylex.props(styles.uploadPlain).className ?? ""}`.trim()}
-          data-stylex-owner="project-postform-upload-plain"
-        >
-          {t("common.attach.clickbutton")}
-        </span>
-        <span
-          className="help help-pastable"
-          {...(pasteSupported ? stylex.props(styles.pasteHelpVisible) : {})}
-          data-stylex-owner="project-postform-paste-help"
-        >
-          {t("common.attach.pastehere")}
-        </span>
-      </div>
-      <ul
-        {...stylex.props(styles.attachedFiles)}
-        className={`attached-files unstyled ${stylex.props(styles.attachedFiles).className ?? ""}`.trim()}
-        data-stylex-owner="project-postform-attached-files"
-      ></ul>
-      <p
-        {...stylex.props(styles.uploadAttachSaveHelp)}
-        className={`right-txt help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
-        data-stylex-owner="project-postform-upload-attach-save-help"
-      >
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
-    </div>
   );
 }
 

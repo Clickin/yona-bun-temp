@@ -146,7 +146,12 @@ function ProjectCodeFileHistoryBody({
       <div className="project-page-wrap">
         <div {...sx.repo} data-stylex-owner="commit-file-repo">
           <div data-stylex-owner="commit-file-browse">
-            <div {...sx.breadcrumbs} data-stylex-owner="commit-file-breadcrumbs" id="breadcrumbs">
+            <div
+              {...sx.breadcrumbs}
+              className={`code-breadcrumb-wrap ${sx.breadcrumbs.className ?? ""}`.trim()}
+              data-stylex-owner="commit-file-breadcrumbs"
+              id="breadcrumbs"
+            >
               <Link
                 to={projectRoutePath(ownerName, projectName, "commits", encodedBranch)}
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}

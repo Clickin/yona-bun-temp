@@ -296,7 +296,6 @@ export const styles = stylex.create({
     color: projectSettingColors.inputText,
     padding: "4px",
     marginBottom: "0px",
-    resize: "vertical",
     width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },
   },
   legacyTextareaHeight: { height: "80px !important" },

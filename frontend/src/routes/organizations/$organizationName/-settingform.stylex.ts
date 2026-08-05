@@ -54,6 +54,7 @@ export const organizationSettingStyles = stylex.create({
   descsItem: { marginTop: "10px" },
   descsLast: { marginTop: "25px" },
   fieldGeometry: { width: "380px" },
+  fieldTermLabel: { fontWeight: "bold" },
   textareaGeometry: {
     width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },
     height: "80px",

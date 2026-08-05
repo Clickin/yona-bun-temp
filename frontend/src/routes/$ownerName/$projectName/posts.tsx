@@ -3,8 +3,6 @@ import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
-  useEffect,
-  useRef,
   useState,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -23,6 +21,7 @@ import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { useLockedLinkClick } from "../../../components/route-fetch-lock";
+import { TwoColumnModeCheckbox } from "../../../components/two-column-mode-checkbox";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-posts.stylex";
 
@@ -200,10 +199,19 @@ function ProjectPostsBody({
                 search={search}
               />
             ) : null}
-            <TwoColumnModeCheckbox />
+            <TwoColumnModeCheckbox
+              anchorStyle={styles.twoColumnMode}
+              labelStyle={styles.twoColumnModeLabel}
+              popoverStyle={twoColumnModePopoverStyles.popover}
+              anchorOwner="project-posts-two-column-mode"
+              labelOwner="project-posts-two-column-mode-label"
+              popoverOwner="project-posts-two-column-popover"
+              wrapPopoverContentInP
+            />
           </form>
           <div
             {...stylex.props(styles.newPostWrap)}
+            className={stylex.props(styles.newPostWrap).className}
             data-stylex-owner="project-posts-new-post-wrap"
           >
             <Link
@@ -783,96 +791,6 @@ function splitHeaderWordsInBrackets(title: string) {
     prefixes: onlyPrefixes ? [] : prefixes,
     title: onlyPrefixes ? title : rest.trimStart(),
   };
-}
-
-function TwoColumnModeCheckbox() {
-  const { t } = useLegacyMessages();
-  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showPopover, setShowPopover] = useState(false);
-  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
-    () =>
-      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
-  );
-  const clearPopoverTimers = () => {
-    if (showTimerRef.current) {
-      clearTimeout(showTimerRef.current);
-      showTimerRef.current = null;
-    }
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  };
-  const showDelayedPopover = () => {
-    clearPopoverTimers();
-    showTimerRef.current = setTimeout(() => setShowPopover(true), 100);
-  };
-  const hideDelayedPopover = () => {
-    clearPopoverTimers();
-    hideTimerRef.current = setTimeout(() => setShowPopover(false), 100);
-  };
-
-  const twoColumnModeProps = stylex.props(styles.twoColumnMode);
-
-  useEffect(
-    () => () => {
-      if (showTimerRef.current) {
-        clearTimeout(showTimerRef.current);
-      }
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-    },
-    [],
-  );
-
-  return (
-    <div
-      {...twoColumnModeProps}
-      className={`${twoColumnModeProps.className} two-column-icon mr10 hide-in-mobile`}
-      data-stylex-owner="project-posts-two-column-mode"
-      id="two-column-mode-checkbox"
-      title={t("common.two.column.mode")}
-      onBlur={hideDelayedPopover}
-      onFocus={showDelayedPopover}
-      onMouseEnter={showDelayedPopover}
-      onMouseLeave={hideDelayedPopover}
-    >
-      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label
-        className={`${stylex.props(styles.twoColumnModeLabel).className} checkbox`.trim()}
-        data-stylex-owner="project-posts-two-column-mode-label"
-      >
-        <div className="two-column-icon-border">
-          <input
-            id="two-column-mode"
-            type="checkbox"
-            checked={useTwoColumnMode}
-            onChange={(event) => {
-              const checked = event.currentTarget.checked;
-              localStorage.setItem("useTwoColumnMode", String(checked));
-              setUseTwoColumnMode(checked);
-            }}
-          />
-          <span className="two-column-mode-text">{t("common.two.column.view")}</span>
-        </div>
-      </label>
-      {showPopover ? (
-        <div
-          className={`${stylex.props(twoColumnModePopoverStyles.popover).className} popover top`.trim()}
-          data-stylex-owner="project-posts-two-column-popover"
-          role="tooltip"
-        >
-          <div className="arrow"></div>
-          <h3 className="popover-title">{t("common.two.column.mode")}</h3>
-          <div className="popover-content">
-            <p>{t("common.two.column.mode.desc")}</p>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 function BoardListKeymap({ project }: { project: ProjectContainer }) {

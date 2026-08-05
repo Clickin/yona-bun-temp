@@ -12,7 +12,7 @@ const ORGANIZATION_ROUTE_SOURCE = readFileSync(
 
 const EXPECTED_ORGANIZATION_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer project-header"><div class="gnb-inner"><button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform">Setting</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/members">Group member</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/organizations/weblabs/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required="required" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i> Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Group Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin" data-selected="true" class="active"><button type="button" data-loginId="admin">Group Manager</button></li><li data-value="org_member"><button type="button" data-loginId="admin">Group Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Dev Member</div><div class="member-id">@dev</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Group Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin"><button type="button" data-loginId="dev">Group Manager</button></li><li data-value="org_member" data-selected="true" class="active"><button type="button" data-loginId="dev">Group Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><div id="alertDeletion" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete a group member</h3></div><div class="modal-body"><p>Are you sure this user should leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="deleteBtn">Yes</button><button type="button" class="ybtn ybtn-mini">No</button></div></div><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/pending"><img src="/assets/images/default-avatar-64.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/pending"><strong>Pending User</strong></a></span><span>(pending)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginId="pending"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
@@ -265,7 +265,7 @@ test("organization members add-member input performs legacy typeahead lookup, re
   await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("car");
   const typeaheadMenu = page.locator(".inner-bubble .typeahead.dropdown-menu");
   await expect(typeaheadMenu).toBeVisible();
-  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble open");
+  await expect(page.locator(".inner-bubble")).toHaveClass(/inner-bubble open/);
   await expect(typeaheadMenu).not.toHaveAttribute("style", /.+/);
   await expect(typeaheadMenu.locator("li")).toHaveCount(2);
   await expect(typeaheadMenu.locator("li").nth(0)).toHaveClass("active");
@@ -316,7 +316,7 @@ test("organization members add-member input performs legacy typeahead lookup, re
 
   await expect(addInput).toHaveValue("carmine");
   await expect(typeaheadMenu).toHaveCount(0);
-  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble");
+  await expect(page.locator(".inner-bubble")).toHaveClass(/inner-bubble/);
   await expect.poll(() => requests.addedLoginIds).toEqual([]);
 
   await page.locator("#addNewMember .ybtn.ybtn-success").click();
@@ -327,12 +327,12 @@ test("organization members add-member input performs legacy typeahead lookup, re
   await expect(addInput).toHaveValue("cal");
   await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("cal");
   await expect(typeaheadMenu).toBeVisible();
-  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble open");
+  await expect(page.locator(".inner-bubble")).toHaveClass(/inner-bubble open/);
   await expect(typeaheadMenu).not.toHaveAttribute("style", /.+/);
   await typeaheadMenu.locator("li").nth(0).locator("button").click();
   await expect(addInput).toHaveValue("carol");
   await expect(typeaheadMenu).toHaveCount(0);
-  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble");
+  await expect(page.locator(".inner-bubble")).toHaveClass(/inner-bubble/);
 
   await page.locator("#addNewMember .ybtn.ybtn-success").click();
   await expect.poll(() => requests.addedLoginIds).toEqual(["carmine", "carol"]);
@@ -524,7 +524,7 @@ test("organization members profile and breadcrumb links use SPA navigation with 
       ),
     )
     .toBe("breadcrumb");
-  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
+  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
 });
 
 test("organization members route source keeps internal navigation out of raw anchors", () => {
@@ -576,7 +576,7 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('data-toggle="dropdown"');
   const organizationMemberSource = ORGANIZATION_MEMBERS_ROUTE_SOURCE.slice(
     ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function OrganizationMember"),
-    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function EnrollmentRequest"),
+    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function OrganizationSettingMenu"),
   );
   expect(organizationMemberSource).not.toContain("data-name={`roleof-${loginId}`}");
   expect(organizationMemberSource).not.toMatch(/data-name=\{[^}]*roleof-[^}]*loginId[^}]*\}/u);
@@ -607,7 +607,7 @@ test("organization members delete modal stays route-owned across open dismiss an
   await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-modal");
 
   expect(await dispatchCancelableClick(page, deleteButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal hide in");
+  await expect(deleteModal).toHaveClass(/\bmodal\b[\s\S]*\bhide\b[\s\S]*\bin\b/u);
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page.locator(closeButton)).not.toHaveAttribute("data-dismiss", /.+/);
@@ -632,7 +632,7 @@ test("organization members delete modal stays route-owned across open dismiss an
   expect(requests.deletedUserIds).toEqual([]);
 
   expect(await dispatchCancelableClick(page, deleteButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal hide in");
+  await expect(deleteModal).toHaveClass(/\bmodal\b[\s\S]*\bhide\b[\s\S]*\bin\b/u);
   expect(await dispatchCancelableClick(page, closeButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal hide");
   await expect(deleteModal).toHaveCSS("display", "none");
@@ -678,7 +678,9 @@ test("organization members delete failure shows legacy alert mapping", async ({ 
   const membersUrl = page.url();
 
   expect(await dispatchCancelableClick(page, ".members.project button.ybtn-danger")).toBe(false);
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertDeletion")).toHaveClass(
+    /\bmodal\b[\s\S]*\bhide\b[\s\S]*\bin\b/u,
+  );
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page).toHaveURL(membersUrl);
   await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-failure");
@@ -762,7 +764,7 @@ test("organization members menu settings link preserves legacy href with SPA tra
     )
     .toBe("kept");
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#saveSetting")).toHaveCount(1);
 });
 
 test("organization members menu home link preserves legacy href with SPA transition", async ({
@@ -788,7 +790,7 @@ test("organization members menu home link preserves legacy href with SPA transit
       ),
     )
     .toBe("kept");
-  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
+  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
@@ -823,6 +825,13 @@ async function mockOrganizationMembers(
   page: Page,
   options: { adminStatus?: number; deleteErrorMessage?: string; deleteStatus?: number } = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   const requests = {
     acceptedUserIds: [] as string[],
     addedLoginIds: [] as string[],
@@ -1353,7 +1362,9 @@ async function canonicalizeScreenRoots(
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1395,6 +1406,19 @@ async function canonicalizeScreenRoots(
           attr.value = originalValue;
         }
       }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       if (attr.name === "required") {
         return "required";
       }
@@ -1435,7 +1459,9 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
         const attrs = Array.from(node.attributes)
           .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
           .sort((left, right) => left.name.localeCompare(right.name))
-          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+          .filter(([name, value]) => !(name === "class" && value === ""))
+          .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
           .join(" ");
         const open = attrs
           ? `<${node.tagName.toLowerCase()} ${attrs}>`

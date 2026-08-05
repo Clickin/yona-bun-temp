@@ -65,12 +65,12 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button type="button" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="__BASE_PATH__/legacy-assets/images/default-avatar-34.png"></span><span class="caret"></span>
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn">
           <i class="yobicon-plus"></i><span class="caret"></span>
         </button>
         <ul class="dropdown-menu flat right">
@@ -1540,14 +1540,14 @@ test("authenticated root user menu toggles stay route-local buttons without navi
 
   await expect(sidebarToggle).toHaveJSProperty("tagName", "BUTTON");
   await expect(sidebarToggle).toHaveAttribute("type", "button");
-  await expect(sidebarToggle).not.toHaveClass(/gnb-dropdown-toggle/);
+  await expect(sidebarToggle).toHaveClass(/gnb-dropdown-toggle/);
   await expect(sidebarToggle).not.toHaveAttribute("href", "javascript:void(0);");
 
   await expect(createToggle).toHaveJSProperty("tagName", "BUTTON");
   await expect(createToggle).toHaveAttribute("type", "button");
   await expect(createToggle).not.toHaveAttribute("data-toggle");
-  await expect(createToggle).not.toHaveClass(/gnb-dropdown-toggle/);
-  await expect(createToggle).not.toHaveClass(/dropdwon-box-btn/);
+  await expect(createToggle).toHaveClass(/gnb-dropdown-toggle/);
+  await expect(createToggle).toHaveClass(/dropdwon-box-btn/);
   await expect(createMenu.locator(":scope > a")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu a[href^='javascript:']")).toHaveCount(0);
   await page.evaluate(() => {
@@ -1612,8 +1612,8 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(authenticatedUserMenuSource).toContain("handleCreateMenuBlur");
   expect(authenticatedUserMenuSource).toContain("event.preventDefault();");
   expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
-  expect(authenticatedUserMenuSource).not.toContain("gnb-dropdown-toggle");
-  expect(authenticatedUserMenuSource).not.toContain("dropdwon-box-btn");
+  expect(authenticatedUserMenuSource).toContain("gnb-dropdown-toggle");
+  expect(authenticatedUserMenuSource).toContain("dropdwon-box-btn");
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
   expect(authenticatedUserMenuSource).not.toContain('data-placement="bottom"');
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="dropdown"');

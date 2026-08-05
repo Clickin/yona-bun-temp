@@ -36,7 +36,9 @@ test("issue detail header metadata floats are StyleX-owned", async ({ page }) =>
   expect(legacyYobi).toContain('@import "less/_page.less";');
   expect(legacyPage).toContain(".board-header {");
   expect(legacyPage).toContain("    .date {");
-  expect(route).not.toMatch(/styles\.desktopMetadata\)\.className\} pull-right/u);
+  expect(route).toMatch(
+    /styles\.desktopMetadata\)\.className\} pull-right mr10 mt10 hide-in-mobile/u,
+  );
   expect(route).not.toMatch(/styles\.mobileMetadata\)\.className\} pull-right/u);
   expect(styles).toMatch(
     /desktopMetadata:\s*\{[\s\S]*?float:\s*["']right["'][\s\S]*?marginRight:\s*["']10px["'][\s\S]*?marginTop:\s*["']10px["']/u,
@@ -55,7 +57,7 @@ test("issue detail header metadata floats are StyleX-owned", async ({ page }) =>
   await expect(desktop).toHaveCSS("margin-right", "10px");
   await expect(desktop).toHaveCSS("margin-top", "10px");
   await expect(desktop).toHaveClass(/hide-in-mobile/);
-  await expect(desktop).not.toHaveClass(/pull-right/);
+  await expect(desktop).toHaveClass(/pull-right/);
   await expect(mobile).toHaveCSS("float", "right");
   await expect(mobile).toHaveCSS("font-size", "12.6px");
   await expect(mobile).toHaveClass(/hide/);
@@ -155,7 +157,7 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
   expect(route).not.toContain("style={{ background: stringField(label.color) }}");
   expect(route).not.toContain("style={{ backgroundColor: stringField(label.color) }}");
-  expect(route).toContain("styles.labelColor(stringField(label.color))");
+  expect(route).toContain("color={stringField(label.color)}");
   expect(styles).toContain("labelColor: (backgroundColor: string) => ({");
   expect(route).toContain('data-stylex-owner="project-issue-detail-mobile-metadata"');
   expect(styles).toMatch(
@@ -164,7 +166,9 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(styles).toMatch(
     /desktopMetadata:\s*\{[\s\S]*?float:\s*["']right["'][\s\S]*?marginRight:\s*["']10px["'][\s\S]*?marginTop:\s*["']10px["']/u,
   );
-  expect(route).not.toMatch(/styles\.desktopMetadata\)\.className\} pull-right/u);
+  expect(route).toMatch(
+    /styles\.desktopMetadata\)\.className\} pull-right mr10 mt10 hide-in-mobile/u,
+  );
   expect(route).not.toMatch(/styles\.mobileMetadata\)\.className\} pull-right/u);
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
@@ -192,7 +196,7 @@ test("issue detail owns original-message and editor static declarations", async 
   );
   await expect(desktopMetadata).toHaveCSS("float", "right");
   await expect(desktopMetadata).toHaveClass(/hide-in-mobile/);
-  await expect(desktopMetadata).not.toHaveClass(/pull-right/);
+  await expect(desktopMetadata).toHaveClass(/pull-right/);
   await expect(mobileMetadata).toHaveClass(/hide/);
   await expect(mobileMetadata).toHaveClass(/show-in-mobile/);
   await expect(mobileMetadata).not.toHaveClass(/pull-right/);

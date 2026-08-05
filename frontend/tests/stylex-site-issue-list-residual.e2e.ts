@@ -65,7 +65,7 @@ test.describe("StyleX site issue-list residual effects", () => {
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);
-    expect(route).toContain('data-stylex-owner="site-issue-list-sidebar-badge"');
+    expect(route).toContain('badgeOwner="site-issue-list-sidebar-badge"');
     expect(route).toContain('data-stylex-owner="site-issue-list-pagination-input"');
     expect(route).toContain(
       'boxShadow: "0px 1px 1px rgba(0,0,0,0.2), inset 0px 1px 1px rgba(0,0,0,0.1)"',

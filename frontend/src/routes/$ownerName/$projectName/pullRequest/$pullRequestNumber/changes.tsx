@@ -1,4 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DiffLineView, type ParsedDiffLine } from "../../../../../components/diff-line-view";
+import { UploadForm } from "../../../../../components/file-uploader";
+import { FileDiffErrorRow } from "../../../../../components/file-diff-error-row";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import type { MouseEvent } from "react";
@@ -81,18 +84,6 @@ type PullRequestChangedFileWithError = PullRequestChangesResponse["files"][numbe
   errors?: string[];
   hasError?: boolean | string;
 };
-
-type ParsedDiffLine =
-  | { kind: "range"; text: string }
-  | {
-      kind: "line";
-      lineNumber: number;
-      newLineNumber: number | null;
-      oldLineNumber: number | null;
-      prefix: string;
-      text: string;
-      type: "add" | "context" | "remove";
-    };
 
 type ParsedFileDiff = {
   lines: ParsedDiffLine[];
@@ -338,9 +329,17 @@ function ProjectPullRequestChangesBody({
 
   return (
     <>
-      <div {...sx.page} data-stylex-owner="pull-request-changes-page">
-        <div data-stylex-owner="pull-request-changes-shell">
-          <div {...sx.browse} data-stylex-owner="pull-request-changes-browse">
+      <div
+        {...sx.page}
+        className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
+        data-stylex-owner="pull-request-changes-page"
+      >
+        <div className="project-page-wrap" data-stylex-owner="pull-request-changes-shell">
+          <div
+            {...sx.browse}
+            className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
+            data-stylex-owner="pull-request-changes-browse"
+          >
             <PullRequestHeader
               activeTab="changes"
               project={project}
@@ -348,8 +347,13 @@ function ProjectPullRequestChangesBody({
               runtimeConfig={runtimeConfig}
             />
 
-            <div data-stylex-owner="pull-request-changes-body">
-              <div {...sx.author} data-stylex-owner="pull-request-changes-author">
+            <div className="board-body mb20" data-stylex-owner="pull-request-changes-body">
+              <div
+                {...sx.author}
+                className={`author-info right-txt ${sx.author.className ?? ""}`.trim()}
+                style={{ marginTop: "20px" }}
+                data-stylex-owner="pull-request-changes-author"
+              >
                 <Link
                   to="/$user"
                   params={{ user: pullRequest.contributor.loginId }}
@@ -381,7 +385,12 @@ function ProjectPullRequestChangesBody({
                   <i className="yobicon-restore"></i>
                 </button>
               ) : null}
-              <div {...sx.diffs} data-stylex-owner="pull-request-changes-diffs" id="changes">
+              <div
+                {...sx.diffs}
+                className={`diffs-wrap ${sx.diffs.className ?? ""}`.trim()}
+                data-stylex-owner="pull-request-changes-diffs"
+                id="changes"
+              >
                 <CommitDropdown
                   commitId={commitId}
                   commits={changes.commits}
@@ -555,7 +564,11 @@ function ThreadReplyFormBody({
       <div className="write-comment-box">
         <div className="write-comment-wrap">
           <Editor editorMode="code-review-body" wrapId={wrapId} />
-          <UploadForm />
+          <UploadForm
+            resourceType="REVIEW_COMMENT"
+            helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+            helpOwner="pull-request-changes-upload-help"
+          />
           <div {...sx.threadActions} data-stylex-owner="pull-request-changes-thread-actions">
             <button
               type="button"
@@ -1054,7 +1067,7 @@ function PullRequestFileDiff({
                       (thread.endSide ?? "B") === (line.type === "remove" ? "A" : "B"),
                   );
                   return [
-                    <DiffLineView key={lineKey} line={line} />,
+                    <DiffLineView key={lineKey} line={line} dataLineKey={lineKey} />,
                     ...renderInlineRows({
                       activeInlineReview,
                       currentUser,
@@ -1499,43 +1512,6 @@ function reviewBlockHiddenFields(fields: ReviewBlockInfo) {
   ] as const;
 }
 
-function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }> }) {
-  const oldLine = line.oldLineNumber === null ? "" : String(line.oldLineNumber);
-  const newLine = line.newLineNumber === null ? "" : String(line.newLineNumber);
-
-  return (
-    <tr
-      className={line.type}
-      data-line={line.lineNumber}
-      data-line-key={diffLineKey(line)}
-      data-side={line.type === "remove" ? "A" : "B"}
-    >
-      <td className="linenum">
-        <i className="yobicon-comments"></i>
-        <div className="line-number" data-line-num={oldLine}></div>
-        <span className="hidden">{oldLine}</span>
-      </td>
-      <td className="linenum">
-        <div className="line-number" data-line-num={newLine}></div>
-        <span className="hidden">{newLine}</span>
-      </td>
-      <td className="code">
-        <pre className="diff-partial-codeline">{`${line.prefix}${line.text}`}</pre>
-      </td>
-    </tr>
-  );
-}
-
-function FileDiffErrorRow({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <tr>
-      <td colSpan={3}>{t(messageKey)}</td>
-    </tr>
-  );
-}
-
 function fileDiffErrorMessageKey(file: PullRequestChangedFileWithError) {
   const errors = [
     file.error,
@@ -1777,7 +1753,12 @@ function CommentForm({ action }: { action: string }) {
     <form id="comment-form" action={action} method="post" encType="multipart/form-data">
       <div className="write-comment-box">
         <Editor editorMode="comment-body" wrapId="comment" />
-        <UploadForm formId="upload" />
+        <UploadForm
+          resourceType="REVIEW_COMMENT"
+          wrapperId="upload"
+          helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+          helpOwner="pull-request-changes-upload-help"
+        />
         <div className="write-comment-wrap">
           <div {...sx.commentActions} data-stylex-owner="pull-request-changes-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
@@ -1845,7 +1826,11 @@ function ReviewForm({
               </button>
             </div>
             <Editor editorMode="code-review-body" wrapId="review" />
-            <UploadForm />
+            <UploadForm
+              resourceType="REVIEW_COMMENT"
+              helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+              helpOwner="pull-request-changes-upload-help"
+            />
             <div {...sx.reviewActions} data-stylex-owner="pull-request-changes-review-actions">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
@@ -1948,32 +1933,6 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
           <span className="notification-receiver-list"></span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function UploadForm({ formId }: { formId?: string }) {
-  const { t } = useLegacyMessages();
-  return (
-    <div className="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT" id={formId}>
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
-      </div>
-      <ul className="attached-files unstyled"></ul>
-      <p
-        className={`help ${sx.uploadHelp.className ?? ""}`.trim()}
-        data-stylex-owner="pull-request-changes-upload-help"
-      >
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
     </div>
   );
 }

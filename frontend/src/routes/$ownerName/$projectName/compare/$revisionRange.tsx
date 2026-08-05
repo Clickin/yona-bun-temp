@@ -5,6 +5,7 @@ import { useState } from "react";
 import { codeCompareQueryOptions, type CodeCompareResponse } from "../../../../api/code-compare";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
+import { DiffLineView, type ParsedDiffLine } from "../../../../components/diff-line-view";
 import { useLegacyMessages } from "../../../../i18n";
 import { type RuntimeConfig } from "../../../../runtime-config";
 import { styles } from "./-compare.stylex";
@@ -13,7 +14,6 @@ const sx = {
   page: stylex.props(styles.page),
   browse: stylex.props(styles.browse),
   commitInfo: stylex.props(styles.commitInfo),
-  diffBody: stylex.props(styles.diffBody),
   empty: stylex.props(styles.empty),
   diffStatBar: stylex.props(styles.diffStatBar),
   diffStatBadgeChanged: stylex.props(styles.diffStatBadgeChanged),
@@ -24,18 +24,6 @@ const sx = {
   fileHeaderTitle: stylex.props(styles.fileHeaderTitle),
   fileToggleIcon: stylex.props(styles.fileToggleIcon),
 } as const;
-
-type ParsedDiffLine =
-  | { kind: "range"; text: string }
-  | {
-      kind: "line";
-      lineNumber: number;
-      newLineNumber: number | null;
-      oldLineNumber: number | null;
-      prefix: string;
-      text: string;
-      type: "add" | "context" | "remove";
-    };
 
 type ParsedFileDiff = {
   lines: ParsedDiffLine[];
@@ -138,8 +126,16 @@ function ProjectCodeCompareBody({
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
 
   return (
-    <div {...sx.page} data-stylex-owner="project-compare-page">
-      <div {...sx.browse} data-stylex-owner="project-compare-browse">
+    <div
+      {...sx.page}
+      className={`project-page-wrap ${sx.page.className ?? ""}`.trim()}
+      data-stylex-owner="project-compare-page"
+    >
+      <div
+        {...sx.browse}
+        className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
+        data-stylex-owner="project-compare-browse"
+      >
         <p {...sx.commitInfo} data-stylex-owner="project-compare-commit-info">
           <strong className="commitId">
             @{commitA}..{commitB}
@@ -157,17 +153,21 @@ function ProjectCodeCompareBody({
         ) : null}
 
         {isSvn && compare.patch ? (
-          <div data-stylex-owner="project-compare-diff-wrap">
+          <div className="diff-wrap" data-stylex-owner="project-compare-diff-wrap">
             <div className="diff-body hide" data-commit-origin="true" id="commit">
               {compare.patch}
             </div>
           </div>
         ) : compare.files.length === 0 ? (
-          <div {...sx.empty} data-stylex-owner="project-compare-empty">
+          <div
+            {...sx.empty}
+            className={`alert ${sx.empty.className ?? ""}`.trim()}
+            data-stylex-owner="project-compare-empty"
+          >
             {t("code.noChanges")}
           </div>
         ) : (
-          <div {...sx.diffBody} data-stylex-owner="project-compare-diff-body">
+          <div className="diff-body discommentable">
             {compare.files.length >= LEGACY_DIFF_FILE_LIMIT ? (
               <p className="alert">
                 {t("code.fileDiffLimitExceeded", { args: [String(LEGACY_DIFF_FILE_LIMIT)] })}
@@ -323,32 +323,6 @@ function CompareFileDiff({
         ) : null}
       </div>
     </div>
-  );
-}
-
-function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }> }) {
-  const oldLine = line.oldLineNumber === null ? "" : String(line.oldLineNumber);
-  const newLine = line.newLineNumber === null ? "" : String(line.newLineNumber);
-
-  return (
-    <tr
-      className={line.type}
-      data-line={line.lineNumber}
-      data-side={line.type === "remove" ? "A" : "B"}
-    >
-      <td className="linenum">
-        <i className="yobicon-comments"></i>
-        <div className="line-number" data-line-num={oldLine}></div>
-        <span className="hidden">{oldLine}</span>
-      </td>
-      <td className="linenum">
-        <div className="line-number" data-line-num={newLine}></div>
-        <span className="hidden">{newLine}</span>
-      </td>
-      <td className="code">
-        <pre className="diff-partial-codeline">{`${line.prefix}${line.text}`}</pre>
-      </td>
-    </tr>
   );
 }
 

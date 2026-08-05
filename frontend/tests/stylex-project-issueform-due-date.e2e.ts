@@ -10,6 +10,10 @@ test("issueform due-date control owns route-scoped geometry with StyleX", async 
     new URL("../src/routes/$ownerName/$projectName/-issueform.stylex.ts", import.meta.url),
     "utf8",
   );
+  const component = readFileSync(
+    new URL("../src/components/issue-due-date-input.tsx", import.meta.url),
+    "utf8",
+  );
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/issue/create.scala.html", import.meta.url),
     "utf8",
@@ -32,20 +36,12 @@ test("issueform due-date control owns route-scoped geometry with StyleX", async 
   expect(calendar).toContain('targetElement.next(".btn-calendar")');
   expect(less).toContain(".search-bar");
 
-  for (const owner of [
-    "project-issue-form-due-date-search",
-    "project-issue-form-due-date-input",
-    "project-issue-form-due-date-calendar",
-    "project-issue-form-due-date-native-picker",
-  ]) {
-    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  expect(route).toContain('data-stylex-owner="project-issue-form-due-date-search"');
+  for (const suffix of ["-due-date-input", "-due-date-calendar", "-due-date-native-picker"]) {
+    expect(component).toContain(suffix);
   }
-  for (const token of [
-    "dueDateSearchBar",
-    "dueDateInput",
-    "dueDateCalendarButton",
-    "dueDateNativePicker",
-  ]) {
+  expect(component).toContain("ownerPrefix");
+  for (const token of ["dueDateSearchBar", "dueDateInput", "dueDateCalendarButton"]) {
     expect(style).toContain(token);
   }
 
@@ -57,5 +53,6 @@ test("issueform due-date control owns route-scoped geometry with StyleX", async 
   ]) {
     expect(css).not.toContain(selector);
   }
+  expect(css).toContain(".issue-due-date-native-picker {");
   expect(css).toContain(".search-bar");
 });

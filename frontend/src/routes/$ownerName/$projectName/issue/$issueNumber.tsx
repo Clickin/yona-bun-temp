@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
-  type ChangeEvent,
   useEffect,
   useId,
   useRef,
@@ -22,7 +21,7 @@ import { listProjectMilestonesQueryOptions } from "../../../../api/milestones";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
-import { resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
+import { useLegacyMessages } from "../../../../i18n";
 import type { ProjectIssuesSearch } from "../issues";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../../api/types";
@@ -43,13 +42,15 @@ import {
   watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
-import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectNestedShellContext } from "../../$projectName";
 import { useRootToast } from "../../../__root";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
+import { UploadForm } from "../../../../components/file-uploader";
 import { IssueLabel } from "../../../../components/issue-label";
+import { IssueDueDateInput } from "../../../../components/issue-due-date-input";
+import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
 import "../../../../yobicon-font.css";
 import { styles } from "./-issue-detail.stylex";
 
@@ -395,32 +396,6 @@ function IssueDetailAssets({
         type="text/css"
         href={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/styles/default.css")}
       />
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/highlight.pack.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/marked.js")}
-      ></script>
-      <IssueDetailSelect2Partial basePath={basePath} supportedLanguages={supportedLanguages} />
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/moment-with-langs.min.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/pikaday/pikaday.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Calendar.js")}
-      ></script>
       <link
         rel="stylesheet"
         type="text/css"
@@ -445,104 +420,6 @@ function IssueDetailAssets({
         media="screen"
         href={prefixBasePath(basePath, "/assets/javascripts/lib/videojs/video-js.min.css")}
       />
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/atjs/jquery.caret.min.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/atjs/jquery.atwho.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/elevator/jquery.elevator.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/videojs/video.min.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/favico/favico.min.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.issue.Assginee.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.issue.Sharer.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.detectChange.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.Sha1.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.Tasklist.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.SubComment.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(
-          basePath,
-          "/assets/javascripts/common/yona.CommentAttachmentsUpdate.js",
-        )}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yona.ReceiverList.js")}
-      ></script>
-    </>
-  );
-}
-
-function IssueDetailSelect2Partial({
-  basePath,
-  supportedLanguages,
-}: {
-  basePath: string;
-  supportedLanguages?: string[];
-}) {
-  const language = resolveInitialLanguage(supportedLanguages);
-  const localeScript =
-    language === "ko-KR"
-      ? "/assets/javascripts/lib/select2/select2_locale_ko.js"
-      : language === "ja-JP"
-        ? "/assets/javascripts/lib/select2/select2_locale_ja.js"
-        : "";
-
-  return (
-    <>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/select2/select2.js")}
-      ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Select2.js")}
-      ></script>
-      {localeScript ? <script defer src={prefixBasePath(basePath, localeScript)}></script> : null}
     </>
   );
 }
@@ -581,19 +458,7 @@ function ProjectIssueNotFoundBody({
           <Link
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
-            search={{
-              state: "all",
-              assigneeId: "",
-              authorId: "",
-              commenterId: "",
-              dueDate: "",
-              filter: "",
-              labelIds: [],
-              milestoneId: "",
-              orderBy: "updatedDate",
-              orderDir: "desc",
-              pageNum: 1,
-            }}
+            search={{ state: "all" } as unknown as ProjectIssuesSearch}
             className="ybtn ybtn-primary"
           >
             {t("button.list")}
@@ -693,6 +558,7 @@ function IssueDetailBody({
   const [dueDateValue, setDueDateValue] = useState(dueDateLabel);
   const [committedDueDateValue, setCommittedDueDateValue] = useState(dueDateLabel.trim());
   const dueDateInputRef = useRef<HTMLInputElement>(null);
+  const dueDatePickerRef = useRef<HTMLInputElement>(null);
   const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
     ? "Overdue"
     : localizeIssueDuration(stringField(issue.dueDateUntilLabel), language);
@@ -856,8 +722,8 @@ function IssueDetailBody({
     setDueDateValue(dueDateLabel);
     setCommittedDueDateValue(dueDateLabel.trim());
   }, [dueDateLabel]);
-  function handleDueDateChange(event: ChangeEvent<HTMLInputElement>) {
-    setDueDateValue(event.currentTarget.value);
+  function handleDueDateChange(value: string) {
+    setDueDateValue(value);
   }
   function commitDueDateChange() {
     const trimmedDueDate = dueDateValue.trim();
@@ -919,7 +785,7 @@ function IssueDetailBody({
         >
           <div
             {...stylex.props(styles.desktopMetadata)}
-            className={`${stylex.props(styles.desktopMetadata).className} hide-in-mobile`}
+            className={`${stylex.props(styles.desktopMetadata).className} pull-right mr10 mt10 hide-in-mobile`}
             data-stylex-owner="project-issue-detail-desktop-metadata"
           >
             <div
@@ -1271,6 +1137,7 @@ function IssueDetailBody({
                           placeholder={t("issue.noAssignee")}
                           value={selectedAssigneeLoginId}
                           readOnly
+                          style={{ width: "100%" }}
                           data-stylex-owner="issue-detail-assignee-input"
                         />
                         <LegacyAssigneeControl
@@ -1293,10 +1160,7 @@ function IssueDetailBody({
                           <img
                             src={stringField(
                               issue.assigneeAvatarUrl,
-                              prefixBasePath(
-                                runtimeConfig.basePath,
-                                "/assets/images/default-avatar-32.png",
-                              ),
+                              "/assets/images/default-avatar-32.png",
                             )}
                             width="20"
                             height="20"
@@ -1352,7 +1216,6 @@ function IssueDetailBody({
                               projectName,
                               milestoneId: String(issue.milestoneId),
                             }}
-                            search={{ state: "open" }}
                           >
                             {stringField(issue.milestoneTitle)}
                           </Link>
@@ -1397,23 +1260,15 @@ function IssueDetailBody({
                   >
                     {canUpdate ? (
                       <div className="search search-bar">
-                        <input
-                          type="text"
-                          name="dueDate"
+                        <IssueDueDateInput
+                          ownerPrefix="project-issue-detail"
+                          dueDateRef={dueDateInputRef}
+                          datePickerRef={dueDatePickerRef}
                           value={dueDateValue}
-                          className="textbox full"
                           autoComplete="off"
                           onBlur={commitDueDateChange}
                           onChange={handleDueDateChange}
-                          ref={dueDateInputRef}
                         />
-                        <button
-                          type="button"
-                          className="search-btn btn-calendar"
-                          onClick={() => dueDateInputRef.current?.focus()}
-                        >
-                          <i className="yobicon-calendar2"></i>
-                        </button>
                       </div>
                     ) : (
                       dueDateLabel || t("issue.noDuedate")
@@ -1817,9 +1672,9 @@ function IssueVoterListDialog({
       <div
         ref={modalRef}
         id={id}
-        className={`${stylex.props(styles.modal).className} ${open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}`}
+        className={`${stylex.props(styles.modal).className} ${stylex.props(styles.votersModalVisible).className ?? ""} ${open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}`.trim()}
         data-stylex-owner="issue-detail-voters-modal"
-        {...(open ? stylex.props(styles.votersModalVisible) : {})}
+        {...(open ? { style: stylex.props(styles.votersModalVisible).style } : {})}
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, () => onClose?.())}
       >
@@ -1981,13 +1836,35 @@ function IssueMilestoneSelect({
         onChange={(event) => onChange(event.currentTarget.value)}
         className="select2-offscreen"
       >
-        <option value="-1">{t("issue.noMilestone")}</option>
+        <option
+          value="-1"
+          ref={
+            selectedMilestoneId === "-1"
+              ? (option) => {
+                  if (option) {
+                    option.defaultSelected = true;
+                  }
+                }
+              : undefined
+          }
+        >
+          {t("issue.noMilestone")}
+        </option>
         <optgroup label={t("milestone.state.open")}>
           {milestones.open.map((milestone) => (
             <option
               key={stringField(milestone.id)}
               value={stringField(milestone.id)}
               data-state={stringField(milestone.state, "open")}
+              ref={
+                stringField(milestone.id) === selectedMilestoneId
+                  ? (option) => {
+                      if (option) {
+                        option.defaultSelected = true;
+                      }
+                    }
+                  : undefined
+              }
             >
               {stringField(milestone.title)}
             </option>
@@ -1999,6 +1876,15 @@ function IssueMilestoneSelect({
               key={stringField(milestone.id)}
               value={stringField(milestone.id)}
               data-state={stringField(milestone.state, "closed")}
+              ref={
+                stringField(milestone.id) === selectedMilestoneId
+                  ? (option) => {
+                      if (option) {
+                        option.defaultSelected = true;
+                      }
+                    }
+                  : undefined
+              }
             >
               {stringField(milestone.title)}
             </option>
@@ -2331,8 +2217,8 @@ function LegacyLabelControl({
     );
   return (
     <div
-      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
       {...stylex.props(styles.labelControl)}
+      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""} ${stylex.props(styles.labelControl).className ?? ""}`.trim()}
       data-stylex-owner="project-issue-detail-label-control"
     >
       <ul
@@ -2450,7 +2336,8 @@ function IssueSelectedLabels({
       <dt>{t("issue.label")}</dt>
       <dd>
         {labels.map((label) => (
-          <Link
+          <IssueLabel
+            as={Link}
             {...LEGACY_LINK_PROPS}
             to={listPath}
             params={{ ownerName, projectName }}
@@ -2458,18 +2345,18 @@ function IssueSelectedLabels({
               {
                 state: issueState === "closed" ? "closed" : "open",
                 // ponytail: partial search; missing fields get route defaults. Single label
-                // id serializes raw as `labelIds=8` (arrays would JSON-encode).
-                labelIds: String(label.id),
+                // id serializes raw as `labelIds=8` (numbers pass plain, strings JSON-encode).
+                labelIds: Number(label.id),
               } as unknown as ProjectIssuesSearch
             }
-            className="label issue-label active static"
-            style={{ background: stringField(label.color) }}
-            data-label-id={String(label.id)}
+            className="label static"
+            color={stringField(label.color)}
+            labelId={String(label.id)}
             data-stylex-owner="project-issue-detail-label-geometry"
             key={String(label.id)}
           >
             {label.name}
-          </Link>
+          </IssueLabel>
         ))}
       </dd>
     </dl>
@@ -2656,21 +2543,7 @@ function IssueChildIssue({
           as={Link}
           {...LEGACY_LINK_PROPS}
           {...stylex.props(styles.labelGeometry)}
-          to="/$ownerName/$projectName/issues"
-          params={{ ownerName, projectName }}
-          search={{
-            state: "open",
-            assigneeId: "",
-            authorId: "",
-            commenterId: "",
-            dueDate: "",
-            filter: "",
-            labelIds: [String(label.id)],
-            milestoneId: "",
-            orderBy: "updatedDate",
-            orderDir: "desc",
-            pageNum: 1,
-          }}
+          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}`}
           className="label list-label twoColumeModeTarget"
           color={stringField(label.color)}
           labelId={stringField(label.id)}
@@ -2817,7 +2690,7 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
         data-stylex-owner="issue-detail-keymap-modal"
         tabIndex={-1}
         role="dialog"
-        {...(open ? stylex.props(styles.keymapModalVisible) : {})}
+        {...(open ? { style: stylex.props(styles.keymapModalVisible).style } : {})}
         onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
       >
         <div className="row-fluid">
@@ -3115,8 +2988,15 @@ function IssueCommentForm({
           data-stylex-owner="project-issue-detail-comment-form"
         >
           <div className="write-comment-wrap">
-            <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
-            <UploadForm resourceType="ISSUE_COMMENT" />
+            <MarkdownEditor
+              {...issueDetailMarkdownEditorProps("comment-body", "contents", "", "contents")}
+            />
+            <UploadForm
+              resourceType="ISSUE_COMMENT"
+              wrapperId="upload"
+              helpClassName={`${stylex.props(styles.uploadHelp).className} help`}
+              helpOwner="project-issue-detail-upload-help"
+            />
             <div
               className={stylex.props(styles.commentFormActions).className}
               data-stylex-owner="project-issue-detail-comment-actions"
@@ -3130,32 +3010,6 @@ function IssueCommentForm({
         </div>
       </form>
     </>
-  );
-}
-
-function UploadForm({ resourceType }: { resourceType: string }) {
-  const { t } = useLegacyMessages();
-  return (
-    <div className="upload-wrap content-footer" data-resource-type={resourceType} id="upload">
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
-      </div>
-      <ul className="attached-files unstyled"></ul>
-      <p
-        className={`${stylex.props(styles.uploadHelp).className} help`}
-        data-stylex-owner="project-issue-detail-upload-help"
-      >
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
-    </div>
   );
 }
 
@@ -3751,11 +3605,19 @@ function IssueCommentRow({
           </span>
           <span
             {...stylex.props(styles.commentActionRow)}
-            className={`${stylex.props(styles.commentActionRow).className} act-row`}
+            className={`${stylex.props(styles.commentActionRow).className} act-row pull-right`}
             data-stylex-owner="project-issue-detail-comment-action-row"
           >
             <span className="new-issue-by">
-              <Link {...LEGACY_LINK_PROPS} to="/user/issues/new" search={{ commentId }}>
+              <Link
+                {...LEGACY_LINK_PROPS}
+                to="/user/issues/new"
+                search={
+                  { commentId: Number(commentId) || undefined } as unknown as {
+                    commentId: string;
+                  }
+                }
+              >
                 Reference in new issue
               </Link>
             </span>
@@ -4217,10 +4079,12 @@ function CommentUpdateForm({
         <div className="write-comment-box">
           <div className="write-comment-wrap">
             <MarkdownEditor
-              editorMode="update-comment-body"
-              name="contents"
-              value={contentsMarkdown}
-              wrapId={commentId}
+              {...issueDetailMarkdownEditorProps(
+                "update-comment-body",
+                "contents",
+                contentsMarkdown,
+                commentId,
+              )}
             />
             <div className="upload-drop-here">
               <div className="msg-wrap">
@@ -4313,117 +4177,35 @@ function CommentUpdateForm({
   );
 }
 
-function MarkdownEditor({
-  editorMode,
-  name,
-  value,
-  wrapId,
-}: {
-  editorMode: string;
-  name: string;
-  value: string;
-  wrapId: string;
-}) {
-  const { t } = useLegacyMessages();
-  const [notificationVisible, setNotificationVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  const switchTab = (event: MouseEvent<HTMLElement>, nextTab: "edit" | "preview") => {
-    event.preventDefault();
-    event.stopPropagation();
-    setActiveTab(nextTab);
+function issueDetailMarkdownEditorProps(
+  editorMode: string,
+  name: string,
+  value: string,
+  wrapId: string,
+): MarkdownEditorProps {
+  return {
+    wrapperClassName:
+      `mt10 markdown-editor ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim(),
+    wrapperStyleProps: stylex.props(styles.markdownEditorWrapper),
+    wrapperOwner: "project-issue-detail-markdown-editor-wrapper",
+    wrapperInstance: wrapId,
+    tabClickPreventDefault: true,
+    tabContentClassName: `${stylex.props(styles.editorTabContent).className} tab-content`,
+    tabContentPaneOwner: "project-issue-detail-editor-tab-content",
+    tabContentPaneInstance: wrapId,
+    editPaneId: `edit-${wrapId}`,
+    previewPaneId: `preview-${wrapId}`,
+    textareaName: name,
+    textareaId: `editor-${name}-${wrapId}`,
+    textareaMode: editorMode,
+    textareaDefaultValue: value,
+    previewClassName: `markdown-preview markdown-wrap ${editorMode}`,
+    notificationRevealStyle: stylex.props(styles.notificationVisible),
+    notificationOwner: "project-issue-detail-markdown-editor-notification-receiver",
+    notificationInstance: wrapId,
+    notificationTitleStyleProps: stylex.props(styles.markdownEditorNotificationReceiverTitle),
+    notificationTitleOwner: "project-issue-detail-markdown-editor-notification-receiver-title",
   };
-
-  return (
-    <div
-      {...stylex.props(styles.markdownEditorWrapper)}
-      className={`mt10 markdown-editor ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
-      data-stylex-owner="project-issue-detail-markdown-editor-wrapper"
-      data-stylex-owner-instance={wrapId}
-    >
-      <ul className="nav nav-tabs nm small">
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={(event) => switchTab(event, "edit")}>
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={(event) => switchTab(event, "preview")}>
-            {t("common.editor.preview")}
-          </button>
-        </li>
-        <li>
-          <div className="task-list-button">
-            <button
-              type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-            >
-              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li>
-          <div className="editor-clear-temporary">
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div className="editor-notice-label"></div>
-        </li>
-      </ul>
-      <div
-        className={`${stylex.props(styles.editorTabContent).className} tab-content`}
-        data-stylex-owner="project-issue-detail-editor-tab-content"
-        data-stylex-owner-instance={wrapId}
-      >
-        <LegacyMarkdownHelp />
-        <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div className="textarea-box">
-            <textarea
-              name={name}
-              className="editorSeries content comment nm"
-              data-editor-mode={editorMode}
-              id={`editor-${name}-${wrapId}`}
-              defaultValue={value}
-              onFocus={() => setNotificationVisible(true)}
-              {...{ markdown: "true" }}
-            ></textarea>
-          </div>
-        </div>
-        <div
-          id={`preview-${wrapId}`}
-          className={`tab-pane${activeTab === "preview" ? " active" : ""}`}
-        >
-          <div
-            className={`markdown-preview markdown-wrap ${editorMode}`}
-            data-via-email="false"
-          ></div>
-        </div>
-        <div
-          className="notification-receiver"
-          {...(notificationVisible ? stylex.props(styles.notificationVisible) : {})}
-          data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver"
-          data-stylex-owner-instance={wrapId}
-        >
-          <span
-            {...stylex.props(styles.markdownEditorNotificationReceiverTitle)}
-            data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver-title"
-            className={`${stylex.props(styles.markdownEditorNotificationReceiverTitle).className} notification-receiver-title`}
-          >
-            {t("notification.receiver.list.title")}
-          </span>
-          <span className="notification-receiver-list"></span>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function taskItemsFromMarkdown(markdown: string) {

@@ -406,6 +406,20 @@ async function canonicalizeScreenRoots(page: Page) {
           current.setAttribute(name, originalValue);
         }
       }
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
@@ -520,6 +534,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           } finally {
             current.setAttribute(name, originalValue);
           }
+        }
+        if (name === "class") {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/u)
+            .filter(
+              (token) =>
+                token &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
         }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }

@@ -83,10 +83,10 @@ test("project posts action floats preserve legacy source and StyleX ownership", 
     "project-posts-new-post-wrap",
     "project-posts-keymap",
     "project-posts-keymap-modal",
-    "project-posts-two-column-mode",
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
+  expect(routeSource).toContain('anchorOwner="project-posts-two-column-mode"');
   expect(routeSource).not.toContain("pull-left");
   expect(routeSource).not.toContain("pull-right");
   expect(styleSource).toMatch(/search:\s*\{[^}]*float:\s*"left"/u);
@@ -138,7 +138,8 @@ test(`project posts action floats preserve desktop/mobile runtime parity (${fall
       await expect(twoColumn).toBeVisible();
       await expect(twoColumn.locator("#two-column-mode")).toBeVisible();
       await expect(twoColumn.locator(".two-column-mode-text")).toHaveText("Column View");
-      await twoColumn.hover();
+      // Frozen .search-wrap height:30px lets .filter-wrap cover the control's lower part (legacy parity); hover its clear top area.
+      await twoColumn.hover({ position: { x: 5, y: 5 } });
       await expect(
         twoColumn.locator('[data-stylex-owner="project-posts-two-column-popover"]'),
       ).toBeVisible();

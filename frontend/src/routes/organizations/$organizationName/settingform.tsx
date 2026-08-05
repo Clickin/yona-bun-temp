@@ -247,7 +247,13 @@ function OrganizationSettingsBody({
                   data-stylex-owner="organization-setting-box-right"
                 >
                   <dt>
-                    <label htmlFor="project-name">{t("organization.name.placeholder")}</label>
+                    <label
+                      {...stylex.props(organizationSettingStyles.fieldTermLabel)}
+                      className={stylex.props(organizationSettingStyles.fieldTermLabel).className}
+                      htmlFor="project-name"
+                    >
+                      {t("organization.name.placeholder")}
+                    </label>
                   </dt>
                   <dd>
                     <input
@@ -261,6 +267,7 @@ function OrganizationSettingsBody({
                     />
                     <div
                       {...stylex.props(styles.validationMessage)}
+                      className={`${stylex.props(styles.validationMessage).className} orange-txt`.trim()}
                       data-stylex-owner="organization-setting-validation-message"
                     >
                       {serverNameError ? (
@@ -273,6 +280,7 @@ function OrganizationSettingsBody({
                       ) : null}
                       <span
                         {...wrongNameStyleProps}
+                        style={wrongNameMessage ? undefined : { display: "none" }}
                         className={`msg wrongName ${wrongNameStyleProps?.className ?? ""}`.trim()}
                         data-stylex-owner="organization-setting-wrong-name"
                       >
@@ -281,7 +289,11 @@ function OrganizationSettingsBody({
                     </div>
                   </dd>
                   <dt>
-                    <label htmlFor="project-desc">
+                    <label
+                      {...stylex.props(organizationSettingStyles.fieldTermLabel)}
+                      className={stylex.props(organizationSettingStyles.fieldTermLabel).className}
+                      htmlFor="project-desc"
+                    >
                       {t("organization.description.placeholder")}
                     </label>
                   </dt>

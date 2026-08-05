@@ -12,6 +12,7 @@ import {
   type ReactNode,
   useEffect,
   useRef,
+  use,
   useState,
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -38,7 +39,10 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import type { CommitReferenceMetadata } from "../../../../api/issue-meta";
 import { useLegacyMessages } from "../../../../i18n";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
+import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import { SiteLayoutShell } from "../../../-home-route-screen";
+import { ProjectNestedShellContext } from "../../$projectName";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { styles } from "./-post-detail.stylex";
@@ -199,6 +203,7 @@ function ProjectPostDetailRoute() {
 
 export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, postNumber, projectName } = Route.useParams();
+  const nestedProjectShell = use(ProjectNestedShellContext);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -213,20 +218,50 @@ export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig:
   });
 
   if (!projectQuery.data) {
-    return null;
+    if (nestedProjectShell) {
+      return null;
+    }
+    const projectSearchScope = { ownerName, projectName };
+    return (
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        {null}
+      </SiteLayoutShell>
+    );
   }
 
-  return <ProjectPostDetailScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />;
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <ProjectPostDetailScreen
+      project={projectQuery.data}
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  return (
+    project.organizationName ||
+    (stringField(project.projectScope, "").toUpperCase() === "PROTECTED" ? ownerName : undefined)
+  );
 }
 
 function ProjectPostDetailScreen({
   project,
+  projectSearchScope,
   runtimeConfig,
 }: {
   project: ProjectContainer;
+  projectSearchScope: { organizationName?: string; ownerName: string; projectName: string };
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, postNumber, projectName } = Route.useParams();
+  const nestedProjectShell = use(ProjectNestedShellContext);
   const postQuery = useQuery({
     ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
     retry(failureCount, error) {
@@ -235,11 +270,19 @@ function ProjectPostDetailScreen({
   });
 
   if (restApiErrorStatus(postQuery.error) === 404) {
-    return (
+    const notFoundContent = (
       <>
         <ProjectPostNotFoundTitle ownerName={ownerName} projectName={projectName} />
         <ProjectPostNotFoundBody ownerName={ownerName} projectName={projectName} />
       </>
+    );
+    if (nestedProjectShell) {
+      return notFoundContent;
+    }
+    return (
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        {notFoundContent}
+      </SiteLayoutShell>
     );
   }
 
@@ -738,8 +781,9 @@ function ProjectPostDetailBody({
 
       <div
         id="deleteConfirm"
-        className={`modal ${deleteModalOpen ? "in " : "hide "}fade`}
-        {...(deleteModalOpen ? stylex.props(styles.deleteModalVisible) : {})}
+        className={`modal ${deleteModalOpen ? "in " : "hide "}fade ${
+          deleteModalOpen ? (stylex.props(styles.deleteModalVisible).className ?? "") : ""
+        }`.trim()}
         data-stylex-owner="post-detail-delete-modal"
         aria-hidden={deleteModalOpen ? "false" : undefined}
       >
@@ -1128,6 +1172,15 @@ function nextPostLabelIds(
   return nextLabelIds;
 }
 
+// Legacy `BoardApp.posts` filter links carry a plain `labelIds` value, never a JSON array.
+function postsLabelFilterRoutePath(
+  ownerName: string,
+  projectName: string,
+  labelId: string,
+): string {
+  return `/${ownerName}/${projectName}/posts?labelIds=${labelId}`;
+}
+
 function PostSelectedLabels({
   labels,
   ownerName,
@@ -1151,9 +1204,7 @@ function PostSelectedLabels({
           const labelStyle = stylex.props(styles.labelBackground(label.color));
           return (
             <Link
-              to="/$ownerName/$projectName/posts"
-              params={{ ownerName, projectName }}
-              search={{ labelIds: [label.id] }}
+              to={postsLabelFilterRoutePath(ownerName, projectName, label.id)}
               activeProps={legacyRouteLocalActiveProps}
               {...labelStyle}
               className={`${labelStyle.className} label issue-label active static`}
@@ -1417,11 +1468,8 @@ function PostCommentForm({
           data-stylex-owner="post-detail-comment-create-write-wrap"
         >
           <MarkdownEditor
-            editorMode="comment-body"
             key={editorResetKey}
-            name="contents"
-            value=""
-            wrapId="contents"
+            {...postDetailMarkdownEditorProps("comment-body", "contents", "", "contents")}
           />
           <div
             className={`${sx.commentUploadWrap.className} upload-wrap content-footer`}
@@ -1659,8 +1707,7 @@ function PostCommentRow({
               hash={`comment-${commentId}`}
               activeOptions={{ includeHash: true }}
               activeProps={legacyRouteLocalActiveProps}
-              className="share-link"
-              {...stylex.props(styles.shareLinkHidden)}
+              className={`share-link ${stylex.props(styles.shareLinkHidden).className ?? ""}`.trim()}
               data-stylex-owner="post-detail-share-link"
             >
               [Link]
@@ -2003,10 +2050,12 @@ function PostCommentUpdateForm({
         >
           <div className="write-comment-wrap">
             <MarkdownEditor
-              editorMode="update-comment-body"
-              name="contents"
-              value={comment.contentsMarkdown}
-              wrapId={commentId}
+              {...postDetailMarkdownEditorProps(
+                "update-comment-body",
+                "contents",
+                comment.contentsMarkdown,
+                commentId,
+              )}
             />
             <div
               {...updateDropOverlayStyle}
@@ -2694,86 +2743,40 @@ function remarkChildCommentMetadata() {
   };
 }
 
-function MarkdownEditor({
-  editorMode,
-  name,
-  value,
-  wrapId,
-}: {
-  editorMode: string;
-  name: string;
-  value: string;
-  wrapId: string;
-}) {
-  const { t } = useLegacyMessages();
-  const [activeMode, setActiveMode] = useState<"edit" | "preview">("edit");
-  const [editorValue, setEditorValue] = useState(value);
-
-  const selectMode = (mode: "edit" | "preview", event: ReactMouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setActiveMode(mode);
-  };
-  const editPaneStyle = stylex.props(
-    styles.editorPane,
-    activeMode === "edit" && styles.editorPaneActive,
-  );
-  const previewPaneStyle = stylex.props(
-    styles.editorPane,
-    activeMode === "preview" && styles.editorPaneActive,
-  );
+function postDetailMarkdownEditorProps(
+  editorMode: string,
+  name: string,
+  value: string,
+  wrapId: string,
+): MarkdownEditorProps {
   const isCommentUpdateEditor = editorMode === "update-comment-body";
   const isCommentCreateEditor = editorMode === "comment-body";
-  const updateTextareaBoxStyle =
-    editorMode === "update-comment-body"
-      ? stylex.props(styles.commentUpdateTextareaBox)
-      : undefined;
-  const updateTextareaStyle =
-    editorMode === "update-comment-body"
-      ? stylex.props(styles.commentUpdateTextareaControl)
-      : undefined;
+  const hasCommentStyles = isCommentUpdateEditor || isCommentCreateEditor;
+  const updateTextareaBoxStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateTextareaBox)
+    : undefined;
   const createTextareaBoxStyle = isCommentCreateEditor
     ? stylex.props(styles.commentCreateTextareaBox)
+    : undefined;
+  const updateTextareaStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateTextareaControl)
     : undefined;
   const createTextareaStyle = isCommentCreateEditor
     ? stylex.props(styles.commentCreateTextareaControl)
     : undefined;
-  const editorNavStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentUpdateEditorNav)
-      : undefined;
-  const editorNavItemStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentUpdateEditorNavItem)
-      : undefined;
-  const editorTabStyle = (mode: "edit" | "preview") =>
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(
-          styles.commentUpdateEditorTabLink,
-          activeMode === mode && styles.commentUpdateEditorTabLinkActive,
-        )
-      : undefined;
-  const createEditorNavItemOwner = isCommentCreateEditor
-    ? "post-detail-comment-create-editor-nav-item"
+  const editorNavStyle = hasCommentStyles ? stylex.props(styles.commentUpdateEditorNav) : undefined;
+  const editorNavItemStyle = hasCommentStyles
+    ? stylex.props(styles.commentUpdateEditorNavItem)
     : undefined;
-  const createEditorTabOwner = (mode: "edit" | "preview") =>
-    isCommentCreateEditor
-      ? activeMode === mode
-        ? "post-detail-comment-create-editor-tab-active"
-        : "post-detail-comment-create-editor-tab"
-      : undefined;
-  const checklistWrapStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentUpdateChecklistWrap)
-      : undefined;
-  const checklistButtonStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentUpdateActionButton, styles.commentUpdateChecklistButton)
-      : undefined;
-  const checklistIconStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentUpdateChecklistIcon)
-      : undefined;
+  const checklistWrapStyle = hasCommentStyles
+    ? stylex.props(styles.commentUpdateChecklistWrap)
+    : undefined;
+  const checklistButtonStyle = hasCommentStyles
+    ? stylex.props(styles.commentUpdateActionButton, styles.commentUpdateChecklistButton)
+    : undefined;
+  const checklistIconStyle = hasCommentStyles
+    ? stylex.props(styles.commentUpdateChecklistIcon)
+    : undefined;
   const clearTemporaryStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateClearTemporary)
     : isCommentCreateEditor
@@ -2782,266 +2785,146 @@ function MarkdownEditor({
   const createEditorNoticeLabelStyle = isCommentCreateEditor
     ? stylex.props(styles.commentCreateEditorNoticeLabel)
     : undefined;
-  const notificationReceiverStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentCreateNotificationReceiver)
-      : undefined;
-  const notificationReceiverTitleStyle =
-    isCommentUpdateEditor || isCommentCreateEditor
-      ? stylex.props(styles.commentCreateNotificationReceiverTitle)
-      : undefined;
-  const editorWrapperOwner = isCommentUpdateEditor
-    ? "post-detail-comment-update-editor-wrapper"
-    : isCommentCreateEditor
-      ? "post-detail-comment-create-editor-wrapper"
-      : undefined;
-
-  return (
-    <div
-      {...sx.markdownEditorWrapper}
-      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
-      data-stylex-owner={editorWrapperOwner}
-      data-stylex-owner-instance={wrapId}
-    >
-      <ul
-        {...editorNavStyle}
-        className={`${editorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim()}
-        data-stylex-owner={
-          isCommentUpdateEditor
-            ? "post-detail-comment-update-editor-nav"
-            : isCommentCreateEditor
-              ? "post-detail-comment-create-editor-nav"
-              : undefined
-        }
-      >
-        <li
-          {...editorNavItemStyle}
-          className={`${editorNavItemStyle?.className ?? ""}${activeMode === "edit" ? " active" : ""}`.trim()}
-          data-stylex-owner={
-            isCommentUpdateEditor
-              ? "post-detail-comment-update-editor-nav-item"
-              : createEditorNavItemOwner
-          }
-        >
-          <Link
-            {...editorTabStyle("edit")}
-            to="."
-            hash={`edit-${wrapId}`}
-            data-stylex-owner={
-              isCommentUpdateEditor
-                ? activeMode === "edit"
-                  ? "post-detail-comment-update-editor-tab-active"
-                  : "post-detail-comment-update-editor-tab"
-                : createEditorTabOwner("edit")
-            }
-            onClick={(event) => selectMode("edit", event)}
-          >
-            {t("common.editor.edit")}
-          </Link>
-        </li>
-        <li
-          {...editorNavItemStyle}
-          className={`${editorNavItemStyle?.className ?? ""}${activeMode === "preview" ? " active" : ""}`.trim()}
-          data-stylex-owner={
-            isCommentUpdateEditor
-              ? "post-detail-comment-update-editor-nav-item"
-              : createEditorNavItemOwner
-          }
-        >
-          <Link
-            {...editorTabStyle("preview")}
-            to="."
-            hash={`preview-${wrapId}`}
-            data-stylex-owner={
-              isCommentUpdateEditor
-                ? activeMode === "preview"
-                  ? "post-detail-comment-update-editor-tab-active"
-                  : "post-detail-comment-update-editor-tab"
-                : createEditorTabOwner("preview")
-            }
-            onClick={(event) => selectMode("preview", event)}
-          >
-            {t("common.editor.preview")}
-          </Link>
-        </li>
-        <li
-          {...editorNavItemStyle}
-          data-stylex-owner={
-            isCommentUpdateEditor
-              ? "post-detail-comment-update-editor-nav-item"
-              : createEditorNavItemOwner
-          }
-        >
-          <div
-            {...checklistWrapStyle}
-            className={`${checklistWrapStyle?.className ?? ""} task-list-button`.trim()}
-            data-stylex-owner={
-              isCommentUpdateEditor
-                ? "post-detail-comment-update-checklist-wrap"
-                : isCommentCreateEditor
-                  ? "post-detail-comment-create-checklist-wrap"
-                  : undefined
-            }
-          >
-            <button
-              {...checklistButtonStyle}
-              type="button"
-              className={`${checklistButtonStyle?.className ?? ""} add-task-list-button ybtn ybtn-small ybtn-danger-no-outline`.trim()}
-              data-stylex-owner={
-                isCommentUpdateEditor
-                  ? "post-detail-comment-update-checklist-button"
-                  : isCommentCreateEditor
-                    ? "post-detail-comment-create-checklist-button"
-                    : undefined
-              }
-            >
-              <i
-                {...checklistIconStyle}
-                className={`${checklistIconStyle?.className ?? ""} yobicon-list task-list-icon`.trim()}
-                data-stylex-owner={
-                  isCommentUpdateEditor
-                    ? "post-detail-comment-update-checklist-icon"
-                    : isCommentCreateEditor
-                      ? "post-detail-comment-create-checklist-icon"
-                      : undefined
-                }
-              ></i>{" "}
-              {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li
-          {...editorNavItemStyle}
-          data-stylex-owner={
-            isCommentUpdateEditor
-              ? "post-detail-comment-update-editor-nav-item"
-              : createEditorNavItemOwner
-          }
-        >
-          <div
-            {...clearTemporaryStyle}
-            className={`${clearTemporaryStyle?.className ?? ""} editor-clear-temporary`.trim()}
-            data-stylex-owner={
-              isCommentUpdateEditor
-                ? "post-detail-comment-update-clear-temporary"
-                : isCommentCreateEditor
-                  ? "post-detail-comment-create-clear-temporary"
-                  : undefined
-            }
-          >
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li
-          {...editorNavItemStyle}
-          data-stylex-owner={
-            isCommentUpdateEditor
-              ? "post-detail-comment-update-editor-nav-item"
-              : createEditorNavItemOwner
-          }
-        >
-          <div
-            {...createEditorNoticeLabelStyle}
-            className={`${createEditorNoticeLabelStyle?.className ?? ""} editor-notice-label`.trim()}
-            data-stylex-owner={
-              isCommentCreateEditor ? "post-detail-comment-create-editor-notice-label" : undefined
-            }
-          ></div>
-        </li>
-      </ul>
-      <div
-        {...sx.editorTabContent}
-        className={`${sx.editorTabContent.className} tab-content`}
-        data-stylex-owner="post-detail-editor-tab-content"
-      >
-        <PostDetailMarkdownHelp />
-        <div
-          {...editPaneStyle}
-          id={`edit-${wrapId}`}
-          className={`${editPaneStyle.className} tab-pane${activeMode === "edit" ? " active" : ""}`}
-          data-stylex-owner="post-detail-editor-pane"
-        >
-          <div
-            {...updateTextareaBoxStyle}
-            {...createTextareaBoxStyle}
-            className={`${updateTextareaBoxStyle?.className ?? createTextareaBoxStyle?.className ?? ""} textarea-box`.trim()}
-            data-stylex-owner={
-              editorMode === "update-comment-body"
-                ? "post-detail-comment-update-textarea-box"
-                : isCommentCreateEditor
-                  ? "post-detail-comment-create-textarea-box"
-                  : undefined
-            }
-          >
-            <textarea
-              {...updateTextareaStyle}
-              {...createTextareaStyle}
-              name={name}
-              className={`${updateTextareaStyle?.className ?? createTextareaStyle?.className ?? ""} editorSeries content comment nm`.trim()}
-              data-stylex-owner={
-                editorMode === "update-comment-body"
-                  ? "post-detail-comment-update-textarea"
-                  : isCommentCreateEditor
-                    ? "post-detail-comment-create-textarea"
-                    : undefined
-              }
-              data-editor-mode={editorMode}
-              {...{ markdown: "true" }}
-              id={`editor-${name}-${wrapId}`}
-              value={editorValue}
-              onChange={(event) => setEditorValue(event.currentTarget.value)}
-            ></textarea>
-          </div>
-        </div>
-        <div
-          {...previewPaneStyle}
-          id={`preview-${wrapId}`}
-          className={`${previewPaneStyle.className} tab-pane${activeMode === "preview" ? " active" : ""}`}
-          data-stylex-owner="post-detail-editor-pane"
-        >
-          <div className={`markdown-preview markdown-wrap ${editorMode}`} data-via-email="false">
-            {activeMode === "preview" ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{editorValue}</ReactMarkdown>
-            ) : null}
-          </div>
-        </div>
-        <div
-          {...notificationReceiverStyle}
-          className={`${notificationReceiverStyle?.className ?? ""} notification-receiver`.trim()}
-          data-stylex-owner={
-            isCommentUpdateEditor
-              ? "post-detail-comment-update-notification-receiver"
-              : isCommentCreateEditor
-                ? "post-detail-comment-create-notification-receiver"
-                : undefined
-          }
-        >
-          <span
-            {...notificationReceiverTitleStyle}
-            className={`${notificationReceiverTitleStyle?.className ?? ""} notification-receiver-title`.trim()}
-            data-stylex-owner={
-              isCommentUpdateEditor
-                ? "post-detail-comment-update-notification-receiver-title"
-                : isCommentCreateEditor
-                  ? "post-detail-comment-create-notification-receiver-title"
-                  : undefined
-            }
-          >
-            {t("notification.receiver.list.title")}{" "}
-          </span>
-          <span className="notification-receiver-list"></span>
-        </div>
-      </div>
-    </div>
-  );
+  const notificationReceiverStyle = hasCommentStyles
+    ? stylex.props(styles.commentCreateNotificationReceiver)
+    : undefined;
+  const notificationReceiverTitleStyle = hasCommentStyles
+    ? stylex.props(styles.commentCreateNotificationReceiverTitle)
+    : undefined;
+  const editorPaneStyleProps = (_tab: "edit" | "preview", active: boolean) =>
+    stylex.props(styles.editorPane, active && styles.editorPaneActive);
+  return {
+    value,
+    internalValue: true,
+    wrapperClassName: `mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim(),
+    wrapperStyleProps: sx.markdownEditorWrapper,
+    wrapperOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-editor-wrapper"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-editor-wrapper"
+        : undefined,
+    wrapperInstance: wrapId,
+    tabAs: "link",
+    tabClickPreventDefault: true,
+    tabListClassName: `${editorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim(),
+    tabListStyleProps: editorNavStyle,
+    tabListOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-editor-nav"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-editor-nav"
+        : undefined,
+    tabLiStyleProps: editorNavItemStyle,
+    tabLiOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-editor-nav-item"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-editor-nav-item"
+        : undefined,
+    tabContentStyleProps: (_tab, active) =>
+      hasCommentStyles
+        ? stylex.props(
+            styles.commentUpdateEditorTabLink,
+            active && styles.commentUpdateEditorTabLinkActive,
+          )
+        : undefined,
+    tabContentOwner: (tab, active) => {
+      if (isCommentUpdateEditor) {
+        return active
+          ? "post-detail-comment-update-editor-tab-active"
+          : "post-detail-comment-update-editor-tab";
+      }
+      if (isCommentCreateEditor) {
+        return active
+          ? "post-detail-comment-create-editor-tab-active"
+          : "post-detail-comment-create-editor-tab";
+      }
+      return undefined;
+    },
+    tabLinkProps: {
+      edit: { hash: `edit-${wrapId}` },
+      preview: { hash: `preview-${wrapId}` },
+    },
+    checklistClassName: `${checklistWrapStyle?.className ?? ""} task-list-button`.trim(),
+    checklistStyleProps: checklistWrapStyle,
+    checklistOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-checklist-wrap"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-checklist-wrap"
+        : undefined,
+    checklistButtonClassName:
+      `${checklistButtonStyle?.className ?? ""} add-task-list-button ybtn ybtn-small ybtn-danger-no-outline`.trim(),
+    checklistButtonStyleProps: checklistButtonStyle,
+    checklistButtonOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-checklist-button"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-checklist-button"
+        : undefined,
+    checklistIconClassName:
+      `${checklistIconStyle?.className ?? ""} yobicon-list task-list-icon`.trim(),
+    checklistIconStyleProps: checklistIconStyle,
+    checklistIconOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-checklist-icon"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-checklist-icon"
+        : undefined,
+    clearTemporaryClassName:
+      `${clearTemporaryStyle?.className ?? ""} editor-clear-temporary`.trim(),
+    clearTemporaryStyleProps: clearTemporaryStyle,
+    clearTemporaryOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-clear-temporary"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-clear-temporary"
+        : undefined,
+    noticeLabelClassName:
+      `${createEditorNoticeLabelStyle?.className ?? ""} editor-notice-label`.trim(),
+    noticeLabelStyleProps: createEditorNoticeLabelStyle,
+    noticeLabelOwner: isCommentCreateEditor
+      ? "post-detail-comment-create-editor-notice-label"
+      : undefined,
+    tabContentClassName: `${sx.editorTabContent.className} tab-content`,
+    tabContentPaneOwner: "post-detail-editor-tab-content",
+    help: <PostDetailMarkdownHelp />,
+    editPaneId: `edit-${wrapId}`,
+    editPaneStyleProps: editorPaneStyleProps,
+    editPaneOwner: "post-detail-editor-pane",
+    textareaBoxStyleProps: updateTextareaBoxStyle ?? createTextareaBoxStyle,
+    textareaBoxOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-textarea-box"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-textarea-box"
+        : undefined,
+    textareaName: name,
+    textareaId: `editor-${name}-${wrapId}`,
+    textareaStyleProps: updateTextareaStyle ?? createTextareaStyle,
+    textareaOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-textarea"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-textarea"
+        : undefined,
+    textareaMode: editorMode,
+    previewPaneId: `preview-${wrapId}`,
+    previewPaneStyleProps: editorPaneStyleProps,
+    previewPaneOwner: "post-detail-editor-pane",
+    previewClassName: `markdown-preview markdown-wrap ${editorMode}`,
+    previewChildren: (active, editorValue) =>
+      active ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{editorValue}</ReactMarkdown> : null,
+    notificationClassName:
+      `${notificationReceiverStyle?.className ?? ""} notification-receiver`.trim(),
+    notificationStyleProps: notificationReceiverStyle,
+    notificationOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-notification-receiver"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-notification-receiver"
+        : undefined,
+    notificationTitleClassName:
+      `${notificationReceiverTitleStyle?.className ?? ""} notification-receiver-title`.trim(),
+    notificationTitleStyleProps: notificationReceiverTitleStyle,
+    notificationTitleOwner: isCommentUpdateEditor
+      ? "post-detail-comment-update-notification-receiver-title"
+      : isCommentCreateEditor
+        ? "post-detail-comment-create-notification-receiver-title"
+        : undefined,
+    notificationTitleTrailingSpace: true,
+  };
 }
 
 function PostDetailMarkdownHelp() {
@@ -3179,8 +3062,9 @@ function BoardDetailKeymap({
       </button>
       <div
         id="helpKeys"
-        className={`modal ${open ? "in " : "hide "}fade keymap-help`}
-        {...(open ? stylex.props(styles.keymapModalVisible) : {})}
+        className={`modal ${open ? "in " : "hide "}fade keymap-help ${
+          open ? (stylex.props(styles.keymapModalVisible).className ?? "") : ""
+        }`.trim()}
         data-stylex-owner="post-detail-keymap-modal"
         tabIndex={-1}
         role="dialog"

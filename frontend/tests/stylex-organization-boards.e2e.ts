@@ -8,6 +8,10 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
+const twoColumnComponentSource = readFileSync(
+  fileURLToPath(new URL("../src/components/two-column-mode-checkbox.tsx", import.meta.url)),
+  "utf8",
+);
 const styleSource = readFileSync(
   fileURLToPath(
     new URL(
@@ -135,7 +139,7 @@ test("organization boards empty state preserves legacy image, position, size, an
 
 test("organization boards translates legacy filters and two-column controls to React", () => {
   expect(routeSource).toContain("BoardFilters");
-  expect(routeSource).toContain("TwoColumnModeCheckbox");
+  expect(twoColumnComponentSource).toContain("function TwoColumnModeCheckbox");
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");

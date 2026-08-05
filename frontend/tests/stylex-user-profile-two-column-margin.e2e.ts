@@ -9,6 +9,8 @@ test.use({ locale: "en-US" });
 
 test("public user profile owns legacy spacing on both mode controls", async ({ page }) => {
   const routeSource = readFileSync("src/routes/$user.tsx", "utf8");
+  const sharedComponentSource = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
+
   const styleSource = readFileSync("src/routes/-user-profile.stylex.ts", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const legacyTwoColumn = readFileSync(
@@ -112,7 +114,8 @@ test("public user profile owns legacy spacing on both mode controls", async ({ p
   expect(routeSource).toContain("styles.twoColumnModeControl");
   expect(routeSource).not.toContain("two-column-icon mr10 hide-in-mobile");
   expect(routeSource).not.toContain("show-subtasks mr10");
-  expect(routeSource).toContain('data-stylex-owner="user-profile-two-column-popover-anchor"');
+  expect(routeSource).toContain('anchorOwner="user-profile-two-column-popover-anchor"');
+  expect(sharedComponentSource).toContain("data-stylex-owner={anchorOwner}");
   expect(routeSource).toContain('data-stylex-owner="user-profile-show-subtasks-popover-anchor"');
   expect(routeSource).toContain('localStorage?.setItem("showSubtasksAlways"');
   expect(routeSource).not.toContain('data-toggle="popover"');

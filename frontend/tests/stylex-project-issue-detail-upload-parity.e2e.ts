@@ -66,7 +66,11 @@ test("issue detail keeps the legacy timeline event before the comment uploader",
   expect(routeSource).toContain("function IssueMainTimeline");
   expect(routeSource).toContain("function IssueEventRow");
   expect(routeSource).toContain("ISSUE_MILESTONE_CHANGED");
-  expect(routeSource).toContain('className="upload-wrap content-footer"');
+  expect(routeSource).toContain(
+    'import { UploadForm } from "../../../../components/file-uploader";',
+  );
+  expect(routeSource).toContain('resourceType="ISSUE_COMMENT"');
+  expect(routeSource).toContain('wrapperId="upload"');
 
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({

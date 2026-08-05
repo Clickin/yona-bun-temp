@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useMemo, useRef, useState } from "react";
@@ -318,8 +320,28 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       <div {...stylex.props(styles.page)} data-stylex-owner="site-massmail-page">
         <div {...stylex.props(styles.content)} data-stylex-owner="site-massmail-content">
           <div {...stylex.props(styles.grid)} data-stylex-owner="site-massmail-setting-grid">
-            <div {...stylex.props(styles.sidebarColumn)} data-stylex-owner="site-massmail-sidebar-column">
-              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
+            <div
+              {...stylex.props(styles.sidebarColumn)}
+              data-stylex-owner="site-massmail-sidebar-column"
+            >
+              <SiteAdminSidebar
+                activeTo="/sites/massmail"
+                badgeOwner="site-massmail-sidebar-badge"
+                baseLinkProps={legacySiteSidebarLinkProps}
+                linkPropsByTo={{ "/sites/massmail": { search: legacyMassMailSidebarSearch } }}
+                navOwner="site-massmail-sidebar"
+                ownerPrefix="site-massmail-sidebar"
+                showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
+                  activeLink: [styles.sidebarLink, styles.sidebarActiveLink],
+                  badge: [styles.sidebarBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
+                  item: [styles.sidebarItem],
+                  link: [styles.sidebarLink],
+                  nav: [styles.sidebar],
+                }}
+              />
             </div>
             <div
               {...stylex.props(styles.contentColumn)}
@@ -346,108 +368,6 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 function SiteMassMailTitle() {
   const { t } = useLegacyMessages();
   return <title>{t("title.massMail")}</title>;
-}
-
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  return (
-    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-massmail-sidebar">
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
-        data-stylex-owner="site-massmail-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/userList"
-        >
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-massmail-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/postList"
-        >
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-massmail-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/issueList"
-        >
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-massmail-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/projectList"
-        >
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-massmail-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/mail"
-        >
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
-        data-stylex-owner="site-massmail-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          search={legacyMassMailSidebarSearch}
-          to="/sites/massmail"
-        >
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-massmail-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/update"
-        >
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? (
-            <span
-              {...stylex.props(styles.sidebarBadge)}
-              data-stylex-owner="site-massmail-sidebar-badge"
-            >
-              1
-            </span>
-          ) : null}
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-massmail-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-massmail-sidebar-link"
-          to="/sites/diagnostic"
-        >
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
-    </ul>
-  );
 }
 
 function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -677,9 +597,4 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </button>
     </div>
   );
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }

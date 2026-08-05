@@ -11,6 +11,8 @@ test("authenticated public profile issues controls preserve legacy output and ow
   page,
 }) => {
   const routeSource = readFileSync("src/routes/$user.tsx", "utf8");
+  const sharedComponentSource = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
+
   const styleSource = readFileSync("src/routes/-user-profile.stylex.ts", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const legacyTwoColumn = readFileSync(
@@ -98,7 +100,8 @@ test("authenticated public profile issues controls preserve legacy output and ow
   expect(twoColumnJs).toContain("delay: { show: 100, hide: 100 }");
   expect(subtasksJs).toContain("localStorage.getItem('showSubtasksAlways')");
   expect(subtasksJs).toContain("localStorage.setItem('showSubtasksAlways'");
-  expect(routeSource).toContain('data-stylex-owner="user-profile-two-column-popover-anchor"');
+  expect(routeSource).toContain('anchorOwner="user-profile-two-column-popover-anchor"');
+  expect(sharedComponentSource).toContain("data-stylex-owner={anchorOwner}");
   expect(routeSource).toContain('data-stylex-owner="user-profile-show-subtasks-popover-anchor"');
   expect(routeSource).toContain("onMouseEnter={showPopover}");
   expect(routeSource).toContain("onFocus={showPopover}");

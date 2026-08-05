@@ -109,16 +109,20 @@ const EXPECTED_MISSING_USER_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
 
 test("public user profile route source keeps navigation on TanStack Link", async () => {
   const source = await readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
+  const sharedTwoColumnSource = await readFile(
+    new URL("../src/components/two-column-mode-checkbox.tsx", import.meta.url),
+    "utf8",
+  );
 
   expect(source).not.toContain("<a ");
   expect(source).not.toContain("</a>");
@@ -171,16 +175,16 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).not.toContain('data-toggle="tooltip"');
   expect(source).not.toContain("data-placement");
   expect(source).toContain("const userProfileStaticStyles = stylex.create({");
-  expect(source).toContain("two-column-icon mr10 hide-in-mobile");
+  expect(sharedTwoColumnSource).toContain("two-column-icon mr10 hide-in-mobile");
   expect(source).toContain("show-subtasks mr10");
   expect(source).toContain("post-list-wrap my-issues row-fluid");
   expect(source).toContain("post-item title");
   expect(source).toContain("popover top");
   expect(source).toContain('role="tooltip"');
-  expect(source).toContain(
+  expect(sharedTwoColumnSource).toContain(
     'typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true"',
   );
-  expect(source).toContain(
+  expect(sharedTwoColumnSource).toContain(
     'globalThis.localStorage?.setItem("useTwoColumnMode", String(nextChecked))',
   );
   expect(source).not.toContain('data-toggle="popover"');
@@ -399,7 +403,10 @@ test("public user profile renders legacy connected social provider logos", async
   const googleImage = providerLogo.locator(
     '[data-stylex-owner="user-profile-provider-google-image"]',
   );
-  await expect(googleImage).toHaveAttribute("src", /btn_google_light_normal_ios\.svg/u);
+  await expect(googleImage).toHaveAttribute(
+    "src",
+    /btn_google_light_normal_ios(-[A-Za-z0-9_-]+)?\.svg/u,
+  );
   expect(await googleImage.getAttribute("src")).not.toContain("/assets/images/provider-logo/");
   await expect(page.locator(".provider-name")).toHaveCount(0);
 
@@ -698,6 +705,13 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
   const pullRequestsEmpty = options.pullRequestsEmpty ?? false;
   const viewerCanLeave = options.viewerCanLeave ?? false;
   const viewerCanWatch = options.viewerCanWatch ?? true;
+
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
 
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

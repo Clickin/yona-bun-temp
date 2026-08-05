@@ -1,4 +1,5 @@
 import { useState, type MouseEvent } from "react";
+import { CountBadge } from "../../../components/count-badge";
 import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
@@ -397,7 +398,7 @@ function ProjectDeleteFormBody({
               {...dangerActionStyleProps}
               id="btnDelete"
               type="button"
-              className={dangerActionStyleProps.className}
+              className={`${dangerActionStyleProps.className ?? ""} ybtn ybtn-danger`.trim()}
               data-stylex-owner="project-delete-action"
               onClick={openDeletionModal}
             >
@@ -409,6 +410,7 @@ function ProjectDeleteFormBody({
               styles.modal,
               deletionModalOpen ? styles.modalOpen : styles.modalClosed,
             )}
+            className={`${stylex.props(styles.modal, deletionModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide`}
             id="alertDeletion"
             data-stylex-owner="project-delete-modal"
             aria-hidden={deletionModalState === "initial" ? undefined : !deletionModalOpen}
@@ -585,16 +587,6 @@ function ProjectSettingMenu({
       </li>
     </ul>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
 function recordField(value: unknown) {

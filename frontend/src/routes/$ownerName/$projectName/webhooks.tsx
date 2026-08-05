@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CountBadge } from "../../../components/count-badge";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { Fragment, useState, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
@@ -275,7 +276,7 @@ function ProjectWebhooksBody({
           >
             <strong
               {...stylex.props(styles.legend)}
-              className={stylex.props(styles.legend).className}
+              className={`${stylex.props(styles.legend).className} form-legend`}
               data-stylex-owner="project-webhooks-form-legend"
             >
               {t("project.webhook.new")}
@@ -290,7 +291,7 @@ function ProjectWebhooksBody({
                   type="text"
                   name="payloadUrl"
                   {...stylex.props(styles.payload)}
-                  className={stylex.props(styles.payload).className}
+                  className={`${stylex.props(styles.payload).className} input-webhook-payload`}
                   data-stylex-owner="project-webhooks-payload"
                   maxLength={2000}
                   autoComplete="off"
@@ -300,7 +301,7 @@ function ProjectWebhooksBody({
                   type="text"
                   name="secret"
                   {...stylex.props(styles.secret)}
-                  className={stylex.props(styles.secret).className}
+                  className={`${stylex.props(styles.secret).className} input-webhook-secret`}
                   data-stylex-owner="project-webhooks-secret"
                   maxLength={250}
                   autoComplete="off"
@@ -309,7 +310,7 @@ function ProjectWebhooksBody({
                 <button
                   {...stylex.props(styles.submit)}
                   type="submit"
-                  className={stylex.props(styles.submit).className}
+                  className={`${stylex.props(styles.submit).className} ybtn ybtn-primary btn-submit`}
                   data-stylex-owner="project-webhooks-submit"
                 >
                   {t("project.webhook.add")}
@@ -655,16 +656,6 @@ function ProjectSettingMenu({
       </li>
     </ul>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
 function recordField(value: unknown) {

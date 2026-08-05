@@ -37,7 +37,21 @@ test("issue detail labels own static geometry while retaining dynamic color", as
     (route.match(/data-stylex-owner="project-issue-detail-label-geometry"/g) ?? []).length,
   ).toBe(4);
   expect(route).toContain("styles.labelGeometry");
-  expect(route).toContain("styles.labelColor");
+  expect(route).toContain("color={stringField(label.color)}");
+  const sharedLabelComponent = readFileSync(
+    new URL("../src/components/issue-label.tsx", import.meta.url),
+    "utf8",
+  );
+  const sharedPaintContract = readFileSync(
+    new URL("../src/legacy-issue-label-style.ts", import.meta.url),
+    "utf8",
+  );
+  // Label paint moved to the shared IssueLabel contract (formerly styles.labelColor).
+  expect(sharedLabelComponent).toContain("issueLabelStyle(color)");
+  expect(sharedLabelComponent).toContain(
+    "data-label-id={labelId == null ? undefined : String(labelId)}",
+  );
+  expect(sharedPaintContract).toContain("backgroundColor: color");
   expect(style).toContain('display: "inline-block"');
   expect(style).toContain('margin: "0 4px 4px 0"');
   expect(style).toContain('padding: "2px 6px"');

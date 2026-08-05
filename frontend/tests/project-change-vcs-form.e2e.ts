@@ -56,9 +56,9 @@ test("protected weblabs portal change-VCS keeps the legacy group shell from its 
 
   await page.locator("#acceptChangeVCS").check();
   await page.locator("#btnChangeVCS").click();
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide in/);
   await page.locator("#alertChangeVCS .close").click();
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide/);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await page.evaluate(() => {
@@ -554,7 +554,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await page.goto(`${basePath}/admin/sample/changeVCS`);
   await installProjectChangeVcsModalBridgeAudit(page, ["alertChangeVCS"]);
   await rememberSpaMarker(page, "change-vcs-modal");
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertChangeVCS")).not.toHaveAttribute("aria-hidden", /.*/);
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator('#btnChangeVCS[data-toggle="modal"]')).toHaveCount(0);
@@ -568,7 +568,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
     await dialog.accept();
   });
   expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
   expect(await spaMarker(page)).toBe("change-vcs-modal");
@@ -581,7 +581,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
 
   await page.locator("#acceptChangeVCS").check();
   expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide in/);
   await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
@@ -607,7 +607,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
       page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }),
     ),
   ).toBe(false);
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -621,7 +621,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
     });
 
   expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide in/);
   await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -629,7 +629,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await expect(page.locator(".page-wrap-outer + .modal-backdrop.in")).toHaveCount(1);
   await expect(page.locator(".project-page-wrap > .modal-backdrop")).toHaveCount(0);
   expect(await dispatchCancelableClick(page.locator("#alertChangeVCS .close"))).toBe(false);
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -677,7 +677,7 @@ test("project change-VCS POST failure hides modal and alerts the legacy error", 
   await page.goto(`${basePath}/admin/sample/changeVCS`);
   await page.locator("#acceptChangeVCS").check();
   await page.locator("#btnChangeVCS").click();
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide in/);
 
   const postResponsePromise = page.waitForResponse(
     (response) =>
@@ -696,7 +696,7 @@ test("project change-VCS POST failure hides modal and alerts the legacy error", 
   await dialogPromise;
 
   expect(changeVcsRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
-  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveClass(/modal hide/);
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);

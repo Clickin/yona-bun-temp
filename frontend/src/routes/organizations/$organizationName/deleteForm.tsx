@@ -261,14 +261,14 @@ function OrganizationDeleteFormBody({
         <OrganizationSettingMenu organizationName={organizationName} />
         <div
           {...actionBoxStyleProps}
-          className={actionBoxStyleProps.className}
+          className={`box-wrap bottom ${actionBoxStyleProps.className ?? ""}`.trim()}
           data-stylex-owner="organization-delete-action"
         >
           <button
             {...dangerActionStyleProps}
             id="btnDelete"
             type="button"
-            className={dangerActionStyleProps.className}
+            className={`ybtn ybtn-danger ${dangerActionStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-delete-action"
             onClick={openDeletionModal}
           >
@@ -278,19 +278,23 @@ function OrganizationDeleteFormBody({
 
         <div
           {...stylex.props(styles.modal, deletionModalOpen ? styles.modalOpen : styles.modalClosed)}
+          className={`modal hide${deletionModalOpen ? " in" : ""} ${stylex.props(styles.modal, deletionModalOpen ? styles.modalOpen : styles.modalClosed).className ?? ""}`.trim()}
           id="alertDeletion"
           data-stylex-owner="organization-delete-modal"
           aria-hidden={deletionModalWasOpened ? !deletionModalOpen : undefined}
+          style={
+            deletionModalWasOpened ? { display: deletionModalOpen ? "block" : "none" } : undefined
+          }
         >
           <div
             {...headerStyleProps}
-            className={headerStyleProps.className}
+            className={`modal-header ${headerStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-delete-modal-header"
           >
             <button
               {...closeStyleProps}
               type="button"
-              className={closeStyleProps.className}
+              className={`close ${closeStyleProps.className ?? ""}`.trim()}
               data-stylex-owner="organization-delete-modal-header"
               onClick={dismissDeletionModal}
             >
@@ -306,21 +310,21 @@ function OrganizationDeleteFormBody({
           </div>
           <div
             {...bodyStyleProps}
-            className={bodyStyleProps.className}
+            className={`modal-body ${bodyStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-delete-modal-body"
           >
             <p> {t("organization.delete.reaccept")} </p>
           </div>
           <div
             {...footerStyleProps}
-            className={footerStyleProps.className}
+            className={`modal-footer ${footerStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-delete-modal-footer"
           >
             <button
               {...dangerActionStyleProps}
               id="btnDeleteExec"
               type="button"
-              className={dangerActionStyleProps.className}
+              className={`ybtn ybtn-danger ${dangerActionStyleProps.className ?? ""}`.trim()}
               data-stylex-owner="organization-delete-modal-footer"
               onClick={() => deleteMutation.mutate()}
             >
@@ -329,7 +333,7 @@ function OrganizationDeleteFormBody({
             <button
               {...defaultActionStyleProps}
               type="button"
-              className={defaultActionStyleProps.className}
+              className={`ybtn ${defaultActionStyleProps.className ?? ""}`.trim()}
               data-stylex-owner="organization-delete-modal-footer"
               onClick={dismissDeletionModal}
             >
@@ -340,7 +344,7 @@ function OrganizationDeleteFormBody({
         {deletionModalOpen ? (
           <div
             {...backdropStyleProps}
-            className={backdropStyleProps.className}
+            className={`modal-backdrop fade in ${backdropStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-delete-modal-backdrop"
           />
         ) : null}

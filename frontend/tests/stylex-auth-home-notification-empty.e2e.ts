@@ -47,7 +47,8 @@ test("authenticated Home empty notification has bounded global-theme StyleX owne
   const markupEnd = route.indexOf("{notificationHasMore ?", markupStart);
   const markup = route.slice(route.lastIndexOf("<ul", markupStart), markupEnd);
   expect(markup).toContain("{...stylex.props(authenticatedHomeNotificationStyles.list)}");
-  expect(markup).not.toMatch(/\b(?:activity-streams|notification-wrap|unstyled|warning-none)\b/u);
+  expect(markup).toMatch(/\bactivity-streams notification-wrap unstyled\b/u);
+  expect(markup).toMatch(/\bwarning-none\b/u);
   expect(markup).toContain('data-stylex-owner="authenticated-home-notification-empty"');
   expect(markup).toContain('className="yobicon-danger"');
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams .warning-none {");
@@ -85,9 +86,9 @@ for (const viewport of [
     const list = page.locator(LIST);
     const empty = page.locator(EMPTY);
     await expect(list).toHaveCount(1);
-    await expect(list).not.toHaveClass(/\b(?:activity-streams|notification-wrap|unstyled)\b/u);
+    await expect(list).toHaveClass(/\b(?:activity-streams|notification-wrap|unstyled)\b/u);
     await expect(empty).toHaveCount(1);
-    await expect(empty).not.toHaveClass(/\bwarning-none\b/u);
+    await expect(empty).toHaveClass(/\bwarning-none\b/u);
     await expect(list.locator(`:scope > ${EMPTY}`)).toHaveCount(1);
     await expect(empty).toContainText("알림 메시지가 없습니다.");
     await expect(empty.locator(":scope > i.yobicon-danger")).toHaveCount(1);
@@ -154,7 +155,7 @@ test("authenticated Home notification list retires populated activity-stream fal
   await installAuthenticatedHome(page, true);
   await page.goto(`${BASE_PATH}/notifications`);
   const list = page.locator(LIST);
-  await expect(list).not.toHaveClass(/\bactivity-streams\b/u);
+  await expect(list).toHaveClass(/\bactivity-streams\b/u);
   await expect(
     list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
   ).toHaveCount(1);

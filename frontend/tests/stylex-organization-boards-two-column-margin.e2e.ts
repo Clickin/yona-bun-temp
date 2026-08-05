@@ -11,6 +11,7 @@ test.use({ locale: "en-US" });
 
 test("organization boards owns legacy mr10 on the two-column mode control", async ({ page }) => {
   const routeSource = readFileSync("src/routes/organizations/$organizationName/boards.tsx", "utf8");
+  const sharedComponentSource = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
   const legacyRoot = readFileSync(
     "../yona-original/app/views/organization/group_board_list.scala.html",
     "utf8",
@@ -104,12 +105,12 @@ test("organization boards owns legacy mr10 on the two-column mode control", asyn
   expect(twoColumnJs).toContain("$twoColumnMode.on('click'");
   expect(boardJs).toContain("_initTwoColumnMode();");
 
-  expect(routeSource).toContain('data-stylex-owner="organization-boards-two-column-anchor"');
+  expect(routeSource).toContain('anchorOwner="organization-boards-two-column-anchor"');
   expect(routeSource).toContain('twoColumnAnchor: { marginRight: "10px", position: "relative" }');
-  expect(routeSource).toContain("two-column-icon mr10 hide-in-mobile");
-  expect(routeSource).toContain('id="two-column-mode-checkbox"');
-  expect(routeSource).toContain('id="two-column-mode"');
-  expect(routeSource).toContain("common.two.column.mode.desc");
+  expect(sharedComponentSource).toContain("two-column-icon mr10 hide-in-mobile");
+  expect(sharedComponentSource).toContain('id="two-column-mode-checkbox"');
+  expect(sharedComponentSource).toContain('id="two-column-mode"');
+  expect(sharedComponentSource).toContain("common.two.column.mode.desc");
   expect(routeSource).not.toContain('data-toggle="popover"');
   expect(routeSource).not.toContain('data-trigger="hover"');
 

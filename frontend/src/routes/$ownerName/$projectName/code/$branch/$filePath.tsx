@@ -4,10 +4,173 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import hljs from "highlight.js";
-if (import.meta.env.DEV) {
-  // Load Highlight.js CSS only in development to avoid StyleX verification errors
-  import("highlight.js/styles/github.css");
+import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism-light";
+import { ghcolors } from "react-syntax-highlighter/dist/esm/styles/prism";
+import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
+import c from "react-syntax-highlighter/dist/esm/languages/prism/c";
+import cpp from "react-syntax-highlighter/dist/esm/languages/prism/cpp";
+import csharp from "react-syntax-highlighter/dist/esm/languages/prism/csharp";
+import css from "react-syntax-highlighter/dist/esm/languages/prism/css";
+import diff from "react-syntax-highlighter/dist/esm/languages/prism/diff";
+import docker from "react-syntax-highlighter/dist/esm/languages/prism/docker";
+import go from "react-syntax-highlighter/dist/esm/languages/prism/go";
+import groovy from "react-syntax-highlighter/dist/esm/languages/prism/groovy";
+import ini from "react-syntax-highlighter/dist/esm/languages/prism/ini";
+import java from "react-syntax-highlighter/dist/esm/languages/prism/java";
+import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
+import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
+import jsx from "react-syntax-highlighter/dist/esm/languages/prism/jsx";
+import kotlin from "react-syntax-highlighter/dist/esm/languages/prism/kotlin";
+import markdown from "react-syntax-highlighter/dist/esm/languages/prism/markdown";
+import markup from "react-syntax-highlighter/dist/esm/languages/prism/markup";
+import php from "react-syntax-highlighter/dist/esm/languages/prism/php";
+import properties from "react-syntax-highlighter/dist/esm/languages/prism/properties";
+import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
+import ruby from "react-syntax-highlighter/dist/esm/languages/prism/ruby";
+import rust from "react-syntax-highlighter/dist/esm/languages/prism/rust";
+import scala from "react-syntax-highlighter/dist/esm/languages/prism/scala";
+import scss from "react-syntax-highlighter/dist/esm/languages/prism/scss";
+import sql from "react-syntax-highlighter/dist/esm/languages/prism/sql";
+import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
+import typescript from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
+import yaml from "react-syntax-highlighter/dist/esm/languages/prism/yaml";
+
+SyntaxHighlighter.registerLanguage("bash", bash);
+SyntaxHighlighter.registerLanguage("c", c);
+SyntaxHighlighter.registerLanguage("cpp", cpp);
+SyntaxHighlighter.registerLanguage("csharp", csharp);
+SyntaxHighlighter.registerLanguage("css", css);
+SyntaxHighlighter.registerLanguage("diff", diff);
+SyntaxHighlighter.registerLanguage("docker", docker);
+SyntaxHighlighter.registerLanguage("go", go);
+SyntaxHighlighter.registerLanguage("groovy", groovy);
+SyntaxHighlighter.registerLanguage("ini", ini);
+SyntaxHighlighter.registerLanguage("java", java);
+SyntaxHighlighter.registerLanguage("javascript", javascript);
+SyntaxHighlighter.registerLanguage("json", json);
+SyntaxHighlighter.registerLanguage("jsx", jsx);
+SyntaxHighlighter.registerLanguage("kotlin", kotlin);
+SyntaxHighlighter.registerLanguage("markdown", markdown);
+SyntaxHighlighter.registerLanguage("xml", markup);
+SyntaxHighlighter.registerLanguage("php", php);
+SyntaxHighlighter.registerLanguage("properties", properties);
+SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("ruby", ruby);
+SyntaxHighlighter.registerLanguage("rust", rust);
+SyntaxHighlighter.registerLanguage("scala", scala);
+SyntaxHighlighter.registerLanguage("scss", scss);
+SyntaxHighlighter.registerLanguage("sql", sql);
+SyntaxHighlighter.registerLanguage("tsx", tsx);
+SyntaxHighlighter.registerLanguage("typescript", typescript);
+SyntaxHighlighter.registerLanguage("yaml", yaml);
+
+// The legacy code viewer renders the pre with route-scoped stylex geometry
+// (no inline style); the prism theme is applied only to token spans.
+const codeFileTheme = {
+  ...ghcolors,
+  'pre[class*="language-"]': {},
+  'code[class*="language-"]': {},
+};
+
+const MIME_TYPE_LANGUAGE: Record<string, string> = {
+  "text/javascript": "javascript",
+  "application/javascript": "javascript",
+  "application/x-javascript": "javascript",
+  "text/typescript": "typescript",
+  "application/typescript": "typescript",
+  "text/jsx": "jsx",
+  "text/tsx": "tsx",
+  "text/x-kotlin": "kotlin",
+  "text/x-java-source": "java",
+  "text/x-scala": "scala",
+  "text/x-python": "python",
+  "text/x-go": "go",
+  "text/x-rust": "rust",
+  "text/yaml": "yaml",
+  "application/yaml": "yaml",
+  "text/x-yaml": "yaml",
+  "application/json": "json",
+  "text/json": "json",
+  "application/xml": "xml",
+  "text/xml": "xml",
+  "text/markdown": "markdown",
+  "text/css": "css",
+  "text/x-scss": "scss",
+  "text/x-sql": "sql",
+  "text/x-sh": "bash",
+  "application/x-sh": "bash",
+  "text/x-shellscript": "bash",
+  "text/x-diff": "diff",
+  "text/x-groovy": "groovy",
+  "text/x-c": "c",
+  "text/x-c++": "cpp",
+  "text/x-csharp": "csharp",
+  "text/x-ruby": "ruby",
+  "text/x-php": "php",
+  "text/x-dockerfile": "docker",
+  "text/x-ini": "ini",
+  "text/x-properties": "properties",
+};
+
+const FILE_EXTENSION_LANGUAGE: Record<string, string> = {
+  cjs: "javascript",
+  js: "javascript",
+  mjs: "javascript",
+  cts: "typescript",
+  mts: "typescript",
+  ts: "typescript",
+  jsx: "jsx",
+  tsx: "tsx",
+  kt: "kotlin",
+  kts: "kotlin",
+  java: "java",
+  sc: "scala",
+  scala: "scala",
+  py: "python",
+  go: "go",
+  rs: "rust",
+  yaml: "yaml",
+  yml: "yaml",
+  json: "json",
+  html: "xml",
+  htm: "xml",
+  svg: "xml",
+  xml: "xml",
+  markdown: "markdown",
+  md: "markdown",
+  css: "css",
+  scss: "scss",
+  sql: "sql",
+  bash: "bash",
+  sh: "bash",
+  zsh: "bash",
+  diff: "diff",
+  patch: "diff",
+  gradle: "groovy",
+  groovy: "groovy",
+  c: "c",
+  h: "c",
+  cc: "cpp",
+  cpp: "cpp",
+  cxx: "cpp",
+  hh: "cpp",
+  hpp: "cpp",
+  cs: "csharp",
+  rb: "ruby",
+  php: "php",
+  dockerfile: "docker",
+  cfg: "ini",
+  ini: "ini",
+  properties: "properties",
+};
+
+function codeLanguage(mimeType: string, fileName: string): string | undefined {
+  const byMimeType = MIME_TYPE_LANGUAGE[mimeType.toLowerCase()];
+  if (byMimeType) {
+    return byMimeType;
+  }
+  const extension = fileName.slice(fileName.lastIndexOf(".") + 1).toLowerCase();
+  return FILE_EXTENSION_LANGUAGE[extension];
 }
 
 import {
@@ -25,7 +188,6 @@ import {
 } from "../../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
-import { codeBlameQueryOptions } from "../../../../../api/code";
 import { styles } from "./-code-file.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$filePath")({
@@ -414,7 +576,7 @@ function ProjectCodeFileBody({
           <div className="code-viewer-wrap">
             <div
               id="spin"
-              style={{ left: "50%", position: "fixed", top: "50%" }}
+              style={{ position: "fixed", top: "50%", left: "50%" }}
               data-stylex-owner="project-code-file-spinner"
             ></div>
             {isFolder ? (
@@ -621,8 +783,6 @@ function FileView({
 }) {
   const { t } = useLegacyMessages();
   const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
-  const [isBlameActive, setIsBlameActive] = React.useState(false);
-  const [copiedPermalink, setCopiedPermalink] = React.useState(false);
   const openBrowserWrapStyleProps = stylex.props(styles.openBrowserWrap);
   const commentCountStyleProps = stylex.props(styles.commentCount);
   const commitId = stringField(file.commitId, "");
@@ -632,11 +792,6 @@ function FileView({
   const authorLoginId = stringField(file.userLoginId, "");
   const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
   const fileText = stringField(file.data, "") || stringField(file.text, "");
-  const highlightedHtml = React.useMemo(() => {
-    if (!fileText) return "";
-    const result = hljs.highlightAuto(fileText);
-    return result.value;
-  }, [fileText]);
   const isBinary = booleanField(file.isBinary);
   const isTooLargeText = !isBinary && !hasViewableText && numberField(file.size) > 0;
   const mimeType = stringField(file.mimeType, "");
@@ -655,16 +810,6 @@ function FileView({
     "commits",
     encodeURIComponent(selectedBranch),
     filePath,
-  );
-
-  const blameQuery = useQuery(
-    codeBlameQueryOptions(runtimeConfig, {
-      branch: selectedBranch,
-      enabled: isBlameActive,
-      filePath,
-      ownerName,
-      projectName,
-    }),
   );
 
   return (
@@ -746,7 +891,7 @@ function FileView({
               {numberField(file.commentCount) > 0 ? (
                 <span
                   {...commentCountStyleProps}
-                  className={`${commentCountStyleProps.className} ml5`}
+                  className={`${commentCountStyleProps.className} number-of-comments ml5`}
                   data-stylex-owner="project-code-file-comment-count"
                 >
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}
@@ -769,42 +914,6 @@ function FileView({
         >
           {!isBinary ? (
             <>
-              <button
-                type="button"
-                {...stylex.props(styles.action)}
-                className={`${stylex.props(styles.action).className} ybtn${isBlameActive ? " active ybtn-info" : ""}`}
-                data-stylex-owner="project-code-file-blame-action"
-                onClick={() => setIsBlameActive(!isBlameActive)}
-              >
-                Blame
-              </button>
-              <button
-                type="button"
-                {...stylex.props(styles.action)}
-                className={`${stylex.props(styles.action).className} ybtn`}
-                data-stylex-owner="project-code-file-permalink-action"
-                title="Copy commit permalink"
-                onClick={() => {
-                  if (commitId) {
-                    const permalinkPath = projectPath(
-                      ownerName,
-                      projectName,
-                      "code",
-                      commitId,
-                      filePath,
-                    );
-                    const fullUrl = `${location.origin}${prefixBasePath(
-                      runtimeConfig.basePath,
-                      permalinkPath,
-                    )}`;
-                    navigator.clipboard.writeText(fullUrl).catch(() => {});
-                    setCopiedPermalink(true);
-                    setTimeout(() => setCopiedPermalink(false), 2000);
-                  }
-                }}
-              >
-                {copiedPermalink ? "Copied!" : "Permalink"}
-              </button>
               <Link
                 {...stylex.props(styles.action)}
                 to={rawPath}
@@ -861,7 +970,7 @@ function FileView({
             {isOpenInBrowserPopoverVisible ? (
               <div
                 {...stylex.props(styles.popover)}
-                className="popover top in"
+                className={`popover top in ${stylex.props(styles.popover).className ?? ""}`.trim()}
                 data-stylex-owner="project-code-file-open-popover"
                 role="tooltip"
               >
@@ -891,16 +1000,7 @@ function FileView({
           </Link>
         </div>
       </div>
-      {isBlameActive ? (
-        <BlameView
-          blame={blameQuery.data}
-          filePath={filePath}
-          isLoading={blameQuery.isLoading}
-          ownerName={ownerName}
-          projectName={projectName}
-          selectedBranch={selectedBranch}
-        />
-      ) : isBinary ? (
+      {isBinary ? (
         mimeType.startsWith("image/") ? (
           <div
             id="showImage"
@@ -959,111 +1059,21 @@ function FileView({
           <div id="codeVal" className="hidden">
             {fileText}
           </div>
-          <pre
+          <SyntaxHighlighter
+            language={codeLanguage(mimeType, filePath)}
+            style={codeFileTheme}
+            PreTag="pre"
             id="showCode"
             className={`${stylex.props(styles.code).className} code-wrap`}
-            data-stylex-owner="project-code-file-source"
             data-mimetype={mimeType}
-            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-          ></pre>
+            data-stylex-owner="project-code-file-source"
+            codeTagProps={{ className: "code-content" }}
+          >
+            {fileText}
+          </SyntaxHighlighter>
         </>
       )}
     </div>
-  );
-}
-
-function BlameView({
-  blame,
-  filePath,
-  isLoading,
-  ownerName,
-  projectName,
-  selectedBranch,
-}: {
-  blame?: {
-    lines: Array<{
-      authorAvatarUrl: string;
-      authorDate: string;
-      authorEmail: string;
-      authorName: string;
-      commitId: string;
-      commitMessage: string;
-      commitShortId: string;
-      content: string;
-      lineNumber: number;
-    }>;
-  };
-  filePath: string;
-  isLoading: boolean;
-  ownerName: string;
-  projectName: string;
-  selectedBranch: string;
-}) {
-  if (isLoading || !blame) {
-    return <div style={{ padding: "20px", textAlign: "center" }}>Loading blame data…</div>;
-  }
-
-  return (
-    <table {...stylex.props(styles.blameTable)} data-stylex-owner="project-code-blame-table">
-      <tbody>
-        {blame.lines.map((line, index) => {
-          const isFirstInBlock = index === 0 || blame.lines[index - 1].commitId !== line.commitId;
-          return (
-            <tr
-              key={line.lineNumber}
-              {...stylex.props(styles.blameRow)}
-              id={`L${line.lineNumber}`}
-              data-stylex-owner="project-code-blame-row"
-            >
-              <td
-                {...stylex.props(
-                  styles.blameMetaCell,
-                  isFirstInBlock ? styles.blameMetaCellHeader : undefined,
-                )}
-                data-stylex-owner="project-code-blame-meta"
-                title={`${line.authorName} (${line.authorEmail}): ${line.commitMessage}`}
-              >
-                {isFirstInBlock ? (
-                  <>
-                    {line.authorAvatarUrl ? (
-                      <img
-                        src={line.authorAvatarUrl}
-                        alt=""
-                        {...stylex.props(styles.blameAuthorAvatar)}
-                      />
-                    ) : null}
-                    <Link
-                      to="/$ownerName/$projectName/commit/$commitId"
-                      params={{ commitId: line.commitId, ownerName, projectName }}
-                      search={{ branch: selectedBranch, path: filePath }}
-                      {...stylex.props(styles.blameCommitLink)}
-                    >
-                      {line.commitShortId}
-                    </Link>
-                    <span {...stylex.props(styles.blameAuthorLink)}>{line.authorName}</span>
-                    <span {...stylex.props(styles.blameDate)}>{line.authorDate}</span>
-                  </>
-                ) : null}
-              </td>
-              <td
-                {...stylex.props(styles.lineNumberCell)}
-                data-stylex-owner="project-code-blame-linenumber"
-              >
-                <Link to="." hash={`L${line.lineNumber}`} {...stylex.props(styles.lineNumberLink)}>
-                  {line.lineNumber}
-                </Link>
-              </td>
-              <td
-                {...stylex.props(styles.lineContentCell)}
-                data-stylex-owner="project-code-blame-content"
-              >
-                {line.content}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
   );
 }
 

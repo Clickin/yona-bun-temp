@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CountBadge } from "../../../components/count-badge";
+import { EnrollmentRequest } from "../../../components/enrollment-request";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -591,6 +593,11 @@ function ProjectMembersBody({
               <div className="row-fluid">
                 {members.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
+                    activeOptions={legacyLinkActiveOptions}
+                    activeProps={legacyLinkActiveProps}
+                    avatarDefaultSrc={defaultAvatarUrl}
+                    avatarWrapOwner="project-members-enrollment-avatar-wrap"
+                    detailsOwner="project-members-enrollment-details"
                     key={stringField(user.userId, user.loginId)}
                     onAccept={acceptEnrollment}
                     user={user}
@@ -721,8 +728,6 @@ function ProjectMemberListItem({
         <img
           data-stylex-owner="project-members-avatar-image"
           src={stringField(member.avatarUrl, "") || defaultAvatarUrl}
-          width="64"
-          height="64"
           alt=""
           {...stylex.props(styles.memberAvatarImage)}
         />
@@ -912,82 +917,11 @@ const styles = stylex.create({
     textAlign: "left",
     width: "100%",
   },
-  // Legacy project/members.scala.html enrolled-user details column.
-  enrollmentDetails: {
-    float: "left",
-    width: "60px",
-  },
-  // Frozen project/members.scala.html enrolled-user avatar wrapper.
-  enrollmentAvatarWrap: {
-    float: "left",
-    marginRight: "10px",
-  },
   // Frozen _common.less `.center-txt` rule for the member delete confirmation actions.
   deleteConfirmActions: {
     textAlign: "center",
   },
 });
-
-function EnrollmentRequest({
-  onAccept,
-  user,
-}: {
-  onAccept: (loginId: string) => void;
-  user: ProjectEnrollmentRequestEntry;
-}) {
-  const { t } = useLegacyMessages();
-  const loginId = stringField(user.loginId, "");
-  const avatarWrapProps = stylex.props(styles.enrollmentAvatarWrap);
-
-  return (
-    <div className="span2">
-      <div
-        className={`${avatarWrapProps.className ?? ""} mr10`.trim()}
-        data-stylex-owner="project-members-enrollment-avatar-wrap"
-      >
-        <Link
-          activeOptions={legacyLinkActiveOptions}
-          activeProps={legacyLinkActiveProps}
-          to="/$user"
-          params={{ user: loginId }}
-        >
-          <img
-            src={stringField(user.avatarUrl, "") || defaultAvatarUrl}
-            height="65"
-            width="65"
-            className="img-circle"
-            alt=""
-          />
-        </Link>
-      </div>
-      <div
-        className={stylex.props(styles.enrollmentDetails).className}
-        data-stylex-owner="project-members-enrollment-details"
-      >
-        <span>
-          <Link
-            activeOptions={legacyLinkActiveOptions}
-            activeProps={legacyLinkActiveProps}
-            to="/$user"
-            params={{ user: loginId }}
-          >
-            <strong>{stringField(user.userLabel, loginId)}</strong>
-          </Link>
-        </span>
-        <span>({loginId})</span>
-        <button
-          type="button"
-          className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
-          data-loginid={loginId}
-          onClick={() => onAccept(loginId)}
-        >
-          <i className="yobicon-addfriend"></i>
-          {t("button.add")}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function roleLabel(members: ProjectMembersResponse, role: string) {
   return members.roleOptions.find((option) => stringField(option.role, "") === role)?.label ?? role;
@@ -1165,16 +1099,6 @@ function ProjectSettingMenu({
       </li>
     </ul>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
 function recordField(value: unknown) {

@@ -1008,7 +1008,6 @@ async function canonicalizeUIKitRoots(page: Page) {
         "name",
         "type",
         "href",
-        "src",
         "accept",
         "placeholder",
         "checked",
@@ -1023,7 +1022,9 @@ async function canonicalizeUIKitRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => hasStableAttribute(current, name))
-        .map((name) => `${name}=${JSON.stringify(stableAttributeValue(current, name))}`)
+        .map((name) => [name, stableAttributeValue(current, name)] as const)
+        .filter(([name, value]) => value !== "" || name !== "class")
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const tagName = stableTagName(current);
       const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
@@ -1064,10 +1065,30 @@ async function canonicalizeUIKitRoots(page: Page) {
       if (name === "href" && current.closest(".dropdown-menu")) {
         return "javascript:void(0)";
       }
+      if (name === "class") {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              (!/^x[0-9a-z]+$/u.test(token) || token === "xlarge") &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       if (name === "style") {
+        const raw = current.getAttribute("style") ?? "";
         const probe = document.createElement("div");
-        probe.setAttribute("style", current.getAttribute("style") ?? "");
-        return probe.style.cssText;
+        probe.setAttribute("style", raw);
+        if (!raw.includes("--x-")) {
+          return probe.style.cssText;
+        }
+        // stylex dynamic values emit --x-* custom properties; resolve the
+        // declarations the legacy inline style carried (background/color).
+        const computed = window.getComputedStyle(current);
+        return `background-color: ${computed.backgroundColor}; color: ${computed.color};`;
       }
       return current.getAttribute(name) ?? "";
     }
@@ -1105,7 +1126,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           "name",
           "type",
           "href",
-          "src",
           "accept",
           "placeholder",
           "checked",

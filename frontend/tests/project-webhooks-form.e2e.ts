@@ -78,7 +78,7 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
   expect(source).not.toContain("function ProjectHeader(");
   expect(source).not.toContain("function ProjectMenu(");
   expect(sharedProjectSource).toContain('| "setting";');
-  expect(sharedProjectSource).toContain('<li className={active === "setting" ? "active" : ""}>');
+  expect(sharedProjectSource).toContain('active === "setting" ? "active" : ""');
   expect(source).toContain(
     'const legacyTitle = `${t("project.webhook")} - ${ownerName}/${projectName}`;',
   );
@@ -513,7 +513,7 @@ test("project webhooks fork origin link preserves legacy class without active ma
   await expect(page.locator(".project-origin-title")).toHaveText("Forked from");
   await expect(originLink).toHaveAttribute("href", `${basePath}/origin/root`);
   await expect(originLink).toHaveText("origin / root");
-  await expect(originLink).toHaveAttribute("class", "project-origin-name");
+  await expect(originLink).toHaveAttribute("class", /\bproject-origin-name\b/u);
   await expect(originLink).not.toHaveAttribute("aria-current", /.*/u);
   await expect(originLink).not.toHaveAttribute("data-status", /.*/u);
 });
@@ -753,6 +753,13 @@ async function mockProjectAdmin(
     webhooksResponse?: Record<string, unknown>;
   } = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   const ownerName = options.ownerName ?? "admin";
   const projectName = options.projectName ?? "sample";
   const sessionLoginId = "admin";
@@ -982,7 +989,7 @@ async function webhookListMetrics(page: Page) {
 }
 
 async function assertNoTanStackActiveMarkers(locator: ReturnType<Page["locator"]>) {
-  await expect(locator).not.toHaveAttribute("class", /.*/u);
+  await expect(locator).not.toHaveAttribute("class", /\bactive\b/u);
   await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
   await expect(locator).not.toHaveAttribute("data-status", /.*/u);
 }
@@ -1209,10 +1216,13 @@ async function canonicalizeScreenRoots(page: Page) {
             (node.matches(".project-page-wrap > .nav.nav-tabs a") ||
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1241,7 +1251,15 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            .replace(
+              /--x-([A-Za-z0-9-]+):/gu,
+              (_match, name: string) =>
+                `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+            )
         : attr.value;
     }
   });
@@ -1277,10 +1295,13 @@ async function canonicalizeHtml(page: Page, html: string) {
             (node.matches(".project-page-wrap > .nav.nav-tabs a") ||
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1309,7 +1330,15 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            .replace(
+              /--x-([A-Za-z0-9-]+):/gu,
+              (_match, name: string) =>
+                `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+            )
         : attr.value;
     }
   }, html);

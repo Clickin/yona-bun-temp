@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useState, type MouseEvent, type SyntheticEvent } from "react";
@@ -805,17 +807,6 @@ const paginationDisabledLabelStyleProps = stylex.props(
   styles.paginationLabel,
   styles.paginationLabelDisabled,
 );
-const sidebarNavStyleProps = stylex.props(styles.sidebarNav);
-const sidebarItemStyleProps = stylex.props(styles.sidebarItem);
-const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarItemFirst);
-const sidebarActiveItemStyleProps = stylex.props(
-  styles.sidebarItem,
-  styles.sidebarItemFirst,
-  styles.sidebarItemActive,
-);
-const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
-const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarLinkActive);
-const sidebarNotificationBadgeStyleProps = stylex.props(styles.sidebarNotificationBadge);
 const stateTabNumericBadgeStyleProps = stylex.props(styles.stateTabNumericBadge);
 const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
 const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
@@ -1015,7 +1006,28 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               {...settingSidebarColumnStyleProps}
               data-stylex-owner="site-user-list-setting-sidebar-column"
             >
-              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
+              <SiteAdminSidebar
+                activeTo="/sites/userList"
+                badgeOwner="site-user-list-sidebar-notification-badge"
+                baseLinkProps={LEGACY_SITE_SETTING_NAV_LINK_PROPS}
+                dataSelected="active-only"
+                navOwner="site-user-list-sidebar-nav"
+                ownerPrefix="site-user-list-sidebar"
+                showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [
+                    styles.sidebarItem,
+                    styles.sidebarItemFirst,
+                    styles.sidebarItemActive,
+                  ],
+                  activeLink: [styles.sidebarLink, styles.sidebarLinkActive],
+                  badge: [styles.sidebarNotificationBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarItemFirst],
+                  item: [styles.sidebarItem],
+                  link: [styles.sidebarLink],
+                  nav: [styles.sidebarNav],
+                }}
+              />
             </div>
             <div
               {...settingContentColumnStyleProps}
@@ -1398,52 +1410,6 @@ function UserListPagination({
   );
 }
 
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  const items = [
-    { active: true, label: "site.sidebar.userList", to: "/sites/userList", update: false },
-    { active: false, label: "site.sidebar.postList", to: "/sites/postList", update: false },
-    { active: false, label: "site.sidebar.issueList", to: "/sites/issueList", update: false },
-    { active: false, label: "site.sidebar.projectList", to: "/sites/projectList", update: false },
-    { active: false, label: "site.sidebar.mailSend", to: "/sites/mail", update: false },
-    { active: false, label: "site.sidebar.massMail", to: "/sites/massmail", update: false },
-    { active: false, label: "site.sidebar.update", to: "/sites/update", update: true },
-    { active: false, label: "site.sidebar.diagnostics", to: "/sites/diagnostic", update: false },
-  ] as const;
-  return (
-    <ul {...sidebarNavStyleProps} data-stylex-owner="site-user-list-sidebar-nav">
-      {items.map((item, index) => (
-        <li
-          {...(item.active
-            ? sidebarActiveItemStyleProps
-            : index === 0
-              ? sidebarFirstItemStyleProps
-              : sidebarItemStyleProps)}
-          data-selected={item.active ? "true" : undefined}
-          data-stylex-owner="site-user-list-sidebar-item"
-          key={item.to}
-        >
-          <Link
-            {...LEGACY_SITE_SETTING_NAV_LINK_PROPS}
-            {...(item.active ? sidebarActiveLinkStyleProps : sidebarLinkStyleProps)}
-            data-stylex-owner="site-user-list-sidebar-link"
-            to={item.to}
-          >
-            <LegacyMessage messageKey={item.label} />
-            {item.update && showUpdateBadge ? (
-              <span
-                {...sidebarNotificationBadgeStyleProps}
-                data-stylex-owner="site-user-list-sidebar-notification-badge"
-              >
-                1
-              </span>
-            ) : null}
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function UserStateTabs({
   currentState,
   siteAdminCount,
@@ -1752,9 +1718,4 @@ function RequestWaitingAlert({
 
 function isSiteUserState(value: unknown): value is SiteUserState {
   return typeof value === "string" && USER_STATES.includes(value as SiteUserState);
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }

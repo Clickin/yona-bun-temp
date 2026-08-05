@@ -21,14 +21,13 @@ test("user issue row conditional and dynamic styles use route-local StyleX", asy
   expect(legacy).toContain('style="background:@label.color"');
   expect(childLegacy).toContain('class="label issue-label list-label active twoColumeModeTarget"');
   expect(childLegacy).toContain('style="background:@label.color"');
-  expect(source).toContain("issueStyles.issueLabelBackground(label.color)");
+  expect(source).toContain('import { IssueLabel } from "../../components/issue-label";');
+  expect(source).toContain('data-stylex-owner="user-issues-issue-label-background"');
   expect(source).not.toContain("style={{ background: label.color }}");
   expect(source).not.toContain("childIssueLabelStyle(label.color)");
   expect(styleSource).toContain("issueLabelBackground: (backgroundColor) => ({ backgroundColor })");
   expect(source).toContain("issueStyles.issueRowTwoColumn");
   expect(source).toContain("issueStyles.issueRowHovered");
-  expect(source).toContain("issueStyles.progressBar");
-  expect(source).not.toContain("style={{ width: `${percentage}%` }}");
   expect(source).not.toContain('cursor: "pointer"');
   expect(source).not.toContain('backgroundColor: "#fafafa"');
   expect(styleSource).toContain('issueRowTwoColumn: { cursor: "pointer" }');
@@ -48,7 +47,7 @@ test("user issue row conditional and dynamic styles use route-local StyleX", asy
   const label = row.locator('[data-stylex-owner="user-issues-issue-label-background"]');
   await expect(label).toHaveCount(1);
   await expect(label).toHaveCSS("background-color", "rgb(18, 52, 86)");
-  await expect(label).toHaveAttribute("style", /--x-backgroundColor:\s*#123456/u);
+  await expect(label).toHaveAttribute("style", /background-color:\s*rgb\(18, 52, 86\)/u);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "commit" });

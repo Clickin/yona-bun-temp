@@ -323,15 +323,12 @@ test("site admin diagnostics renders legacy update notification badge", async ({
 
 test("site admin diagnostics sidebar uses typed route Links without a route-local generic adapter", async () => {
   const source = readFileSync("src/routes/sites/diagnostic.tsx", "utf8");
+  const sidebarSource = readFileSync("src/components/site-admin-sidebar.tsx", "utf8");
   expect(source).toContain('<title>{t("title.siteSetting")}</title>');
   expect(source).not.toContain("useLegacySiteDiagnosticDocumentTitle");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain('globalThis["document"]');
   expect(source).not.toMatch(/useEffect\s*\(/u);
-  expect(source).not.toContain("LegacyInternalLink");
-  expect(source).not.toContain("AnchorHTMLAttributes");
-  expect(source).not.toContain("ComponentType");
-  expect(source).not.toContain("to={item.href}");
   expect(source).toContain(
     "<SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>",
   );
@@ -340,7 +337,11 @@ test("site admin diagnostics sidebar uses typed route Links without a route-loca
     'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
   );
   expect(source).toContain("const legacyDiagnosticSidebarSearch = {");
-  expect(source).toContain("search={legacyDiagnosticSidebarSearch}");
+  expect(source).toContain("search: legacyDiagnosticSidebarSearch");
+  expect(sidebarSource).not.toContain("LegacyInternalLink");
+  expect(sidebarSource).not.toContain("AnchorHTMLAttributes");
+  expect(sidebarSource).not.toContain("ComponentType");
+  expect(sidebarSource).not.toContain("to={item.href}");
 });
 
 async function diagnosticNavbarMetrics(page: Page) {

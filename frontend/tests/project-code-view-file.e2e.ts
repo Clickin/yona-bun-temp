@@ -50,8 +50,8 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
-  await expect(searchBox).not.toHaveClass(/\bselect\b/);
+  await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
+  await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
     .poll(() =>
@@ -170,7 +170,7 @@ test("project code file comment count owns legacy spacing and color in StyleX", 
   const commentCount = page.locator('[data-stylex-owner="project-code-file-comment-count"]');
   await expect(commentCount).toHaveText("2");
   await expect(commentCount).toHaveClass(/ml5/u);
-  await expect(commentCount).not.toHaveClass(/number-of-comments/u);
+  await expect(commentCount).toHaveClass(/number-of-comments/u);
   await expect(commentCount).toHaveCSS("margin-left", "5px");
   await expect(commentCount).toHaveCSS("margin-right", "8px");
   await expect(commentCount).toHaveCSS("color", "rgb(102, 102, 102)");
@@ -299,10 +299,10 @@ test("project code file internal links keep legacy hrefs and navigate through th
   );
   await expect(archiveDownloadLink).not.toHaveAttribute("target", /.+/u);
   await expect(archiveDownloadLink).toHaveText("Download as .zip file");
-  await expect(rawLink).toHaveAttribute("class", "ybtn");
+  await expect(rawLink).toHaveClass(/ybtn/u);
   await expect(rawLink).toHaveAttribute("target", "_blank");
   await expect(rawLink).toContainText("Raw");
-  await expect(page.locator("#open-in-browser")).toHaveAttribute("class", "ybtn");
+  await expect(page.locator("#open-in-browser")).toHaveClass(/ybtn/u);
   await expect(page.locator("#open-in-browser")).toHaveAttribute("target", "_blank");
   await expect(page.locator("#open-in-browser")).toContainText("Open in browser");
 
@@ -633,7 +633,9 @@ test("project code file route source keeps backend links as reload-document Link
   expect(routeSource).not.toContain("href={rawHref}");
   expect(routeSource).not.toContain("href={openHref}");
   expect(routeSource).toContain("isOpenInBrowserPopoverVisible");
-  expect(routeSource).toContain('className="popover top in"');
+  expect(routeSource).toContain(
+    'className={`popover top in ${stylex.props(styles.popover).className ?? ""}`.trim()}',
+  );
   expect(routeSource).toContain('className="popover-content"');
   expect(routeSource).not.toContain('data-content={t("code.open.desc")}');
   expect(routeSource).not.toContain('data-toggle="popover"');
@@ -659,7 +661,7 @@ test("project code file route source keeps backend links as reload-document Link
     "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
   );
   expect(routeSource).toContain(
-    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+    "function projectSearchScopeOrganizationName(\n  project: ProjectContainer | undefined,\n  ownerName: string,",
   );
   expect(directLegacyLinkActiveProps).toHaveLength(13);
   expect(directLegacyLinkActiveOptions).toHaveLength(13);
@@ -1215,7 +1217,9 @@ async function canonicalize(page: Page, selector: string) {
               attr.name !== "data-content",
           )
           .sort((left, right) => left.name.localeCompare(right.name))
-          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+          .filter(([name, value]) => !(name === "class" && value === ""))
+          .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
           .join(" ");
         return attrs ? `<pre ${attrs}></pre>` : "<pre></pre>";
       }
@@ -1231,7 +1235,9 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "data-style-src",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1286,7 +1292,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-style-src",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

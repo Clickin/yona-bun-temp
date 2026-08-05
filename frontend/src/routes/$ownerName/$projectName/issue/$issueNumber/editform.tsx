@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { UploadForm } from "../../../../../components/file-uploader";
+import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-input";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
   useState,
+  use,
   type InputHTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
@@ -15,6 +18,7 @@ import { readProjectContainerQueryOptions } from "../../../../../api/org-project
 import type { ProjectContainer, YoramRecord } from "../../../../../api/types";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { TabButton } from "../../../../../components/tab-button";
+import { IssueDueDateInput } from "../../../../../components/issue-due-date-input";
 import {
   listIssueParentOptions,
   readIssueDetail,
@@ -24,7 +28,9 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
+import { ProjectNestedShellContext } from "../../../$projectName";
 import { styles } from "./-issue-editform.stylex";
 
 const sx = {
@@ -90,6 +96,7 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
     queryKey: ["project", ownerName, projectName, "issues", "parent-options", numericIssueNumber],
   });
   const editTitle = <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>;
+  const nestedProjectShell = use(ProjectNestedShellContext);
 
   if (restApiErrorStatus(issueQuery.error) === 404) {
     const notFoundContent = (
@@ -99,11 +106,17 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
       </>
     );
 
-    return notFoundContent;
+    if (nestedProjectShell) {
+      return notFoundContent;
+    }
+    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{notFoundContent}</SiteLayoutShell>;
   }
 
   if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
-    return editTitle;
+    if (nestedProjectShell) {
+      return editTitle;
+    }
+    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{editTitle}</SiteLayoutShell>;
   }
 
   const editContent = (
@@ -222,6 +235,7 @@ function ProjectIssueEditFormBody({
     (issue.labels ?? []).map((label) => stringField(label.id, "")),
   );
   const dueDateRef = useRef<HTMLInputElement>(null);
+  const dueDatePickerRef = useRef<HTMLInputElement>(null);
   const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
 
   function toggleSubtaskOption() {
@@ -287,9 +301,13 @@ function ProjectIssueEditFormBody({
   }
 
   return (
-    <div {...sx.page} data-stylex-owner="issue-editform-page">
-      <div data-stylex-owner="issue-editform-shell">
-        <div data-stylex-owner="issue-editform-content">
+    <div
+      {...sx.page}
+      className={`${sx.page.className ?? ""} page-wrap-outer`}
+      data-stylex-owner="issue-editform-page"
+    >
+      <div className="project-page-wrap">
+        <div className="content-wrap frm-wrap" data-stylex-owner="issue-editform-shell">
           <form
             action={prefixBasePath(
               runtimeConfig.basePath,
@@ -351,6 +369,7 @@ function ProjectIssueEditFormBody({
                           name="title"
                           defaultValue={stringField(issue.title, "")}
                           {...sx.title}
+                          className={`text title ${sx.title.className ?? ""}`}
                           data-stylex-owner="issue-editform-title"
                           maxLength={250}
                           placeholder={t("title")}
@@ -384,7 +403,11 @@ function ProjectIssueEditFormBody({
               <div className="row-fluid">
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd {...sx.editorPositioned} data-stylex-owner="issue-editform-editor-wrapper">
+                    <dd
+                      {...sx.editorPositioned}
+                      style={{ position: "relative" }}
+                      data-stylex-owner="issue-editform-editor-wrapper"
+                    >
                       <IssueEditMarkdownEditor
                         focusRequest={bodyFocusRequest}
                         value={stringField(issue.bodyMarkdown, "")}
@@ -392,9 +415,23 @@ function ProjectIssueEditFormBody({
                     </dd>
                   </dl>
 
-                  <IssuePostFileUploader resourceId={stringField(issue.issueId, "")} />
+                  <UploadForm
+                    resourceType="ISSUE_POST"
+                    wrapperId="upload"
+                    resourceId={stringField(issue.issueId, "")}
+                    pasteHelpFixedStyleProps={{ style: sx.pasteHelp.style }}
+                    pasteHelpOwner="issue-editform-paste-help"
+                    helpClassName="right-txt help"
+                    helpStyleProps={{ style: sx.uploadHelp.style }}
+                    helpStyleFirst={false}
+                    helpOwner="issue-editform-upload-help"
+                  />
 
-                  <div {...sx.actions} data-stylex-owner="issue-editform-actions">
+                  <div
+                    {...sx.actions}
+                    className={`actrow right-txt ${sx.actions.className ?? ""}`}
+                    data-stylex-owner="issue-editform-actions"
+                  >
                     {showNotification ? (
                       <span className="send-notification-check">
                         <label className="checkbox inline">
@@ -415,6 +452,7 @@ function ProjectIssueEditFormBody({
                           type="submit"
                           id="button-draft-publish"
                           {...sx.save}
+                          className={`ybtn ybtn-info ${sx.save.className ?? ""}`}
                           data-stylex-owner="issue-editform-draft-publish"
                           title={draftPublishDescription}
                           onClick={handleDraftPublishClick}
@@ -425,6 +463,7 @@ function ProjectIssueEditFormBody({
                           type="button"
                           id="draft-save-btn"
                           {...sx.save}
+                          className={`ybtn ybtn-watching draft-save-btn ${sx.save.className ?? ""}`}
                           data-stylex-owner="issue-editform-draft-save"
                           title={draftSaveDescription}
                           onClick={(event) => {
@@ -440,6 +479,7 @@ function ProjectIssueEditFormBody({
                         type="submit"
                         id="button-save"
                         {...sx.save}
+                        className={`ybtn ybtn-info ${sx.save.className ?? ""}`}
                         data-stylex-owner="issue-editform-save"
                         onClick={() => {
                           submitIntentRef.current = "save";
@@ -448,7 +488,7 @@ function ProjectIssueEditFormBody({
                         {t("button.save")}
                       </button>
                     )}
-                    <button type="button" onClick={() => router.history.back()}>
+                    <button type="button" className="ybtn" onClick={() => router.history.back()}>
                       {t("button.cancel")}
                     </button>
                   </div>
@@ -464,13 +504,14 @@ function ProjectIssueEditFormBody({
                     <dd>
                       <input
                         type="hidden"
-                        className="bigdrop"
                         id="assignee"
                         name="assigneeLoginId"
                         placeholder={t("issue.noAssignee")}
                         value={assigneeLoginId}
                         readOnly
                         {...sx.assigneeInput}
+                        className={`bigdrop ${sx.assigneeInput.className ?? ""}`}
+                        style={{ width: "100%" }}
                         data-stylex-owner="issue-editform-assignee-input"
                       />
                       <LegacyEditSingleSelect
@@ -521,17 +562,13 @@ function ProjectIssueEditFormBody({
                     <dt>{t("issue.dueDate")}</dt>
                     <dd>
                       <div className="search search-bar">
-                        <input
-                          type="text"
-                          id="issueDueDate"
-                          name="dueDate"
-                          className="textbox full"
+                        <IssueDueDateInput
+                          ownerPrefix="project-issue-edit-form"
+                          inputId="issueDueDate"
+                          dueDateRef={dueDateRef}
+                          datePickerRef={dueDatePickerRef}
                           defaultValue={stringField(issueRecord.dueDateLabel, "")}
-                          ref={dueDateRef}
                         />
-                        <button type="button" className="search-btn btn-calendar">
-                          <i className="yobicon-calendar2"></i>
-                        </button>
                       </div>
                     </dd>
                   </dl>
@@ -969,13 +1006,14 @@ function LegacyEditLabelSelect({
     const labelId = stringField(label.id, "");
     if (!selectedLabelIds.has(labelId)) continue;
     const labelName = stringField(label.name, "");
+    const labelStyle = stylex.props(styles.labelBackground(stringField(label.color, "")));
     selectedLabelElements.push(
       <li className="select2-search-choice" key={labelId}>
         <div>
           <strong
-            className="label issue-label active static"
             data-label-id={labelId}
-            {...stylex.props(styles.labelBackground(stringField(label.color, "")))}
+            {...labelStyle}
+            className={`label issue-label active static ${labelStyle.className ?? ""}`}
           >
             {labelName}
           </strong>
@@ -1016,19 +1054,6 @@ function activateEditControl(event: KeyboardEvent<HTMLElement>, activate: () => 
     event.preventDefault();
     activate();
   }
-}
-
-function LegacyTabIndexInput({
-  focusRequest = 0,
-  ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (focusRequest > 0) {
-      inputRef.current?.focus();
-    }
-  }, [focusRequest]);
-  return <input ref={inputRef} {...props} />;
 }
 
 function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number; value: string }) {
@@ -1091,8 +1116,9 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
         </li>
       </ul>
       <div
-        className="tab-content"
         {...sx.editorTabContent}
+        className={`tab-content ${sx.editorTabContent.className ?? ""}`}
+        style={{ position: "relative", overflow: "visible" }}
         data-stylex-owner="issue-editform-editor-tab-content"
       >
         <LegacyMarkdownHelp />
@@ -1122,40 +1148,6 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
           <span className="notification-receiver-list"></span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function IssuePostFileUploader({ resourceId }: { resourceId: string }) {
-  const { t } = useLegacyMessages();
-  return (
-    <div
-      id="upload"
-      className="upload-wrap content-footer"
-      data-resource-type="ISSUE_POST"
-      data-resource-id={resourceId}
-    >
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span
-          className="help help-pastable"
-          {...sx.pasteHelp}
-          data-stylex-owner="issue-editform-paste-help"
-        >
-          {t("common.attach.pastehere")}
-        </span>
-      </div>
-      <ul className="attached-files unstyled"></ul>
-      <p className="help" {...sx.uploadHelp} data-stylex-owner="issue-editform-upload-help">
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
     </div>
   );
 }

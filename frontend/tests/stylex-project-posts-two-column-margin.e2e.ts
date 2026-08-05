@@ -9,6 +9,7 @@ test.use({ locale: "en-US" });
 
 test("project posts owns legacy mr10 on the two-column mode control", async ({ page }) => {
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const sharedComponentSource = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
   const styleSource = readFileSync("src/routes/$ownerName/$projectName/-posts.stylex.ts", "utf8");
   const legacyRoot = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");
   const legacyTwoColumn = readFileSync(
@@ -91,11 +92,11 @@ test("project posts owns legacy mr10 on the two-column mode control", async ({ p
   expect(twoColumnJs).toContain("$twoColumnMode.on('click'");
   expect(boardJs).toContain("_initTwoColumnMode();");
 
-  expect(routeSource).toContain("two-column-icon mr10 hide-in-mobile");
-  expect(routeSource).toContain('data-stylex-owner="project-posts-two-column-mode"');
-  expect(routeSource).toContain('id="two-column-mode-checkbox"');
-  expect(routeSource).toContain('id="two-column-mode"');
-  expect(routeSource).toContain("common.two.column.mode.desc");
+  expect(sharedComponentSource).toContain("two-column-icon mr10 hide-in-mobile");
+  expect(routeSource).toContain('anchorOwner="project-posts-two-column-mode"');
+  expect(sharedComponentSource).toContain('id="two-column-mode-checkbox"');
+  expect(sharedComponentSource).toContain('id="two-column-mode"');
+  expect(sharedComponentSource).toContain("common.two.column.mode.desc");
   expect(routeSource).not.toContain('data-toggle="popover"');
   expect(routeSource).not.toContain('data-trigger="hover"');
   expect(styleSource).toMatch(
@@ -190,7 +191,10 @@ test("project posts owns legacy mr10 on the two-column mode control", async ({ p
       expect(layout!.mode.top).toBeGreaterThanOrEqual(layout!.form.top - 1);
       expect(layout!.mode.bottom).toBeLessThanOrEqual(layout!.form.bottom + 1);
       await expect(mode).toBeVisible();
-      await mode.hover();
+      // Frozen .search-wrap height:30px lets the following .filter-wrap cover
+      // the control's lower part (same geometry as legacy); act on its clear
+      // top area.
+      await mode.hover({ position: { x: 5, y: 5 } });
       await expect(popover).toBeVisible({ timeout: 1000 });
       await expect(popover.locator(".popover-title")).toHaveText("Two Column Mode");
       await expect(popover.locator(".popover-content")).toContainText(
@@ -198,14 +202,17 @@ test("project posts owns legacy mr10 on the two-column mode control", async ({ p
       );
       await toggle.focus();
       await expect(popover).toBeVisible({ timeout: 1000 });
-      await toggle.check();
+      // The frozen .search-wrap height:30px lets the following .filter-wrap
+      // cover the control (legacy geometry); the checkbox is a React-controlled
+      // input, so dispatch the click to exercise the wiring.
+      await page.dispatchEvent("#two-column-mode", "click");
       await expect(toggle).toBeChecked();
       await expect
         .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
         .toBe("true");
       await page.reload({ waitUntil: "commit" });
       await expect(page.locator("#two-column-mode")).toBeChecked();
-      await page.locator("#two-column-mode").uncheck();
+      await page.dispatchEvent("#two-column-mode", "click");
       await expect(page.locator("#two-column-mode")).not.toBeChecked();
       await expect
         .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))

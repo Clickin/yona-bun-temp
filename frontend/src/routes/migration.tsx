@@ -340,8 +340,6 @@ function MigrationRoute() {
 }
 
 function MigrationScreen() {
-  const { t } = useLegacyMessages();
-
   return (
     <div
       className={`yobi-migration ${migrationDisabledShellStyleProps.className}`}
@@ -349,163 +347,192 @@ function MigrationScreen() {
       data-stylex-page-owner="migration-page"
     >
       <div className="header-pannel" data-stylex-owner="migration-layout">
+        <MigrationComebackHeader />
+        <MigrationSourceDestinationGrid />
+      </div>
+    </div>
+  );
+}
+
+function MigrationComebackHeader() {
+  const { t } = useLegacyMessages();
+  return (
+    <>
+      <div
+        className={`comeback-text pull-right ${comebackClassName}`}
+        data-stylex-part="migration-disabled-comeback"
+      >
+        Yona to Github
+        <span className={`midium-font ${comebackDetailClassName}`} />
+      </div>
+      <div className={`row title-text-bg ${titleTextBgClassName}`}>
+        <div id="system-msg" className={`well board ${boardClassName}`}>
+          <div className="messages" data-stylex-owner="migration-notice">
+            {t("error.forbidden.or.not.allowed")}
+          </div>
+        </div>
+      </div>
+      <div className="status">
+        <div className={`row ${headerRowClassName}`}>
+          <div className={`head-title row-fluid ${headTitleClassName}`}>
+            <div className={`source-title span5 ${sourceTitleClassName}`}>
+              <div className={`project-name warn ${projectWarnClassName}`}>
+                Source 프로젝트를 선택해 주세요
+              </div>
+            </div>
+            <div className={`arrow span1 ${arrowClassName}`}>
+              <i className={`yobicon-arrow-right-alt ${arrowIconClassName}`} />
+            </div>
+            <div className={`destination-title span6 ${destinationTitleClassName}`}>
+              <div className={`project-name warn ${projectWarnClassName}`}>
+                Destination 프로젝트를 선택해 주세요
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function MigrationProjectPane({
+  side,
+  tabIndex,
+}: {
+  side: "source" | "destination";
+  tabIndex: number;
+}) {
+  const isSource = side === "source";
+  const content = (
+    <>
+      <div className={`header ${paneHeaderClassName}`}>
+        {isSource ? "Source 0 개" : "Destination 0 개"}
+      </div>
+      <div
+        className={isSource ? `search left-border ${searchClassName}` : `search ${searchClassName}`}
+      >
+        <input
+          tabIndex={tabIndex}
+          type="text"
+          className={`search-query ${searchInputClassName}`}
+          name="target-filter"
+          placeholder="Search.."
+          disabled
+        />
+      </div>
+      {isSource ? (
+        <div className={`left-project-list ${projectListClassName}`} />
+      ) : (
         <div
-          className={`comeback-text pull-right ${comebackClassName}`}
-          data-stylex-part="migration-disabled-comeback"
-        >
-          Yona to Github
-          <span className={`midium-font ${comebackDetailClassName}`} />
-        </div>
-        <div className={`row title-text-bg ${titleTextBgClassName}`}>
-          <div id="system-msg" className={`well board ${boardClassName}`}>
-            <div className="messages" data-stylex-owner="migration-notice">
-              {t("error.forbidden.or.not.allowed")}
-            </div>
-          </div>
-        </div>
-        <div className="status">
-          <div className={`row ${headerRowClassName}`}>
-            <div className={`head-title row-fluid ${headTitleClassName}`}>
-              <div className={`source-title span5 ${sourceTitleClassName}`}>
-                <div className={`project-name warn ${projectWarnClassName}`}>
-                  Source 프로젝트를 선택해 주세요
-                </div>
+          className={`destination-project-list ${projectListClassName} ${destinationProjectListClassName}`}
+        />
+      )}
+    </>
+  );
+  return isSource ? (
+    <div
+      className={`source-project span4 ${sourceColumnClassName}`}
+      data-stylex-owner="migration-source-column-grid"
+    >
+      {content}
+    </div>
+  ) : (
+    <div
+      className={`destination-project span4 ${destinationColumnClassName}`}
+      data-stylex-owner="migration-destination-column-grid"
+    >
+      {content}
+    </div>
+  );
+}
+
+function MigrationStatusTable() {
+  return (
+    <>
+      <table className={`table ${statusTableClassName}`}>
+        <thead>
+          <tr>
+            <th className={statusTableHeaderCellClassName} colSpan={2}>
+              Migration 대상
+            </th>
+            <th className={statusTableHeaderCellClassName} />
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className={`left-title ${leftTitleCellClassName}`}>마일스톤</td>
+            <td className={`left-title ${leftTitleCellClassName}`}>0</td>
+            <td className={statusTableDataCellClassName}>
+              <div className={`btn-group ${buttonGroupClassName}`}>
+                <button className={`btn btn-danger ${disabledDangerButtonClassName}`} disabled>
+                  마일스톤 옮기기
+                </button>
               </div>
-              <div className={`arrow span1 ${arrowClassName}`}>
-                <i className={`yobicon-arrow-right-alt ${arrowIconClassName}`} />
+            </td>
+          </tr>
+          <tr>
+            <td className={`left-title ${leftTitleCellClassName}`}>이슈</td>
+            <td className={`left-title ${leftTitleCellClassName}`}>
+              <span>0</span>
+            </td>
+            <td className={statusTableDataCellClassName}>
+              <div className={`btn-group ${buttonGroupClassName}`}>
+                <button className={`btn btn-danger ${disabledDangerButtonClassName}`} disabled>
+                  이슈 옮기기
+                </button>
               </div>
-              <div className={`destination-title span6 ${destinationTitleClassName}`}>
-                <div className={`project-name warn ${projectWarnClassName}`}>
-                  Destination 프로젝트를 선택해 주세요
-                </div>
+            </td>
+          </tr>
+          <tr>
+            <td className={`left-title ${leftTitleCellClassName}`}>게시글</td>
+            <td className={`left-title ${leftTitleCellClassName}`}>
+              <span>0</span>
+            </td>
+            <td className={statusTableDataCellClassName}>
+              <div className={`btn-group ${buttonGroupClassName}`}>
+                <button className={`btn btn-danger ${disabledDangerButtonClassName}`} disabled>
+                  게시글 옮기기
+                </button>
               </div>
-            </div>
-          </div>
-        </div>
-        <div
-          className={`row source-destination ${sourceDestinationClassName}`}
-          data-stylex-owner="migration-source-destination-row"
-        >
+            </td>
+          </tr>
+          <tr>
+            <td className={`td-title left-title ${cautionTitleCellClassName}`}>주의 사항!!</td>
+            <td colSpan={2} className={`text-align-left ${cautionCellClassName}`}>
+              <div className={`caution ${cautionClassName}`}>
+                작업 시작전에 Yona to Githbub 마이그레이션 가이드를 꼭 읽어주세요.
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div className={`left-title ${leftTitleClassName}`}>기존 이슈 담당자</div>
+      <div />
+    </>
+  );
+}
+
+function MigrationSourceDestinationGrid() {
+  return (
+    <div
+      className={`row source-destination ${sourceDestinationClassName}`}
+      data-stylex-owner="migration-source-destination-row"
+    >
+      <MigrationProjectPane side="source" tabIndex={1} />
+      <MigrationProjectPane side="destination" tabIndex={2} />
+      <div
+        className={`span6 status ${statusColumnClassName}`}
+        data-stylex-owner="migration-status-column-grid"
+      >
+        <div className={`progress row ${progressClassName}`}>
           <div
-            className={`source-project span4 ${sourceColumnClassName}`}
-            data-stylex-owner="migration-source-column-grid"
+            className={`bar span10 bar-danger ${progressBarClassName}`}
+            data-stylex-owner="migration-progress-bar"
           >
-            <div className={`header ${paneHeaderClassName}`}>Source 0 개</div>
-            <div className={`search left-border ${searchClassName}`}>
-              <input
-                tabIndex={1}
-                type="text"
-                className={`search-query ${searchInputClassName}`}
-                name="target-filter"
-                placeholder="Search.."
-                disabled
-              />
-            </div>
-            <div className={`left-project-list ${projectListClassName}`} />
-          </div>
-          <div
-            className={`destination-project span4 ${destinationColumnClassName}`}
-            data-stylex-owner="migration-destination-column-grid"
-          >
-            <div className={`header ${paneHeaderClassName}`}>Destination 0 개</div>
-            <div className={`search ${searchClassName}`}>
-              <input
-                type="text"
-                tabIndex={2}
-                className={`search-query ${searchInputClassName}`}
-                name="target-filter"
-                placeholder="Search.."
-                disabled
-              />
-            </div>
-            <div
-              className={`destination-project-list ${projectListClassName} ${destinationProjectListClassName}`}
-            />
-          </div>
-          <div
-            className={`span6 status ${statusColumnClassName}`}
-            data-stylex-owner="migration-status-column-grid"
-          >
-            <div className={`progress row ${progressClassName}`}>
-              <div
-                className={`bar span10 bar-danger ${progressBarClassName}`}
-                data-stylex-owner="migration-progress-bar"
-              >
-                0/0
-              </div>
-            </div>
-            <table className={`table ${statusTableClassName}`}>
-              <thead>
-                <tr>
-                  <th className={statusTableHeaderCellClassName} colSpan={2}>
-                    Migration 대상
-                  </th>
-                  <th className={statusTableHeaderCellClassName} />
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className={`left-title ${leftTitleCellClassName}`}>마일스톤</td>
-                  <td className={`left-title ${leftTitleCellClassName}`}>0</td>
-                  <td className={statusTableDataCellClassName}>
-                    <div className={`btn-group ${buttonGroupClassName}`}>
-                      <button
-                        className={`btn btn-danger ${disabledDangerButtonClassName}`}
-                        disabled
-                      >
-                        마일스톤 옮기기
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className={`left-title ${leftTitleCellClassName}`}>이슈</td>
-                  <td className={`left-title ${leftTitleCellClassName}`}>
-                    <span>0</span>
-                  </td>
-                  <td className={statusTableDataCellClassName}>
-                    <div className={`btn-group ${buttonGroupClassName}`}>
-                      <button
-                        className={`btn btn-danger ${disabledDangerButtonClassName}`}
-                        disabled
-                      >
-                        이슈 옮기기
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className={`left-title ${leftTitleCellClassName}`}>게시글</td>
-                  <td className={`left-title ${leftTitleCellClassName}`}>
-                    <span>0</span>
-                  </td>
-                  <td className={statusTableDataCellClassName}>
-                    <div className={`btn-group ${buttonGroupClassName}`}>
-                      <button
-                        className={`btn btn-danger ${disabledDangerButtonClassName}`}
-                        disabled
-                      >
-                        게시글 옮기기
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className={`td-title left-title ${cautionTitleCellClassName}`}>
-                    주의 사항!!
-                  </td>
-                  <td colSpan={2} className={`text-align-left ${cautionCellClassName}`}>
-                    <div className={`caution ${cautionClassName}`}>
-                      작업 시작전에 Yona to Githbub 마이그레이션 가이드를 꼭 읽어주세요.
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div className={`left-title ${leftTitleClassName}`}>기존 이슈 담당자</div>
-            <div />
+            0/0
           </div>
         </div>
+        <MigrationStatusTable />
       </div>
     </div>
   );

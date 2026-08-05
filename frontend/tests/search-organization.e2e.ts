@@ -436,6 +436,13 @@ async function mockOrganizationSearch(
 ) {
   const apiCalls = { count: 0 };
 
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   await page.route("**/api/v1/session", async (route) => {
     const session = options.anonymousSession
       ? {
@@ -636,15 +643,30 @@ async function screenRootClassNames(page: Page) {
       ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
     )
     .evaluateAll((roots) =>
-      roots.map((root) =>
-        root.getAttribute("data-stylex-owner") === "site-footer" &&
-        !root.classList.contains("page-footer-outer")
+      roots.map((root) => {
+        if (root.getAttribute("data-stylex-owner") === "global-gnb-outer") {
+          const hasProjectVariant = Array.from(root.classList).some((token) =>
+            token.endsWith("globalGnbOuterStyles.project"),
+          );
+          return hasProjectVariant ? "gnb-outer project-header" : "gnb-outer";
+        }
+        return root.getAttribute("data-stylex-owner") === "site-footer" &&
+          !root.classList.contains("page-footer-outer")
           ? "site-footer"
-          : root.className,
-      ),
+          : Array.from(root.classList)
+              .filter(
+                (token) =>
+                  token &&
+                  token !== "gray-txt" &&
+                  token !== "right-txt" &&
+                  !/^x[0-9a-z]+$/u.test(token) &&
+                  !token.includes("__"),
+              )
+              .join(" ");
+      }),
     );
 }
 
 function expectedHomeHref(basePath: string) {
-  return basePath === "/" ? "/" : basePath.replace(/\/$/u, "");
+  return basePath === "/" ? "/" : basePath.replace(/\/?$/u, "/");
 }

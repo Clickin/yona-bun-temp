@@ -15,7 +15,7 @@ test("missing svn README renders the legacy project code not-found state", async
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("코드");
   await expect(page.locator(".code-browse-wrap")).toHaveCount(0);
   const error = page.locator(".page-wrap-outer .error-wrap");
-  await expect(error.locator("i")).toHaveClass("ico ico-err2");
+  await expect(error.locator("i")).toHaveClass(/ico ico-err2/);
   await expect(error.locator("p")).toHaveText(
     "main 브랜치가 없습니다. 기본 브랜치 설정을 확인해 주세요.",
   );

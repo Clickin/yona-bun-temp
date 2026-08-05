@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 
 test("public user profile renders legacy info and stream owners", async ({ page }) => {
   const source = await readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
+  const sharedComponentSource = await readFile(
+    new URL("../src/components/two-column-mode-checkbox.tsx", import.meta.url),
+    "utf8",
+  );
   const legacy = await readFile(
     new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
     "utf8",
@@ -34,7 +38,8 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   expect(source).not.toContain('style={{ margin: "0px 5px", verticalAlign: "bottom" }}');
   expect(twoColumnLegacy).toContain('class="two-column-icon mr10 hide-in-mobile"');
   expect(subtasksLegacy).toContain('class="show-subtasks mr10"');
-  expect(source).toContain('data-stylex-owner="user-profile-two-column-popover-anchor"');
+  expect(source).toContain('anchorOwner="user-profile-two-column-popover-anchor"');
+  expect(sharedComponentSource).toContain("data-stylex-owner={anchorOwner}");
   expect(source).toContain('data-stylex-owner="user-profile-show-subtasks-popover-anchor"');
   expect(source).not.toContain('style={{ position: "relative" }}');
   expect(styleSource).toContain('popoverAnchor: { marginRight: "10px", position: "relative" }');

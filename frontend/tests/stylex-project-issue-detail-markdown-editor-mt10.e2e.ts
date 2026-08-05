@@ -118,10 +118,10 @@ test("issue detail comment markdown editor owns legacy mt10 wrapper", async ({ p
     expect(legacySources.yobiLess).toContain(`@import "less/${importedFile}";`);
   }
 
-  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-markdown-editor-wrapper"');
-  expect(routeSource).toContain("data-stylex-owner-instance={wrapId}");
+  expect(routeSource).toContain('wrapperOwner: "project-issue-detail-markdown-editor-wrapper"');
+  expect(routeSource).toContain("wrapperInstance: wrapId");
   expect(routeSource).toContain(
-    'className={`mt10 markdown-editor ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}',
+    '`mt10 markdown-editor ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()',
   );
   expect(routeSource).not.toContain('style={{ marginTop: "10px" }}');
   expect(styleSource).toContain('markdownEditorWrapper: { marginTop: "10px" }');

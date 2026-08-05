@@ -374,7 +374,7 @@ test("project statistics header renders legacy watch dropdown and toggles projec
   const urlBeforeWatchDropdown = page.url();
 
   await watchButton.click();
-  await expect(page.locator(".project-util > li")).toHaveClass("open");
+  await expect(page.locator(".project-util > li")).toHaveClass(/open/);
   await expect(page.locator(".project-util .watch-btn")).toHaveClass(
     "btn-group dropdown watch-btn open",
   );
@@ -398,7 +398,7 @@ test("project statistics header renders legacy watch dropdown and toggles projec
   await expect.poll(() => projectWatchDropdownBubbleClicks(page)).toEqual([]);
 
   await watchButton.click();
-  await expect(page.locator(".project-util > li")).toHaveClass("open");
+  await expect(page.locator(".project-util > li")).toHaveClass(/open/);
   await expect(page.locator(".project-util .watch-btn")).toHaveClass(
     "btn-group dropdown watch-btn open",
   );

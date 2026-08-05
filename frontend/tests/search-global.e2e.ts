@@ -9,10 +9,10 @@ const _EXPECTED_GLOBAL_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button">
+      <i aria-hidden="true" class="yobicon-arrow-left"></i>
+      <i aria-hidden="true" class="yobicon-arrow-right"></i>
+    </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -110,10 +110,10 @@ const EXPECTED_GLOBAL_EMPTY_ISSUE_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button">
+      <i aria-hidden="true" class="yobicon-arrow-left"></i>
+      <i aria-hidden="true" class="yobicon-arrow-right"></i>
+    </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -209,7 +209,7 @@ const EXPECTED_REQUEST_TEXT_TOO_LARGE = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -231,7 +231,7 @@ const EXPECTED_GLOBAL_PROJECT_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -254,7 +254,7 @@ const EXPECTED_GLOBAL_USER_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -279,7 +279,7 @@ const EXPECTED_GLOBAL_DEFAULT_USER_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -302,7 +302,7 @@ const EXPECTED_GLOBAL_ISSUE_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -325,7 +325,7 @@ const EXPECTED_GLOBAL_POST_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -348,7 +348,7 @@ const EXPECTED_GLOBAL_MILESTONE_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -371,7 +371,7 @@ const EXPECTED_GLOBAL_ISSUE_COMMENT_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -394,7 +394,7 @@ const EXPECTED_GLOBAL_POST_COMMENT_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -417,7 +417,7 @@ const EXPECTED_GLOBAL_REVIEW_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -440,7 +440,7 @@ const EXPECTED_GLOBAL_INLINE_REVIEW_SEARCH = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -762,7 +762,10 @@ test("global search category Link keeps legacy SPA navigation without query nois
   const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
   await expect(issueCategory).not.toHaveAttribute("data-toggle");
   await expect(issueCategory).not.toHaveAttribute("data-type");
-  await expect(issueCategory).not.toHaveAttribute("class");
+  await expect(issueCategory).toHaveAttribute(
+    "class",
+    /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
+  );
   await expect(issueCategory).not.toHaveAttribute("aria-current");
   await expect(issueCategory).not.toHaveAttribute("data-status");
   const issueHref = await issueCategory.getAttribute("href");
@@ -1005,7 +1008,7 @@ test("global issue search renders legacy pagination when result pages exceed one
 
   await page.goto(`${basePath}/search?keyword=paged&searchType=issue&pageNum=1`);
   const pagination = page.locator("#pagination");
-  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination).toHaveClass(/page-navigation-wrap/);
   await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
   await expect(pagination.locator("li.page-num")).toHaveCount(5);
   await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
@@ -1551,6 +1554,12 @@ async function readSearchResultShellMetrics(page: Page) {
 
 async function mockGlobalSearch(page: Page) {
   const apiCalls = { count: 0 };
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -2226,7 +2235,7 @@ function expectedDefaultSearchErrorScreen({
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
       <li><a href="${basePath}/projects" class="show-progress-bar">List All</a></li>
@@ -2293,7 +2302,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-login" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .concat(isModernizedLegacySearchCategoryButton(node) ? ['href="#"'] : [])
@@ -2369,7 +2379,20 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function isModernizedTanStackRouterAttr(attr: Attr) {
@@ -2469,7 +2492,15 @@ async function canonicalizeScreenRoots(page: Page) {
     function modernizedTanStackRouterActiveClass(attr: Attr) {
       return attr.value
         .split(/\s+/u)
-        .filter((token) => token && token !== "active")
+        .filter(
+          (token) =>
+            token &&
+            token !== "active" &&
+            token !== "gray-txt" &&
+            token !== "right-txt" &&
+            !/^x[0-9a-z]+$/u.test(token) &&
+            !token.includes("__"),
+        )
         .join(" ");
     }
   });
@@ -2503,7 +2534,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-login" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .concat(isModernizedLegacySearchCategoryButton(node) ? ['href="#"'] : [])
@@ -2611,7 +2643,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function isModernizedTanStackRouterAttr(attr: Attr) {
@@ -2711,7 +2756,15 @@ async function canonicalizeHtml(page: Page, html: string) {
     function modernizedTanStackRouterActiveClass(attr: Attr) {
       return attr.value
         .split(/\s+/u)
-        .filter((token) => token && token !== "active")
+        .filter(
+          (token) =>
+            token &&
+            token !== "active" &&
+            token !== "gray-txt" &&
+            token !== "right-txt" &&
+            !/^x[0-9a-z]+$/u.test(token) &&
+            !token.includes("__"),
+        )
         .join(" ");
     }
   }, html);

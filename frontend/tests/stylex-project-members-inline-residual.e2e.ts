@@ -9,7 +9,7 @@ test("project members moves residual inline actions into colocated StyleX owners
 }) => {
   const source = readFileSync(routeSource, "utf8");
   expect(source).toContain('data-stylex-owner="project-members-suggestion-action"');
-  expect(source).toContain('data-stylex-owner="project-members-enrollment-details"');
+  expect(source).toContain('detailsOwner="project-members-enrollment-details"');
   expect(source).not.toContain('style={{\n                          background: "transparent"');
   expect(source).not.toContain('style={{ width: "60px" }}');
 

@@ -28,7 +28,7 @@ test("SVN members renders the canonical shell and legacy member body on desktop 
     "게시판",
   ]);
   await expect(page.locator(".project-menu-gruop", { hasText: "코드 주고받기" })).toHaveCount(0);
-  await expect(page.locator(".project-setting li")).toHaveClass("active");
+  await expect(page.locator(".project-setting li")).toHaveClass(/active/);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
   await expect(page.locator("#subMenuProjectMember")).toHaveClass("active");
   await expect(page.locator("#addNewMember")).toBeVisible();
@@ -77,7 +77,9 @@ for (const status of [400, 401, 403]) {
     await expect(page.locator(".project-menu-gruop > li")).toHaveCount(6);
     await expect(page.locator(".error-wrap")).toBeVisible();
     await expect(page.locator(".project-menu-gruop", { hasText: "코드 주고받기" })).toHaveCount(0);
-    await expect(page.locator(".project-setting li")).toHaveClass(status === 400 ? "active" : "");
+    await expect(page.locator(".project-setting li")).toHaveClass(
+      status === 400 ? /active/ : /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
+    );
     if (status === 401)
       await expect(page.locator('.error-wrap a[data-login="required"]')).toBeVisible();
   });

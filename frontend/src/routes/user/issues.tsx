@@ -251,7 +251,11 @@ function UserIssuesBody({
 
   return (
     <div className="page-wrap-outer" data-stylex-owner="user-issues-page">
-      <div {...stylex.props(issueStyles.page)} data-stylex-owner="user-issues-shell">
+      <div
+        {...stylex.props(issueStyles.page)}
+        className={`page-wrap ${stylex.props(issueStyles.page).className}`}
+        data-stylex-owner="user-issues-shell"
+      >
         <MySeriesMenuTabs
           hideDefaultLoginPageButton={isDefaultLoginPageSet}
           onSetDefaultLoginPage={(path) => setDefaultLoginPage.mutate(path)}
@@ -282,15 +286,18 @@ function UserIssuesBody({
                 <input type="hidden" name="favoriteId" value={activeFilterIds.favoriteId} />
                 <div
                   {...stylex.props(issueStyles.searchWrapper)}
+                  className={`search myissues-search-input ${stylex.props(issueStyles.searchWrapper).className}`}
                   data-stylex-owner="user-issues-search-wrapper"
                 >
                   <div
                     {...stylex.props(issueStyles.searchBar)}
+                    className={`search-bar ${stylex.props(issueStyles.searchBar).className}`}
                     data-stylex-owner="user-issues-search-bar"
                   >
                     <input
                       name="filter"
                       {...stylex.props(issueStyles.searchInput)}
+                      className={`textbox full ${stylex.props(issueStyles.searchInput).className}`}
                       data-stylex-owner="user-issues-search-input"
                       type="text"
                       placeholder={t("issue.search")}
@@ -298,6 +305,7 @@ function UserIssuesBody({
                     />
                     <button
                       {...stylex.props(issueStyles.searchButton)}
+                      className={`search-btn ${stylex.props(issueStyles.searchButton).className}`}
                       data-stylex-owner="user-issues-search-button"
                       type="submit"
                     >
@@ -309,7 +317,11 @@ function UserIssuesBody({
             </div>
           </div>
           <div className="span10 span-hard-wrap" id="span10">
-            <ul {...stylex.props(issueStyles.tabs)} data-stylex-owner="user-issues-tabs">
+            <ul
+              {...stylex.props(issueStyles.tabs)}
+              className={`nav nav-tabs nm ${stylex.props(issueStyles.tabs).className}`}
+              data-stylex-owner="user-issues-tabs"
+            >
               <StateTab
                 active={search.state === "open"}
                 count={issues.openIssueCount}
@@ -334,8 +346,8 @@ function UserIssuesBody({
                 />
               </li>
               <li
-                className="show-subtasks-li"
                 {...stylex.props(issueStyles.controlsListItem)}
+                className={`show-subtasks-li ${stylex.props(issueStyles.controlsListItem).className}`}
                 data-stylex-owner="user-issues-subtasks-list-item"
               >
                 <ShowSubtasksCheckbox
@@ -525,6 +537,7 @@ function IssuePagination({
             {...paginationInput}
             className={`${paginationInput.className} input-mini nospinner`}
             defaultValue={currentPage}
+            key={currentPage}
             max={totalPages}
             min={1}
             name="pageNum"
@@ -693,12 +706,12 @@ function MySeriesMenuTabs({
           activeProps={legacyTabActiveProps}
           to="/user/issues"
           search={{
-            filter: "assigned",
-            orderBy: "updatedDate",
-            orderDir: "desc",
-            pageNum: 1,
-            query: "",
-            state: "open",
+            filter: undefined!,
+            orderBy: undefined!,
+            orderDir: undefined!,
+            pageNum: undefined!,
+            query: undefined!,
+            state: undefined!,
           }}
         >
           {t("issue.myIssue")}
@@ -737,14 +750,14 @@ function MySeriesMenuTabs({
         </button>
         {isDefaultLoginPagePopoverVisible && !hideDefaultLoginPageButton ? (
           <div
-            className="popover bottom"
-            role="tooltip"
             {...stylex.props(issueStyles.defaultLoginPagePopover)}
             data-stylex-owner="user-issues-default-login-popover"
           >
-            <div className="arrow" />
-            <h3 className="popover-title">{defaultLoginPageTitle}</h3>
-            <div className="popover-content">{defaultLoginPageContent}</div>
+            <div className="popover bottom" role="tooltip">
+              <div className="arrow" />
+              <h3 className="popover-title">{defaultLoginPageTitle}</h3>
+              <div className="popover-content">{defaultLoginPageContent}</div>
+            </div>
           </div>
         ) : null}
       </li>
@@ -894,7 +907,8 @@ function IssueFilters({
   return (
     <div className="filter-wrap small-heights">
       <div
-        className={`${stylex.props(issueStyles.filters).className} filters`}
+        {...stylex.props(issueStyles.filters)}
+        className={`filters pull-right ${stylex.props(issueStyles.filters).className}`}
         data-stylex-owner="user-issues-filters"
       >
         {filters.map((filter) => {
@@ -959,6 +973,7 @@ function UserIssueItem({
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const childListVisible = showSubtasksAlways || isChildListVisible;
   const legacyIssueRowAttrs = {
     className: "post-item title",
     href: issueHref,
@@ -1001,17 +1016,24 @@ function UserIssueItem({
           <span className="title-cell">
             {issueWeight > 0 ? (
               <span className="weight-up-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
-                <i className="yobicon-angle-circled-up"></i>
+                <i
+                  {...stylex.props(issueStyles.weightUpArrow)}
+                  className={`yobicon-angle-circled-up ${stylex.props(issueStyles.weightUpArrow).className}`}
+                ></i>
               </span>
             ) : null}
             {issueWeight < 0 ? (
               <span className="weight-down-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
-                <i className="yobicon-angle-circled-down"></i>
+                <i
+                  {...stylex.props(issueStyles.weightDownArrow)}
+                  className={`yobicon-angle-circled-down ${stylex.props(issueStyles.weightDownArrow).className}`}
+                ></i>
               </span>
             ) : null}
             <Link
               to={issueRoutePath}
               {...stylex.props(issueStyles.issueTitle)}
+              className={`title ${stylex.props(issueStyles.issueTitle).className}`}
               data-stylex-owner="user-issues-issue-title"
               onClick={(event) => {
                 event.stopPropagation();
@@ -1026,21 +1048,9 @@ function UserIssueItem({
             {issue.labels.map((label) => (
               <IssueLabel
                 as={Link}
-                to="/$ownerName/$projectName/issues"
-                params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
-                search={{
-                  state: "open",
-                  assigneeId: "",
-                  authorId: "",
-                  commenterId: "",
-                  dueDate: "",
-                  filter: "",
-                  labelIds: [String(label.id)],
-                  milestoneId: "",
-                  orderBy: "updatedDate",
-                  orderDir: "desc",
-                  pageNum: 1,
-                }}
+                to={
+                  `/${issue.ownerName}/${issue.projectName}/issues?state=open&labelIds=${label.id}` as "/"
+                }
                 className={`label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 color={label.color}
                 labelId={label.id}
@@ -1051,14 +1061,13 @@ function UserIssueItem({
               </IssueLabel>
             ))}
             <div
-              {...(showSubtasksAlways || isChildListVisible
-                ? stylex.props(issueStyles.childIssueListVisible)
-                : undefined)}
+              {...(childListVisible ? stylex.props(issueStyles.childIssueListVisible) : undefined)}
               className={`child-issue-list hide ${
-                showSubtasksAlways || isChildListVisible
+                childListVisible
                   ? (stylex.props(issueStyles.childIssueListVisible).className ?? "")
                   : ""
               }`.trim()}
+              style={childListVisible ? { display: "block" } : undefined}
               data-stylex-owner="user-issues-child-list-visible"
             >
               <UserIssueChildRows issue={issue} />
@@ -1103,7 +1112,7 @@ function UserIssueItem({
             ) : null}
             {issue.dueDateLabel ? (
               <span
-                className={`${stylex.props(issueStyles.dueDate).className}${issue.dueDateOverdue ? " overdue" : ""}`}
+                className={`pull-right ${stylex.props(issueStyles.dueDate).className}${issue.dueDateOverdue ? " overdue" : ""}`}
                 title={`Due date: ${issue.dueDateLabel}`}
                 data-stylex-owner="user-issues-due-date"
               >
@@ -1207,7 +1216,6 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
   const childOpenCount = issue.childOpenCount ?? 0;
   const childTotalCount = childClosedCount + childOpenCount;
   const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
-  const progressBarStyleProps = stylex.props(issueStyles.progressBar(`${percentage}%`));
   const parentIssueNumber = stringField(issue.parentIssueNumber, "");
   const parentIssueTitle = issue.parentIssueTitle ?? "";
 
@@ -1216,18 +1224,31 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
       {childTotalCount ? (
         <>
           <div
+            {...stylex.props(
+              issueStyles.subtaskProgress,
+              percentage === 100
+                ? issueStyles.subtaskProgressDone
+                : issueStyles.subtaskProgressOpen,
+            )}
             className={`subtask-progress upload-progress ${
               percentage === 100 ? "done-outline" : "red-outline"
-            }`}
+            } ${stylex.props(issueStyles.subtaskProgress, percentage === 100 ? issueStyles.subtaskProgressDone : issueStyles.subtaskProgressOpen).className}`}
           >
             <div
-              {...progressBarStyleProps}
-              className={`bar ${percentage === 100 ? "done" : "red"} ${progressBarStyleProps.className ?? ""}`.trim()}
+              {...stylex.props(
+                issueStyles.subtaskProgressBar,
+                percentage === 100
+                  ? issueStyles.subtaskProgressDoneBar
+                  : issueStyles.subtaskProgressOpenBar,
+              )}
+              className={`${stylex.props(issueStyles.subtaskProgressBar, percentage === 100 ? issueStyles.subtaskProgressDoneBar : issueStyles.subtaskProgressOpenBar).className} bar ${percentage === 100 ? "done" : "red"}`}
+              style={{ width: `${percentage}%` }}
               title="Subtask"
             ></div>
           </div>
           <span
-            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+            {...stylex.props(issueStyles.subtaskProgressRatio)}
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""} ${stylex.props(issueStyles.subtaskProgressRatio).className}`}
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {childTotalCount}
@@ -1300,21 +1321,7 @@ function UserIssueChildRow({
           labelId={String(label.id)}
           key={String(label.id)}
           data-stylex-owner="user-issues-child-issue-label-background"
-          to="/$ownerName/$projectName/issues"
-          params={{ ownerName, projectName }}
-          search={{
-            state: "open",
-            assigneeId: "",
-            authorId: "",
-            commenterId: "",
-            dueDate: "",
-            filter: "",
-            labelIds: [String(label.id)],
-            milestoneId: "",
-            orderBy: "updatedDate",
-            orderDir: "desc",
-            pageNum: 1,
-          }}
+          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${label.id}` as "/"}
         >
           {label.name}
         </IssueLabel>
@@ -1490,7 +1497,10 @@ function TwoColumnModeCheckbox({
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label className="checkbox" {...stylex.props(issueStyles.modeControlLabel)}>
+      <label
+        {...stylex.props(issueStyles.modeControlLabel)}
+        className={`checkbox ${stylex.props(issueStyles.modeControlLabel).className}`}
+      >
         <div
           {...borderProps}
           className={`two-column-icon-border${checked ? " two-column-icon-selected" : ""} ${borderProps.className ?? ""}`.trim()}
@@ -1518,14 +1528,14 @@ function TwoColumnModeCheckbox({
       {isPopoverVisible ? (
         <div
           {...stylex.props(issueStyles.twoColumnPopover)}
-          className={`${stylex.props(issueStyles.twoColumnPopover).className} popover top`}
-          role="tooltip"
           data-stylex-owner="user-issues-two-column-popover"
         >
-          <div className="arrow" />
-          <h3 className="popover-title">{popoverTitle}</h3>
-          <div className="popover-content">
-            <p>{popoverContent}</p>
+          <div className="popover top" role="tooltip">
+            <div className="arrow" />
+            <h3 className="popover-title">{popoverTitle}</h3>
+            <div className="popover-content">
+              <p>{popoverContent}</p>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1591,7 +1601,10 @@ function ShowSubtasksCheckbox({
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label className="checkbox" {...stylex.props(issueStyles.modeControlLabel)}>
+      <label
+        {...stylex.props(issueStyles.modeControlLabel)}
+        className={`checkbox ${stylex.props(issueStyles.modeControlLabel).className}`}
+      >
         <div
           {...borderProps}
           className={`show-subtasks-button-border${checked ? " show-subtasks-selected" : ""} ${borderProps.className ?? ""}`.trim()}
@@ -1619,13 +1632,13 @@ function ShowSubtasksCheckbox({
       {isPopoverVisible ? (
         <div
           {...stylex.props(issueStyles.showSubtasksPopover)}
-          className={`${stylex.props(issueStyles.showSubtasksPopover).className} popover top`}
-          role="tooltip"
           data-stylex-owner="user-issues-show-subtasks-popover"
         >
-          <div className="arrow" />
-          <h3 className="popover-title">{popoverTitle}</h3>
-          <div className="popover-content">{popoverContent}</div>
+          <div className="popover top" role="tooltip">
+            <div className="arrow" />
+            <h3 className="popover-title">{popoverTitle}</h3>
+            <div className="popover-content">{popoverContent}</div>
+          </div>
         </div>
       ) : null}
     </div>

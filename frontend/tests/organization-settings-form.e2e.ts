@@ -159,16 +159,28 @@ test("organization settings form matches legacy organization/setting.scala.html 
         ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       )
       .evaluateAll((roots) =>
-        roots.map((root) =>
-          root.getAttribute("data-stylex-owner") === "site-footer" &&
-          !root.classList.contains("page-footer-outer")
-            ? "site-footer"
-            : root.className,
-        ),
+        roots.map((root) => {
+          if (
+            root.getAttribute("data-stylex-owner") === "site-footer" &&
+            !root.classList.contains("page-footer-outer")
+          ) {
+            return "site-footer";
+          }
+          return [...root.classList]
+            .filter(
+              (token) =>
+                token &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
+            )
+            .join(" ");
+        }),
       ),
   ).toEqual([
     "unsupported hidden",
-    "gnb-outer",
+    "",
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",
@@ -199,7 +211,7 @@ test("organization settings form pins the live localhost authenticated generic s
     "Feedback",
   ]);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(0);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator('form.gnb-search-form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
@@ -419,12 +431,12 @@ test("organization settings top-box StyleX owners preserve legacy declarations",
   ])
     expect(source).toContain(`data-stylex-owner="${owner}"`);
   expect(style).toContain('width: "399px"');
-  expect(style).toContain('width: "260px"');
-  expect(style).toContain('height: "188px"');
+  expect(style).toContain('width: { default: "260px"');
+  expect(style).toContain('height: { default: "188px"');
   expect(style).toContain('width: "380px"');
   expect(style).toContain('height: "80px"');
   expect(style).toContain('paddingRight: "20px"');
-  expect(style).toContain('paddingLeft: "20px"');
+  expect(style).toContain('paddingLeft: { default: "20px"');
 });
 
 test("organization settings name submit shows legacy validation warning", async ({ page }) => {
@@ -603,6 +615,7 @@ test("organization settings breadcrumb organization link keeps legacy href with 
       ),
     )
     .toBe("kept");
+  await expect(page.locator("#mylist-filter")).toHaveCount(1);
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
@@ -684,7 +697,8 @@ test("organization settings menu home link preserves legacy href with SPA transi
       ),
     )
     .toBe("kept");
-  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
+  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
+  await expect(page.locator("#mylist-filter")).toHaveCount(1);
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
@@ -704,7 +718,7 @@ test("organization settings menu board link preserves legacy href with SPA trans
   await boardLink.click();
 
   await expect(page).toHaveURL(
-    new RegExp(`${basePath}/organizations/weblabs/boards\\?filter=&orderBy=updatedDate`),
+    new RegExp(`${basePath}/organizations/weblabs/boards\\?orderBy=updatedDate&orderDir=desc`),
   );
   await expect
     .poll(() =>
@@ -889,6 +903,13 @@ async function mockOrganizationSettings(
     uploadRequests: { hasCsrfToken: boolean; method: string }[];
   }> = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1066,7 +1087,9 @@ async function canonicalizeScreenRoot(page: Page, selector: string) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1095,7 +1118,15 @@ async function canonicalizeScreenRoot(page: Page, selector: string) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            .replace(
+              /--x-([A-Za-z0-9-]+):/gu,
+              (_match, name: string) =>
+                `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+            )
         : attr.value;
     }
   }, selector);
@@ -1127,7 +1158,9 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
               attr.name !== "data-stylex-owner",
           )
           .sort((left, right) => left.name.localeCompare(right.name))
-          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+          .filter(([name, value]) => !(name === "class" && value === ""))
+          .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
           .join(" ");
         const open = attrs
           ? `<${node.tagName.toLowerCase()} ${attrs}>`

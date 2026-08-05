@@ -899,10 +899,8 @@ export function PullRequestBranchInfo({
   runtimeConfig?: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const fromBranchName = pullRequest.fromBranch;
-  const toBranchName = pullRequest.toBranch;
-  const fromBranchLabel = branchItemName(fromBranchName);
-  const toBranchLabel = branchItemName(toBranchName);
+  const fromBranchName = branchItemName(pullRequest.fromBranch);
+  const toBranchName = branchItemName(pullRequest.toBranch);
   return (
     <div className="pullRequest-branchInfo">
       <i
@@ -944,7 +942,7 @@ export function PullRequestBranchInfo({
           className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
           {...LEGACY_LINK_PROPS}
         >
-          {fromBranchLabel}
+          {fromBranchName}
         </Link>
       </code>
       <i
@@ -983,7 +981,7 @@ export function PullRequestBranchInfo({
           className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
           {...LEGACY_LINK_PROPS}
         >
-          {toBranchLabel}
+          {toBranchName}
         </Link>
       </code>
     </div>
@@ -1218,6 +1216,7 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
       <div
         id="helpMessage"
         {...modalStyleProps}
+        style={state === "initial" ? undefined : { display: isOpen ? "block" : "none" }}
         className={`${isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"} ${modalStyleProps?.className ?? ""}`.trim()}
         data-stylex-owner="pull-request-detail-help-modal"
         aria-hidden={ariaHidden}

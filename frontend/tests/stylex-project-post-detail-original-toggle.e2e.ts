@@ -14,5 +14,7 @@ test("post detail original-message toggle owns border in StyleX", () => {
   expect(legacyScript).toContain("border");
   expect(route).toContain('data-stylex-owner="post-detail-original-message-toggle"');
   expect(route).not.toContain("style={{ border: 0 }}");
-  expect(theme).toContain("originalMessageToggle: { border: 0");
+  expect(theme).toContain(
+    'originalMessageToggle: {\n    borderStyle: "none",\n    borderWidth: 0,',
+  );
 });

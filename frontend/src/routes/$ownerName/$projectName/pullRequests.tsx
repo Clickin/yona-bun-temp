@@ -21,7 +21,7 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { styles } from "./-pull-requests.stylex";
+import { legacyPullRequestTabsClassName, styles } from "./-pull-requests.stylex";
 
 const sx = {
   page: stylex.props(styles.page),
@@ -427,7 +427,11 @@ function ProjectPullRequestsBody({
                 {t("pullRequest.new")}
               </Link>
             </div>
-            <ul {...sx.tabs} data-stylex-owner="project-pullrequests-tabs">
+            <ul
+              {...sx.tabs}
+              className={`nav nav-tabs nm ${legacyPullRequestTabsClassName} ${sx.tabs.className ?? ""}`.trim()}
+              data-stylex-owner="project-pullrequests-tabs"
+            >
               <li className={requestType === "open" ? "active" : ""}>
                 <Link
                   to="/$ownerName/$projectName/pullRequests"

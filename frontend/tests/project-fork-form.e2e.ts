@@ -371,7 +371,7 @@ test("project fork shell anchors keep legacy active state on owning list items",
   const pullRequestMenuItem = page.locator(".project-menu-gruop > li", {
     has: page.locator('a[href$="/admin/sample/pullRequests"]'),
   });
-  await expect(pullRequestMenuItem).toHaveClass("active");
+  await expect(pullRequestMenuItem).toHaveClass(/\bactive\b/);
   const pullRequestMenuLink = pullRequestMenuItem.locator("a");
   await expect(pullRequestMenuLink).toHaveAttribute(
     "href",
@@ -973,7 +973,9 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1036,7 +1038,9 @@ async function canonicalizePageWrap(page: Page) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1235,7 +1239,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

@@ -134,6 +134,30 @@ Mention: @example
 commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593
 `;
 
+const MARKDOWN_HELP_INPUT_SAMPLES: Record<MarkdownHelpTarget, string> = {
+  markdownHeaders: MARKDOWN_HEADER_SAMPLE,
+  markdownStyling: MARKDOWN_STYLING_SAMPLE,
+  markdownLinks: MARKDOWN_LINK_SAMPLE,
+  markdownLists: MARKDOWN_LIST_INPUT_SAMPLE,
+  markdownTaskList: MARKDOWN_TASK_LIST_SAMPLE,
+  markdownImages: MARKDOWN_IMAGE_INPUT_SAMPLE,
+  markdownBlockquotes: MARKDOWN_BLOCKQUOTE_SAMPLE,
+  markdownCodes: MARKDOWN_CODE_SAMPLE,
+  markdownTables: MARKDOWN_TABLE_INPUT_SAMPLE,
+  markdownShortLinks: MARKDOWN_SHORT_LINK_SAMPLE,
+};
+
+const MARKDOWN_HELP_OUTPUT_SAMPLES: Partial<Record<MarkdownHelpTarget, string>> = {
+  markdownHeaders: MARKDOWN_HEADER_SAMPLE,
+  markdownStyling: MARKDOWN_STYLING_SAMPLE,
+  markdownLinks: MARKDOWN_LINK_OUTPUT_SAMPLE,
+  markdownLists: MARKDOWN_LIST_OUTPUT_SAMPLE,
+  markdownImages: MARKDOWN_IMAGE_OUTPUT_SAMPLE,
+  markdownBlockquotes: MARKDOWN_BLOCKQUOTE_SAMPLE,
+  markdownCodes: MARKDOWN_CODE_SAMPLE,
+  markdownTables: MARKDOWN_TABLE_OUTPUT_SAMPLE,
+};
+
 type MarkdownSampleLinkProps = ComponentPropsWithoutRef<"a"> & ExtraProps;
 type MarkdownSampleImageProps = ComponentPropsWithoutRef<"img"> & ExtraProps;
 type MarkdownSampleCodeProps = ComponentPropsWithoutRef<"code"> & ExtraProps;
@@ -327,14 +351,160 @@ function MarkdownSampleOutput({ sample }: { sample: string }) {
   );
 }
 
-export function LegacyMarkdownHelp() {
+function MarkdownHelpPaneOutput({ target }: { target: MarkdownHelpTarget }) {
+  if (target === "markdownTaskList") {
+    return <MarkdownHelpTaskListOutput />;
+  }
+  if (target === "markdownShortLinks") {
+    return <MarkdownHelpShortLinksOutput />;
+  }
+  return <MarkdownSampleOutput sample={MARKDOWN_HELP_OUTPUT_SAMPLES[target] ?? ""} />;
+}
+
+function MarkdownHelpTaskListOutput() {
+  const checklistTaskListResponsiveStyleProps = stylex.props(contentStyles.taskList);
+  return (
+    <div
+      className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
+      data-stylex-owner="markdown-help-output"
+    >
+      <ul {...checklistTaskListResponsiveStyleProps} data-stylex-owner="markdown-help-task-list">
+        <li>
+          <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> Todos
+          <ul>
+            <li>
+              <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" defaultChecked />{" "}
+              To do A
+            </li>
+            <li>
+              <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To do B
+            </li>
+            <li>
+              <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To do C
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function MarkdownHelpShortLinksOutput() {
+  return (
+    <div
+      className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
+      data-stylex-owner="markdown-help-output"
+    >
+      <p>
+        Issue no: <MarkdownSampleLink href="/example/example/issue/2">#2</MarkdownSampleLink>
+      </p>
+      <p></p>
+      <p>
+        Mention: <MarkdownSampleLink href="/example">@example</MarkdownSampleLink>
+      </p>
+      <p>
+        commit:{" "}
+        <MarkdownSampleLink href="/example/example/commit/763575">@763575</MarkdownSampleLink> or{" "}
+        <MarkdownSampleLink href="/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">
+          @763575
+        </MarkdownSampleLink>
+      </p>
+    </div>
+  );
+}
+
+function MarkdownHelpPane({ target, active }: { target: MarkdownHelpTarget; active: boolean }) {
+  const paneStyleProps = stylex.props(contentStyles.pane, active && contentStyles.paneActive);
+  return (
+    <li
+      {...paneStyleProps}
+      id={markdownHelpContentId(target)}
+      className={`${paneStyleProps.className} markdown-help-item ${target}${active ? " active" : ""}`}
+      data-stylex-owner="markdown-help-pane"
+    >
+      <div className="row-fluid thead">
+        <div className="span6">Markdown Input</div>
+        <div className="span6">Markdown Output</div>
+      </div>
+      <div className="row-fluid markdwon-syntax-wrap">
+        <div className="span6 markdwon-syntax">
+          <pre
+            {...stylex.props(contentStyles.inputPre)}
+            data-stylex-owner="markdown-help-input-pre"
+          >
+            {MARKDOWN_HELP_INPUT_SAMPLES[target]}
+          </pre>
+        </div>
+        <div className="span6">
+          <MarkdownHelpPaneOutput target={target} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function MarkdownHelpNav({
+  activeTarget,
+  toggleActiveTarget,
+}: {
+  activeTarget: MarkdownHelpTarget | null;
+  toggleActiveTarget: (target: MarkdownHelpTarget) => void;
+}) {
   const { t } = useLegacyMessages();
+  return (
+    <ul
+      {...stylex.props(navStyles.nav)}
+      className={`${stylex.props(navStyles.nav).className} markdown-help-nav`}
+      data-stylex-owner="markdown-help-nav-list"
+    >
+      <li {...stylex.props(navStyles.navItem)} data-stylex-owner="markdown-help-nav-item">
+        <span
+          {...stylex.props(navStyles.navLabel)}
+          className={`${stylex.props(navStyles.navLabel).className} label`}
+          data-stylex-owner="markdown-help-nav-label"
+        >
+          {t("title.markdown.help")}
+        </span>
+      </li>{" "}
+      {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }, index) => {
+        const active = activeTarget === target;
+        const itemStyle = stylex.props(
+          navStyles.navItem,
+          navStyles.navChoice,
+          active && navStyles.navChoiceActive,
+        );
+        const buttonStyle = stylex.props(navStyles.navButton);
+        const navClassName = `${itemStyle.className} help-nav${active ? " active" : ""}`;
+        const buttonClassName = `${buttonStyle.className} markdown-help-nav-button`;
+        const item = (
+          <li
+            {...itemStyle}
+            className={navClassName}
+            data-stylex-owner="markdown-help-nav-choice"
+            key={target}
+          >
+            <button
+              {...buttonStyle}
+              type="button"
+              className={buttonClassName}
+              aria-controls={markdownHelpContentId(target)}
+              aria-expanded={active}
+              data-stylex-owner="markdown-help-nav-button"
+              onClick={() => toggleActiveTarget(target)}
+            >
+              {label}
+            </button>
+          </li>
+        );
+        return index === 0 ? item : [" ", item];
+      })}
+    </ul>
+  );
+}
+
+export function LegacyMarkdownHelp() {
   const [activeTarget, setActiveTarget] = useState<MarkdownHelpTarget | null>(null);
 
-  const activeClass = (target: MarkdownHelpTarget) => (activeTarget === target ? " active" : "");
-  const paneStyle = (target: MarkdownHelpTarget) =>
-    stylex.props(contentStyles.pane, activeTarget === target && contentStyles.paneActive);
-  const checklistTaskListResponsiveStyleProps = stylex.props(contentStyles.taskList);
   const toggleActiveTarget = (target: MarkdownHelpTarget) => {
     setActiveTarget((current) => (current === target ? null : target));
   };
@@ -345,349 +515,14 @@ export function LegacyMarkdownHelp() {
       className={`${stylex.props(navStyles.root).className} markdown-help`}
       data-stylex-owner="markdown-help-nav-root"
     >
-      <ul
-        {...stylex.props(navStyles.nav)}
-        className={`${stylex.props(navStyles.nav).className} markdown-help-nav`}
-        data-stylex-owner="markdown-help-nav-list"
-      >
-        <li {...stylex.props(navStyles.navItem)} data-stylex-owner="markdown-help-nav-item">
-          <span
-            {...stylex.props(navStyles.navLabel)}
-            className={`${stylex.props(navStyles.navLabel).className} label`}
-            data-stylex-owner="markdown-help-nav-label"
-          >
-            {t("title.markdown.help")}
-          </span>
-        </li>{" "}
-        {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }, index) => {
-          const active = activeTarget === target;
-          const itemStyle = stylex.props(
-            navStyles.navItem,
-            navStyles.navChoice,
-            active && navStyles.navChoiceActive,
-          );
-          const buttonStyle = stylex.props(navStyles.navButton);
-          const navClassName = `${itemStyle.className} help-nav${activeClass(target)}`;
-          const buttonClassName = `${buttonStyle.className} markdown-help-nav-button`;
-          const item = (
-            <li
-              {...itemStyle}
-              className={navClassName}
-              data-stylex-owner="markdown-help-nav-choice"
-              key={target}
-            >
-              <button
-                {...buttonStyle}
-                type="button"
-                className={buttonClassName}
-                aria-controls={markdownHelpContentId(target)}
-                aria-expanded={active}
-                data-stylex-owner="markdown-help-nav-button"
-                onClick={() => toggleActiveTarget(target)}
-              >
-                {label}
-              </button>
-            </li>
-          );
-          return index === 0 ? item : [" ", item];
-        })}
-      </ul>
+      <MarkdownHelpNav activeTarget={activeTarget} toggleActiveTarget={toggleActiveTarget} />
       <ul
         className={`markdown-help-wrap ${stylex.props(contentStyles.paneList).className}`}
         data-stylex-owner="markdown-help-pane-list"
       >
-        <li
-          {...paneStyle("markdownHeaders")}
-          id={markdownHelpContentId("markdownHeaders")}
-          className={`${paneStyle("markdownHeaders").className} markdown-help-item markdownHeaders${activeClass("markdownHeaders")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_HEADER_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_HEADER_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownStyling")}
-          id={markdownHelpContentId("markdownStyling")}
-          className={`${paneStyle("markdownStyling").className} markdown-help-item markdownStyling${activeClass("markdownStyling")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_STYLING_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_STYLING_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownLinks")}
-          id={markdownHelpContentId("markdownLinks")}
-          className={`${paneStyle("markdownLinks").className} markdown-help-item markdownLinks${activeClass("markdownLinks")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_LINK_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_LINK_OUTPUT_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownLists")}
-          id={markdownHelpContentId("markdownLists")}
-          className={`${paneStyle("markdownLists").className} markdown-help-item markdownLists${activeClass("markdownLists")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_LIST_INPUT_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_LIST_OUTPUT_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownTaskList")}
-          id={markdownHelpContentId("markdownTaskList")}
-          className={`${paneStyle("markdownTaskList").className} markdown-help-item markdownTaskList${activeClass("markdownTaskList")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_TASK_LIST_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <div
-                className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
-                data-stylex-owner="markdown-help-output"
-              >
-                <ul
-                  {...checklistTaskListResponsiveStyleProps}
-                  data-stylex-owner="markdown-help-task-list"
-                >
-                  <li>
-                    <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> Todos
-                    <ul>
-                      <li>
-                        <input
-                          {...stylex.props(contentStyles.taskCheckbox)}
-                          type="checkbox"
-                          defaultChecked
-                        />{" "}
-                        To do A
-                      </li>
-                      <li>
-                        <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To
-                        do B
-                      </li>
-                      <li>
-                        <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To
-                        do C
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownImages")}
-          id={markdownHelpContentId("markdownImages")}
-          className={`${paneStyle("markdownImages").className} markdown-help-item markdownImages${activeClass("markdownImages")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_IMAGE_INPUT_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_IMAGE_OUTPUT_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownBlockquotes")}
-          id={markdownHelpContentId("markdownBlockquotes")}
-          className={`${paneStyle("markdownBlockquotes").className} markdown-help-item markdownBlockquotes${activeClass("markdownBlockquotes")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_BLOCKQUOTE_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_BLOCKQUOTE_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownCodes")}
-          id={markdownHelpContentId("markdownCodes")}
-          className={`${paneStyle("markdownCodes").className} markdown-help-item markdownCodes${activeClass("markdownCodes")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_CODE_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_CODE_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownTables")}
-          id={markdownHelpContentId("markdownTables")}
-          className={`${paneStyle("markdownTables").className} markdown-help-item markdownTables${activeClass("markdownTables")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_TABLE_INPUT_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <MarkdownSampleOutput sample={MARKDOWN_TABLE_OUTPUT_SAMPLE} />
-            </div>
-          </div>
-        </li>
-        <li
-          {...paneStyle("markdownShortLinks")}
-          id={markdownHelpContentId("markdownShortLinks")}
-          className={`${paneStyle("markdownShortLinks").className} markdown-help-item markdownShortLinks${activeClass("markdownShortLinks")}`}
-          data-stylex-owner="markdown-help-pane"
-        >
-          <div className="row-fluid thead">
-            <div className="span6">Markdown Input</div>
-            <div className="span6">Markdown Output</div>
-          </div>
-          <div className="row-fluid markdwon-syntax-wrap">
-            <div className="span6 markdwon-syntax">
-              <pre
-                {...stylex.props(contentStyles.inputPre)}
-                data-stylex-owner="markdown-help-input-pre"
-              >
-                {MARKDOWN_SHORT_LINK_SAMPLE}
-              </pre>
-            </div>
-            <div className="span6">
-              <div
-                className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
-                data-stylex-owner="markdown-help-output"
-              >
-                <p>
-                  Issue no:{" "}
-                  <MarkdownSampleLink href="/example/example/issue/2">#2</MarkdownSampleLink>
-                </p>
-                <p></p>
-                <p>
-                  Mention: <MarkdownSampleLink href="/example">@example</MarkdownSampleLink>
-                </p>
-                <p>
-                  commit:{" "}
-                  <MarkdownSampleLink href="/example/example/commit/763575">
-                    @763575
-                  </MarkdownSampleLink>{" "}
-                  or{" "}
-                  <MarkdownSampleLink href="/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">
-                    @763575
-                  </MarkdownSampleLink>
-                </p>
-              </div>
-            </div>
-          </div>
-        </li>
+        {MARKDOWN_HELP_TARGETS.map((target) => (
+          <MarkdownHelpPane key={target} target={target} active={activeTarget === target} />
+        ))}
       </ul>
     </div>
   );

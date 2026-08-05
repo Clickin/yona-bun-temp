@@ -362,7 +362,11 @@ function GlobalSearchSuccessBody({
                     {resultTitle}
                   </h3>
                 </div>
-                <div {...stylex.props(styles.result)} data-stylex-owner="global-search-result-wrap">
+                <div
+                  {...stylex.props(styles.result)}
+                  className={`search-result-wrap ${stylex.props(styles.result).className}`}
+                  data-stylex-owner="global-search-result-wrap"
+                >
                   <GlobalSearchResultList result={result} runtimeConfig={runtimeConfig} />
                 </div>
               </div>

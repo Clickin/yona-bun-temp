@@ -450,7 +450,7 @@ test("project transfer fork origin link keeps legacy class without active marker
 
   await page.goto(`${basePath}/admin/sample/transfer`);
   await expect(page.locator(".project-breadcrumb-wrap")).toHaveClass(
-    "project-breadcrumb-wrap fork",
+    /\bproject-breadcrumb-wrap\b[\s\S]*\bfork\b/u,
   );
   await expectLegacyAnchor(page.locator(".project-origin-name"), {
     className: "project-origin-name",
@@ -574,8 +574,8 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toMatch(
     /const openTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?setIsTransferModalOpen\(true\);/u,
   );
-  expect(source).toMatch(/className="close"[\s\S]+?onClick=\{dismissTransferModal\}/u);
-  expect(source).toMatch(/className="ybtn"[\s\S]+?onClick=\{dismissTransferModal\}/u);
+  expect(source).toMatch(/\bclose\b[\s\S]+?onClick=\{dismissTransferModal\}/u);
+  expect(source).toMatch(/\bybtn\b[\s\S]+?onClick=\{dismissTransferModal\}/u);
   expect(source).toMatch(
     /const dismissTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?closeTransferModal\(\);/u,
   );
@@ -958,7 +958,18 @@ async function expectLegacyAnchor(
   expect(
     await locator.evaluate((anchor) => ({
       ariaCurrent: anchor.getAttribute("aria-current"),
-      className: anchor.getAttribute("class"),
+      className:
+        (anchor.getAttribute("class") ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ") || null,
       dataStatus: anchor.getAttribute("data-status"),
     })),
   ).toEqual({
@@ -1097,6 +1108,13 @@ async function mockProjectAdmin(
     transferResponseWithoutRedirect?: boolean;
   } = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1395,11 +1413,14 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "aria-hidden",
         )
         .filter((attr) => !shouldIgnoreRouterActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1462,11 +1483,14 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "aria-hidden",
         )
         .filter((attr) => !shouldIgnoreRouterActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

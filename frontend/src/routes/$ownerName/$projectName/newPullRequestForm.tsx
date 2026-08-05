@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PullRequestFileUploader } from "../../../components/file-uploader";
+import { PullRequestMarkdownEditor } from "../../../components/markdown-editor";
 import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -17,7 +19,6 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
 import { styles } from "./-new-pull-request.stylex";
 import { styles as uploadStyles } from "./-new-pull-request-form.stylex";
@@ -353,9 +354,22 @@ function ProjectNewPullRequestBody({
                       setBodyValue(nextBody);
                       setIsUserHasTyped(true);
                     }}
+                    wrapperClassName={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
+                    tabContentClassName={`${stylex.props(styles.editorTabContent).className} tab-content`}
+                    owners={{
+                      wrapper: "new-pull-request-markdown-editor-wrapper",
+                      tabContent: "new-pull-request-editor-tab-content",
+                    }}
                   />
                 </div>
-                <PullRequestFileUploader />
+                <PullRequestFileUploader
+                  helpClassName={`${stylex.props(styles.uploadSaveHelp).className} help`}
+                  pasteHelpStyleProps={stylex.props(uploadStyles.pasteHelpVisible)}
+                  owners={{
+                    pasteHelp: "project-new-pull-request-form-paste-help",
+                    saveHelp: "new-pull-request-upload-save-help",
+                  }}
+                />
                 <div className="actions">
                   <button type="submit" className="ybtn ybtn-success">
                     {t("pullRequest.send")}
@@ -636,135 +650,6 @@ function PullRequestSelect2Closed({
 
 function projectOptionLabel(project: { ownerName: string; projectName: string } | undefined) {
   return project ? `${project.ownerName} / ${project.projectName}` : "";
-}
-
-function PullRequestMarkdownEditor({
-  bodyValue,
-  mergeSuggestionRevision,
-  onBodyChange,
-}: {
-  bodyValue: string;
-  mergeSuggestionRevision: number;
-  onBodyChange: (nextBody: string) => void;
-}) {
-  const { t } = useLegacyMessages();
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  return (
-    <div
-      className={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
-      data-stylex-owner="new-pull-request-markdown-editor-wrapper"
-    >
-      <ul className="nav nav-tabs nm small">
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
-            {t("common.editor.preview")}
-          </button>
-        </li>
-        <li>
-          <div className="task-list-button">
-            <button
-              type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-            >
-              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li>
-          <div className="editor-clear-temporary">
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div className="editor-notice-label"></div>
-        </li>
-      </ul>
-      <div
-        className={`${stylex.props(styles.editorTabContent).className} tab-content`}
-        data-stylex-owner="new-pull-request-editor-tab-content"
-      >
-        <LegacyMarkdownHelp />
-        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div className="textarea-box">
-            <textarea
-              name="body"
-              className="editorSeries content comment nm"
-              data-editor-mode="content-body"
-              id="editor-body-body"
-              key={`body-${mergeSuggestionRevision}`}
-              defaultValue={bodyValue}
-              onChange={(event) => onBodyChange(event.currentTarget.value)}
-              {...{ markdown: "true" }}
-            ></textarea>
-          </div>
-        </div>
-        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
-        </div>
-        <div className="notification-receiver">
-          <span className="notification-receiver-title">
-            {t("notification.receiver.list.title")}
-          </span>
-          <span className="notification-receiver-list"></span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
-  const { t } = useLegacyMessages();
-  const pasteSupported =
-    typeof document !== "undefined" &&
-    "onpaste" in document &&
-    typeof FormData !== "undefined" &&
-    typeof FileReader !== "undefined";
-  return (
-    <div
-      id="upload"
-      className="upload-wrap content-footer"
-      data-resource-type="PULL_REQUEST"
-      data-resource-id={resourceId === undefined ? undefined : String(resourceId)}
-    >
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span
-          className="help help-pastable"
-          {...(pasteSupported ? stylex.props(uploadStyles.pasteHelpVisible) : {})}
-          data-stylex-owner="project-new-pull-request-form-paste-help"
-        >
-          {t("common.attach.pastehere")}
-        </span>
-      </div>
-      <ul className="attached-files unstyled"></ul>
-      <p
-        className={`${stylex.props(styles.uploadSaveHelp).className} help`}
-        data-stylex-owner="new-pull-request-upload-save-help"
-      >
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
-    </div>
-  );
 }
 
 function PullRequestConflictConfirmModal({

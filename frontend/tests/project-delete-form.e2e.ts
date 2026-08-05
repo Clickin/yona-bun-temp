@@ -435,7 +435,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   const deleteFormUrl = page.url();
   const alertDeletion = page.locator("#alertDeletion");
   await rememberSpaMarker(page, "kept");
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator("#alertDeletion .close")).not.toHaveAttribute("data-dismiss", "modal");
   await expect(page.locator("#alertDeletion .modal-footer .ybtn").last()).not.toHaveAttribute(
@@ -599,7 +599,9 @@ test("project delete request failure hides modal and shows legacy error alert", 
   await page.goto(`${basePath}/admin/sample/deleteform`);
   await page.locator("#accept").check();
   await page.locator("#btnDelete").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertDeletion")).toHaveClass(
+    /\bmodal\b[\s\S]*\bhide\b[\s\S]*\bin\b/u,
+  );
 
   const deleteResponsePromise = page.waitForResponse(
     (response) =>
@@ -614,7 +616,7 @@ test("project delete request failure hides modal and shows legacy error alert", 
   await deleteResponsePromise;
 
   expect(deleteRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(page.locator("#alertDeletion"))).toEqual({
@@ -669,7 +671,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/\bactive\b/);
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
@@ -1054,6 +1056,13 @@ async function mockProjectAdmin(
     projectName?: string;
   } = {},
 ) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
+
   const ownerName = options.ownerName ?? "admin";
   const projectName = options.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
@@ -1413,7 +1422,9 @@ async function canonicalizeScreenRoots(page: Page) {
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1507,7 +1518,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

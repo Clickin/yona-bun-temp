@@ -205,8 +205,24 @@ const PARITY_SLICES = [
       "docs/plans/2026-06-26-full-ui-parity-subagent-phase.md",
     ],
   },
+  {
+    id: "shared-ui-components",
+    label: "Shared legacy parity UI components",
+    status: "parity",
+    implementationPatterns: [/^frontend\/src\/components\/[\w-]+\.(?:tsx|stylex\.ts)$/i],
+    testKeywords: [
+      "stylex-project",
+      "project-posts",
+      "project-issue-detail",
+      "project-issue-form",
+      "site-admin",
+      "user-public-profile",
+      "enrollment",
+      "issueform",
+    ],
+    provenanceDocs: ["docs/provenance/frontend-scala-html-goal-violation-audit.md"],
+  },
 ];
-
 const DOMAIN_BUCKETS = [
   {
     id: "project-markdown-rendering",

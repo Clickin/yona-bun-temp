@@ -1,4 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DiffLineView, type ParsedDiffLine } from "../../../../components/diff-line-view";
+import { UploadForm } from "../../../../components/file-uploader";
+import { FileDiffErrorRow } from "../../../../components/file-diff-error-row";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useState } from "react";
@@ -99,18 +102,6 @@ type CurrentUserSummary = {
   loginId: string;
   userLabel: string;
 };
-
-type ParsedDiffLine =
-  | { kind: "range"; text: string }
-  | {
-      kind: "line";
-      lineNumber: number;
-      newLineNumber: number | null;
-      oldLineNumber: number | null;
-      prefix: string;
-      text: string;
-      type: "add" | "context" | "remove";
-    };
 
 type ParsedFileDiff = {
   changeType: "add" | "copy" | "delete" | "modify" | "rename";
@@ -334,9 +325,18 @@ function ProjectCommitDetailBody({
 
   return (
     <>
-      <div {...sx.page} data-stylex-owner="commit-detail-page">
-        <div data-stylex-owner="commit-detail-shell">
-          <div {...sx.browse} data-stylex-owner="commit-detail-browse" id="code-browse-wrap">
+      <div
+        {...sx.page}
+        className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
+        data-stylex-owner="commit-detail-page"
+      >
+        <div className="project-page-wrap" data-stylex-owner="commit-detail-shell">
+          <div
+            {...sx.browse}
+            className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
+            data-stylex-owner="commit-detail-browse"
+            id="code-browse-wrap"
+          >
             <ul
               {...sx.browseTabs}
               className={`${sx.browseTabs.className} nav nav-tabs`}
@@ -1054,16 +1054,6 @@ function FileModeChangedRow({ modeChange }: { modeChange: { newMode: string; old
   );
 }
 
-function FileDiffErrorRow({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <tr>
-      <td colSpan={3}>{t(messageKey)}</td>
-    </tr>
-  );
-}
-
 function fileDiffErrorMessageKey(file: CommitFileDiff) {
   const errors = [
     file.error,
@@ -1129,7 +1119,23 @@ function FragmentWithInlineComments({
 }) {
   return (
     <>
-      <DiffLineView line={line} />
+      <DiffLineView
+        line={line}
+        styles={{
+          lineNumber: sx.diffLineNumber,
+          commentIcon: sx.diffLineCommentIcon,
+          numberMarker: sx.diffLineNumberMarker,
+          codeCell: sx.diffCodeCell,
+          codeLine: sx.diffCodeLine,
+        }}
+        owners={{
+          lineNumberCell: "commit-detail-diff-line-number-cell",
+          commentIcon: "commit-detail-diff-line-comment-icon",
+          lineNumber: "commit-detail-diff-line-number",
+          codeCell: "commit-detail-diff-code-cell",
+          codeLine: "commit-detail-diff-code-pre",
+        }}
+      />
       {threads.length > 0 ? (
         <InlineCommentRow
           commitId={commitId}
@@ -1146,64 +1152,6 @@ function FragmentWithInlineComments({
         />
       ) : null}
     </>
-  );
-}
-
-function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }> }) {
-  const oldLine = line.oldLineNumber === null ? "" : String(line.oldLineNumber);
-  const newLine = line.newLineNumber === null ? "" : String(line.newLineNumber);
-
-  return (
-    <tr
-      className={line.type}
-      data-line={line.lineNumber}
-      data-side={line.type === "remove" ? "A" : "B"}
-    >
-      <td
-        {...sx.diffLineNumber}
-        data-stylex-owner="commit-detail-diff-line-number-cell"
-        className={`${sx.diffLineNumber.className} linenum`}
-      >
-        <i
-          {...sx.diffLineCommentIcon}
-          data-stylex-owner="commit-detail-diff-line-comment-icon"
-          className={`${sx.diffLineCommentIcon.className} yobicon-comments`}
-        ></i>
-        <div
-          {...sx.diffLineNumberMarker}
-          data-stylex-owner="commit-detail-diff-line-number"
-          className={`${sx.diffLineNumberMarker.className} line-number`}
-          data-line-num={oldLine}
-        ></div>
-        <span className="hidden">{oldLine}</span>
-      </td>
-      <td
-        {...sx.diffLineNumber}
-        data-stylex-owner="commit-detail-diff-line-number-cell"
-        className={`${sx.diffLineNumber.className} linenum`}
-      >
-        <div
-          {...sx.diffLineNumberMarker}
-          data-stylex-owner="commit-detail-diff-line-number"
-          className={`${sx.diffLineNumberMarker.className} line-number`}
-          data-line-num={newLine}
-        ></div>
-        <span className="hidden">{newLine}</span>
-      </td>
-      <td
-        {...sx.diffCodeCell}
-        data-stylex-owner="commit-detail-diff-code-cell"
-        className={`${sx.diffCodeCell.className} code`}
-      >
-        <pre
-          {...sx.diffCodeLine}
-          data-stylex-owner="commit-detail-diff-code-pre"
-          className={`${sx.diffCodeLine.className} diff-partial-codeline`}
-        >
-          {`${line.prefix}${line.text}`}
-        </pre>
-      </td>
-    </tr>
   );
 }
 
@@ -1635,7 +1583,13 @@ function CodeCommentThreadView({
           >
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
-              <UploadForm resourceType="COMMIT_COMMENT" />
+              <UploadForm
+                resourceType="COMMIT_COMMENT"
+                helpClassName="help"
+                helpStyleProps={sx.rightText}
+                helpStyleFirst={false}
+                helpOwner="commit-detail-attachment-help"
+              />
               <div
                 {...sx.rightText}
                 {...sx.threadActions}
@@ -1940,7 +1894,13 @@ function CommentForm({
     >
       <div className="write-comment-box">
         <Editor editorMode="comment-body" wrapId="comment" />
-        <UploadForm resourceType="COMMIT_COMMENT" />
+        <UploadForm
+          resourceType="COMMIT_COMMENT"
+          helpClassName="help"
+          helpStyleProps={sx.rightText}
+          helpStyleFirst={false}
+          helpOwner="commit-detail-attachment-help"
+        />
         <div className="write-comment-wrap">
           <div {...sx.rightText} data-stylex-owner="commit-detail-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
@@ -2019,7 +1979,13 @@ function ReviewForm({
               </button>
             </div>
             <Editor editorMode="code-review-body" wrapId="review" />
-            <UploadForm resourceType="COMMIT_COMMENT" />
+            <UploadForm
+              resourceType="COMMIT_COMMENT"
+              helpClassName="help"
+              helpStyleProps={sx.rightText}
+              helpStyleFirst={false}
+              helpOwner="commit-detail-attachment-help"
+            />
             <div {...sx.rightText} data-stylex-owner="commit-detail-review-actions">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
@@ -2132,29 +2098,6 @@ function Editor({
           <span className="notification-receiver-list"></span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function UploadForm({ resourceType }: { resourceType: string }) {
-  const { t } = useLegacyMessages();
-  return (
-    <div className="upload-wrap content-footer" data-resource-type={resourceType}>
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
-      </div>
-      <ul className="attached-files unstyled"></ul>
-      <p className="help" {...sx.rightText} data-stylex-owner="commit-detail-attachment-help">
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
     </div>
   );
 }

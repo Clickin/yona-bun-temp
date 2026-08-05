@@ -56,7 +56,7 @@ test("List All source has complete global-theme StyleX ownership", () => {
     route.indexOf("</Link>", linkMarker),
   );
   expect(itemOwner).not.toContain('className={activeMenu === "projects" ? "active"');
-  expect(linkOwner).not.toContain("show-progress-bar");
+  expect(linkOwner).toContain("show-progress-bar");
   expect(linkOwner).toContain('to="/projects"');
   expect(linkOwner).toContain("globalGnbProjectListStyles.link");
   expect(route).toContain('activeMenu === "projects" && globalGnbProjectListStyles.activeItem');
@@ -86,7 +86,7 @@ for (const state of [
     await expect(link).toHaveText("List All");
     await expect(link).toHaveAttribute("href", `${BASE_PATH}/projects`);
     await expect(item).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
-    await expect(link).not.toHaveClass(/(?:^|\s)show-progress-bar(?:\s|$)/u);
+    await expect(link).toHaveClass(/(?:^|\s)show-progress-bar(?:\s|$)/u);
     await expect(link).not.toHaveAttribute("aria-current");
     await expect(link).not.toHaveAttribute("data-status");
 

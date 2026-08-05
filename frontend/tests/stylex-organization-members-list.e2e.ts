@@ -297,11 +297,15 @@ test("organization enrollment avatar owner follows the frozen legacy float bound
     "utf8",
   );
 
-  expect(route).toContain('data-stylex-owner="organization-enrollment-avatar-wrap"');
-  expect(route).toContain('data-stylex-owner="organization-members-enrollment-details"');
-  expect(route).toContain('float: "left"');
-  expect(route).toContain('marginRight: "10px"');
-  expect(route).toContain('width: "60px"');
+  expect(route).toContain('avatarWrapOwner="organization-enrollment-avatar-wrap"');
+  expect(route).toContain('detailsOwner="organization-members-enrollment-details"');
+  const componentStyleSource = readFileSync(
+    resolve(repoRoot, "frontend/src/components/enrollment-request.stylex.ts"),
+    "utf8",
+  );
+  expect(componentStyleSource).toContain('float: "left"');
+  expect(componentStyleSource).toContain('marginRight: "10px"');
+  expect(componentStyleSource).toContain('width: "60px"');
   expect(legacyTemplate).toContain('<div class="pull-left mr10">');
   expect(legacyTemplate).toContain('<div class="pull-left" style="width: 60px;">');
   expect(legacyTemplate).toContain(

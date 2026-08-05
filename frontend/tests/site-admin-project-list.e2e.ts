@@ -938,6 +938,12 @@ async function projectListDeleteModalStateMetrics(page: Page) {
 }
 
 async function mockSiteAdminSession(page: Page) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   const sessionBody = {
     actorId: "1",
     avatarUrl: "/assets/images/default-avatar-32.png",
@@ -1192,6 +1198,19 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return value;
     }
 
@@ -1250,6 +1269,7 @@ async function canonicalizeScreenRoots(page: Page) {
                 (residualOwner === "site-project-list-sidebar-item" &&
                   current.getAttribute("data-selected") !== "true"))
             ) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === "") &&
             !(name === "data-stylex-owner" && !isResidualOwner),
         )
         .map(
@@ -1571,6 +1591,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           (name) =>
             current.hasAttribute(name) &&
             !(name === "class" && isResidualOwner) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === "") &&
             !(name === "data-stylex-owner" && !isResidualOwner),
         )
         .map(

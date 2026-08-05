@@ -21,7 +21,7 @@ test("organization home owns legacy small-font typography in route-local StyleX"
   expect(stylex).toContain('smallFont: { fontSize: "10px", fontWeight: "normal" }');
   expect(legacy).toContain(".blue-txt      { color:@blue;}");
   expect(variables).toContain("@blue   : #5DBBE0;");
-  expect(route).not.toContain("blue-txt");
+  expect(route).toContain("blue-txt");
   expect(route).toContain('data-stylex-owner="organization-home-project-origin"');
   expect(stylex).toContain('originProjectText: "#5DBBE0"');
   expect(stylex).toContain("projectOrigin: { color: organizationHomeColors.originProjectText }");
@@ -72,7 +72,7 @@ for (const viewport of [
     await page.goto("/yona/organizations/acme");
     const origin = page.locator('[data-stylex-owner="organization-home-project-origin"]');
     await expect(origin).toHaveText(/admin\s*\/\s*sample/u);
-    await expect(origin).not.toHaveClass(/(?:^|\s)blue-txt(?:\s|$)/u);
+    await expect(origin).toHaveClass(/(?:^|\s)blue-txt(?:\s|$)/u);
     await expect
       .poll(() => origin.evaluate((element) => getComputedStyle(element).color))
       .toBe("rgb(93, 187, 224)");

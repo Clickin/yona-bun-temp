@@ -309,6 +309,7 @@ function ProjectForkBody({
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/fork`)}
             method="post"
             {...sx.form}
+            className={`form-horizontal nm ${sx.form.className ?? ""}`.trim()}
             data-stylex-owner="project-fork-form"
             onSubmit={onSubmit}
           >
@@ -319,7 +320,12 @@ function ProjectForkBody({
                   {`${ownerName} / ${projectName} ${t("fork")}`}
                 </h4>
               </legend>
-              <div {...sx.help} data-stylex-owner="project-fork-help" id="helpMessage">
+              <div
+                {...sx.help}
+                className={`well ${sx.help.className ?? ""}`.trim()}
+                data-stylex-owner="project-fork-help"
+                id="helpMessage"
+              >
                 <div className="row-fluid" data-stylex-owner="project-fork-help-row">
                   {options.existingForks.length === 0 ? (
                     <>
@@ -344,7 +350,7 @@ function ProjectForkBody({
                   ) : (
                     <div
                       {...sx.existing}
-                      className={`${sx.existing.className} help-messages`}
+                      className={`${sx.existing.className} help-messages center-txt`}
                       data-stylex-owner="project-fork-existing"
                     >
                       <i
@@ -393,15 +399,24 @@ function ProjectForkBody({
                   )}
                 </div>
               </div>
-              <div {...sx.group} data-stylex-owner="project-fork-owner-group">
+              <div
+                {...sx.group}
+                className={`control-group ${sx.group.className ?? ""}`.trim()}
+                data-stylex-owner="project-fork-owner-group"
+              >
                 <label
                   {...sx.label}
+                  className={`control-label ${sx.label.className ?? ""}`.trim()}
                   data-stylex-owner="project-fork-owner-label"
                   htmlFor="inputOwner"
                 >
                   {t("project.owner")}
                 </label>
-                <div {...sx.controls} data-stylex-owner="project-fork-owner-controls">
+                <div
+                  {...sx.controls}
+                  className={`controls ${sx.controls.className ?? ""}`.trim()}
+                  data-stylex-owner="project-fork-owner-controls"
+                >
                   <select
                     id="project-owner"
                     name="owner"
@@ -419,15 +434,24 @@ function ProjectForkBody({
                   </select>
                 </div>
               </div>
-              <div {...sx.group} data-stylex-owner="project-fork-name-group">
+              <div
+                {...sx.group}
+                className={`control-group ${sx.group.className ?? ""}`.trim()}
+                data-stylex-owner="project-fork-name-group"
+              >
                 <label
                   {...sx.label}
+                  className={`control-label ${sx.label.className ?? ""}`.trim()}
                   data-stylex-owner="project-fork-name-label"
                   htmlFor="inputName"
                 >
                   {t("project.name")}
                 </label>
-                <div {...sx.controls} data-stylex-owner="project-fork-name-controls">
+                <div
+                  {...sx.controls}
+                  className={`controls ${sx.controls.className ?? ""}`.trim()}
+                  data-stylex-owner="project-fork-name-controls"
+                >
                   <input
                     {...sx.input}
                     data-stylex-owner="project-fork-name-input"
@@ -445,11 +469,23 @@ function ProjectForkBody({
                   </span>
                 </div>
               </div>
-              <div {...sx.group} data-stylex-owner="project-fork-scope-group">
-                <label {...sx.label} data-stylex-owner="project-fork-scope-label">
+              <div
+                {...sx.group}
+                className={`control-group ${sx.group.className ?? ""}`.trim()}
+                data-stylex-owner="project-fork-scope-group"
+              >
+                <label
+                  {...sx.label}
+                  className={`control-label ${sx.label.className ?? ""}`.trim()}
+                  data-stylex-owner="project-fork-scope-label"
+                >
                   {t("project.shareOption")}
                 </label>
-                <div {...sx.controls} data-stylex-owner="project-fork-scope-controls">
+                <div
+                  {...sx.controls}
+                  className={`controls ${sx.controls.className ?? ""}`.trim()}
+                  data-stylex-owner="project-fork-scope-controls"
+                >
                   <input
                     name="projectScope"
                     type="radio"
@@ -513,8 +549,12 @@ function ProjectForkBody({
                   </label>
                 </div>
               </div>
-              <div {...sx.group} data-stylex-owner="project-fork-actions">
-                <div {...sx.controls}>
+              <div
+                {...sx.group}
+                className={`control-group ${sx.group.className ?? ""}`.trim()}
+                data-stylex-owner="project-fork-actions"
+              >
+                <div {...sx.controls} className={`controls ${sx.controls.className ?? ""}`.trim()}>
                   <button {...sx.action} data-stylex-owner="project-fork-submit" type="submit">
                     {t("fork")}
                   </button>{" "}

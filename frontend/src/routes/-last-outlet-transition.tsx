@@ -1,11 +1,13 @@
 import { AnimatePresence, LazyMotion, domMax, m, useReducedMotion } from "framer-motion";
-import { Outlet, useMatches, useRouterState } from "@tanstack/react-router";
+import { Outlet, useRouterState } from "@tanstack/react-router";
 
 export function LastOutletTransition({ routeId }: { routeId: string }) {
-  const isLastOutlet = useMatches({
-    select: (matches) => matches.length > 1 && matches.at(-2)?.routeId === routeId,
+  const { isLastOutlet, pathname } = useRouterState({
+    select: (state) => ({
+      isLastOutlet: state.matches.length > 1 && state.matches.at(-2)?.routeId === routeId,
+      pathname: state.location.pathname,
+    }),
   });
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const shouldReduceMotion = useReducedMotion();
 
   if (!isLastOutlet || shouldReduceMotion) {

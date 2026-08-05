@@ -122,7 +122,7 @@ test("Projects final presentation classes are direct StyleX owners", async ({ pa
   );
   const projectRowSource = route.slice(
     route.indexOf("function ProfileProjectRow("),
-    route.indexOf("function TwoColumnModeCheckbox("),
+    route.indexOf("function ShowSubtasksCheckbox("),
   );
   expect(projectsPaneSource).not.toMatch(/\b(?:user-streams|all-projects)\b/u);
   for (const literal of [

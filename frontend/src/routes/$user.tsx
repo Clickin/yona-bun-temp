@@ -19,6 +19,8 @@ import type {
   YoramRecord,
 } from "../api/types";
 import { IssueLabel } from "../components/issue-label";
+import { issueLabelStyle } from "../legacy-issue-label-style";
+import { TwoColumnModeCheckbox } from "../components/two-column-mode-checkbox";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -596,7 +598,26 @@ function PublicProfileBody({
                     onSelect={() => setActiveTab("projects")}
                   />
                   <li>
-                    <TwoColumnModeCheckbox />
+                    <TwoColumnModeCheckbox
+                      anchorStyle={[
+                        styles.popoverAnchor,
+                        styles.checkboxControl,
+                        styles.twoColumnModeControl,
+                      ]}
+                      labelStyle={styles.checkboxControlLabel}
+                      borderStyle={styles.checkboxControlBorder}
+                      borderHoverStyle={styles.checkboxControlBorderHover}
+                      textStyle={styles.checkboxControlText}
+                      textHoverStyle={styles.checkboxControlTextHover}
+                      inputStyle={styles.checkboxControlInput}
+                      popoverStyle={userProfileStaticStyles.faqPopover}
+                      anchorOwner="user-profile-two-column-popover-anchor"
+                      labelOwner="user-profile-two-column-label"
+                      borderOwner="user-profile-two-column-border"
+                      inputOwner="user-profile-two-column-input"
+                      textOwner="user-profile-two-column-text"
+                      popoverOwner="user-profile-two-column-popover"
+                    />
                   </li>
                 </ul>
 
@@ -996,19 +1017,18 @@ function ProfileIssueRow({
               const labelPresentation = stylex.props(styles.issueLabelPresentation);
 
               return (
-                <IssueLabel
-                  as={Link}
+                <Link
+                  key={label.id}
                   {...LEGACY_LINK_PROPS}
                   {...labelPresentation}
                   to={`${projectPath}/issues?state=open&labelIds=${label.id}` as "/"}
-                  className={`${labelPresentation.className ?? ""} label list-label`.trim()}
-                  color={label.color}
-                  labelId={String(label.id)}
-                  key={String(label.id)}
+                  className={`${labelPresentation.className ?? ""} label issue-label list-label`.trim()}
+                  data-label-id={String(label.id)}
+                  style={issueLabelStyle(label.color)}
                   data-stylex-owner="user-profile-parent-issue-label"
                 >
                   {label.name}
-                </IssueLabel>
+                </Link>
               );
             })}
             <div
@@ -1902,119 +1922,6 @@ function ProfileProjectRow({
         </div>
       </div>
     </li>
-  );
-}
-
-function TwoColumnModeCheckbox() {
-  const { t } = useLegacyMessages();
-  const [isChecked, setIsChecked] = useState(
-    () =>
-      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
-  );
-  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = React.useRef<number | null>(null);
-  const popoverTitle = t("common.two.column.mode");
-  const popoverContent = t("common.two.column.mode.desc");
-  const [isControlHovered, setIsControlHovered] = useState(false);
-  const borderProps = stylex.props(
-    styles.checkboxControlBorder,
-    isControlHovered ? styles.checkboxControlBorderHover : null,
-  );
-  const textProps = stylex.props(
-    styles.checkboxControlText,
-    isControlHovered ? styles.checkboxControlTextHover : null,
-  );
-
-  const clearPopoverTimer = React.useCallback(() => {
-    if (popoverTimer.current !== null) {
-      window.clearTimeout(popoverTimer.current);
-      popoverTimer.current = null;
-    }
-  }, []);
-
-  React.useEffect(() => clearPopoverTimer, [clearPopoverTimer]);
-
-  const showPopover = React.useCallback(() => {
-    clearPopoverTimer();
-    popoverTimer.current = window.setTimeout(() => {
-      setIsPopoverVisible(true);
-      popoverTimer.current = null;
-    }, 100);
-  }, [clearPopoverTimer]);
-
-  const hidePopover = React.useCallback(() => {
-    clearPopoverTimer();
-    popoverTimer.current = window.setTimeout(() => {
-      setIsPopoverVisible(false);
-      popoverTimer.current = null;
-    }, 100);
-  }, [clearPopoverTimer]);
-
-  const storeTwoColumnMode = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const nextChecked = event.currentTarget.checked;
-    setIsChecked(nextChecked);
-    globalThis.localStorage?.setItem("useTwoColumnMode", String(nextChecked));
-  }, []);
-  const popoverAnchorStyleProps = stylex.props(
-    styles.popoverAnchor,
-    styles.checkboxControl,
-    styles.twoColumnModeControl,
-  );
-
-  return (
-    <div
-      {...popoverAnchorStyleProps}
-      className={`${popoverAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
-      id="two-column-mode-checkbox"
-      title={popoverTitle}
-      data-stylex-owner="user-profile-two-column-popover-anchor"
-      onBlur={hidePopover}
-      onFocus={showPopover}
-      onMouseEnter={showPopover}
-      onMouseLeave={hidePopover}
-    >
-      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper. */}
-      <label
-        {...stylex.props(styles.checkboxControlLabel)}
-        className={`${stylex.props(styles.checkboxControlLabel).className} checkbox`.trim()}
-        data-stylex-owner="user-profile-two-column-label"
-      >
-        <div
-          {...borderProps}
-          className={`two-column-icon-border ${borderProps.className ?? ""}`.trim()}
-          data-stylex-owner="user-profile-two-column-border"
-          onMouseEnter={() => setIsControlHovered(true)}
-          onMouseLeave={() => setIsControlHovered(false)}
-        >
-          <input
-            id="two-column-mode"
-            type="checkbox"
-            checked={isChecked}
-            {...stylex.props(styles.checkboxControlInput)}
-            data-stylex-owner="user-profile-two-column-input"
-            onChange={storeTwoColumnMode}
-          />
-          <span
-            {...textProps}
-            className={`two-column-mode-text ${textProps.className ?? ""}`.trim()}
-            data-stylex-owner="user-profile-two-column-text"
-          >
-            {t("common.two.column.view")}
-          </span>
-        </div>
-      </label>
-      {isPopoverVisible ? (
-        <div
-          className={`${stylex.props(userProfileStaticStyles.faqPopover).className} popover top`}
-          role="tooltip"
-          data-stylex-owner="user-profile-two-column-popover"
-        >
-          <div className="arrow" />
-          <h3 className="popover-title">{popoverTitle}</h3>
-          <div className="popover-content">{popoverContent}</div>
-        </div>
-      ) : null}
-    </div>
   );
 }
 

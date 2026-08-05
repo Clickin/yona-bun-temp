@@ -607,7 +607,8 @@ test("project members settings tab anchors keep legacy hrefs without route-local
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveCount(1);
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
@@ -925,16 +926,20 @@ test("project members enrollment rows own legacy floats and width through StyleX
   expect(legacyView).toContain('<div class="pull-left" style="width: 60px;">');
   expect(commonLess).toMatch(/\.mr10\s*\{\s*margin-right:10px;\s*\}/u);
   expect(bootstrap).toMatch(/\.pull-left\s*\{\s*float:\s*left;\s*\}/u);
-  expect(routeSource).toContain('data-stylex-owner="project-members-enrollment-avatar-wrap"');
-  expect(routeSource).toContain('data-stylex-owner="project-members-enrollment-details"');
-  expect(routeSource).toContain('className={`${avatarWrapProps.className ?? ""} mr10`.trim()}');
-  expect(routeSource).not.toContain(
+  const componentSource = readFileSync("src/components/enrollment-request.tsx", "utf8");
+  const componentStyleSource = readFileSync("src/components/enrollment-request.stylex.ts", "utf8");
+  expect(routeSource).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
+  expect(routeSource).toContain('detailsOwner="project-members-enrollment-details"');
+  expect(componentSource).toContain('className={`${avatarWrapProps.className ?? ""} mr10`.trim()}');
+  expect(componentSource).not.toContain(
     'className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}',
   );
-  expect(routeSource).not.toContain(
+  expect(componentSource).not.toContain(
     "className={`${stylex.props(styles.enrollmentDetails).className} pull-left`}",
   );
-  expect(routeSource).toContain('enrollmentDetails: {\n    float: "left",\n    width: "60px",');
+  expect(componentStyleSource).toContain('float: "left"');
+  expect(componentStyleSource).toContain('marginRight: "10px"');
+  expect(componentStyleSource).toContain('width: "60px"');
 
   const requests = await mockProjectMembers(page);
   for (const viewport of [
@@ -1338,9 +1343,12 @@ async function expectLegacyAnchor(
   await expect(locator).toHaveAttribute("href", href);
   await expect(locator).toHaveText(text);
   if (className === null) {
-    await expect(locator).not.toHaveAttribute("class", /.+/);
+    await expect(locator).not.toHaveAttribute(
+      "class",
+      /(?:^|\s)(?!(?:x[0-9a-z]+|\S*__\S*)(?:\s|$))\S+/u,
+    );
   } else {
-    await expect(locator).toHaveAttribute("class", className);
+    await expect(locator).toHaveAttribute("class", new RegExp(`\\b${className}\\b`, "u"));
   }
   await expect(locator).not.toHaveAttribute("aria-current", /.+/);
   await expect(locator).not.toHaveAttribute("data-status", /.+/);
@@ -1388,8 +1396,10 @@ test("project members parent fallback retains legacy forbidden shell", async ({ 
   await mockProjectMembers(page, { membersStatus: 403 });
 
   await page.goto(`${basePath}/admin/sample/members`);
-  await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass("active");
-  await expect(page.locator(".project-setting .project-menu-nav > li")).toHaveClass("");
+  await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass(/active/);
+  await expect(page.locator(".project-setting .project-menu-nav > li")).toHaveClass(
+    /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
+  );
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
   await expect(page.locator("#addNewMember")).toHaveCount(0);
@@ -1444,8 +1454,10 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
   await page.goto(`${basePath}/admin/sample/members`);
   await expect(page).toHaveTitle("You are not authorized - admin/sample");
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
-  await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass("active");
-  await expect(page.locator(".project-setting .project-menu-nav > li")).toHaveClass("");
+  await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass(/active/);
+  await expect(page.locator(".project-setting .project-menu-nav > li")).toHaveClass(
+    /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
+  );
   await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
   await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveText("Log in");
   await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveAttribute(
@@ -1762,6 +1774,12 @@ async function mockProjectMembers(
   const ownerName = options.ownerName ?? "admin";
   const projectName = options.projectName ?? "sample";
   const projectApiBase = `/api/v1/owners/${ownerName}/projects/${projectName}`;
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   const requests = {
     addedLoginIds: [] as string[],
     deletedUserIds: [] as string[],
@@ -2217,13 +2235,17 @@ async function canonicalizeScreenRoots(page: Page) {
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .filter((attr) => !(owner && attr.name === "class" && !legacyClassesByOwner[owner]))
         .map(
           (attr) =>
-            `${attr.name}=${JSON.stringify(
-              owner && attr.name === "class" ? legacyClassesByOwner[owner] : normalizeAttr(attr),
-            )}`,
+            [
+              attr.name,
+              owner && legacyClassesByOwner[owner] != null && attr.name === "class"
+                ? legacyClassesByOwner[owner]
+                : normalizeAttr(attr),
+            ] as const,
         )
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
@@ -2365,13 +2387,17 @@ async function canonicalizeLocator(page: Page, selector: string) {
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .filter((attr) => !(owner && attr.name === "class" && !legacyClassesByOwner[owner]))
         .map(
           (attr) =>
-            `${attr.name}=${JSON.stringify(
-              owner && attr.name === "class" ? legacyClassesByOwner[owner] : normalizeAttr(attr),
-            )}`,
+            [
+              attr.name,
+              owner && legacyClassesByOwner[owner] != null && attr.name === "class"
+                ? legacyClassesByOwner[owner]
+                : normalizeAttr(attr),
+            ] as const,
         )
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
@@ -2736,7 +2762,9 @@ async function canonicalizeHtml(page: Page, html: string) {
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)

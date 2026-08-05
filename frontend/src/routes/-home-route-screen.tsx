@@ -1942,6 +1942,7 @@ export function SiteLayoutShell({
                   {hasScopedSearch ? (
                     <div
                       {...stylex.props(globalGnbSearchScopeStyles.scope)}
+                      className={`btn-group ${stylex.props(globalGnbSearchScopeStyles.scope).className}`}
                       data-stylex-owner="global-gnb-search-scope"
                       onBlur={handleSearchScopeBlur}
                     >
@@ -2024,6 +2025,7 @@ export function SiteLayoutShell({
                       globalGnbSearchBoxStyles.box,
                       hasScopedSearch && globalGnbSearchBoxStyles.scoped,
                     )}
+                    className={`search-box ${hasScopedSearch ? "select" : ""} ${stylex.props(globalGnbSearchBoxStyles.box, hasScopedSearch && globalGnbSearchBoxStyles.scoped).className}`}
                     data-stylex-owner="global-gnb-search-box"
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
@@ -5318,6 +5320,7 @@ function AuthenticatedSiteUserMenu({
                   ).className
                 }
                 type="button"
+                data-toggle="tab"
                 onClick={() => setActiveSidebarTab("favorite")}
               >
                 {t("title.favorite")}
@@ -5334,6 +5337,7 @@ function AuthenticatedSiteUserMenu({
                   ).className
                 }
                 type="button"
+                data-toggle="tab"
                 onClick={() => setActiveSidebarTab("project")}
               >
                 {t("title.project")}
@@ -5350,6 +5354,7 @@ function AuthenticatedSiteUserMenu({
                   ).className
                 }
                 type="button"
+                data-toggle="tab"
                 onClick={() => setActiveSidebarTab("recent")}
               >
                 {t("title.recently.visited.issue")}
@@ -5480,10 +5485,20 @@ function AuthenticatedSiteUserMenu({
           </button>
           <ul className="dropdown-menu flat right">
             <li>
-              <Link to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}>{t("issue.menu.new")}</Link>
+              <Link
+                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
+              >
+                {t("issue.menu.new")}
+              </Link>
             </li>
             <li>
-              <Link to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}>{t("issue.menu.new.mine")}</Link>
+              <Link
+                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
+              >
+                {t("issue.menu.new.mine")}
+              </Link>
             </li>
             <li>
               <hr className="no-margin" />
@@ -5549,127 +5564,152 @@ const anonymousSiteUserMenuStyles = stylex.create({
 });
 
 function AnonymousSiteUserMenu() {
-  const { t } = useLegacyMessages();
   const openRootLoginDialog = useRootLoginDialog();
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
     "favorite",
   );
-  const anonymousSiteUserMenuStyleProps = stylex.props(anonymousSiteUserMenuStyles.menu);
 
   return (
     <>
-      <div id="mySidenav" className="sidenav">
-        <div className="span5 right-menu span-hard-wrap">
-          <div className="row-fluid user-menu-wrap">
-            <span className="user-menu">
-              <Link
-                activeProps={{
-                  "aria-current": undefined,
-                  className: undefined,
-                  "data-status": undefined,
-                }}
-                activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                params={{ user: "anonymous" }}
-                search={LEGACY_USER_LINK_SEARCH}
-                to="/$user"
-              >
-                {t("userinfo.profile")}
-              </Link>
-            </span>
-            <span className="user-menu">
-              <Link
-                activeProps={{
-                  "aria-current": undefined,
-                  className: undefined,
-                  "data-status": undefined,
-                }}
-                to="/user/editform"
-              >
-                {t("userinfo.accountSetting")}
-              </Link>
-            </span>
-            <Link to={LEGACY_ANONYMOUS_LOGOUT_PATH} reloadDocument>
-              <span className="user-menu logout label">{t("title.logout")}</span>
+      <AnonymousSidenav
+        activeSidebarTab={activeSidebarTab}
+        onSelectSidebarTab={setActiveSidebarTab}
+      />
+      <AnonymousGnbUserMenu onOpenLoginDialog={openRootLoginDialog} />
+    </>
+  );
+}
+
+function AnonymousSidenav({
+  activeSidebarTab,
+  onSelectSidebarTab,
+}: {
+  activeSidebarTab: "favorite" | "project" | "recent";
+  onSelectSidebarTab: (tab: "favorite" | "project" | "recent") => void;
+}) {
+  const { t } = useLegacyMessages();
+  return (
+    <div id="mySidenav" className="sidenav">
+      <div className="span5 right-menu span-hard-wrap">
+        <div className="row-fluid user-menu-wrap">
+          <span className="user-menu">
+            <Link
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              params={{ user: "anonymous" }}
+              search={LEGACY_USER_LINK_SEARCH}
+              to="/$user"
+            >
+              {t("userinfo.profile")}
             </Link>
-          </div>
-          <ul className="nav nav-tabs nm">
-            <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-stylex-owner="anonymous-sidebar-tab-favorite"
-                onClick={() => setActiveSidebarTab("favorite")}
-              >
-                {t("title.favorite")}
-              </button>
-            </li>
-            <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-stylex-owner="anonymous-sidebar-tab-project"
-                onClick={() => setActiveSidebarTab("project")}
-              >
-                {t("title.project")}
-              </button>
-            </li>
-            <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-stylex-owner="anonymous-sidebar-tab-recent"
-                onClick={() => setActiveSidebarTab("recent")}
-              >
-                {t("title.recently.visited.issue")}
-              </button>
-            </li>
-          </ul>
-          <div className="tab-content tab-box">
-            <div id="usermenu-tab-content-list" className="tab-content">
-              {"Loading..."}
-            </div>
+          </span>
+          <span className="user-menu">
+            <Link
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              to="/user/editform"
+            >
+              {t("userinfo.accountSetting")}
+            </Link>
+          </span>
+          <Link to={LEGACY_ANONYMOUS_LOGOUT_PATH} reloadDocument>
+            <span className="user-menu logout label">{t("title.logout")}</span>
+          </Link>
+        </div>
+        <ul className="nav nav-tabs nm">
+          <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
+            <button
+              type="button"
+              data-toggle="tab"
+              data-stylex-owner="anonymous-sidebar-tab-favorite"
+              onClick={() => onSelectSidebarTab("favorite")}
+            >
+              {t("title.favorite")}
+            </button>
+          </li>
+          <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
+            <button
+              type="button"
+              data-toggle="tab"
+              data-stylex-owner="anonymous-sidebar-tab-project"
+              onClick={() => onSelectSidebarTab("project")}
+            >
+              {t("title.project")}
+            </button>
+          </li>
+          <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
+            <button
+              type="button"
+              data-toggle="tab"
+              data-stylex-owner="anonymous-sidebar-tab-recent"
+              onClick={() => onSelectSidebarTab("recent")}
+            >
+              {t("title.recently.visited.issue")}
+            </button>
+          </li>
+        </ul>
+        <div className="tab-content tab-box">
+          <div id="usermenu-tab-content-list" className="tab-content">
+            {"Loading..."}
           </div>
         </div>
       </div>
-      <ul
-        className={`gnb-usermenu ${anonymousSiteUserMenuStyleProps.className}`}
-        data-stylex-owner="anonymous-site-user-menu"
+    </div>
+  );
+}
+
+function AnonymousGnbUserMenu({ onOpenLoginDialog }: { onOpenLoginDialog: () => boolean }) {
+  const { t } = useLegacyMessages();
+  const anonymousSiteUserMenuStyleProps = stylex.props(anonymousSiteUserMenuStyles.menu);
+  return (
+    <ul
+      className={`gnb-usermenu ${anonymousSiteUserMenuStyleProps.className}`}
+      data-stylex-owner="anonymous-site-user-menu"
+    >
+      <li
+        className={`gnb-usermenu-item ${stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.loginItem).className}`}
+        id="required-logged-in"
       >
-        <li
-          className={`gnb-usermenu-item ${stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.loginItem).className}`}
-          id="required-logged-in"
+        <Link
+          to="/users/loginform"
+          search={LEGACY_LOGIN_FORM_LINK_SEARCH}
+          className={`user-item-btn ${stylex.props(anonymousSiteUserMenuStyles.loginLink).className}`}
+          aria-controls="loginDialog"
+          aria-haspopup="dialog"
+          onClick={(event) => {
+            if (onOpenLoginDialog()) {
+              event.preventDefault();
+            }
+          }}
         >
-          <Link
-            to="/users/loginform"
-            search={LEGACY_LOGIN_FORM_LINK_SEARCH}
-            className={`user-item-btn ${stylex.props(anonymousSiteUserMenuStyles.loginLink).className}`}
-            aria-controls="loginDialog"
-            aria-haspopup="dialog"
-            onClick={(event) => {
-              if (openRootLoginDialog()) {
-                event.preventDefault();
-              }
-            }}
-          >
-            {t("title.login")}
-          </Link>
-        </li>
-        <li
-          className={`divider ${stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.divider).className}`}
-        ></li>
-        <li
-          className={
-            stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.signupItem)
-              .className
-          }
+          {t("title.login")}
+        </Link>
+      </li>
+      <li
+        className={`divider ${stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.divider).className}`}
+      ></li>
+      <li
+        className={
+          stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.signupItem)
+            .className
+        }
+      >
+        <Link
+          {...stylex.props(anonymousSiteSignupStyles.link)}
+          to="/users/signupform"
+          data-stylex-owner="anonymous-site-signup"
         >
-          <Link
-            {...stylex.props(anonymousSiteSignupStyles.link)}
-            to="/users/signupform"
-            data-stylex-owner="anonymous-site-signup"
-          >
-            {t("title.signup")}
-          </Link>
-        </li>
-      </ul>
-    </>
+          {t("title.signup")}
+        </Link>
+      </li>
+    </ul>
   );
 }
 

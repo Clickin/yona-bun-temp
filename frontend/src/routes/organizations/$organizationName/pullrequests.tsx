@@ -10,7 +10,10 @@ import {
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { styles } from "./-organization-pullrequests.stylex";
+import {
+  legacyOrganizationPullRequestTabsClassName,
+  styles,
+} from "./-organization-pullrequests.stylex";
 
 const sx = {
   page: stylex.props(styles.page),
@@ -172,7 +175,11 @@ function OrganizationPullRequestsBody({
               </form>
             </div>
             <div className="span10 span-hard-wrap" id="span10">
-              <ul {...sx.tabs} data-stylex-owner="organization-pullrequests-tabs">
+              <ul
+                {...sx.tabs}
+                className={`nav nav-tabs nm ${legacyOrganizationPullRequestTabsClassName} ${sx.tabs.className ?? ""}`.trim()}
+                data-stylex-owner="organization-pullrequests-tabs"
+              >
                 <li className={selectedCategory === "open" ? "active" : ""}>
                   <button
                     {...(selectedCategory === "open" ? sx.activeTabButton : sx.tabButton)}

@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type MouseEvent } from "react";
+import { CountBadge } from "../../../components/count-badge";
 import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
@@ -509,7 +510,7 @@ function ProjectTransferBody({
               {...dangerActionStyleProps}
               type="button"
               id="btnTransfer"
-              className={dangerActionStyleProps.className}
+              className={`${dangerActionStyleProps.className ?? ""} ybtn ybtn-danger`.trim()}
               data-stylex-owner="project-transfer-action"
               onClick={openTransferModal}
             >
@@ -521,19 +522,20 @@ function ProjectTransferBody({
               styles.modal,
               isTransferModalOpen ? styles.modalOpen : styles.modalClosed,
             )}
+            className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide`}
             id="alertTransfer"
             data-stylex-owner="project-transfer-modal"
             aria-hidden={!isTransferModalOpen}
           >
             <div
               {...headerStyleProps}
-              className={headerStyleProps.className}
+              className={`${headerStyleProps.className} modal-header`}
               data-stylex-owner="project-transfer-modal-header"
             >
               <button
                 {...closeStyleProps}
                 type="button"
-                className={closeStyleProps.className}
+                className={`${closeStyleProps.className} close`.trim()}
                 data-stylex-owner="project-transfer-modal-header"
                 onClick={dismissTransferModal}
               >
@@ -549,7 +551,7 @@ function ProjectTransferBody({
             </div>
             <div
               {...bodyStyleProps}
-              className={bodyStyleProps.className}
+              className={`${bodyStyleProps.className} modal-body`}
               data-stylex-owner="project-transfer-modal-body"
             >
               <p>{t("project.transfer.description")}</p>
@@ -557,14 +559,14 @@ function ProjectTransferBody({
             </div>
             <div
               {...footerStyleProps}
-              className={footerStyleProps.className}
+              className={`${footerStyleProps.className} modal-footer`}
               data-stylex-owner="project-transfer-modal-footer"
             >
               <button
                 {...dangerActionStyleProps}
                 id="btnTransferExec"
                 type="button"
-                className={dangerActionStyleProps.className}
+                className={`${dangerActionStyleProps.className} ybtn ybtn-danger`.trim()}
                 data-stylex-owner="project-transfer-modal-footer"
                 disabled={hasTransferRequestStarted || transferMutation.isPending}
                 onClick={() => {
@@ -580,7 +582,7 @@ function ProjectTransferBody({
               <button
                 {...defaultActionStyleProps}
                 type="button"
-                className={defaultActionStyleProps.className}
+                className={`${defaultActionStyleProps.className} ybtn`.trim()}
                 data-stylex-owner="project-transfer-modal-footer"
                 onClick={dismissTransferModal}
               >
@@ -705,16 +707,6 @@ function ProjectSettingMenu({
       </li>
     </ul>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
 function recordField(value: unknown) {

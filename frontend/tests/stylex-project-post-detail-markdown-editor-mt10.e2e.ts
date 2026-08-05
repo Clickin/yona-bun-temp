@@ -11,6 +11,10 @@ const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber.tsx", import.meta.url),
   "utf8",
 );
+const markdownEditorSource = readFileSync(
+  new URL("../src/components/markdown-editor.tsx", import.meta.url),
+  "utf8",
+);
 const styleSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts", import.meta.url),
   "utf8",
@@ -112,14 +116,12 @@ test("project board post detail comment editors keep the legacy mt10 source and 
     expect(legacyMessagesSource).toContain(message);
   }
 
-  expect(routeSource).toContain(
-    "markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper)",
-  );
+  expect(routeSource).toContain("wrapperStyleProps: sx.markdownEditorWrapper");
   expect(routeSource).toContain('"post-detail-comment-create-editor-wrapper"');
   expect(routeSource).toContain('"post-detail-comment-update-editor-wrapper"');
-  expect(routeSource).toContain("data-stylex-owner-instance={wrapId}");
+  expect(markdownEditorSource).toContain("data-stylex-owner-instance={wrapperInstance}");
   expect(routeSource).toContain(
-    'className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}',
+    'wrapperClassName: `mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()',
   );
   expect(routeSource).not.toContain('style={{ marginTop: "10px" }}');
   expect(styleSource).toContain('markdownEditorWrapper: { marginTop: "10px" }');

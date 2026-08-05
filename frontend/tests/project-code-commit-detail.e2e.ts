@@ -22,6 +22,10 @@ const COMMIT_DETAIL_STYLEX_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/commit/-commit-detail.stylex.ts", import.meta.url),
   "utf8",
 );
+const DIFF_LINE_VIEW_SOURCE = readFileSync(
+  new URL("../src/components/diff-line-view.tsx", import.meta.url),
+  "utf8",
+);
 const LEGACY_COMMENT_THREAD_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/partial_comment_thread.scala.html", import.meta.url),
   "utf8",
@@ -1617,20 +1621,21 @@ test("project commit detail Batch 746 partial diff row and cell owners keep lega
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.discommentable {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("display:none;");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-diff-line-number-cell"',
+    'lineNumberCell: "commit-detail-diff-line-number-cell"',
   );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('lineNumber: "commit-detail-diff-line-number"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('codeCell: "commit-detail-diff-code-cell"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('codeLine: "commit-detail-diff-code-pre"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-diff-line-number"',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-cell"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-pre"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-diff-line-comment-icon"',
+    'commentIcon: "commit-detail-diff-line-comment-icon"',
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("sx.diffLineCommentIcon");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
-    'data-stylex-owner="commit-detail-diff-line-comment-icon" style=',
-  );
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.lineNumberCell}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.lineNumber}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.codeCell}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.codeLine}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.commentIcon}");
+  expect(DIFF_LINE_VIEW_SOURCE).not.toContain("data-stylex-owner={owners.commentIcon} style=");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffLineCommentIcon: {");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "absolute"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('cursor: "pointer"');
@@ -4096,7 +4101,20 @@ async function canonicalize(page: Page, selector: string) {
           .join(" ")
           .trim();
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function isNormalizedRuntimeAttr(attr: Attr) {
@@ -4152,9 +4170,20 @@ async function canonicalizeHtml(page: Page, html: string) {
             .join(" ")
             .trim();
         }
-        return attr.name === "style"
-          ? attr.value.replace(/\s+/g, "").replace(/;$/u, "")
-          : attr.value;
+        return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+      }
+
+      function normalizeStyleAttr(value: string) {
+        const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
+        if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+          return normalized;
+        }
+        return normalized
+          .replace(
+            /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+            "$1src/assets/legacy/$2$3$4)",
+          )
+          .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
       }
 
       function isNormalizedRuntimeAttr(attr: Attr) {
@@ -4344,7 +4373,7 @@ test("project commit detail Batch 750 partial-filediff border owners preserve le
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-meta"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-pre"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('codeLine: "commit-detail-diff-code-pre"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.file");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.fileMeta");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeLine");

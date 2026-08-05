@@ -806,8 +806,10 @@ async function canonicalizeScreenRoots(page: Page) {
                   )
                   .join(" ")
               : (current.getAttribute(name) ?? "");
-          return `${name}=${JSON.stringify(value)}`;
+          return { name, value };
         })
+        .filter(({ name, value }) => !(name === "class" && value === ""))
+        .map(({ name, value }) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -875,8 +877,10 @@ async function canonicalizeHtml(page: Page, html: string) {
                     )
                     .join(" ")
                 : value;
-            return `${name}=${JSON.stringify(normalized)}`;
+            return { name, value: normalized };
           })
+          .filter(({ name, value }) => !(name === "class" && value === ""))
+          .map(({ name, value }) => `${name}=${JSON.stringify(value)}`)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`

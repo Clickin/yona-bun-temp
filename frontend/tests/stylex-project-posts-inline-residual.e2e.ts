@@ -5,6 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("project posts owns the board controls' former inline declarations", async ({ page }) => {
   const source = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const sharedComponentSource = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
   const styleSource = readFileSync("src/routes/$ownerName/$projectName/-posts.stylex.ts", "utf8");
   const twoColumnLegacy = readFileSync(
     "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
@@ -27,10 +28,12 @@ test("project posts owns the board controls' former inline declarations", async 
   expect(pageLess).toContain("margin:2px !important;");
   expect(keymapLegacy).toContain('style="padding:10px 0; margin-left: 55px;"');
   expect(labelLegacy).toContain("background-color: @label.color");
-  expect(source).toContain('data-stylex-owner="project-posts-two-column-mode"');
-  expect(source).toContain('data-stylex-owner="project-posts-two-column-mode-label"');
+  expect(source).toContain('anchorOwner="project-posts-two-column-mode"');
+  expect(source).toContain('labelOwner="project-posts-two-column-mode-label"');
   expect(source).toContain("styles.twoColumnModeLabel");
-  expect(source).toMatch(/className=.*checkbox/u);
+  expect(sharedComponentSource).toContain("data-stylex-owner={anchorOwner}");
+  expect(sharedComponentSource).toContain("data-stylex-owner={labelOwner}");
+  expect(sharedComponentSource).toMatch(/className=.*checkbox/u);
   expect(source).toContain('data-stylex-owner="project-posts-keymap"');
   expect(source).toContain('data-stylex-owner="project-posts-label-button"');
   expect(source).not.toContain("style={issueLabelStyle(label.color)}");
@@ -41,7 +44,9 @@ test("project posts owns the board controls' former inline declarations", async 
   expect(styleSource).toContain('margin: "2px !important"');
   expect(styleSource).toContain('verticalAlign: "top"');
   expect(styleSource).toContain('keymap: { float: "left", marginLeft: "55px", padding: "10px 0" }');
-  expect(styleSource).toContain("labelPaint:");
+  // The label paint stays on the shared issueLabelStyle inline contract (pinned by
+  // project-posts.e2e.ts parity metrics); the route no longer carries label stylex keys.
+  expect(styleSource).not.toContain("labelPaint");
 
   await mockPosts(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -112,8 +117,10 @@ test("project posts owns the board controls' former inline declarations", async 
     ?.split(";")
     .map((declaration) => declaration.split(":", 1)[0].trim().toLowerCase())
     .filter(Boolean);
-  expect(inlineDeclarations).not.toContain("background");
-  expect(inlineDeclarations).not.toContain("background-color");
+  // Label paint rides the shared issueLabelStyle inline contract (legacy labelStyles.css
+  // equivalent); only the reset stays inline on top of it.
+  expect(inlineDeclarations).toContain("background-color");
+  expect(inlineDeclarations).toContain("border");
 
   const keymapButton = keymapOwner.locator("button.ybtn-inverse");
   await keymapButton.click();

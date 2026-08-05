@@ -768,8 +768,10 @@ async function canonicalizeScreenRoots(page: Page) {
                     .sort()
                     .join(" ")
                 : value;
-          return `${name}=${JSON.stringify(normalized)}`;
+          return [name, normalized] as const;
         })
+        .filter(([name, normalized]) => !(name === "class" && normalized === ""))
+        .map(([name, normalized]) => `${name}=${JSON.stringify(normalized)}`)
         .sort()
         .join(" ");
       const open = attrs
@@ -853,8 +855,10 @@ async function canonicalizeElements(page: Page, selectors: string[]) {
                     .sort()
                     .join(" ")
                 : value;
-          return `${name}=${JSON.stringify(normalized)}`;
+          return [name, normalized] as const;
         })
+        .filter(([name, normalized]) => !(name === "class" && normalized === ""))
+        .map(([name, normalized]) => `${name}=${JSON.stringify(normalized)}`)
         .sort()
         .join(" ");
       const open = attrs
@@ -977,8 +981,10 @@ async function canonicalizeHtml(page: Page, html: string) {
                     .sort()
                     .join(" ")
                 : value;
-          return `${name}=${JSON.stringify(normalized)}`;
+          return [name, normalized] as const;
         })
+        .filter(([name, normalized]) => !(name === "class" && normalized === ""))
+        .map(([name, normalized]) => `${name}=${JSON.stringify(normalized)}`)
         .sort()
         .join(" ");
       const open = attrs

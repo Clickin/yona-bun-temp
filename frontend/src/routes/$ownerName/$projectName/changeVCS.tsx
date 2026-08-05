@@ -1,4 +1,5 @@
 import { useState, type MouseEvent } from "react";
+import { CountBadge } from "../../../components/count-badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
@@ -450,16 +451,6 @@ function ProjectSettingMenu({
       </li>
     </ul>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
 const styles = stylex.create({

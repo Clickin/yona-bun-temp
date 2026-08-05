@@ -4,10 +4,11 @@ import {
   Link,
   type Register,
   type SearchSchemaInput,
+  stripSearchParams,
   useRouter,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   listOrganizationBoardsQueryOptions,
   type BoardPostListItem,
@@ -17,6 +18,7 @@ import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationContainer } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
+import { TwoColumnModeCheckbox } from "../../../components/two-column-mode-checkbox";
 import { useLegacyMessages } from "../../../i18n";
 import { type RuntimeConfig } from "../../../runtime-config";
 import {
@@ -120,7 +122,12 @@ export const Route = createFileRoute("/organizations/$organizationName/boards")<
   component: OrganizationBoardsRoute,
   validateSearch: validateOrganizationBoardsSearch,
   search: {
-    middlewares: [resetLegacyBoardSortSearch],
+    middlewares: [
+      // Legacy BoardApp sort links carry ONLY orderBy/orderDir; the reset
+      // middleware re-adds empty defaults, so strip them back out.
+      stripSearchParams({ filter: "", pageNum: 1, projectNames: [] }),
+      resetLegacyBoardSortSearch,
+    ],
   },
 });
 
@@ -230,7 +237,13 @@ function OrganizationBoardsBody({
                   <i className="yobicon-search"></i>
                 </button>
               </div>
-              <TwoColumnModeCheckbox />
+              <TwoColumnModeCheckbox
+                anchorStyle={styles.twoColumnAnchor}
+                popoverStyle={styles.twoColumnPopover}
+                anchorOwner="organization-boards-two-column-anchor"
+                popoverOwner="organization-boards-two-column-popover"
+                wrapPopoverContentInP
+              />
             </form>
           </div>
 
@@ -660,94 +673,6 @@ function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
         ) : null}
       </div>
     </li>
-  );
-}
-
-function TwoColumnModeCheckbox() {
-  const { t } = useLegacyMessages();
-  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showPopover, setShowPopover] = useState(false);
-  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
-    () =>
-      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
-  );
-  const twoColumnPopoverStyleProps = stylex.props(styles.twoColumnPopover);
-  const clearPopoverTimers = () => {
-    if (showTimerRef.current) {
-      clearTimeout(showTimerRef.current);
-      showTimerRef.current = null;
-    }
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  };
-  const showDelayedPopover = () => {
-    clearPopoverTimers();
-    showTimerRef.current = setTimeout(() => setShowPopover(true), 100);
-  };
-  const hideDelayedPopover = () => {
-    clearPopoverTimers();
-    hideTimerRef.current = setTimeout(() => setShowPopover(false), 100);
-  };
-
-  useEffect(
-    () => () => {
-      if (showTimerRef.current) {
-        clearTimeout(showTimerRef.current);
-      }
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-    },
-    [],
-  );
-  const twoColumnAnchorStyleProps = stylex.props(styles.twoColumnAnchor);
-
-  return (
-    <div
-      {...twoColumnAnchorStyleProps}
-      className={`${twoColumnAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
-      data-stylex-owner="organization-boards-two-column-anchor"
-      id="two-column-mode-checkbox"
-      title={t("common.two.column.mode")}
-      onBlur={hideDelayedPopover}
-      onFocus={showDelayedPopover}
-      onMouseEnter={showDelayedPopover}
-      onMouseLeave={hideDelayedPopover}
-    >
-      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label className="checkbox">
-        <div className="two-column-icon-border">
-          <input
-            id="two-column-mode"
-            type="checkbox"
-            checked={useTwoColumnMode}
-            onChange={(event) => {
-              const checked = event.currentTarget.checked;
-              localStorage.setItem("useTwoColumnMode", String(checked));
-              setUseTwoColumnMode(checked);
-            }}
-          />
-          <span className="two-column-mode-text">{t("common.two.column.view")}</span>
-        </div>
-      </label>
-      {showPopover ? (
-        <div
-          {...twoColumnPopoverStyleProps}
-          className={`popover top ${twoColumnPopoverStyleProps.className ?? ""}`.trim()}
-          role="tooltip"
-          data-stylex-owner="organization-boards-two-column-popover"
-        >
-          <div className="arrow"></div>
-          <h3 className="popover-title">{t("common.two.column.mode")}</h3>
-          <div className="popover-content">
-            <p>{t("common.two.column.mode.desc")}</p>
-          </div>
-        </div>
-      ) : null}
-    </div>
   );
 }
 

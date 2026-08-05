@@ -15,7 +15,7 @@ test("milestone edit upload paste-help display is conditional StyleX-owned", () 
   expect(template).toContain("ResourceType.MILESTONE");
   expect(upload).toContain('class="help help-pastable"');
   expect(upload).toContain("common.attach.pastehere");
-  expect(route).toContain('data-stylex-owner="milestone-edit-form-paste-help"');
+  expect(route).toContain('pasteHelp: "milestone-edit-form-paste-help"');
   expect(route).toContain("milestoneEditFormStyles.pasteHelpVisible");
   expect(route).not.toContain('style={pasteSupported ? { display: "block" } : undefined}');
   expect(theme).toContain('pasteHelpVisible: { display: "block" }');

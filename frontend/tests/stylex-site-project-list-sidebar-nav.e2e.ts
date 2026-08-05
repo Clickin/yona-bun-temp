@@ -82,7 +82,12 @@ test("sidebar navigation has direct owners and retires this route's presentation
   expect(pageLess).toContain(".site-setting-nav {");
   expect(pageLess).toContain("border-left: 4px solid #EEE;");
   expect(pageLess).toContain("border-left:4px solid @primary;");
-  for (const owner of Object.values(selectors)) expect(route).toContain(owner.slice(1, -1));
+  const sidebarSource = readFileSync("src/components/site-admin-sidebar.tsx", "utf8");
+  expect(route).toContain('navOwner="site-project-list-sidebar-nav"');
+  expect(route).toContain('ownerPrefix="site-project-list-sidebar"');
+  expect(sidebarSource).toContain("data-stylex-owner={navOwner}");
+  expect(sidebarSource).toContain("`${ownerPrefix}-item`");
+  expect(sidebarSource).toContain("`${ownerPrefix}-link`");
   expect(route).not.toContain('<ul className="site-setting-nav">');
   expect(route).not.toContain('<li className="active">');
   expect(route).not.toContain('<li className="">');

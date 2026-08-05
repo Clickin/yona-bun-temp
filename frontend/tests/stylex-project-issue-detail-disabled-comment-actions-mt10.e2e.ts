@@ -98,7 +98,7 @@ test("issue detail unauthorized comment action row owns legacy mt10 in StyleX", 
   expect(routeSource).toContain(
     "const disabledCommentActionsClassName = stylex.props(styles.disabledCommentActions).className;",
   );
-  expect(routeSource).toContain("className={`${disabledCommentActionsClassName} mt10`}");
+  expect(routeSource).toContain("className={`${disabledCommentActionsClassName} right-txt`}");
   expect(routeSource).toContain(
     'data-stylex-owner="project-issue-detail-disabled-comment-actions"',
   );
@@ -140,7 +140,7 @@ test("issue detail unauthorized comment action row owns legacy mt10 in StyleX", 
     );
     await expect(textarea).not.toHaveAttribute("style", /.+/u);
     await expect(textarea).toHaveCSS("cursor", "text");
-    await expect(actions).toHaveClass(/\bmt10\b/u);
+    await expect(actions).toHaveClass(/\bright-txt\b/u);
     await expect(actions).toHaveCSS("margin-top", "10px");
     await expect(actions).toHaveCSS("text-align", "right");
     await expect(actions).not.toHaveAttribute("style", /.+/u);

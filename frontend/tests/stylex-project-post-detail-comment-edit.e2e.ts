@@ -19,5 +19,5 @@ test("post detail comment edit visibility is conditional StyleX-owned", () => {
   expect(route).not.toContain('style={isEditing ? { display: "none" } : undefined}');
   expect(route).not.toContain('style={isEditing ? { display: "block" } : undefined}');
   expect(theme).toContain('commentBodyHidden: { display: "none" }');
-  expect(theme).toContain('commentEditorVisible: { display: "block" }');
+  expect(theme).toContain('commentUpdateFormVisible: { display: "block" }');
 });

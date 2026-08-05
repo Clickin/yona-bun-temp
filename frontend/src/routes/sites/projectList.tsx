@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useState, type MouseEvent, type SyntheticEvent } from "react";
@@ -643,13 +645,6 @@ const paginationNextDisabledIconStyleProps = stylex.props(
   styles.paginationNextIcon,
   styles.paginationNextDisabledIcon,
 );
-const sidebarNavStyleProps = stylex.props(styles.sidebarNav);
-const sidebarItemStyleProps = stylex.props(styles.sidebarItem);
-const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarFirstItem);
-const sidebarActiveItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarActiveItem);
-const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
-const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarActiveLink);
-const notificationBadgeStyleProps = stylex.props(styles.notificationBadge);
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
@@ -808,7 +803,24 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               {...settingSidebarColumnStyleProps}
               data-stylex-owner="site-project-list-setting-sidebar-column"
             >
-              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
+              <SiteAdminSidebar
+                activeTo="/sites/projectList"
+                badgeOwner="site-project-list-notification-badge"
+                baseLinkProps={legacyLinkSuppressionProps}
+                dataSelected="always"
+                navOwner="site-project-list-sidebar-nav"
+                ownerPrefix="site-project-list-sidebar"
+                showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
+                  activeLink: [styles.sidebarLink, styles.sidebarActiveLink],
+                  badge: [styles.notificationBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
+                  item: [styles.sidebarItem],
+                  link: [styles.sidebarLink],
+                  nav: [styles.sidebarNav],
+                }}
+              />
             </div>
             <div
               {...settingContentColumnStyleProps}
@@ -1188,134 +1200,6 @@ function ProjectListPagination({
   );
 }
 
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  return (
-    <ul {...sidebarNavStyleProps} data-stylex-owner="site-project-list-sidebar-nav">
-      <li
-        {...sidebarFirstItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/userList"
-        >
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li
-        {...sidebarItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/postList"
-        >
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li
-        {...sidebarItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/issueList"
-        >
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li
-        {...sidebarActiveItemStyleProps}
-        data-selected="true"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarActiveLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/projectList"
-        >
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li
-        {...sidebarItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/mail"
-        >
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li
-        {...sidebarItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/massmail"
-        >
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li
-        {...sidebarItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/update"
-        >
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? (
-            <span
-              {...notificationBadgeStyleProps}
-              className={notificationBadgeStyleProps.className}
-              data-stylex-owner="site-project-list-notification-badge"
-            >
-              1
-            </span>
-          ) : null}
-        </Link>
-      </li>
-      <li
-        {...sidebarItemStyleProps}
-        data-selected="false"
-        data-stylex-owner="site-project-list-sidebar-item"
-      >
-        <Link
-          {...legacyLinkSuppressionProps}
-          {...sidebarLinkStyleProps}
-          data-stylex-owner="site-project-list-sidebar-link"
-          to="/sites/diagnostic"
-        >
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
-    </ul>
-  );
-}
-
 function ProjectListItem({
   index,
   onDelete,
@@ -1396,9 +1280,4 @@ function ProjectListItem({
       </div>
     </li>
   );
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }

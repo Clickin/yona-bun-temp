@@ -138,6 +138,21 @@
     border: 0;
   }
 
+  .search-wrap {
+    clear: both;
+    height: 30px;
+    padding: 10px 0;
+  }
+
+  .search-wrap.underline {
+    border-bottom: 1px solid #ddd;
+  }
+
+  .write-btn-wrap {
+    margin: 20px 0;
+    text-align: right;
+  }
+
   .close {
     float: right;
     font-size: 20px;
@@ -303,6 +318,18 @@
   .ybtn-success:focus {
     color: #fff;
     background-color: #e95e01;
+  }
+
+  .ybtn-danger {
+    color: #fff;
+    background-color: #c93426 !important;
+    border: 1px solid #b13427;
+  }
+
+  .ybtn-danger:hover,
+  .ybtn-danger:focus {
+    color: #fff;
+    background-color: #b13427 !important;
   }
 
   .secret-box {
@@ -612,6 +639,13 @@
 
   .modal-backdrop,
   .modal-backdrop.in {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    background-color: #000;
     opacity: 0.5;
   }
 
@@ -1440,6 +1474,14 @@
 
   .content-container .main-stream .activity-streams .activity-stream:last-child {
     border-bottom: 0 none;
+  }
+
+  /* source:bootstrap — frozen bootstrap.css .nav base (margin-bottom feeds the legacy
+     tab/list gap; scoped overrides like .nm and .write-comment-wrap .nav still win) */
+  .nav {
+    margin-bottom: 20px;
+    margin-left: 0;
+    list-style: none;
   }
 
   .nav-tabs {
@@ -2825,6 +2867,11 @@
     margin: 10px 20px;
   }
 
+  .posting-history {
+    display: inline-block;
+    margin-left: 10px;
+  }
+
   .board-body .content {
     min-height: 150px;
     padding: 0 20px;
@@ -2851,6 +2898,18 @@
   .issue-detail-page .issue-info p {
     margin-bottom: 5px;
     line-height: 14px;
+  }
+
+  .issue-info {
+    padding: 15px 0 0 52px;
+  }
+
+  .issue-info dl {
+    margin-bottom: 20px;
+  }
+
+  .issue-info dl dd {
+    padding: 5px 0;
   }
 
   .issue-detail-page .issue-info .status {
@@ -3172,6 +3231,11 @@
     display: block;
     padding: 0 14px 0 0;
     margin: 0;
+  }
+
+  .editor-clear-temporary {
+    margin-left: 10px;
+    display: none;
   }
 
   .textarea-box textarea {
@@ -4018,6 +4082,16 @@
     vertical-align: middle;
   }
 
+  /* source:bootstrap — legacy bootstrap.css .btn-group > .btn restores the base font-size, ported for the fallback-off profile */
+  .btn-group > .btn {
+    font-size: 14px;
+  }
+
+  /* source:_yobiUI.less — legacy .popover-content line-height:120% at the 11px code-view context, ported for the fallback-off profile */
+  .popover-content {
+    line-height: 13.2px;
+  }
+
   /* source:select2 — legacy select2.css base, ported for the fallback-off profile */
   .select2-container {
     margin: 0;
@@ -4612,5 +4686,79 @@
     border-top: 0;
     margin-top: 0;
     padding-top: 0;
+  }
+
+  .search-bar {
+    border: 1px solid #ccc;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    line-height: 20px;
+    padding: 4px 25px 4px 5px;
+    position: relative;
+    height: 20px;
+    background-color: #FFF;
+  }
+
+  .search-bar .textbox {
+    border: 0 none;
+    height: 20px;
+    width: 350px;
+    margin: 0 -5px;
+    padding: 0 5px;
+    -webkit-transition: width 0.15s;
+    -moz-transition: width 0.15s;
+    -ms-transition: width 0.15s;
+    -o-transition: width 0.15s;
+    transition: width 0.15s;
+  }
+
+  .search-bar .textbox.small {
+    width: 150px;
+  }
+
+  .search-bar .textbox.large {
+    width: 560px;
+  }
+
+  .search-bar .textbox.resize {
+    width: 80px;
+  }
+
+  .search-bar .textbox.resize:focus,
+  .search-bar .textbox.resize:active {
+    width: 350px;
+  }
+
+  .search-bar .textbox.full {
+    width: 100%;
+  }
+
+  .search-bar .search-btn {
+    background-color: transparent;
+    border: 0;
+    height: 20px;
+    outline: 0 none;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    /* the legacy icon glyphs are not ported to app.css, so the icon box keeps
+       the legacy 14px width to stay visible/clickable */
+    width: 14px;
+  }
+
+  .issue-due-date-native-picker {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 1px;
+    min-width: 1px;
+    height: 1px;
+    min-height: 1px;
+    padding: 0;
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
   }
 }

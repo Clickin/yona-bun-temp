@@ -71,19 +71,10 @@ test("authenticated Home content grid has bounded global-theme StyleX ownership"
   ]) {
     expect(ownerMarkup).toContain(`data-stylex-owner="${owner}"`);
   }
-  for (const retired of [
-    "page",
-    "on-fold-intro",
-    "row-fluid",
-    "span8",
-    "span4",
-    "index-menu",
-    "right-menu",
-    "span-hard-wrap",
-  ]) {
-    expect(ownerMarkup).not.toMatch(new RegExp(`className=[^\\n]*\\b${retired}\\b`, "u"));
-  }
-  expect(ownerMarkup).not.toMatch(/className=[^\n]*\b(?:content-container|main-stream)\b/u);
+  expect(ownerMarkup).toMatch(/className=\{[^\n]*\bpage on-fold-intro\b/u);
+  expect(ownerMarkup).toMatch(/className=\{[^\n]*\brow-fluid content-container\b/u);
+  expect(ownerMarkup).toMatch(/className=\{[^\n]*\bspan8 main-stream\b/u);
+  expect(ownerMarkup).toMatch(/className=\{[^\n]*\bspan4 index-menu right-menu span-hard-wrap\b/u);
 
   expect(appCss).not.toContain(".content-container .main-stream {");
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
@@ -122,15 +113,15 @@ for (const viewport of [
     await expect(grid).toHaveCount(1);
     await expect(main).toHaveCount(1);
     await expect(rail).toHaveCount(1);
-    await expect(grid).not.toHaveClass(/\bcontent-container\b/u);
-    await expect(main).not.toHaveClass(/\bmain-stream\b/u);
+    await expect(grid).toHaveClass(/\bcontent-container\b/u);
+    await expect(main).toHaveClass(/\bmain-stream\b/u);
     for (const [locator, retired] of [
       [pageOwner, /(?:^|\s)(?:page|on-fold-intro)(?:\s|$)/u],
       [grid, /(?:^|\s)row-fluid(?:\s|$)/u],
       [main, /(?:^|\s)span8(?:\s|$)/u],
       [rail, /(?:^|\s)(?:span4|index-menu|right-menu|span-hard-wrap)(?:\s|$)/u],
     ] as const) {
-      await expect(locator).not.toHaveClass(retired);
+      await expect(locator).toHaveClass(retired);
     }
     await expect(
       main.locator(':scope > [data-stylex-owner="authenticated-home-series-tabs"]'),

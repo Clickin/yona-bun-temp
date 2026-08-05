@@ -11,5 +11,6 @@ test("issue detail label control owns inline-block display in StyleX", () => {
   expect(template).toContain("partial_show_selected_label");
   expect(route).toContain('data-stylex-owner="project-issue-detail-label-control"');
   expect(route).not.toContain('style={{ display: "inline-block" }}');
-  expect(theme).toContain('labelControl: { display: "inline-block" }');
+  expect(theme).toContain("labelControl: {");
+  expect(theme).toMatch(/labelControl:\s*\{[\s\S]*?display:\s*["']inline-block["']/u);
 });

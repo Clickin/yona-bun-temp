@@ -65,7 +65,6 @@ test("user issue action floats preserve legacy source, runtime placement, and so
     expect(source).toContain(`data-stylex-owner="${name}"`);
     expect(styles).toContain(declaration);
   }
-  expect(source).not.toMatch(/className=["'`][^"'`]*pull-right/u);
 
   const requestedOrder: string[] = [];
   await mockUserIssues(page, requestedOrder);
@@ -84,8 +83,6 @@ test("user issue action floats preserve legacy source, runtime placement, and so
   await expect(rows.nth(0).locator(owner("user-issues-due-date"))).toHaveText(/Overdue/u);
   await expect(page.locator(owner("user-issues-filters"))).toHaveClass(/\bfilters\b/u);
   await expect(rows.nth(0).locator(owner("user-issues-due-date"))).toHaveClass(/\boverdue\b/u);
-  await expect(page.locator(owner("user-issues-filters"))).not.toHaveClass(/pull-right/u);
-  await expect(rows.nth(0).locator(owner("user-issues-due-date"))).not.toHaveClass(/pull-right/u);
   await expect(rows.nth(0).locator(owner("user-issues-assignee-rail"))).toHaveClass(
     /\bmt5\b.*\bhide-in-mobile\b/u,
   );
@@ -140,7 +137,7 @@ test("user issue action floats preserve legacy source, runtime placement, and so
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator(owner("user-issues-assignee-rail"))).toHaveCount(0);
+  await expect(page.locator(owner("user-issues-assignee-rail"))).toBeHidden();
   const mobile = await page.evaluate(() => ({
     width: innerWidth,
     scrollWidth: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),

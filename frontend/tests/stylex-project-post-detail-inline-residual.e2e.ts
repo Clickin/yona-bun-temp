@@ -97,9 +97,9 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   }
   expect(theme).toContain('actions: { margin: "10px 0px", textAlign: "right" }');
   expect(theme).toContain('disabledCommentActions: { textAlign: "right" }');
-  expect(theme).toContain('commentUploadHelp: { textAlign: "right" }');
+  expect(theme).toContain('commentUploadHelp: { display: "none", textAlign: "right" }');
   expect(theme).toContain('commentActions: { textAlign: "right" }');
-  expect(theme).toContain('commentUpdateActions: { textAlign: "right" }');
+  expect(theme).toContain('commentUpdateActions: { marginTop: "10px", textAlign: "right" }');
   expect(theme).toContain("title: {");
   expect(theme).toContain("boardId: {");
   expect(theme).toContain("date: {");
@@ -108,14 +108,14 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(theme).toContain("labelBackground: (backgroundColor: string) => ({ backgroundColor })");
   expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
   expect(theme).toContain(
-    'mobileMetadata: {\n    display: "none",\n    fontSize: "0.7em",\n    "@media all and (max-width: 720px)": { display: "block" },',
+    'mobileMetadata: {\n    display: "none",\n    float: "right",\n    fontSize: "0.7em",\n    "@media all and (max-width: 720px)": { display: "block" },',
   );
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
   expect(theme).toContain(
     'originalMessageToggle: {\n    borderStyle: "none",\n    borderWidth: 0,',
   );
   expect(theme).toContain("tasklistProgress: { width: 0 }");
-  expect(theme).toContain('keymapWrapper: { marginLeft: 55, padding: "10px 0px" }');
+  expect(theme).toContain('keymapWrapper: { float: "left", marginLeft: 55, padding: "10px 0px" }');
 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });

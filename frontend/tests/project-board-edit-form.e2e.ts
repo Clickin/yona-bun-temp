@@ -46,7 +46,10 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   );
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("styles.options).className} right-txt");
   expect(EDITFORM_ROUTE_SOURCE).toContain(
-    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
+    'import { BoardPostMarkdownEditor } from "../../../../../components/markdown-editor";',
+  );
+  expect(EDITFORM_ROUTE_SOURCE).toContain(
+    'import { BoardPostFileUploader } from "../../../../../components/file-uploader";',
   );
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("document.");

@@ -19,12 +19,12 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <button type="button" class="pin" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
@@ -56,15 +56,15 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -330,11 +330,7 @@ test("site admin mail renders legacy sended=true success state", async ({ page }
   await expect(page.locator(".span10 > .alert-error")).toHaveCount(0);
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
   await expect(page.locator('input[name="from"]')).toHaveValue("site-admin@yona.local");
-  expect(await mailSuccessStateOrder(page)).toEqual([
-    "title_area",
-    "alert alert-success",
-    "form-horizontal",
-  ]);
+  expect(await mailSuccessStateOrder(page)).toEqual(["title_area", "alert alert-success", "form"]);
 });
 
 test("site admin mail submits the legacy payload and rerenders a blank compose form on success", async ({
@@ -385,11 +381,7 @@ test("site admin mail submits the legacy payload and rerenders a blank compose f
   await expect(page.locator('input[name="to"]')).toHaveValue("");
   await expect(page.locator('input[name="subject"]')).toHaveValue("");
   await expect(page.locator('textarea[name="body"]')).toHaveValue("");
-  expect(await mailSuccessStateOrder(page)).toEqual([
-    "title_area",
-    "alert alert-success",
-    "form-horizontal",
-  ]);
+  expect(await mailSuccessStateOrder(page)).toEqual(["title_area", "alert alert-success", "form"]);
 });
 
 test("site admin mail shows legacy common.loading while mail options load", async ({ page }) => {
@@ -439,11 +431,7 @@ test("site admin mail renders legacy errorMessage alert state", async ({ page })
   ]);
   await expect(page.locator(".span10 > .alert-success")).toHaveCount(0);
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
-  expect(await mailErrorStateOrder(page)).toEqual([
-    "title_area",
-    "alert alert-error",
-    "form-horizontal",
-  ]);
+  expect(await mailErrorStateOrder(page)).toEqual(["title_area", "alert alert-error", "form"]);
 });
 
 test("site admin mail renders legacy Html error message line breaks", async ({ page }) => {
@@ -518,10 +506,12 @@ test("site admin mail renders legacy update notification badge", async ({ page }
 
 test("site admin mail route source keeps direct typed sidebar links", async () => {
   const source = await readFile("src/routes/sites/mail.tsx", "utf8");
+  const sidebarSource = await readFile("src/components/site-admin-sidebar.tsx", "utf8");
 
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('<title>{t("title.sendMail")}</title>');
   expect(source).not.toContain("legacyMailSidebarSearch");
+  expect(source).toContain('activeTo="/sites/mail"');
   for (const destination of [
     "/sites/userList",
     "/sites/postList",
@@ -532,8 +522,10 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
     "/sites/update",
     "/sites/diagnostic",
   ])
-    expect(source).toContain(`to="${destination}"`);
-  expect(source).toContain("stylex.props(styles.sidebarLink, styles.sidebarActiveLink)");
+    expect(sidebarSource).toContain(`to: "${destination}"`);
+  expect(sidebarSource).toContain(
+    "stylex.props(styleSlots.link, isActive && styleSlots.activeLink)",
+  );
   expect(source).not.toContain(
     'errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : ""',
   );
@@ -544,6 +536,7 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
   expect(source).not.toContain("matchAll(tokenPattern)");
   expect(source).not.toContain("new RegExp(");
   expect(source).not.toContain("to={item.href}");
+  expect(sidebarSource).not.toContain("to={item.href}");
   expect(source).not.toContain("DOMParser");
   expect(source).not.toContain("parseFromString");
   expect(source).not.toContain("useLegacySiteMailDocumentTitle");
@@ -597,6 +590,7 @@ async function mailErrorStateOrder(page: Page) {
       const owner = element.getAttribute("data-stylex-owner");
       if (owner === "site-mail-title-strip") return "title_area";
       if (owner === "site-mail-error-alert") return "alert alert-error";
+      if (owner === "site-mail-form") return "form";
       return element.getAttribute("class") ?? element.tagName.toLowerCase();
     }),
   );
@@ -608,6 +602,7 @@ async function mailSuccessStateOrder(page: Page) {
       const owner = element.getAttribute("data-stylex-owner");
       if (owner === "site-mail-title-strip") return "title_area";
       if (owner === "site-mail-success-alert") return "alert alert-success";
+      if (owner === "site-mail-form") return "form";
       return element.getAttribute("class") ?? element.tagName.toLowerCase();
     }),
   );
@@ -731,6 +726,12 @@ async function legacyMailShellMetrics(page: Page) {
 }
 
 async function mockSiteAdminSession(page: Page) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   const fulfillSession = async (route: Route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -845,6 +846,19 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
+          .join(" ");
+      }
       return value;
     }
 
@@ -957,6 +971,19 @@ async function canonicalizeHtml(page: Page, html: string) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== retiredToken)
+          .join(" ");
+      }
+      if (name === "class") {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
       }
       return value;

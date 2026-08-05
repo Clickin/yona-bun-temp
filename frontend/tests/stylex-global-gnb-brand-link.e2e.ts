@@ -61,7 +61,7 @@ test("global GNB brand link has complete global-theme StyleX ownership", () => {
   const owner = route.slice(ownerStart, ownerEnd);
   expect(owner).not.toContain('className="logo logo-letter"');
   expect(owner).toContain('to="/"');
-  expect(owner).toContain("className={globalGnbBrandLinkClassName}");
+  expect(owner).toContain("className={`logo logo-letter ${globalGnbBrandLinkClassName}`}");
   expect(route).toContain("globalGnbBrandLinkStyles.root,");
   expect(route).toContain("hasScopedSearch && globalGnbBrandLinkStyles.projectHeader");
   expect(owner).not.toContain("activeProps={{");
@@ -119,7 +119,7 @@ for (const state of [
     await expect(owner).toBeVisible();
     await expect(owner).toHaveText("Y");
     await expect(owner).toHaveAttribute("href", `${BASE_PATH}/`);
-    await expect(owner).not.toHaveClass(/(?:^|\s)(?:logo|logo-letter)(?:\s|$)/u);
+    await expect(owner).toHaveClass(/(?:^|\s)(?:logo|logo-letter)(?:\s|$)/u);
     if (state.path === "/") {
       await expect(owner).toHaveAttribute("aria-current", "page");
       await expect(owner).toHaveAttribute("data-status", "active");

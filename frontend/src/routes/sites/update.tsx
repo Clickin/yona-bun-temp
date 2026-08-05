@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { siteUpdateQueryOptions, type SiteUpdateResponse } from "../../api/site-admin";
@@ -181,13 +183,30 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
-          <div className="row-fluid">
-            <div className="span2">
-              <SiteAdminSidebar showUpdateBadge={Boolean(query.data?.versionToUpdate)} />
+      <div className="page-wrap-outer" data-stylex-owner="site-update-page">
+        <div className="site-setting-wrap" data-stylex-owner="site-update-setting-wrap">
+          <div className="row-fluid" data-stylex-owner="site-update-setting-grid">
+            <div className="span2" data-stylex-owner="site-update-sidebar-column">
+              <SiteAdminSidebar
+                activeItemClassName="active"
+                activeTo="/sites/update"
+                badgeOwner="site-update-sidebar-badge"
+                baseLinkProps={legacySiteSidebarLinkProps}
+                linkPropsByTo={{ "/sites/update": { search: legacyUpdateSidebarSearch } }}
+                navOwner="site-update-sidebar"
+                ownerPrefix="site-update-sidebar"
+                showUpdateBadge={Boolean(query.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
+                  badge: [styles.sidebarBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
+                  item: [styles.sidebarItem],
+                  nav: [styles.sidebar],
+                }}
+                ulClassName="site-setting-nav"
+              />
             </div>
-            <div className="span10">
+            <div className="span10" data-stylex-owner="site-update-setting-content-column">
               <div
                 {...titleAreaStyleProps}
                 className={`title_area ${titleAreaStyleProps.className ?? ""}`}
@@ -207,105 +226,6 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         </div>
       </div>
     </>
-  );
-}
-
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  return (
-    <ul
-      {...stylex.props(styles.sidebar)}
-      className={`site-setting-nav ${stylex.props(styles.sidebar).className}`}
-      data-stylex-owner="site-update-sidebar"
-    >
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
-        data-stylex-owner="site-update-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/userList"
-        >
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/postList"
-        >
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/issueList"
-        >
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/projectList"
-        >
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/mail"
-        >
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/massmail"
-        >
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
-        className={`active ${stylex.props(styles.sidebarItem, styles.sidebarActiveItem).className}`}
-        data-stylex-owner="site-update-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          search={legacyUpdateSidebarSearch}
-          to="/sites/update"
-        >
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? (
-            <span
-              {...stylex.props(styles.sidebarBadge)}
-              data-stylex-owner="site-update-sidebar-badge"
-            >
-              1
-            </span>
-          ) : null}
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          data-stylex-owner="site-update-sidebar-link"
-          to="/sites/diagnostic"
-        >
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
-    </ul>
   );
 }
 
@@ -374,11 +294,6 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
       ) : null}
     </>
   );
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }
 
 function SiteUpdateTitle() {

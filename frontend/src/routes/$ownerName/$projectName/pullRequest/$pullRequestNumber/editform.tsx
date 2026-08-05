@@ -1,5 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PullRequestFileUploader } from "../../../../../components/file-uploader";
+import { PullRequestMarkdownEditor } from "../../../../../components/markdown-editor";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import {
@@ -14,7 +16,6 @@ import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { styles as sx } from "./-editform.stylex";
 
 export const Route = createFileRoute(
@@ -211,9 +212,28 @@ function ProjectPullRequestEditBody({
                 placeholder={t("title")}
               />
               <div {...stylex.props(sx.editorWrap)}>
-                <PullRequestMarkdownEditor value={pullRequest.bodyMarkdown} />
+                <PullRequestMarkdownEditor
+                  value={pullRequest.bodyMarkdown}
+                  wrapperClassName={`${stylex.props(sx.markdownEditorWrapper).className} mt10`.trim()}
+                  wrapperStyle={stylex.props(sx.markdownEditorWrapper)}
+                  editorStyle={stylex.props(sx.editor)}
+                  tabContentClassName={`${stylex.props(sx.editorTabContent).className} tab-content`}
+                  owners={{
+                    wrapper: "pull-request-editform-markdown-editor-wrapper",
+                    tabContent: "pull-request-edit-editor-tab-content",
+                  }}
+                />
               </div>
-              <PullRequestFileUploader resourceId={pullRequest.id} />
+              <PullRequestFileUploader
+                resourceId={pullRequest.id}
+                wrapperStyleProps={stylex.props(sx.uploader)}
+                attachedFilesStyleProps={stylex.props(sx.attachmentDivider)}
+                helpClassName={`help ${stylex.props(sx.uploadSaveHelp).className ?? ""}`.trim()}
+                owners={{
+                  wrapper: "pull-request-edit-uploader",
+                  saveHelp: "pull-request-edit-upload-save-help",
+                }}
+              />
               <div className={`${stylex.props(sx.actions).className} actions`}>
                 <button type="submit" className="ybtn ybtn-success">
                   {t("button.save")}
@@ -428,118 +448,6 @@ function PullRequestDisabledBranchSelectors({
         <input type="hidden" name="toProjectId" value={selected.toProjectId} />
         <input type="hidden" name="toBranch" value={selected.toBranch} />
       </div>
-    </div>
-  );
-}
-
-function PullRequestMarkdownEditor({ value }: { value: string }) {
-  const { t } = useLegacyMessages();
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  return (
-    <div
-      {...stylex.props(sx.markdownEditorWrapper)}
-      className={`${stylex.props(sx.markdownEditorWrapper).className} mt10`.trim()}
-      data-stylex-owner="pull-request-editform-markdown-editor-wrapper"
-    >
-      <ul className="nav nav-tabs nm small">
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
-            {t("common.editor.preview")}
-          </button>
-        </li>
-        <li>
-          <div className="task-list-button">
-            <button
-              type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-            >
-              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li>
-          <div className="editor-clear-temporary">
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div className="editor-notice-label"></div>
-        </li>
-      </ul>
-      <div
-        className={`${stylex.props(sx.editorTabContent).className} tab-content`}
-        data-stylex-owner="pull-request-edit-editor-tab-content"
-      >
-        <LegacyMarkdownHelp />
-        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div className="textarea-box">
-            <textarea
-              name="body"
-              className={`${stylex.props(sx.editor).className} editorSeries content comment nm`}
-              data-editor-mode="content-body"
-              id="editor-body-body"
-              defaultValue={value}
-              {...{ markdown: "true" }}
-            ></textarea>
-          </div>
-        </div>
-        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
-        </div>
-        <div className="notification-receiver">
-          <span className="notification-receiver-title">
-            {t("notification.receiver.list.title")}
-          </span>
-          <span className="notification-receiver-list"></span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
-  const { t } = useLegacyMessages();
-  return (
-    <div
-      id="upload"
-      className={`${stylex.props(sx.uploader).className} upload-wrap content-footer`}
-      data-stylex-owner="pull-request-edit-uploader"
-      data-resource-type="PULL_REQUEST"
-      data-resource-id={resourceId === undefined ? undefined : String(resourceId)}
-    >
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
-          <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> {t("button.upload")}
-            <input type="file" className="file" name="filePath" multiple />
-          </div>
-        </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
-      </div>
-      <ul
-        className={`${stylex.props(sx.attachmentDivider).className} attached-files unstyled`}
-      ></ul>
-      <p
-        className={`help ${stylex.props(sx.uploadSaveHelp).className ?? ""}`.trim()}
-        data-stylex-owner="pull-request-edit-upload-save-help"
-      >
-        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-      </p>
     </div>
   );
 }

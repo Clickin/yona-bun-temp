@@ -1,10 +1,6 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
-import { Link, createFileRoute } from "@tanstack/react-router";
-
-// ponytail: external footer links use `to` typed via ExternalLinkTarget (Link
-// requires `to`; plain URL literals are not route types).
-type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
+import { createFileRoute } from "@tanstack/react-router";
 import { prefixBasePath } from "../runtime-config";
 import * as sx from "./-UIKit.stylex";
 
@@ -19,263 +15,289 @@ function UIKitRoute() {
 
   return (
     <>
-      <title>Yoram UI</title>
+      <title>Yobi UI</title>
       <style>{`body { color:#ccc; }
-dl { display:inline-block; margin:18px; }
-dd { margin-left:0; }
-.gnb-logo { display:inline-block !important; }
-.gnb-outer { text-align:center; }
-.subtitle { font-size:24px; font-weight:bold; height:55px; line-height:55px; vertical-align:bottom; }
-.css { font-family: Consolas; color: #222; background: #C9EBB5; padding: 3px; border-radius: 3px; border: 1px solid #4CB848; }`}</style>
-      <header className="gnb-outer">
-        <span className="subtitle">Yoram UI</span>
-      </header>
+      dl { display:inline-block; margin:18px; }
+      dd { margin-left:0; }
+      .gnb-logo { display:inline-block !important; }
+      .gnb-outer { text-align:center; }
+      .subtitle { font-size:24px; font-weight:bold; height:55px; line-height:55px; vertical-align:bottom; }
+      .css { font-family: Consolas; color: #222; background: #C9EBB5; padding: 3px; border-radius: 3px; border: 1px solid #4CB848; }`}</style>
+      <UIKitPageHeader />
       <div className="page-wrap-outer">
         <div className="container page-wrap">
           <div className="page">
-            <h3>Buttons</h3>
-            <div>
-              <pre>.ybtn</pre>
-              <p>
-                <button type="button" className="ybtn">
-                  Default
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-primary">
-                  Primary
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-inverse">
-                  Inverse
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-info">
-                  Info
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-watching">
-                  Watching
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-warning">
-                  Warning
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-danger">
-                  Danger
-                </button>{" "}
-                <button type="button" className="ybtn ybtn-disabled">
-                  Disabled
-                </button>
-              </p>
-              <CodeSample>{`${legacyAnchorMarkup('href="#" class="ybtn"', "Default")}
-<button type="button" class="ybtn ybtn-primary">Primary</button>
-${legacyAnchorMarkup('href="#" class="ybtn ybtn-inverse"', "Inverse")}
-<button type="button" class="ybtn ybtn-info">Info</button>
-${legacyAnchorMarkup('href="#" class="ybtn ybtn-watching"', "Watching")}
-<button type="button" class="ybtn ybtn-warning">Warning</button>
-${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSample>
-              <hr />
-              <div className="btn-wrap">
-                <div className="nbtn medium white fake-file-wrap">
-                  <i className="ico ico-plus-blue" />
-                  Upload
-                  <input type="file" className="file" name="filePath" accept="image/*" />
-                </div>
-              </div>
-              <CodeSample>{`<div class="btn-wrap">
-    <div class="nbtn medium white fake-file-wrap">
-        <i class="ico ico-plus-blue"></i>Upload
-        <input type="file" class="file" name="filePath" accept="image/*">
-    </div>
-</div>`}</CodeSample>
-            </div>
-            <hr />
-            <h3>Select</h3>
-            <div>
-              <pre>.dropdown-toggle</pre>
-              <DropdownDemo size="small" />
-              <DropdownDemo size="medium" />
-              <DropdownDemo size="large" />
-              <CodeSample>{`<div class="btn-group" data-name="assigneeId">
-    <button class="btn dropdown-toggle large" data-toggle="dropdown">
-        <span class="d-label">전체</span>
-        <span class="d-caret"><span class="caret"></span></span>
-    </button>
-    <ul class="dropdown-menu">
-        <li data-value="" data-selected="true" class="active">${legacyAnchorMarkup('href="javascript:void(0)"', "전체")}</li>
-        <li data-value="0">${legacyAnchorMarkup('href="javascript:void(0)"', "담당자 없음")}</li>
-    </ul>
-</div>`}</CodeSample>
-            </div>
-            <hr />
-            <h3>Search Form</h3>
-            <div>
-              <pre>.form-search</pre>
-              <form className="form-search">
-                <input
-                  type="text"
-                  className="text"
-                  name="filter"
-                  placeholder="현재 프로젝트에서 검색"
-                />
-                <button type="button" className="btn">
-                  검색
-                </button>
-              </form>
-              <CodeSample>{`<form class="form-search">
-    <input type="text" class="text" name="filter" placeholder="현재 프로젝트에서 검색"><!--
- --><button type="button" class="btn">검색</button>
-</form>`}</CodeSample>
-              <hr />
-              <pre>.search-bar</pre>
-              <div className="search">
-                <div className="search-bar">
-                  <input name="filter" className="textbox full" type="text" />
-                  <button type="submit" className="search-btn">
-                    <i className="yobicon-search" />
-                  </button>
-                </div>
-              </div>
-              <CodeSample>{`<div class="search">
-    <div class="search-bar">
-        <input name="filter" class="textbox full" type="text">
-        <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
-    </div>
-</div>`}</CodeSample>
-            </div>
-            <hr />
-            <h3>Labels</h3>
-            <div>
-              <pre>.issue-label</pre>
-              <p>
-                <button className="issue-label">Clean</button>{" "}
-                <button className="issue-label">Fresh</button>{" "}
-                <button className="issue-label">Modern</button>{" "}
-                <button className="issue-label">Unique</button>
-              </p>
-              <pre>.issue-label .active</pre>
-              <p>
-                <IssueLabel color="#da5454">Clean</IssueLabel>{" "}
-                <IssueLabel color="#ff9933">Fresh</IssueLabel>{" "}
-                <IssueLabel color="#ffcc33">Modern</IssueLabel>{" "}
-                <IssueLabel color="#22b4b9">Unique</IssueLabel>
-              </p>
-              <pre>.issue-label .active .editable</pre>
-              <p>
-                <IssueLabel color="#da5454" editable>
-                  Clean
-                </IssueLabel>{" "}
-                <IssueLabel color="#ff9933" editable>
-                  Fresh
-                </IssueLabel>{" "}
-                <IssueLabel color="#ffcc33" editable>
-                  Modern
-                </IssueLabel>{" "}
-                <IssueLabel color="#22b4b9" editable>
-                  Unique
-                </IssueLabel>
-              </p>
-            </div>
-            <CodeSample>{`<button class="issue-label">Clean</button>
-<button class="issue-label active" style="background-color:#da5454; color:#fff;">Clean<span class="delete">&times;</span></button>
-<button class="issue-label active editable" style="background-color:#da5454; color:#fff;">Clean<span class="delete">&times;</span></button>`}</CodeSample>
-            <hr />
-            <h3>Avatar</h3>
-            <div>
-              <pre>.avatar-wrap</pre>
-              <AvatarDemo size="mini" label=".mini (12x12)" />
-              <AvatarDemo size="smaller" label=".smaller (20x20)" />
-              <AvatarDemo size="small" label=".small (24x24)" />
-              <AvatarDemo size="medium" label=".medium (32x32, default)" />
-              <AvatarDemo size="mlarge" label=".mlarge (40x40)" />
-              <AvatarDemo size="large" label=".large (64x64)" />
-              <AvatarDemo size="xlarge" label=".xlarge (128x128)" />
-            </div>
-            <hr />
-            <h3>Tabs</h3>
-            <pre>.nav .nav-tabs</pre>
-            <div>
-              <ul className="nav nav-tabs">
-                <li className="active">
-                  <button type="button">파일</button>
-                </li>
-                <li>
-                  <button type="button">커밋</button>
-                </li>
-              </ul>
-            </div>
-            <hr />
-            <h3>Switches</h3>
-            <CodeSample>{`<input type="checkbox" data-toggle="switch">`}</CodeSample>
-            <div>
-              <div className="switch" data-on-label="미해결" data-off-label="해결">
-                <input type="checkbox" data-toggle="switch" defaultChecked />
-              </div>
-              <div className="switch deactivate" data-on-label="미해결" data-off-label="해결">
-                <input
-                  type="checkbox"
-                  data-toggle="switch"
-                  checked={showsViaEmailDemo}
-                  onChange={(event) => {
-                    setShowsViaEmailDemo(event.currentTarget.checked);
-                  }}
-                />
-              </div>
-              <div
-                className="switch switch-square"
-                data-on-label="<i class='yobicon-eye-close'></i>"
-                data-off-label="<i class='yobicon-eye-open'></i>"
-              >
-                <input type="checkbox" data-toggle="switch" />
-              </div>
-            </div>
-            {showsViaEmailDemo ? <OriginalMessageDemo /> : null}
+            <UIKitButtonsSection />
+            <UIKitSelectSection />
+            <UIKitSearchFormSection />
+            <UIKitLabelsSection />
+            <UIKitAvatarSection />
+            <UIKitTabsSection />
+            <UIKitSwitchesSection
+              showsViaEmailDemo={showsViaEmailDemo}
+              onToggleViaEmailDemo={setShowsViaEmailDemo}
+            />
           </div>
         </div>
       </div>
-      <footer className="page-footer-outer">
-        <div className="page-footer">
-          <span className="provider">
-            Copyright{" "}
-            <Link
-              className="yona-author"
-              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
-              rel="noreferrer"
-              target="_blank"
-              to={
-                "https://github.com/yona-projects/yona/blob/master/AUTHORS" as unknown as ExternalLinkTarget
-              }
-            >
-              Yona authors
-            </Link>{" "}
-            & ©{" "}
-            <Link
-              href="https://navercorp.com"
-              rel="noreferrer"
-              target="_blank"
-              to={"https://navercorp.com" as unknown as ExternalLinkTarget}
-            >
-              NAVER Corp.
-            </Link>{" "}
-            &{" "}
-            <Link
-              className="naver-labs"
-              href="https://naverlabs.com/"
-              rel="noreferrer"
-              target="_blank"
-              to={"https://naverlabs.com/" as unknown as ExternalLinkTarget}
-            >
-              NAVER LABS
-            </Link>{" "}
-            Supported by{" "}
-            <Link
-              className="naver-cloud-platform"
-              href="https://www.ncloud.com/?referer=yona"
-              rel="noreferrer"
-              target="_blank"
-              to={"https://www.ncloud.com/?referer=yona" as unknown as ExternalLinkTarget}
-            >
-              NAVER CLOUD PLATFORM
-            </Link>
-          </span>
-        </div>
-      </footer>
+      <UIKitPageFooter />
     </>
+  );
+}
+
+function UIKitPageHeader() {
+  return (
+    <header className="gnb-outer">
+      <span className="subtitle">Yobi UI</span>
+    </header>
+  );
+}
+
+function UIKitButtonsSection() {
+  return (
+    <>
+      <h3>Buttons</h3>
+      <div>
+        <pre>.ybtn</pre>
+        <p>
+          <button type="button" className="ybtn">
+            Default
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-primary">
+            Primary
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-inverse">
+            Inverse
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-info">
+            Info
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-watching">
+            Watching
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-warning">
+            Warning
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-danger">
+            Danger
+          </button>{" "}
+          <button type="button" className="ybtn ybtn-disabled">
+            Disabled
+          </button>
+        </p>
+        <CodeSample>{`${legacyAnchorMarkup('href="#" class="ybtn"', "Default")}
+      <button type="button" class="ybtn ybtn-primary">Primary</button>
+      ${legacyAnchorMarkup('href="#" class="ybtn ybtn-inverse"', "Inverse")}
+      <button type="button" class="ybtn ybtn-info">Info</button>
+      ${legacyAnchorMarkup('href="#" class="ybtn ybtn-watching"', "Watching")}
+      <button type="button" class="ybtn ybtn-warning">Warning</button>
+      ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSample>
+        <hr />
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="ico ico-plus-blue" />
+            Upload
+            <input type="file" className="file" name="filePath" accept="image/*" />
+          </div>
+        </div>
+        <CodeSample>{`<div class="btn-wrap">
+          <div class="nbtn medium white fake-file-wrap">
+              <i class="ico ico-plus-blue"></i>Upload
+              <input type="file" class="file" name="filePath" accept="image/*">
+          </div>
+      </div>`}</CodeSample>
+      </div>
+      <hr />
+    </>
+  );
+}
+function UIKitSelectSection() {
+  return (
+    <>
+      <h3>Select</h3>
+      <div>
+        <pre>.dropdown-toggle</pre>
+        <DropdownDemo size="small" />
+        <DropdownDemo size="medium" />
+        <DropdownDemo size="large" />
+        <CodeSample>{`<div class="btn-group" data-name="assigneeId">
+          <button class="btn dropdown-toggle large" data-toggle="dropdown">
+              <span class="d-label">전체</span>
+              <span class="d-caret"><span class="caret"></span></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li data-value="" data-selected="true" class="active">${legacyAnchorMarkup('href="javascript:void(0)"', "전체")}</li>
+              <li data-value="0">${legacyAnchorMarkup('href="javascript:void(0)"', "담당자 없음")}</li>
+          </ul>
+      </div>`}</CodeSample>
+      </div>
+      <hr />
+    </>
+  );
+}
+function UIKitSearchFormSection() {
+  return (
+    <>
+      <h3>Search Form</h3>
+      <div>
+        <pre>.form-search</pre>
+        <form className="form-search">
+          <input type="text" className="text" name="filter" placeholder="현재 프로젝트에서 검색" />
+          <button type="button" className="btn">
+            검색
+          </button>
+        </form>
+        <CodeSample>{`<form class="form-search">
+          <input type="text" class="text" name="filter" placeholder="현재 프로젝트에서 검색"><!--
+       --><button type="button" class="btn">검색</button>
+      </form>`}</CodeSample>
+        <hr />
+        <pre>.search-bar</pre>
+        <div className="search">
+          <div className="search-bar">
+            <input name="filter" className="textbox full" type="text" />
+            <button type="submit" className="search-btn">
+              <i className="yobicon-search" />
+            </button>
+          </div>
+        </div>
+        <CodeSample>{`<div class="search">
+          <div class="search-bar">
+              <input name="filter" class="textbox full" type="text">
+              <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
+          </div>
+      </div>`}</CodeSample>
+      </div>
+      <hr />
+    </>
+  );
+}
+function UIKitLabelsSection() {
+  return (
+    <>
+      <h3>Labels</h3>
+      <div>
+        <pre>.issue-label</pre>
+        <p>
+          <button className="issue-label">Clean</button>{" "}
+          <button className="issue-label">Fresh</button>{" "}
+          <button className="issue-label">Modern</button>{" "}
+          <button className="issue-label">Unique</button>
+        </p>
+        <pre>.issue-label .active</pre>
+        <p>
+          <IssueLabel color="#da5454">Clean</IssueLabel>{" "}
+          <IssueLabel color="#ff9933">Fresh</IssueLabel>{" "}
+          <IssueLabel color="#ffcc33">Modern</IssueLabel>{" "}
+          <IssueLabel color="#22b4b9">Unique</IssueLabel>
+        </p>
+        <pre>.issue-label .active .editable</pre>
+        <p>
+          <IssueLabel color="#da5454" editable>
+            Clean
+          </IssueLabel>{" "}
+          <IssueLabel color="#ff9933" editable>
+            Fresh
+          </IssueLabel>{" "}
+          <IssueLabel color="#ffcc33" editable>
+            Modern
+          </IssueLabel>{" "}
+          <IssueLabel color="#22b4b9" editable>
+            Unique
+          </IssueLabel>
+        </p>
+      </div>
+      <CodeSample>{`<button class="issue-label">Clean</button>
+      <button class="issue-label active" style="background-color:#da5454; color:#fff;">Clean<span class="delete">&times;</span></button>
+      <button class="issue-label active editable" style="background-color:#da5454; color:#fff;">Clean<span class="delete">&times;</span></button>`}</CodeSample>
+      <hr />
+    </>
+  );
+}
+function UIKitAvatarSection() {
+  return (
+    <>
+      <h3>Avatar</h3>
+      <div>
+        <pre>.avatar-wrap</pre>
+        <AvatarDemo size="mini" label=".mini (12x12)" />
+        <AvatarDemo size="smaller" label=".smaller (20x20)" />
+        <AvatarDemo size="small" label=".small (24x24)" />
+        <AvatarDemo size="medium" label=".medium (32x32, default)" />
+        <AvatarDemo size="mlarge" label=".mlarge (40x40)" />
+        <AvatarDemo size="large" label=".large (64x64)" />
+        <AvatarDemo size="xlarge" label=".xlarge (128x128)" />
+      </div>
+      <hr />
+    </>
+  );
+}
+function UIKitTabsSection() {
+  return (
+    <>
+      <h3>Tabs</h3>
+      <pre>.nav .nav-tabs</pre>
+      <div>
+        <ul className="nav nav-tabs">
+          <li className="active">
+            <button type="button">파일</button>
+          </li>
+          <li>
+            <button type="button">커밋</button>
+          </li>
+        </ul>
+      </div>
+      <hr />
+    </>
+  );
+}
+function UIKitSwitchesSection({
+  showsViaEmailDemo,
+  onToggleViaEmailDemo,
+}: {
+  showsViaEmailDemo: boolean;
+  onToggleViaEmailDemo: (checked: boolean) => void;
+}) {
+  return (
+    <>
+      <h3>Switches</h3>
+      <CodeSample>{`<input type="checkbox" data-toggle="switch">`}</CodeSample>
+      <div>
+        <div className="switch" data-on-label="미해결" data-off-label="해결">
+          <input type="checkbox" data-toggle="switch" defaultChecked />
+        </div>
+        <div className="switch deactivate" data-on-label="미해결" data-off-label="해결">
+          <input
+            type="checkbox"
+            data-toggle="switch"
+            checked={showsViaEmailDemo}
+            onChange={(event) => {
+              onToggleViaEmailDemo(event.currentTarget.checked);
+            }}
+          />
+        </div>
+        <div
+          className="switch switch-square"
+          data-on-label="<i class='yobicon-eye-close'></i>"
+          data-off-label="<i class='yobicon-eye-open'></i>"
+        >
+          <input type="checkbox" data-toggle="switch" />
+        </div>
+      </div>
+      {showsViaEmailDemo ? <OriginalMessageDemo /> : null}
+    </>
+  );
+}
+
+function UIKitPageFooter() {
+  return (
+    <footer className="page-footer-outer">
+      <div className="page-footer">
+        <span className="provider">
+          © <strong>NAVER Corp.</strong>
+        </span>
+      </div>
+    </footer>
   );
 }
 
@@ -346,9 +368,14 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
             </span>
           </button>
           <ul className="dropdown-menu">
-            <li data-value="" data-selected="true" className={selectedValue === "" ? "active" : ""}>
+            <li
+              data-value=""
+              data-selected="true"
+              className={selectedValue === "" ? "active" : undefined}
+            >
               <button
                 type="button"
+                {...stylex.props(sx.styles.dropdownMenuButton)}
                 onClick={(event) => {
                   event.stopPropagation();
                   setSelectedValue("");
@@ -362,6 +389,7 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
             <li data-value="0" className={selectedValue === "0" ? "active" : undefined}>
               <button
                 type="button"
+                {...stylex.props(sx.styles.dropdownMenuButton)}
                 onClick={(event) => {
                   event.stopPropagation();
                   setSelectedValue("0");

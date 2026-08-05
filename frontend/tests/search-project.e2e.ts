@@ -78,20 +78,7 @@ test("project search matches legacy search/result.scala.html project empty revie
     .poll(() => page.locator("head > title").allTextContents())
     .toContain("Search - admin/sample");
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
-  expect(
-    await page
-      .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-      )
-      .evaluateAll((roots) =>
-        roots.map((root) =>
-          root.getAttribute("data-stylex-owner") === "site-footer" &&
-          !root.classList.contains("page-footer-outer")
-            ? "site-footer"
-            : root.className,
-        ),
-      ),
-  ).toEqual([
+  expect(await screenRootClassNames(page)).toEqual([
     "unsupported hidden",
     "gnb-outer project-header",
     "project-header-outer",
@@ -472,7 +459,7 @@ test("project search without required query renders legacy badrequest_default.sc
     expectProjectHeader: false,
     expectProjectMenu: false,
     expectSiteBreadcrumb: false,
-    expectedRootOrder: ["unsupported hidden", "gnb-outer", "page-wrap-outer", "page-footer-outer"],
+    expectedRootOrder: ["unsupported hidden", "gnb-outer", "page-wrap-outer", "site-footer"],
   });
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
@@ -737,19 +724,7 @@ async function expectProjectSearchShell(page: Page) {
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const rootOrder = await page
-    .locator(
-      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-    )
-    .evaluateAll((roots) =>
-      roots.map((root) =>
-        root.getAttribute("data-stylex-owner") === "site-footer" &&
-        !root.classList.contains("page-footer-outer")
-          ? "site-footer"
-          : root.className,
-      ),
-    );
-  expect(rootOrder).toEqual([
+  expect(await screenRootClassNames(page)).toEqual([
     "unsupported hidden",
     "gnb-outer project-header",
     "project-header-outer",
@@ -881,6 +856,13 @@ async function mockProjectSearch(
     keywords: [],
     pageNums: [],
   };
+
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
 
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -1136,7 +1118,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "tabindex" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .concat(isModernizedLegacySearchCategoryButton(node) ? [`href=${JSON.stringify("#")}`] : [])
@@ -1226,9 +1209,20 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function isModernizedTanStackRouterAttr(attr: Attr) {
@@ -1380,7 +1374,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "tabindex" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .concat(isModernizedLegacySearchCategoryButton(node) ? [`href=${JSON.stringify("#")}`] : [])
@@ -1502,9 +1497,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function isModernizedTanStackRouterAttr(attr: Attr) {
@@ -1654,18 +1660,35 @@ async function expectProjectSearchErrorShell(
   await expect(page.locator(".site-breadcrumb-outer")).toHaveCount(
     options.expectSiteBreadcrumb ? 1 : 0,
   );
-  expect(
-    await page
-      .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-      )
-      .evaluateAll((roots) =>
-        roots.map((root) =>
-          root.getAttribute("data-stylex-owner") === "site-footer" &&
+  expect(await screenRootClassNames(page)).toEqual(options.expectedRootOrder);
+}
+
+async function screenRootClassNames(page: Page) {
+  return page
+    .locator(
+      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+    )
+    .evaluateAll((roots) =>
+      roots.map((root) => {
+        if (root.getAttribute("data-stylex-owner") === "global-gnb-outer") {
+          const hasProjectVariant = Array.from(root.classList).some((token) =>
+            token.endsWith("globalGnbOuterStyles.project"),
+          );
+          return hasProjectVariant ? "gnb-outer project-header" : "gnb-outer";
+        }
+        return root.getAttribute("data-stylex-owner") === "site-footer" &&
           !root.classList.contains("page-footer-outer")
-            ? "site-footer"
-            : root.className,
-        ),
-      ),
-  ).toEqual(options.expectedRootOrder);
+          ? "site-footer"
+          : Array.from(root.classList)
+              .filter(
+                (token) =>
+                  token &&
+                  token !== "gray-txt" &&
+                  token !== "right-txt" &&
+                  !/^x[0-9a-z]+$/u.test(token) &&
+                  !token.includes("__"),
+              )
+              .join(" ");
+      }),
+    );
 }

@@ -15,12 +15,16 @@ test("sidebar nav owns only UL, repeated LI variants, and direct Links", () => {
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   expect(legacy).toContain('<ul class="site-setting-nav">');
   expect(pageLess).toContain(".site-setting-nav {");
-  for (const owner of Object.values(owners))
-    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  const sidebarSource = readFileSync("src/components/site-admin-sidebar.tsx", "utf8");
+  expect(route).toContain('navOwner="site-user-list-sidebar-nav"');
+  expect(route).toContain('ownerPrefix="site-user-list-sidebar"');
+  expect(sidebarSource).toContain("data-stylex-owner={navOwner}");
+  expect(sidebarSource).toContain("`${ownerPrefix}-item`");
+  expect(sidebarSource).toContain("`${ownerPrefix}-link`");
   for (const retired of ["site-setting-nav", "active"])
     expect(route).not.toContain(`className="${retired}"`);
   expect(route).not.toContain('className="notification-badge"');
-  expect(route).toContain('data-stylex-owner="site-user-list-sidebar-notification-badge"');
+  expect(route).toContain('badgeOwner="site-user-list-sidebar-notification-badge"');
   expect(route).toContain("styles.sidebarNotificationBadge");
   for (const paint of ["sidebarAccent", "sidebarBorder", "sidebarHoverSurface"])
     expect(theme).toContain(paint);

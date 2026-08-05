@@ -20,6 +20,7 @@ import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../components/issue-label";
+import { IssueDueDateInput } from "../../../components/issue-due-date-input";
 import {
   useLockedLinkClick,
   useRootProgressStatusBar,
@@ -250,27 +251,6 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         )}
         type="text/css"
       />
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(
-          runtimeConfig.basePath,
-          "/assets/javascripts/lib/moment-with-langs.min.js",
-        )}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(runtimeConfig.basePath, "/assets/javascripts/lib/pikaday/pikaday.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(
-          runtimeConfig.basePath,
-          "/assets/javascripts/common/yobi.ui.Calendar.js",
-        )}
-      ></script>
       <ProjectIssuesBody
         assignableUsers={assignableUsersQuery.data?.items ?? []}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
@@ -2736,6 +2716,7 @@ function IssueSearchForm({
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
+  const dueDatePickerRef = useRef<HTMLInputElement>(null);
   const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>());
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
@@ -2963,19 +2944,15 @@ function IssueSearchForm({
         <dl className="issue-option">
           <dt>{t("issue.dueDate")}</dt>
           <dd className="search search-bar">
-            <input
-              ref={dueDateInputRef}
-              id="issueDueDate"
-              type="text"
-              name="dueDate"
-              className="textbox full"
+            <IssueDueDateInput
+              ownerPrefix="project-issue-list"
+              inputId="issueDueDate"
+              dueDateRef={dueDateInputRef}
+              datePickerRef={dueDatePickerRef}
               defaultValue={search.dueDate}
               onFocus={(event) => rememberSearchInputValue(event.currentTarget)}
               onBlur={(event) => submitSearchInputIfChanged(event.currentTarget)}
             />
-            <button type="button" className="search-btn btn-calendar">
-              <i className="yobicon-calendar2"></i>
-            </button>
           </dd>
         </dl>
         <div

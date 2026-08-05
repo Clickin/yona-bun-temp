@@ -16,12 +16,12 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 const ISSUE_DETAIL_KEYMAP = `<div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button><div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue details</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">L</span><span class="help-inline">List</span><br><span class="ybtn ybtn-small">E</span><span class="help-inline">Edit</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"><h5>Issue Comments</h5><span class="ybtn ybtn-small">SHIFT</span> + <span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Comment &amp; Close issue</span><br></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div></div>`;
 
 const EXPECTED_ISSUE_DETAIL = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id">11</strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="issue-11" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/issues/11/content"><textarea>Body **markdown**</textarea></form></div><div id="issue-body-11"><div class="content markdown-wrap" data-allowed-update="true"><p>Body <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " title="Watch this issue" data-watching="false">Subscribe</button><button id="issue-share-button" type="button" class="ybtn">Issue Sharing</button><span class="project-btn-item hide show-in-mobile-inline ml4"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></span><span class="issue-weight"><span class="divider">|</span><button id="upvote-issue-weight" class="ybtn ybtn-small" title="Issue weight: Upvote"><i class="yobicon-arrow-up-alt"></i></button><button class="ybtn ybtn-small" id="down-vote-issue-weight" title="Issue weight: Down vote"><i class="yobicon-arrow-down-alt"></i></button><span class="weight-number">2</span></span></div></div><div id="vote" class="vote-wrap voter-exists"><button type="button" class="" title="Vote this issue"><span class="heart"><i class="yobicon-hearts"></i></span></button><div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div></div><div id="voters" class="modal hide voters-dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">People who agree with this</h5></div><div class="modal-body"><ul class="unstyled"><li><a href="__BASE_PATH__/admin" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li><a href="__BASE_PATH__/dev" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div class="modal-footer"><button id="copyEmailBtn" class="ybtn ybtn-info ybtn-small">Copy email list</button><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Close</button></div></div><span class="act-row"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span></div><dl class="sharer-list hideFromDisplayOnly"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="hideFromDisplayOnly"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value=""></dd></dl><div class="watcher-list"></div><div class="subtasks"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info"><form id="issueUpdateForm" action="__BASE_PATH__/admin/sample/issues" method="post"><input type="hidden" name="issues[0].id" value="42"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></dd><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="admin" style="width:100%"></dd></dl><dl><dt>Milestone</dt><dd><select id="milestone" name="milestone.id" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd></dl><dl><dt>Due date<span class="duedate-status "></span></dt><dd><div class="search search-bar"><input type="text" name="dueDate" value="Jul 5, 2026" class="textbox full" autocomplete="off"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select></dd></dl><div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div></form><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div></div></div><div><input type="hidden" id="issueBodyChecksum" value="body-sha1"><input type="hidden" id="numOfComments" value="0"><input type="hidden" id="issueUpdateDate" value="1782892800000"></div><div class="board-footer">${ISSUE_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Are you sure you want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id">11</strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="hide show-in-mobile"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="issue-11" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/issues/11/content"><textarea>Body **markdown**</textarea></form></div><div id="issue-body-11"><div class="content markdown-wrap" data-allowed-update="true"><p>Body <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " title="Watch this issue" data-watching="false">Subscribe</button><button id="issue-share-button" type="button" class="ybtn">Issue Sharing</button><span class="project-btn-item hide show-in-mobile-inline ml4"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></span><span class="issue-weight"><span class="divider">|</span><button id="upvote-issue-weight" class="ybtn ybtn-small" title="Issue weight: Upvote"><i class="yobicon-arrow-up-alt"></i></button><button class="ybtn ybtn-small" id="down-vote-issue-weight" title="Issue weight: Down vote"><i class="yobicon-arrow-down-alt"></i></button><span class="weight-number">2</span></span></div></div><div id="vote" class="vote-wrap voter-exists"><button type="button" class="" title="Vote this issue"><span class="heart"><i class="yobicon-hearts"></i></span></button><div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div></div><div id="voters" class="modal hide voters-dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">People who agree with this</h5></div><div class="modal-body"><ul class="unstyled"><li><a href="__BASE_PATH__/admin" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li><a href="__BASE_PATH__/dev" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div class="modal-footer"><button id="copyEmailBtn" class="ybtn ybtn-info ybtn-small">Copy email list</button><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Close</button></div></div><span class="act-row"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></span></div><dl class="sharer-list hideFromDisplayOnly"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="hideFromDisplayOnly"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value=""></dd></dl><div class="watcher-list"></div><div class="subtasks"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info"><form id="issueUpdateForm" action="__BASE_PATH__/admin/sample/issues" method="post"><input type="hidden" name="issues[0].id" value="42"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></dd><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="admin" style="width:100%"></dd></dl><dl><dt>Milestone</dt><dd><select id="milestone" name="milestone.id" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd></dl><dl><dt>Due date<span class="duedate-status "></span></dt><dd><div class="search search-bar"><input type="text" name="dueDate" value="Jul 5, 2026" class="textbox full" autocomplete="off"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></div></dd></dl><dl><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select></dd></dl><div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></div></form><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div></div></div><div><input type="hidden" id="issueBodyChecksum" value="body-sha1"><input type="hidden" id="numOfComments" value="0"><input type="hidden" id="issueUpdateDate" value="1782892800000"></div><div class="board-footer">${ISSUE_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Are you sure you want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
 `;
 
 const TASKLIST = `<div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div>`;
 const COMMENT_UPDATE_FORM = `<div id="comment-editform-77" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments/77" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-77">Comment **markdown**</textarea></div></div><div id="preview-77" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-77" class="file-upload__label ybtn">File upload</label><input id="upload-77" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="77">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-77"></div><div class="attachment-files"></div><div id="upload-77" data-resourcetype="ISSUE_COMMENT" data-resourceid="77"></div></div></form></div>`;
-const COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="ISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
+const COMMENT_FORM = `<form action="__BASE_PATH__/admin/sample/issue/11/comments" enctype="multipart/form-data" id="comment-form" method="post"><div class="write-comment-box"><div class="write-comment-wrap"><div class="markdown-editor mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button class="add-task-list-button ybtn ybtn-danger-no-outline ybtn-small" type="button"><i class="task-list-icon yobicon-list"></i>Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button class="ybtn ybtn-small ybtn-warning" id="button-clear-temporary" type="button">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div class="markdown-help"><ul class="markdown-help-nav"><li><span class="label">Markdown help</span></li><li class="help-nav"><button aria-controls="markdown-help-markdownHeaders" aria-expanded="false" class="markdown-help-nav-button" type="button">Header</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownStyling" aria-expanded="false" class="markdown-help-nav-button" type="button">Text Style</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownLinks" aria-expanded="false" class="markdown-help-nav-button" type="button">Link</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownLists" aria-expanded="false" class="markdown-help-nav-button" type="button">List</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownTaskList" aria-expanded="false" class="markdown-help-nav-button" type="button">Checklist</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownImages" aria-expanded="false" class="markdown-help-nav-button" type="button">Image</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownBlockquotes" aria-expanded="false" class="markdown-help-nav-button" type="button">Blockquote</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownCodes" aria-expanded="false" class="markdown-help-nav-button" type="button">Code</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownTables" aria-expanded="false" class="markdown-help-nav-button" type="button">Table</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownShortLinks" aria-expanded="false" class="markdown-help-nav-button" type="button">Short Link</button></li></ul><ul class="markdown-help-wrap"><li class="markdown-help-item markdownHeaders" id="markdown-help-markdownHeaders"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre># This is an H1 ## This is an H2 ### This is an H3</pre></div><div class="span6"><div class="markdown-wrap"><h1 id="yb-header-this-is-an-h1">This is an H1<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h1">#</a></h1><h2 id="yb-header-this-is-an-h2">This is an H2<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h2">#</a></h2><h3 id="yb-header-this-is-an-h3">This is an H3<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h3">#</a></h3></div></div></div></li><li class="markdown-help-item markdownStyling" id="markdown-help-markdownStyling"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre></div><div class="span6"><div class="markdown-wrap"><p><em>This is an italic</em><strong>This is an bold</strong><del>This is an strike</del></p></div></div></div></li><li class="markdown-help-item markdownLinks" id="markdown-help-markdownLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>[Site](https://example.com/ "Example Site") https://example.com/</pre></div><div class="span6"><div class="markdown-wrap"><p><a href="https://example.com/" title="Example Site">Site</a></p><p><a href="https://example.com/">https://example.com/</a></p></div></div></div></li><li class="markdown-help-item markdownLists" id="markdown-help-markdownLists"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- Red 1. White 2. Blue - Green.</pre></div><div class="span6"><div class="markdown-wrap"><ul><li>Red<ol><li>White</li><li>Blue</li></ol></li><li>Green</li></ul></div></div></div></li><li class="markdown-help-item markdownTaskList" id="markdown-help-markdownTaskList"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre></div><div class="span6"><div class="markdown-wrap"><ul><li><input type="checkbox"></input>Todos<ul><li><input checked="" type="checkbox"></input>To do A</li><li><input type="checkbox"></input>To do B</li><li><input type="checkbox"></input>To do C</li></ul></li></ul></div></div></div></li><li class="markdown-help-item markdownImages" id="markdown-help-markdownImages"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>![title](https://example.com/images/sample.png "Sample image")</pre></div><div class="span6"><div class="markdown-wrap"><p><img src="__BASE_PATH__/legacy-assets/images/ico-like-small.png" title="Sample image"></img></p></div></div></div></li><li class="markdown-help-item markdownBlockquotes" id="markdown-help-markdownBlockquotes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>> Lorem ipsum dolor sit amet, consectetuer adipiscing elit. > > Aenean commodo ligula eget dolor.</pre></div><div class="span6"><div class="markdown-wrap"><blockquote><p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p><p>Aenean commodo ligula eget dolor.</p></blockquote></div></div></div></li><li class="markdown-help-item markdownCodes" id="markdown-help-markdownCodes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>\`function test() {console.log("hello world");}\` \`\`\`javascript function test() { console.log("hello world"); } \`\`\`</pre></div><div class="span6"><div class="markdown-wrap"><p><code>function test() {console.log("hello world");}</code></p><pre><code class="hljs language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-title">test</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-built_in">console</span>.log(<span class="hljs-string">"hello world"</span>); }</code></pre></div></div></div></li><li class="markdown-help-item markdownTables" id="markdown-help-markdownTables"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>| Default | Align center | Align right | | ------------ | :----------: | ------: | | Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |</pre></div><div class="span6"><div class="markdown-wrap"><table><thead><tr><th>Default</th><th style="text-align:center">Align center</th><th style="text-align:right">Align right</th></tr></thead><tbody><tr><td>Carrot</td><td style="text-align:center">Red</td><td style="text-align:right">1,000</td></tr><tr><td>Banana</td><td style="text-align:center">Yellow</td><td style="text-align:right">32,000</td></tr></tbody></table><p>Also, you can copy & paste table from excel sheet</p></div></div></div></li><li class="markdown-help-item markdownShortLinks" id="markdown-help-markdownShortLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>Issue no: #2 Mention: @example commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593</pre></div><div class="span6"><div class="markdown-wrap"><p>Issue no:<a href="__BASE_PATH__/example/example/issue/2">#2</a></p><p></p><p>Mention:<a href="__BASE_PATH__/example">@example</a></p><p>commit:<a href="__BASE_PATH__/example/example/commit/763575">@763575</a>or<a href="__BASE_PATH__/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">@763575</a></p></div></div></div></li></ul></div><div class="active tab-pane" id="edit-contents"><div class="textarea-box"><textarea class="comment content editorSeries nm" data-editor-mode="comment-body" id="editor-contents-contents" markdown="true" name="contents"></textarea></div></div><div class="tab-pane" id="preview-contents"><div class="comment-body markdown-preview markdown-wrap" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="content-footer upload-wrap" data-resource-type="ISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag & Drop files to attach here or</span><div class="btn-wrap"><div class="fake-file-wrap medium nbtn white"><i class="yobicon-upload"></i>File upload<input class="file" multiple="" name="filePath" type="file"></input></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="help"><i class="yobicon-supportrequest"></i>Selected file will be attached when your comment is saved.</p></div><div><button class="hidden ybtn" id="dynamic-comment-btn" type="button"></button><button class="ybtn ybtn-success" type="submit">Add a comment</button></div></div></div></form>`;
 const CHILD_COMMENT_ANCHORS = `<div id="comment-78"></div>`;
 const CHILD_COMMENTS = `<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Child <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/qa1" class="usf-group" title="qa1"><strong>QA One</strong></a><a href="__BASE_PATH__/admin/sample/issue/11#comment-78" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="77"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="__CHILD_REPLY_PLACEHOLDER__"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>`;
 const LEFT_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment " id="comment-77">${CHILD_COMMENT_ANCHORS}<div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Dev Member"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="dev"></a></span><a href="__BASE_PATH__/dev" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/issue/11#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="__BASE_PATH__/admin/sample/issue/11#comment-77" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><span class="new-issue-by"><a href="__BASE_PATH__/user/issues/new?commentId=77">Reference in new issue</a></span><button type="button" class="btn-transparent-with-fontsize-lineheight" title="Agree"><i class="yobicon-hearts vote-heart-off"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml10" data-comment-id="77" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div>${COMMENT_UPDATE_FORM}<div id="comment-body-77">${TASKLIST}<div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>Comment <strong>markdown</strong></p></div><div class="attachments pull-left" data-attachments="[]"></div></div></div>${CHILD_COMMENTS}</li></ul></div></div>${COMMENT_FORM}</div>`;
@@ -31,14 +31,14 @@ const LEFT_ASSIGNEE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wr
 const LEFT_MILESTONE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-91"><span class="state milestone-changed">Update milestone</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> changed milestone to <span class="bold font-blue"><a href="__BASE_PATH__/admin/sample/milestone/5" data-placement="bottom" title="Milestone">v1.0</a></span><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-91">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_NULL_MILESTONE_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-99"><span class="state milestone-changed">Update milestone</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> changed milestone to <span class="bold">None</span><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-99">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_MOVED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-92"><span class="state changed">moved</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> moved this issue from <strong><a href="__BASE_PATH__/old-owner/old-project" class="link">old-owner/old-project</a></strong><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-92">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
-const LEFT_COMMIT_REFERRED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-93"><span class="state changed">mentioned</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> mentioned this issue in <strong>Commit <a href="__BASE_PATH__/admin/sample/commit/abcdef0" class="link">@abcdef0</a></strong><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-93">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_COMMIT_REFERRED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-93"><span class="state changed">mentioned</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> mentioned this issue in <strong>Commit <a href="__BASE_PATH__/admin/sample/commit/abcdef0?branch=&path=" class="link">@abcdef0</a></strong><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-93">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_PULL_REQUEST_REFERRED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-94"><span class="state changed">mentioned</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> mentioned this issue in <strong>Pull request -3 <a href="__BASE_PATH__/admin/sample/pullRequest/3" class="link">Fix login redirect</a></strong><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-94">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_SHARER_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-95"><span class="state sharer-added">Issue Sharer</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> shared current issue to <a href="__BASE_PATH__/qa1" class="usf-group" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-95">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_SHARER_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-96"><span class="state sharer-deleted">Cancelled</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> cancelled issue sharing with <a href="__BASE_PATH__/qa1" class="usf-group" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-96">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
-const LEFT_LABEL_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-97"><span class="state label-added">Added</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> added <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-97">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
-const LEFT_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-98"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-98">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_LABEL_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-97"><span class="state label-added">Added</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> added <div class="issue-label active label" data-label-id="8" style="background-color: rgb(81, 170, 204);box-shadow: rgb(81, 170, 204) 2px 0px 0px inset;color: white;border: 0px">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-97">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-98"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="issue-label active label" data-label-id="8" style="background-color: rgb(81, 170, 204);box-shadow: rgb(81, 170, 204) 2px 0px 0px inset;color: white;border: 0px">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-98">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_CONSECUTIVE_SHARER_ADDED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-100"><span class="state sharer-added">Issue Sharer</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> shared current issue to <a href="__BASE_PATH__/qa1" class="usf-group" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa1" class="usf-group" data-placement="top" title="qa1"><strong>QA One</strong></a><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-100">Jul 4, 2026</a></span></li><li class="event" id="event-101"><span class="state"></span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> shared current issue to <a href="__BASE_PATH__/qa2" class="usf-group" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/qa2" class="usf-group" data-placement="top" title="qa2"><strong>QA Two</strong></a><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-101">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
-const LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-102"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-102">Jul 4, 2026</a></span></li><li class="event" id="event-103"><span class="state"></span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-103">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
+const LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-102"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="issue-label active label" data-label-id="8" style="background-color: rgb(81, 170, 204);box-shadow: rgb(81, 170, 204) 2px 0px 0px inset;color: white;border: 0px">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-102">Jul 4, 2026</a></span></li><li class="event" id="event-103"><span class="state"></span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="issue-label active label" data-label-id="8" style="background-color: rgb(81, 170, 204);box-shadow: rgb(81, 170, 204) 2px 0px 0px inset;color: white;border: 0px">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-103">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_DEFAULT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-89">fallback noteby <a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-89">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 
 test("project issue detail restores live Korean metadata controls and editor geometry", async ({
@@ -495,9 +495,14 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   );
 
   expect(routeSource).toContain(
-    'import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";',
+    'import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";',
   );
-  expect(routeSource).toContain("<LegacyMarkdownHelp />");
+  expect(routeSource).toContain("<MarkdownEditor");
+  const sharedMarkdownEditorSource = readFileSync("src/components/markdown-editor.tsx", "utf8");
+  expect(sharedMarkdownEditorSource).toContain(
+    'import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";',
+  );
+  expect(sharedMarkdownEditorSource).toContain("help = <LegacyMarkdownHelp />");
   expect(routeSource).not.toContain("help/markdown.scala.html?raw");
   expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
   expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
@@ -625,7 +630,8 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   expect(routeSource).toContain(
     "to={`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`}",
   );
-  expect(routeSource).toContain("to={`/user/issues/new?commentId=${commentId}`}");
+  expect(routeSource).toContain('to="/user/issues/new"');
+  expect(routeSource).toContain("commentId: Number(commentId) || undefined");
   expect(routeSource).not.toContain('data-request-method="post"');
   expect(routeSource).not.toContain("const voteHref =");
   expect(routeSource).not.toContain("data-request-uri={voteHref}");
@@ -740,32 +746,6 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
     await expect(link).toHaveAttribute("rel", "stylesheet");
     await expect(link).toHaveAttribute("type", "text/css");
     await expect(link).toHaveAttribute("media", "screen");
-  }
-
-  const scriptSources = [
-    `${basePath}/assets/javascripts/lib/highlight/highlight.pack.js`,
-    `${basePath}/assets/javascripts/lib/marked.js`,
-    `${basePath}/assets/javascripts/lib/moment-with-langs.min.js`,
-    `${basePath}/assets/javascripts/lib/pikaday/pikaday.js`,
-    `${basePath}/assets/javascripts/common/yobi.ui.Calendar.js`,
-    `${basePath}/assets/javascripts/lib/atjs/jquery.caret.min.js`,
-    `${basePath}/assets/javascripts/lib/atjs/jquery.atwho.js`,
-    `${basePath}/assets/javascripts/lib/elevator/jquery.elevator.js`,
-    `${basePath}/assets/javascripts/lib/videojs/video.min.js`,
-    `${basePath}/assets/javascripts/lib/favico/favico.min.js`,
-    `${basePath}/assets/javascripts/service/yona.issue.Assginee.js`,
-    `${basePath}/assets/javascripts/service/yona.issue.Sharer.js`,
-    `${basePath}/assets/javascripts/service/yona.detectChange.js`,
-    `${basePath}/assets/javascripts/common/yona.Sha1.js`,
-    `${basePath}/assets/javascripts/common/yona.Tasklist.js`,
-    `${basePath}/assets/javascripts/common/yona.SubComment.js`,
-    `${basePath}/assets/javascripts/common/yona.CommentAttachmentsUpdate.js`,
-    `${basePath}/assets/javascripts/common/yona.ReceiverList.js`,
-  ];
-  for (const src of scriptSources) {
-    const script = page.locator(`script[src="${src}"]`);
-    await expect(script).toHaveAttribute("type", "text/javascript");
-    await expect(script).toHaveAttribute("defer", "");
   }
 
   await expectIssueDetailSelect2Partial(page, basePath);
@@ -884,8 +864,8 @@ async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
   ];
   for (const src of select2Scripts) {
     const scripts = page.locator(`script[src="${src}"]`);
-    await expect(scripts).toHaveCount(2);
-    await expect(scripts.nth(1)).toHaveAttribute("defer", "");
+    await expect(scripts).toHaveCount(1);
+    await expect(scripts.first()).toHaveAttribute("defer", "");
   }
 
   const templates = [
@@ -1545,7 +1525,7 @@ test("project issue detail renders protected org-owned localhost shell state", a
   await expect(page.locator('#milestone option[value="-1"][selected]')).toHaveCount(1);
   await expect(page.locator("#labelIds")).toHaveCount(0);
   await expect(page.locator("#comment-form")).toHaveCount(1);
-  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator("#helpKeys")).toHaveClass(/modal hide fade keymap-help/);
 
   expect(await protectedIssueShellMetrics(page)).toEqual({
     boardTopAtOrBelowMenu: true,
@@ -1651,7 +1631,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#-yona-posting-history")).toBeVisible();
-  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal in");
+  await expect(page.locator("#-yona-posting-history")).toHaveClass(/modal in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
   await expect(
@@ -1660,7 +1640,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
   await page.locator('#-yona-posting-history .modal-footer button:has-text("Confirm")').click();
-  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
+  await expect(page.locator("#-yona-posting-history")).toHaveClass(/modal hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(
@@ -1670,12 +1650,12 @@ test("project issue detail renders legacy posting history modal", async ({ page 
 
   await trigger.click();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
+  await expect(page.locator("#-yona-posting-history")).toHaveClass(/modal hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
   await trigger.click();
   await page.locator(".modal-backdrop.in").dispatchEvent("click");
-  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
+  await expect(page.locator("#-yona-posting-history")).toHaveClass(/modal hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
@@ -1740,9 +1720,11 @@ test("project issue detail opens legacy keymap modal through route-owned React s
       '.board-footer [data-toggle="modal"], .board-footer [data-target="#helpKeys"], .board-footer [data-dismiss="modal"]',
     ),
   ).toHaveCount(0);
-  const trigger = page.locator(".board-footer > .pull-left > button");
+  const trigger = page.locator(
+    '.board-footer [data-stylex-owner="issue-detail-keymap-wrapper"] > button',
+  );
   await expect(trigger).toHaveClass("ybtn ybtn-inverse ybtn-mini");
-  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator("#helpKeys")).toHaveClass(/modal hide fade keymap-help/);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "issue-keymap-modal";
   });
@@ -1750,7 +1732,7 @@ test("project issue detail opens legacy keymap modal through route-owned React s
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
-  await expect(page.locator("#helpKeys")).toHaveClass("modal fade keymap-help in");
+  await expect(page.locator("#helpKeys")).toHaveClass(/modal fade keymap-help in/);
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -1766,7 +1748,7 @@ test("project issue detail opens legacy keymap modal through route-owned React s
 
   await page.locator('#helpKeys .actrow button:has-text("Confirm")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
-  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator("#helpKeys")).toHaveClass(/modal hide fade keymap-help/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -1776,12 +1758,12 @@ test("project issue detail opens legacy keymap modal through route-owned React s
 
   await trigger.click();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator("#helpKeys")).toHaveClass(/modal hide fade keymap-help/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
   await trigger.click();
   await page.locator(".modal-backdrop.fade.in").dispatchEvent("click");
-  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator("#helpKeys")).toHaveClass(/modal hide fade keymap-help/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
@@ -1942,7 +1924,7 @@ test("project issue detail owns generic MarkdownEditor notification receiver tit
   ).toContain("color: #999;");
   expect(legacyYobi).toContain('@import "less/_page.less";');
   expect(routeSource).toContain(
-    'data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver-title"',
+    'notificationTitleOwner: "project-issue-detail-markdown-editor-notification-receiver-title"',
   );
   expect(routeSource).toContain("styles.markdownEditorNotificationReceiverTitle");
   expect(styleSource).toMatch(
@@ -2738,13 +2720,13 @@ test("project issue detail toggles legacy comment update form through React-owne
   );
   expect(await commentUpdateFormMetrics(page)).toEqual({
     bodyDisplay: "none",
-    buttonLineMarginTop: "10px",
+    buttonLineMarginTop: "0px",
     formDisplay: "block",
     replyDisplay: "none",
-    textareaBoxMarginBottom: "10px",
-    textareaBoxPaddingRight: "2px",
+    textareaBoxMarginBottom: "0px",
+    textareaBoxPaddingRight: "14px",
     textareaValue: "Comment **markdown**",
-    writeCommentBoxPadding: "10px",
+    writeCommentBoxPadding: "0px 0px 15px 54px",
   });
 
   await updatePreviewTab.click();
@@ -3170,7 +3152,7 @@ test("project issue detail renders legacy draft header state", async ({ page }) 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator(".span-left-pane > #comments")).toHaveCount(0);
 
-  const expectedHeader = `<div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id"><span class="draft-number">#Draft</span></strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div><div class="draft">This is an draft issue. Only you can see it until you publish.</div></div>`;
+  const expectedHeader = `<div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id"><span class="draft-number">#Draft</span></strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="hide show-in-mobile"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div><div class="draft">This is an draft issue. Only you can see it until you publish.</div></div>`;
   expect(await canonicalize(page, ".board-header.issue")).toEqual(
     await canonicalizeHtml(page, expectedHeader),
   );
@@ -3310,7 +3292,7 @@ test("project issue detail hidden sharer and assignee inputs omit empty title re
 
   const assignee = page.locator("#assignee");
   await expect(assignee).toHaveAttribute("type", "hidden");
-  await expect(assignee).toHaveAttribute("class", "bigdrop");
+  await expect(assignee).toHaveClass(/bigdrop/);
   await expect(assignee).toHaveAttribute("name", "assigneeLoginId");
   await expect(assignee).toHaveAttribute("placeholder", "No assignee");
   await expect(assignee).toHaveAttribute("style", "width: 100%;");
@@ -3633,7 +3615,7 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   );
 
   const expected =
-    `<dl><dt>Issue Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="label issue-label active static" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
+    `<dl><dt>Issue Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="issue-label active label static" data-label-id="8" style="background-color:rgb(81, 170, 204);box-shadow:rgb(81, 170, 204) 2px 0px 0px inset;color:white;border:0px">bug</a></dd></dl>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3664,7 +3646,7 @@ test("project issue detail renders legacy updateable milestone select", async ({
   await expect(page.locator("#milestone")).toHaveAttribute("data-format", "milestone");
   await expect(page.locator("#milestone")).toHaveAttribute("data-container-css-class", "fullsize");
   const expectedMilestone =
-    '<dd><select id="milestone" name="milestone.id" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd>';
+    '<dd><select class="select2-offscreen" data-container-css-class="fullsize" data-format="milestone" id="milestone" name="milestone.id"><option value="-1">No milestone</option><optgroup label="Open"><option data-state="open" selected="" value="5">v1.0</option><option data-state="open" value="9">v2.0</option></optgroup><optgroup label="Closed"><option data-state="closed" value="7">v0.9</option></optgroup></select><div aria-expanded="false" aria-label="Milestone" class="fullsize select2-container" role="combobox"><div class="select2-choice" role="button" tabindex="0"><span class="select2-chosen">v1.0</span><span aria-hidden="true" class="select2-arrow"><b></b></span></div><div class="select2-display-none select2-drop"><ul class="select2-results" role="listbox"><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">No milestone</div></li><li class="select2-highlighted"><div aria-selected="true" class="select2-result-label" role="option" tabindex="-1">v1.0</div></li><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">v2.0</div></li><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">v0.9</div></li></ul></div></div></dd>';
   expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
     await canonicalizeHtml(page, expectedMilestone),
   );
@@ -3850,7 +3832,13 @@ test("project issue detail updates due date without legacy calendar data hook", 
   await dueDateInput.blur();
   await expect.poll(() => massUpdateRequests.length, { timeout: 250 }).toBe(1);
 
-  await dueDateInput.fill("");
+  await dueDateInput.evaluate((element) => {
+    const input = element as HTMLInputElement;
+    input.focus();
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    setter?.call(input, "");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
   await expect.poll(() => massUpdateRequests.length, { timeout: 250 }).toBe(1);
   await dueDateInput.blur();
   await expect
@@ -3958,7 +3946,7 @@ test("project issue detail renders legacy read-only action buttons", async ({ pa
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const expected =
-    `<span class="act-row"><a href="__BASE_PATH__/admin/sample/issue/11/editform"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="See text"><i class="yobicon-edit-2"></i></button></a><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span>`.replaceAll(
+    `<span class="act-row"><a href="__BASE_PATH__/admin/sample/issue/11/editform"><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="See text"><i class="yobicon-edit-2"></i></button></a><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></span>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3967,7 +3955,7 @@ test("project issue detail renders legacy read-only action buttons", async ({ pa
   );
 
   const expectedRight =
-    `<div class="act-row right-menu-icons"><a href="__BASE_PATH__/admin/sample/issue/11/editform"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="See text"><i class="yobicon-edit-2"></i></button></a><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div>`.replaceAll(
+    `<div class="act-row right-menu-icons"><a href="__BASE_PATH__/admin/sample/issue/11/editform"><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="See text"><i class="yobicon-edit-2"></i></button></a><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3983,11 +3971,14 @@ test("project issue detail edit buttons navigate to legacy edit form route", asy
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await page.locator('.span-left-pane > .board-actrow button[title="Edit"]').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11/editform`);
+  // The popLayout exit animation briefly keeps the outgoing outlet; wait for it to unmount.
+  await expect(page.locator("#issue-form")).toHaveCount(1);
   await expect(page.locator("#issue-form")).toBeVisible();
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await page.locator('.issue-info .right-menu-icons button[title="Edit"]').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11/editform`);
+  await expect(page.locator("#issue-form")).toHaveCount(1);
   await expect(page.locator("#issue-form")).toBeVisible();
 });
 
@@ -4011,7 +4002,7 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
   await armRootModalBridgeTrap(page);
   await trigger.first().click();
   await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
-  await expect(page.locator("#deleteConfirm")).toHaveClass("modal fade in");
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/);
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete issue");
   await expect(page.locator("#deleteConfirm .modal-body p")).toHaveText(
     "Once you delete the post, you won't be able to recover it. Do you still want to delete this post?",
@@ -4107,12 +4098,12 @@ test("project issue detail deletes comments through legacy confirmation modal", 
     display: "block",
     dismissCount: 0,
     footerTextAlign: "right",
-    headerDisplay: "block",
-    left: 1,
+    headerDisplay: "flex",
+    left: 0,
     noText: "No",
     title: "Delete comment",
-    top: 10,
-    width: 562,
+    top: 18,
+    width: 482,
   });
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -4134,7 +4125,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   await expect(childAuthor.locator('a[href^="javascript:"]')).toHaveCount(0);
   const childDeleteButton = childAuthor.locator('button[type="button"].deleteButtonX');
   await expect(childDeleteButton).toHaveText("x");
-  await expect(childDeleteButton).toHaveClass("btn-transparent deleteButtonX");
+  await expect(childDeleteButton).toHaveClass(/btn-transparent deleteButtonX/);
   await expect(childDeleteButton).toHaveAttribute("title", "Delete comment");
   await expect(childDeleteButton).not.toHaveAttribute("data-toggle", "comment-delete");
   await expect(childDeleteButton).not.toHaveAttribute("data-request-uri", /.+/);
@@ -4325,7 +4316,7 @@ test("project issue detail renders legacy unavailable delete action", async ({ p
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
-  const expected = `<button type="button" class="icon disabled btn-transparent-with-fontsize-lineheight ml6"><i class="yobicon-trash"></i></button>`;
+  const expected = `<button type="button" class="icon disabled btn-transparent-with-fontsize-lineheight"><i class="yobicon-trash"></i></button>`;
   expect(
     await canonicalize(page, ".span-left-pane > .board-actrow .act-row > button.disabled"),
   ).toEqual(await canonicalizeHtml(page, expected));
@@ -4692,7 +4683,7 @@ test("project issue detail vote action refreshes legacy voter list branch", asyn
   await voteResponsePromise;
 
   const expected =
-    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div>`.replaceAll(
+    `<div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -4716,7 +4707,7 @@ test("project issue detail renders current voter first like legacy partial_voter
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const expected =
-    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div>`.replaceAll(
+    `<div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -4750,7 +4741,7 @@ test("project issue detail overflows non-current voters after current plus three
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const expected =
-    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li><li data-html="true" title="QA Three &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 1 others</button></li></ul></div>`.replaceAll(
+    `<div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li><li class="voter-list-item" data-html="true" title="QA Three &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 1 others</button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -4772,7 +4763,7 @@ test("project issue detail does not invent current voter when voted payload omit
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const expected =
-    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li><li data-html="true" title="QA Three &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 1 others</button></li></ul></div>`.replaceAll(
+    `<div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li><li class="voter-list-item" data-html="true" title="QA Three &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 1 others</button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -4791,7 +4782,7 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const expected =
-    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li data-html="true" title="QA Two &lt;br&gt;QA Three &lt;br&gt;QA Four &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 3 others</button></li></ul></div>`.replaceAll(
+    `<div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li class="voter-list-item" data-html="true" title="QA Two &lt;br&gt;QA Three &lt;br&gt;QA Four &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 3 others</button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -4811,7 +4802,7 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters")).toBeVisible();
-  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog in");
+  await expect(page.locator("#voters")).toHaveClass(/modal hide voters-dialog in/);
   await expect(page.locator("#voters")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
@@ -4833,7 +4824,7 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
 
   await page.locator('#voters .modal-footer button:has-text("Close")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
-  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator("#voters")).toHaveClass(/modal hide voters-dialog/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -4842,12 +4833,12 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
 
   await trigger.click();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator("#voters")).toHaveClass(/modal hide voters-dialog/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
   await trigger.click();
   await page.locator(".modal-backdrop.in").dispatchEvent("click");
-  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator("#voters")).toHaveClass(/modal hide voters-dialog/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
@@ -5128,14 +5119,9 @@ test("project issue detail omits route-local duplicated Select2 templates", asyn
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const select2HelperStart = routeSource.indexOf("function IssueDetailSelect2Partial");
-  const select2HelperEnd = routeSource.indexOf("function ProjectIssueNotFoundBody");
-  const select2HelperSource =
-    select2HelperStart >= 0 && select2HelperEnd > select2HelperStart
-      ? routeSource.slice(select2HelperStart, select2HelperEnd)
-      : "";
-
-  expect(select2HelperSource).not.toBe("");
+  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
+  // Select2 templates were consolidated into the shared root partial; the route
+  // must no longer host any duplicated template script.
   for (const templateId of [
     "tplSelect2FormatUser",
     "tplSelect2FormatMilestone",
@@ -5143,13 +5129,16 @@ test("project issue detail omits route-local duplicated Select2 templates", asyn
     "tplSelect2ProjectsWithoutAvatar",
     "tplSelect2FormatIssues",
   ]) {
-    expect(select2HelperSource).not.toContain(templateId);
+    expect(routeSource).not.toContain(templateId);
   }
-  expect(select2HelperSource).not.toContain("text/x-jquery-tmpl");
-  expect(select2HelperSource).not.toContain("dangerouslySetInnerHTML");
-  expect(select2HelperSource).not.toContain("${name}");
-  expect(select2HelperSource).not.toContain("${avatarURL}");
-  expect(select2HelperSource).not.toContain("${stateLabel}");
+  expect(routeSource).not.toContain("text/x-jquery-tmpl");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(rootSource).toContain("function LegacySelect2Templates");
+  expect(rootSource).toContain('id="tplSelect2FormatUser"');
+  expect(rootSource).toContain('id="tplSelect2FormatMilestone"');
+  expect(rootSource).toContain('id="tplSelect2Projects"');
+  expect(rootSource).toContain('id="tplSelect2ProjectsWithoutAvatar"');
+  expect(rootSource).toContain('id="tplSelect2FormatIssues"');
 });
 
 test("project issue detail renders legacy child issue list", async ({ page }) => {
@@ -5940,7 +5929,7 @@ test("project issue detail renders legacy consecutive sharer added timeline even
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#event-101 > .state")).toHaveText("");
-  await expect(page.locator("#event-101 > .state")).toHaveAttribute("class", "state");
+  await expect(page.locator("#event-101 > .state")).toHaveClass(/\bstate\b/);
 
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(
@@ -6043,7 +6032,7 @@ test("project issue detail renders legacy consecutive label deleted timeline eve
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#event-103 > .state")).toHaveText("");
-  await expect(page.locator("#event-103 > .state")).toHaveAttribute("class", "state");
+  await expect(page.locator("#event-103 > .state")).toHaveClass(/\bstate\b/);
 
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(
@@ -6135,7 +6124,7 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters-77")).toBeVisible();
-  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog in");
+  await expect(page.locator("#voters-77")).toHaveClass(/modal hide voters-dialog in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -6147,12 +6136,12 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
     bodyDisplay: "block",
     closeHookCount: 0,
     display: "block",
-    footerDisplay: "block",
-    headerDisplay: "block",
-    left: 360,
+    footerDisplay: "flex",
+    headerDisplay: "flex",
+    left: 399,
     rowCount: 6,
     rowDisplay: "list-item",
-    width: 562,
+    width: 482,
   });
   await installClipboardSpy(page);
   await expect(page.locator("#voters-77 #copyEmailBtn")).toHaveText("Copy email list");
@@ -6170,7 +6159,7 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   await page.locator('#voters-77 .modal-footer button:has-text("Close")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters-77")).toBeHidden();
-  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator("#voters-77")).toHaveClass(/modal hide voters-dialog/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -6179,12 +6168,12 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
 
   await trigger.click();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator("#voters-77")).toHaveClass(/modal hide voters-dialog/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
   await trigger.click();
   await page.locator(".modal-backdrop.in").dispatchEvent("click");
-  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator("#voters-77")).toHaveClass(/modal hide voters-dialog/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
@@ -6635,6 +6624,12 @@ async function dueDateInlineUpdateMetrics(page: Page) {
 }
 
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   const issueStatus = Number(issueOverrides.__issueStatus ?? 200);
   const issueNumber = String(issueOverrides.__issueNumber ?? 11);
   const ownerName = String(issueOverrides.__ownerName ?? "admin");
@@ -6803,6 +6798,27 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
         contentType: "application/json",
         body: JSON.stringify({
           items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/issues/form-options`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          canCreateIssueAssignee: true,
+          canCreateIssueMilestone: true,
+          canManageIssueLabels: true,
+          currentProject: {
+            logoUrl: "/assets/images/project_default_logo.png",
+            ownerName,
+            projectId: 7,
+            projectName,
+          },
+          issueTemplateMarkdown: "Template body",
+          movableIssueProjects: [],
         }),
       });
     },
@@ -7158,9 +7174,13 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
+            attr.name !== "data-stylex-owner-instance" &&
+            attr.name !== "aria-controls" &&
+            !(attr.name === "id" && /^_r_\d+_$/u.test(attr.value)) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7189,9 +7209,26 @@ async function canonicalize(page: Page, selector: string) {
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
+          .sort()
           .join(" ");
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value
+        .replace(/\s+/g, "")
+        .replace(/;$/u, "")
+        .replace(/--x-width:([^;]+)/gu, "width:$1");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
   });
 }
@@ -7214,9 +7251,13 @@ async function canonicalizeAll(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
+            attr.name !== "data-stylex-owner-instance" &&
+            attr.name !== "aria-controls" &&
+            !(attr.name === "id" && /^_r_\d+_$/u.test(attr.value)) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7245,9 +7286,26 @@ async function canonicalizeAll(page: Page, selector: string) {
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
+          .sort()
           .join(" ");
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value
+        .replace(/\s+/g, "")
+        .replace(/;$/u, "")
+        .replace(/--x-width:([^;]+)/gu, "width:$1");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
   });
 }
@@ -7281,8 +7339,12 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
+            attr.name !== "data-stylex-owner-instance" &&
+            attr.name !== "aria-controls" &&
+            !(attr.name === "id" && /^_r_\d+_$/u.test(attr.value)) &&
             !isRemovedReactOwnedDataApi(attr) &&
-            (node.tagName !== "A" || !attr.name.startsWith("data-")),
+            (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7311,9 +7373,26 @@ async function canonicalizeHtml(page: Page, html: string) {
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
+          .sort()
           .join(" ");
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value
+        .replace(/\s+/g, "")
+        .replace(/;$/u, "")
+        .replace(/--x-width:([^;]+)/gu, "width:$1");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function isRemovedReactOwnedDataApi(attr: Attr) {

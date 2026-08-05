@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { type KeyboardEvent } from "react";
@@ -559,7 +561,30 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
               {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
               data-stylex-owner="site-issue-list-setting-sidebar-column"
             >
-              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
+              <SiteAdminSidebar
+                activeTo="/sites/issueList"
+                badgeOwner="site-issue-list-sidebar-badge"
+                baseLinkProps={legacySiteSidebarLinkProps}
+                linkPropsByTo={{
+                  "/sites/issueList": {
+                    activeProps: {},
+                    mask: { to: "/sites/issueList" },
+                    search: legacySiteIssueListSidebarSearch,
+                  },
+                }}
+                navOwner="site-issue-list-sidebar"
+                ownerPrefix="site-issue-list-sidebar"
+                showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
+                  activeLink: [styles.sidebarLink, styles.sidebarActiveLink],
+                  badge: [styles.sidebarBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
+                  item: [styles.sidebarItem],
+                  link: [styles.sidebarLink],
+                  nav: [styles.sidebar],
+                }}
+              />
             </div>
             <div
               {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
@@ -800,110 +825,6 @@ function clampPageNum(pageNum: number, totalPages: number) {
   return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  return (
-    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-issue-list-sidebar">
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
-        data-stylex-owner="site-issue-list-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/userList"
-        >
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-issue-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/postList"
-        >
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
-        data-stylex-owner="site-issue-list-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          activeProps={{}}
-          mask={{ to: "/sites/issueList" }}
-          search={legacySiteIssueListSidebarSearch}
-          to="/sites/issueList"
-        >
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-issue-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/projectList"
-        >
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-issue-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/mail"
-        >
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-issue-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/massmail"
-        >
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-issue-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/update"
-        >
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? (
-            <span
-              {...stylex.props(styles.sidebarBadge)}
-              data-stylex-owner="site-issue-list-sidebar-badge"
-            >
-              1
-            </span>
-          ) : null}
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-issue-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-issue-list-sidebar-link"
-          to="/sites/diagnostic"
-        >
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
-    </ul>
-  );
-}
-
 function IssueStateTab({ selected, state }: { selected: string; state: SiteIssueState }) {
   const { t } = useLegacyMessages();
   const isSelected = selected === state;
@@ -1046,11 +967,6 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
       </div>
     </li>
   );
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }
 
 function isDefaultAuthorAvatar(avatarUrl: string) {

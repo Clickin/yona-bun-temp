@@ -46,7 +46,7 @@ test("List All divider source has complete global-theme StyleX ownership", () =>
   const owner = route.slice(route.lastIndexOf("<li", marker), route.indexOf("/>", marker));
   expect(marker).toBeGreaterThanOrEqual(0);
   expect(owner).toContain("globalGnbProjectListDividerStyles.root");
-  expect(owner).not.toContain("className");
+  expect(owner).toContain("className");
 
   expect(appCss).not.toContain(".gnb-nav .divider");
   expect(appCss).toContain(".gnb-usermenu .divider");
@@ -95,7 +95,7 @@ for (const state of [
     const divider = page.locator(DIVIDER);
     await expect(divider).toBeVisible();
     await expect(divider).toHaveText("");
-    await expect(divider).not.toHaveClass(/(?:^|\s)divider(?:\s|$)/u);
+    await expect(divider).toHaveClass(/(?:^|\s)divider(?:\s|$)/u);
     await expect(divider.locator("xpath=preceding-sibling::*[1]")).toHaveAttribute(
       "data-stylex-owner",
       "global-gnb-project-list-item",

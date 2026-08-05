@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CountBadge } from "../../../components/count-badge";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -544,7 +545,10 @@ function ProjectSettingBody({
                     `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
                   ),
                 )}
-                className={`${sx.logo.className} ${stylex.props(styles.logoBackground(`url('${projectLogoUrl(project, runtimeConfig.basePath)}')`)).className ?? ""}`.trim()}
+                style={{
+                  backgroundImage: `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
+                }}
+                className={`${sx.logo.className} logo-wrap`}
                 data-stylex-owner="project-setting-logo"
               ></div>
               <div
@@ -618,10 +622,8 @@ function ProjectSettingBody({
             </div>
             {/* Keep the legacy setting-box/right owner adjacent to the StyleX border cascade. */}
             <dl
-              {...sx.settingBox}
-              {...sx.settingBoxRight}
-              {...sx.settingFields}
-              className={`${sx.settingBox.className} ${sx.settingBoxRight.className} ${sx.settingFields.className} setting-box right`}
+              {...stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields)}
+              className={`${stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields).className} setting-box right`}
               data-stylex-owner="project-setting-setting-box-right"
             >
               <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
@@ -665,7 +667,7 @@ function ProjectSettingBody({
                 {oldPlace ? (
                   <div>
                     {t("project.previous.place", { args: [""] })}
-                    <span {...sx.oldPlace} data-stylex-owner="project-setting-old-place">
+                    <span style={{ color: "red" }} data-stylex-owner="project-setting-old-place">
                       {oldPlace}
                     </span>
                   </div>
@@ -1246,6 +1248,7 @@ function DefaultBranchSelect2({
         data-dropdown-css-class="branches"
         data-stylex-owner="project-setting-default-branch-select"
         className={`${sx.defaultBranchSelect.className} select2-offscreen`}
+        style={{ minWidth: "220px" }}
         tabIndex={-1}
         key={selectedBranch}
         defaultValue={selectedBranch}
@@ -1463,16 +1466,6 @@ function ProjectSettingMenu({
       </li>
     </ul>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
 function projectMenuSetting(project: ProjectContainer) {

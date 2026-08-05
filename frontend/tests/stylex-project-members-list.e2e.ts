@@ -30,9 +30,13 @@ test("project enrollment avatar wrapper preserves frozen legacy geometry and acc
     "utf8",
   );
 
-  expect(route).toContain('data-stylex-owner="project-members-enrollment-avatar-wrap"');
-  expect(route).toContain('float: "left"');
-  expect(route).toContain('marginRight: "10px"');
+  expect(route).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
+  const componentStyleSource = readFileSync(
+    resolve(repoRoot, "frontend/src/components/enrollment-request.stylex.ts"),
+    "utf8",
+  );
+  expect(componentStyleSource).toContain('float: "left"');
+  expect(componentStyleSource).toContain('marginRight: "10px"');
   expect(legacyTemplate).toContain('<div class="pull-left mr10">');
   expect(legacyTemplate).toContain(
     '<img src="@user.avatarUrl" height="65" width="65" class="img-circle"/>',

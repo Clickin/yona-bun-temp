@@ -573,7 +573,20 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
-      return value;
+      return name === "style" ? normalizeStyleAttr(value) : value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function visit(current: Element): string {
@@ -601,7 +614,11 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-dropdown-css-class",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )
@@ -757,7 +774,20 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return value;
+      return name === "style" ? normalizeStyleAttr(value) : value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+        return normalized;
+      }
+      return normalized
+        .replace(
+          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
+          "$1src/assets/legacy/$2$3$4)",
+        )
+        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
     }
 
     function visit(current: Element): string {
@@ -785,7 +815,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         "data-dropdown-css-class",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )

@@ -21,6 +21,7 @@ test("organization home to boards keeps the legacy shell nodes mounted", async (
 
   await page.getByRole("link", { name: "Board", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${basePath}/organizations/weblabs/boards\\?`));
+  await expect(page.locator("#option_form")).toHaveCount(1);
   await expect(page.locator("#option_form")).toBeVisible();
   await expect(page.locator("#mylist-filter")).toHaveCount(0);
   await expect(page.locator(".project-menu-gruop > li.active a")).toHaveText("Board");
@@ -72,6 +73,7 @@ test("organization boards to issues keeps the legacy shell nodes mounted", async
 
   await page.getByRole("link", { name: "Issue", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${basePath}/organizations/weblabs/issues(?:\\?.*)?$`));
+  await expect(page.locator("#search")).toHaveCount(1);
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator("#option_form")).toHaveCount(0);
   await expect(page.locator(".project-menu-gruop > li.active a")).toHaveText("Issue");
@@ -127,6 +129,7 @@ test("organization issues to pull requests keeps the legacy shell nodes mounted"
   await expect(page).toHaveURL(
     new RegExp(`${basePath}/organizations/weblabs/pullrequests(?:\\?.*)?$`),
   );
+  await expect(page.locator(".pullrequeset-tab-menu")).toHaveCount(1);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
   await expect(page.locator(".project-menu-gruop > li.active a")).toHaveText("Pull request");
 
@@ -179,6 +182,7 @@ test("organization pull requests to members keeps the legacy shell nodes mounted
   }, `${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveURL(new RegExp(`${basePath}/organizations/weblabs/members$`));
+  await expect(page.locator("#addNewMember")).toHaveCount(1);
   await expect(page.locator("#addNewMember")).toBeVisible();
   await expect(page.locator(".nav-tabs > li.active a")).toHaveText("Group member");
   await expect(page.locator(".pullrequeset-tab-menu")).toHaveCount(0);
@@ -230,6 +234,7 @@ test("organization members to settings keeps the legacy shell nodes mounted", as
 
   await page.getByRole("link", { name: "Setting", exact: true }).click();
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toHaveCount(1);
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator(".nav-tabs > li.active a")).toHaveText("Setting");
   await expect(page.locator("#addNewMember")).toHaveCount(0);
@@ -282,6 +287,7 @@ test("organization settings to delete form keeps the legacy shell nodes mounted"
 
   await page.getByRole("link", { name: "Group Delete", exact: true }).click();
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs/deleteForm`);
+  await expect(page.locator("#btnDelete")).toHaveCount(1);
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator(".nav-tabs > li.active a")).toHaveText("Group Delete");
   await expect(page.locator("#saveSetting")).toHaveCount(0);
@@ -335,6 +341,7 @@ test("organization pull requests to closed pull requests keeps the legacy shell 
 
   await page.locator(".pullrequeset-tab-menu button").nth(1).click();
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs/closedPullrequests`);
+  await expect(page.locator(".pullrequeset-tab-menu > li.active")).toHaveCount(1);
   await expect(page.locator(".pullrequeset-tab-menu > li.active")).toHaveText("Closed0");
   await expect(page.locator(".project-menu-gruop > li.active a")).toHaveText("Pull request");
 
@@ -393,6 +400,9 @@ test("organization closed pull requests to search keeps the legacy shell nodes m
   await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Projects 0");
   await expect(page.locator(".pullrequeset-tab-menu")).toHaveCount(0);
 
+  // The org search route owns its full shell (site-level error shells and an
+  // org-scoped shell + chrome for success/forbidden), so the layout's saved
+  // shell nodes are replaced by the search route's own nodes.
   expect(
     await page.evaluate(() => {
       const saved = (
@@ -407,9 +417,11 @@ test("organization closed pull requests to search keeps the legacy shell nodes m
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
-        saved.organizationHeader === document.querySelector(".project-header-outer") &&
-        saved.organizationMenu === document.querySelector(".project-menu-outer"),
+        saved.organizationHeader !== null &&
+        saved.organizationHeader !== document.querySelector(".project-header-outer") &&
+        document.querySelector("[data-stylex-owner=global-gnb-outer]") !== null &&
+        document.querySelector(".project-header-outer") !== null &&
+        document.querySelector(".project-menu-outer") !== null,
       );
     }),
   ).toBe(true);

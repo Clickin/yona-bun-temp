@@ -15,10 +15,14 @@ import {
   type SearchResponse,
   type SearchType,
 } from "../../../api/search";
+import { readOrganizationContainerRest } from "../../../api/org-project";
+import { apiQueryKeys } from "../../../api/query-keys";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
+import { SiteLayoutShell } from "../../-home-route-screen";
+import { OrganizationHeader, OrganizationMenu } from "../$organizationName";
 import { styles } from "./-organization-search.stylex";
 import {
   DefaultSearchErrorBody,
@@ -122,6 +126,10 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     }),
     enabled: hasKeyword && !search.routeInvalid,
   });
+  const organizationQuery = useQuery({
+    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
+    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
+  });
   const result =
     searchQuery.data ??
     emptySearchResult({
@@ -131,44 +139,81 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const searchTitle = t("title.search");
 
   if (search.routeInvalid) {
+    // Legacy SearchApp.searchInAGroup renders badrequest_default.scala.html
+    // in the SITE layout (no org chrome); the org layout unwraps the search
+    // route, so this route owns the site-level shell.
     return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.badrequest"
-        runtimeConfig={runtimeConfig}
-        ybtnClassName="ybtn ybtn-info"
-      />
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.badrequest"
+          runtimeConfig={runtimeConfig}
+          ybtnClassName="ybtn ybtn-info"
+        />
+      </SiteLayoutShell>
     );
   }
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
-    // The organization layout owns the global and organization navbars; a
-    // nested SiteLayoutShell here would stack a second navbar.
-    return <RequestTextTooLargeErrorBody />;
+    return (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <RequestTextTooLargeErrorBody />
+      </SiteLayoutShell>
+    );
   }
 
   if (isDefaultInternalServerError(searchQuery.error)) {
-    // The organization layout owns the global and organization navbars; a
-    // nested SiteLayoutShell here would stack a second navbar.
     return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.internalServerError"
-        runtimeConfig={runtimeConfig}
-      />
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.internalServerError"
+          runtimeConfig={runtimeConfig}
+        />
+      </SiteLayoutShell>
     );
   }
 
-  if (isDefaultForbiddenError(searchQuery.error)) {
+  const orgScopedShell = (body: ReactNode) => {
+    if (!organizationQuery.data) {
+      return null;
+    }
+    const organization = organizationQuery.data;
     return (
+      <SiteLayoutShell
+        projectSearchScope={{ organizationName }}
+        runtimeConfig={runtimeConfig}
+        showLegacyProjectHeaderLinks
+      >
+        <OrganizationHeader
+          enrollmentRequested={booleanField(organization.enrollmentRequested)}
+          logoUrl={
+            stringField(organization.logoUrl, "") ||
+            prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png")
+          }
+          organizationName={organizationName}
+          viewerCanEnroll={booleanField(organization.viewerCanEnroll)}
+        />
+        <OrganizationMenu
+          active="home"
+          organizationName={organizationName}
+          viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
+        />
+        {body}
+      </SiteLayoutShell>
+    );
+  };
+
+  if (isDefaultForbiddenError(searchQuery.error)) {
+    return orgScopedShell(
       <>
         <title>{searchTitle}</title>
         <OrganizationSearchErrorBody messageKey="error.forbidden" />
-      </>
+      </>,
     );
   }
 
-  return (
+  return orgScopedShell(
     <>
       <title>{searchTitle}</title>
       <OrganizationSearchBody
@@ -176,7 +221,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         result={result}
         runtimeConfig={runtimeConfig}
       />
-    </>
+    </>,
   );
 }
 
@@ -1080,4 +1125,18 @@ function LegacyProjectLogoImage({ src }: { src: string }) {
 
 function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {
   return avatarUrl?.includes("gravatar.com/avatar/") === true;
+}
+
+function stringField(value: unknown, fallback: string) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  return fallback;
+}
+
+function booleanField(value: unknown) {
+  return value === true;
 }

@@ -359,7 +359,9 @@ export const styles = stylex.create({
   // `_responsive.less` wins the frozen cascade for the rendered issue detail
   // state, including the desktop viewport used by the paired sweep.
   issueInfo: {
-    padding: "15px 0 0 10px",
+    "@media (max-width: 720px)": {
+      padding: "15px 0 0 10px",
+    },
   },
   boardFooter: {
     marginTop: "20px",

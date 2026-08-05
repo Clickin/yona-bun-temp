@@ -10,6 +10,7 @@ import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../components/issue-label";
+import { CountBadge } from "../../components/count-badge";
 import { styles as projectHomeStyles } from "./$projectName/-project-home.stylex";
 
 const projectHistoryStyles = stylex.create({
@@ -1521,7 +1522,8 @@ export function ProjectHomeBody({
                 {projectName}
               </Link>
             </span>
-            {booleanField(projectRecord.isPrivate) ? (
+            {booleanField(projectRecord.isPrivate) ||
+            stringField(projectRecord.projectScope, "").toUpperCase() === "PRIVATE" ? (
               <span
                 className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-private`}
                 data-stylex-owner="project-home-private-badge"
@@ -3014,7 +3016,8 @@ function ProjectHeaderContent({
                   star
                 </i>
               </span>
-              {booleanField(recordField(project).isPrivate) ? (
+              {booleanField(recordField(project).isPrivate) ||
+              stringField(recordField(project).projectScope, "").toUpperCase() === "PRIVATE" ? (
                 <span
                   className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-private`}
                   data-stylex-owner="project-header-private-badge"
@@ -3408,7 +3411,11 @@ export function ProjectMenu({
                       {t("menu.admin")}
                     </span>
                   </span>
-                  <CountBadge count={arrayField(project.enrolledUsers).length} />
+                  <CountBadge
+                    count={arrayField(project.enrolledUsers).length}
+                    styleX={[projectHomeStyles.menuCount, projectMenuNavStyles.mobileCount]}
+                    owner="project-menu-count"
+                  />
                 </Link>
               </li>
             </ul>
@@ -3471,29 +3478,16 @@ function ProjectMenuItem({
         {count > 0 ? (
           <>
             {" "}
-            <CountBadge count={count} />
+            <CountBadge
+              count={count}
+              styleX={[projectHomeStyles.menuCount, projectMenuNavStyles.mobileCount]}
+              owner="project-menu-count"
+            />
           </>
         ) : null}
       </Link>
     </li>
   );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? (
-    <span
-      className={`${stylex.props(projectHomeStyles.menuCount, projectMenuNavStyles.mobileCount).className} ${className}`}
-      data-stylex-owner="project-menu-count"
-    >
-      {count}
-    </span>
-  ) : null;
 }
 
 function projectMenuSetting(project: ProjectContainer) {

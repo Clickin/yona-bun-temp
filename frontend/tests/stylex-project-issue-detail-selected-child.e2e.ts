@@ -43,7 +43,7 @@ test("issue detail selected child owns conditional StyleX state", async () => {
   expect(style).toContain('border: "1px solid #ddd"');
   expect(style).toContain('borderRadius: "4px"');
   expect(route).toContain(
-    'data-stylex-owner={isSelected ? "project-issue-detail-selected-child" : undefined}',
+    'isSelected ? "project-issue-detail-selected-child" : "project-issue-detail-subtask-item"',
   );
   expect(route).toContain('isSelected ? "selected-child" : ""');
 });

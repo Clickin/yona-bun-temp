@@ -139,10 +139,20 @@ function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const isClosedPullRequests = pathname === `/organizations/${organizationName}/closedPullrequests`;
   const isSettings = pathname === `/organizations/${organizationName}/settingform`;
   const isDeleteForm = pathname === `/organizations/${organizationName}/deleteForm`;
+  const isSearch = pathname.endsWith("/search");
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
   });
+
+  if (isSearch) {
+    // The org search route owns its full shell per state (site-level error
+    // shells for badrequest/too-large/500, org-scoped shell + chrome for
+    // success/forbidden), mirroring the project search pattern
+    // ($ownerName/$projectName.tsx + search.tsx); the layout must not stack
+    // a second navbar around it.
+    return <Outlet />;
+  }
 
   if (!organizationQuery.data) {
     return null;
@@ -535,7 +545,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             </Link>
             {originOwnerName && originProjectName ? (
               <span
-                className={stylex.props(styles.smallFont, styles.projectOrigin).className}
+                className={`blue-txt ${stylex.props(styles.smallFont, styles.projectOrigin).className}`}
                 data-stylex-owner="organization-home-project-origin"
               >
                 <Link
@@ -1047,19 +1057,7 @@ export function OrganizationMenu({
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
               data-stylex-owner="organization-menu-link-issues"
-              params={{ organizationName }}
-              search={{
-                assigneeId: "",
-                authorId: "",
-                filter: "",
-                mentionId: "",
-                orderBy: "updatedDate",
-                orderDir: "desc",
-                pageNum: 1,
-                projectNames: [],
-                state: "open",
-              }}
-              to="/organizations/$organizationName/issues"
+              to={`/organizations/${organizationName}/issues` as string}
             >
               {t("menu.issue")}
             </Link>
@@ -1087,15 +1085,7 @@ export function OrganizationMenu({
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
               data-stylex-owner="organization-menu-link-boards"
-              params={{ organizationName }}
-              search={{
-                filter: "",
-                orderBy: "updatedDate",
-                orderDir: "desc",
-                pageNum: 1,
-                projectNames: [],
-              }}
-              to="/organizations/$organizationName/boards"
+              to={`/organizations/${organizationName}/boards` as string}
             >
               {t("menu.board")}
             </Link>
@@ -1123,9 +1113,7 @@ export function OrganizationMenu({
               }}
               {...stylex.props(organizationMenuMigrationStyles.link)}
               data-stylex-owner="organization-menu-link-pullrequests"
-              params={{ organizationName }}
-              search={{ filter: "", pageNum: 1 }}
-              to="/organizations/$organizationName/pullrequests"
+              to={`/organizations/${organizationName}/pullrequests` as string}
             >
               {t("menu.pullRequest")}
             </Link>

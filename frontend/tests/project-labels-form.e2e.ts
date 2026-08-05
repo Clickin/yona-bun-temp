@@ -1635,6 +1635,21 @@ async function mockProjectLabels(
       body: JSON.stringify({ ...projectSettings(), ...overrides.project }),
     });
   });
+  await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...projectSettings(),
+        ...overrides.project,
+        boardCount: 1,
+        openIssueCount: 1,
+        openPullRequestCount: 1,
+        reviewCount: 2,
+        viewerCanUpdate: true,
+        viewerIsProjectMember: true,
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/labels**", async (route) => {
     const request = route.request();
     if (request.method() !== "GET") {
@@ -1977,7 +1992,9 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -2061,7 +2078,9 @@ async function canonicalizeElement(page: Page, selector: string) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .filter(([name, value]) => !(name === "class" && value === ""))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -2141,7 +2160,9 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
               attr.name !== "data-stylex-owner",
           )
           .sort((left, right) => left.name.localeCompare(right.name))
-          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+          .filter(([name, value]) => !(name === "class" && value === ""))
+          .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
           .join(" ");
         const open = attrs
           ? `<${node.tagName.toLowerCase()} ${attrs}>`

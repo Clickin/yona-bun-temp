@@ -521,6 +521,13 @@ async function canonicalizeScreenRoots(page: Page) {
                 current.closest(".page-wrap .nav-tabs")
               ),
           )
+          .filter(
+            (value) =>
+              value !== "gray-txt" &&
+              value !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(value) &&
+              !value.includes("__"),
+          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -647,6 +654,13 @@ async function canonicalizeHtml(page: Page, html: string) {
                   current.tagName.toLowerCase() === "a" &&
                   current.closest(".page-wrap .nav-tabs")
                 ),
+            )
+            .filter(
+              (value) =>
+                value !== "gray-txt" &&
+                value !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(value) &&
+                !value.includes("__"),
             )
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";

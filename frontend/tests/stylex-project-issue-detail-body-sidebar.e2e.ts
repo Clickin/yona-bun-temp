@@ -55,7 +55,11 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
     "uploadHelp",
     "commentUpdateActions",
   ]) {
-    expect(styleSource).toContain(`${owner}: { textAlign: "right" }`);
+    expect(styleSource).toContain(
+      owner === "disabledCommentActions"
+        ? 'disabledCommentActions: { textAlign: "right", marginTop: "10px" }'
+        : `${owner}: { textAlign: "right" }`,
+    );
   }
   for (const marker of [
     "project-issue-detail-author",
@@ -63,7 +67,6 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
     "project-issue-detail-actions",
     "project-issue-detail-disabled-comment-actions",
     "project-issue-detail-comment-actions",
-    "project-issue-detail-upload-help",
     "project-issue-detail-comment-update-actions",
     "project-issue-detail-board-footer",
     "project-issue-detail-sidebar-meta",
@@ -74,7 +77,14 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${marker}"`);
   }
-  expect(routeSource).not.toContain("right-txt");
+  // Upload help marker moved onto the shared UploadForm via the helpOwner prop.
+  expect(routeSource).toContain('helpOwner="project-issue-detail-upload-help"');
+  const uploadFormSource = readFileSync(
+    fileURLToPath(new URL("../src/components/file-uploader.tsx", import.meta.url)),
+    "utf8",
+  );
+  expect(uploadFormSource).toContain("data-stylex-owner={helpOwner}");
+  expect(routeSource).toContain("right-txt`}");
   expect(routeSource).toContain(
     '<div className="write-comment-wrap">\n            <MarkdownEditor editorMode="comment-body"',
   );

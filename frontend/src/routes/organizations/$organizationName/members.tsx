@@ -20,6 +20,7 @@ import {
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationAdminView, YoramRecord, YoramUserItem } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
+import { EnrollmentRequest } from "../../../components/enrollment-request";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
@@ -403,12 +404,20 @@ function OrganizationMembersBody({
               <div className="row-fluid">
                 {organization.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
+                    avatarDefaultSrc="/assets/images/default-avatar-64.png"
+                    avatarWrapOwner="organization-enrollment-avatar-wrap"
+                    detailsOwner="organization-members-enrollment-details"
                     key={stringField(user.loginId, "")}
-                    onAccept={(userId, loginId) => {
+                    onAccept={(loginId, userId) => {
                       setLoginIdQuery(loginId);
                       setIsTypeaheadOpen(false);
                       setActiveSuggestionIndex(0);
-                      acceptEnrollmentMutation.mutate(userId);
+                      acceptEnrollmentMutation.mutate(Number(userId));
                     }}
                     user={user}
                   />
@@ -563,16 +572,6 @@ const styles = stylex.create({
     textAlign: "left",
     width: "100%",
   },
-  // Legacy organization/members.scala.html enrolled-user details column.
-  enrollmentDetails: {
-    float: "left",
-    width: "60px",
-  },
-  // Legacy organization/members.scala.html enrolled-user avatar wrapper.
-  enrollmentAvatarWrap: {
-    float: "left",
-    marginRight: "10px",
-  },
   memberList: {
     listStyle: "none",
     margin: "0px",
@@ -658,74 +657,6 @@ const styles = stylex.create({
     lineHeight: "20px",
   },
 });
-
-function EnrollmentRequest({
-  onAccept,
-  user,
-}: {
-  onAccept: (userId: number, loginId: string) => void;
-  user: YoramUserItem;
-}) {
-  const { t } = useLegacyMessages();
-  const loginId = stringField(user.loginId, "");
-  const avatarWrapProps = stylex.props(styles.enrollmentAvatarWrap);
-  const enrollmentDetailsProps = stylex.props(styles.enrollmentDetails);
-
-  return (
-    <div className="span2">
-      <div
-        className={`${avatarWrapProps.className ?? ""} mr10`.trim()}
-        data-stylex-owner="organization-enrollment-avatar-wrap"
-      >
-        <Link
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
-          params={{ user: loginId }}
-          to="/$user"
-        >
-          <img
-            src={stringField(user.avatarUrl, "/assets/images/default-avatar-64.png")}
-            height="65"
-            width="65"
-            className="img-circle"
-            alt=""
-          />
-        </Link>
-      </div>
-      <div
-        className={enrollmentDetailsProps.className}
-        data-stylex-owner="organization-members-enrollment-details"
-      >
-        <span>
-          <Link
-            activeProps={{
-              "aria-current": undefined,
-              className: undefined,
-              "data-status": undefined,
-            }}
-            params={{ user: loginId }}
-            to="/$user"
-          >
-            <strong>{stringField(user.userLabel, loginId)}</strong>
-          </Link>
-        </span>
-        <span>({loginId})</span>
-        <button
-          type="button"
-          className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
-          data-loginid={loginId}
-          onClick={() => onAccept(Number(user.userId), loginId)}
-        >
-          <i className="yobicon-addfriend"></i>
-          {t("button.add")}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function OrganizationSettingMenu({
   active,

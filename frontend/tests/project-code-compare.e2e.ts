@@ -6,6 +6,7 @@ const ROUTE_SOURCE = readFileSync(
   "src/routes/$ownerName/$projectName/compare/$revisionRange.tsx",
   "utf8",
 );
+const DIFF_LINE_VIEW_SOURCE = readFileSync("src/components/diff-line-view.tsx", "utf8");
 
 const EXPECTED_COMPARE_BODY = `
 <div class="project-page-wrap"><div class="code-browse-wrap"><p class="commitInfo"><strong class="commitId">@abcdef1234567890..1234567890abcdef</strong></p><div class="alert">No changes</div></div></div>
@@ -91,8 +92,8 @@ test("project code compare uses legacy project-scoped GNB search shell", async (
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
-  await expect(searchBox).not.toHaveClass(/\bselect\b/);
+  await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
+  await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
   const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
@@ -252,8 +253,8 @@ test("project code compare added file renders legacy added-path metadata", async
 });
 
 test("project code compare route drops legacy comment JS-only diff line type marker", () => {
-  expect(ROUTE_SOURCE).toContain("data-line={line.lineNumber}");
-  expect(ROUTE_SOURCE).toContain('data-side={line.type === "remove" ? "A" : "B"}');
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-line={line.lineNumber}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain('data-side={line.type === "remove" ? "A" : "B"}');
   expect(ROUTE_SOURCE).not.toContain("data-type={line.type}");
   expect(ROUTE_SOURCE).not.toMatch(/<tr[\s\S]*data-type=/u);
 });

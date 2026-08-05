@@ -66,9 +66,14 @@ import {
 } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import {
+  humanFileSize,
+  IssuePostFileUploader,
+  type UploadRow,
+} from "../../../components/file-uploader";
+import { IssueDueDateInput } from "../../../components/issue-due-date-input";
+import { MarkdownEditor } from "../../../components/markdown-editor";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
-import { useRootToast } from "../../__root";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 import { issueFormStyles, projectIssueFormTheme } from "./-issueform.stylex";
 
@@ -235,17 +240,6 @@ type IssueLabelOption = {
   color: string;
   id: number;
   name: string;
-};
-
-type UploadRow = {
-  attachment?: UploadedAttachment;
-  error?: string;
-  key: number;
-  name: string;
-  placeholder?: string;
-  progress: number;
-  size: number;
-  status: "deleting" | "error" | "ready" | "uploading";
 };
 
 type BodySelection = {
@@ -647,7 +641,6 @@ function ProjectIssueFormBody({
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const setRootToast = useRootToast();
   const routePathname = useRouterState({ select: (state) => state.location.pathname });
   const draftKey = prefixBasePath(runtimeConfig.basePath, routePathname);
   const labels = useMemo(() => normalizeIssueLabels(rawLabels), [rawLabels]);
@@ -677,6 +670,7 @@ function ProjectIssueFormBody({
   const [submitError, setSubmitError] = useState("");
   const [uploadRows, setUploadRows] = useState<UploadRow[]>([]);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [toastNotice, setToastNotice] = useState<{ key: number; message: string } | null>(null);
   const isCrossProject = targetProjectId !== projectIdNumber(project);
 
   useEffect(() => {
@@ -746,12 +740,9 @@ function ProjectIssueFormBody({
     router.history.back();
   };
 
-  const setToast = useCallback(
-    (message: string, durationMs = 3_000) => {
-      setRootToast({ durationMs, key: `${Date.now()}-${message}`, message });
-    },
-    [setRootToast],
-  );
+  const setToast = useCallback((message: string, _durationMs = 3_000) => {
+    setToastNotice((current) => ({ key: (current?.key ?? 0) + 1, message }));
+  }, []);
 
   const selectLabel = useCallback(
     (labelId: number) => {
@@ -1072,6 +1063,10 @@ function ProjectIssueFormBody({
               validateAndSubmit(false);
             }}
           >
+            <IssueFormToast
+              noticeKey={toastNotice?.key ?? 0}
+              message={toastNotice?.message ?? ""}
+            />
             <div className="row-fluid">
               <div className="span12">
                 <dl>
@@ -1159,7 +1154,7 @@ function ProjectIssueFormBody({
                       className={`${stylex.props(issueFormStyles.editorCell).className} issue-editor-cell`}
                       data-stylex-owner="project-issue-form-editor"
                     >
-                      <IssueMarkdownEditor
+                      <IssueBodyMarkdownEditor
                         bodyMarkdown={bodyMarkdown}
                         bodyRef={bodyRef}
                         draftNotice={draftNotice}
@@ -1192,6 +1187,25 @@ function ProjectIssueFormBody({
                     onFiles={(files) => void uploadFiles(files)}
                     onInsert={insertAttachment}
                     onRemove={(row) => void removeAttachment(row)}
+                    styles={{
+                      shell: issueFormStyles.uploadShell,
+                      fakeFile: issueFormStyles.uploadFakeFile,
+                      fileInput: issueFormStyles.uploadFileInput,
+                      pasteHelp: issueFormStyles.uploadHelpPastable,
+                      attachedFilesVisible: issueFormStyles.attachedFilesVisible,
+                      attachedFile: issueFormStyles.attachedFile,
+                      attachedFileMain: issueFormStyles.attachedFileMain,
+                      attachedFileMainDisabled: issueFormStyles.attachedFileMainDisabled,
+                      attachedFileMainIcon: issueFormStyles.attachedFileMainIcon,
+                      attachedFileName: issueFormStyles.attachedFileName,
+                      attachedFileInsertCopy: issueFormStyles.attachedFileInsertCopy,
+                      uploadProgressWrapper: issueFormStyles.uploadProgressWrapper,
+                      uploadProgress: issueFormStyles.uploadProgress,
+                      uploadProgressBar: issueFormStyles.uploadProgressBar,
+                      uploadError: issueFormStyles.uploadError,
+                      attachedFileDelete: issueFormStyles.attachedFileDelete,
+                      uploadAttachSaveHelp: issueFormStyles.uploadAttachSaveHelp,
+                    }}
                   />
                   <div
                     className={`${stylex.props(styles.actions).className} actrow`}
@@ -1248,12 +1262,31 @@ function ProjectIssueFormBody({
                       onChange={setMilestoneId}
                     />
                   ) : null}
-                  <IssueDueDateInput
-                    datePickerRef={datePickerRef}
-                    dueDate={dueDate}
-                    dueDateRef={dueDateRef}
-                    onChange={setDueDate}
-                  />
+                  <dl className="issue-option issue-due-date-option">
+                    <dt>{t("issue.dueDate")}</dt>
+                    <dd>
+                      <div
+                        {...stylex.props(issueFormStyles.dueDateSearchBar)}
+                        className={`search search-bar ${stylex.props(issueFormStyles.dueDateSearchBar).className ?? ""}`.trim()}
+                        data-stylex-owner="project-issue-form-due-date-search"
+                      >
+                        <label className="blind" htmlFor="issueDueDate">
+                          {t("issue.dueDate")}
+                        </label>
+                        <IssueDueDateInput
+                          ownerPrefix="project-issue-form"
+                          inputId="issueDueDate"
+                          datePickerRef={datePickerRef}
+                          dueDateRef={dueDateRef}
+                          inputStyle={issueFormStyles.dueDateInput}
+                          buttonStyle={issueFormStyles.dueDateCalendarButton}
+                          value={dueDate}
+                          autoComplete="off"
+                          onChange={setDueDate}
+                        />
+                      </div>
+                    </dd>
+                  </dl>
                   <IssueLabelSelect
                     canManageIssueLabels={canManageIssueLabels}
                     labels={labels}
@@ -1276,6 +1309,28 @@ function ProjectIssueFormBody({
               </div>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueFormToast({ message, noticeKey }: { message: string; noticeKey: number }) {
+  if (noticeKey === 0) {
+    return null;
+  }
+
+  return (
+    <div id="yobiToasts" className="yobiToasts" key={noticeKey}>
+      <div className="toast" tabIndex={-1} key={noticeKey}>
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent">
+            &times;
+          </button>
+        </div>
+        <div className="center-text">
+          <span className="v"></span>
+          <div className="msg">{message}</div>
         </div>
       </div>
     </div>
@@ -1711,7 +1766,19 @@ function SubtaskSelects({
         >
           <option value="">{t("issue.subtask.select")}</option>
           {parentOptions.map((issue) => (
-            <option key={String(issue.id)} value={String(issue.id)}>
+            <option
+              key={String(issue.id)}
+              value={String(issue.id)}
+              ref={
+                String(issue.id) === parentIssueId
+                  ? (option) => {
+                      if (option) {
+                        option.defaultSelected = true;
+                      }
+                    }
+                  : undefined
+              }
+            >
               #{String(issue.issueNumber)}. {issue.title}
             </option>
           ))}
@@ -1721,7 +1788,7 @@ function SubtaskSelects({
   );
 }
 
-function IssueMarkdownEditor({
+function IssueBodyMarkdownEditor({
   bodyMarkdown,
   bodyRef,
   draftNotice,
@@ -1974,498 +2041,260 @@ function IssueMarkdownEditor({
   };
 
   return (
-    <div
-      {...stylex.props(issueFormStyles.issueMarkdownEditor)}
-      className={`mt10 issue-markdown-editor ${stylex.props(issueFormStyles.issueMarkdownEditor).className ?? ""}`.trim()}
-      data-stylex-owner="project-issue-form-markdown-editor"
-    >
-      <ul
-        {...stylex.props(issueFormStyles.issueMarkdownEditorTabs)}
-        className={`nav nav-tabs nm small ${stylex.props(issueFormStyles.issueMarkdownEditorTabs).className ?? ""}`.trim()}
-        data-stylex-owner="project-issue-form-markdown-editor-tabs"
-      >
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <button
-            type="button"
-            {...stylex.props(
-              issueFormStyles.markdownTab,
-              activeTab === "edit" && issueFormStyles.markdownTabActive,
-            )}
-            data-stylex-owner="project-issue-form-markdown-tab-edit"
-            onClick={() => setActiveTab("edit")}
+    <MarkdownEditor
+      activeTab={activeTab}
+      onActiveTabChange={setActiveTab}
+      wrapperClassName={`mt10 issue-markdown-editor ${stylex.props(issueFormStyles.issueMarkdownEditor).className ?? ""}`.trim()}
+      wrapperStyleProps={stylex.props(issueFormStyles.issueMarkdownEditor)}
+      wrapperOwner="project-issue-form-markdown-editor"
+      tabListClassName={`nav nav-tabs nm small ${stylex.props(issueFormStyles.issueMarkdownEditorTabs).className ?? ""}`.trim()}
+      tabListStyleProps={stylex.props(issueFormStyles.issueMarkdownEditorTabs)}
+      tabListOwner="project-issue-form-markdown-editor-tabs"
+      tabContentStyleProps={(_tab, active) =>
+        stylex.props(issueFormStyles.markdownTab, active && issueFormStyles.markdownTabActive)
+      }
+      tabContentOwner={(tab) =>
+        tab === "edit"
+          ? "project-issue-form-markdown-tab-edit"
+          : "project-issue-form-markdown-tab-preview"
+      }
+      checklistClassName={`task-list-button ${stylex.props(issueFormStyles.taskListButton).className ?? ""}`.trim()}
+      checklistStyleProps={stylex.props(issueFormStyles.taskListButton)}
+      checklistOwner="project-issue-form-task-list-button"
+      checklistButtonAriaLabel={t("button.add.checklist")}
+      onChecklistClick={insertChecklist}
+      clearTemporaryAriaHidden
+      clearTemporaryButtonTabIndex={-1}
+      noticeLabelClassName={`editor-notice-label ${stylex.props(issueFormStyles.editorNoticeLabel).className ?? ""}`.trim()}
+      noticeLabelStyleProps={stylex.props(issueFormStyles.editorNoticeLabel)}
+      noticeLabelOwner="project-issue-form-editor-notice"
+      noticeContent={
+        draftNotice ? (
+          <span
+            {...stylex.props(issueFormStyles.editorNoticeSaved)}
+            className={`saved ${stylex.props(issueFormStyles.editorNoticeSaved).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-editor-notice-saved"
           >
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <button
-            type="button"
-            {...stylex.props(
-              issueFormStyles.markdownTab,
-              activeTab === "preview" && issueFormStyles.markdownTabActive,
-            )}
-            data-stylex-owner="project-issue-form-markdown-tab-preview"
-            onClick={() => setActiveTab("preview")}
-          >
-            {t("common.editor.preview")}
-          </button>
-        </li>
-        <li>
-          <div
-            {...stylex.props(issueFormStyles.taskListButton)}
-            className={`task-list-button ${stylex.props(issueFormStyles.taskListButton).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-task-list-button"
-          >
-            <button
-              type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
-              aria-label={t("button.add.checklist")}
-              onClick={insertChecklist}
-            >
-              <i className="yobicon-list task-list-icon" /> {t("button.add.checklist")}
-            </button>
-          </div>
-        </li>
-        <li>
-          <div className="editor-clear-temporary" aria-hidden="true">
-            <div className="editor-clear-temporary-button">
-              <button
-                type="button"
-                id="button-clear-temporary"
-                className="ybtn ybtn-small ybtn-warning"
-                tabIndex={-1}
-              >
-                {t("button.clear.temporary")}
-              </button>
-            </div>
-          </div>
-        </li>
-        <li>
-          <div
-            {...stylex.props(issueFormStyles.editorNoticeLabel)}
-            className={`editor-notice-label ${stylex.props(issueFormStyles.editorNoticeLabel).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-editor-notice"
-          >
-            {draftNotice ? (
-              <span
-                {...stylex.props(issueFormStyles.editorNoticeSaved)}
-                className={`saved ${stylex.props(issueFormStyles.editorNoticeSaved).className ?? ""}`.trim()}
-                data-stylex-owner="project-issue-form-editor-notice-saved"
-              >
-                {draftNotice}
-              </span>
-            ) : null}
-          </div>
-        </li>
-      </ul>
-      <div
-        className={`${stylex.props(issueFormStyles.editorTabContent).className} tab-content issue-editor-tab-content`}
-        data-stylex-owner="project-issue-form-editor-tab-content"
-      >
-        <LegacyMarkdownHelp />
-        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div
-            ref={textareaBoxRef}
-            className="textarea-box"
-            data-stylex-owner="project-issue-form-textarea-box"
-            onBlurCapture={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                setDismissedMentionKey(mentionKey);
-                setActiveSuggestion(-1);
-              }
-            }}
-          >
-            {/* Keep the legacy Bootstrap border-box contract on this fixed-height editor. */}
-            <textarea
-              ref={bodyRef}
-              name="body"
-              className="editorSeries content comment nm"
-              id="editor-body-body"
-              value={bodyMarkdown}
-              tabIndex={2}
-              role="combobox"
-              aria-autocomplete="list"
-              aria-controls="editor-mention-options"
-              aria-expanded={mentionSuggestions.length > 0}
-              aria-activedescendant={
-                mentionSuggestions.length > 0
-                  ? `editor-mention-option-${Math.max(activeSuggestion, 0)}`
-                  : undefined
-              }
-              {...editorTextareaStyleProps}
-              data-stylex-owner="project-issue-form-editor-textarea"
-              onChange={(event) => {
-                setTextareaContentHeight(300);
-                setDismissedMentionKey(null);
-                onBodyChange(event.currentTarget.value);
-                setCaretPosition(event.currentTarget.selectionStart);
-                requestAnimationFrame(() => {
-                  const textarea = bodyRef.current;
-                  if (!textarea) return;
-                  const style = getComputedStyle(textarea);
-                  const verticalPadding =
-                    Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
-                  setTextareaContentHeight(Math.max(300, textarea.scrollHeight - verticalPadding));
-                });
-              }}
-              onFocus={onBodyFocus}
-              onClick={(event) => {
-                setDismissedMentionKey(null);
-                setCaretPosition(event.currentTarget.selectionStart);
-              }}
-              onScroll={(event) => setTextareaScrollTop(event.currentTarget.scrollTop)}
-              onPaste={(event) => {
-                const markdownTable = clipboardMarkdownTable(event.clipboardData);
-                if (markdownTable !== null) {
-                  event.preventDefault();
-                  const insertionStart = event.currentTarget.selectionStart;
-                  const nextCaret = insertionStart + markdownTable.length;
-                  onBodyChange(
-                    `${bodyMarkdown.slice(0, insertionStart)}${markdownTable}${bodyMarkdown.slice(insertionStart)}`,
-                  );
-                  setCaretPosition(nextCaret);
-                  requestAnimationFrame(() => {
-                    bodyRef.current?.focus();
-                    bodyRef.current?.setSelectionRange(nextCaret, nextCaret);
-                  });
-                  return;
-                }
-                const files = clipboardImageFiles(event.clipboardData).map((file) =>
-                  legacyPastedImageFile(file),
-                );
-                if (files.length === 0) {
-                  return;
-                }
-                event.preventDefault();
-                onFiles(files, {
-                  end: event.currentTarget.selectionEnd,
-                  start: event.currentTarget.selectionStart,
-                });
-              }}
-              onDragOver={(event) => {
-                if (event.dataTransfer.types.includes("Files")) {
-                  event.preventDefault();
-                }
-              }}
-              onDrop={(event) => {
-                const files = Array.from(event.dataTransfer.files);
-                if (files.length === 0) {
-                  return;
-                }
-                event.preventDefault();
-                onFiles(files, {
-                  end: event.currentTarget.selectionEnd,
-                  start: event.currentTarget.selectionStart,
-                });
-              }}
-              onKeyUp={(event) => {
-                if (event.key !== "Escape") {
-                  setCaretPosition(event.currentTarget.selectionStart);
-                }
-              }}
-              onKeyDown={handleEditorKeyDown}
-            />
-            {mention ? (
-              <div
-                aria-hidden="true"
-                {...stylex.props(
+            {draftNotice}
+          </span>
+        ) : null
+      }
+      tabContentClassName={`${stylex.props(issueFormStyles.editorTabContent).className} tab-content issue-editor-tab-content`}
+      tabContentPaneOwner="project-issue-form-editor-tab-content"
+      editPaneId="edit-body"
+      textareaBoxOwner="project-issue-form-textarea-box"
+      textareaBoxRef={textareaBoxRef}
+      onTextareaBoxBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setDismissedMentionKey(mentionKey);
+          setActiveSuggestion(-1);
+        }
+      }}
+      textareaRef={bodyRef}
+      textareaName="body"
+      textareaId="editor-body-body"
+      textareaStyleProps={editorTextareaStyleProps}
+      textareaStyleFirst={false}
+      textareaOwner="project-issue-form-editor-textarea"
+      textareaValue={bodyMarkdown}
+      textareaOnChange={(event) => {
+        setTextareaContentHeight(300);
+        setDismissedMentionKey(null);
+        onBodyChange(event.currentTarget.value);
+        setCaretPosition(event.currentTarget.selectionStart);
+        requestAnimationFrame(() => {
+          const textarea = bodyRef.current;
+          if (!textarea) return;
+          const style = getComputedStyle(textarea);
+          const verticalPadding =
+            Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+          setTextareaContentHeight(Math.max(300, textarea.scrollHeight - verticalPadding));
+        });
+      }}
+      textareaOnFocus={onBodyFocus}
+      textareaTabIndex={2}
+      textareaExtraProps={{
+        role: "combobox",
+        "aria-autocomplete": "list",
+        "aria-controls": "editor-mention-options",
+        "aria-expanded": mentionSuggestions.length > 0,
+        "aria-activedescendant":
+          mentionSuggestions.length > 0
+            ? `editor-mention-option-${Math.max(activeSuggestion, 0)}`
+            : undefined,
+        onClick: (event) => {
+          setDismissedMentionKey(null);
+          setCaretPosition(event.currentTarget.selectionStart);
+        },
+        onScroll: (event) => setTextareaScrollTop(event.currentTarget.scrollTop),
+        onPaste: (event) => {
+          const markdownTable = clipboardMarkdownTable(event.clipboardData);
+          if (markdownTable !== null) {
+            event.preventDefault();
+            const insertionStart = event.currentTarget.selectionStart;
+            const nextCaret = insertionStart + markdownTable.length;
+            onBodyChange(
+              `${bodyMarkdown.slice(0, insertionStart)}${markdownTable}${bodyMarkdown.slice(insertionStart)}`,
+            );
+            setCaretPosition(nextCaret);
+            requestAnimationFrame(() => {
+              bodyRef.current?.focus();
+              bodyRef.current?.setSelectionRange(nextCaret, nextCaret);
+            });
+            return;
+          }
+          const files = clipboardImageFiles(event.clipboardData).map((file) =>
+            legacyPastedImageFile(file),
+          );
+          if (files.length === 0) {
+            return;
+          }
+          event.preventDefault();
+          onFiles(files, {
+            end: event.currentTarget.selectionEnd,
+            start: event.currentTarget.selectionStart,
+          });
+        },
+        onDragOver: (event) => {
+          if (event.dataTransfer.types.includes("Files")) {
+            event.preventDefault();
+          }
+        },
+        onDrop: (event) => {
+          const files = Array.from(event.dataTransfer.files);
+          if (files.length === 0) {
+            return;
+          }
+          event.preventDefault();
+          onFiles(files, {
+            end: event.currentTarget.selectionEnd,
+            start: event.currentTarget.selectionStart,
+          });
+        },
+        onKeyUp: (event) => {
+          if (event.key !== "Escape") {
+            setCaretPosition(event.currentTarget.selectionStart);
+          }
+        },
+        onKeyDown: handleEditorKeyDown,
+      }}
+      textareaExtras={
+        <>
+          {mention ? (
+            <div
+              aria-hidden="true"
+              {...stylex.props(
+                issueFormStyles.editorMentionMirror,
+                issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
+              )}
+              className={`editor-mention-mirror ${
+                stylex.props(
                   issueFormStyles.editorMentionMirror,
                   issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
-                )}
-                className={`editor-mention-mirror ${
-                  stylex.props(
-                    issueFormStyles.editorMentionMirror,
-                    issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
-                  ).className ?? ""
-                }`.trim()}
-                data-stylex-owner="project-issue-form-mention-mirror"
+                ).className ?? ""
+              }`.trim()}
+              data-stylex-owner="project-issue-form-mention-mirror"
+            >
+              {bodyMarkdown.slice(0, caretPosition)}
+              <span
+                ref={mentionMarkerRef}
+                {...stylex.props(issueFormStyles.editorMentionMarker)}
+                className={`editor-mention-marker ${stylex.props(issueFormStyles.editorMentionMarker).className ?? ""}`.trim()}
+                data-stylex-owner="project-issue-form-editor-mention-marker"
               >
-                {bodyMarkdown.slice(0, caretPosition)}
-                <span
-                  ref={mentionMarkerRef}
-                  {...stylex.props(issueFormStyles.editorMentionMarker)}
-                  className={`editor-mention-marker ${stylex.props(issueFormStyles.editorMentionMarker).className ?? ""}`.trim()}
-                  data-stylex-owner="project-issue-form-editor-mention-marker"
-                >
-                  {"\u200b"}
-                </span>
-              </div>
-            ) : null}
-            {mentionSuggestions.length > 0 ? (
-              <div
-                ref={mentionPopupRef}
-                id="editor-mention-options"
-                role="listbox"
-                {...stylex.props(
+                {"\u200b"}
+              </span>
+            </div>
+          ) : null}
+          {mentionSuggestions.length > 0 ? (
+            <div
+              ref={mentionPopupRef}
+              id="editor-mention-options"
+              role="listbox"
+              {...stylex.props(
+                issueFormStyles.editorMentionOptions,
+                issueFormStyles.mentionPopupPosition(
+                  mentionPopupPosition.left,
+                  mentionPopupPosition.top,
+                ),
+              )}
+              className={`issue-combobox-options editor-mention-options ${
+                stylex.props(
                   issueFormStyles.editorMentionOptions,
                   issueFormStyles.mentionPopupPosition(
                     mentionPopupPosition.left,
                     mentionPopupPosition.top,
                   ),
-                )}
-                className={`issue-combobox-options editor-mention-options ${
-                  stylex.props(
-                    issueFormStyles.editorMentionOptions,
-                    issueFormStyles.mentionPopupPosition(
-                      mentionPopupPosition.left,
-                      mentionPopupPosition.top,
-                    ),
-                  ).className ?? ""
-                }`.trim()}
-                data-stylex-owner="project-issue-form-editor-mention-options"
-              >
-                {mentionSuggestions.map((suggestion, index) => {
-                  const optionStyle = stylex.props(
-                    issueFormStyles.issueComboboxOptionButton,
-                    index === activeSuggestion && issueFormStyles.issueComboboxOptionButtonActive,
-                  );
-                  return (
-                    <button
-                      type="button"
-                      id={`editor-mention-option-${index}`}
-                      key={suggestion.key}
-                      {...optionStyle}
-                      className={`${index === activeSuggestion ? "active" : ""} ${optionStyle.className ?? ""}`.trim()}
-                      data-stylex-owner="project-issue-form-editor-mention-option"
-                      role="option"
-                      aria-selected={index === activeSuggestion}
-                      aria-label={suggestion.accessibleLabel}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => chooseMention(suggestion)}
-                    >
-                      {suggestion.imageUrl ? (
-                        <img src={suggestion.imageUrl} alt="" width="20" height="20" />
-                      ) : null}
-                      <span>{suggestion.label}</span>
-                      {suggestion.detail ? (
-                        <small
-                          {...stylex.props(
-                            issueFormStyles.issueComboboxOptionSmall,
-                            index === activeSuggestion &&
-                              issueFormStyles.issueComboboxOptionSmallActive,
-                          )}
-                          data-stylex-owner="project-issue-form-editor-mention-option-detail"
-                        >
-                          {suggestion.detail}
-                        </small>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        </div>
-        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div
-            {...stylex.props(issueFormStyles.markdownPreview)}
-            className={`markdown-preview markdown-wrap content-body ${stylex.props(issueFormStyles.markdownPreview).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-markdown-preview"
-          >
-            <ReactMarkdown
-              components={markdownComponents}
-              rehypePlugins={[
-                rehypeRaw,
-                rehypeLegacyStylePolicy,
-                [rehypeSanitize, ISSUE_MARKDOWN_SANITIZE_SCHEMA],
-              ]}
-              remarkPlugins={[
-                remarkGfm,
-                remarkBreaks,
-                remarkLegacyHeadingAnchors,
-                markdownAutoLinkPlugin,
-              ]}
-              urlTransform={legacyMarkdownUrlTransform}
+                ).className ?? ""
+              }`.trim()}
+              data-stylex-owner="project-issue-form-editor-mention-options"
             >
-              {bodyMarkdown}
-            </ReactMarkdown>
-          </div>
-        </div>
-        <div className="notification-receiver">
-          <span className="notification-receiver-title">
-            {t("notification.receiver.list.title")}
-          </span>
-          <span className="notification-receiver-list" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function IssuePostFileUploader({
-  isDragging,
-  onDragEnter,
-  onDragLeave,
-  onDragOver,
-  onDrop,
-  onFiles,
-  onInsert,
-  onRemove,
-  rows,
-}: {
-  isDragging: boolean;
-  onDragEnter: (event: DragEvent<HTMLDivElement>) => void;
-  onDragLeave: (event: DragEvent<HTMLDivElement>) => void;
-  onDragOver: (event: DragEvent<HTMLDivElement>) => void;
-  onDrop: (event: DragEvent<HTMLDivElement>) => void;
-  onFiles: (files: File[]) => void;
-  onInsert: (attachment: UploadedAttachment) => void;
-  onRemove: (row: UploadRow) => void;
-  rows: UploadRow[];
-}) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <div
-      {...stylex.props(issueFormStyles.uploadShell)}
-      id="upload"
-      className={`upload-wrap content-footer ${stylex.props(issueFormStyles.uploadShell).className ?? ""}${isDragging ? " dragover" : ""}`.trim()}
-      data-stylex-owner="project-issue-form-upload-shell"
-      onDragEnter={onDragEnter}
-      onDragLeave={onDragLeave}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-    >
-      <div className="attach-wrap">
-        <span className="help help-droppable">{t("common.attach.drophere")}</span>{" "}
-        <div className="btn-wrap">
-          <label
-            {...stylex.props(issueFormStyles.uploadFakeFile)}
-            className={`nbtn medium white fake-file-wrap ${stylex.props(issueFormStyles.uploadFakeFile).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-upload-fake-file"
-          >
-            <i className="yobicon-upload" /> {t("button.upload")}
-            <input
-              type="file"
-              {...stylex.props(issueFormStyles.uploadFileInput)}
-              className={`file ${stylex.props(issueFormStyles.uploadFileInput).className ?? ""}`.trim()}
-              data-stylex-owner="project-issue-form-upload-file-input"
-              name="filePath"
-              multiple
-              onChange={(event) => {
-                onFiles(Array.from(event.currentTarget.files ?? []));
-                event.currentTarget.value = "";
-              }}
-            />
-          </label>
-        </div>{" "}
-        <span className="plain">{t("common.attach.clickbutton")}</span>{" "}
-        <span
-          {...stylex.props(issueFormStyles.uploadHelpPastable)}
-          className={`help help-pastable ${stylex.props(issueFormStyles.uploadHelpPastable).className ?? ""}`.trim()}
-          data-stylex-owner="project-issue-form-upload-help-pastable"
-        >
-          {t("common.attach.pastehere")}
-        </span>
-      </div>
-      <ul
-        {...stylex.props(rows.length > 0 && issueFormStyles.attachedFilesVisible)}
-        className={`attached-files unstyled${rows.length > 0 ? " has-files" : ""} ${stylex.props(rows.length > 0 && issueFormStyles.attachedFilesVisible).className ?? ""}`.trim()}
-        data-stylex-owner={rows.length > 0 ? "project-issue-form-attached-files" : undefined}
-      >
-        {rows.map((row) => {
-          const progressStyle = stylex.props(issueFormStyles.uploadProgressBar(`${row.progress}%`));
-          return (
-            <li
-              key={row.key}
-              {...stylex.props(issueFormStyles.attachedFile)}
-              className={`attached-file temporary${row.status === "ready" ? " complete" : ""} ${stylex.props(issueFormStyles.attachedFile).className ?? ""}`.trim()}
-              data-stylex-owner="project-issue-form-attached-file"
-            >
-              <button
-                type="button"
-                {...stylex.props(issueFormStyles.attachedFileMain)}
-                {...stylex.props(
-                  row.status !== "ready" && issueFormStyles.attachedFileMainDisabled,
-                )}
-                className={`attached-file-main ${stylex.props(issueFormStyles.attachedFileMain).className ?? ""} ${stylex.props(row.status !== "ready" && issueFormStyles.attachedFileMainDisabled).className ?? ""}`.trim()}
-                data-stylex-owner="project-issue-form-attached-file-main"
-                aria-label={`${t("common.attach.clickToPost")} ${row.name}`}
-                disabled={!row.attachment || row.status !== "ready"}
-                onClick={() => row.attachment && onInsert(row.attachment)}
-              >
-                <i
-                  {...stylex.props(issueFormStyles.attachedFileMainIcon)}
-                  className={`yobicon-supportrequest ${stylex.props(issueFormStyles.attachedFileMainIcon).className ?? ""}`.trim()}
-                  data-stylex-owner="project-issue-form-attached-file-main-icon"
-                />
-                <strong
-                  {...stylex.props(issueFormStyles.attachedFileName)}
-                  className={`name ${stylex.props(issueFormStyles.attachedFileName).className ?? ""}`.trim()}
-                  data-stylex-owner="project-issue-form-attached-file-name"
-                >
-                  {row.name}
-                </strong>{" "}
-                <span className="size">{humanFileSize(row.size)}</span>
-                {row.attachment && row.status === "ready" ? (
-                  <span
-                    {...stylex.props(issueFormStyles.attachedFileInsertCopy)}
-                    className={`btn-insert-copy ${stylex.props(issueFormStyles.attachedFileInsertCopy).className ?? ""}`.trim()}
-                    data-stylex-owner="project-issue-form-attached-file-insert-copy"
+              {mentionSuggestions.map((suggestion, index) => {
+                const optionStyle = stylex.props(
+                  issueFormStyles.issueComboboxOptionButton,
+                  index === activeSuggestion && issueFormStyles.issueComboboxOptionButtonActive,
+                );
+                return (
+                  <button
+                    type="button"
+                    id={`editor-mention-option-${index}`}
+                    key={suggestion.key}
+                    {...optionStyle}
+                    className={`${index === activeSuggestion ? "active" : ""} ${optionStyle.className ?? ""}`.trim()}
+                    data-stylex-owner="project-issue-form-editor-mention-option"
+                    role="option"
+                    aria-selected={index === activeSuggestion}
+                    aria-label={suggestion.accessibleLabel}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => chooseMention(suggestion)}
                   >
-                    {t("common.attach.clickToPost")}
-                  </span>
-                ) : null}
-              </button>
-              {row.status === "uploading" ? (
-                <div
-                  {...stylex.props(issueFormStyles.uploadProgressWrapper)}
-                  data-stylex-owner="project-issue-form-upload-progress-wrapper"
-                >
-                  <div
-                    {...stylex.props(issueFormStyles.uploadProgress)}
-                    className={`progress upload-progress ${stylex.props(issueFormStyles.uploadProgress).className ?? ""}`.trim()}
-                    data-stylex-owner="project-issue-form-upload-progress-shell"
-                  >
-                    <div
-                      {...progressStyle}
-                      className={`${progressStyle.className ?? ""} bar orange`.trim()}
-                      data-stylex-owner="project-issue-form-upload-progress"
-                    />
-                  </div>
-                </div>
-              ) : null}
-              {row.error ? (
-                <span
-                  {...stylex.props(issueFormStyles.uploadError)}
-                  className={`upload-error ${stylex.props(issueFormStyles.uploadError).className ?? ""}`.trim()}
-                  data-stylex-owner="project-issue-form-upload-error"
-                >
-                  {row.error}
-                </span>
-              ) : null}
-              <button
-                type="button"
-                {...stylex.props(issueFormStyles.attachedFileDelete)}
-                className={`btn-transparent btn-delete ${stylex.props(issueFormStyles.attachedFileDelete).className ?? ""}`.trim()}
-                data-stylex-owner="project-issue-form-attached-file-delete"
-                aria-label={`${t("button.delete")} ${row.name}`}
-                disabled={row.status === "deleting" || row.status === "uploading"}
-                onClick={() => onRemove(row)}
-              >
-                &times;
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {rows.length > 0 ? (
-        <p
-          {...stylex.props(issueFormStyles.uploadAttachSaveHelp)}
-          className={`help attach-save-help ${stylex.props(issueFormStyles.uploadAttachSaveHelp).className ?? ""}`.trim()}
-          data-stylex-owner="project-issue-form-upload-attach-save-help"
+                    {suggestion.imageUrl ? (
+                      <img src={suggestion.imageUrl} alt="" width="20" height="20" />
+                    ) : null}
+                    <span>{suggestion.label}</span>
+                    {suggestion.detail ? (
+                      <small
+                        {...stylex.props(
+                          issueFormStyles.issueComboboxOptionSmall,
+                          index === activeSuggestion &&
+                            issueFormStyles.issueComboboxOptionSmallActive,
+                        )}
+                        data-stylex-owner="project-issue-form-editor-mention-option-detail"
+                      >
+                        {suggestion.detail}
+                      </small>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </>
+      }
+      previewPaneId="preview-body"
+      previewClassName={`${stylex.props(issueFormStyles.markdownPreview).className} markdown-preview markdown-wrap content-body`.trim()}
+      previewStyleProps={stylex.props(issueFormStyles.markdownPreview)}
+      previewOwner="project-issue-form-markdown-preview"
+      previewChildren={() => (
+        <ReactMarkdown
+          components={markdownComponents}
+          rehypePlugins={[
+            rehypeRaw,
+            rehypeLegacyStylePolicy,
+            [rehypeSanitize, ISSUE_MARKDOWN_SANITIZE_SCHEMA],
+          ]}
+          remarkPlugins={[
+            remarkGfm,
+            remarkBreaks,
+            remarkLegacyHeadingAnchors,
+            markdownAutoLinkPlugin,
+          ]}
+          urlTransform={legacyMarkdownUrlTransform}
         >
-          <i className="yobicon-supportrequest" /> {t("common.attach.attachIfYouSave")}
-        </p>
-      ) : null}
-      {isDragging ? (
-        <div className="upload-drop-here">
-          <div className="msg-wrap">
-            <div className="msg">{t("common.attach.dropFilesHere")}</div>
-          </div>
-        </div>
-      ) : null}
-    </div>
+          {bodyMarkdown}
+        </ReactMarkdown>
+      )}
+    />
   );
 }
 
@@ -2757,84 +2586,6 @@ function IssueMilestoneSelect({
             </select>
           </>
         )}
-      </dd>
-    </dl>
-  );
-}
-
-function IssueDueDateInput({
-  datePickerRef,
-  dueDate,
-  dueDateRef,
-  onChange,
-}: {
-  datePickerRef: React.RefObject<HTMLInputElement | null>;
-  dueDate: string;
-  dueDateRef: React.RefObject<HTMLInputElement | null>;
-  onChange: (value: string) => void;
-}) {
-  const { t } = useLegacyMessages();
-  const nativeDateValue = /^\d{4}-\d{2}-\d{2}$/u.test(dueDate) ? dueDate : "";
-
-  const openPicker = () => {
-    const picker = datePickerRef.current;
-    if (!picker) {
-      return;
-    }
-    picker.focus();
-    try {
-      picker.showPicker?.();
-    } catch {
-      picker.focus();
-    }
-  };
-
-  return (
-    <dl className="issue-option issue-due-date-option">
-      <dt>{t("issue.dueDate")}</dt>
-      <dd>
-        <div
-          {...stylex.props(issueFormStyles.dueDateSearchBar)}
-          className={`search search-bar ${stylex.props(issueFormStyles.dueDateSearchBar).className ?? ""}`.trim()}
-          data-stylex-owner="project-issue-form-due-date-search"
-        >
-          <label className="blind" htmlFor="issueDueDate">
-            {t("issue.dueDate")}
-          </label>
-          <input
-            ref={dueDateRef}
-            type="text"
-            id="issueDueDate"
-            name="dueDate"
-            {...stylex.props(issueFormStyles.dueDateInput)}
-            className={`textbox full ${stylex.props(issueFormStyles.dueDateInput).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-due-date-input"
-            value={dueDate}
-            autoComplete="off"
-            onChange={(event) => onChange(event.currentTarget.value)}
-          />
-          <button
-            type="button"
-            {...stylex.props(issueFormStyles.dueDateCalendarButton)}
-            className={`search-btn btn-calendar ${stylex.props(issueFormStyles.dueDateCalendarButton).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-due-date-calendar"
-            aria-label={t("issue.dueDate")}
-            onClick={openPicker}
-          >
-            <i className="yobicon-calendar2" />
-          </button>
-          <input
-            ref={datePickerRef}
-            type="date"
-            {...stylex.props(issueFormStyles.dueDateNativePicker)}
-            className={`issue-due-date-native-picker ${stylex.props(issueFormStyles.dueDateNativePicker).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-due-date-native-picker"
-            aria-label={t("milestone.form.dueDate")}
-            tabIndex={-1}
-            value={nativeDateValue}
-            onChange={(event) => onChange(event.currentTarget.value)}
-          />
-        </div>
       </dd>
     </dl>
   );
@@ -3792,22 +3543,6 @@ function assigneeDisplayName(
   return ["issue.assignToMe", "issue.assignToAuthor", "issue.noAssignee"].includes(displayName)
     ? translate(displayName)
     : displayName;
-}
-
-function humanFileSize(bytes: number) {
-  const normalizedBytes = Math.max(0, Number(bytes) || 0);
-  if (normalizedBytes < 1_024) {
-    return `${normalizedBytes.toLocaleString("en-US")} bytes`;
-  }
-  const units = ["Kb", "Mb", "Gb", "Tb", "Pb"];
-  const exponent = Math.min(
-    units.length,
-    Math.max(1, Math.floor(Math.log(normalizedBytes) / Math.log(1_024))),
-  );
-  return `${(normalizedBytes / 1_024 ** exponent).toLocaleString("en-US", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  })} ${units[exponent - 1]}`;
 }
 
 function legacyHtmlMessageToText(message: string) {

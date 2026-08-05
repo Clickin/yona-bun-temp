@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { LegacyMessage } from "../../components/legacy-message";
+import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
@@ -435,7 +437,29 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
               data-stylex-owner="site-post-list-setting-sidebar-column"
             >
-              <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
+              <SiteAdminSidebar
+                activeTo="/sites/postList"
+                badgeOwner="site-post-list-sidebar-badge"
+                baseLinkProps={legacySiteSidebarLinkProps}
+                linkPropsByTo={{
+                  "/sites/postList": {
+                    mask: { to: "/sites/postList" },
+                    search: legacyCurrentSitePostListSidebarSearch,
+                  },
+                }}
+                navOwner="site-post-list-sidebar"
+                ownerPrefix="site-post-list-sidebar"
+                showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
+                styleSlots={{
+                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
+                  activeLink: [styles.sidebarLink, styles.sidebarActiveLink],
+                  badge: [styles.sidebarBadge],
+                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
+                  item: [styles.sidebarItem],
+                  link: [styles.sidebarLink],
+                  nav: [styles.sidebar],
+                }}
+              />
             </div>
             <div
               {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
@@ -642,109 +666,6 @@ function PostListPagination({
   );
 }
 
-function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
-  return (
-    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-post-list-sidebar">
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
-        data-stylex-owner="site-post-list-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/userList"
-        >
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li
-        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
-        data-stylex-owner="site-post-list-sidebar-item"
-      >
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          mask={{ to: "/sites/postList" }}
-          search={legacyCurrentSitePostListSidebarSearch}
-          to="/sites/postList"
-        >
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-post-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/issueList"
-        >
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-post-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/projectList"
-        >
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-post-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/mail"
-        >
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-post-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/massmail"
-        >
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-post-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/update"
-        >
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? (
-            <span
-              {...stylex.props(styles.sidebarBadge)}
-              data-stylex-owner="site-post-list-sidebar-badge"
-            >
-              1
-            </span>
-          ) : null}
-        </Link>
-      </li>
-      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-post-list-sidebar-item">
-        <Link
-          {...legacySiteSidebarLinkProps}
-          {...stylex.props(styles.sidebarLink)}
-          data-stylex-owner="site-post-list-sidebar-link"
-          to="/sites/diagnostic"
-        >
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
-    </ul>
-  );
-}
-
 function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
   const projectLogoUrl = legacyProjectLogoUrl(post.projectLogoUrl);
   const createdTitle = post.createdTitle ?? post.createdLabel;
@@ -865,9 +786,4 @@ function isDefaultAuthorAvatar(avatarUrl: string) {
       avatarUrl,
     ) || /\/assets\/images\/default-avatar-\d+\.png$/u.test(avatarUrl)
   );
-}
-
-function LegacyMessage({ messageKey }: { messageKey: string }) {
-  const { t } = useLegacyMessages();
-  return <>{t(messageKey)}</>;
 }

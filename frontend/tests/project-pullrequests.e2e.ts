@@ -1427,6 +1427,12 @@ function expectedPagedPullRequests(basePath: string) {
 
 async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin?: boolean } = {}) {
   const pushedBranchDeleteRequests: { hasCsrfToken: boolean; method: string; url: string }[] = [];
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",

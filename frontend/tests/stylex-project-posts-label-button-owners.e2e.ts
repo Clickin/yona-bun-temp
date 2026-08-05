@@ -12,7 +12,7 @@ const legacySource = new URL(
 );
 const appCssSource = new URL("../src/app.css", import.meta.url);
 
-test("project posts label buttons preserve legacy reset and spacing in StyleX", async () => {
+test("project posts label buttons preserve legacy reset and spacing", async () => {
   const [route, style, legacy, appCss] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
@@ -22,11 +22,13 @@ test("project posts label buttons preserve legacy reset and spacing in StyleX", 
   expect(legacy).toContain("board-labels");
   expect(appCss).toContain(".issue-label.list-label");
   expect(appCss).not.toContain(".post-list-wrap .infos > button.issue-label.list-label");
-  expect(route).toContain("styles.labelButtonReset");
-  expect(route).toContain("styles.labelList");
-  expect(route).toContain("styles.labelPaint");
-  expect(style).toContain(
-    'labelButtonReset: { border: 0, cursor: "pointer", fontFamily: "inherit" }',
-  );
-  expect(style).toContain('labelList: { fontWeight: "normal", padding: "2px 3px" }');
+  // The label button keeps the legacy class string and the shared issueLabelStyle paint
+  // inline (parity metrics pin the exact inline declarations in project-posts.e2e.ts);
+  // the old route-local StyleX label keys were retired with the shared IssueLabel move.
+  expect(route).toContain('className="label issue-label list-label active"');
+  expect(route).toContain("issueLabelStyle(label.color)");
+  expect(route).toContain("border: 0");
+  expect(style).not.toContain("labelPaint");
+  expect(appCss).toContain("padding: 2px 3px");
+  expect(appCss).toContain("font-weight: normal");
 });
