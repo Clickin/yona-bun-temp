@@ -14,6 +14,7 @@ const traceMode =
 export default defineConfig({
   testDir: "./tests",
   testMatch: /\.*\.e2e\.ts/,
+  testIgnore: /tests\/wtr\//,
   // Test-level ceiling: no spec hangs past this (specs may raise via test.setTimeout).
   timeout: 30_000,
   expect: {

@@ -14,11 +14,44 @@ const srcDir = join(repoRoot, "frontend", "src");
 const legacyDir = join(repoRoot, "yona-original");
 const basePath = "/yona";
 
-const RUNTIME_CONFIG_SCRIPT =
-  '<script>window.__YONA_RUNTIME_CONFIG__={basePath:"/yona",feedbackUrl:"https://github.com/yona-projects/yona/issues"};</script>';
+const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:"/yona"};</script>';
 
-const FETCH_MOCK_SCRIPT =
-  "<script>window.fetch = function (...args) { return parent.__wtrMockFetch.apply(parent, args); };</script>";
+const FETCH_MOCK_SCRIPT = `<script>
+  window.fetch = function (...args) { return parent.__wtrMockFetch.apply(parent, args); };
+  try { for (const hook of parent.__wtrInitHooks ?? []) { eval("(" + hook.source + ")(" + (hook.argJson || "") + ")"); } } catch (e) {}
+  window.confirm = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); return true; };
+  window.alert = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); };
+  window.prompt = () => null;
+  if (typeof PerformanceObserver !== "undefined") {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const resource = entry;
+          parent.__wtrEmit("request", {
+            url: () => resource.name,
+            method: () => "GET",
+            resourceType: () => {
+              const initiator = resource.initiatorType || "other";
+              if (initiator === "link" || initiator === "css") return "stylesheet";
+              if (initiator === "img") return "image";
+              if (initiator === "script") return "script";
+              if (initiator === "xmlhttprequest" || initiator === "fetch") return "fetch";
+              return initiator;
+            },
+          });
+        }
+      });
+      observer.observe({ type: "resource", buffered: true });
+    } catch (e) {}
+  }
+  for (const level of ["log", "error", "warn", "info", "debug"]) {
+    const original = console[level];
+    console[level] = (...args) => {
+      parent.__wtrEmit("console", { type: () => level, text: () => args.map((a) => (typeof a === "string" ? a : String(a))).join(" ") });
+      original.apply(console, args);
+    };
+  }
+</script>`;
 
 function serveIndex(context) {
   const indexPath = join(distDir, "index.html");

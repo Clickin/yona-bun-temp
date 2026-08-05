@@ -28,6 +28,82 @@ export type Page = any;
   env: { YONA_DEV_BASE_PATH: "/yona" },
 };
 
+// Minimal Buffer polyfill: specs call Buffer.from(...) for upload fixtures.
+class WtrBuffer {
+  static from(input: string | Uint8Array | ArrayLike<number>): Uint8Array {
+    if (typeof input === "string") return new TextEncoder().encode(input);
+    return new Uint8Array(input as ArrayLike<number>);
+  }
+}
+(globalThis as { Buffer?: unknown }).Buffer = WtrBuffer;
+
+// Async file reader (fetch over the same-origin fixture middleware).
+export async function readFile(source: URL | string): Promise<string> {
+  const href = typeof source === "string" ? new URL(source, import.meta.url).href : source.href;
+  const response = await fetch(href);
+  if (!response.ok) throw new Error(`wtr readFile: ${response.status} for ${href}`);
+  return response.text();
+}
+
+// Cross-realm event bus: the injected iframe script emits dialog/request/console
+// events through parent.__wtrEmit; watchers live here.
+type WtrEventName = "dialog" | "request" | "console";
+const eventListeners = new Map<WtrEventName, Array<(payload: unknown) => void>>();
+const eventWaiters = new Map<WtrEventName, Array<(payload: unknown) => void>>();
+
+function emitWtrEvent(name: WtrEventName, payload: unknown): void {
+  for (const listener of eventListeners.get(name) ?? []) listener(payload);
+  const waiters = eventWaiters.get(name) ?? [];
+  eventWaiters.delete(name);
+  for (const resolve of waiters) resolve(payload);
+}
+
+function waitForWtrEvent(name: WtrEventName): Promise<unknown> {
+  const { promise, resolve } = Promise.withResolvers<unknown>();
+  const waiters = eventWaiters.get(name) ?? [];
+  waiters.push(resolve);
+  eventWaiters.set(name, waiters);
+  return promise;
+}
+
+// addInitScript hooks: { source, argJson } replayed by the injected iframe
+// script on EVERY page load (including reloads).
+type InitHook = { source: string; argJson: string };
+const initHooks: InitHook[] = [];
+
+// Response watchers for page.waitForResponse (checked when a mock resolves and
+// when real fetches complete through the wrapper).
+type ResponseFacade = {
+  url: () => string;
+  request: () => {
+    method: () => string;
+    url: () => string;
+    headers: () => Record<string, string>;
+  };
+};
+type ResponseWatcher = (facade: ResponseFacade) => boolean;
+const responseWatchers: Array<{ predicate: ResponseWatcher; resolve: (facade: unknown) => void }> =
+  [];
+
+function checkResponseWatchers(facade: ResponseFacade): void {
+  for (let index = responseWatchers.length - 1; index >= 0; index -= 1) {
+    const watcher = responseWatchers[index];
+    if (watcher.predicate(facade)) {
+      responseWatchers.splice(index, 1);
+      watcher.resolve(facade);
+    }
+  }
+}
+
+function wireCrossRealmBridge(): void {
+  const top = window as unknown as Record<string, unknown>;
+  top.__wtrEmit = (name: string, payload: unknown) => {
+    emitWtrEvent(name as WtrEventName, payload);
+  };
+  top.__wtrInitHooks = initHooks;
+}
+wireCrossRealmBridge();
+
 // ---------------------------------------------------------------------------
 // readFileSync shim (sync XHR over the same-origin middleware)
 // ---------------------------------------------------------------------------
@@ -53,10 +129,30 @@ export function readFileSync(source: URL | string): string {
 // Glob -> regex (Playwright "**/api/v1/*" patterns)
 // ---------------------------------------------------------------------------
 
+// Playwright's `:has-text("X")` pseudo has no CSS counterpart. Translate
+// `A:has-text("X") B` to `A B` + a filter on the ancestor's text, per comma part.
+function translateHasText(
+  selector: string,
+): { parts: Array<{ base: string; filter: (element: Element) => boolean }> } | null {
+  if (!selector.includes(":has-text(")) return null;
+  const parts = selector.split(",").map((part) => {
+    const match = /^([^:]*):has-text\("([^"]*)"\)(.*)$/.exec(part.trim());
+    if (!match) return { base: part.trim(), filter: null };
+    const [, before, text, after] = match;
+    const base = `${before}${after}`.trim();
+    const filter = (element: Element) => {
+      const target = after ? element.closest(before) : element;
+      return (target?.textContent ?? "").includes(text);
+    };
+    return { base, filter };
+  });
+  return { parts: parts.map((part) => ({ base: part.base, filter: part.filter })) };
+}
+
 function globToRegExp(pattern: string): RegExp {
   // Protect glob wildcards with placeholders, escape literals, then restore.
   const protectedGlobs = pattern.replace(/\*\*/g, "\u0000").replace(/\*/g, "\u0001");
-  const escaped = protectedGlobs.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+  const escaped = protectedGlobs.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
   const restored = escaped.replace(/\u0000/g, ".*").replace(/\u0001/g, "[^/]*");
   return new RegExp(`^${restored}$`);
 }
@@ -114,7 +210,13 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
           url: () => new URL(url, location.href).href,
           method: () => (init?.method ?? "GET").toUpperCase(),
           headers: () => Object.fromEntries(new Headers(init?.headers as HeadersInit).entries()),
-          postData: () => (typeof init?.body === "string" ? init.body : undefined),
+          postData: () => {
+            if (typeof init?.body === "string") return init.body;
+            if (init?.body instanceof FormData) {
+              return new URLSearchParams(init.body as unknown as Record<string, string>).toString();
+            }
+            return undefined;
+          },
           postDataJSON: () => {
             if (typeof init?.body !== "string") return undefined;
             try {
@@ -124,12 +226,26 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
             }
           },
         };
+        emitWtrEvent("request", {
+          url: requestFacade.url(),
+          resourceType: () => "fetch",
+          method: () => requestFacade.method(),
+        });
         const { promise, resolve } = Promise.withResolvers<Response>();
         try {
           const handlerResult = handler({
             request: () => requestFacade,
             fulfill: async (opts) => {
-              resolve(await createFulfilledResponse(opts));
+              const response = await createFulfilledResponse(opts);
+              checkResponseWatchers({
+                url: () => requestFacade.url(),
+                request: () => ({
+                  method: () => requestFacade.method(),
+                  url: () => requestFacade.url(),
+                  headers: () => requestFacade.headers(),
+                }),
+              });
+              resolve(response);
             },
           });
           if (handlerResult instanceof Promise) {
@@ -160,6 +276,8 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL_MS = 40;
+let lastMouseX = 0;
+let lastMouseY = 0;
 
 function sleep(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
@@ -171,43 +289,185 @@ function normalizeText(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+// React installs a value tracker on controlled inputs; assigning element.value
+// directly bypasses onChange. Set through the native prototype setter instead.
+function setNativeInputValue(element: HTMLInputElement | HTMLTextAreaElement, value: string): void {
+  // The element lives in the iframe realm; its prototype must come from that
+  // realm too (top-realm setters throw Illegal invocation on cross-realm refs).
+  const view = element.ownerDocument.defaultView as Window & typeof globalThis;
+  const proto =
+    element instanceof view.HTMLTextAreaElement
+      ? view.HTMLTextAreaElement.prototype
+      : view.HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+  if (setter) setter.call(element, value);
+  else element.value = value;
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 export class Locator {
+  readonly selector: string;
+  private readonly index?: number;
+  private readonly scopedChild?: string;
+
   constructor(
     private readonly page: PageFacade,
-    private readonly selector: string,
-    private readonly index?: number,
-  ) {}
+    selector: string,
+    index?: number,
+    scopedChild?: string,
+  ) {
+    this.selector = selector;
+    this.index = index;
+    this.scopedChild = scopedChild;
+  }
+
+  private resolveElements(): Element[] {
+    const doc = this.page.document();
+    if (this.scopedChild !== undefined) {
+      const elements: Element[] = [];
+      for (const base of doc.querySelectorAll(this.selector)) {
+        elements.push(...Array.from(base.querySelectorAll(this.scopedChild)));
+      }
+      return elements;
+    }
+    const translated = translateHasText(this.selector);
+    if (translated) {
+      const result: Element[] = [];
+      for (const part of translated.parts) {
+        const matched = Array.from(doc.querySelectorAll(part.base));
+        result.push(...(part.filter ? matched.filter(part.filter) : matched));
+      }
+      return Array.from(new Set(result));
+    }
+    return Array.from(doc.querySelectorAll(this.selector));
+  }
 
   private current(): HTMLElement | null {
-    const doc = this.page.document();
-    const elements = Array.from(doc.querySelectorAll(this.selector));
+    const elements = this.resolveElements();
     const index = this.index ?? 0;
+    // Playwright strict-mode: unindexed resolution over >1 element is a
+    // violation (all/nth/first/last/count stay exempt by using resolveElements).
+    if (this.index === undefined && elements.length > 1) {
+      throw new Error(
+        `strict mode violation: ${this.selector} resolved to ${elements.length} elements`,
+      );
+    }
     return (elements[index] as HTMLElement) ?? null;
   }
 
+  // Playwright actions auto-wait for the element (actionTimeout); poll up to
+  // 15s instead of throwing on the first miss.
+  private async waitForElement(timeoutMs = 15000): Promise<HTMLElement> {
+    const deadline = Date.now() + timeoutMs;
+    let element = this.current();
+    while (!element && Date.now() < deadline) {
+      await sleep(50);
+      element = this.current();
+    }
+    if (!element) throw new Error(`${this.selector}: element not found`);
+    return element;
+  }
+
   all(): Locator[] {
-    const doc = this.page.document();
-    const count = doc.querySelectorAll(this.selector).length;
-    return Array.from(
-      { length: count },
-      (_, index) => new Locator(this.page, this.selector, index),
-    );
+    const count = this.resolveElements().length;
+    return Array.from({ length: count }, (_, index) => this.withIndex(index));
+  }
+
+  private withIndex(index: number): Locator {
+    if (this.hasCustomResolver) {
+      // Preserve the parent's resolver (filter/.. /nth-scoped chains): index
+      // selects WITHIN the resolved set. The subclass is unindexed — its
+      // resolveElements already narrows to one element, so current() must not
+      // apply the index a second time.
+      const page = this.page;
+      const base = this;
+      return new (class extends Locator {
+        hasCustomResolver = true;
+        resolveElements(): Element[] {
+          const all = base.resolveElements();
+          return all[index] ? [all[index]] : [];
+        }
+      })(page, base.selector, undefined, base.scopedChild);
+    }
+    return new Locator(this.page, this.selector, index, this.scopedChild);
   }
 
   nth(index: number): Locator {
-    return new Locator(this.page, this.selector, index);
+    return this.withIndex(index);
   }
 
   first(): Locator {
-    return new Locator(this.page, this.selector, 0);
+    return this.withIndex(0);
+  }
+
+  last(): Locator {
+    return this.withIndex(Math.max(0, this.resolveElements().length - 1));
   }
 
   locator(childSelector: string): Locator {
+    if (childSelector.trim() === "..") {
+      const page = this.page;
+      const base = this;
+      return new (class extends Locator {
+        hasCustomResolver = true;
+        resolveElements(): Element[] {
+          return Array.from(
+            new Set(
+              base
+                .resolveElements()
+                .map((element) => element.parentElement)
+                .filter((element): element is Element => element !== null),
+            ),
+          );
+        }
+      })(page, base.selector, undefined, base.scopedChild);
+    }
+    if (childSelector.trim().startsWith(":scope")) {
+      return new Locator(this.page, this.selector, this.index, childSelector.trim());
+    }
+    if (this.hasCustomResolver) {
+      const page = this.page;
+      const base = this;
+      const child = childSelector;
+      return new (class extends Locator {
+        hasCustomResolver = true;
+        resolveElements(): Element[] {
+          return base
+            .resolveElements()
+            .flatMap((element) => Array.from(element.querySelectorAll(child)));
+        }
+      })(page, base.selector, undefined);
+    }
+    if (this.index !== undefined) {
+      // nth(i).locator(child): scope children within the indexed parent.
+      const page = this.page;
+      const base = this;
+      const child = childSelector;
+      return new (class extends Locator {
+        hasCustomResolver = true;
+        resolveElements(): Element[] {
+          const parent = base.resolveElements()[base.index ?? 0];
+          if (!parent) return [];
+          return Array.from(parent.querySelectorAll(child));
+        }
+      })(page, base.selector, undefined);
+    }
     const combined = this.selector
       .split(",")
       .map((part) => `${part.trim()} ${childSelector}`)
       .join(", ");
     return new Locator(this.page, combined, this.index);
+  }
+
+  async evaluateAll<T>(fn: (elements: Element[]) => T): Promise<T> {
+    return fn(this.resolveElements());
+  }
+
+  async boundingBox(): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    const element = this.current();
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
@@ -218,44 +478,76 @@ export class Locator {
     return this.locator("*").filterByText(text, options?.exact);
   }
 
+  getByTestId(testId: string): Locator {
+    return this.locator(`[data-testid="${testId}"]`);
+  }
+
+  // Artifact-only: screenshots are not part of assertion outcomes.
+  async screenshot(_options?: Record<string, unknown>): Promise<void> {}
+
   getByLabel(label: string): Locator {
     return this.locator(`[aria-label="${label}"], label:has-text("${label}") input`);
   }
 
   private filterByText(text: string | RegExp | undefined, exact?: boolean): Locator {
     if (text === undefined) return this;
+    return this.filterWithPredicate((element) => {
+      const ownText = normalizeText(element.textContent ?? "");
+      return typeof text === "string"
+        ? exact
+          ? ownText === text
+          : ownText.includes(text)
+        : text.test(ownText);
+    });
+  }
+
+  filter(options: { hasText?: string | RegExp; has?: Locator }): Locator {
+    return this.filterWithPredicate((element) => {
+      if (options.hasText !== undefined) {
+        const ownText = normalizeText(element.textContent ?? "");
+        const textMatches =
+          typeof options.hasText === "string"
+            ? ownText.includes(options.hasText)
+            : options.hasText.test(ownText);
+        if (!textMatches) return false;
+      }
+      if (options.has !== undefined) {
+        const hasSelector = options.has.selector;
+        if (element.querySelector(hasSelector) === null) return false;
+      }
+      return true;
+    });
+  }
+
+  protected hasCustomResolver = false;
+
+  private filterWithPredicate(predicate: (element: Element) => boolean): Locator {
     const page = this.page;
     const base = this;
     return new (class extends Locator {
-      current(): HTMLElement | null {
+      hasCustomResolver = true;
+      resolveElements(): Element[] {
         const doc = page.document();
-        const elements = Array.from(doc.querySelectorAll(base.selector));
-        const index = base.index ?? 0;
-        let found: HTMLElement | null = null;
-        let seen = 0;
-        for (const element of elements) {
-          const ownText = normalizeText((element as HTMLElement).textContent ?? "");
-          const matches =
-            typeof text === "string"
-              ? exact
-                ? ownText === text
-                : ownText.includes(text)
-              : text.test(ownText);
-          if (matches) {
-            if (seen === index) {
-              found = element as HTMLElement;
-              break;
-            }
-            seen += 1;
-          }
-        }
-        return found;
+        return Array.from(doc.querySelectorAll(base.selector)).filter((element) =>
+          predicate(element),
+        );
       }
     })(page, base.selector, base.index);
   }
 
+  async getAttribute(name: string): Promise<string | null> {
+    return this.current()?.getAttribute(name) ?? null;
+  }
+
+  async clear(): Promise<void> {
+    const element = (await this.waitForElement()) as HTMLInputElement | HTMLTextAreaElement;
+    setNativeInputValue(element, "");
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(20);
+  }
+
   async count(): Promise<number> {
-    return this.page.document().querySelectorAll(this.selector).length;
+    return this.resolveElements().length;
   }
 
   async textContent(): Promise<string | null> {
@@ -290,27 +582,26 @@ export class Locator {
   }
 
   async click(options?: { force?: boolean; position?: { x: number; y: number } }): Promise<void> {
-    const element = this.current();
-    if (!element) throw new Error(`click: no element for ${this.selector}`);
-    this.page.dispatch(element, "pointerdown", options?.position);
+    const element = await this.waitForElement();
+    for (const type of ["pointerdown", "mousedown"]) {
+      this.page.dispatch(element, type, options?.position);
+    }
+    await sleep(10);
     this.page.dispatch(element, "pointerup", options?.position);
     this.page.dispatch(element, "click", options?.position);
     await sleep(30);
   }
 
   async fill(text: string): Promise<void> {
-    const element = this.current() as HTMLInputElement | HTMLTextAreaElement | null;
-    if (!element) throw new Error(`fill: no element for ${this.selector}`);
+    const element = (await this.waitForElement()) as HTMLInputElement | HTMLTextAreaElement;
     element.focus();
-    element.value = text;
-    element.dispatchEvent(new Event("input", { bubbles: true }));
+    setNativeInputValue(element, text);
     element.dispatchEvent(new Event("change", { bubbles: true }));
     await sleep(30);
   }
 
   async press(key: string): Promise<void> {
-    const element = this.current();
-    if (!element) throw new Error(`press: no element for ${this.selector}`);
+    const element = await this.waitForElement();
     const keyMap: Record<string, string> = {
       Enter: "Enter",
       Escape: "Escape",
@@ -325,8 +616,7 @@ export class Locator {
   }
 
   async check(): Promise<void> {
-    const element = this.current() as HTMLInputElement | null;
-    if (!element) throw new Error(`check: no element for ${this.selector}`);
+    const element = (await this.waitForElement()) as HTMLInputElement;
     if (!element.checked) {
       element.click();
     }
@@ -334,25 +624,48 @@ export class Locator {
   }
 
   async uncheck(): Promise<void> {
-    const element = this.current() as HTMLInputElement | null;
-    if (!element) throw new Error(`uncheck: no element for ${this.selector}`);
+    const element = (await this.waitForElement()) as HTMLInputElement;
     if (element.checked) {
       element.click();
     }
     await sleep(30);
   }
 
+  async setInputFiles(
+    files:
+      | Array<{ buffer: Uint8Array; mimeType: string; name: string }>
+      | { buffer: Uint8Array; mimeType: string; name: string },
+  ): Promise<void> {
+    const element = (await this.waitForElement()) as HTMLInputElement;
+    const fileList = Array.isArray(files) ? files : [files];
+    // Construct File/DataTransfer in the IFRAME realm: the app checks
+    // `file instanceof File`, and a runner-realm File fails that check.
+    const view = element.ownerDocument.defaultView as Window & typeof globalThis;
+    const dataTransfer = new view.DataTransfer();
+    for (const file of fileList) {
+      dataTransfer.items.add(
+        new view.File([file.buffer as ArrayBuffer], file.name, { type: file.mimeType }),
+      );
+    }
+    // React tracks the files property with its own value tracker; set through
+    // the native setter so the app's change handler runs.
+    const setter = Object.getOwnPropertyDescriptor(view.HTMLInputElement.prototype, "files")?.set;
+    if (setter) setter.call(element, dataTransfer.files);
+    else element.files = dataTransfer.files;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(30);
+  }
+
   async selectOption(value: string): Promise<void> {
-    const element = this.current() as HTMLSelectElement | null;
-    if (!element) throw new Error(`selectOption: no element for ${this.selector}`);
+    const element = (await this.waitForElement()) as HTMLSelectElement;
     element.value = value;
     element.dispatchEvent(new Event("change", { bubbles: true }));
     await sleep(30);
   }
 
   async hover(options?: { position?: { x: number; y: number }; force?: boolean }): Promise<void> {
-    const element = this.current();
-    if (!element) throw new Error(`hover: no element for ${this.selector}`);
+    const element = await this.waitForElement();
     this.page.dispatch(element, "mouseover", options?.position);
     this.page.dispatch(element, "mouseenter", options?.position);
     this.page.dispatch(element, "mousemove", options?.position);
@@ -373,17 +686,36 @@ export class Locator {
     await sleep(10);
   }
 
+  async pressSequentially(text: string): Promise<void> {
+    const element = (await this.waitForElement()) as HTMLInputElement | HTMLTextAreaElement;
+    element.focus();
+    setNativeInputValue(element, text);
+    await sleep(30);
+  }
+
   async dispatchEvent(type: string, init?: Record<string, unknown>): Promise<void> {
-    const element = this.current();
-    if (!element) throw new Error(`dispatchEvent: no element for ${this.selector}`);
+    const element = await this.waitForElement();
     element.dispatchEvent(new Event(type, { bubbles: true, ...init }));
     await sleep(10);
   }
 
   async evaluate<T>(fn: (element: Element) => T): Promise<T> {
-    const element = this.current();
-    if (!element) return undefined as T;
-    return fn(element);
+    // Custom resolvers (filter/.. /nth-scoped chains) can't be rebuilt inside
+    // the iframe from the selector alone — resolve top-realm and run there.
+    if (this.hasCustomResolver) {
+      const element = this.current();
+      if (!element) return undefined as T;
+      return fn(element);
+    }
+    // Plain selectors: run inside the iframe realm so `element instanceof
+    // Element` resolves against the app's own globals.
+    const target = this.page.window();
+    const selector = JSON.stringify(this.selector);
+    const index = this.index ?? 0;
+    // eslint-disable-next-line no-eval
+    return target.eval(
+      `(function () { const elements = document.querySelectorAll(${selector}); const el = elements[${index}]; if (!el) return undefined; return (${fn.toString()})(el); })()`,
+    ) as T;
   }
 }
 
@@ -414,16 +746,78 @@ class PageFacade {
     },
   };
 
+  private lastHovered: Element | null = null;
+
   readonly mouse = {
     click: async (x: number, y: number) => {
-      const element = document.elementFromPoint(x, y);
+      const element = this.document().elementFromPoint(x, y);
       if (element) {
         element.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: x, clientY: y }));
       }
       await sleep(20);
     },
+    down: async () => {
+      const element = this.document().elementFromPoint(lastMouseX, lastMouseY);
+      if (element) {
+        element.dispatchEvent(
+          new MouseEvent("mousedown", {
+            bubbles: true,
+            clientX: lastMouseX,
+            clientY: lastMouseY,
+            button: 0,
+          }),
+        );
+      }
+      await sleep(20);
+    },
+    up: async () => {
+      const element = this.document().elementFromPoint(lastMouseX, lastMouseY);
+      if (element) {
+        element.dispatchEvent(
+          new MouseEvent("mouseup", {
+            bubbles: true,
+            clientX: lastMouseX,
+            clientY: lastMouseY,
+            button: 0,
+          }),
+        );
+      }
+      await sleep(20);
+    },
     move: async (x: number, y: number) => {
-      const element = document.elementFromPoint(x, y);
+      lastMouseX = x;
+      lastMouseY = y;
+      const doc = this.document();
+      const element = doc.elementFromPoint(x, y);
+      // Real browsers fire mouseout+mouseleave on the previously hovered
+      // element; the app hides popovers on mouseleave (+100ms timer).
+      if (element !== this.lastHovered) {
+        if (this.lastHovered) {
+          for (const type of ["mouseout", "mouseleave"]) {
+            this.lastHovered.dispatchEvent(
+              new MouseEvent(type, {
+                bubbles: true,
+                clientX: x,
+                clientY: y,
+                relatedTarget: element,
+              }),
+            );
+          }
+        }
+        if (element) {
+          for (const type of ["mouseover", "mouseenter"]) {
+            element.dispatchEvent(
+              new MouseEvent(type, {
+                bubbles: true,
+                clientX: x,
+                clientY: y,
+                relatedTarget: this.lastHovered,
+              }),
+            );
+          }
+        }
+        this.lastHovered = element;
+      }
       if (element) {
         element.dispatchEvent(
           new MouseEvent("mousemove", { bubbles: true, clientX: x, clientY: y }),
@@ -469,6 +863,14 @@ class PageFacade {
     await sleep(250);
   }
 
+  async goBack(): Promise<void> {
+    const current = this.iframe?.contentWindow;
+    if (current) {
+      current.history.back();
+      await sleep(300);
+    }
+  }
+
   async reload(): Promise<void> {
     const src = this.iframe?.src;
     if (!src) return;
@@ -477,8 +879,22 @@ class PageFacade {
     await sleep(300);
   }
 
-  locator(selector: string): Locator {
-    return new Locator(this, selector);
+  locator(selector: string, options?: { hasText?: string | RegExp }): Locator {
+    const locator = new Locator(this, selector);
+    if (options?.hasText === undefined) return locator;
+    return locator.filterByText(options.hasText);
+  }
+
+  async fill(selector: string, value: string): Promise<void> {
+    await this.locator(selector).fill(value);
+  }
+
+  async click(selector: string, options?: { force?: boolean }): Promise<void> {
+    await this.locator(selector).click(options);
+  }
+
+  async check(selector: string): Promise<void> {
+    await this.locator(selector).check();
   }
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
@@ -495,6 +911,129 @@ class PageFacade {
 
   url(): string {
     return this.iframe?.contentWindow?.location.href ?? "";
+  }
+
+  async addInitScript(fn: (arg: never) => void, arg?: unknown): Promise<void> {
+    initHooks.push({
+      source: fn.toString(),
+      argJson: arg === undefined ? "" : JSON.stringify(arg),
+    });
+  }
+
+  async waitForResponse(predicate: ResponseWatcher): Promise<ResponseFacade> {
+    const { promise, resolve } = Promise.withResolvers<ResponseFacade>();
+    responseWatchers.push({ predicate, resolve: resolve as (facade: unknown) => void });
+    return promise;
+  }
+
+  async waitForRequest(
+    predicate:
+      | ((request: {
+          url: string;
+          method: () => string;
+          headers: () => Record<string, string>;
+        }) => boolean)
+      | string,
+  ): Promise<{ url: () => string; method: () => string; headers: () => Record<string, string> }> {
+    const { promise, resolve } = Promise.withResolvers<{
+      url: () => string;
+      method: () => string;
+      headers: () => Record<string, string>;
+    }>();
+    const matcher =
+      typeof predicate === "string"
+        ? (request: { url: string | (() => string) }) =>
+            globToRegExp(predicate).test(constOf(request.url)())
+        : predicate;
+    const constOf = (value: unknown): (() => string) =>
+      typeof value === "function" ? (value as () => string) : () => String(value);
+    const check = (payload: unknown) => {
+      const request = payload as {
+        url: string | (() => string);
+        method?: string | (() => string);
+        resourceType?: string | (() => string);
+      };
+      const urlValue = constOf(request.url);
+      if (
+        matcher({
+          url: urlValue,
+          method: request.method === undefined ? () => "GET" : constOf(request.method),
+          headers: () => ({}),
+          resourceType:
+            request.resourceType === undefined ? () => "fetch" : constOf(request.resourceType),
+        })
+      ) {
+        eventListeners.set(
+          "request",
+          (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
+        );
+        resolve({
+          url: urlValue,
+          method: request.method === undefined ? () => "GET" : constOf(request.method),
+          headers: () => ({}),
+        });
+      }
+    };
+    eventListeners.set("request", [...(eventListeners.get("request") ?? []), check]);
+    return promise;
+  }
+
+  async waitForFunction(fn: () => unknown, options?: { timeout?: number }): Promise<void> {
+    const deadline = Date.now() + (options?.timeout ?? 10000);
+    const fnSource = fn.toString();
+    const target = this.window();
+    while (Date.now() < deadline) {
+      // eslint-disable-next-line no-eval
+      const result = target.eval(`(${fnSource})()`);
+      if (result) return;
+      await sleep(50);
+    }
+    throw new Error("waitForFunction: condition never became truthy");
+  }
+
+  async waitForURL(url: string | RegExp): Promise<void> {
+    await expectPoll(
+      async () => {
+        const actual = this.url();
+        return typeof url === "string" ? actual.includes(url) : url.test(actual);
+      },
+      `waitForURL(${String(url)})`,
+    );
+  }
+
+  async unroute(pattern: string): Promise<void> {
+    const regex = globToRegExp(pattern);
+    for (let index = mockRegistry.length - 1; index >= 0; index -= 1) {
+      if (mockRegistry[index].regex.source === regex.source) {
+        mockRegistry.splice(index, 1);
+      }
+    }
+  }
+
+  on(name: WtrEventName, listener: (payload: unknown) => void): void {
+    const listeners = eventListeners.get(name) ?? [];
+    listeners.push(listener);
+    eventListeners.set(name, listeners);
+  }
+
+  once(name: WtrEventName, listener: (payload: unknown) => void): void {
+    const wrapped = (payload: unknown) => {
+      listener(payload);
+      const listeners = eventListeners.get(name) ?? [];
+      eventListeners.set(
+        name,
+        listeners.filter((entry) => entry !== wrapped),
+      );
+    };
+    this.on(name, wrapped);
+  }
+
+  waitForEvent(name: WtrEventName): Promise<unknown> {
+    return waitForWtrEvent(name);
+  }
+
+  title(): string {
+    return this.document().title;
   }
 
   async setViewportSize(size: { width: number; height: number }): Promise<void> {
@@ -580,6 +1119,20 @@ interface ExpectResult {
   toEqual(expected: unknown, options?: { timeout?: number }): Promise<void>;
   toBeLessThan(expected: number, options?: { timeout?: number }): Promise<void>;
   toBeGreaterThan(expected: number, options?: { timeout?: number }): Promise<void>;
+  toBeLessThanOrEqual(expected: number, options?: { timeout?: number }): Promise<void>;
+  toBeGreaterThanOrEqual(expected: number, options?: { timeout?: number }): Promise<void>;
+  toBeCloseTo(expected: number, digits?: number, options?: { timeout?: number }): Promise<void>;
+  toHaveCSS(name: string, value: string | RegExp, options?: { timeout?: number }): Promise<void>;
+  toBeAttached(options?: { timeout?: number }): Promise<void>;
+  toHaveLength(expected: number, options?: { timeout?: number }): Promise<void>;
+  toBeNull(options?: { timeout?: number }): Promise<void>;
+  toBeEmpty(options?: { timeout?: number }): Promise<void>;
+  resolves: {
+    toBe(expected: unknown): Promise<void>;
+    toEqual(expected: unknown): Promise<void>;
+  };
+  toContainEqual(expected: unknown, options?: { timeout?: number }): Promise<void>;
+  toBeUndefined(options?: { timeout?: number }): Promise<void>;
   not: Omit<ExpectResult, "not">;
 }
 
@@ -603,16 +1156,21 @@ function expectPoll(
 }
 
 function matchText(actual: string, expected: string | RegExp): boolean {
-  return typeof expected === "string" ? actual === expected : expected.test(actual);
+  return typeof expected === "string" ? actual === normalizeText(expected) : expected.test(actual);
 }
 
 function matchContainText(actual: string, expected: string | RegExp): boolean {
-  return typeof expected === "string" ? actual.includes(expected) : expected.test(actual);
+  return typeof expected === "string"
+    ? actual.includes(normalizeText(expected))
+    : expected.test(actual);
 }
 
 function matchClass(actualClass: string, expected: string | RegExp): boolean {
   if (typeof expected === "string") {
-    return expected.split(/\s+/).every((token) => actualClass.split(/\s+/).includes(token));
+    return expected
+      .split(/\s+/)
+      .filter(Boolean)
+      .every((token) => actualClass.split(/\s+/).includes(token));
   }
   return expected.test(actualClass);
 }
@@ -645,6 +1203,131 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
   };
 
   const matchers: ExpectResult = {
+    toBeLessThanOrEqual: (expected: number, options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        syncAssert(
+          Number(stringTarget()) <= expected,
+          `toBeLessThanOrEqual(${expected}) — actual: ${String(stringTarget())}`,
+        );
+        return;
+      }
+      return expectPoll(
+        async () => Number(await textOf()) <= expected,
+        `toBeLessThanOrEqual(${expected})`,
+        options?.timeout,
+      );
+    },
+    toBeGreaterThanOrEqual: (expected: number, options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        syncAssert(
+          Number(stringTarget()) >= expected,
+          `toBeGreaterThanOrEqual(${expected}) — actual: ${String(stringTarget())}`,
+        );
+        return;
+      }
+      return expectPoll(
+        async () => Number(await textOf()) >= expected,
+        `toBeGreaterThanOrEqual(${expected})`,
+        options?.timeout,
+      );
+    },
+    toBeCloseTo: (expected: number, digits?: number, options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        const actual = Number(stringTarget());
+        const epsilon = Math.pow(10, -(digits ?? 2)) / 2;
+        syncAssert(
+          Math.abs(actual - expected) <= epsilon,
+          `toBeCloseTo(${expected}) — actual: ${actual}`,
+        );
+        return;
+      }
+      return expectPoll(
+        async () => Math.abs(Number(await textOf()) - expected) <= Math.pow(10, -(digits ?? 2)) / 2,
+        `toBeCloseTo(${expected})`,
+        options?.timeout,
+      );
+    },
+    toHaveCSS: async (name: string, value: string | RegExp, options?: { timeout?: number }) => {
+      const actualValue = async () => {
+        if (!(target instanceof Locator)) return "";
+        const element = target.current();
+        if (!element) return "";
+        return target.page.window().getComputedStyle(element).getPropertyValue(name).trim();
+      };
+      await expectPoll(
+        async () => {
+          const actual = await actualValue();
+          const matches = typeof value === "string" ? actual === value : value.test(actual);
+          return negate ? !matches : matches;
+        },
+        `toHaveCSS(${name}) — actual: ${await actualValue()}`,
+        options?.timeout,
+      );
+    },
+    toBeAttached: make(
+      async () => (target instanceof Locator ? target.current() !== null : false),
+      "toBeAttached",
+    ),
+    toBeEmpty: make(async () => {
+      if (!(target instanceof Locator)) return false;
+      const element = target.current();
+      return (
+        element !== null &&
+        element.children.length === 0 &&
+        (element.textContent ?? "").trim() === ""
+      );
+    }, "toBeEmpty"),
+    resolves: {
+      toBe: async (expected: unknown) => {
+        if (stringTarget === null) return;
+        const actual = await (stringTarget() as Promise<unknown>);
+        syncAssert(
+          actual === expected,
+          `resolves.toBe(${String(expected)}) — actual: ${String(actual)}`,
+        );
+      },
+      toEqual: async (expected: unknown) => {
+        if (stringTarget === null) return;
+        const actual = await (stringTarget() as Promise<unknown>);
+        syncAssert(
+          JSON.stringify(actual) === JSON.stringify(expected),
+          `resolves.toEqual(${JSON.stringify(expected)})`,
+        );
+      },
+    },
+    toContainEqual: (expected: unknown, options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        const actual = stringTarget() as unknown[];
+        const passes =
+          Array.isArray(actual) &&
+          actual.some((item) => JSON.stringify(item) === JSON.stringify(expected));
+        syncAssert(passes, `toContainEqual(${JSON.stringify(expected)})`);
+        return;
+      }
+      return expectPoll(
+        async () => {
+          const actual = await textOf();
+          const matches = actual.includes(JSON.stringify(expected));
+          return negate ? !matches : matches;
+        },
+        `toContainEqual(${JSON.stringify(expected)})`,
+        options?.timeout,
+      );
+    },
+    toBeUndefined: (options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        syncAssert(stringTarget() === undefined, "toBeUndefined");
+        return;
+      }
+      return expectPoll(
+        async () => {
+          const matches = (await textOf()) === "";
+          return negate ? !matches : matches;
+        },
+        "toBeUndefined",
+        options?.timeout,
+      );
+    },
     toContain: (expected, options) => {
       if (stringTarget !== null) {
         const actual = String(stringTarget());
@@ -669,6 +1352,20 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         options?.timeout,
       );
     },
+    toBeNull: (options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        syncAssert(stringTarget() === null, `toBeNull — actual: ${String(stringTarget())}`);
+        return;
+      }
+      return expectPoll(
+        async () => {
+          const matches = (await textOf()) === "";
+          return negate ? !matches : matches;
+        },
+        "toBeNull",
+        options?.timeout,
+      );
+    },
     toBe: (expected, options) => {
       if (stringTarget !== null) {
         const actual = stringTarget();
@@ -687,10 +1384,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
     toEqual: (expected, options) => {
       if (stringTarget !== null) {
         const actual = stringTarget();
-        const passes =
-          typeof expected === "number" || typeof actual === "number"
-            ? actual === expected
-            : JSON.stringify(actual) === JSON.stringify(expected);
+        const passes = asymmetricEquals(actual, expected);
         let detail = "";
         if (
           !passes &&
@@ -721,10 +1415,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       return expectPoll(
         async () => {
           const actual = await textOf();
-          const passes =
-            typeof expected === "number" || typeof actual === "number"
-              ? actual === expected
-              : JSON.stringify(actual) === JSON.stringify(expected);
+          const passes = asymmetricEquals(actual, expected);
           return negate ? !passes : passes;
         },
         `toEqual(${String(expected)})`,
@@ -734,9 +1425,8 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
     toMatchObject: (expected: Record<string, unknown>, options?: { timeout?: number }) => {
       if (stringTarget === null) return;
       const actual = stringTarget() as Record<string, unknown>;
-      const matches = Object.entries(expected).every(
-        ([key, value]) =>
-          JSON.stringify((actual as Record<string, unknown>)[key]) === JSON.stringify(value),
+      const matches = Object.entries(expected).every(([key, value]) =>
+        asymmetricEquals((actual as Record<string, unknown>)[key], value),
       );
       syncAssert(
         matches,
@@ -799,7 +1489,14 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           const matches = matchText(actual, expected);
           return negate ? !matches : matches;
         },
-        `toHaveText(${String(expected)}) — actual: ${await textOf()}`,
+        (() => {
+          try {
+            const element = target instanceof Locator ? target.current() : null;
+            return `toHaveText(${String(expected)}) — actual: ${element?.textContent ?? ""}`;
+          } catch {
+            return `toHaveText(${String(expected)})`;
+          }
+        })(),
         options?.timeout,
       );
     },
@@ -817,7 +1514,14 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           const matches = matchContainText(await textOf(), expected);
           return negate ? !matches : matches;
         },
-        `toContainText(${String(expected)}) — actual: ${await textOf()}`,
+        (() => {
+          try {
+            const element = target instanceof Locator ? target.current() : null;
+            return `toContainText(${String(expected)}) — actual: ${element?.textContent ?? ""}`;
+          } catch {
+            return `toContainText(${String(expected)})`;
+          }
+        })(),
         options?.timeout,
       );
     },
@@ -850,14 +1554,39 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         async () => {
           const actual = await actualValue();
           const matches =
-            expected === undefined
-              ? actual !== null
-              : typeof expected === "string"
-                ? actual === expected
-                : expected.test(actual ?? "");
+            actual === null
+              ? false
+              : expected === undefined
+                ? true
+                : typeof expected === "string"
+                  ? actual === expected
+                  : expected instanceof RegExp
+                    ? expected.test(actual)
+                    : String(actual) === String(expected);
           return negate ? !matches : matches;
         },
         `toHaveAttribute(${name}) — actual: ${await actualValue()}`,
+        options?.timeout,
+      );
+    },
+    toHaveLength: (expected: number, options?: { timeout?: number }) => {
+      if (stringTarget !== null) {
+        const actual = stringTarget() as unknown;
+        const length =
+          typeof actual === "string" ? actual.length : Array.isArray(actual) ? actual.length : null;
+        syncAssert(
+          length === expected,
+          `toHaveLength(${expected}) — actual length: ${String(length)}`,
+        );
+        return;
+      }
+      return expectPoll(
+        async () => {
+          const actual = await textOf();
+          const matches = actual.length === expected;
+          return negate ? !matches : matches;
+        },
+        `toHaveLength(${expected})`,
         options?.timeout,
       );
     },
@@ -955,9 +1684,36 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
   return matchers;
 }
 
+function asymmetricEquals(actual: unknown, expected: unknown): boolean {
+  if (expected !== null && typeof expected === "object" && "asymmetricMatch" in expected) {
+    const matcher = expected as { asymmetricMatch: (value: unknown) => boolean };
+    return matcher.asymmetricMatch(actual);
+  }
+  if (typeof expected === "number" || typeof actual === "number") return actual === expected;
+  return JSON.stringify(actual) === JSON.stringify(expected);
+}
+
 export function expect(target: ExpectTarget): ExpectResult {
   return buildExpect(target, false);
 }
+
+// Asymmetric matchers for use inside toEqual / toMatchObject.
+expect.stringContaining = (expected: string) => ({
+  asymmetricMatch: (actual: unknown) => typeof actual === "string" && actual.includes(expected),
+});
+expect.stringMatching = (expected: RegExp) => ({
+  asymmetricMatch: (actual: unknown) => typeof actual === "string" && expected.test(actual),
+});
+expect.any = (constructor: unknown) => ({
+  asymmetricMatch: (actual: unknown) => {
+    if (constructor === String) return typeof actual === "string";
+    if (constructor === Number) return typeof actual === "number";
+    if (constructor === Boolean) return typeof actual === "boolean";
+    if (constructor === Array) return Array.isArray(actual);
+    if (constructor === Object) return typeof actual === "object" && actual !== null;
+    return actual instanceof (constructor as new (...args: never[]) => object);
+  },
+});
 
 expect.poll = (fn: () => unknown) => ({
   toBe: async (expected: unknown) => {
@@ -994,6 +1750,12 @@ expect.poll = (fn: () => unknown) => ({
       `poll().toBeGreaterThanOrEqual(${expected})`,
     );
   },
+  toBeGreaterThan: async (expected: number) => {
+    await expectPoll(
+      async () => Number(await fn()) > expected,
+      `poll().toBeGreaterThan(${expected})`,
+    );
+  },
   toHaveLength: async (length: number) => {
     await expectPoll(async () => {
       const actual = await fn();
@@ -1004,6 +1766,12 @@ expect.poll = (fn: () => unknown) => ({
   },
   toBeTruthy: async () => {
     await expectPoll(async () => Boolean(await fn()), "poll().toBeTruthy()");
+  },
+  toEqual: async (expected: unknown) => {
+    await expectPoll(
+      async () => JSON.stringify(await fn()) === JSON.stringify(expected),
+      `poll().toEqual(${JSON.stringify(expected)})`,
+    );
   },
   toBeNull: async () => {
     await expectPoll(async () => (await fn()) === null, "poll().toBeNull()");
@@ -1056,8 +1824,22 @@ function installDefaultMocks(page: PageFacade): void {
 function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
   return async () => {
     const fixturePage = new PageFacade();
+    if (configuredViewport) {
+      void fixturePage.setViewportSize(configuredViewport);
+    }
     currentPage = fixturePage;
     mockRegistry.length = 0;
+    initHooks.length = 0;
+    eventListeners.clear();
+    eventWaiters.clear();
+    responseWatchers.length = 0;
+    // Same-origin iframe shares the WTR page's storage; isolate per test.
+    try {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    } catch {
+      // Storage may be unavailable in some contexts.
+    }
     installDefaultMocks(fixturePage);
     try {
       await fn({ page: fixturePage as unknown as Page });
@@ -1068,11 +1850,15 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
   };
 }
 
+let configuredViewport: { width: number; height: number } | null = null;
+
 export const test: {
   (name: string, fn: (fixture: Fixture) => void | Promise<void>): void;
   describe: (name: string, fn: () => void) => void;
   beforeEach: (fn: () => void | Promise<void>) => void;
   afterEach: (fn: () => void | Promise<void>) => void;
+  use: (options: { viewport?: { width: number; height: number } }) => void;
+  info: () => { title: () => string };
 } = Object.assign(
   (name: string, fn: (fixture: Fixture) => void | Promise<void>) => {
     it(name, runWithPage(fn));
@@ -1081,5 +1867,14 @@ export const test: {
     describe,
     beforeEach,
     afterEach,
+    use: (options: { viewport?: { width: number; height: number } }) => {
+      if (options.viewport) configuredViewport = options.viewport;
+    },
+    // Playwright test.info() — debug annotations are recorded, not asserted.
+    info: () => ({
+      title: () => "",
+      annotations: [],
+      attach: async (_name: string, _options?: { body?: string; contentType?: string }) => {},
+    }),
   },
 );

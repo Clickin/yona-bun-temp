@@ -82,22 +82,68 @@ harness fidelity gaps, now fixed:
    dialog metrics read (modal transition), per the suite's marker-wait
    convention.
 
+## Wave 1 (2026-08-05, committed)
+
+27 converted specs (`tests/wtr/*.e2e.ts`): the 3 pilots + user cluster (8),
+project-forms cluster (8), org cluster (8). Full-suite WTR run on the correct
+dist: **232 passed / 126 failed** (~6 min vs the Playwright ~2-4h equivalent).
+
+**Dist correctness (critical)**: WTR serves `frontend/dist`; the dist must be
+built `VITE_DISABLE_LEGACY_FALLBACK=1 VITE_YONA_BASE_PATH=/yona pnpm --dir
+frontend run build` (matches the spec-runner profile; absolute `/yona/assets`
+chunk paths — a plain `pnpm build` emits `./assets` relative chunks that break
+deep-route lazy loading: the not-found screen rendered an empty body under WTR
+but 4/4 under Playwright). `frontend/playwright.config.ts` gained
+`testIgnore: /tests\/wtr\//` so the Playwright runner no longer globs the
+converted copies.
+
+**Shim gaps applied during wave 1** (all in `wtr-compat.ts` /
+`web-test-runner.config.mjs`): action auto-wait (15s), `pressSequentially`,
+single-object `setInputFiles`, `waitForFunction`, `page.click/check/fill`,
+`resolves.toEqual`, `toContainEqual`, `toBeUndefined`, `toBeEmpty`,
+`toBeGreaterThan` (poll), `toHaveCSS`, `toBeAttached`, asymmetric matchers
+(`expect.stringContaining/Matching/any`, applied in `toEqual`/`toMatchObject`),
+`:has-text()` translation, `locator("..")` parent traversal, filter-chain and
+nth-scoped resolver preservation (`nth/first/last/all` + `locator(child)` never
+drop custom resolvers; fixed a double-index apply), strict-mode fidelity,
+mouse events into the iframe incl. mouseout/mouseleave synthesis,
+React controlled-input native setter (cross-realm), file-input
+`File`/`DataTransfer` constructed in the iframe realm (app checks
+`instanceof File`), `toHaveText` message crash fix (esbuild async-IIFE),
+`matchClass` trailing-space, glob `?` escape (query-string mocks were dead),
+`test.info().annotations/attach`, `page.screenshot` no-op (PageFacade),
+`getByTestId`, per-test storage isolation, resource-request events via
+PerformanceObserver with Playwright-normalized `resourceType` (`link`→
+`stylesheet`), LIFO route precedence, cross-realm `File` values.
+
+**Outcome parity** (two verification agents ran fresh Playwright ground truth
+per spec — the wave-1 agents' early baselines were stale, predating the S8
+consolidation and the wrong-base dist): organization specs match PW per-test
+outcomes exactly (boards/delete/home/issues/members/pullrequests/settings/list
++ project transfer/webhooks/change-vcs/delete). Remaining WTR-only deltas are
+classified: bucket-2 app/build gaps (stylex-only class tokens on legacy shell
+roots, missing `avatar-wrap` on org-home member links, TanStack active-link
+`aria-current` attrs, `@layer` cascade differences between dev and the built
+dist affecting toHaveCSS/geometry probes), bucket-3 stale pins (pin
+`<button class="pin">` vs the app's legacy `<div class="pin">` navbar button,
+`/yona/legacy-assets/...` vs the vite-imported hashed fallback URL,
+`demo.yobi.io` sample link, hashed avatar assets), bucket-4 dist-staleness
+(resolved by the rebuild). WTR-greener cases (PW cold-start goto timeouts,
+stale ORIGINAL pins already corrected in the converted copies) documented per
+spec in the verification reports.
+
 ## Next steps
 
-1. Rerun `tests/wtr/loginform.e2e.ts` alone; classify the 12 residuals (4-bucket
-   rule). If the redirect cluster is flake-only under concurrency, raise
-   `concurrency`/`concurrentBrowsers` or serialize iframe-heavy specs.
-2. Convert the remaining ~855 specs: per-spec = copy to `tests/wtr/` + import
-   swap + surface gaps → add to `wtr-compat.ts` (inventory-driven; the
-   playwright-suite API surface was pre-inventoried: goto 677, locator 657,
-   evaluate 482, route 650, reload 41, getByRole 101, expect.poll 112,
-   keyboard 13, mouse 54, toHaveScreenshot 0).
-3. Batch conversions with subagents (specs are mechanical; shared-file fixes
+1. Convert the remaining ~830 specs in waves (24-32 per wave), reusing the
+   wave-1 loop: convert → run → apply shim gaps → verify against PW baseline.
+2. Batch conversions with subagents (specs are mechanical; shared-file fixes
    batched per wave like the parity work). Keep Playwright copies in `tests/`
    until the WTR coverage is verified, then cut over the gate
    (`test:e2e:stylex-final` → WTR profile) and delete the Playwright set.
-4. Gate: replace the playwright runner invocation with `web-test-runner` for the
+3. Gate: replace the playwright runner invocation with `web-test-runner` for the
    final profile; keep the build + StyleX verifier steps.
+4. Reconcile the bucket-3 stale pins in the ORIGINAL specs (sync the
+   converted-copy fixes back) so the Playwright baseline and WTR agree.
 
 ## Key findings
 
