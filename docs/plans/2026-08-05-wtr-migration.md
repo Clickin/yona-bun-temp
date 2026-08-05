@@ -253,3 +253,30 @@ fallback-off .user-li); source pins (account-row row-fluid user-menu-wrap);
 stale pins fixed in copies (intro-outer row-token family d1ba4466f, notification
 geometry family, provider-logo owners, fav-project popover inversion 8029e1e6d,
 fav-stars iconBox 23.109375 + 600ms sidebar transition settle wait).
+
+## Wave 7 — committed `996092b31` (25 files, +9.2k)
+
+Specs (24): stylex-authenticated-sidenav-{project-shell,project-subtabs,recent-issue-rows,recent-shell,shell,
+tab-panel,tabs}, stylex-authenticated-user-menu, stylex-commit-detail-review-textarea, stylex-controls-row-fallback,
+stylex-error-wrap-fallback-retirement, stylex-framed-site-shell, stylex-global-gnb-{brand-link,feedback-link,inner,
+nav,outer,project-list-divider,project-list-link,search-box,search-form,search-input,search-scope-legacy-classes,
+search-scope-menu}.
+
+Suite: 171 files, 1156 passed / 485 failed / 1 skipped (~22 min).
+
+Shim additions: document request event on every iframe load (app-initiated
+form GET navigations no longer hang waitForRequest), toMatchObject subset
+semantics (expected ⊆ actual, nested plain objects recurse, arrays
+element-wise) in buildExpect + poll, process.env.PW_CHANNEL="chrome",
+createHash export (verified byte-identical compact SHA-256).
+
+Residual families (all PW-verified): CSS :hover ceiling (brand-link,
+feedback-link, List All, scope-menu); retained legacy classes (search-box/
+select, input-prepend, btn-group — PW byte-identical); dist sidebar
+offset/collapse geometry (sidenav family, WTR-only where PW dev renders
+correctly); fallback-comparison pins (subtabs :focus border, tab-panel
+radius — both runners fallback-off); data-toggle=tab fixture pins; stale
+pins fixed in copies (gnb-outer template-literal className, framed-site-shell
+sha256 8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6,
+project-shell input color 51,51,51, recent-shell empty heights, subtabs
+height family 46->44 etc).
