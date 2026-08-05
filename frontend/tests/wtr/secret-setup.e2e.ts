@@ -1,0 +1,906 @@
+import { readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
+
+const SECRET_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/secret.tsx", import.meta.url),
+  "utf8",
+);
+
+const EXPECTED_SECRET_SCREEN = `
+<div class="page-wrap-outer">
+  <div class="container page-wrap">
+    <div class="page">
+      <div class="secret-wrap">
+        <a href="__ROOT_HREF__" class="logo"><span>Yoram</span></a>
+        <h3>Tada! Welcome to Yoram!</h3>
+        <div class="alert alert-block secret-box">
+          <h4>Create website-admin account</h4>
+          Caution: Password MUST be kept secret.
+        </div>
+      </div>
+      <div class="signup-form-wrap frm-wrap">
+        <form action="__CONTEXT_ROOT__" method="post" class="input-append">
+          <dl>
+            <dt><label for="loginId">User ID (lower case)</label></dt>
+            <dd>
+              <input id="loginId" type="text" name="loginId" class="text password" placeholder="" autocomplete="off" readonly value="admin">
+            </dd>
+            <dt><label for="uname">Name</label></dt>
+            <dd>
+              <input id="uname" type="text" name="name" class="text password" placeholder="" autocomplete="off" value="">
+            </dd>
+            <dt><label for="email">Email address</label></dt>
+            <dd>
+              <input id="email" type="text" name="email" class="text password" placeholder="" autocomplete="off" value="">
+            </dd>
+            <dt><label for="password">Password</label></dt>
+            <dd>
+              <input id="password" type="password" name="password" class="text password" placeholder="" autocomplete="off">
+            </dd>
+            <dt><label for="retypedPassword">Password confirmation</label></dt>
+            <dd>
+              <input id="retypedPassword" type="password" name="retypedPassword" class="text password" placeholder="" autocomplete="off">
+            </dd>
+          </dl>
+          <div class="btns-row">
+            <button type="submit" class="ybtn ybtn-success">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Powered by <strong>Yoram</strong></span>
+  </div>
+</footer>
+`;
+
+const EXPECTED_FORM_ACTIONS = {
+  "": "/",
+  "/": "/",
+  "/yona": "/yona/",
+  "/team/yoram": "/team/yoram/",
+} as const;
+
+const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <a href="__ROOT_HREF__" class="logo"><h1 class="blind">Yoram</h1></a>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__/projects">Project list</a></li>
+      <li><a href="__BASE_PATH__/_help">Help</a></li>
+    </ul>
+  </div>
+</header>
+<div class="page-wrap-outer">
+  <div class="project-page-wrap">
+    <div class="error-wrap">
+      <i class="ico ico-err2"></i>
+      <p>Page not found</p>
+      <a href="__ROOT_HREF__" class="ybtn ybtn-info">Home</a>
+    </div>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+  </div>
+</footer>
+`;
+
+test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    expect(route.request().headers()["x-csrf-token"]).toBe("csrf-secret");
+    expect(route.request().postDataJSON()).toEqual({
+      emailAddress: "admin@example.com",
+      name: "Site Admin",
+      password: "secret-pass",
+      retypedPassword: "secret-pass",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ restartPath: "/restart" }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await expect(page).toHaveTitle("Tada! Welcome to Yoram!");
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator(".page-footer-outer")).toBeVisible();
+  const expectedFormAction = expectedFormActionFor(basePath);
+  await expect(page.locator(".signup-form-wrap form")).toHaveAttribute(
+    "action",
+    expectedFormAction,
+  );
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_SECRET_SCREEN.replace("__ROOT_HREF__", legacyRootHref(basePath)).replace(
+      "__CONTEXT_ROOT__",
+      expectedFormAction,
+    ),
+  );
+
+  expect(actual).toEqual(expected);
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+  );
+  expect(await readDesktopSecretMetrics(page)).toEqual({
+    buttonRowMarginBottom: "20px",
+    formMarginTop: "14px",
+    formWidth: "400px",
+    inputHeight: "27px",
+    inputMarginBottom: "15px",
+    inputWidth: "386px",
+    logoHeight: "55px",
+    logoLineHeight: "55px",
+    logoMarginBottom: "50px",
+    logoMarginTop: "50px",
+    logoWidth: "123px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterPadding: "10px 0px",
+    providerColor: "rgb(51, 51, 51)",
+    providerFontSize: "9px",
+    providerMarginLeft: "4px",
+    secretBoxBackgroundColor: "rgb(252, 248, 227)",
+    secretBoxBorderColor: "rgb(251, 238, 213)",
+    secretBoxBorderRadius: "4px",
+    secretBoxColor: "rgb(192, 152, 83)",
+    secretBoxHeadingColor: "rgb(192, 152, 83)",
+    secretBoxHeadingMargin: "0px",
+    secretBoxMarginBottom: "20px",
+    secretBoxMarginTop: "20px",
+    secretBoxPaddingBottom: "14px",
+    secretBoxPaddingLeft: "14px",
+    secretBoxPaddingRight: "35px",
+    secretBoxPaddingTop: "14px",
+    secretBoxWidth: "640px",
+  });
+
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#password", "secret-pass");
+  await page.fill("#retypedPassword", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(`${basePath}/restart`);
+});
+
+test("first-run secret setup logo is SPA-owned internal navigation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await expect(page.locator(".secret-wrap .logo")).toHaveAttribute(
+    "href",
+    legacyRootHref(basePath),
+  );
+  await expectLegacyAnchor(page, ".secret-wrap .logo", {
+    className: "logo",
+    href: legacyRootHref(basePath),
+    text: "Yoram",
+  });
+  await expect(page.locator(".secret-wrap .logo span")).toHaveText("Yoram");
+
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+
+  await page.locator(".secret-wrap .logo").click();
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(legacyRootHref(basePath));
+  expect(documentRequests).toEqual([]);
+});
+
+test("first-run secret setup shows legacy field errors without setup REST call until valid", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let setupRequests = 0;
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    setupRequests += 1;
+    expect(route.request().postDataJSON()).toEqual({
+      emailAddress: "admin@example.com",
+      name: "Site Admin",
+      password: "secret-pass",
+      retypedPassword: "secret-pass",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ restartPath: "/restart" }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  const emailError = page.locator('dt:has(label[for="email"]) .label.label-important');
+  await expect(emailError).toHaveText("Enter valid email address!");
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveText(
+    "Wrong password!",
+  );
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveCount(0);
+  await expect.poll(() => setupRequests).toBe(0);
+
+  await page.fill("#password", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveText("The passwords don't match");
+  await expect.poll(() => setupRequests).toBe(0);
+
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#retypedPassword", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  await expect.poll(() => setupRequests).toBe(1);
+  await expect(page).toHaveURL(`${basePath}/restart`);
+});
+
+test("first-run secret setup renders REST validation errors in legacy field labels", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 400,
+      body: JSON.stringify({
+        error: {
+          code: "bad_request",
+          message: "validation.passwordMismatch",
+          status: 400,
+        },
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#password", "secret-pass");
+  await page.fill("#retypedPassword", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveCount(0);
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveText("The passwords don't match");
+  await expect(page.locator('dt:has(label[for="email"]) .label.label-important')).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/secret`);
+});
+
+test("first-run secret setup renders legacy loginId REST errors beside the readonly label", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 400,
+      body: JSON.stringify({
+        error: {
+          code: "bad_request",
+          message: "user.wrongloginId.alert",
+          status: 400,
+        },
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#password", "secret-pass");
+  await page.fill("#retypedPassword", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  const loginIdError = page.locator('dt:has(label[for="loginId"]) .label.label-important');
+  await expect(loginIdError).toHaveText("Enter Valid ID");
+  await expect(page.locator('dt:has(label[for="email"]) .label.label-important')).toHaveCount(0);
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveCount(0);
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveCount(0);
+  expect(await readLoginIdErrorPlacementMetrics(page)).toEqual({
+    errorBottomWithinLabelRow: true,
+    errorLeftAfterLabel: true,
+    errorTopWithinLabelRow: true,
+  });
+  await expect(page).toHaveURL(`${basePath}/secret`);
+});
+
+test("first-run secret setup keeps legacy mobile standalone form proportions", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/secret`);
+  await expect(page.locator(".secret-wrap")).toBeVisible();
+
+  expect(await readMobileSecretMetrics(page)).toEqual({
+    formDefinitionListTextAlign: "right",
+    formWidth: "370.5px",
+    inputWidth: "148.188px",
+    pageFooterLineHeight: "34px",
+    pageFooterOuterMinWidth: "10px",
+    pageFooterOuterPadding: "10px",
+    pageFooterWidth: 370,
+    pageWrapOuterMinWidth: "10px",
+    pageWrapOuterPadding: "0px",
+    pageWrapOuterWidth: 390,
+    providerFontSize: "9px",
+    secretBoxBackgroundColor: "rgb(252, 248, 227)",
+    secretBoxBorderColor: "rgb(251, 238, 213)",
+    secretBoxBorderRadius: "4px",
+    secretBoxColor: "rgb(192, 152, 83)",
+    secretBoxHeadingColor: "rgb(192, 152, 83)",
+    secretBoxHeadingMargin: "0px",
+    secretBoxMarginBottom: "20px",
+    secretBoxMarginTop: "20px",
+    secretBoxPaddingBottom: "14px",
+    secretBoxPaddingLeft: "14px",
+    secretBoxPaddingRight: "35px",
+    secretBoxPaddingTop: "14px",
+    secretBoxStyleWidth: "195px",
+    secretBoxWidth: 246,
+  });
+});
+
+test("secret setup disabled matches legacy error/notfound_default.scala.html screen DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: false }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await expect(page.locator(".error-wrap")).toBeVisible();
+
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_SECRET_NOT_FOUND_SCREEN.replaceAll("__BASE_PATH__", basePath).replaceAll(
+      "__ROOT_HREF__",
+      legacyRootHref(basePath),
+    ),
+  );
+
+  expect(actual).toEqual(expected);
+  await expectLegacyAnchor(page, ".gnb-inner > .logo", {
+    className: "logo",
+    href: legacyRootHref(basePath),
+    text: "Yoram",
+  });
+  await expectLegacyAnchor(page, ".gnb-nav a >> nth=0", {
+    href: `${basePath}/projects`,
+    text: "Project list",
+  });
+  await expectLegacyAnchor(page, ".gnb-nav a >> nth=1", {
+    href: `${basePath}/_help`,
+    text: "Help",
+  });
+  await expect(page.locator(".gnb-nav a")).toHaveCount(2);
+  await expectLegacyAnchor(page, ".error-wrap .ybtn", {
+    className: "ybtn ybtn-info",
+    href: legacyRootHref(basePath),
+    text: "Home",
+  });
+  await expect(page.locator(".page-footer .provider")).toContainText("Yona authors");
+  await expect(page.locator(".page-footer .provider")).not.toContainText("Yoram");
+  await expect(page.locator(".page-footer .provider a")).toHaveCount(4);
+
+  await page.evaluate(() => {
+    (
+      window as typeof window & { __secretDisabledHomeSpaMarker?: string }
+    ).__secretDisabledHomeSpaMarker = "home";
+  });
+  await page.locator(".error-wrap .ybtn").click();
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(legacyRootHref(basePath));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __secretDisabledHomeSpaMarker?: string })
+            .__secretDisabledHomeSpaMarker,
+      ),
+    )
+    .toBe("home");
+});
+
+test("secret route source keeps anchors owned by TanStack Link", async () => {
+  expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
+  expect(SECRET_ROUTE_SOURCE).toContain('to="/"');
+  expect(SECRET_ROUTE_SOURCE).toContain('"loginId"');
+  expect(SECRET_ROUTE_SOURCE).toContain("<title>{welcome}</title>");
+  expect(SECRET_ROUTE_SOURCE).toContain(
+    'lookupLegacyMessage(language, "app.welcome", { args: [siteName] })',
+  );
+  expect(SECRET_ROUTE_SOURCE).toContain('error.message === "user.wrongloginId.alert"');
+  expect(SECRET_ROUTE_SOURCE).toContain("errors={fieldErrors.loginId}");
+  expect(SECRET_ROUTE_SOURCE).toContain('className="logo"');
+  expect(SECRET_ROUTE_SOURCE).toContain('className="ybtn ybtn-info"');
+  expect(SECRET_ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(SECRET_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /<Link\s+to="\/"\s+activeProps=\{legacyLinkActiveProps\}\s+className="logo"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /<Link\s+to="\/"\s+activeProps=\{legacyLinkActiveProps\}\s+className="ybtn ybtn-info"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).not.toContain('reactJsx("a"');
+  expect(SECRET_ROUTE_SOURCE).not.toContain("createLink");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyRootLink");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyRootLinkAnchor");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("legacyRootHref");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("href={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("to={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("handleHomeClick");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("useLinkProps");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
+  expect(SECRET_ROUTE_SOURCE).not.toContain('search={{ filter: "", labelIds: "" }}');
+  expect(SECRET_ROUTE_SOURCE).not.toContain("React.createElement");
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
+  expect(SECRET_ROUTE_SOURCE).toContain("runtimeConfig.feedbackUrl ? (");
+  expect(SECRET_ROUTE_SOURCE).toContain("to={runtimeConfig.feedbackUrl}");
+  expect(SECRET_ROUTE_SOURCE).not.toContain('to="/"\n                  target="_blank"');
+  expect(SECRET_ROUTE_SOURCE).toContain(
+    '<span className="provider">\n            Copyright{" "}\n            <Link',
+  );
+  expect(SECRET_ROUTE_SOURCE).toContain("Yona authors");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("github.com/nforge/yobi");
+  expect(SECRET_ROUTE_SOURCE).toContain("https://navercorp.com");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("developers.naver.com");
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bas\s+never\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=["']\/(?!\/)/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bdocument\.title\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/document\./u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bwindow\.document\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bglobalThis\.document\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\buseEffect\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/addEventListener/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/classList/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/style\.display/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/dangerouslySetInnerHTML/u);
+});
+
+async function readDesktopSecretMetrics(page: Page) {
+  return page.evaluate(() => {
+    const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const secretBoxHeading = document.querySelector<HTMLElement>(".secret-box h4");
+    const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const buttonRow = document.querySelector<HTMLElement>(".signup-form-wrap .btns-row");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !logo ||
+      !secretBox ||
+      !secretBoxHeading ||
+      !formWrap ||
+      !passwordInput ||
+      !buttonRow ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected secret setup metric targets are missing.");
+    }
+
+    const logoStyle = getComputedStyle(logo);
+    const secretBoxStyle = getComputedStyle(secretBox);
+    const secretBoxHeadingStyle = getComputedStyle(secretBoxHeading);
+    const formWrapStyle = getComputedStyle(formWrap);
+    const passwordInputStyle = getComputedStyle(passwordInput);
+    const buttonRowStyle = getComputedStyle(buttonRow);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+    const providerStyle = getComputedStyle(provider);
+
+    return {
+      buttonRowMarginBottom: buttonRowStyle.marginBottom,
+      formMarginTop: formWrapStyle.marginTop,
+      formWidth: formWrapStyle.width,
+      inputHeight: passwordInputStyle.height,
+      inputMarginBottom: passwordInputStyle.marginBottom,
+      inputWidth: passwordInputStyle.width,
+      logoHeight: logoStyle.height,
+      logoLineHeight: logoStyle.lineHeight,
+      logoMarginBottom: logoStyle.marginBottom,
+      logoMarginTop: logoStyle.marginTop,
+      logoWidth: logoStyle.width,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      providerColor: providerStyle.color,
+      providerFontSize: providerStyle.fontSize,
+      providerMarginLeft: providerStyle.marginLeft,
+      secretBoxBackgroundColor: secretBoxStyle.backgroundColor,
+      secretBoxBorderColor: secretBoxStyle.borderColor,
+      secretBoxBorderRadius: secretBoxStyle.borderRadius,
+      secretBoxColor: secretBoxStyle.color,
+      secretBoxHeadingColor: secretBoxHeadingStyle.color,
+      secretBoxHeadingMargin: secretBoxHeadingStyle.margin,
+      secretBoxMarginBottom: secretBoxStyle.marginBottom,
+      secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxPaddingBottom: secretBoxStyle.paddingBottom,
+      secretBoxPaddingLeft: secretBoxStyle.paddingLeft,
+      secretBoxPaddingRight: secretBoxStyle.paddingRight,
+      secretBoxPaddingTop: secretBoxStyle.paddingTop,
+      secretBoxWidth: secretBoxStyle.width,
+    };
+  });
+}
+
+async function expectLegacyAnchor(
+  page: Page,
+  selector: string,
+  expected: { className?: string; href: string; target?: string; text: string },
+) {
+  const link = page.locator(selector);
+  await expect(link).toHaveAttribute("href", expected.href);
+  await expect(link).toHaveText(expected.text);
+  if (expected.className) {
+    expect(
+      await link.evaluate((element, expectedClassName) => {
+        const owner = element.closest('[data-stylex-owner="secret-setup"]');
+        const classes = Array.from(element.classList);
+        const expectedClasses = expectedClassName.split(" ");
+        return (
+          expectedClasses.every((className) => classes.includes(className)) &&
+          (!owner ||
+            classes.every(
+              (className) =>
+                expectedClasses.includes(className) ||
+                className.startsWith("x") ||
+                className.includes("__styles."),
+            ))
+        );
+      }, expected.className),
+    ).toBe(true);
+  } else {
+    await expect(link).not.toHaveAttribute("class", /.+/u);
+  }
+  if (expected.target) {
+    await expect(link).toHaveAttribute("target", expected.target);
+  } else {
+    await expect(link).not.toHaveAttribute("target", /.+/u);
+  }
+  await expect(link).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(link).not.toHaveAttribute("data-status", /.+/u);
+}
+
+async function readLoginIdErrorPlacementMetrics(page: Page) {
+  return page.evaluate(() => {
+    const labelRow = document.querySelector<HTMLElement>('dt:has(label[for="loginId"])');
+    const label = document.querySelector<HTMLElement>('label[for="loginId"]');
+    const error = document.querySelector<HTMLElement>(
+      'dt:has(label[for="loginId"]) .label.label-important',
+    );
+    if (!labelRow || !label || !error) {
+      throw new Error("Expected loginId field-error metric targets are missing.");
+    }
+
+    const rowBox = labelRow.getBoundingClientRect();
+    const labelBox = label.getBoundingClientRect();
+    const errorBox = error.getBoundingClientRect();
+
+    return {
+      errorBottomWithinLabelRow: errorBox.bottom <= rowBox.bottom,
+      errorLeftAfterLabel: errorBox.left >= labelBox.right,
+      errorTopWithinLabelRow: errorBox.top >= rowBox.top,
+    };
+  });
+}
+
+async function readMobileSecretMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const secretBoxHeading = document.querySelector<HTMLElement>(".secret-box h4");
+    const formWrap = document.querySelector<HTMLElement>(".signup-form-wrap");
+    const definitionList = document.querySelector<HTMLElement>(".signup-form-wrap dl");
+    const passwordInput = document.querySelector<HTMLElement>("#password");
+    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
+    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
+    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    if (
+      !pageWrapOuter ||
+      !secretBox ||
+      !secretBoxHeading ||
+      !formWrap ||
+      !definitionList ||
+      !passwordInput ||
+      !pageFooter ||
+      !pageFooterOuter ||
+      !provider
+    ) {
+      throw new Error("Expected secret setup mobile metric targets are missing.");
+    }
+
+    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
+    const secretBoxStyle = getComputedStyle(secretBox);
+    const secretBoxHeadingStyle = getComputedStyle(secretBoxHeading);
+    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
+
+    return {
+      formDefinitionListTextAlign: getComputedStyle(definitionList).textAlign,
+      formWidth: getComputedStyle(formWrap).width,
+      inputWidth: getComputedStyle(passwordInput).width,
+      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
+      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
+      pageFooterOuterPadding: pageFooterOuterStyle.padding,
+      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
+      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
+      pageWrapOuterPadding: pageWrapOuterStyle.padding,
+      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
+      providerFontSize: getComputedStyle(provider).fontSize,
+      secretBoxBackgroundColor: secretBoxStyle.backgroundColor,
+      secretBoxBorderColor: secretBoxStyle.borderColor,
+      secretBoxBorderRadius: secretBoxStyle.borderRadius,
+      secretBoxColor: secretBoxStyle.color,
+      secretBoxHeadingColor: secretBoxHeadingStyle.color,
+      secretBoxHeadingMargin: secretBoxHeadingStyle.margin,
+      secretBoxMarginBottom: secretBoxStyle.marginBottom,
+      secretBoxMarginTop: secretBoxStyle.marginTop,
+      secretBoxPaddingBottom: secretBoxStyle.paddingBottom,
+      secretBoxPaddingLeft: secretBoxStyle.paddingLeft,
+      secretBoxPaddingRight: secretBoxStyle.paddingRight,
+      secretBoxPaddingTop: secretBoxStyle.paddingTop,
+      secretBoxStyleWidth: secretBoxStyle.width,
+      secretBoxWidth: Math.round(secretBox.getBoundingClientRect().width),
+    };
+  });
+}
+
+function expectedFormActionFor(basePath: string) {
+  const expectedAction = Object.entries(EXPECTED_FORM_ACTIONS).find(
+    ([mount]) => mount === basePath,
+  )?.[1];
+  if (!expectedAction) {
+    throw new Error(`Unsupported test mount: ${basePath}`);
+  }
+  return expectedAction;
+}
+
+function contextRoot(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
+}
+
+function legacyRootHref(basePath: string) {
+  return contextRoot(basePath);
+}
+
+async function canonicalizeScreenRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(
+      document.querySelectorAll(".gnb-outer, .page-wrap-outer, .page-footer-outer"),
+    );
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "value",
+        "autocomplete",
+        "placeholder",
+        "href",
+        "target",
+        "for",
+        "checked",
+        "required",
+        "readonly",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => {
+          const value =
+            name === "class"
+              ? Array.from(current.classList)
+                  .filter(
+                    (className) =>
+                      className &&
+                      className !== "gray-txt" &&
+                      className !== "right-txt" &&
+                      !/^x[0-9a-z]+$/u.test(className) &&
+                      !className.includes("__"),
+                  )
+                  .join(" ")
+              : (current.getAttribute(name) ?? "");
+          return { name, value };
+        })
+        .filter(({ name, value }) => !(name === "class" && value === ""))
+        .map(({ name, value }) => `${name}=${JSON.stringify(value)}`)
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  });
+}
+
+async function canonicalizeHtml(page: Page, html: string) {
+  return page.evaluate(
+    ({ markup }) => {
+      const template = document.createElement("template");
+      template.innerHTML = markup.trim();
+      return Array.from(template.content.children)
+        .map((root) => visit(root))
+        .join("");
+
+      function visit(current: Element): string {
+        const stableAttributes = [
+          "id",
+          "class",
+          "name",
+          "type",
+          "method",
+          "action",
+          "value",
+          "autocomplete",
+          "placeholder",
+          "href",
+          "target",
+          "for",
+          "checked",
+          "required",
+          "readonly",
+        ];
+        const attrs = stableAttributes
+          .filter((name) => current.hasAttribute(name))
+          .map((name) => {
+            const value = current.getAttribute(name) ?? "";
+            const normalized =
+              name === "class"
+                ? value
+                    .split(/\s+/u)
+                    .filter(
+                      (token) =>
+                        token &&
+                        token !== "gray-txt" &&
+                        token !== "right-txt" &&
+                        !/^x[0-9a-z]+$/u.test(token) &&
+                        !token.includes("__"),
+                    )
+                    .join(" ")
+                : value;
+            return { name, value: normalized };
+          })
+          .filter(({ name, value }) => !(name === "class" && value === ""))
+          .map(({ name, value }) => `${name}=${JSON.stringify(value)}`)
+          .join(" ");
+        const open = attrs
+          ? `<${current.tagName.toLowerCase()} ${attrs}>`
+          : `<${current.tagName.toLowerCase()}>`;
+        const children = Array.from(current.childNodes)
+          .map((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+            }
+            if (child.nodeType === Node.ELEMENT_NODE) {
+              return visit(child as Element);
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join("");
+
+        return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+    },
+    { markup: html },
+  );
+}

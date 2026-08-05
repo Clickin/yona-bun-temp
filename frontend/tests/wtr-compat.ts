@@ -39,8 +39,22 @@ class WtrBuffer {
 (globalThis as { Buffer?: unknown }).Buffer = WtrBuffer;
 
 // Async file reader (fetch over the same-origin fixture middleware).
+// Mirrors readFileSync's path mapping (bare-relative / ../frontend/ /
+// ../yona-original/ / src/...) so both readers agree on fixture roots.
 export async function readFile(source: URL | string): Promise<string> {
-  const href = typeof source === "string" ? new URL(source, import.meta.url).href : source.href;
+  let resolved = source;
+  if (typeof source === "string" && source.startsWith("../frontend/")) {
+    resolved = `/tests/frontend/${source.slice("../frontend/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("../yona-original/")) {
+    resolved = `/yona-original/${source.slice("../yona-original/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("src/")) {
+    resolved = `/tests/src/${source.slice("src/".length)}`;
+  } else if (typeof source === "string" && !source.startsWith(".") && !source.startsWith("/")) {
+    resolved = `/tests/root/${source}`;
+  }
+  const raw =
+    typeof resolved === "string" ? resolved.replace(/\.(ts|tsx|js|mjs)$/i, ".$1.txt") : resolved;
+  const href = typeof raw === "string" ? new URL(raw, import.meta.url).href : raw.href;
   const response = await fetch(href);
   if (!response.ok) throw new Error(`wtr readFile: ${response.status} for ${href}`);
   return response.text();
@@ -48,7 +62,7 @@ export async function readFile(source: URL | string): Promise<string> {
 
 // Cross-realm event bus: the injected iframe script emits dialog/request/console
 // events through parent.__wtrEmit; watchers live here.
-type WtrEventName = "dialog" | "request" | "console";
+type WtrEventName = "dialog" | "request" | "console" | "framenavigated";
 const eventListeners = new Map<WtrEventName, Array<(payload: unknown) => void>>();
 const eventWaiters = new Map<WtrEventName, Array<(payload: unknown) => void>>();
 
@@ -263,7 +277,12 @@ function globToRegExp(pattern: string): RegExp {
 // Mock routing (fetch interception inside the iframe)
 // ---------------------------------------------------------------------------
 
-type MockHandler = (route: { fulfill: (opts: Record<string, unknown>) => Promise<void> }) => void;
+type MockRoute = {
+  request: () => RequestFacade;
+  fulfill: (opts: Record<string, unknown>) => Promise<void>;
+  fallback: () => Promise<void>;
+};
+type MockHandler = (route: MockRoute) => void | Promise<void>;
 const mockRegistry: Array<{ regex: RegExp; handler: MockHandler }> = [];
 
 async function createFulfilledResponse(overrides: Record<string, unknown>): Promise<Response> {
@@ -335,40 +354,53 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
           postData: requestFacade.postData,
           postDataJSON: requestFacade.postDataJSON,
         });
-        const { promise, resolve } = Promise.withResolvers<Response>();
-        try {
-          const handlerResult = handler({
-            request: () => requestFacade,
-            fulfill: async (opts) => {
-              const response = await createFulfilledResponse(opts);
-              checkResponseWatchers({
-                url: () => requestFacade.url(),
-                request: () => ({
-                  method: () => requestFacade.method(),
-                  url: () => requestFacade.url(),
-                  headers: () => requestFacade.headers(),
-                }),
+        // route.fallback() continues to the next matching handler, else the
+        // real network — mirror Playwright's multi-handler semantics.
+        const tryHandlers = async (startIndex: number): Promise<Response> => {
+          for (let i = startIndex; i >= 0; i -= 1) {
+            const { regex, handler } = mockRegistry[i];
+            if (!regex.test(url)) continue;
+            const { promise, resolve } = Promise.withResolvers<Response>();
+            try {
+              const handlerResult = handler({
+                request: () => requestFacade,
+                fulfill: async (opts) => {
+                  const response = await createFulfilledResponse(opts);
+                  checkResponseWatchers({
+                    url: () => requestFacade.url(),
+                    request: () => ({
+                      method: () => requestFacade.method(),
+                      url: () => requestFacade.url(),
+                      headers: () => requestFacade.headers(),
+                    }),
+                  });
+                  resolve(response);
+                },
+                fallback: async () => {
+                  resolve(await tryHandlers(i - 1));
+                },
               });
-              resolve(response);
-            },
-          });
-          if (handlerResult instanceof Promise) {
-            handlerResult.catch((error) => {
+              if (handlerResult instanceof Promise) {
+                handlerResult.catch((error) => {
+                  const top = typeof window !== "undefined" ? window : null;
+                  if (top) {
+                    (top as unknown as Record<string, unknown>).__wtrMockError = String(error);
+                  }
+                  throw error;
+                });
+              }
+            } catch (error) {
               const top = typeof window !== "undefined" ? window : null;
               if (top) {
                 (top as unknown as Record<string, unknown>).__wtrMockError = String(error);
               }
               throw error;
-            });
+            }
+            return promise;
           }
-        } catch (error) {
-          const top = typeof window !== "undefined" ? window : null;
-          if (top) {
-            (top as unknown as Record<string, unknown>).__wtrMockError = String(error);
-          }
-          throw error;
-        }
-        return promise;
+          return realFetch.call(iframe.contentWindow as Window, input as RequestInfo, init);
+        };
+        return tryHandlers(index);
       }
     }
     return realFetch.call(iframe.contentWindow as Window, input as RequestInfo, init);
@@ -400,6 +432,10 @@ function parseKeyCombo(key: string): {
     altKey: modifiers.has("Alt"),
     metaKey: modifiers.has("Meta"),
   };
+}
+
+function isPrintableKey(key: string): boolean {
+  return key.length === 1 && /[^\u0000-\u001F\u007F]/.test(key);
 }
 
 function createTypedEvent(
@@ -470,6 +506,17 @@ export class Locator {
 
   private resolveElements(): Element[] {
     const doc = this.page.document();
+    // Playwright chain selector: "A >> nth=N" applies an index to A's results.
+    const chain = this.selector.split(" >> ");
+    if (chain.length > 1) {
+      const [baseSel, ...rest] = chain;
+      const nthPart = rest[rest.length - 1].match(/^nth=(\d+)$/);
+      const nth = nthPart ? Number(nthPart[1]) : undefined;
+      const innerSelector = rest.length > 1 || !nthPart ? rest.join(" >> ") : baseSel;
+      const inner = new Locator(this.page, innerSelector);
+      const all = inner.resolveElements();
+      return nth !== undefined ? [all[nth]].filter(Boolean) : all;
+    }
     if (this.scopedChild !== undefined) {
       const elements: Element[] = [];
       for (const base of doc.querySelectorAll(this.selector)) {
@@ -741,6 +788,35 @@ export class Locator {
       return resultWithOptions;
     }
     const childParts = childSelector.split(",").map((part) => part.trim());
+    if (this.index !== undefined || this.hasCustomResolver || this.scopedChild !== undefined) {
+      // Scoped compose: resolve the parent (with its index/filters) first,
+      // then the child within each resolved element. A combined selector +
+      // parent index would index the WRONG element (nth(1).locator("a") must
+      // take anchors of the 1st parent, not the 2nd anchor overall).
+      const page = this.page;
+      const base = this;
+      const scoped = new (class extends Locator {
+        hasCustomResolver = true;
+        resolveElements(): Element[] {
+          const parents = base.resolveElements();
+          const parent =
+            base.index === undefined ? parents : parents[base.index] ? [parents[base.index]] : [];
+          const elements: Element[] = [];
+          for (const p of parent) {
+            for (const part of childParts) {
+              elements.push(...Array.from(p.querySelectorAll(part)));
+            }
+          }
+          return elements;
+        }
+      })(page, base.selector, undefined);
+      let resultWithOptions: Locator = scoped;
+      if (options?.hasText !== undefined)
+        resultWithOptions = resultWithOptions.filterByText(options.hasText);
+      if (options?.has !== undefined)
+        resultWithOptions = resultWithOptions.filterWithHas(options.has);
+      return resultWithOptions;
+    }
     const combined = this.selector
       .split(",")
       .flatMap((parentPart) => childParts.map((childPart) => `${parentPart.trim()} ${childPart}`))
@@ -786,7 +862,7 @@ export class Locator {
   }
 
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator {
-    return this.locator("*").filterByText(text, options?.exact);
+    return this.locator("*").filterByText(text, options?.exact, true);
   }
 
   getByTestId(testId: string): Locator {
@@ -797,9 +873,13 @@ export class Locator {
     return this.locator(`[aria-label="${label}"], label:has-text("${label}") input`);
   }
 
-  private filterByText(text: string | RegExp | undefined, exact?: boolean): Locator {
+  private filterByText(
+    text: string | RegExp | undefined,
+    exact?: boolean,
+    innermost = false,
+  ): Locator {
     if (text === undefined) return this;
-    return this.filterWithPredicate((element) => {
+    const predicate = (element: Element): boolean => {
       // Accessible-name matching: aria-label > content > title (Playwright
       // resolves the accessible name; title covers icon-only buttons).
       const candidates = [
@@ -816,7 +896,13 @@ export class Locator {
             : candidate.includes(text)
           : text.test(candidate);
       return candidates.some(matchesCandidate);
-    });
+    };
+    if (!innermost) return this.filterWithPredicate(predicate);
+    // Playwright's text engine matches the SMALLEST element containing the
+    // text: drop any match that has a matching descendant.
+    return this.filterWithPredicate(
+      (element) => predicate(element) && !Array.from(element.children).some(predicate),
+    );
   }
 
   filterWithHas(has?: Locator): Locator {
@@ -854,12 +940,12 @@ export class Locator {
     return new (class extends Locator {
       hasCustomResolver = true;
       resolveElements(): Element[] {
-        const doc = page.document();
-        return Array.from(doc.querySelectorAll(base.selector)).filter((element) =>
-          predicate(element),
-        );
+        // Filter the FULL resolved chain (nth/filter/scoped-custom resolvers),
+        // never re-resolve the raw selector from the document — that would
+        // drop the chain's narrowing and index semantics.
+        return base.resolveElements().filter((element) => predicate(element));
       }
-    })(page, base.selector, base.index);
+    })(page, base.selector, undefined);
   }
 
   async getAttribute(name: string): Promise<string | null> {
@@ -932,6 +1018,13 @@ export class Locator {
       this.page.dispatch(target, type, options?.position);
     }
     await sleep(10);
+    // Real clicks move focus to the target (apps select-on-click, etc.).
+    element.focus();
+    if ("value" in element) {
+      // select() is unreadable on type=number (selectionStart is null), so
+      // record the click-select so a following press() replaces the value.
+      (element as HTMLInputElement).setAttribute("data-wtr-click-selected", "1");
+    }
     this.page.dispatch(element, "pointerup", options?.position);
     this.page.dispatch(element, "click", options?.position);
     await sleep(30);
@@ -947,6 +1040,7 @@ export class Locator {
 
   async press(key: string): Promise<void> {
     const element = await this.waitForElement();
+    element.focus();
     const parsed = parseKeyCombo(key);
     if (parsed.key === "Tab") {
       // Real Tab moves focus — the previously focused element blurs (apps
@@ -957,6 +1051,20 @@ export class Locator {
       active?.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
       active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
       active?.blur();
+    } else if (isPrintableKey(parsed.key)) {
+      // Real presses insert the character into the focused editable element
+      // (replacing the selection — apps select-all on click/focus).
+      const editable = (element as HTMLInputElement | HTMLTextAreaElement | null) ?? null;
+      if (editable && "value" in editable && !editable.readOnly) {
+        const clickSelected = editable.getAttribute("data-wtr-click-selected") === "1";
+        editable.removeAttribute("data-wtr-click-selected");
+        const start = clickSelected ? 0 : (editable.selectionStart ?? editable.value.length);
+        const end = clickSelected
+          ? editable.value.length
+          : (editable.selectionEnd ?? editable.value.length);
+        const next = editable.value.slice(0, start) + parsed.key + editable.value.slice(end);
+        setNativeInputValue(editable, next);
+      }
     }
     for (const type of ["keydown", "keyup"]) {
       element.dispatchEvent(new KeyboardEvent(type, { ...parsed, bubbles: true }));
@@ -1124,6 +1232,7 @@ export class Locator {
 class PageFacade {
   private iframe: HTMLIFrameElement | null = null;
   private requestedViewport: { width: number; height: number } | null = null;
+  private mediaEmulation: { reducedMotion?: "reduce" | "no-preference" | "light" } = {};
   readonly keyboard = {
     press: async (key: string) => {
       const doc = this.document();
@@ -1135,6 +1244,18 @@ class PageFacade {
         active?.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
         active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
         active?.blur();
+      } else if (isPrintableKey(parsed.key)) {
+        const editable = (target as HTMLInputElement | HTMLTextAreaElement | null) ?? null;
+        if (editable && "value" in editable && !editable.readOnly) {
+          const clickSelected = editable.getAttribute("data-wtr-click-selected") === "1";
+          editable.removeAttribute("data-wtr-click-selected");
+          const start = clickSelected ? 0 : (editable.selectionStart ?? editable.value.length);
+          const end = clickSelected
+            ? editable.value.length
+            : (editable.selectionEnd ?? editable.value.length);
+          const next = editable.value.slice(0, start) + parsed.key + editable.value.slice(end);
+          setNativeInputValue(editable, next);
+        }
       }
       target.dispatchEvent(new KeyboardEvent("keydown", { ...parsed, bubbles: true }));
       target.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
@@ -1251,6 +1372,32 @@ class PageFacade {
     return this.iframe.contentWindow;
   }
 
+  async emulateMedia(media: {
+    reducedMotion?: "reduce" | "no-preference" | "light";
+  }): Promise<void> {
+    this.mediaEmulation = { ...this.mediaEmulation, ...media };
+    this.applyMediaEmulation();
+  }
+
+  private applyMediaEmulation(): void {
+    if (!this.iframe?.contentWindow) return;
+    const win = this.iframe.contentWindow;
+    const reducedMotion = this.mediaEmulation.reducedMotion;
+    if (!reducedMotion) return;
+    const original = win.matchMedia.bind(win);
+    win.matchMedia = (query: string): MediaQueryList => {
+      const result = original(query);
+      if (reducedMotion === "reduce" && query.includes("prefers-reduced-motion")) {
+        try {
+          Object.defineProperty(result, "matches", { value: true, configurable: true });
+        } catch {
+          // readonly guard failed — fall back to a shimmed object
+        }
+      }
+      return result;
+    };
+  }
+
   async goto(url: string, options?: { waitUntil?: string }): Promise<void> {
     if (!this.iframe) {
       this.iframe = document.createElement("iframe");
@@ -1265,6 +1412,7 @@ class PageFacade {
     }
     const absolute = url.startsWith("http") ? url : new URL(url, location.origin).href;
     installFetchMock(this.iframe, window.fetch);
+    this.applyMediaEmulation();
     this.iframe.src = absolute;
     const { promise, resolve } = Promise.withResolvers<void>();
     const onLoad = () => {
@@ -1272,6 +1420,14 @@ class PageFacade {
       resolve();
     };
     this.iframe.addEventListener("load", onLoad);
+    // Any document navigation inside the iframe (goto, reload, location
+    // changes from the app) emits framenavigated; the initial load fires
+    // before waiters register, so it is harmless.
+    this.iframe.addEventListener("load", () => {
+      emitWtrEvent("framenavigated", {
+        url: this.iframe?.contentWindow?.location.href ?? "",
+      });
+    });
     await promise;
     // Emit exactly one document request per navigation (Playwright fires one
     // per full document load; SPA pushState redirects do NOT fire one).
@@ -1334,7 +1490,7 @@ class PageFacade {
   }
 
   getByText(text: string | RegExp, options?: { exact?: boolean }): Locator {
-    return new Locator(this, "body *").filterByText(text, options?.exact);
+    return new Locator(this, "body *").filterByText(text, options?.exact, true);
   }
 
   getByLabel(label: string): Locator {
@@ -1499,6 +1655,16 @@ class PageFacade {
       },
       `waitForURL(${String(url)})`,
     );
+  }
+
+  async waitForLoadState(
+    state?: "load" | "domcontentloaded" | "networkidle" | "commit",
+  ): Promise<void> {
+    // Iframe document + mocked fetch are already settled when the test body
+    // runs; the follow-up assertions poll anyway. Wait a beat for any in-flight
+    // post-mount effects (load events, image decode) to land.
+    if (state === "networkidle") await sleep(120);
+    await this.document();
   }
 
   async unroute(pattern: string): Promise<void> {
@@ -1893,7 +2059,13 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
     },
     toContain: (expected, options) => {
       if (stringTarget !== null) {
-        const actual = String(stringTarget());
+        const raw = stringTarget();
+        if (Array.isArray(raw)) {
+          const passes = raw.some((item) => asymmetricEquals(item, expected));
+          syncAssert(passes, `toContain(${String(expected)})`);
+          return;
+        }
+        const actual = String(raw);
         const passes =
           typeof expected === "string" ? actual.includes(expected) : expected.test(actual);
         syncAssert(passes, `toContain(${String(expected)})`);
