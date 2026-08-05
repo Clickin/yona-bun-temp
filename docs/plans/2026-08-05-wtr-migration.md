@@ -227,3 +227,29 @@ stylex-anonymous-* suite, stylex-* login/signup/user-menu/auth-home screens, sup
 profile screens, project-code-* remainder, yobi-svn-* / vcs-* / weblabs-* screens, org-* remainder,
 milestone-*, issue-* remainder, project-issue-* remainder. Recompute `comm -23` against the live
 `frontend/tests/wtr/` list each wave; ~750 remain.
+
+## Wave 6 — committed `9cb55ff60` (25 files, +8.5k)
+
+Specs (24): stylex-anonymous-home-{intro-outer,intro}, stylex-anonymous-{login-normal,site-signup,user-menu},
+stylex-auth-home-{content-grid,default-login-action,intro-guide-cta,intro-guide,notification-empty,notification-more,
+notification-row,page-wrap,series-tabs}, stylex-auth-provider-logo-owners, stylex-authenticated-sidebar-project-list,
+stylex-authenticated-sidenav-{account-row,content-frame,direct-project-rows,favorite-organization-rows,
+favorite-project-rows,favorite-shell,favorite-star-geometry,favorite-stars}.
+
+Suite: 147 files, 1078 passed / 431 failed / 1 skipped (~19.5 min).
+
+Shim additions: element-handle bridge (Locator.elementHandle + __wtrHandleRef
+resolution inside iframe evals, both branches), getByRole a11y-tree hidden
+exclusion, Locator.innerText (iframe-realm prototype getter), getByPlaceholder,
+Locator.screenshot, expect.closeTo, xpath= children on custom-resolver parents,
+elementHandle waits through strict violations.
+
+Residual families (all PW-verified): CSS :hover ceiling (site-signup interaction
+states, user-menu login hover, auth-home hover bgs, favorite-stars hover — stylex
+`:hover`/`:focus`/`:active` tokens need CDP); dev-vs-dist geometry drift
+(account-row, content-frame, direct-project-rows width 293->207, fav-org
+minHeight, fav-shell mobile subpixel + dist sidebar collapse ~13px, fav-project
+fallback-off .user-li); source pins (account-row row-fluid user-menu-wrap);
+stale pins fixed in copies (intro-outer row-token family d1ba4466f, notification
+geometry family, provider-logo owners, fav-project popover inversion 8029e1e6d,
+fav-stars iconBox 23.109375 + 600ms sidebar transition settle wait).
