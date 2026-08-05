@@ -61,13 +61,26 @@ Measured on the pilot: `tests/wtr/not-found.e2e.ts` runs **4/4 green in 2.1s**
 |---|---|
 | `tests/wtr/not-found.e2e.ts` | 4/4 green |
 | `tests/wtr/wtr-smoke.e2e.ts` | 2/2 green (harness smoke) |
-| `tests/wtr/loginform.e2e.ts` | 13/25 (12 residual — see below) |
+| `tests/wtr/loginform.e2e.ts` | 24/24 green |
 
-loginform residual failures (12): 9 standalone-login redirect-chain tests
-(`toHaveAttribute(action)` null — form not observed under the full
-`mockStandalonePasswordLogin` mock set; reproduced green in isolation, so
-suspect cross-test browser pressure/iframe-reload races — rerun in isolation to
-confirm), 3 root-login-dialog tests (DOM/geometry diffs, not yet triaged).
+All 31 converted tests green in **10.7s** (vs ~2min+ per spec under Playwright).
+
+loginform was 13/25 when first converted; the residual clusters were traced to
+harness fidelity gaps, now fixed:
+1. `route.request()` facade: Playwright's `url()`/`method()`/`headers()`/
+   `postDataJSON()` are METHODS, and `headers()` returns a plain object
+   (specs index `["x-csrf-token"]`); the facade now matches. This unlocked the
+   9-test standalone-login redirect cluster (their session mocks record
+   `route.request().url()` and the sign-in mocks inspect headers/body).
+2. `expect.poll().toMatch`/`toHaveLength`/`toBeGreaterThanOrEqual` and
+   `expect(locator).toBeFocused` matchers added.
+3. Root-login-dialog geometry: 8.66px-short dialog was a **broken provider
+   logo** — the config's content-type map lacked `.svg` (and other asset
+   types), so the google button's img rendered as a broken 19px placeholder
+   instead of the 24px logo. Fixed the MIME map; the dialog then measured
+   exactly 378/306 as expected. Also added a settle-wait (250ms) before the
+   dialog metrics read (modal transition), per the suite's marker-wait
+   convention.
 
 ## Next steps
 

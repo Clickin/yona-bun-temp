@@ -1800,6 +1800,9 @@ async function readRootLoginDialogMetrics(page: Page) {
 }
 
 async function readRootLoginDialogFormMetrics(page: Page) {
+  // Settle the modal open transition before measuring (same convention as the
+  // playwright suite's marker waits; the dialog's height animates in).
+  await page.waitForTimeout(250);
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");

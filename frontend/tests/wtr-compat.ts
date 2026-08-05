@@ -103,13 +103,51 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
         if (top) {
           const counter = ((top as unknown as Record<string, number>).__wtrMockHits ?? 0) + 1;
           (top as unknown as Record<string, number>).__wtrMockHits = counter;
+          (top as unknown as Record<string, unknown>).__wtrMockLast = regex.source;
+          (top as unknown as Record<string, unknown>).__wtrRegistry = mockRegistry.map(
+            ({ regex: r }) => ({ source: r.source }),
+          );
         }
-        const { promise, resolve } = Promise.withResolvers<Response>();
-        handler({
-          fulfill: async (opts) => {
-            resolve(await createFulfilledResponse(opts));
+        // Playwright's APIRequest methods: url(), method(), headers(),
+        // postDataJSON(), postData() — all functions.
+        const requestFacade = {
+          url: () => new URL(url, location.href).href,
+          method: () => (init?.method ?? "GET").toUpperCase(),
+          headers: () => Object.fromEntries(new Headers(init?.headers as HeadersInit).entries()),
+          postData: () => (typeof init?.body === "string" ? init.body : undefined),
+          postDataJSON: () => {
+            if (typeof init?.body !== "string") return undefined;
+            try {
+              return JSON.parse(init.body);
+            } catch {
+              return undefined;
+            }
           },
-        });
+        };
+        const { promise, resolve } = Promise.withResolvers<Response>();
+        try {
+          const handlerResult = handler({
+            request: () => requestFacade,
+            fulfill: async (opts) => {
+              resolve(await createFulfilledResponse(opts));
+            },
+          });
+          if (handlerResult instanceof Promise) {
+            handlerResult.catch((error) => {
+              const top = typeof window !== "undefined" ? window : null;
+              if (top) {
+                (top as unknown as Record<string, unknown>).__wtrMockError = String(error);
+              }
+              throw error;
+            });
+          }
+        } catch (error) {
+          const top = typeof window !== "undefined" ? window : null;
+          if (top) {
+            (top as unknown as Record<string, unknown>).__wtrMockError = String(error);
+          }
+          throw error;
+        }
         return promise;
       }
     }
@@ -228,6 +266,11 @@ export class Locator {
   async inputValue(): Promise<string> {
     const element = this.current() as HTMLInputElement | null;
     return element?.value ?? "";
+  }
+
+  async innerHTML(): Promise<string> {
+    const element = this.current();
+    return element?.innerHTML ?? "";
   }
 
   async isVisible(): Promise<boolean> {
@@ -525,6 +568,7 @@ interface ExpectResult {
   toBeVisible(options?: { timeout?: number }): Promise<void>;
   toBeHidden(options?: { timeout?: number }): Promise<void>;
   toBeChecked(options?: { timeout?: number }): Promise<void>;
+  toBeFocused(options?: { timeout?: number }): Promise<void>;
   toHaveValue(value: string, options?: { timeout?: number }): Promise<void>;
   toHaveURL(expected: string | RegExp, options?: { timeout?: number }): Promise<void>;
   toContain(expected: string | RegExp, options?: { timeout?: number }): Promise<void>;
@@ -648,7 +692,21 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
             ? actual === expected
             : JSON.stringify(actual) === JSON.stringify(expected);
         let detail = "";
-        if (!passes && typeof expected === "string" && typeof actual === "string") {
+        if (
+          !passes &&
+          typeof expected === "object" &&
+          actual !== null &&
+          typeof actual === "object"
+        ) {
+          const expectedObj = expected as Record<string, unknown>;
+          const actualObj = actual as Record<string, unknown>;
+          const diffKeys = Object.keys(expectedObj).filter(
+            (key) => JSON.stringify(expectedObj[key]) !== JSON.stringify(actualObj[key]),
+          );
+          if (diffKeys.length > 0) {
+            detail = ` keys=${diffKeys.join(",")} exp=${JSON.stringify(diffKeys.map((k) => expectedObj[k]))} act=${JSON.stringify(diffKeys.map((k) => actualObj[k]))}`;
+          }
+        } else if (!passes && typeof expected === "string" && typeof actual === "string") {
           for (let k = 0; k < Math.min(expected.length, actual.length); k += 1) {
             if (expected[k] !== actual[k]) {
               detail = ` diff@${k} exp[...${JSON.stringify(expected.slice(Math.max(0, k - 60), k + 120))}] act[...${JSON.stringify(actual.slice(Math.max(0, k - 60), k + 120))}]`;
@@ -826,6 +884,13 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       async () => (target instanceof Locator ? target.isChecked() : false),
       "toBeChecked",
     ),
+    toBeFocused: make(async () => {
+      if (!(target instanceof Locator)) return false;
+      const element = target.current();
+      return (
+        element !== null && element === (element.ownerDocument.activeElement as Element | null)
+      );
+    }, "toBeFocused"),
     toHaveJSProperty: async (name: string, expected: unknown, options?: { timeout?: number }) => {
       if (!(target instanceof Locator)) return;
       const actualValue = async () => {
@@ -916,6 +981,26 @@ expect.poll = (fn: () => unknown) => ({
       },
       `poll().toContain(${String(expected)})`,
     );
+  },
+  toMatch: async (expected: RegExp) => {
+    await expectPoll(
+      async () => expected.test(String(await fn())),
+      `poll().toMatch(${String(expected)})`,
+    );
+  },
+  toBeGreaterThanOrEqual: async (expected: number) => {
+    await expectPoll(
+      async () => Number(await fn()) >= expected,
+      `poll().toBeGreaterThanOrEqual(${expected})`,
+    );
+  },
+  toHaveLength: async (length: number) => {
+    await expectPoll(async () => {
+      const actual = await fn();
+      if (typeof actual === "string") return actual.length === length;
+      if (Array.isArray(actual)) return actual.length === length;
+      return false;
+    }, `poll().toHaveLength(${length})`);
   },
   toBeTruthy: async () => {
     await expectPoll(async () => Boolean(await fn()), "poll().toBeTruthy()");

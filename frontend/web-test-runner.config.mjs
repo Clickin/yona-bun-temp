@@ -49,6 +49,24 @@ function contentTypeFor(filePath) {
       return "text/html";
     case ".json":
       return "application/json";
+    case ".svg":
+      return "image/svg+xml";
+    case ".png":
+      return "image/png";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".gif":
+      return "image/gif";
+    case ".woff":
+    case ".woff2":
+      return "font/woff2";
+    case ".ttf":
+      return "font/ttf";
+    case ".ico":
+      return "image/x-icon";
+    case ".map":
+      return "application/json";
     default:
       return "text/plain";
   }
