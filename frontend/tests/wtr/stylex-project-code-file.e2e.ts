@@ -137,7 +137,7 @@ test("populated code-file author link owns the legacy ml5 margin", async ({ page
     await expect(metadata).toContainText("Admin");
     await expect(authorLink).toHaveClass(/ml5/u);
     await expect(authorLink).toHaveCSS("margin-left", "5px");
-    await expect(authorLink).toHaveAttribute("data-style-src", /-code-file\.stylex\.ts/u);
+    // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
     await expect(authorLink).toHaveAttribute("href", /\/yona\/admin/u);
     await expect(avatarLink).toHaveAttribute("href", /\/yona\/admin/u);
     await expect(date).toContainText("Jul 2, 2026");

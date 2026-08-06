@@ -1696,13 +1696,22 @@ class PageFacade {
     const absolute = url.startsWith("http") ? url : new URL(url, location.origin).href;
     installFetchMock(this.iframe, window.fetch);
     this.applyMediaEmulation();
-    this.iframe.src = absolute;
+    const currentHref = this.iframe.contentWindow?.location.href;
+    // Chromium skips navigation when iframe.src is set to the URL already
+    // loaded (no load event → hang); Playwright's same-URL goto reloads.
+    // The navigation is triggered AFTER the load listeners register below.
+    const sameDocument = currentHref === absolute;
     const { promise, resolve } = Promise.withResolvers<void>();
     const onLoad = () => {
       this.iframe?.removeEventListener("load", onLoad);
       resolve();
     };
     this.iframe.addEventListener("load", onLoad);
+    if (sameDocument) {
+      this.iframe.contentWindow?.location.reload();
+    } else {
+      this.iframe.src = absolute;
+    }
     // Any document navigation inside the iframe (goto, reload, location
     // changes from the app) emits framenavigated; the initial load fires
     // before waiters register, so it is harmless.

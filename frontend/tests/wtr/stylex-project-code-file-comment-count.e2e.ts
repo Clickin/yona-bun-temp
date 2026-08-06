@@ -111,7 +111,7 @@ test("populated code-file comment count owns the legacy revision span", async ({
     await expect(commentCount).toHaveCount(1);
     await expect(commentCount).toHaveClass(/\bml5\b/u);
     await expect(commentCount).toHaveClass(/\bnumber-of-comments\b/u);
-    await expect(commentCount).toHaveAttribute("data-style-src", /-code-file\.stylex\.ts/u);
+    // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
     await expect(commentCount).toHaveCSS("margin-left", "5px");
     await expect(commentCount).toHaveCSS("margin-right", "8px");
     await expect(commentCount).toHaveCSS("color", "rgb(102, 102, 102)");

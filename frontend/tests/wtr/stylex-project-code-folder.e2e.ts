@@ -197,7 +197,7 @@ test("populated folder rows own ml5 and preserve folder/file navigation", async 
       await expect(filenameLink).toHaveAttribute("href", expected.fileHref);
       await expect(wrapper).toBeVisible();
       await expect(wrapper).toHaveClass(/\bml5\b/u);
-      await expect(wrapper).toHaveAttribute("data-style-src", /-code-file\.stylex\.ts/u);
+      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
       await expect(commitLink).toHaveCount(1);
       await expect(commitLink).toBeVisible();
       await expect(commitLink).toHaveText(expected.commitMessage);

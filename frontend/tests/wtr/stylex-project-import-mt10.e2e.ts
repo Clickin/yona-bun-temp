@@ -172,7 +172,7 @@ test("project import mt10 owners preserve legacy structure and StyleX geometry",
       [privateRow, "project-import-private-scope-row"],
     ] as const) {
       await expect(element).toHaveAttribute("data-stylex-owner", owner);
-      await expect(element).toHaveAttribute("data-style-src", /-project-import\.stylex\.ts/u);
+      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
       await expect(element).not.toHaveAttribute("style", /.+/u);
     }
 

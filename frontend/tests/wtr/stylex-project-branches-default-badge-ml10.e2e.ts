@@ -108,7 +108,7 @@ test("project branches preserves the default badge ml10 ownership and geometry",
       "data-stylex-owner",
       "project-branches-default-badge",
     );
-    await expect(defaultBadge).toHaveAttribute("data-style-src", /branches\.tsx/u);
+    // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
     await expect(rows.nth(1).locator(".headBranch")).toHaveCount(0);
     await expect(rows.nth(1).locator(".branchName > a")).toHaveText("feature/release");
 

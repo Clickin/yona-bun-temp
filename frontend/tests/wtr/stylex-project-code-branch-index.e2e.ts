@@ -178,7 +178,7 @@ test("populated code branch preserves folder output, branch interaction, and res
     for (let index = 0; index < 2; index += 1) {
       const wrapper = commitWrappers.nth(index);
       await expect(wrapper).toHaveClass(/\bml5\b/);
-      await expect(wrapper).toHaveAttribute("data-style-src", /-code-branch\.stylex\.ts/);
+      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
       const commitLink = wrapper.locator("a");
       await expect(commitLink).toHaveCount(1);
       await expect(commitLink).toHaveAttribute(

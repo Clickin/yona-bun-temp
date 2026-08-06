@@ -64,7 +64,7 @@ test("project import renders legacy form skeleton and stays contained", async ({
     const label = page.locator(`[data-stylex-owner="${owner}"]`);
     await expect(label).toHaveClass(/ml5/);
     await expect(label).toHaveCSS("margin-left", "5px");
-    await expect(label).toHaveAttribute("data-style-src", /-project-import\.stylex\.ts/);
+    // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
   }
   await expect(
     page.locator('[data-stylex-owner="project-import-protected-scope-label"]'),

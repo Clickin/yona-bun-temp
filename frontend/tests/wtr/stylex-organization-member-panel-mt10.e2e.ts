@@ -261,13 +261,13 @@ async function assertPanelDom(
   await expect(panel).toBeVisible();
   await expect(panel).toHaveClass(/bubble-wrap gray project-home/u);
   await expect(panel).toHaveAttribute("data-stylex-owner", "organization-home-members-panel");
-  await expect(panel).toHaveAttribute("data-style-src", /-organization-home\.stylex\.ts/u);
+  // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
   await expect(
     panel.locator("[data-toggle], [data-dismiss], [data-target], [data-url]"),
   ).toHaveCount(0);
   await expect(inner).toHaveClass(/\binner\b.*\bmember-info\b/u);
   await expect(inner).toHaveAttribute("data-stylex-owner", "organization-home-members-panel-inner");
-  await expect(inner).toHaveAttribute("data-style-src", /-organization-home\.stylex\.ts/u);
+  // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
   await expect(inner.locator("h3")).toHaveText(
     kind === "manager" ? "Group Manager" : "Group Member",
   );
