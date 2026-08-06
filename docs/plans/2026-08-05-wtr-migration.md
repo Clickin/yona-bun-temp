@@ -638,3 +638,35 @@ Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
 - new-pull-request-form-inline-residual: center-txt pins.
 
 Remaining: 376 of 858 specs converted.
+
+## Wave 21 — committed `160fcac8c` (24 files)
+
+Specs (24): stylex-project-post-detail-{disabled-comment,error-wrap,
+inline-residual,keymap-modal,markdown-editor-mt10,modal-visibility,
+original-toggle,owners,share-link}, stylex-project-post-detail,
+stylex-project-post-edit-{form-paste}, stylex-project-post-edit,
+stylex-project-post-editform-{inline-residual,markdown-editor-mt10,owners},
+stylex-project-postform-{inline-residual,markdown-editor-mt10,paste},
+stylex-project-postform, stylex-project-posts-{action-floats,filters,
+inline-residual,keymap-visibility,label-button-owners}.
+
+Suite: 507 files, 1674 passed / 531 failed / 1 skipped (~26 min; +29 passed,
+zero new fails).
+
+Shim fix (main, wtr-compat.ts):
+- `Locator.count()` respects `.first()`/`.nth(N)` index narrowing (indexed
+  locator reports 1 when ≥1 match exists) — Playwright parity. Unblocked
+  post-detail-inline-residual toHaveCount(1) on the first tab-content pane.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- post-detail: post mock URL owners-style → `/api/v1/projects/**/posts/1`
+  (boards.ts:224-225 projectPostsPath);
+- post-edit(+form-paste/editform mt10+owners): page-wide
+  [data-toggle]/[data-dismiss]/[data-request-method] count 0 scoped to
+  `[data-stylex-owner="post-edit-form"]` (sidenav data-toggle="tab" tabs —
+  faithful port of sidebar.scala.html:50/55); button-clear-temporary id →
+  markdown-editor.tsx:410; pasteHelp/saveHelp/wrapper owners-prop
+  refactors (editform.tsx:166-171);
+- postform(+paste/mt10): owners props (postform.tsx:271-299).
+
+Remaining: 352 of 858 specs converted.
