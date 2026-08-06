@@ -400,3 +400,25 @@ pull-left/pull-right retained f54b9a330, #spin inline style 38254cc9f,
 comment-count number-of-comments + revision ?branch=#path, folder-row LESS
 nesting regex, code searchStyles scope 270ee07ff); error-wrap needs the
 workspace mock (PW dead backend keeps it pending; WTR unmocked fetch 404s).
+
+## Wave 13 — committed `673d4fc66` (24 files, +3.0k)
+
+Specs (24): stylex-project-commit-detail-{original-message,owners,review-residual}, stylex-project-commit-detail,
+stylex-project-commit-file-history-{mt10,warning-none}, stylex-project-commit-file,
+stylex-project-commits-{inline-residual,warning-none}, stylex-project-commits, stylex-project-compare,
+stylex-project-delete-form, stylex-project-deleteform-{batch7,code-visibility}, stylex-project-history-
+{activity-geometry,avatar-wrapper,pull-request-owners,static-owners,typography,whereis-owners},
+stylex-project-home-{action-floats,action-member-card,assignee-link,clone-controls}.
+
+Suite: 315 files, 1434 passed / 534 failed / 1 skipped (~26 min). No new shim
+gaps (wtr-compat unchanged).
+
+Residuals: default-avatar-64.png base64 data-URI inline under dist (Vite
+4089<4096 inline limit — bucket-2 dev-vs-dist); compare runtime mock glob
+/owners/**/compare never matches /projects/.../compare (bucket-4,
+PW-identical); commit review comment button 0x0 yobicon collapse
+(WTR-greener with PW evidence); stale pins fixed in copies + PW-verified
+(commit-detail diff-body-layout 8d08f4a5b + helpOwner prop 38254cc9f,
+warning-none @layer nesting b2d42bdf6, delete-form modal 1366x900 geometry
+ebfd91c33, commits mock glob /projects/.../commits, pathless commits
+empty-warning owner).
