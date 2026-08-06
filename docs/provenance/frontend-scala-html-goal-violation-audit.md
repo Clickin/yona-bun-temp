@@ -4569,3 +4569,5 @@ Manual evidence-only exception note: historical commit c7a9b356f615e507fb9a6e1db
 Manual evidence-only exception note: historical commit 67cdc961b0f66ae0ebdaf58f0d92cbe830710de9 (wtr wave 27: site-admin family batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit 768e30b8fc1ef908b5c62b5c6d8602fc26aa100d (wtr wave 28: site issue-list/mail/massmail batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 68d2b26b926388cf58be1b6be69afdf7cf90f079 (wtr wave 29: massmail/post-list/project-list batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
