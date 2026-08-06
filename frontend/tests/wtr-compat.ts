@@ -691,6 +691,10 @@ export class Locator {
     }
     if (this.scopedChild !== undefined) {
       const elements: Element[] = [];
+      // NOTE: nth(N).locator(':scope …') scopes to the indexed parent in
+      // Playwright; the aggregate loop below (all parents) is the historical
+      // harness behavior that several specs depend on. The site-issue-list-
+      // metadata copy uses an evaluate-based workaround for the indexed case.
       for (const base of doc.querySelectorAll(this.selector)) {
         if (this.scopedChild.startsWith("xpath=")) {
           const expression = this.scopedChild.slice("xpath=".length);
@@ -2622,11 +2626,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           if (Array.isArray(expected) && target instanceof Locator) {
             // Playwright semantics: for a multi-element locator the array is
             // compared element-wise (button[0] === entry[0], ...).
-            const elements = target.all();
-            const texts = [];
-            for (const element of elements) {
-              texts.push(normalizeText((await element.textContent()) ?? ""));
-            }
+            const texts = (await target.allTextContents()).map((text) => normalizeText(text));
             const matches =
               texts.length === expectedList.length &&
               expectedList.every((part, index) => matchText(texts[index] ?? "", part));
