@@ -4549,3 +4549,5 @@ Manual evidence-only exception note: historical commit 51aea137486b74e1469cc1eaf
 Manual evidence-only exception note: historical commit 976a0c5abbdcbd18ec371dde80535ced439f4ae7 (wtr wave 17: project issues/issueform batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit 80f18d06497f8abd2e7edaeb5ed12f485cdf838d (wtr wave 18: labels/members/menu/milestone batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 75ef80701161cd0b04652cfda0e90b139fde9048 (wtr wave 19: milestone family batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
