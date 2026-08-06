@@ -499,3 +499,43 @@ Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
   → string fixture paths (established copy adaptation).
 
 Remaining: 472 of 858 specs converted.
+
+## Wave 17 — committed `cd6a6b2ff` (24 files)
+
+Specs (24): stylex-project-issueform-{title-suggestion-color,upload-progress-
+shell,upload-vertical-parity}, stylex-project-issueform, stylex-project-issues
+-{action-floats,child-list,clickable-row,due-date-mr20-mt10,error-wrap,
+inline-residual,keymap-visibility,keymap,list-row-owners,mass-update-float,
+milestone-avatar-owners,pagination,progress-inline-residual,
+quicksearch-count-floats,row-action-floats,row-label-dynamic,
+selected-milestone-floats,static-owners-wave,two-column-margin}, stylex-
+project-issues.
+
+Suite: 411 files, 1553 passed / 538 failed / 1 skipped (~26 min).
+
+Shim fixes (main, wtr-compat.ts):
+- `page.setContent(html)` — document.open/write/close on the fixture iframe
+  (lazily created like goto, works without a prior goto). Unblocked
+  issues-error-wrap fixture-DOM geometry at 2 viewports.
+- `waitForURL` accepts `(url: URL) => boolean` function predicate
+  (Playwright parity). Unblocked selected-milestone-floats labelsform nav.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- title-suggestion-color owner rename (project-issue-form-*);
+  upload-progress-shell 4 pins → file-uploader.tsx (:501/:410/:506/:443);
+  upload-vertical-parity owner props (textareaOwner/textareaBoxOwner);
+  issueform data-toggle/data-request-method/data-dismiss count 0→3
+  (markdown-editor wrappers :346) + upload-progress owner/bar template →
+  file-uploader.tsx + attach-save-help owner prop; inline-residual
+  keymapWrap float pin (-issues.stylex.ts:49); row-label-dynamic
+  childLabelBackground → childIssueLabelStyle (issues.tsx:2301/2323) +
+  URL fixture reads → string paths; static-owners-wave
+  data-stylex-content-ready expression + project-issues-page-wireframe +
+  .search-box-wrap retirement.
+
+Bucket-2 MATCH (evidence, no fix): issueform upload-progress wrapper lost
+legacy pull-right class (fileUploader.scala.html:31); issues subtask/
+milestone bars render full width vs legacy percentage width
+(partial_list_subtask.scala.html:18, partial_status.scala.html:46).
+
+Remaining: 448 of 858 specs converted.
