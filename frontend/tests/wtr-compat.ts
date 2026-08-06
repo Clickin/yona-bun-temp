@@ -185,19 +185,11 @@ export function readFileSync(source: URL | string): string {
   if (cached !== undefined) return cached;
   const request = new XMLHttpRequest();
   request.open("GET", href, false);
-  // Binary fixtures (PNG etc.) return bytes so `byteLength` assertions work
-  // like Playwright's node:fs Buffer (mirrors the async readFile branch).
-  if (/\.(png|jpe?g|gif|webp|ico|woff2?|eot|ttf|otf|svg)$/i.test(href)) {
-    request.responseType = "arraybuffer";
-  }
+  // NOTE: sync XHR forbids responseType != "" (InvalidAccessError), so binary
+  // fixtures must use the async readFile (returns Uint8Array for byteLength).
   request.send();
   if (request.status >= 400) {
     throw new Error(`wtr readFileSync: ${request.status} for ${href}`);
-  }
-  if (request.responseType === "arraybuffer") {
-    const bytes = new Uint8Array(request.response);
-    fileCache.set(href, bytes as unknown as string);
-    return bytes as unknown as string;
   }
   const text = request.responseText;
   fileCache.set(href, text);
