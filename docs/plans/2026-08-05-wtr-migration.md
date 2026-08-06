@@ -941,3 +941,31 @@ recipient-radios label display:block absent from dist css
 (bootstrap.css:1023-1026); send-action/select-project :hover ceiling.
 
 Remaining: 184 of 858 specs converted.
+
+## Wave 29 — committed `7deefa435` (24 files)
+
+Specs (24): stylex-site-massmail-{selected-projects,sidebar,title-strip,
+write-action}, stylex-site-post-list-{breadcrumb,management-grid,metadata,
+page-row-shell,pagination-nospinner,pagination,row-avatar,row-content,
+shell-fallbacks,sidebar,title-strip}, stylex-site-project-list-{breadcrumb,
+listhead,modal-actions,modal,notification-badge,page-management-shell,
+pagination-sprite,pagination,residual}.
+
+Suite: 699 files, 2138 passed / 585 failed / 1 skipped (~31 min; +75 passed,
++19 = the documented bucket-2/dev-vs-dist/:hover families).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- massmail-sidebar: SiteAdminSidebar props pins (massmail.tsx:325-333);
+- massmail-title-strip: `.site-setting-wrap .span10` → content-column
+  owner (massmail.tsx:350);
+- post-list-shell-fallbacks/sidebar/breadcrumb stale pins;
+- post-list-metadata: loadFixtureLogo img patch;
+- massmail-breadcrumb stale pins.
+
+Bucket-2 MATCH (evidence): post-list-pagination sprite gap (stylex
+className spread overwrite drops backgroundImage; _sprites.less:1-6/
+97-115); project-list listhead/modal-actions/modal/notification-badge/
+management-shell/pagination/residual dev-vs-dist fallback-equivalence
+geometry; :hover paint ceilings (write-action, modal close, pagination).
+
+Remaining: 160 of 858 specs converted.
