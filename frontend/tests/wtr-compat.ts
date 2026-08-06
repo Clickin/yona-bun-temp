@@ -110,6 +110,8 @@ type ResponseFacade = {
     url: () => string;
     headers: () => Record<string, string>;
   };
+  status: () => number;
+  json: () => Promise<unknown>;
 };
 type ResponseWatcher = (facade: ResponseFacade) => boolean;
 const responseWatchers: Array<{ predicate: ResponseWatcher; resolve: (facade: unknown) => void }> =
@@ -419,6 +421,15 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
                       headers: () => requestFacade.headers(),
                     }),
                     status: () => responseStatus,
+                    // Playwright APIResponse.json() — parse the mock body.
+                    json: async () => {
+                      const text = await response.clone().text();
+                      try {
+                        return JSON.parse(text);
+                      } catch {
+                        return undefined;
+                      }
+                    },
                   });
                   resolve(response);
                 },
