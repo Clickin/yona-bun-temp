@@ -670,3 +670,52 @@ Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
 - postform(+paste/mt10): owners props (postform.tsx:271-299).
 
 Remaining: 352 of 858 specs converted.
+
+## Wave 22 — committed `b8aedb5b3` (24 files)
+
+Specs (24): stylex-project-posts-{two-column-margin,two-column-popover},
+stylex-project-posts, stylex-project-projectform, stylex-project-pull-request-
+changes-{codediff-mt10,commit-hash-mr10,delete-modal,residual,
+review-card-avatar,review-editor-mt10}, stylex-project-pull-request-changes,
+stylex-project-pull-request-create-form-mr5, stylex-project-pull-request-
+detail-{action-wrapper,alert-icon,help-messages-mt10,help-modal,mr10},
+stylex-project-pull-request-detail, stylex-project-pull-request-edit-form-
+{mr5}, stylex-project-pull-request-edit-form, stylex-project-pull-request-
+editform-markdown-editor-mt10, stylex-project-pull-requests-two-column-margin,
+stylex-project-pull-requests, stylex-project-pullrequest-changes-error-wrap.
+
+Suite: 531 files, 1706 passed / 531 failed / 1 skipped (~26 min; +32 passed,
+fails flat).
+
+Shim fixes (main):
+- `Locator.count()` index-narrowing scoped to non-scopedChild locators
+  (`.first().locator(":scope > …").count()` counts the child chain, not 1)
+  — debugged via throw-instrumentation (compose returned 5, count said 1:
+  the indexed shortcut fired on the scopedChild locator);
+- `page.dispatchEvent(selector, type, init)` — Playwright parity;
+- `readFile` binary fixtures (png/jpg/…) return Uint8Array (byteLength
+  assertions like Playwright's Buffer);
+- `Locator.locator("> child")` normalized to `":scope > child"` (leading
+  child combinator scoped to the parent; querySelectorAll rejects bare
+  ">");
+- `toHaveJSProperty` traverses dotted paths ("files.length");
+- native legacy-form POST submits (defaultPrevented=false) routed through
+  the fetch mock (submit interceptor in the served index) — unblocked
+  review-editor-mt10 waitForRequest on the comment POST.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- pull-request-detail mock URL → /owners/…/pull-requests/1
+  (pull-requests.ts:327-334); mr10 headerStateDate two-prop form
+  (-pull-request-detail.stylex.ts:43); edit-form owners prop
+  (editform.tsx:233); editform-mt10 wrapperClassName + owners prop;
+  changes upload-help owner prop (changes.tsx:570); changes-residual
+  .first() per owner (2 upload forms — legacy reviewForm.scala.html:45 +
+  partial_comment_form_on_thread.scala.html:55);
+- posts/postform/editform owners-prop refactors (wave-21 family);
+- pull-request-editform-markdown-editor-mt10 wrapperClassName/owners.
+
+Bucket-2 MATCH (evidence): codediff-mt10 mobile margin-right 282px (no
+_responsive.less:156-159 override); changes-residual diff-partial-code
+class clobbered by isExpanded spread (viewChanges.scala.html:216-218).
+
+Remaining: 328 of 858 specs converted.
