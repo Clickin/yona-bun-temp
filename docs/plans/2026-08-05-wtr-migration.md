@@ -906,3 +906,38 @@ sidebarLink slot, _page.less:5251-5264); pagination paint; residual input
 :hover shadow (ceiling).
 
 Remaining: 208 of 858 specs converted.
+
+## Wave 28 — committed `2a74db9de` (24 files)
+
+Specs (24): stylex-site-issue-list-{row-avatar,row-content,shell-fallbacks,
+sidebar,state-tabs,title-strip}, stylex-site-issue-list, stylex-site-mail-
+{breadcrumb,error-alert,form,not-configured-alert,page-grid-columns,
+send-action-wrap,send-action,sidebar,success-alert,title-strip},
+stylex-site-massmail-{breadcrumb,page-grid-columns,project-input,
+project-wrapper,recipient-radios,select-project-action,selected-project-tag}.
+
+Suite: 675 files, 2063 passed / 566 failed / 1 skipped (~29 min; +89 passed,
++8 = the documented bucket-2/ceiling family).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- site-issue-list: mock URL /sites/issues → /site/issues?*
+  (site-admin.ts:237) + isSiteAdmin session;
+- shell-fallbacks: allowed-owner set += pagination-prev/last
+  (issueList.tsx:723/811);
+- mail-page-grid-columns: 5 legacy fallback classes retained →
+  toHaveClass; bootstrap ratios (no responsive.css:
+  layout.scala.html:29-30);
+- mail-send-action: ybtn/ybtn-primary retained pins (mail.tsx:581-583);
+  generated-token filter for form groups; wrapper span12 pin;
+- mail-title-strip (main; the massmail agent ran out mid-debug): loading
+  case needs a never-resolving site/mail mock (real 404 flips the route
+  into the forbidden state); owner list extended to the 10 rendered
+  owners (form + controls/labels);
+- issue-list-row-avatar: `<img>` fetch-only mock gap → loadFixtureLogo
+  data-URI patch (bucket-1 workaround); scopedChild index workaround.
+
+Bucket-2 MATCH (evidence): mail-breadcrumb h3 font-size family;
+recipient-radios label display:block absent from dist css
+(bootstrap.css:1023-1026); send-action/select-project :hover ceiling.
+
+Remaining: 184 of 858 specs converted.
