@@ -374,3 +374,29 @@ verified: org-new validation owner refactor (n-alert data-errtype, owners 5->4),
 org-setting body->top-box (82a95f70c), org search result-item-content +
 fallback bridge retirement (1b69e66a4), project branches data-toggle scoping
 to .code-browse-wrap, pullrequests sprite dist-hashed.
+
+## Wave 12 — committed `9cc593714` (25 files, +3.4k)
+
+Specs (24): stylex-project-change-vcs-{code-visibility,modal-visibility}, stylex-project-change-vcs,
+stylex-project-code-branch-{breadcrumb-ml10,dropdown,index,inline-residual}, stylex-project-code-branch,
+stylex-project-code-browser-header-floats, stylex-project-code-file-{breadcrumb-ml10,comment-count,error-wrap,
+header-floats,inline-residual,open-popover}, stylex-project-code-file, stylex-project-code-folder-{row,shell},
+stylex-project-code-folder, stylex-project-code-{history-floats,nohead}, stylex-project-code,
+stylex-project-commit-detail-{inline-residual,markdown-editor-mt10}.
+
+Suite: 291 files, 1403 passed / 532 failed / 1 skipped (~25 min).
+
+Config fix (web-test-runner.config.mjs): esbuild resolveMimeType returns
+text/html for /yona/ SPA fallback routes (non-asset, non-api) — the core's
+URL-extension mime fallback typed .ts-suffixed SPA routes as
+text/javascript and esbuild crashed transforming the HTML (500) / the
+browser rendered the source; /yona/ transforms short-circuited (built dist
+served verbatim).
+
+Residuals (all PW-verified): data-style-src DEV-only attr (code-folder,
+code-branch-index, code-file, comment-count); stale pins fixed in copies +
+PW-verified (change-vcs data-toggle scoping, code-browser/file-header
+pull-left/pull-right retained f54b9a330, #spin inline style 38254cc9f,
+comment-count number-of-comments + revision ?branch=#path, folder-row LESS
+nesting regex, code searchStyles scope 270ee07ff); error-wrap needs the
+workspace mock (PW dead backend keeps it pending; WTR unmocked fetch 404s).
