@@ -969,3 +969,36 @@ management-shell/pagination/residual dev-vs-dist fallback-equivalence
 geometry; :hover paint ceilings (write-action, modal close, pagination).
 
 Remaining: 160 of 858 specs converted.
+
+## Wave 30 — committed `87117f4ae` (24 files)
+
+Specs (24): stylex-site-project-list-{row,search,sidebar-nav,
+title-search-shell,title-strip}, stylex-site-update-{available-message,
+breadcrumb,download-action,error-pre,grid-residual,no-update-body,page-shell,
+sidebar,title-shell,title-strip}, stylex-site-user-list-{breadcrumb,
+deleted-row,listhead,page-management-shell,pagination-sprite,pagination,
+row-actions,row-columns,row-identity}.
+
+Suite: 723 files, 2213 passed / 593 failed / 1 skipped (~31 min; +75 passed,
++8 = the documented bucket-2/ceiling families).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- update-*: site-update-content → site-update-setting-wrap owner
+  (update.tsx:187); sidebar SiteAdminSidebar props (update.tsx:193-197);
+  bootstrap base ratios (no responsive.css); content-column parents;
+- user-list-listhead: row-fluid listhead template-literal pin
+  ($branch.tsx:403);
+- user-list-pagination-sprite: paginationSprite(spriteUrl) pin
+  (userList.tsx:57/783/1301);
+- user-list-row-actions stale pins;
+- project-list-row: .listitem retirement (fixture equivalence dropped,
+  migrated pins kept);
+- project-list-search: lineHeight/box-shadow/focus pins updated;
+- project-list-sidebar-nav + row: filter({has}) / nth(:scope) harness
+  gaps → workarounds (documented).
+
+Bucket-2 MATCH (evidence): frozen-fixture unstyled equivalence (legacy CSS
+absent in the baseline env); update-breadcrumb h3 font-size; pagination
+:hover/Enter; user-list columns/actions geometry.
+
+Remaining: 136 of 858 specs converted.
