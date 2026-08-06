@@ -866,3 +866,43 @@ Retired (ceiling): restricted-sidebar-pin :hover computed styles;
 mt10 existsSync screenshot assertion (artifact-only screenshots).
 
 Remaining: 232 of 858 specs converted.
+
+## Wave 27 — committed `8963ec232` (24 files)
+
+Specs (24): stylex-secret-{notfound-error-wrap,setup},
+stylex-signup-validation-popover-position, stylex-site-admin-affix,
+stylex-site-data-{breadcrumb,export-action,page-grid-columns,sidebar,
+title-strip,title-warning-shell,warning-surface}, stylex-site-diagnostic-
+{breadcrumb,error-pre,error-title,no-error-title,page-grid-columns,
+sidebar}, stylex-site-footer, stylex-site-issue-list-{breadcrumb,metadata,
+page-row-shell,pagination-sprite,pagination,residual}.
+
+Suite: 651 files, 1974 passed / 558 failed / 1 skipped (~29 min; +86 passed,
++8 = documented bucket-2/ceiling family).
+
+Shim fixes (main, wtr-compat.ts):
+- `toHaveText` array element-wise uses `allTextContents()` (was calling
+  `locator.textContent()` as a function — TypeError every poll, masked
+  by expectPoll retries);
+- scopedChild index-aware resolution TRIED then REVERTED: broke the
+  aggregate path specs depend on (`nth(0).locator(":scope …")` resolved
+  0 elements); the metadata copy carries an evaluate-based workaround
+  instead (documented divergence).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- site-data-title-strip: owner list + `.span10` → content-column scoping;
+- site-data-export-action + diagnostic-error-pre: `.span10` selectors →
+  stylex content-column owners (siteMngLayout.scala.html:40-72 layout
+  retired);
+- site-diagnostic-sidebar: SiteAdminSidebar props (badgeOwner/navOwner/
+  ownerPrefix);
+- warning-surface: dev debug class token → hash regex (dist strips the
+  debug prefix);
+- issue-list-breadcrumb stale pins.
+
+Bucket-2 MATCH (evidence): data-breadcrumb h3 font-size 15.21px vs legacy
+24.5px (bootstrap.css:714); diagnostic-sidebar links unstyled (orphaned
+sidebarLink slot, _page.less:5251-5264); pagination paint; residual input
+:hover shadow (ceiling).
+
+Remaining: 208 of 858 specs converted.
