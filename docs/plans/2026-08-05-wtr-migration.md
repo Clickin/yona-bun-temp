@@ -834,3 +834,35 @@ Note: sync XHR forbids responseType (InvalidAccessError) — binary
 fixtures must use the async readFile.
 
 Remaining: 256 of 858 specs converted.
+
+## Wave 26 — committed `0df6f43e1` (24 files)
+
+Specs (24): stylex-pull-request-changes-{pending-block,review-owners},
+stylex-pull-request-{conflict-guide,create-edit-geometry,
+detail-header-state-date-mt10,state-info}, stylex-reset-password-
+{bad-request,form,validation-popover}, stylex-restart-notice,
+stylex-restricted-sidebar-pin, stylex-root-{boundary,home-wrapper-parity,
+login-dialog-separator,login-dialog-visibility,login-dialog,notfound-
+error-wrap,sidebar-open-close-popover,toast,usermenu-admin-font,
+usermenu-dropdown-colors,yobi-dialog}, stylex-search-{error-wrap},
+stylex-search.
+
+Suite: 627 files, 1888 passed / 550 failed / 1 skipped (~28 min; +58 passed,
+zero new fails).
+
+Shim fix (main, wtr-compat.ts):
+- `page.clock.runFor(ms)` — waits out the real interval so the app's
+  React-owned timers fire (root-toast dismiss test).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- reset-password-form: y-pins −2px/−4px (legacy geometry drift);
+- reset-password-validation-popover: className template-literal pin
+  (resetPassword.tsx:467), y-pins 243/294/303/354, public/ fixture path;
+- root-toast: `${basePath}` goto (bare '/' mounts the runner page),
+  opacity 0.9 pin, button y 734;
+- root-boundary: fallback-off runtime pins (link stripped, display block).
+
+Retired (ceiling): restricted-sidebar-pin :hover computed styles;
+mt10 existsSync screenshot assertion (artifact-only screenshots).
+
+Remaining: 232 of 858 specs converted.
