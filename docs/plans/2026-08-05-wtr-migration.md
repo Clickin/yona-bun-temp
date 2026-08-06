@@ -761,3 +761,43 @@ path (dist copies public/ verbatim, byte-identical; precedent
 legacy-fallback-off.e2e.ts:830).
 
 Remaining: 304 of 858 specs converted.
+
+## Wave 24 — committed `e00f5c0f6` (24 files)
+
+Specs (24): stylex-project-setting-{logo-branch-result,
+overview-height-dynamic,reviewer-note-ml10,textarea-static},
+stylex-project-setting, stylex-project-settingform-{batch6},
+stylex-project-settingform, stylex-project-transfer-{batch6,
+code-visibility}, stylex-project-transfer, stylex-project-util-shell,
+stylex-project-visibility-badges, stylex-project-watcher-state,
+stylex-project-webhooks-{code-visibility,error-wrap,list-header,
+list-item-headings,list-item-mr20,residual,truncate},
+stylex-project-webhooks, stylex-project-weblabs-portal-shell,
+stylex-projectform-{conditional-displays,inline-residual}.
+
+Suite: 579 files, 1783 passed / 534 failed / 1 skipped (~27 min; +34 passed,
++2 = bucket-2 MATCHes).
+
+Shim fix (main, wtr-compat.ts):
+- `waitForResponse` ResponseFacade gains `json()` (Playwright
+  APIResponse.json(); clone().text() → JSON.parse of the mock body).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- setting-logo-branch-result: inline dynamic logo URL positive pin
+  (setting.tsx:549; legacy setting.scala.html);
+- setting: 7 stale pins (descs-list owner, inline color/minWidth, theme
+  block literals, borderLeftColor cascade, textarea height 80px);
+- webhooks-list-header: list geometry moved to route styles
+  (webhooks.tsx:65-72) — css pins → stylex source + not-contains;
+- webhooks-list-item-headings: `.truncate` → textOverflow/whiteSpace pins;
+- webhooks: paint-only contract scoped to the defineVars theme block;
+- weblabs-portal-shell: bucket-4 (mirror-only weblabs/portal project) —
+  copy adds a container mock + payload contract assertions.
+
+Bucket-2 MATCH (evidence): setting name-popover position:static (legacy
+.popover absolute, bootstrap.css:5334) breaks the branch-drop open in real
+Chrome (PW fails identically); settingform-batch6 setting-box-right 400px
+vs legacy 420px (styles.settingFields zeroes padding-left,
+_page.less:2081/2117-2119).
+
+Remaining: 280 of 858 specs converted.
