@@ -458,3 +458,44 @@ width scoping; inline-residual 8-pin set (MarkdownEditor tabContentPaneOwner/
 wrapId props, taskProgressBar dynamic fn, label-color dropdown-only owner,
 viewerCanUpdate mock); issue-edit container vcs + projects-level mock globs
 (/projects/{owner}/{project}/issues).
+
+## Wave 16 — committed `313240fd4` (24 files)
+
+Specs (24): stylex-project-issue-editform-{inline-residual,label-residual,
+markdown-editor-mt10,owners,secondary}, stylex-project-issue-form-label-colors,
+stylex-project-issue-legacy-popover-position, stylex-project-issue-sharer-list-
+visibility, stylex-project-issueform-assignee-control, -attachments-visible,
+-cancel-button, -due-date, -editor-option-shell, -editor-shell,
+-editor-toolbar-notice, -error, -inline-residual, -markdown-editor-mt10,
+-markdown-tabs, -mention-popup-position, -mention-scroll-dynamic,
+-select-controls, -subtask, -title-options.
+
+Suite: 387 files, 1513 passed / 536 failed / 1 skipped (~26 min). 22/24 fully
+green; no bucket-1/2/4 residuals reported.
+
+Shim fixes (main, wtr-compat.ts / web-test-runner.config.mjs):
+- `Locator.scrollIntoViewIfNeeded` (scrollIntoView nearest + settle sleep);
+  unblocked issueform-assignee-control.
+- XHR uploads: `WtrXHR` wraps XMLHttpRequest in the served index; `send()`
+  routes through `__wtrMockFetch`, defines status/responseText/response
+  getters, fires readystatechange (0→4), upload progress+load (drives
+  `onProgress(100)`), load, loadend. Unblocked attachments-visible upload
+  progress.
+- `toHaveValue` accepts RegExp (Playwright parity).
+- `createFulfilledResponse`: null-body statuses 204/205/304 construct
+  `Response` with `null` body — `new Response("", {status: 204})` throws
+  "Response with null body status cannot have body", which left the
+  attachment delete row stuck in 'deleting' forever (fetch hit the mock,
+  response never constructed). Debugged via mock hit history probe
+  (`__wtrMockHistory`); 3/3 green after fix.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- editform inline-residual 4-pin set: retired 3 redundant inline-style
+  .not.toContain pins (editform.tsx:408/514/1121 duplicate stylex
+  declarations), assignee-input class pin dist-aware
+  (`/^bigdrop .+$/u`), paste-help/upload-help retired toHaveCSS DOM pins
+  (display:none in @layer legacy; right-txt absent from dist).
+- markdown-editor-mt10 + secondary: node:fs (import.meta.dirname/resolve)
+  → string fixture paths (established copy adaptation).
+
+Remaining: 472 of 858 specs converted.
