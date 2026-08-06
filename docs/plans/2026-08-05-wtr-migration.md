@@ -422,3 +422,22 @@ PW-identical); commit review comment button 0x0 yobicon collapse
 warning-none @layer nesting b2d42bdf6, delete-form modal 1366x900 geometry
 ebfd91c33, commits mock glob /projects/.../commits, pathless commits
 empty-warning owner).
+
+## Wave 14 — committed `eec7d9838` (25 files, +2.3k)
+
+Specs (24): stylex-project-home-{dashboard-progress,header-background,header-overview,leave-modal,
+member-avatar-image,member-avatar-wrapper,member-header,milestone-progress,overview-label,overview-static,
+progress,side-panel}, stylex-project-home, stylex-project-import-{mt10,protected-scope,repo-auth},
+stylex-project-import, stylex-project-internal-error-wrap, stylex-project-issue-detail-{body-sidebar,
+conditional-visibility-wave,danger-buttons,disabled-comment-actions-mt10,disabled-vote,error-wrap}.
+
+Suite: 339 files, 1459 passed / 536 failed / 1 skipped (~26 min).
+
+Shim addition: waitForResponse/waitForRequest facades expose status() (real
+mocked status) — specs can predicate on response.status() directly.
+
+Residuals (all PW-verified): data-style-src DEV-only attr (import,
+import-mt10); stale pins fixed in copies + PW-verified (issue-detail-body-
+sidebar MarkdownEditor/UploadForm props refactor, project-home progress
+milestoneProgressBar split :1935, milestone-progress fixture-string raw .txt,
+warning-none nesting); avatar data-URI inline family tolerated.
