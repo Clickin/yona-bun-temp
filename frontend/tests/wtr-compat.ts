@@ -322,7 +322,10 @@ async function createFulfilledResponse(overrides: Record<string, unknown>): Prom
       headerMap.set(key, value);
     }
   }
-  return new Response(payload, { status, headers: headerMap });
+  // 204/205/304 are null-body statuses: `new Response("", { status: 204 })`
+  // throws "Response with null body status cannot have body".
+  const nullBody = status === 204 || status === 205 || status === 304;
+  return new Response(nullBody ? null : payload, { status, headers: headerMap });
 }
 
 // The iframe's own fetch override does not survive navigation (Chrome restores
@@ -343,6 +346,9 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
           const counter = ((top as unknown as Record<string, number>).__wtrMockHits ?? 0) + 1;
           (top as unknown as Record<string, number>).__wtrMockHits = counter;
           (top as unknown as Record<string, unknown>).__wtrMockLast = regex.source;
+          const history = (top as unknown as Record<string, unknown[]>).__wtrMockHistory ?? [];
+          history.push({ url, source: regex.source });
+          (top as unknown as Record<string, unknown[]>).__wtrMockHistory = history;
           (top as unknown as Record<string, unknown>).__wtrRegistry = mockRegistry.map(
             ({ regex: r }) => ({ source: r.source }),
           );
@@ -1163,6 +1169,12 @@ export class Locator {
 
   async count(): Promise<number> {
     return this.resolveElements().length;
+  }
+
+  async scrollIntoViewIfNeeded(): Promise<void> {
+    const element = await this.waitForElement();
+    element.scrollIntoView({ block: "nearest", inline: "nearest" });
+    await sleep(20);
   }
 
   async screenshot(_options?: Record<string, unknown>): Promise<Uint8Array> {
@@ -2070,7 +2082,7 @@ interface ExpectResult {
   toBeHidden(options?: { timeout?: number }): Promise<void>;
   toBeChecked(options?: { timeout?: number }): Promise<void>;
   toBeFocused(options?: { timeout?: number }): Promise<void>;
-  toHaveValue(value: string, options?: { timeout?: number }): Promise<void>;
+  toHaveValue(value: string | RegExp, options?: { timeout?: number }): Promise<void>;
   toHaveURL(expected: string | RegExp, options?: { timeout?: number }): Promise<void>;
   toContain(expected: string | RegExp, options?: { timeout?: number }): Promise<void>;
   toMatch(expected: RegExp, options?: { timeout?: number }): Promise<void>;
@@ -2719,14 +2731,15 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         options?.timeout,
       );
     },
-    toHaveValue: async (value, options) => {
+    toHaveValue: async (value: string | RegExp, options?: { timeout?: number }) => {
       const actualValue = async () => (target instanceof Locator ? target.inputValue() : "");
       await expectPoll(
         async () => {
-          const matches = (await actualValue()) === value;
+          const actual = await actualValue();
+          const matches = typeof value === "string" ? actual === value : value.test(actual);
           return negate ? !matches : matches;
         },
-        `toHaveValue(${value}) — actual: ${await actualValue()}`,
+        `toHaveValue(${String(value)}) — actual: ${await actualValue()}`,
         options?.timeout,
       );
     },

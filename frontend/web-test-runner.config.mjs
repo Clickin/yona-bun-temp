@@ -19,6 +19,47 @@ const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:
 
 const FETCH_MOCK_SCRIPT = `<script>
   window.fetch = function (...args) { return parent.__wtrMockFetch.apply(parent, args); };
+  // The app uploads with progress callbacks via XMLHttpRequest (api/attachments
+  // passes onProgress). Route XHR through the same mock registry as fetch.
+  (function () {
+    const NativeXHR = window.XMLHttpRequest;
+    class WtrXHR extends NativeXHR {
+      open(method, url, asyncFlag, username, password) {
+        this.__wtrMethod = method;
+        this.__wtrUrl = url;
+        return super.open(method, url, asyncFlag, username, password);
+      }
+      send(body) {
+        const xhr = this;
+        parent.__wtrMockFetch(this.__wtrUrl, { method: this.__wtrMethod, body })
+          .then((response) => {
+            return response.text().then((text) => {
+              Object.defineProperty(xhr, "status", { configurable: true, get: () => response.status });
+              Object.defineProperty(xhr, "responseText", { configurable: true, get: () => text });
+              Object.defineProperty(xhr, "response", { configurable: true, get: () => {
+                try { return JSON.parse(text); } catch { return text; }
+              } });
+              Object.defineProperty(xhr, "statusText", { configurable: true, get: () => "OK" });
+              xhr.dispatchEvent(new Event("readystatechange"));
+              Object.defineProperty(xhr, "readyState", { configurable: true, get: () => 4 });
+              xhr.dispatchEvent(new Event("readystatechange"));
+              // Upload-target progress completes (the app's upload.onload ->
+              // onProgress(100) drives the row's progress bar).
+              try {
+                const upload = xhr.upload;
+                upload.dispatchEvent(new ProgressEvent("progress", { lengthComputable: true, loaded: 1, total: 1 }));
+                upload.dispatchEvent(new ProgressEvent("load", { loaded: 1, total: 1 }));
+              } catch (e) {}
+              xhr.dispatchEvent(new ProgressEvent("load", { loaded: 1, total: 1 }));
+              xhr.dispatchEvent(new Event("loadend"));
+            });
+          })
+          .catch(() => {});
+        return undefined;
+      }
+    }
+    window.XMLHttpRequest = WtrXHR;
+  })();
   try { for (const hook of parent.__wtrInitHooks ?? []) { eval("(" + hook.source + ")(" + (hook.argJson || "") + ")"); } } catch (e) {}
   window.confirm = (msg) => { parent.__wtrEmit("dialog", { type: () => "confirm", message: () => msg, accept: () => {}, dismiss: () => {} }); return true; };
   window.alert = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); };
