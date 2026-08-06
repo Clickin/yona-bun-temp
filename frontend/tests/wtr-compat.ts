@@ -388,6 +388,7 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
                 request: () => requestFacade,
                 fulfill: async (opts) => {
                   const response = await createFulfilledResponse(opts);
+                  const responseStatus = response.status;
                   checkResponseWatchers({
                     url: () => requestFacade.url(),
                     request: () => ({
@@ -395,6 +396,7 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
                       url: () => requestFacade.url(),
                       headers: () => requestFacade.headers(),
                     }),
+                    status: () => responseStatus,
                   });
                   resolve(response);
                 },
