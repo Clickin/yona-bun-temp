@@ -4541,3 +4541,5 @@ Manual evidence-only exception note: historical commit 3d966a10710e1d3e7436d1c94
 Manual evidence-only exception note: historical commit 5d5c200b1f2375d5207aeabdd094b25253a4dc0b (feat(e2e): WTR wave 13 — 24 project commit/history specs, viewport-aware pins) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit a81571524855af2c368bd98b072ed1ba67fbc283 (feat(e2e): WTR wave 14 — 24 project-home/import/issue specs, response status()) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 90ee6cfde9afaf4161396d4317a4ecc1a08d306f (feat(e2e): WTR wave 15 — 24 issue-detail specs, 22/24 fully green) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
