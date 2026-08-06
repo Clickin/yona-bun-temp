@@ -19,6 +19,19 @@ const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:
 
 const FETCH_MOCK_SCRIPT = `<script>
   window.fetch = function (...args) { return parent.__wtrMockFetch.apply(parent, args); };
+  // Legacy-compatible forms submit natively (method=post action=...); the
+  // iframe navigation swallows the POST. Route non-React POST submits
+  // (defaultPrevented false) through the mock so waitForRequest sees them.
+  window.addEventListener("submit", (event) => {
+    if (event.defaultPrevented) return;
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    const method = (form.method || "GET").toUpperCase();
+    if (method !== "POST") return;
+    event.preventDefault();
+    const url = new URL(form.action, location.href).href;
+    window.fetch(url, { method, body: new FormData(form), credentials: "include" });
+  });
   // The app uploads with progress callbacks via XMLHttpRequest (api/attachments
   // passes onProgress). Route XHR through the same mock registry as fetch.
   (function () {

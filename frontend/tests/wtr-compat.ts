@@ -66,6 +66,12 @@ export async function readFile(source: URL | string): Promise<string> {
   const href = typeof raw === "string" ? new URL(raw, import.meta.url).href : raw.href;
   const response = await fetch(href);
   if (!response.ok) throw new Error(`wtr readFile: ${response.status} for ${href}`);
+  // Binary fixtures (PNG etc.) return bytes so `byteLength` assertions work
+  // like Playwright's node:fs Buffer.
+  if (/\.(png|jpe?g|gif|webp|ico|woff2?|eot|ttf|otf|svg)$/i.test(href)) {
+    const buffer = await response.arrayBuffer();
+    return new Uint8Array(buffer) as unknown as string;
+  }
   return response.text();
 }
 
@@ -813,6 +819,11 @@ export class Locator {
   }
 
   locator(childSelector: string, options?: { hasText?: string | RegExp; has?: Locator }): Locator {
+    // Playwright scopes a leading child combinator to the parent element
+    // ("> .x" == ":scope > .x"); querySelectorAll rejects a bare ">".
+    if (/^\s*>/.test(childSelector)) {
+      return this.locator(`:scope ${childSelector.trim()}`, options);
+    }
     if (childSelector.trim() === "..") {
       const page = this.page;
       const base = this;
@@ -1170,8 +1181,12 @@ export class Locator {
   async count(): Promise<number> {
     const elements = this.resolveElements();
     // Playwright narrows indexed locators before counting: .first()/.nth(N)
-    // report 1 when >=1 match exists (never 0 via index-out-of-range).
-    if (this.index !== undefined) return elements.length > 0 ? 1 : 0;
+    // report 1 when >=1 match exists (never 0 via index-out-of-range). A
+    // scopedChild keeps the index on the PARENT set — the child chain counts
+    // its own matches (.first().locator(":scope > .x").count() = children).
+    if (this.index !== undefined && this.scopedChild === undefined) {
+      return elements.length > 0 ? 1 : 0;
+    }
     return elements.length;
   }
 
@@ -2052,6 +2067,17 @@ class PageFacade {
     doc.close();
   }
 
+  async dispatchEvent(
+    selector: string,
+    type: string,
+    init?: Record<string, unknown>,
+  ): Promise<void> {
+    // Playwright page.dispatchEvent(selector, type, init): resolve the
+    // selector (strict mode) and dispatch on the first match.
+    const locator = new Locator(this, selector);
+    await locator.dispatchEvent(type, init);
+  }
+
   async evaluateHandle(fn: () => unknown): Promise<unknown> {
     // Lazy iframe-realm handle: resolved when passed into dispatchEvent init.
     return { __wtrHandleSource: fn.toString() };
@@ -2744,7 +2770,14 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       if (!(target instanceof Locator)) return;
       const actualValue = async () => {
         const element = target.current();
-        return element ? (element as unknown as Record<string, unknown>)[name] : undefined;
+        if (!element) return undefined;
+        // Playwright accepts dotted paths ("files.length").
+        let value: unknown = element;
+        for (const part of name.split(".")) {
+          if (value === null || value === undefined) return undefined;
+          value = (value as Record<string, unknown>)[part];
+        }
+        return value;
       };
       await expectPoll(
         async () => {
