@@ -52,6 +52,10 @@ export async function readFile(source: URL | string): Promise<string> {
     resolved = `/tests/frontend/${source.slice("../frontend/".length)}`;
   } else if (typeof source === "string" && source.startsWith("../yona-original/")) {
     resolved = `/yona-original/${source.slice("../yona-original/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("../docs/")) {
+    resolved = `/docs/${source.slice("../docs/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("../src/")) {
+    resolved = `/tests/src/${source.slice("../src/".length)}`;
   } else if (typeof source === "string" && source.startsWith("src/")) {
     resolved = `/tests/src/${source.slice("src/".length)}`;
   } else if (typeof source === "string" && !source.startsWith(".") && !source.startsWith("/")) {
@@ -151,6 +155,12 @@ export function readFileSync(source: URL | string): string {
     resolved = `/tests/frontend/${source.slice("../frontend/".length)}`;
   } else if (typeof source === "string" && source.startsWith("../yona-original/")) {
     resolved = `/yona-original/${source.slice("../yona-original/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("../docs/")) {
+    resolved = `/docs/${source.slice("../docs/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("../src/")) {
+    resolved = `/tests/src/${source.slice("../src/".length)}`;
+  } else if (typeof source === "string" && source.startsWith("src/")) {
+    resolved = `/tests/src/${source.slice("src/".length)}`;
   } else if (typeof source === "string" && !source.startsWith(".") && !source.startsWith("/")) {
     // node:fs resolves bare relative strings against the cwd (frontend/);
     // map them to the /tests/root/ fixture root.
