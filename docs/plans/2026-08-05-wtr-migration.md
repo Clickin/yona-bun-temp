@@ -353,3 +353,24 @@ Fixture-server gotcha (waves 9-10): URL-object fixture reads (fileURLToPath)
 bypass the .txt raw-suffix mapping and get esbuild-transformed (trailing
 commas dropped in multi-line stylex source pins) — always pass fixture paths
 as STRINGS so the .txt suffix serves them raw.
+
+## Wave 11 — committed `4e0fb3c9b` (25 files, +4.2k)
+
+Specs (24): stylex-organization-{menu-setting,new,profile-logo,project-card-avatar-image,project-card-child-paint,
+project-card-stats-icons,pullrequests-action-floats,pullrequests-header-logo,pullrequests-inline-residual,
+pullrequests-pagination,pullrequests,search-category,search-error-wrap,search-pagination,search-results,search,
+setting-form,settingform-inline-residual,settingform-wrong-name,settingform,util-shell},
+stylex-project-branches-{default-badge-ml10,inline-residual}, stylex-project-branches.
+
+Suite: 267 files, 1371 passed / 527 failed / 1 skipped (~25 min).
+
+Shim additions: ../src/ fixture mapping (both readers); readFile gained the
+../docs/ mapping it was missing.
+
+Residuals (all PW-verified): yobicon @font-face collapse under fallback-off
+(project-card lock/stats icons — PW-identical bucket-2 MATCH); data-style-src
+DEV-only attr (branches default badge); stale pins fixed in copies + PW-
+verified: org-new validation owner refactor (n-alert data-errtype, owners 5->4),
+org-setting body->top-box (82a95f70c), org search result-item-content +
+fallback bridge retirement (1b69e66a4), project branches data-toggle scoping
+to .code-browse-wrap, pullrequests sprite dist-hashed.
