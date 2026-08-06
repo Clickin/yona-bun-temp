@@ -1168,7 +1168,11 @@ export class Locator {
   }
 
   async count(): Promise<number> {
-    return this.resolveElements().length;
+    const elements = this.resolveElements();
+    // Playwright narrows indexed locators before counting: .first()/.nth(N)
+    // report 1 when >=1 match exists (never 0 via index-out-of-range).
+    if (this.index !== undefined) return elements.length > 0 ? 1 : 0;
+    return elements.length;
   }
 
   async scrollIntoViewIfNeeded(): Promise<void> {
