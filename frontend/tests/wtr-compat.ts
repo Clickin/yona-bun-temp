@@ -1943,10 +1943,11 @@ class PageFacade {
     throw new Error("waitForFunction: condition never became truthy");
   }
 
-  async waitForURL(url: string | RegExp): Promise<void> {
+  async waitForURL(url: string | RegExp | ((url: URL) => boolean)): Promise<void> {
     await expectPoll(
       async () => {
         const actual = this.url();
+        if (typeof url === "function") return url(new URL(actual));
         if (typeof url !== "string") return url.test(actual);
         const relative = !/^[a-z]+:/i.test(url) && !url.startsWith("//");
         if (url.includes("*")) {
@@ -2011,6 +2012,31 @@ class PageFacade {
       this.iframe.style.width = `${size.width}px`;
       this.iframe.style.height = `${size.height}px`;
     }
+  }
+
+  async setContent(html: string): Promise<void> {
+    // Playwright page.setContent replaces the document with the given HTML
+    // (works without a prior goto). document.open/write/close keeps the same
+    // window (fetch mock, storage) while swapping the document for the
+    // injected fixture DOM.
+    if (!this.iframe) {
+      this.iframe = document.createElement("iframe");
+      this.iframe.id = "wtr-app-frame";
+      this.iframe.style.width = `${this.requestedViewport?.width ?? 1280}px`;
+      this.iframe.style.height = `${this.requestedViewport?.height ?? 720}px`;
+      this.iframe.style.border = "0";
+      this.iframe.style.position = "fixed";
+      this.iframe.style.left = "0";
+      this.iframe.style.top = "0";
+      document.body.appendChild(this.iframe);
+    }
+    installFetchMock(this.iframe, window.fetch);
+    this.applyMediaEmulation();
+    const doc = this.iframe.contentDocument;
+    if (!doc) throw new Error("page: iframe has no contentDocument");
+    doc.open();
+    doc.write(html);
+    doc.close();
   }
 
   async evaluateHandle(fn: () => unknown): Promise<unknown> {
