@@ -801,3 +801,36 @@ vs legacy 420px (styles.settingFields zeroes padding-left,
 _page.less:2081/2117-2119).
 
 Remaining: 280 of 858 specs converted.
+
+## Wave 25 — committed `fe7fe89bc` (24 files)
+
+Specs (24): stylex-projectform-{mt10,vcs-warning-ml10}, stylex-projects-
+{breadcrumb,directory-tabs,empty-sprite,empty-state,final-consumers,
+fork-origin,icons-avatar-image,list-shell,logo-lock-label,page-wrappers,
+pagination-avatar-radius,pagination-input-icons,pagination-shell,
+pagination-sprite,readable-residual,row-content,search,stats-alignment-weight,
+stats-members,text-links-code-update}, stylex-pull-request-branch-{direction-
+ml10,info}.
+
+Suite: 603 files, 1830 passed / 550 failed / 1 skipped (~28 min; +47 passed,
++16 = the :hover/:focus CDP-only ceiling family + 1 dev-vs-dist URL case).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- empty-state: empty-icon CSS-var pin → projectsDirectoryDynamicStyles
+  form (projects.tsx:486/725/728); sprite URL dist-aware regex
+  (stringContaining → /sprite(?:-[A-Za-z0-9_-]+)?.png/);
+- list-shell + readable-residual: className regex tightened to
+  /className=.*\bproject\b/u (empty-sprite migration b2fb2f116
+  false-positive); readable mobile y geometry −30px (5253fbe15);
+- fork-origin mobile geometry stale pins.
+
+Ceiling residuals (evidence; copies keep assertions): directory-tabs
+:hover bg paint (:281); fork-origin :hover; logo-lock-label label
+hover-color/focus; pagination-avatar/shell/one-page/sprite hover polls;
+text-links hover polls; search filter-submit URL canonicalization (dist
+TanStack Router appends labelIds=; dev URL exact-match differs).
+
+Note: sync XHR forbids responseType (InvalidAccessError) — binary
+fixtures must use the async readFile.
+
+Remaining: 256 of 858 specs converted.
