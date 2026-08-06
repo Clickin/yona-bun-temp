@@ -719,3 +719,45 @@ _responsive.less:156-159 override); changes-residual diff-partial-code
 class clobbered by isExpanded spread (viewChanges.scala.html:216-218).
 
 Remaining: 328 of 858 specs converted.
+
+## Wave 23 — committed `57a4f3178` (24 files)
+
+Specs (24): stylex-project-pullrequest-{changes-inline-residual,
+detail-error-wrap,detail-inline-residual,editform-error-wrap,
+editform-inline-residual}, stylex-project-pullrequests-{action-floats,
+error-wrap,list-inline-residual,row-pointer}, stylex-project-reviews-
+{action-floats,batch6,inline-residual,side-effect-button,
+sidebar-count-floats,title-overflow,title-residual}, stylex-project-reviews,
+stylex-project-search-{category,error-wrap,pagination,results},
+stylex-project-search, stylex-project-setting-default-branch-{control},
+stylex-project-setting-default-branch.
+
+Suite: 555 files, 1749 passed / 532 failed / 1 skipped (~27 min; +43 passed,
++1 flake).
+
+Shim fix (main, wtr-compat.ts):
+- `readFileSync` mirrors the async readFile binary branch (arraybuffer
+  responseType for png/jpg/gif/webp/ico/woff*/eot/ttf/otf/svg) —
+  byteLength assertions work like Playwright's Buffer.
+
+Known divergence (documented): `toContainText` on multi-match locators
+aggregates text instead of PW's strict-mode violation — copy-level
+`.first()` scoping is the established convention.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- changes-inline-residual: `.right-txt .ybtn` → thread-actions owner
+  (-pull-request-changes.stylex.ts:40; no literal class);
+- detail-inline-residual: actionWrapper two-prop form
+  (-pull-request-detail.stylex.ts:76);
+- editform-inline-residual: submit scoped to form owner (3 submits on
+  page); merge mock returns a PullRequestCommit so the conflict modal
+  opens (editform.tsx:585-592); saveHelp owners prop (editform.tsx:234);
+- pullrequests-action-floats: `.first()` scoping for duplicate-screen DOM;
+- reviews-title-overflow: `.review-list-wrap` → `.post-list-wrap` rule
+  pin (app.css:2492).
+
+Copy-level: search legacy-fallback.css fixture read via the /yona/ served
+path (dist copies public/ verbatim, byte-identical; precedent
+legacy-fallback-off.e2e.ts:830).
+
+Remaining: 304 of 858 specs converted.
