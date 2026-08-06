@@ -539,3 +539,42 @@ milestone bars render full width vs legacy percentage width
 (partial_list_subtask.scala.html:18, partial_status.scala.html:46).
 
 Remaining: 448 of 858 specs converted.
+
+## Wave 18 — committed `719e9589e` (24 files)
+
+Specs (24): stylex-project-labels-{category-suggestion,error-wrap,
+inline-owners,list-header,preset-color-dynamic}, stylex-project-labelsform
+-{category-heading-mr20,change-vcs-visibility,color-input-dynamic,mr5-inputs,
+owners}, stylex-project-labelsform, stylex-project-members-{code-visibility,
+error-wrap,guest-badge,inline-residual,list}, stylex-project-menu-{count,
+group,nav,setting,shell}, stylex-project-milestone-detail-{action-floats,
+delete-visibility,filter-visibility}.
+
+Suite: 435 files, 1590 passed / 531 failed / 1 skipped (~26 min; −7 failed).
+
+Shim fixes (main, wtr-compat.ts):
+- `page.goto` to the URL already loaded in the iframe now reloads
+  (Chromium skips `iframe.src` assignment to the identical URL → no load
+  event → hang); Playwright same-URL goto semantics. Unblocked
+  milestone-detail-action-floats second viewport pass.
+- `data-style-src` systematic retirement (9 copies, 11 assertions):
+  dev-only StyleX source-attribution metadata, absent from the dist build
+  WTR mounts (project parity helper treats it as env-variant noise;
+  canonicalizer precedent drops the token). Unblocked member-panel-mt10,
+  branches-default-badge-ml10, code-branch-index, code-file,
+  code-file-comment-count, code-folder, import, import-mt10,
+  labelsform-mr5-inputs.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- labels-list-header `.list-head` → `.not.toContain` (colocation complete);
+- labelsform margin pin narrowed (`margin: "30px auto"` — errorMessage
+  margin added -labelsform.stylex.ts:45);
+- members-list pull-left dropped (enrollment-request.stylex.ts owns
+  float:left; legacy members.scala.html:85);
+- menu-count/menu-nav owner prop refactor (count-badge.tsx:27,
+  $projectName.tsx:3417/3484).
+
+Bucket-1 ceilings (evidence): menu-nav :hover background-color
+unsynthesizable (CSS :hover family).
+
+Remaining: 424 of 858 specs converted.
