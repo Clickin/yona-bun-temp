@@ -605,3 +605,36 @@ Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
 - milestones-closed-due-margin ml5 pin.
 
 Remaining: 400 of 858 specs converted.
+
+## Wave 20 — committed `28b60e743` (24 files)
+
+Specs (24): stylex-project-milestones-{error-wrap,hidden-issue,label-color,
+progress-residual}, stylex-project-milestones, stylex-project-new-fork-{index},
+stylex-project-new-fork, stylex-project-new-milestone-{form-paste,
+inline-residual,markdown-editor-mt10}, stylex-project-new-milestone,
+stylex-project-new-pull-request-{form-inline-residual,form-paste,
+markdown-editor-mt10,select2-button}, stylex-project-new-pull-request,
+stylex-project-new-pullrequest-error-wrap, stylex-project-origin,
+stylex-project-overview-{dashboard-headings,dashboard-visible-state,
+dead-small-selector}, stylex-project-post-detail-{comment-edit,delete-modal,
+disabled-comment-actions-mt10}.
+
+Suite: 483 files, 1645 passed / 531 failed / 1 skipped (~26 min; +30 passed,
+zero new fails). No bucket-1 gaps.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- overview-dashboard-headings + visible-state: `.project-overview-home
+  .empty` / `.search-category-wrap li.empty` retired from app.css →
+  `.not.toContain` (empty-state styles now in -project-home.stylex.ts:
+  116-117 / -project-search.stylex.ts:89);
+- new-fork-index: center-txt retained-legacy-class ceiling →
+  `sx.existing.className` pin (newFork.tsx:353; legacy fork.scala.html:53);
+- new-milestone-form-paste: pasteHelp owners-prop refactor
+  (newMilestoneForm.tsx:271/274; file-uploader.tsx:164);
+- new-milestone(+inline-residual/mt10): tab state moved to
+  markdown-editor.tsx:307, dataToggle + owners prop forms
+  (newMilestoneForm.tsx:256-270), route shell gates on container query
+  (mock added — 3 URLs);
+- new-pull-request-form-inline-residual: center-txt pins.
+
+Remaining: 376 of 858 specs converted.
