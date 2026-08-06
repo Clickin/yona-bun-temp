@@ -4563,3 +4563,5 @@ Manual evidence-only exception note: historical commit 8b003319b60a7d6ba9bbfea38
 Manual evidence-only exception note: historical commit 3e1514983a7a35862894228d4afec1ebb4ccd3cf (wtr wave 24: settings/transfer/webhooks batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit dac3ee881f68b95098196962c994f1cedc6b1eef (wtr wave 25: projectform/projects/pull-request-branch batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit c7a9b356f615e507fb9a6e1dbe3d8adfbb46aa9f (wtr wave 26: pull-request/reset-password/root batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.

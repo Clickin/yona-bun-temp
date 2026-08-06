@@ -1904,6 +1904,11 @@ class PageFacade {
         argJson: "",
       });
     },
+    // Playwright clock.runFor(ms) advances fake timers; under WTR the app's
+    // real timers drive the state, so runFor waits out the real interval.
+    runFor: async (milliseconds: number): Promise<void> => {
+      await sleep(milliseconds);
+    },
   };
 
   async waitForResponse(predicate: ResponseWatcher): Promise<ResponseFacade> {
