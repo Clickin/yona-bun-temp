@@ -578,3 +578,30 @@ Bucket-1 ceilings (evidence): menu-nav :hover background-color
 unsynthesizable (CSS :hover family).
 
 Remaining: 424 of 858 specs converted.
+
+## Wave 19 — committed `bd1f48dc2` (24 files)
+
+Specs (24): stylex-project-milestone-detail-{inline-residual,
+issue-meta-counts-labels,issue-row-title-meta,labels,list-action-float,
+mass-update-float,ml10,owners,search-float,state-badge-margin,tabs,
+wrapper-parity}, stylex-project-milestone-detail, stylex-project-milestone-
+edit-form-paste, -edit, -editform-{inline-residual,markdown-editor-mt10,
+owners}, -editform, -error-wrap, -mass-update-buttons, -route-loading,
+stylex-project-milestones-{action-floats,closed-due-margin}.
+
+Suite: 459 files, 1615 passed / 531 failed / 1 skipped (~26 min; +25 passed,
+zero new fails). No bucket-1 gaps (all 3 agents empty).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- milestone-detail-owners padding '10px 0px' → '10px'
+  (-milestone-detail.stylex.ts:114 issueRow; legacy _page.less:3851);
+- milestone-edit: page-wide [data-toggle]/[data-dismiss]/[data-request-
+  method] count 0 → scoped to #milestone-form (the 3 matches are the
+  authenticated sidenav data-toggle="tab" tabs — faithful legacy port of
+  usermenu.scala.html:55-66, parity-correct); button-clear-temporary id
+  moved to markdown-editor.tsx:410 (legacy editor.scala.html:40);
+- milestone-editform(+inline-residual/owners/mt10): wrapperClassName +
+  owners-prop refactors (editform.tsx:202/206/221/224/308);
+- milestones-closed-due-margin ml5 pin.
+
+Remaining: 400 of 858 specs converted.
