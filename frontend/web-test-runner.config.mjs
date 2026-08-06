@@ -253,8 +253,45 @@ const fixturePlugin = {
   },
 };
 
+// SPA routes under /yona/ ending in .ts are served as text/html by the
+// fixture plugin (built-dist app routes — e.g. a not-found URL whose last
+// segment looks like a TS file). The esbuild plugin's default resolveMimeType
+// would re-type them as application/javascript and transform the HTML -> 500;
+// skip the mime override for the whole app base (its static assets already
+// carry correct types).
+const esbuild = esbuildPlugin({ ts: true });
+const originalResolveMimeType = esbuild.resolveMimeType.bind(esbuild);
+esbuild.resolveMimeType = (context) => {
+  const pathname = context.path ?? context.url.split("?")[0];
+  if (
+    pathname.startsWith("/yona/") &&
+    !pathname.startsWith("/yona/assets/") &&
+    !pathname.startsWith("/yona/api/")
+  ) {
+    // SPA fallback routes under /yona/ are served as text/html by the
+    // fixture plugin; without an explicit override the core falls back to the
+    // URL-extension mime (.ts -> text/javascript) and the browser renders the
+    // HTML source instead of booting the app.
+    return "text/html";
+  }
+  return originalResolveMimeType(context);
+};
+const originalTransform = esbuild.transform.bind(esbuild);
+esbuild.transform = async (context) => {
+  const pathname = context.path ?? context.url.split("?")[0];
+  if (pathname.startsWith("/yona/")) {
+    // eslint-disable-next-line no-console
+    console.log("WTRTRANSFORM-SKIP", (pathname.slice(0, 50)), "type:", context.response?.type, "bodyLen:", (context.body ?? "").length);
+    // The built app is served verbatim under /yona/ (dist bundles + SPA
+    // fallback HTML whose last URL segment may look like a .ts file).
+    // Never esbuild-transform it — the HTML would crash the ts loader.
+    return context.body;
+  }
+  return originalTransform(context);
+};
+
 export default {
-  plugins: [fixturePlugin, esbuildPlugin({ ts: true })],
+  plugins: [fixturePlugin, esbuild],
   files: ["tests/wtr/**/*.e2e.ts"],
   mimeTypes: { "**/*.ts": "text/javascript" },
   port: 8128,
