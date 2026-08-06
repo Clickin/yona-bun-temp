@@ -441,3 +441,20 @@ import-mt10); stale pins fixed in copies + PW-verified (issue-detail-body-
 sidebar MarkdownEditor/UploadForm props refactor, project-home progress
 milestoneProgressBar split :1935, milestone-progress fixture-string raw .txt,
 warning-none nesting); avatar data-URI inline family tolerated.
+
+## Wave 15 — committed `936f33268` (24 files, +2.4k)
+
+Specs (24): stylex-project-issue-detail-{event-base,event-state-variants,fixed-inline-owners,font12,
+inline-residual,item-count-groups,keymap-wrapper,label-control,label-geometry,label-search,markdown-editor-mt10,
+modals,owners,parent-subtask-state,selected-child,share-link-secondary,share-link,sidebar-metadata,subtasks,
+upload-parity,voter-summary}, stylex-project-issue-detail, stylex-project-issue-edit,
+stylex-project-issue-editform-error-wrap.
+
+Suite: 363 files, 1488 passed / 536 failed / 1 skipped (~26 min). 22/24 fully
+green; no bucket-1/2/4 residuals.
+
+Stale pins fixed in copies + PW-verified: fixed-inline-owners hidden select2
+width scoping; inline-residual 8-pin set (MarkdownEditor tabContentPaneOwner/
+wrapId props, taskProgressBar dynamic fn, label-color dropdown-only owner,
+viewerCanUpdate mock); issue-edit container vcs + projects-level mock globs
+(/projects/{owner}/{project}/issues).
