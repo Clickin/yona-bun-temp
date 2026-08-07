@@ -3129,19 +3129,30 @@ const DEFAULT_SESSION_MOCK = {
 };
 
 function installDefaultMocks(page: PageFacade): void {
-  page.route("**/api/v1/session", (route) =>
-    route.fulfill({ contentType: "application/json", json: DEFAULT_SESSION_MOCK }),
-  );
-  page.route("**/api/v1/auth/capabilities", (route) =>
-    route.fulfill({
-      contentType: "application/json",
-      json: {
-        emailVerificationEnabled: false,
-        enabledSocialProviders: [],
-        loginIdPlaceholder: "",
-      },
-    }),
-  );
+  // Mocha runs beforeEach hooks BEFORE the test body, so a session mock the
+  // spec registered in beforeEach is already in mockRegistry when this runs
+  // (body wrapper). Registering the anonymous DEFAULT afterwards would shadow
+  // it (last-wins) and flip authenticated screens to the guest branch. Skip
+  // a default when the user already registered the same pattern.
+  const hasMock = (pattern: string): boolean =>
+    mockRegistry.some((entry) => entry.regex.source === globToRegExp(pattern).source);
+  if (!hasMock("**/api/v1/session")) {
+    page.route("**/api/v1/session", (route) =>
+      route.fulfill({ contentType: "application/json", json: DEFAULT_SESSION_MOCK }),
+    );
+  }
+  if (!hasMock("**/api/v1/auth/capabilities")) {
+    page.route("**/api/v1/auth/capabilities", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        json: {
+          emailVerificationEnabled: false,
+          enabledSocialProviders: [],
+          loginIdPlaceholder: "",
+        },
+      }),
+    );
+  }
 }
 
 // Playwright hooks receive the page fixture; mocha's raw hooks don't. Wrap
