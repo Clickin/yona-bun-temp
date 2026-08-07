@@ -357,6 +357,35 @@ esbuild.transform = async (context) => {
   return originalTransform(context);
 };
 
+// Real CSS :hover/:active require a real mouse. The WTR launcher is
+// Playwright, so expose its mouse to the test page via a page bridge;
+// wtr-compat's Locator.hover()/mouse.down()/up() call it after their
+// synthetic dispatch (see wtr-637 Phase B).
+const { PlaywrightLauncher } = await import("@web/test-runner-playwright");
+class RealMouseLauncher extends PlaywrightLauncher {
+  async startSession(sessionId, url) {
+    await super.startSession(sessionId, url);
+    const page = this.activePages.get(sessionId).playwrightPage;
+    await page.exposeFunction("__wtrRealMouse", async (op, x, y) => {
+      if (op === "move") await page.mouse.move(x, y);
+      if (op === "down") {
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+      }
+      if (op === "up") {
+        await page.mouse.move(x, y);
+        await page.mouse.up();
+      }
+      // Resize the real browser viewport to the requested test viewport so
+      // the iframe (fixed at 0,0 with the same size) fills it exactly and
+      // real-mouse coords map 1:1 (the WTR default 800x600 page clips moves).
+      if (op === "setViewport") {
+        await page.setViewportSize({ width: x, height: y });
+      }
+    });
+  }
+}
+
 export default {
   plugins: [fixturePlugin, esbuild],
   files: ["tests/wtr/**/*.e2e.ts"],
@@ -369,19 +398,21 @@ export default {
   browserLogs: true,
   logBrowserLogs: true,
   browsers: [
-    (await import("@web/test-runner-playwright")).playwrightLauncher({
-      product: "chromium",
-      concurrency: 2,
-      launchOptions: {
+    new RealMouseLauncher(
+      "chromium",
+      {
         channel: "chrome",
         headless: true,
         args: ["--no-first-run"],
       },
-      createBrowserContext: ({ browser }) =>
+      ({ browser }) =>
         browser.newContext({
           locale: "en-US",
           viewport: { width: 1280, height: 720 },
         }),
-    }),
+      ({ context }) => context.newPage(),
+      false,
+      2,
+    ),
   ],
 };

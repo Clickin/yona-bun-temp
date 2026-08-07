@@ -1451,6 +1451,26 @@ export class Locator {
     // Record the hover so a later page.mouse.move synthesizes the leave
     // events the app needs to hide popovers.
     (this.page as unknown as { lastHovered: Element | null }).lastHovered = element;
+    // C1 real-mouse bridge: synthetic mouse events cannot match CSS :hover;
+    // move the real Playwright mouse over the element so :hover applies
+    // (coords are iframe-relative; add the iframe's page offset). Also sync
+    // lastMouseX/Y so a later mouse.down()/up() presses where the real cursor
+    // sits (Playwright semantics) instead of the last synthetic move.
+    const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
+    if (typeof bridge === "function") {
+      const iframeRect = this.page.iframe.getBoundingClientRect();
+      // Playwright's hover() auto-scrolls the element into view; the real
+      // mouse needs the element inside the visible viewport for :hover.
+      element.scrollIntoView({ block: "center", inline: "center" });
+      const rect = element.getBoundingClientRect();
+      lastMouseX = rect.left + rect.width / 2;
+      lastMouseY = rect.top + rect.height / 2;
+      await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+        "move",
+        iframeRect.left + lastMouseX,
+        iframeRect.top + lastMouseY,
+      );
+    }
     await sleep(30);
   }
 
@@ -1560,7 +1580,30 @@ export class Locator {
 // ---------------------------------------------------------------------------
 
 class PageFacade {
-  private iframe: HTMLIFrameElement | null = null;
+  private iframeElement: HTMLIFrameElement | null = null;
+
+  // Public read access for the C1 real-mouse bridge (hover/down/up need the
+  // iframe's page offset to translate iframe-relative coords).
+  get iframe(): HTMLIFrameElement {
+    if (!this.iframeElement) throw new Error("page: no active iframe (call goto first)");
+    return this.iframeElement;
+  }
+
+  // Teardown: park the real mouse off-viewport so :hover never leaks into the
+  // next test, then drop the iframe.
+  async removeIframe(): Promise<void> {
+    const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
+    if (typeof bridge === "function") {
+      try {
+        await (bridge as (op: string, x: number, y: number) => Promise<void>)("move", -5, -5);
+      } catch {
+        // Bridge teardown is best-effort; the iframe removal below is the
+        // actual state reset.
+      }
+    }
+    this.iframeElement?.remove();
+    this.iframeElement = null;
+  }
   private requestedViewport: { width: number; height: number } | null = null;
   private mediaEmulation: { reducedMotion?: "reduce" | "no-preference" | "light" } = {};
   readonly keyboard = {
@@ -1627,6 +1670,21 @@ class PageFacade {
 
   private lastHovered: Element | null = null;
 
+  // C1 real-mouse bridge: move/down/up the Playwright mouse (page coords =
+  // iframe offset + iframe-relative coords). No-op when the launcher does
+  // not expose the bridge (synthetic-only fallback).
+  private async realMouse(op: "down" | "up" | "move", x: number, y: number): Promise<void> {
+    const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
+    if (typeof bridge !== "function") return;
+    const iframeRect = this.iframeElement?.getBoundingClientRect();
+    if (!iframeRect) return;
+    await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+      op,
+      iframeRect.left + x,
+      iframeRect.top + y,
+    );
+  }
+
   readonly mouse = {
     click: async (x: number, y: number) => {
       const element = this.document().elementFromPoint(x, y);
@@ -1649,6 +1707,7 @@ class PageFacade {
           }),
         );
       }
+      await this.realMouse("down", lastMouseX, lastMouseY);
       await sleep(20);
     },
     up: async () => {
@@ -1663,6 +1722,7 @@ class PageFacade {
           }),
         );
       }
+      await this.realMouse("up", lastMouseX, lastMouseY);
       await sleep(20);
     },
     move: async (x: number, y: number) => {
@@ -1710,18 +1770,23 @@ class PageFacade {
           new MouseEvent("mousemove", { bubbles: true, clientX: x, clientY: y }),
         );
       }
+      // C1: keep the real mouse in sync so CSS :hover/:active match the
+      // synthetic position (move away => :hover clears).
+      await this.realMouse("move", x, y);
       await sleep(20);
     },
   };
 
   document(): Document {
-    if (!this.iframe?.contentDocument) throw new Error("page: no active iframe (call goto first)");
-    return this.iframe.contentDocument;
+    if (!this.iframeElement?.contentDocument)
+      throw new Error("page: no active iframe (call goto first)");
+    return this.iframeElement.contentDocument;
   }
 
   window(): Window {
-    if (!this.iframe?.contentWindow) throw new Error("page: no active iframe (call goto first)");
-    return this.iframe.contentWindow;
+    if (!this.iframeElement?.contentWindow)
+      throw new Error("page: no active iframe (call goto first)");
+    return this.iframeElement.contentWindow;
   }
 
   async emulateMedia(media: {
@@ -1732,8 +1797,8 @@ class PageFacade {
   }
 
   private applyMediaEmulation(): void {
-    if (!this.iframe?.contentWindow) return;
-    const win = this.iframe.contentWindow;
+    if (!this.iframeElement?.contentWindow) return;
+    const win = this.iframeElement.contentWindow;
     const reducedMotion = this.mediaEmulation.reducedMotion;
     if (!reducedMotion) return;
     const original = win.matchMedia.bind(win);
@@ -1751,41 +1816,59 @@ class PageFacade {
   }
 
   async goto(url: string, options?: { waitUntil?: string }): Promise<void> {
-    if (!this.iframe) {
-      this.iframe = document.createElement("iframe");
-      this.iframe.id = "wtr-app-frame";
-      this.iframe.style.width = `${this.requestedViewport?.width ?? 1280}px`;
-      this.iframe.style.height = `${this.requestedViewport?.height ?? 720}px`;
-      this.iframe.style.border = "0";
-      this.iframe.style.position = "fixed";
-      this.iframe.style.left = "0";
-      this.iframe.style.top = "0";
-      document.body.appendChild(this.iframe);
+    if (!this.iframeElement) {
+      this.iframeElement = document.createElement("iframe");
+      this.iframeElement.id = "wtr-app-frame";
+      this.iframeElement.style.width = `${this.requestedViewport?.width ?? 1280}px`;
+      this.iframeElement.style.height = `${this.requestedViewport?.height ?? 720}px`;
+      this.iframeElement.style.border = "0";
+      this.iframeElement.style.position = "fixed";
+      this.iframeElement.style.left = "0";
+      this.iframeElement.style.top = "0";
+      document.body.appendChild(this.iframeElement);
+    }
+    // Park the real mouse before navigation: the cursor persists across
+    // goto/setViewportSize within a test, so without this a fresh document
+    // would mount with :hover applied and base-paint reads would catch the
+    // border transition mid-flight.
+    await this.realMouse("move", -5, -5);
+    // Keep the parent browser viewport in sync with the iframe size even when
+    // the test never calls setViewportSize (default 1280x720 iframe in an
+    // 800x600 WTR page would clip real-mouse moves below y=600).
+    const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
+    if (typeof bridge === "function") {
+      const width = this.requestedViewport?.width ?? 1280;
+      const height = this.requestedViewport?.height ?? 720;
+      await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+        "setViewport",
+        width,
+        height,
+      );
     }
     const absolute = url.startsWith("http") ? url : new URL(url, location.origin).href;
-    installFetchMock(this.iframe, window.fetch);
+    installFetchMock(this.iframeElement, window.fetch);
     this.applyMediaEmulation();
-    const currentHref = this.iframe.contentWindow?.location.href;
+    const currentHref = this.iframeElement.contentWindow?.location.href;
     // Chromium skips navigation when iframe.src is set to the URL already
     // loaded (no load event → hang); Playwright's same-URL goto reloads.
     // The navigation is triggered AFTER the load listeners register below.
     const sameDocument = currentHref === absolute;
     const { promise, resolve } = Promise.withResolvers<void>();
     const onLoad = () => {
-      this.iframe?.removeEventListener("load", onLoad);
+      this.iframeElement?.removeEventListener("load", onLoad);
       resolve();
     };
-    this.iframe.addEventListener("load", onLoad);
+    this.iframeElement.addEventListener("load", onLoad);
     if (sameDocument) {
-      this.iframe.contentWindow?.location.reload();
+      this.iframeElement.contentWindow?.location.reload();
     } else {
-      this.iframe.src = absolute;
+      this.iframeElement.src = absolute;
     }
     // Any document navigation inside the iframe (goto, reload, location
     // changes from the app) emits framenavigated; the initial load fires
     // before waiters register, so it is harmless.
-    this.iframe.addEventListener("load", () => {
-      const url = this.iframe?.contentWindow?.location.href ?? "";
+    this.iframeElement.addEventListener("load", () => {
+      const url = this.iframeElement?.contentWindow?.location.href ?? "";
       emitWtrEvent("framenavigated", { url });
       emitWtrEvent("request", {
         url: () => url,
@@ -1806,7 +1889,7 @@ class PageFacade {
   }
 
   async goBack(): Promise<void> {
-    const current = this.iframe?.contentWindow;
+    const current = this.iframeElement?.contentWindow;
     if (current) {
       current.history.back();
       await sleep(300);
@@ -1814,10 +1897,10 @@ class PageFacade {
   }
 
   async reload(): Promise<void> {
-    const src = this.iframe?.src;
+    const src = this.iframeElement?.src;
     if (!src) return;
-    installFetchMock(this.iframe as HTMLIFrameElement, window.fetch);
-    this.iframe!.src = src;
+    installFetchMock(this.iframeElement as HTMLIFrameElement, window.fetch);
+    this.iframeElement!.src = src;
     await sleep(300);
   }
 
@@ -1910,7 +1993,7 @@ class PageFacade {
   };
 
   url(): string {
-    return this.iframe?.contentWindow?.location.href ?? "";
+    return this.iframeElement?.contentWindow?.location.href ?? "";
   }
 
   async addInitScript(fn: (arg: never) => void, arg?: unknown): Promise<void> {
@@ -2096,9 +2179,19 @@ class PageFacade {
 
   async setViewportSize(size: { width: number; height: number }): Promise<void> {
     this.requestedViewport = size;
-    if (this.iframe) {
-      this.iframe.style.width = `${size.width}px`;
-      this.iframe.style.height = `${size.height}px`;
+    if (this.iframeElement) {
+      this.iframeElement.style.width = `${size.width}px`;
+      this.iframeElement.style.height = `${size.height}px`;
+    }
+    // Real mouse needs the parent browser viewport to match: the iframe is
+    // fixed at (0,0) sized to the requested viewport, so coords map 1:1.
+    const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
+    if (typeof bridge === "function") {
+      await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+        "setViewport",
+        size.width,
+        size.height,
+      );
     }
   }
 
@@ -2107,20 +2200,20 @@ class PageFacade {
     // (works without a prior goto). document.open/write/close keeps the same
     // window (fetch mock, storage) while swapping the document for the
     // injected fixture DOM.
-    if (!this.iframe) {
-      this.iframe = document.createElement("iframe");
-      this.iframe.id = "wtr-app-frame";
-      this.iframe.style.width = `${this.requestedViewport?.width ?? 1280}px`;
-      this.iframe.style.height = `${this.requestedViewport?.height ?? 720}px`;
-      this.iframe.style.border = "0";
-      this.iframe.style.position = "fixed";
-      this.iframe.style.left = "0";
-      this.iframe.style.top = "0";
-      document.body.appendChild(this.iframe);
+    if (!this.iframeElement) {
+      this.iframeElement = document.createElement("iframe");
+      this.iframeElement.id = "wtr-app-frame";
+      this.iframeElement.style.width = `${this.requestedViewport?.width ?? 1280}px`;
+      this.iframeElement.style.height = `${this.requestedViewport?.height ?? 720}px`;
+      this.iframeElement.style.border = "0";
+      this.iframeElement.style.position = "fixed";
+      this.iframeElement.style.left = "0";
+      this.iframeElement.style.top = "0";
+      document.body.appendChild(this.iframeElement);
     }
-    installFetchMock(this.iframe, window.fetch);
+    installFetchMock(this.iframeElement, window.fetch);
     this.applyMediaEmulation();
-    const doc = this.iframe.contentDocument;
+    const doc = this.iframeElement.contentDocument;
     if (!doc) throw new Error("page: iframe has no contentDocument");
     doc.open();
     doc.write(html);
@@ -3190,7 +3283,7 @@ function withHookFixture(fn: (fixture: Fixture) => void | Promise<void>): () => 
       }
       throw error;
     } finally {
-      fixturePage.iframe?.remove();
+      await fixturePage.removeIframe();
       currentPage = null;
     }
   };
@@ -3259,7 +3352,7 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
       } catch {
         // Storage may be unavailable in some contexts.
       }
-      fixturePage.iframe?.remove();
+      await fixturePage.removeIframe();
       currentPage = null;
     }
   };
