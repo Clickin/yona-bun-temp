@@ -4575,3 +4575,5 @@ Manual evidence-only exception note: historical commit 68d2b26b926388cf58be1b6be
 Manual evidence-only exception note: historical commit 8b623182e7ca4d50f0ea87f1d7f2c81fa09406cf (wtr wave 30: site update/user-list batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit 04f3631e964de3d0faf339471f60b613664b18ce (wtr wave 31: user-list/standalone/user-edit batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit c85096988e97ac83c595bd07e24f8a4d1df41ff0 (wtr wave 32: user issues/password/profile batch (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.

@@ -838,8 +838,14 @@ export class Locator {
   locator(childSelector: string, options?: { hasText?: string | RegExp; has?: Locator }): Locator {
     // Playwright scopes a leading child combinator to the parent element
     // ("> .x" == ":scope > .x"); querySelectorAll rejects a bare ">".
-    if (/^\s*>/.test(childSelector)) {
-      return this.locator(`:scope ${childSelector.trim()}`, options);
+    // Comma lists scope each part that starts with ">" ("> a, > b" ==
+    // ":scope > a, :scope > b").
+    if (/^\s*>/.test(childSelector) || /,\s*>/.test(childSelector)) {
+      const scoped = childSelector
+        .split(",")
+        .map((part) => (/^\s*>/.test(part) ? `:scope ${part.trim()}` : part))
+        .join(", ");
+      return this.locator(scoped, options);
     }
     if (childSelector.trim() === "..") {
       const page = this.page;
@@ -1363,6 +1369,15 @@ export class Locator {
         if (form && typeof form.requestSubmit === "function") {
           form.requestSubmit();
         } else if (form) {
+          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        }
+      } else if (tag === "FORM" && parsed.key === "Enter") {
+        // Playwright: Enter on a non-focusable <form> lands on its focused
+        // input, which performs the implicit submission.
+        const form = element as HTMLFormElement;
+        if (typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        } else {
           form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         }
       }
