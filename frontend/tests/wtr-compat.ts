@@ -1946,6 +1946,11 @@ class PageFacade {
     runFor: async (milliseconds: number): Promise<void> => {
       await sleep(milliseconds);
     },
+    // Playwright clock.fastForward(ms): same real-timer semantics as runFor —
+    // wait out the interval while the app's real timers drive state.
+    fastForward: async (milliseconds: number): Promise<void> => {
+      await sleep(milliseconds);
+    },
   };
 
   async waitForResponse(predicate: ResponseWatcher): Promise<ResponseFacade> {
@@ -3206,7 +3211,9 @@ if (typeof originalBeforeEach === "function") {
       if (fn.length > 0) {
         return withHookFixture(fn as (f: Fixture) => void | Promise<void>).call(this);
       }
-      return (fn as () => void | Promise<void>)();
+      // Zero-arg fns are usually already wrapped by withHookFixture (length 0);
+      // bind mocha's this so the wrapper's this.skip() works.
+      return (fn as () => void | Promise<void>).call(this);
     });
   };
 }
@@ -3216,7 +3223,7 @@ if (typeof originalAfterEach === "function") {
       if (fn.length > 0) {
         return withHookFixture(fn as (f: Fixture) => void | Promise<void>).call(this);
       }
-      return (fn as () => void | Promise<void>)();
+      return (fn as () => void | Promise<void>).call(this);
     });
   };
 }

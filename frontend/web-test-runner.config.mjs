@@ -88,7 +88,7 @@ const FETCH_MOCK_SCRIPT = `<script>
     });
     return parent.__wtrConfirmResult ?? true;
   };
-  window.alert = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); };
+  window.alert = (msg) => { parent.__wtrEmit("dialog", { type: () => "alert", message: () => msg, accept: () => {}, dismiss: () => {} }); };
   window.prompt = () => null;
   if (typeof PerformanceObserver !== "undefined") {
     try {

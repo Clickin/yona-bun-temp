@@ -1,135 +1,98 @@
-# WTR e2e suite: 637-failure remediation
+# WTR 637-failure remediation
 
-> status: planned — enters execution after the wave-36 cutover (committed `98bfa308c`); schedule aligned with the pre-release full sweep
-> slug: wtr-637-failure-remediation
+> status: executing — Phase A (triage) complete 2026-08-08; ledger committed; Phases B–E pending
+> slug: wtr-637-remediation
 > date: 2026-08-07
 
-## Goal
+## Context
 
-Drive the `frontend/tests/wtr/` suite from **2449 passed / 637 failed / 1 skipped**
-(859 files) to a fully-triaged state: every failure classified, the actionable
-families fixed, and the residual documented with a decision. Parallelize the
-final full sweep (`--concurrency N`) as part of the pre-release gate.
+The WTR e2e suite (`frontend/tests/wtr/`, 859 files) is now the only e2e gate (Playwright set deleted at `98bfa308c`) and runs at **2449 passed / 637 failed / 1 skipped**. The ask: classify all 637 failures and drive the suite to a final, documented state — harness gaps fixed, ceiling families resolved by the agreed hybrid decision (small high-value subset gets CDP-real-mouse `:hover` support, the rest retired; geometry triaged against the dist build), and every bucket-2 app parity gap fixed per the parity principle. End state: a full parallel sweep that is green modulo ledgered residuals.
 
-## Ground truth (measured at wave 36, `/tmp/w36-suite.log`)
+Post-cutover there is NO Playwright baseline (originals + config deleted): verification is **WTR-green + legacy source evidence** (`yona-original/`). The wave-16–36 per-test PW verifications remain the historical evidence for the pre-existing families.
 
-- 637 failed (634 unique test names; counts include multi-line per-test marks).
-- Assertion-shape taxonomy (log extraction):
-  - `toEqual` ~239 — geometry / computed-value pins (dev-vs-dist drift + dist
-    cascade diffs, e.g. tag-level input cascade absent from dist,
-    bootstrap.css:1031-1052)
-  - `toHaveCSS` ~168 — computed-style pins (CSS `:hover/:focus/:active`
-    CDP-only ceiling + dist cascade)
-  - `toHaveClass` ~90 / `toContain` ~86 / `toHaveAttribute` ~80 /
-    `toMatchObject` ~56 / `poll` ~23 / `toHaveCount` ~28 / `toMatch` ~14
-  - 92 test names match `matches legacy … DOM|core DOM|screen DOM` (legacy
-    DOM-equivalence family)
-  - 243 names match `hover|preserve|geometry|computed|cascade|paint|frozen`
-  - small bucket-1 residue: `dialog.type is not a function` (2),
-    `Cannot read properties of undefined (reading 'skip')` (2),
-    `page.clock.fastForward` (1), `waitForFunction` (1), `value is not
-    defined` (1), strict-mode violations (6), `Timeout of` (2)
+## Phase 0 — Harness quick fixes (DONE)
 
-## Taxonomy (from the wave 16–36 four-bucket discipline)
+Three one-line harness fixes (committed in the Phase-A commit):
 
-Every wave verified each conversion per-test against a fresh PW baseline, so
-the families below are PW-verified, not inferred:
+1. **`window.alert` payload lacks `type`** — `frontend/web-test-runner.config.mjs:91` now emits `type: () => "alert"`. Fixed `project-pullrequest-edit-form` "blocks submit when merge result has no commits" + "blocks submit when legacy required title is empty".
+2. **`page.clock.fastForward` missing** — `frontend/tests/wtr-compat.ts` clock now has `fastForward` (real-timer wait, identical to `runFor`). Fixed `project-fork-form` "project fork clone completion preserves the configured base path".
+3. **Hook double-wrap drops mocha `this`** — `frontend/tests/wtr-compat.ts:3197` (+ afterEach twin) zero-arg branch now binds `.call(this)`. Fixed the mirror skip gates in `project-issues-real-instance-parity` + `project-issue-detail-parity` (`this.skip()` crash) — both now skip properly.
 
-1. **Bucket-2 app parity gaps (PW fails identically) — the largest family.**
-   Real app-vs-legacy deviations accumulated during the StyleX migration,
-   surfaced at full-suite scale. Examples (evidence in wave commits):
-   tag-level input cascade absent from dist (bootstrap.css:1031-1052,
-   _yobiUI.less:15-18/38-43), upload-progress wrapper lost `pull-right`
-   (fileUploader.scala.html:31), subtask/milestone bars full-width vs legacy %
-   (partial_list_subtask.scala.html:18, partial_status.scala.html:46),
-   ui-kit login-dialog `.error` clobbered by stylex spread
-   (loginDialog.scala.html:38), rightMenu +10px offset
-   (_page.less:7148, issueform.tsx:3593), site-admin/signup/password
-   DOM-equivalence family.
-2. **WTR-environment ceilings (PW passes, WTR cannot)** — CSS
-   `:hover/:focus/:active` computed-style synthesis (CDP-only; PW forces
-   pseudo-classes), dev-vs-dist geometry/@layer drift (WTR mounts the dist
-   production build; PW baselines ran the dev server).
-3. **Bucket-1 harness residue (small)** — `dialog.type()`, a few
-   `waitForFunction`/`toBeFocused`/`clock`/strict-mode cases; fixable in
-   `frontend/tests/wtr-compat.ts`.
-4. **Mirror backend down** — mirror-profile specs `test.skip` in both
-   runners; skip-as-fail MATCH, resolves when the mirror is reachable.
+Verify: tsc 0; the 4 affected specs run **19 passed / 8 failed / 4 skipped**, where the 8 failures are all pre-existing families (fork href/geometry pins, edit-form toContain pin) and the 3 fixed tests + 2 mirror skips behave as expected.
 
-## Phases
+## Phase A — Triage (DONE)
 
-### Phase A — Triage (subagents, 1 wave)
-Build a per-spec failure ledger for all 637: spec → failing test → family
-(1/2/3/4) → evidence (legacy source line for bucket-2, error kind for
-bucket-1, exact pin for bucket-3). Inputs: `/tmp/w36-suite.log` extraction +
-wave 16–36 per-spec reports (`agent://WtrWave*`). Output: committed ledger in
-`docs/provenance/wtr-637-ledger.md` + per-family counts. No code changes.
+1. Fresh full-suite run (`/tmp/suite-1.log`, ~34.5 min serial): **2450 passed / 632 failed / 5 skipped** — delta from wave-36 (637 failed / 1 skipped) reconciles exactly: −2 mirror-skip errors (now skips), −2 dialog tests, −1 fastForward test, +4 skips.
+2. Parsed with the extraction script → `/tmp/fails.json`: **632 rows across 210 specs**, == runner failed count, 0 missing / 0 duplicated.
+3. 27 triage agents (9 waves × 3 × 8) classified every row → **`docs/provenance/wtr-637-ledger.md`** (632 triage rows + 5 history rows F1/F8).
 
-### Phase B — Bucket-1 harness patches (main, one batch)
-Fix the small residue in `wtr-compat.ts`:
-`dialog.type()` facade, `waitForFunction` polling edge cases, `toBeFocused`
-semantics, `clock.fastForward`, `Cannot read …'skip'` guard. Re-run affected
-specs; expect a handful of green flips.
+### Family counts (ledger)
 
-### Phase C — WTR-ceiling decision (per family, with user sign-off)
-For each ceiling family choose one of:
-- **(C1) CDP-backed pseudo-state synthesis** — add a CDP/`page._client`-style
-  force-`:hover/:focus/:active` hook so computed-style pins become meaningful.
-  Highest fidelity; most work; WTR runs via `@web/test-runner-playwright`
-  (CDP available).
-- **(C2) Retire the assertion in copies** — precedent: `data-style-src`
-  retirement + wave-33 `:hover` block retirements. Acceptable where the pin
-  is redundant with base-state paint + geometry.
-- **(C3) Standardize geometry baselines on dist** — triage PW baselines
-  against the dist preview (not the dev server) so dev-vs-dist drift stops
-  being a two-runner delta; fix the app where dist is genuinely wrong.
+| family | count | disposition |
+|---|---|---|
+| F7 app-fix | 307 | app-fix 307 (Phase D) |
+| F6 pin-stale | 162 | copy-fix-current-dom 121, retained-class-retention 41 (Phase C) |
+| F3 C1-candidate | 87 | C1-candidate 87 (Phase B) |
+| F5 dist-geometry | 46 | copy-fix-dist-truth 46 (Phase C) |
+| F2 harness-investigate | 26 | harness-investigate 26 (Phase B) |
+| F4 C2-retire | 4 | C2-retire 4 (Phase C) |
+| **total** | **632** | |
 
-Default recommendation: C3 for all dev-vs-dist geometry, C1 for
-`:hover/:focus/:active` paint pins that are the sole coverage of a legacy
-interaction state, C2 for redundant pins.
+## Phase B — C1 real-mouse bridge (main agent; applies to the 87 F3 rows)
 
-### Phase D — Bucket-2 app-fix batches (subagents, parity principle)
-Fix the app where it deviates from `yona-original/`, keeping legacy DOM/copy
-verbatim (667398a04-style restores; frozen files untouched). Batch by family
-(tag cascade, bar widths, wrapper classes, DOM-equivalence screens), each fix
-evidenced with the legacy source line + the owning spec going green.
-Screens where the app is already parity-correct stay bucket-2 MATCH with
-their evidence (documented residual, not silent).
+Real CSS `:hover`/`:active` require a real mouse; the WTR launcher is Playwright, so expose its mouse to the test page:
 
-### Phase E — Final sweep + gate (main, escalated)
-1. Full suite with `--concurrency N` (measured serial ~34 min; target
-   <10 min).
-2. Gate: `pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir
-   frontend test:e2e:stylex-final -- .`
-3. Expected end state: 0 unexpected failures; remaining = documented
-   residuals (mirror skips, agreed C2 retirements) with ledger entries.
+1. `frontend/web-test-runner.config.mjs` — replace the `playwrightLauncher({…})` with a `RealMouseLauncher extends PlaywrightLauncher` subclass that `exposeFunction("__wtrRealMouse", …)` after `startSession` (page = `this.activePages.get(sessionId).playwrightPage`; constructor args mirror `playwrightLauncher()` defaults, keeping the chrome channel + viewport context).
+2. `frontend/tests/wtr-compat.ts` `Locator.hover()` (line ~1446) — after synthetic dispatch, call the bridge `("move", iframeOffset + elementCenter)` so the real mouse sits over the element and CSS `:hover` matches.
+3. `mouse.down()`/`mouse.up()` (line ~1630) — call the bridge `("down"|"up", lastMouseX, lastMouseY)` after the synthetic dispatch.
+4. Cleanup — in `runWithPage`'s `finally` (line ~3224): bridge `("move", -5, -5)` off-viewport so `:hover` never leaks.
+5. Apply: re-run each F3 spec; hover assertion must flip green. Contingency (pre-decided): a specific test that stays red retires as F4/C2 with a ledger note — never blocks the wave.
 
-## Definition of Done
+## Phase C — C2 retirements + F5/F6 copy fixes (subagent waves, mechanical)
 
-- Ledger committed with all 637 rows (family + evidence + disposition).
-- Bucket-1 residue fixed (Phase B) and WTR-green.
-- Every bucket-2 family either app-fixed (spec green) or documented MATCH
-  with legacy evidence.
-- Ceiling families resolved via C1/C2/C3 decision, recorded per family.
-- Full suite green under the parallelized sweep; gate passes; residuals
-  counted and ledgered.
-- This plan doc + ledger appended to the migration narrative.
+1. **C2** (4 F4 rows): retire the `:hover/:focus/:active` computed-style assertion block with the wave-33 comment.
+2. **F5** (46 rows): fix the copy's geometry pin to the measured dist truth where app == legacy (add `// F5 dist-truth`).
+3. **F6** (162 rows): wave-33 retained-class flips (absence → retention, 41) + stale-pin fixes to current DOM (121); app gaps → F7.
+4. Cadence: 3 agents × 8 specs/wave; affected specs + tsc after each wave; full suite every 2 waves.
 
-## Deferred scope
+## Phase D — bucket-2 app fixes (subagent waves, parity principle; 307 F7 rows)
 
-- Playwright-side re-verification is not part of the remediation (the PW
-  set is deleted; parity principle is enforced by app-side evidence).
-- Mirror-profile real-instance runs (backend down) — blocked until
-  `192.168.45.20` is reachable.
-- The 3 pre-existing `yona-legacy-parity-gate.test.mjs` contract failures
-  (repo.rs / canonical-migration-crate bucket mappings) — separate clean-up,
-  not e2e scope.
+Grouped batches (assign at triage time; expected from triage evidence):
+- **D1 tag-level cascade** — inputs/selects/buttons render UA defaults; port `yona-original/public/bootstrap/css/bootstrap.css:1031-1052` + `_yobiUI.less:15-18,38-43` into `frontend/src/app.css` `@layer legacy`.
+- **D2 wrapper-class retention** — `pull-right`, `ybtn`, `gnb-outer project-header`, `page-wrap-outer`, `search-box-wrap` etc. → route TSX class/template retention (667398a04-style).
+- **D3 DOM-equivalence screens** — site-admin family, milestone-edit-form, signup, password, email-settings, user-files, posts, loginform, nested-layout shell nodes, fork-form → per-screen audit vs legacy `.scala.html`.
+- **D4 dist-geometry-truth** — dist renders ≠ legacy (line-height 18px root, legend, h3/h4/h5, pagination input heights): fix in app.css `@layer legacy` or route stylex.
+
+Per-fix contract: legacy file:line evidence; owning spec green under WTR; frozen `yona-original/**` never modified; no new abstractions; no route DOM escapes. Full suite every 2 waves.
+
+## Phase E — Final sweep + gate (main agent)
+
+1. Full suite parallelized: `--concurrency 4` (config default 2); record serial vs parallel wall time (target <12 min).
+2. Gate: `pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir frontend test:e2e:stylex-final -- .`
+3. Residual = ledger rows only (F8 mirror skips + agreed C2 retirements + documented F7-MATCH rows). Zero unexpected failures.
+4. Append final numbers + residual list to this doc and the ledger tail.
+
+## Critical files & anchors
+
+- `frontend/web-test-runner.config.mjs:91` (alert `type`), `:366-388` (launcher + concurrency) — Phase 0 done, Phase B.
+- `frontend/tests/wtr-compat.ts:1925` (clock), `:3197` (hook `this`), `:1446` (hover), `:1630` (mouse), `:3224` (runWithPage finally) — Phase 0 done, Phase B.
+- `frontend/tests/wtr/{project-pullrequest-edit-form,project-fork-form,project-issues-real-instance-parity,project-issue-detail-parity}.e2e.ts` — Phase 0 anchors (verified).
+- `/tmp/fails.json` (Phase A extraction) — triage input (done).
+- `docs/provenance/wtr-637-ledger.md` (committed) + this doc — deliverables.
 
 ## Verification
 
-- Phase A: ledger counts sum to 637 and match the log extraction.
-- Phase B: tsc 0 + affected specs green.
-- Phase D: each fix's owning spec green under WTR; no new failures in the
-  full suite.
-- Phase E: `test:e2e:stylex-final` gate pass; wall-clock recorded before/after
-  `--concurrency`.
+- Phase 0: tsc 0; 4 affected specs → 3 green + 2 mirror skips (DONE).
+- Phase A: 632 ledger rows == runner failed count; every row has family + disposition + evidence; committed (DONE).
+- Phase B: tsc 0; an F3 spec's `:hover` computed-style assertion passes; no new failures in the F3 specs' other tests.
+- Phase C/D: each wave's affected specs green; no new failures in the full suite after each 2 waves.
+- Phase E: full parallel sweep — residual failures exactly equal the ledger's remaining F8/F4/F7-MATCH rows; gate passes; wall time recorded.
+
+## Assumptions & contingencies
+
+- Hybrid ceiling decision (user): F3 subset gets C1 real-mouse support; everything else C2-retire; geometry triaged against dist.
+- All bucket-2 app gaps get fixed; a row where the app actually equals legacy is F5/F6 (copy fix), never F7.
+- Verification is WTR-green + `yona-original/` evidence — no PW baseline post-cutover.
+- If the C1 bridge fails on a specific test, retire that pin (F4) — pre-decided, no stall.
+- The 2 known `Timeout of 30000ms` rows are F2-classified and get re-checked after Phase D (slow-mock artifacts).
+- The 3 pre-existing `tests/yona-legacy-parity-gate.test.mjs` contract failures (repo.rs / canonical-migration-crate bucket mappings) are out of scope — separate cleanup.
