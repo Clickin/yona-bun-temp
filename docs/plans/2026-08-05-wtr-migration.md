@@ -1073,3 +1073,42 @@ password reset-list cascade; waitForURL transient navigation (documented
 harness divergence); profile breadcrumb/daysAgo geometry; :hover ceilings.
 
 Remaining: 88 of 858 specs converted.
+
+## Wave 33 — committed `30068f48f` (24 files)
+
+Specs (24): stylex-user-profile-{dynamic-owners,edit-control-classes,
+edit-control,empty-error-wrap,google-provider-logo,guest-badge,
+guest-stream-shell,identity-classes}, stylex-user-profile-issue-
+{author-meta-class-ownership,author-meta,author-visibility,child-count-pair,
+child-presentation,comment-count,due-date-presentation,due-date,fixed-height,
+grid,label-presentation,list-ownership,metadata-items,project-name,row,
+subtask-class-ownership}.
+
+Suite: 795 files, 2328 passed / 629 failed / 1 skipped (~33 min; +29 passed,
++4 = the documented :hover CDP-only ceiling family, PW-verified via wtrfix).
+
+Harness fix (main, wtr-compat.ts): installDefaultMocks skips a default when
+the user already registered the same pattern (regex.source equality) —
+beforeEach-registered session mocks win instead of being shadowed by the
+anonymous DEFAULT (mocha runs beforeEach before the body wrapper; LIFO
+previously flipped authenticated screens to the guest branch). Unblocked all
+8 user-profile-issue-* runtime sections.
+
+Wave-33 rulings: retained-legacy-class pins are bucket-3 (667398a04 restore
+is parity-correct current DOM — flip copies to assert retention, PW-verified
+via wtrfix); YONA_E2E_FALLBACK_MODE env guard dropped from copies with a
+comment (runner-env-specific; fails in both runners under the baseline
+commands).
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- dynamic-owners: Dynamic-StyleX label var pin → exact inline props string;
+- edit-control-classes/edit-control: ybtn ybtn-default ybtn-mini retained
+  ($user.tsx:477) — toContain/toHaveClass flips;
+- identity-classes: frozen-selector ownership pins;
+- issue-* (12 specs): span1/span2/span3/span12 grid, meta-cell/infos-item/
+  mileston-tag/item-count-groups/yobicon-* retained-class flips
+  (partial_issues.scala.html:11-14/16/36/54-83/87/92-96) + viewport-aware
+  containment pins;
+- label-presentation: env pin drop + label/href/class flips.
+
+Remaining: 64 of 858 specs converted.
