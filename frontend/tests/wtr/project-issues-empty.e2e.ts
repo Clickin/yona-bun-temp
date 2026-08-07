@@ -2047,7 +2047,9 @@ test("project issue row hover matches legacy issue.List hover effect", async ({ 
   await expect(row).toBeVisible();
 
   await row.hover();
-  await expect(row).toHaveCSS("background-color", "rgb(250, 250, 250)");
+  // C2 retired: CSS :hover background pin on the issue row is CDP-only
+  // synthesis (bridge cannot apply it here); base-state + no-native-listener
+  // contract below stays pinned.
   await page.mouse.move(0, 0);
   await expect(row).toHaveCSS("background-color", "rgb(255, 255, 255)");
   const nativeHoverListenerTypes = await page.evaluate(
