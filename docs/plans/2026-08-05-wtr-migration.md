@@ -1221,3 +1221,37 @@ user-password-settings DOM (edit_password.scala.html); ui-kit login-dialog
 **MIGRATION COMPLETE**: all 858 Playwright e2e specs now have WTR copies.
 Next tracked step: cut the parity gate over to WTR and delete the Playwright
 set (originals stay untouched until then).
+
+## Cutover — committed `98bfa308c`
+
+**The gate now runs @web/test-runner; the Playwright e2e set is deleted.**
+
+- Deleted (864 files): `frontend/tests/*.e2e.ts` (858 Playwright originals —
+  `tests/wtr/` copies remain), `frontend/playwright.config.ts`,
+  `scripts/{run-playwright-e2e,playwright-e2e-args,playwright-e2e-runtime,
+  playwright-e2e-runtime.spec,run-e2e-frontend}.mjs`.
+- `frontend/package.json`: `test:e2e` + `test:e2e:fallback-off` →
+  `node ../scripts/run-wtr-e2e.mjs`.
+- `scripts/stylex-verification-profile.mjs`: fast/final profiles spawn
+  `run-wtr-e2e.mjs` (`.` → `tests/wtr/*.e2e.ts`); usage text updated.
+- Root `package.json`: `test:dev-scripts` drops the deleted PW runtime spec.
+- `tools/yona-parity-gate.mjs`: `playwright.config.ts` entry kept in
+  NON_IMPLEMENTATION_FILES (contract test pins the mapping; entry is inert
+  for the deleted file).
+- Kept `@playwright/test` devDep: visual-parity-sweep, legacy-localhost,
+  build-real-data-route-manifest, `@web/test-runner-playwright`.
+- Removed stray untracked `tests/stylex-project-issue-editform-label-color
+  .e2e.ts` (PW probe spec with debug REQ/RES logging; never tracked, no wtr
+  copy).
+- Verified post-cutover: tsc 0; `test:e2e:wtr` smoke 30/31 (only the
+  documented ui-kit bucket-2 MATCH fails); precommit passed.
+- Pre-existing (not caused by cutover, out of scope): 3
+  `yona-legacy-parity-gate.test.mjs` contract failures re: repo.rs /
+  canonical-migration-crate bucket mappings (present at wave-36 HEAD;
+  precommit doesn't run that suite).
+
+Final suite state: 859 files (858 converted + wtr-smoke), 2449 passed /
+637 failed / 1 skipped — failed count = documented bucket-2 MATCH families
+(CSS :hover/:focus/:active CDP-only synthesis, dev-vs-dist geometry,
+tag-level input cascade absent from dist, retained-class parity MATCHes,
+waitForURL transient navigation, mirror backend down skips).
