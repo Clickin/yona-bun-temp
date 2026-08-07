@@ -7,7 +7,7 @@ export const STYLEX_VERIFICATION_PROFILES = Object.freeze({
   fast: Object.freeze({
     name: "fast",
     required: [
-      "focused fallback-off Playwright",
+      "focused fallback-off WTR",
       "desktop/mobile target metrics",
       "source and provenance checks",
     ],
@@ -21,7 +21,7 @@ export const STYLEX_VERIFICATION_PROFILES = Object.freeze({
   final: Object.freeze({
     name: "final",
     required: [
-      "focused fallback-off Playwright",
+      "focused fallback-off WTR",
       "desktop/mobile target metrics",
       "live legacy screenshot pair",
       "exact pixel/geometry review",
@@ -72,8 +72,8 @@ export function injectPreviewRuntimeConfig(html, basePath) {
 
 function usage() {
   return [
-    "Usage: node scripts/stylex-verification-profile.mjs --profile fast -- <focused Playwright args>",
-    "       node scripts/stylex-verification-profile.mjs --profile final -- <final Playwright args>",
+    "Usage: node scripts/stylex-verification-profile.mjs --profile fast -- <focused WTR spec paths>",
+    "       node scripts/stylex-verification-profile.mjs --profile final -- .",
     "",
     "fast: target-level fallback-off validation for an active wave.",
     "final: final visual lock; also requires the documented legacy/global/build checks.",
@@ -132,7 +132,12 @@ async function main() {
 
   const child = spawn(
     process.execPath,
-    [path.join(scriptDirectory, "run-playwright-e2e.mjs"), ...forwardedArgs],
+    [
+      path.join(scriptDirectory, "run-wtr-e2e.mjs"),
+      // WTR mounts frontend/dist (the fallback-off build built above); a
+      // bare "." selects the whole in-browser suite.
+      ...forwardedArgs.map((arg) => (arg === "." ? "tests/wtr/*.e2e.ts" : arg)),
+    ],
     {
       cwd: path.resolve(scriptDirectory, ".."),
       env,
