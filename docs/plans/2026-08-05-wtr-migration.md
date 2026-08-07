@@ -1002,3 +1002,40 @@ absent in the baseline env); update-breadcrumb h3 font-size; pagination
 :hover/Enter; user-list columns/actions geometry.
 
 Remaining: 136 of 858 specs converted.
+
+## Wave 31 — committed `44171afb5` (24 files)
+
+Specs (24): stylex-site-user-list-{row-shell,search-controls,sidebar-nav,
+state-tabs,title-search-shell,title-strip}, stylex-standalone-login-{form,
+verification-help}, stylex-standalone-signup-{confirmation-notice,form,
+validation-popover}, stylex-tasklist-static-owners,
+stylex-uikit-issue-label-dynamic, stylex-user-editform-{avatar-upload-mt10,
+avatar-visibility,emails-inline-residual,inline-residual,profile-fields-mt10},
+stylex-user-email-{add-form,description,primary-identity,secondary-row,
+table-shell}, stylex-user-files-screen.
+
+Suite: 747 files, 2266 passed / 611 failed / 1 skipped (~32 min; +53 passed,
++18 = the documented bucket-2/ceiling/MATCH families).
+
+Shim fix (main, wtr-compat.ts):
+- `pressSequentially` dispatches keydown/keyup per character (Playwright
+  typing semantics; apps validate on keyup) — unblocked signup
+  validation-popover t2.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- user-list-row-shell: row-fluid listitem template-literal pin
+  ($branch.tsx:429);
+- email-description: separatorTheme slice end (-emails.stylex.ts:35
+  emailSecondaryRowColors); geometry 36/72 + tableTop;
+- email-primary-identity: multiline avatar + secondaryAddressStyleProps
+  pins (emails.tsx:424-431); tops −4/−8px;
+- email-secondary-row + table-shell stale pins;
+- signup-form/confirmation: fixture path + stale source pins.
+
+Bucket-2 MATCH (evidence): frozen-fixture unstyled equivalence;
+search-controls .search-btn 13.34/6.58 vs 14/5 (_yobiUI.less:1386-1393);
+title/search shell fallback geometry; signup t1/t4/t5 stale-source +
+dev-vs-dist; user-files-screen; :hover ceilings (email-add-form,
+secondary-row).
+
+Remaining: 112 of 858 specs converted.
