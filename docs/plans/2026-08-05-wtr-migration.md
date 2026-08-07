@@ -1186,3 +1186,38 @@ copies, deleted) — wave-33 retained-class ruling throughout ($user.tsx
   avatars (fetch mock bypass).
 
 Remaining: 16 of 858 specs converted.
+
+## Wave 36 (FINAL) — committed `61edf67ca` (16 files; 858/858 converted)
+
+Specs (16): stylex-user-profile-{tab-count-badges,top-tabs,
+two-column-margin}, stylex-user-profile, stylex-user-settings-
+{breadcrumb,edit-tabs,page-shell,profile-field-rows},
+stylex-verified-user-success, ui-kit, user-direct-issue-form, user-files,
+user-notification-settings, user-password-settings, user-project-leave,
+user-settings-nested-layout.
+
+Suite: 859 files (858 originals + wtr-smoke harness spec), 2449 passed /
+637 failed / 1 skipped (~34 min; +68 passed, +5 = bucket-2 MATCH family).
+
+No harness gaps. Bucket-3 copy fixes (agents, PW-verified via temp wtrfix
+copies, deleted):
+- tab-count-badges/top-tabs: tab-pane active retention + num-badge count
+  3→6; two-column-margin: show-subtasks mr10 retention;
+- settings-breadcrumb/edit-tabs: theme pins scoped to the defineVars color
+  blocks (-editform.stylex.ts growth), app.css indent 4;
+- verified-user-success: resetPasswordTaglinePaddingTop/TitleLineHeight
+  retired (theme.stylex.ts inlined; route paddingTop 80px/lineHeight 42px);
+- ui-kit: yobiToasts/modal-backdrop-in source forms, select2.css →
+  app.css source:select2 pin;
+- user-files/user-password-settings/user-notification-settings/
+  user-project-leave/user-settings-nested-layout: retained-class flips.
+
+Bucket-2 MATCH (5, PW-identical evidence): crop-modal mobile containment;
+user-direct-issue-form rightMenu +10px offset missing (_page.less:7148
+.right-menu margin-top:10px not ported, issueform.tsx:3593); user-files DOM;
+user-password-settings DOM (edit_password.scala.html); ui-kit login-dialog
+.error class clobbered by stylex spread (loginDialog.scala.html:38).
+
+**MIGRATION COMPLETE**: all 858 Playwright e2e specs now have WTR copies.
+Next tracked step: cut the parity gate over to WTR and delete the Playwright
+set (originals stay untouched until then).
