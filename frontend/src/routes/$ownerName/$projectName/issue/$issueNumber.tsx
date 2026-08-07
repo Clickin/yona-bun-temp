@@ -947,6 +947,7 @@ function IssueDetailBody({
             >
               <div
                 {...stylex.props(styles.boardActionGroup)}
+                className={`${stylex.props(styles.boardActionGroup).className} pull-left`}
                 data-stylex-owner="project-issue-detail-board-action-group"
               >
                 <div>

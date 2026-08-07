@@ -262,10 +262,27 @@
   textarea,
   select {
     padding: 4px 6px;
+    font-size: 12px;
+    line-height: 20px;
     color: #333;
+    vertical-align: middle;
     background-color: #fff;
     border: 1px solid #ccc;
-    border-radius: 3px;
+    border-radius: 2px;
+  }
+
+  input,
+  textarea {
+    height: 20px;
+  }
+
+  select {
+    height: 30px;
+    line-height: 30px;
+  }
+
+  textarea {
+    height: auto;
   }
 
   input,
@@ -598,6 +615,13 @@
   .avatar-wrap.smaller {
     width: 20px;
     height: 20px;
+  }
+
+  /* legacy truth: _common.less:147 `.avatar-wrap.small { width:24px; height:24px; }`
+     (timeline event sender avatars render 24px, not the 32px base) */
+  .avatar-wrap.small {
+    width: 24px;
+    height: 24px;
   }
 
   .avatar-wrap.mlarge {
@@ -1082,6 +1106,107 @@
     color: #007fca;
     background: transparent;
     border: 0;
+  }
+
+  /* source:_page.less:3999-4055 — legacy .item-count-groups block (issue list
+     row comment/vote/sharer counters). The app's generated legacy fallback
+     stylesheet is not loaded in this profile, so port the frozen rules. */
+  .item-count-groups {
+    border: 1px solid #eee;
+    border-radius: 3px;
+    line-height: 14px;
+    margin-top: 2px;
+  }
+
+  .item-count-groups .comments-count:hover {
+    color: #be00be;
+  }
+
+  .item-count-groups .vote-count:hover {
+    color: #f68c52;
+  }
+
+  .item-count-groups .vote-color {
+    color: #f36c22;
+  }
+
+  .item-count-groups .comments-count-color {
+    color: #8b008b;
+  }
+
+  .item-count-groups .sharer-color {
+    color: #007fca;
+  }
+
+  .item-count-groups a:nth-child(2) {
+    margin-left: -5px;
+  }
+
+  .item-count-groups a:nth-child(3) {
+    margin-left: -5px;
+  }
+
+  .item-count-groups .count-groups {
+    margin: 0 auto;
+    display: inline-block;
+    text-align: center;
+    padding: 0 5px;
+  }
+
+  .item-count-groups .count-groups.item-icon {
+    font-size: 9px;
+    padding-top: 2px;
+    line-height: 12px;
+    border-left: 1px solid #eee;
+  }
+
+  .item-count-groups .count-groups.item-icon:first-child {
+    border-left: none;
+  }
+
+  .item-count-groups .count-groups.item-count {
+    padding: 0 5px 0 0;
+  }
+
+  /* source:_page.less:1821 + 3748-3764 — issue list shell + search option rows */
+  .issue-list-wrap {
+    clear: both;
+  }
+
+  .issue-option {
+    width: 100%;
+    margin-bottom: 16px !important;
+  }
+
+  .issue-option dt {
+    margin-bottom: 5px;
+  }
+
+  .issue-option dd {
+    margin: 0;
+  }
+
+  .issue-option dd .btn-group {
+    width: 100%;
+  }
+
+  .issue-option dd select {
+    width: 100%;
+  }
+
+  /* source:bootstrap — bootstrap.css:6113-6115 .affix + _page.less:5491-5501
+     .mass-update-wrap.affix (issue list mass-update toolbar pin-on-scroll) */
+  .affix {
+    position: fixed;
+  }
+
+  .mass-update-wrap.affix {
+    top: 0;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    width: 100%;
+    background: #fff;
+    z-index: 900;
   }
 
   .issue-label {
@@ -2901,7 +3026,9 @@
   }
 
   .issue-info {
-    padding: 15px 0 0 52px;
+    /* legacy truth: _responsive.less:553-687 `@media all` unconstrained override
+       (compiled after _page.less:3561) pins 15px 0 0 10px at every width */
+    padding: 15px 0 0 10px;
   }
 
   .issue-info dl {
@@ -2915,6 +3042,13 @@
   .issue-detail-page .issue-info .status {
     margin: 0;
     color: #646464;
+  }
+
+  /* legacy truth: _page.less:7245-7249 `.child-issue .child-issue-date { display: none; }`
+     (desktop child rows hide the date; hover reveal via .issue-item-row:hover) */
+  .child-issue .child-issue-date {
+    display: none;
+    color: lightgrey;
   }
 
   .board-view .board-comment-wrap {

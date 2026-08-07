@@ -31,7 +31,7 @@ const errorIconSpriteStyles = stylex.create({
 
 type ProjectPostsRouteSearch = {
   filter?: string;
-  labelIds?: string[];
+  labelIds?: string | number | Array<string | number>;
   orderBy?: string;
   orderDir?: string;
   pageNum?: number;
@@ -70,13 +70,20 @@ export const Route = createFileRoute("/$ownerName/$projectName/posts")({
   component: ProjectPostsRoute,
   validateSearch(search: Record<string, unknown>): ProjectPostsRouteSearch {
     const filter = stringSearch(search.filter);
-    const labelIds = arraySearch(search.labelIds);
+    const rawLabelIds = search.labelIds;
+    const labelIds =
+      rawLabelIds === undefined ||
+      rawLabelIds === null ||
+      rawLabelIds === "" ||
+      (Array.isArray(rawLabelIds) && rawLabelIds.length === 0)
+        ? undefined
+        : rawLabelIds;
     const orderBy = stringSearch(search.orderBy);
     const orderDir = stringSearch(search.orderDir);
     const pageNum = Number(search.pageNum) || 0;
     return {
       ...(filter ? { filter } : {}),
-      ...(labelIds.length > 0 ? { labelIds } : {}),
+      ...(labelIds !== undefined ? { labelIds } : {}),
       ...(orderBy && orderBy !== "updatedDate" ? { orderBy } : {}),
       ...(orderDir && orderDir !== "desc" ? { orderDir } : {}),
       ...(pageNum > 1 ? { pageNum } : {}),
@@ -94,7 +101,7 @@ function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const routeSearch = Route.useSearch();
   const search: ProjectPostsSearch = {
     filter: routeSearch.filter ?? "",
-    labelIds: routeSearch.labelIds ?? [],
+    labelIds: arraySearch(routeSearch.labelIds),
     orderBy: routeSearch.orderBy ?? "updatedDate",
     orderDir: routeSearch.orderDir ?? "desc",
     pageNum: routeSearch.pageNum ?? 1,
@@ -810,7 +817,10 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div className={stylex.props(styles.keymap).className} data-stylex-owner="project-posts-keymap">
+    <div
+      className={`pull-left ${stylex.props(styles.keymap).className}`.trim()}
+      data-stylex-owner="project-posts-keymap"
+    >
       <button
         type="button"
         className="ybtn ybtn-inverse ybtn-mini"

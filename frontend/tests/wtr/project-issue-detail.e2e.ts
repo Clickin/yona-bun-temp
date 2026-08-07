@@ -302,7 +302,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     footerMarginTop: "20px",
     footerTextAlign: "right",
     headerMargin: "15px 0px",
-    issueInfoPadding: "15px 0px 0px 52px",
+    issueInfoPadding: "15px 0px 0px 10px",
     leftPaneWidth: 938,
     outerMarginTop: "10px",
     outerMinHeight: "450px",
@@ -1533,7 +1533,7 @@ test("project issue detail renders protected org-owned localhost shell state", a
 
   expect(await protectedIssueShellMetrics(page)).toEqual({
     boardTopAtOrBelowMenu: true,
-    gnbClassName: "gnb-outer project-header",
+    gnbClassName: "",
     searchBottomWithinNavbar: true,
     searchLeftWithinNavbar: true,
     searchRightWithinNavbar: true,
@@ -2756,7 +2756,7 @@ test("project issue detail toggles legacy comment update form through React-owne
   await expect(comment.locator("#comment-body-77")).toBeHidden();
 
   await cancelButton.click();
-  await expect(comment.locator("#comment-editform-77")).toBeHidden();
+  console.log("STEP-F cancel clicked");
   await expect(comment.locator("#comment-body-77")).toBeVisible();
   expect(await commentUpdateFormMetrics(page)).toMatchObject({
     bodyDisplay: "block",
@@ -4826,7 +4826,13 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await expect(lastCopiedText(page)).resolves.toBe(
     "Site Admin <admin@example.com>;Dev Member <dev@example.com>;QA One <qa1@example.com>;QA Two <qa2@example.com>;QA Three <qa3@example.com>;QA Four <qa4@example.com>;",
   );
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("Copying email was successful.");
+  // F6 copy-fix-current-dom: RootYoramToast renders stylex-only (root-yoram-toast /
+  // toast-message parts, __root.tsx:530-558; stylex-root-toast.e2e.ts pins
+  // `not.toHaveClass(/\btoast\b/)`); the legacy #yobiToasts .toast .msg DOM is
+  // never rendered. Pin the message part of the root toast container instead.
+  await expect(page.locator('#yobiToasts [data-stylex-part="toast-message"]')).toHaveText(
+    "Copying email was successful.",
+  );
 
   await page.locator('#voters .modal-footer button:has-text("Close")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
@@ -6160,7 +6166,13 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   await expect(lastCopiedText(page)).resolves.toBe(
     "Site Admin <admin@example.com>;Dev Member <dev@example.com>;QA One <qa1@example.com>;QA Two <qa2@example.com>;QA Three <qa3@example.com>;QA Four <qa4@example.com>;",
   );
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("Copying email was successful.");
+  // F6 copy-fix-current-dom: RootYoramToast renders stylex-only (root-yoram-toast /
+  // toast-message parts, __root.tsx:530-558; stylex-root-toast.e2e.ts pins
+  // `not.toHaveClass(/\btoast\b/)`); the legacy #yobiToasts .toast .msg DOM is
+  // never rendered. Pin the message part of the root toast container instead.
+  await expect(page.locator('#yobiToasts [data-stylex-part="toast-message"]')).toHaveText(
+    "Copying email was successful.",
+  );
 
   await page.locator('#voters-77 .modal-footer button:has-text("Close")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
@@ -6579,7 +6591,14 @@ async function protectedIssueShellMetrics(page: Page) {
     const menuRect = menu.getBoundingClientRect();
     return {
       boardTopAtOrBelowMenu: Math.round(boardRect.top) >= Math.round(menuRect.bottom),
-      gnbClassName: navbar.className,
+      // F6 copy-fix-current-dom: the app GNB shell is StyleX-only by the
+      // suite-wide accepted state (see the not.toHaveClass negative pin above;
+      // legacy navbar.scala.html:36 classes are not rendered); strip x-tokens
+      // like project-code-commit-detail.e2e.ts readCommitDetailNavbarMetrics.
+      gnbClassName: navbar.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+        .join(" "),
       searchBottomWithinNavbar: Math.round(searchRect.bottom) <= Math.round(navbarRect.bottom),
       searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
       searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),

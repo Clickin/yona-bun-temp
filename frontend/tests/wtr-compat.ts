@@ -1352,9 +1352,13 @@ export class Locator {
         setNativeInputValue(editable, next);
       }
     }
-    for (const type of ["keydown", "keyup"]) {
-      element.dispatchEvent(new KeyboardEvent(type, { ...parsed, bubbles: true }));
-    }
+    const keydownEvent = new KeyboardEvent("keydown", { ...parsed, bubbles: true, cancelable: true });
+    element.dispatchEvent(keydownEvent);
+    element.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
+    // Real browsers cancel implicit form submission and button activation when
+    // a keydown handler calls preventDefault() — the SPA does this to own the
+    // submit path. Skip the synthetic activation when the app handled it.
+    const keydownHandled = keydownEvent.defaultPrevented;
     if (parsed.key === " " || parsed.key === "Enter") {
       // Real trusted keys activate buttons (Space on keyup, Enter on keydown).
       // parseKeyCombo maps "Space" -> " "; the row's onKeyDown guards
@@ -1363,7 +1367,7 @@ export class Locator {
       const isButton = tag === "BUTTON" || tag === "A" || element.getAttribute("role") === "button";
       if (isButton && (parsed.key === " " || parsed.key === "Enter")) {
         // Enter activates on keydown, Space on keyup — both dispatch click.
-        this.page.dispatch(element, "click");
+        if (!keydownHandled) this.page.dispatch(element, "click");
       } else if (
         (tag === "INPUT" &&
           (element as HTMLInputElement).type === "checkbox" &&
@@ -1371,22 +1375,23 @@ export class Locator {
         (tag === "INPUT" && (element as HTMLInputElement).type === "radio" && parsed.key === " ")
       ) {
         // Native default: Space toggles checkboxes / checks radios on keyup.
-        (element as HTMLInputElement).click();
+        if (!keydownHandled) (element as HTMLInputElement).click();
       } else if (tag === "INPUT" && parsed.key === "Enter") {
-        // Implicit form submission: Enter on a text input submits the form.
+        // Implicit form submission: Enter on a text input submits the form —
+        // unless the app's keydown handler preventDefaulted it.
         const form = (element as HTMLInputElement).form;
-        if (form && typeof form.requestSubmit === "function") {
+        if (!keydownHandled && form && typeof form.requestSubmit === "function") {
           form.requestSubmit();
-        } else if (form) {
+        } else if (!keydownHandled && form) {
           form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         }
       } else if (tag === "FORM" && parsed.key === "Enter") {
         // Playwright: Enter on a non-focusable <form> lands on its focused
         // input, which performs the implicit submission.
         const form = element as HTMLFormElement;
-        if (typeof form.requestSubmit === "function") {
+        if (!keydownHandled && typeof form.requestSubmit === "function") {
           form.requestSubmit();
-        } else {
+        } else if (!keydownHandled) {
           form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         }
       }
@@ -1634,23 +1639,27 @@ class PageFacade {
           setNativeInputValue(editable, next);
         }
       }
-      target.dispatchEvent(new KeyboardEvent("keydown", { ...parsed, bubbles: true }));
+      const kbKeydown = new KeyboardEvent("keydown", { ...parsed, bubbles: true, cancelable: true });
+      target.dispatchEvent(kbKeydown);
       target.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
+      // Real browsers cancel implicit submission / button activation when a
+      // keydown handler preventDefault()s — skip synthetic activation then.
+      const kbHandled = kbKeydown.defaultPrevented;
       const kbTag = target.tagName;
       const kbIsButton =
         kbTag === "BUTTON" || kbTag === "A" || target.getAttribute("role") === "button";
       if (kbIsButton && (parsed.key === " " || parsed.key === "Enter")) {
-        this.dispatch(target, "click");
+        if (!kbHandled) this.dispatch(target, "click");
       } else if (kbTag === "INPUT" && parsed.key === " ") {
         const input = target as HTMLInputElement;
         if (input.type === "checkbox" || input.type === "radio") {
-          input.click();
+          if (!kbHandled) input.click();
         }
       } else if (kbTag === "INPUT" && parsed.key === "Enter") {
         const form = (target as HTMLInputElement).form;
-        if (form && typeof form.requestSubmit === "function") {
+        if (!kbHandled && form && typeof form.requestSubmit === "function") {
           form.requestSubmit();
-        } else if (form) {
+        } else if (!kbHandled && form) {
           form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         }
       }
@@ -1866,15 +1875,12 @@ class PageFacade {
     }
     // Any document navigation inside the iframe (goto, reload, location
     // changes from the app) emits framenavigated; the initial load fires
-    // before waiters register, so it is harmless.
+    // before waiters register, so it is harmless. The document-request event
+    // is emitted once per navigation in goto() below (Playwright parity: one
+    // document request per full document load).
     this.iframeElement.addEventListener("load", () => {
       const url = this.iframeElement?.contentWindow?.location.href ?? "";
       emitWtrEvent("framenavigated", { url });
-      emitWtrEvent("request", {
-        url: () => url,
-        method: () => "GET",
-        resourceType: () => "document",
-      });
     });
     await promise;
     // Emit exactly one document request per navigation (Playwright fires one

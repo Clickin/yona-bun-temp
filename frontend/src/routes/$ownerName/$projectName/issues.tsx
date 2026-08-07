@@ -1697,9 +1697,12 @@ function LabelMassUpdateGroup({
             {...stylex.props(styles.massUpdateOptionButton)}
             onClick={(event) => handleMassUpdateOptionClick(event, label.id)}
           >
-            <IssueLabel className="list-label" color={label.color} labelId={label.id}>
+            {/* legacy partial_massupdate.scala.html labelList renders a plain
+                span with no inline paint; the shared IssueLabel would add
+                background/box-shadow/border inline styles */}
+            <span className="issue-label active list-label" data-label-id={label.id}>
               {label.name}
-            </IssueLabel>
+            </span>
           </button>
         </li>
       ))}
@@ -2072,8 +2075,11 @@ function ProjectIssueItem({
               );
             })}
             <div
-              className="child-issue-list hide"
-              {...(childIssueListVisible ? stylex.props(styles.childIssueListVisible) : {})}
+              className={
+                childIssueListVisible
+                  ? `child-issue-list ${stylex.props(styles.childIssueListVisible).className}`
+                  : "child-issue-list hide"
+              }
               data-stylex-owner="project-issues-child-list"
             >
               <IssueChildRows
@@ -2293,21 +2299,20 @@ function IssueChildRow({
         <IssueChildCommentAndVotePair issue={issue} issueParams={issueParams} />
       </span>
       {labels.map((label) => (
-        <IssueLabel
-          as={Link}
+        <Link
           activeProps={legacyRouteLocalActiveProps}
           to={childLabelRoutePath(String(label.id))}
-          className="label list-label twoColumeModeTarget"
-          color={childIssueLabelStyle(label.color)}
-          labelId={label.id}
+          className="label issue-label list-label active twoColumeModeTarget"
+          data-label-id={String(label.id)}
           data-category-id={label.categoryId ?? ""}
+          style={{ background: childIssueLabelStyle(label.color) }}
           key={String(label.id)}
           onClick={(event: ReactMouseEvent<HTMLElement>) =>
             handleChildLabelClick(event, String(label.id), childLabelHref(String(label.id)))
           }
         >
           {label.name}
-        </IssueLabel>
+        </Link>
       ))}
       <span
         className={`child-issue-date ${stylex.props(hovered ? styles.childDateVisible : styles.childDate).className}`}

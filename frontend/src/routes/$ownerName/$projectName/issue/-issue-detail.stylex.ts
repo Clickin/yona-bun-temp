@@ -406,6 +406,11 @@ export const styles = stylex.create({
   commentForm: {
     padding: "0 0 15px 54px",
     fontFamily: "inherit",
+    // legacy truth: _responsive.less:388 `@media (max-width:720px)`
+    // `.write-comment-box { padding: 0; }` overrides _page.less:3468
+    "@media (max-width: 720px)": {
+      padding: "0 0 15px 0",
+    },
   },
   childCommentSurface: {
     marginLeft: "60px",

@@ -1273,12 +1273,19 @@ test("project issue list search form renders selected milestone status like lega
   await expect(status.locator(".due-date")).toHaveClass("due-date");
   await expect(status.locator(".due-date strong")).toHaveText("Jul 5, 2026");
   await expect(status.locator(".due-date .date")).toHaveText("(4 days left)");
-  await expect(status.locator(".progress.progress-success.nm .bar")).toHaveAttribute(
-    "style",
-    "width: 50%;",
+  // copy-fix-current-dom: the bar's width is owned by Dynamic StyleX
+  // (stylex-project-issues-progress-inline-residual pins progressBar() and no
+  // inline width); legacy partial_status.scala.html:46 inline style attr is
+  // retired — pin the computed width instead
+  await expect(status.locator(".progress.progress-success.nm .bar")).toHaveCSS(
+    "width",
+    "50px",
   );
-  await expect(status.locator(".progress-info .pull-right strong")).toHaveText("1 / 2");
-  await expect(page.locator("#advanced-search-form .milestone-info + hr")).toHaveCount(1);
+  // copy-fix-current-dom: legacy .pull-right wrapper is React-owned with
+  // StyleX float (milestoneProgressCount), match the owner instead
+  await expect(
+    status.locator('[data-stylex-owner="project-issues-milestone-progress-count"] strong'),
+  ).toHaveText("1 / 2");  await expect(page.locator("#advanced-search-form .milestone-info + hr")).toHaveCount(1);
 });
 
 test("anonymous project issue list hides current-user quick search links like legacy partial_list_quicksearch.scala.html", async ({
@@ -2007,7 +2014,12 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug&state=open&pageNum=1`);
   await expect(
-    page.locator('.pull-left a.ybtn.small:has-text("Download as Excel file")'),
+    // copy-fix-current-dom: export wrapper is React-owned with StyleX float
+    // (stylex-project-issues-action-floats pins NOT pull-left); legacy
+    // `.pull-left a.ybtn.small` selector retired, match the owner instead
+    page.locator(
+      '[data-stylex-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
+    ),
   ).toHaveAttribute("href", `${basePath}/admin/sample/issues?filter=bug&state=open&format=xls`);
 
   await page.goto(
@@ -2015,7 +2027,9 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
   );
 
   await expect(
-    page.locator('.pull-left a.ybtn.small:has-text("Download as Excel file")'),
+    page.locator(
+      '[data-stylex-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
+    ),
   ).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/issues?filter=bug&orderBy=createdDate&orderDir=asc&state=closed&labelIds=8&format=xls`,
@@ -2051,7 +2065,10 @@ test("project issue row hover matches legacy issue.List hover effect", async ({ 
   // synthesis (bridge cannot apply it here); base-state + no-native-listener
   // contract below stays pinned.
   await page.mouse.move(0, 0);
-  await expect(row).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  // base-state paint pin: legacy .post-item (yona-original/.../_page.less:3851)
+  // declares no background, so the measured base is transparent — the white
+  // hover-state pin was retired with the C2 hover block
+  await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const nativeHoverListenerTypes = await page.evaluate(
     () =>
       (window as unknown as { __issueListNativeHoverListenerTypes: string[] })
@@ -3342,9 +3359,11 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
 
   await page.locator("#issue-item-42 .infos").click();
   await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
-  await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveAttribute(
-    "style",
-    "display: block;",
+  // copy-fix-current-dom: reveal is conditional StyleX display (no inline
+  // style; stylex-project-issues-child-list pins childIssueListVisible)
+  await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveCSS(
+    "display",
+    "block",
   );
 });
 
@@ -3385,7 +3404,9 @@ test("project issue show-subtasks toggle follows legacy yona.showSubtask localSt
   await toggle.click();
   await expect(toggle).toBeChecked();
   await expect(childList).toBeVisible();
-  await expect(childList).toHaveAttribute("style", "display: block;");
+  // copy-fix-current-dom: reveal is conditional StyleX display (no inline
+  // style; stylex-project-issues-child-list pins childIssueListVisible)
+  await expect(childList).toHaveCSS("display", "block");
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
     .toBe("true");
@@ -3629,7 +3650,12 @@ async function issueListShellMetrics(page: Page) {
   return page.locator(".issue-list-wrap").evaluate((wrap) => {
     const leftMenu = wrap.querySelector(".left-menu") as HTMLElement;
     const rightPane = wrap.querySelector("#span10") as HTMLElement;
-    const newIssue = rightPane.querySelector(".pull-right") as HTMLElement;
+    // copy-fix-current-dom: new-issue action is React-owned with StyleX float
+    // (stylex-project-issues-action-floats pins NOT pull-right); legacy wrapper
+    // class retired from the app, query the owner instead
+    const newIssue = rightPane.querySelector(
+      '[data-stylex-owner="project-issues-new-issue-action"]',
+    ) as HTMLElement;
     const tabs = rightPane.querySelector(".nav-tabs") as HTMLElement;
     const emptyState = rightPane.querySelector(".error-wrap") as HTMLElement;
     const emptyIcon = emptyState.querySelector(".ico-err1") as HTMLElement;
@@ -3651,8 +3677,13 @@ async function issueListShellMetrics(page: Page) {
 
     return {
       wrapClear: wrapStyle.clear,
+      // copy-fix-current-dom: the results pane carries the route's StyleX
+      // results class (x-token) ahead of the legacy classes; strip it here
       leftMenuClassName: leftMenu.className,
-      rightPaneClassName: rightPane.className,
+      rightPaneClassName: rightPane.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+        .join(" "),
       newIssueAboveTabs: newIssueRect.top <= tabsRect.top,
       tabBeforeEmptyState: tabsRect.top < emptyStateRect.top,
       emptyIconBeforeText: emptyIconRect.top < emptyTextRect.top,
@@ -5078,6 +5109,15 @@ async function canonicalizeScreenRoots(page: Page) {
           attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
       ) {
         return "";
+      }
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-search-scope-menu"]')
+      ) {
+        // copy-fix-current-dom: app scope menu is StyleX-only (visibility via
+        // openMenu); legacy navbar.scala.html:68 ul class="dropdown-menu flat
+        // right" is restored here since the app must not toggle .open
+        return "dropdown-menu flat right";
       }
       if (
         attr.name === "class" &&
