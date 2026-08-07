@@ -1112,3 +1112,46 @@ Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
 - label-presentation: env pin drop + label/href/class flips.
 
 Remaining: 64 of 858 specs converted.
+
+## Wave 34 — committed `0e1749023` (24 files)
+
+Specs (24): stylex-user-profile-{issue-subtask-layout,issue-tabs,
+issue-title-cell,issue-title-rail-ownership,notfound-error-wrap,
+notfound-home-button,page-wrappers,project-avatar-image-fork-icon,
+project-avatar-lock-fork-classes,project-avatar-rail,project-child-paint,
+project-final-classes,project-first-row,project-info-wrapper-class,
+project-leaf-classes,project-leave-control,project-link-leaf-classes,
+project-links,project-origin-watch,project-residual-icons,
+project-row-stats-classes,project-row,project-stats-wrapper-class,
+projects-list}.
+
+Suite: 819 files, 2352 passed / 632 failed / 1 skipped (~34 min; +24 passed,
++3 = the documented :hover CDP-only ceiling family, PW-verified via wtrfix).
+
+Harness fixes (main):
+- `PageFacade.route` accepts RegExp patterns (typeof string ? globToRegExp :
+  pattern) — unblocked avatar-lock-fork-classes (avatar png glob);
+- `window.confirm` mock: accept()/dismiss() set a result flag the test's
+  dialog listener writes synchronously during __wtrEmit; dismiss() → confirm
+  returns false (onClick preventDefault path, URL unchanged); accept()/no
+  listener → true. Playwright dialog parity — unblocked final-classes +
+  leave-control cancelled-leave flows;
+- `Locator.locator(locator)` delegates to the child locator's selector —
+  unblocked leave-control `rows.nth(0).locator(leave)`;
+- `Locator.evaluateAll` forwards the 2nd arg to the fn (top-realm and
+  in-iframe paths) — child-paint forbiddenAttributes scan.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+wave-33 retained-class ruling applied throughout: subtask-layout
+(for-subtask-progressbar/subtask-progress/red-outline/completion-ratio/bar
+red @ user.tsx:1007/1195/1209/1229), issue-tabs tab-pane/active (:726),
+title-cell/title-rail (:963-999), avatar-lock-fork-classes/avatar-rail/
+child-paint/final-classes/leave-control/link-leaf-classes/links/
+origin-watch/residual-icons/row-stats-classes/projects-list (avatar-wrap
+small, yobicon-*, pull-left, stats, nbtn black medium last leaveProject,
+watchBtn num-badge; legacy partial_projectlist.scala.html:54), project
+row/stats/wrappers; :hover/:focus toHaveCSS blocks retired (CDP-only,
+base-state paint kept); YONA_E2E_FALLBACK_MODE guards dropped; img data-URI
+patch before metrics.
+
+Remaining: 40 of 858 specs converted.
