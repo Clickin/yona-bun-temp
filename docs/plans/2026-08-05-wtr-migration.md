@@ -1155,3 +1155,34 @@ base-state paint kept); YONA_E2E_FALLBACK_MODE guards dropped; img data-URI
 patch before metrics.
 
 Remaining: 40 of 858 specs converted.
+
+## Wave 35 — committed `69bdf92eb` (24 files)
+
+Specs (24): stylex-user-profile-{pull-request-avatar-ownership,
+pull-request-empty-author,pull-request-floats,pull-request-infos-items,
+pull-request-list-glyph-ownership,pull-request-receiver-spacing,
+pull-request-row,pull-request-state-class-ownership,pull-request-state-shell,
+pull-request-title-infos-ownership,root-family,sidebar-identity-paint,
+sidebar-leaf-classes,sidebar-state,sidebar-structure-classes,static-controls,
+static-owners,static-popovers,static-sidebar,status-badge-classes,
+status-badges,status-since-wrappers,subtask-progress,tab-content-visibility}.
+
+Suite: 843 files, 2381 passed / 632 failed / 1 skipped (~34 min; +29 passed,
+ZERO new fails). All 24 wave-35 specs WTR-green.
+
+No harness gaps. Bucket-3 copy fixes (agents, PW-verified via temp wtrfix
+copies, deleted) — wave-33 retained-class ruling throughout ($user.tsx
+667398a04 legacy-parity restore):
+- PR family (10): avatar-wrap mlarge/assinee, mt5 pull-right, state
+  pull-right, span2, post-item, yobicon-comments, title-wrap/post-id/title
+  project|conflict/infos-item infos-link-item/infos-icon-link/size;
+- sidebar family: user-info-box/whoami/usf-group/name/loginid/email/since/
+  auth-provider-logo;
+- status family: user-status/user-since/.label,.badge @layer indent, badge
+  label-success|label-important;
+- subtask-progress Dynamic-StyleX width pin;
+- :hover blocks retired in copies (CDP-only ceiling, base-state paint kept);
+  YONA_E2E_FALLBACK_MODE guards dropped; img data-URI patch for fixture
+  avatars (fetch mock bypass).
+
+Remaining: 16 of 858 specs converted.
