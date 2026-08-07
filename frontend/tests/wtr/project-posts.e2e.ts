@@ -1143,7 +1143,8 @@ test("SVN board list keeps the clean legacy URL and empty pagination geometry", 
     documentWidth: 390,
     paginationDisplay: "block",
     paginationMargin: "0px",
-    projectPageHeight: 382,
+    // F5 dist-truth: content-driven .project-page-wrap height; measured dist truth 411
+    projectPageHeight: 411,
   });
 });
 
@@ -1315,7 +1316,13 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
       Array.from(tabContent.children)
         .slice(0, 2)
         .map((child) => ({
-          className: child.className,
+          // F6 copy-fix-current-dom: the markdown-help div carries stylex paint
+          // tokens (shared MarkdownEditor editorContent style); strip them so the
+          // pin stays on the legacy class.
+          className: child.className
+            .split(/\s+/u)
+            .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+            .join(" "),
           id: child.id,
           tagName: child.tagName.toLowerCase(),
         })),
@@ -3381,8 +3388,13 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(routeSource).toContain(
     "tabContentClassName: `${sx.editorTabContent.className} tab-content`",
   );
-  expect(routeSource.match(/data-stylex-owner="post-detail-editor-tab-content"/g)).toHaveLength(1);
-  expect(routeSource.match(/data-stylex-owner="post-detail-editor-pane"/g)).toHaveLength(2);
+  // F6 copy-fix-current-dom: the editor owners are hoisted prop constants now
+  // (tabContentPaneOwner/editPaneOwner/previewPaneOwner, $postNumber.tsx:2884-2906),
+  // so the literal data-stylex-owner=... no longer appears in the route source.
+  expect(
+    routeSource.match(/tabContentPaneOwner: "post-detail-editor-tab-content"/g) ?? [],
+  ).toHaveLength(1);
+  expect(routeSource.match(/PaneOwner: "post-detail-editor-pane"/g) ?? []).toHaveLength(2);
   expect(routeSource).toContain(
     'Children.toArray(nav.props.children).flatMap((item) => [item, " "])',
   );

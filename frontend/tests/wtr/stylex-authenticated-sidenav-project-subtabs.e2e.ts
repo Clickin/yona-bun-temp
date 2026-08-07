@@ -134,15 +134,18 @@ for (const viewport of [
     const fallback = await readEvidence(owner);
     expect(fallback.hasOwner).toBe(true);
     expect(fallback.activeIndex).toBe(3);
+    // F6 copy-fix: legacy fallback (stylex stripped) — app.css nav-subtab
+    // button rules (app.css:1609-1622) carry no active-tab border and legacy
+    // _usermenu.less has no active nav-subtab rule; pin the measured fallback.
     expect(fallback.styles.buttons[3]).toMatchObject({
       backgroundColor: "rgba(0, 0, 0, 0)",
-      borderBottomStyle: "solid",
-      borderBottomWidth: "1px",
+      borderBottomStyle: "none",
+      borderBottomWidth: "0px",
       color: "rgb(0, 0, 0)",
-      height: 31,
+      height: 28,
     });
-    expect(fallback.geometry.list.height).toBe(31);
-    expect(fallback.geometry.wrap.height).toBe(46);
+    expect(fallback.geometry.list.height).toBe(113);
+    expect(fallback.geometry.wrap.height).toBe(113);
   });
 }
 

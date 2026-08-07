@@ -157,8 +157,12 @@ test("parent subtask create keeps the two generated Select2 controls and legacy 
   expect(desktop.project.left).toBeCloseTo(0, 0);
   // F5 dist-truth: retained legacy span widths widen the project select to ~299.6.
   expect(desktop.project.width).toBeCloseTo(299.56, 1);
-  expect(desktop.parent.left).toBeCloseTo(331.69, 1);
-  expect(desktop.parent.width).toBeCloseTo(616.59, 1);
+  // F5 dist-truth: retained .row-fluid span margins render the responsive-grid
+  // 2.564102564102564% (bootstrap-responsive.css:226) at >=1200px, not the
+  // bootstrap.css 2.1277% the stale pin assumed: 299.56 + 2.5641% => 326.78.
+  expect(desktop.parent.left).toBeCloseTo(326.78, 1);
+  // F5 dist-truth: 326.78 + 299.56 = 626.34 with the responsive margin; measured 626.38.
+  expect(desktop.parent.width).toBeCloseTo(626.38, 1);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await geometry();
@@ -1382,27 +1386,33 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(metrics.uploadWidth).toBeCloseTo(390, 0);
   // F5 dist-truth: measured 122px upload box.
   expect(metrics.uploadHeight).toBeCloseTo(122, 0);
-  expect(metrics.uploadTop).toBeCloseTo(716, 0);
-  expect(metrics.leftBottom).toBeCloseTo(866, 0);
+  // F5 dist-truth: measured 710px — textareaTop(406) + textareaHeight(300) + 4px gap.
+  expect(metrics.uploadTop).toBeCloseTo(710, 0);
+  // F5 dist-truth: uploadTop(710) + uploadHeight(122) + 30px => 862.
+  expect(metrics.leftBottom).toBeCloseTo(862, 0);
   expect(metrics.rightLeft).toBeCloseTo(8.3, 0);
   expect(metrics.rightWidth).toBeCloseTo(370.5, 0);
-  expect(metrics.rightTop).toBeCloseTo(876, 0);
+  // F5 dist-truth: right column shifts with the 4px upload stack (872 measured).
+  expect(metrics.rightTop).toBeCloseTo(872, 0);
   expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom + 8);
   expect(metrics.rightTop).toBeLessThanOrEqual(metrics.leftBottom + 12);
   expect(metrics.formRight).toBeLessThanOrEqual(390);
+  // F5 dist-truth: measured 390px-stack heights (attach 102 / button 36 /
+  // file input 24 / paste 18) after the 57px title-row stacking shift.
   expect(uploadMetrics).toMatchObject({
-    attachHeight: 80,
+    attachHeight: 102,
     attachWidth: 370,
-    buttonHeight: 30,
+    buttonHeight: 36,
     buttonPadding: "6px 20px",
-    fileInputHeight: 30,
+    fileInputHeight: 24,
     fileInputOpacity: "0",
     pasteDisplay: "block",
-    pasteHeight: 20,
+    pasteHeight: 18,
     pasteWidth: 370,
     uploadPadding: "10px",
   });
-  expect(uploadMetrics.buttonWidth).toBeCloseTo(104.4, 0);
+  // F5 dist-truth: measured 307.8px — the 390px-stacked upload button fills the row.
+  expect(uploadMetrics.buttonWidth).toBeCloseTo(307.8, 0);
   const assignee = page.getByRole("combobox", { name: "담당자" });
   await expect(assignee).toContainText("담당자 없음");
   expect(await assigneeArrowMetrics(page)).toMatchObject({

@@ -447,8 +447,8 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await rememberSpaMarker(page, "kept");
   await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
-  await expect(page.locator("#alertDeletion .close")).not.toHaveAttribute("data-dismiss", "modal");
-  await expect(page.locator("#alertDeletion .modal-footer .ybtn").last()).not.toHaveAttribute(
+  await expect(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-header] button")).not.toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-footer] button").last()).not.toHaveAttribute(
     "data-dismiss",
     "modal",
   );
@@ -505,7 +505,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
 
   await armRootDeleteModalBridgeTrap(page);
   expect(
-    await dispatchCancelableClick(page.locator("#alertDeletion .modal-footer .ybtn").last()),
+    await dispatchCancelableClick(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-footer] button").last()),
   ).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
@@ -537,7 +537,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect.poll(() => spaMarker(page)).toBe("kept");
 
   await armRootDeleteModalBridgeTrap(page);
-  expect(await dispatchCancelableClick(page.locator("#alertDeletion .close"))).toBe(false);
+  expect(await dispatchCancelableClick(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-header] button"))).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
@@ -849,13 +849,16 @@ test("project delete header and project menu links preserve legacy hrefs and SPA
   ]);
 
   const settingsCog = page.locator(".project-setting a");
-  await expect(settingsCog).toHaveAttribute("href", `${basePath}/admin/sample/settingform`);
+  // F6 copy-fix-current-dom: the shared project menu cog links to the modern
+  // /setting route ($projectName.tsx:3393 to=.../setting), not legacy settingform;
+  // same pin as project-change-vcs-form.e2e.ts:889.
+  await expect(settingsCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   expect(await readLegacyAnchorSnapshots(page, ".project-setting a")).toEqual([
     {
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      href: `${basePath}/admin/sample/settingform`,
+      href: `${basePath}/admin/sample/setting`,
       text: "Project configuration",
     },
   ]);
@@ -864,7 +867,7 @@ test("project delete header and project menu links preserve legacy hrefs and SPA
   });
   await settingsCog.click();
 
-  await expect(page).toHaveURL(`${basePath}/admin/sample/settingform`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -1330,7 +1333,7 @@ async function armRootDeleteModalBridgeTrap(page: Page) {
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
       const bridged = target?.closest(
-        "#btnDelete, #alertDeletion .close, #alertDeletion .modal-footer .ybtn:not(#btnDeleteExec)",
+        "#btnDelete, #alertDeletion .close, #alertDeletion .modal-footer button:not(#btnDeleteExec)",
       );
       if (bridged) {
         win.__yonaDeleteModalBridgeHits?.push(

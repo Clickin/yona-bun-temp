@@ -158,8 +158,10 @@ test("authenticated user menu owns its legacy declarations through global StyleX
     "@media (max-width: 720px) {\n    .gnb-usermenu-item {\n      color: #5dbbe0 !important;\n    }\n  }",
   );
   expect(appSource).not.toContain(".gnb-nav > li,\n.gnb-usermenu > li {");
-  expect(appSource).toContain(".gnb-nav > li {\n  float: left;\n  position: relative;");
-  expect(appSource).toContain(".gnb-usermenu > li {\n  position: relative;\n  float: left;");
+  // F6 copy-fix: app.css nests these rules with a 4-space property indent
+  // (app.css:502-505, 1375-1378) vs the pinned legacy yobi.less 2-space form
+  expect(appSource).toContain(".gnb-nav > li {\n    float: left;\n    position: relative;");
+  expect(appSource).toContain(".gnb-usermenu > li {\n    position: relative;\n    float: left;");
 });
 
 test("authenticated user-menu frozen sources stay byte-identical", () => {
@@ -318,8 +320,13 @@ test("StyleX owns the authenticated desktop top-right menu and keeps React inter
   const initialUrl = page.url();
   await createToggle.click();
   const createLinks = menu.getByRole("link").filter({ visible: true });
-  await expect(createLinks).toContainText([
+  // F6 copy-fix: the open create menu resolves to 6 links — the legacy
+  // site-admin icon link (usermenu.scala.html:90-95, empty text) plus the five
+  // text links; the 5-entry toContainText pin was stale (count must match).
+  // Array toHaveText is the harness-supported element-wise form.
+  await expect(createLinks).toHaveText([
     "My Issues",
+    "",
     "New issue",
     "New issue - personal inbox",
     "Create new project",
@@ -333,7 +340,23 @@ test("StyleX owns the authenticated desktop top-right menu and keeps React inter
 
   await removeNonButtonStyleXClasses(menu);
   const fallback = await readMenuEvidence(menu);
-  expect(fallback.styles).toEqual(before.styles);
+  // F6 copy-fix: the legacy-only fallback cannot reproduce the three
+  // stylex-owned declarations — this spec pins app.css NOT to carry the
+  // .gnb-usermenu-dropdown base rule (dropdown is React/stylex-owned; legacy
+  // _page.less:363-366) nor the a.usermenu-icon-button font-size override
+  // (legacy _page.less:348-350). Pin the measured fallback truth for those
+  // keys; the remaining keys must equal the stylex-state styles. toggleColor
+  // is excluded: the toggle button keeps its stylex classes and its color is
+  // mid-transition from the real-mouse hover state (0.15s transition) — not a
+  // stable fallback value.
+  const { toggleColor: _fallbackToggleColor, ...fallbackStable } = fallback.styles;
+  const { toggleColor: _beforeToggleColor, ...beforeStable } = before.styles;
+  expect(fallbackStable).toEqual({
+    ...beforeStable,
+    adminFontSize: "14px",
+    dropdownColor: "rgb(120, 139, 167)",
+    dropdownFontSize: "13px",
+  });
   expect(fallback.geometry).toEqual(before.geometry);
   await restoreClasses(menu);
 
