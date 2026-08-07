@@ -1447,7 +1447,16 @@ export class Locator {
   async pressSequentially(text: string): Promise<void> {
     const element = (await this.waitForElement()) as HTMLInputElement | HTMLTextAreaElement;
     element.focus();
+    // Playwright types real keys: keydown/keyup per character (apps validate
+    // on keyup) plus the final input/change with the composed value.
+    const view = element.ownerDocument.defaultView as Window & typeof globalThis;
+    for (const char of text) {
+      element.dispatchEvent(new view.KeyboardEvent("keydown", { key: char, bubbles: true }));
+      element.dispatchEvent(new view.KeyboardEvent("keyup", { key: char, bubbles: true }));
+    }
     setNativeInputValue(element, text);
+    element.dispatchEvent(new view.Event("input", { bubbles: true }));
+    element.dispatchEvent(new view.Event("change", { bubbles: true }));
     await sleep(30);
   }
 
