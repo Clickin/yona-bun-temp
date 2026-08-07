@@ -4585,3 +4585,5 @@ Manual evidence-only exception note: historical commit c4980d3c21f819cd6d12bdd90
 Manual evidence-only exception note: historical commit 5be1d778767ea9cf6a1c9831ada6b047f1527b46 (wtr wave 35: user-profile pull-request/sidebar/status tail (24 specs)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 
 Manual evidence-only exception note: historical commit 12e6bb97eb3e25f906cef5416af916ad2aca00d4 (wtr wave 36: FINAL wave — profile/settings/user batch (16 specs; 858/858 converted)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 122360c7369390f1122b4cd32e236184f657e361 (wtr-637 Phase C: retire 4 F4 CDP-only hover pins (wave-33 precedent, plan-approved C2 disposition)) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.

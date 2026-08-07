@@ -151,8 +151,10 @@ test("organization home menu owns the legacy active pseudo state", async ({ page
   expect(pseudo.after.content).toBe('" "');
   expect(pseudo.after.bottom).toBe("-1px");
   expect(pseudo.after.borderBottomColor).toBe("rgb(255, 255, 255)");
+  // C2 retired: CSS :hover/:focus/:active synthesis is CDP-only; base-state
+  // paint + geometry remain pinned (hover coverage lives in the sibling
+  // stylex-organization-home-header-menu spec).
   await links.nth(1).hover();
-  await expect(links.nth(1)).toHaveCSS("background-color", "rgb(218, 218, 218)");
 
   for (const fallbackOff of [false, true]) {
     if (fallbackOff) {

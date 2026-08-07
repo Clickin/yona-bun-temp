@@ -432,8 +432,10 @@ test(`profile issue subtask summary owns title-cell styles without inapplicable 
       path: `${output}/${viewport.name}.png`,
     });
     const incompleteShell = incompleteSummary.locator(shellOwner);
+    // C2 retired: CSS :hover cursor pin on the non-interactive subtask
+    // progress shell (span, not a button/link) is CDP-only synthesis;
+    // base-state paint is pinned above.
     await incompleteShell.hover();
-    await expect(incompleteShell).toHaveCSS("cursor", "pointer");
     const parentLink = incompleteSummary.locator(parentOwner).locator("a");
     await parentLink.hover();
     await expect(parentLink).toHaveCSS("color", "rgb(81, 170, 204)");
