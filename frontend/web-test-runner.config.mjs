@@ -74,7 +74,20 @@ const FETCH_MOCK_SCRIPT = `<script>
     window.XMLHttpRequest = WtrXHR;
   })();
   try { for (const hook of parent.__wtrInitHooks ?? []) { eval("(" + hook.source + ")(" + (hook.argJson || "") + ")"); } } catch (e) {}
-  window.confirm = (msg) => { parent.__wtrEmit("dialog", { type: () => "confirm", message: () => msg, accept: () => {}, dismiss: () => {} }); return true; };
+  window.confirm = (msg) => {
+    parent.__wtrConfirmResult = undefined;
+    parent.__wtrEmit("dialog", {
+      type: () => "confirm",
+      message: () => msg,
+      // The test's dialog listener runs synchronously during __wtrEmit
+      // (direct parent function call), so accept()/dismiss() below set the
+      // result BEFORE confirm returns. Playwright parity: dismiss() -> false
+      // (onClick preventDefault path), accept()/no listener -> true.
+      accept: () => { parent.__wtrConfirmResult = true; },
+      dismiss: () => { parent.__wtrConfirmResult = false; },
+    });
+    return parent.__wtrConfirmResult ?? true;
+  };
   window.alert = (msg) => { parent.__wtrEmit("dialog", { message: () => msg, accept: () => {}, dismiss: () => {} }); };
   window.prompt = () => null;
   if (typeof PerformanceObserver !== "undefined") {

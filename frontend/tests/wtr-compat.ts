@@ -835,7 +835,15 @@ export class Locator {
     return this.withIndex(Math.max(0, this.resolveElements().length - 1));
   }
 
-  locator(childSelector: string, options?: { hasText?: string | RegExp; has?: Locator }): Locator {
+  locator(
+    childSelector: string | Locator,
+    options?: { hasText?: string | RegExp; has?: Locator },
+  ): Locator {
+    // Playwright: locator(otherLocator) scopes the child locator's selector
+    // within this locator's elements.
+    if (childSelector instanceof Locator) {
+      return this.locator(childSelector.selector, options);
+    }
     // Playwright scopes a leading child combinator to the parent element
     // ("> .x" == ":scope > .x"); querySelectorAll rejects a bare ">".
     // Comma lists scope each part that starts with ">" ("> a, > b" ==
@@ -1030,7 +1038,7 @@ export class Locator {
     return result;
   }
 
-  async evaluateAll<T>(fn: (elements: Element[]) => T): Promise<T> {
+  async evaluateAll<T>(fn: (elements: Element[], arg?: unknown) => T, arg?: unknown): Promise<T> {
     if (
       this.hasCustomResolver ||
       this.scopedChild !== undefined ||
@@ -1042,13 +1050,14 @@ export class Locator {
     ) {
       // Custom resolvers / translated pseudos run top-realm (they can't be
       // serialized into the iframe's querySelectorAll).
-      return fn(this.resolveElements());
+      return fn(this.resolveElements(), arg);
     }
     const target = this.page.window();
     const selector = JSON.stringify(this.selector);
+    const serializedArg = arg === undefined ? "undefined" : JSON.stringify(arg);
     // eslint-disable-next-line no-eval
     return target.eval(
-      `(function () { const elements = document.querySelectorAll(${selector}); return (${fn.toString()})(Array.from(elements)); })()`,
+      `(function () { const elements = document.querySelectorAll(${selector}); return (${fn.toString()})(Array.from(elements), ${serializedArg}); })()`,
     ) as T;
   }
 
@@ -2137,8 +2146,10 @@ class PageFacade {
     return target.eval(`(${fnSource})(${serializedArg})`) as T;
   }
 
-  async route(pattern: string, handler: MockHandler): Promise<void> {
-    mockRegistry.push({ regex: globToRegExp(pattern), handler });
+  async route(pattern: string | RegExp, handler: MockHandler): Promise<void> {
+    // Playwright accepts a string glob OR a RegExp.
+    const regex = typeof pattern === "string" ? globToRegExp(pattern) : pattern;
+    mockRegistry.push({ regex, handler });
   }
 
   async unrouteAll(): Promise<void> {
