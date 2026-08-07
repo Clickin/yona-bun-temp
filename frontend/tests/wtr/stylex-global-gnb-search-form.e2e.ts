@@ -160,8 +160,12 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
   expect(formMarker).toBeGreaterThanOrEqual(0);
   expect(item).toContain("globalGnbSearchFormStyles.item");
   expect(form).toContain("globalGnbSearchFormStyles.form");
-  expect(form).toContain("`gnb-search-form ${stylex.props(");
-  expect(form).not.toContain("input-prepend");
+  // wave-33 retained-class retention (667398a04): form keeps legacy
+  // input-prepend per navbar.scala.html:53 class="input-prepend gnb-search-form"
+  expect(form).toContain(
+    'className={`input-prepend gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}',
+  );
+  expect(form).toContain("input-prepend");
   expect(form).toContain("globalGnbSearchSubmitStyles.searchIcon");
   expect(form).toContain('name="gnb-search-form"');
   expect(form).toContain('name="searchType" value="auto"');
@@ -252,7 +256,9 @@ for (const state of [
     await expect(item).toBeAttached();
     await expect(form).toBeAttached();
     await expect(form).toHaveClass(/(?:^|\s)gnb-search-form(?:\s|$)/u);
-    await expect(form).not.toHaveClass(/(?:^|\s)input-prepend(?:\s|$)/u);
+    // wave-33 retained-class retention (667398a04): input-prepend kept per
+    // legacy navbar.scala.html:53 class="input-prepend gnb-search-form"
+    await expect(form).toHaveClass(/(?:^|\s)input-prepend(?:\s|$)/u);
     await expect(form).toHaveAttribute("name", "gnb-search-form");
     await expect(form).toHaveAttribute("action", expectedAction(state.kind));
     await expect(form.locator(':scope > input[type="hidden"]')).toHaveAttribute(
@@ -388,7 +394,9 @@ test("global GNB search outer paint is isolated while required legacy classes re
   });
 
   expect(evidence.requiredClasses).toContain("gnb-search-form");
-  expect(evidence.requiredClasses).not.toContain("input-prepend");
+  // wave-33 retained-class retention (667398a04): input-prepend kept per
+  // legacy navbar.scala.html:53 class="input-prepend gnb-search-form"
+  expect(evidence.requiredClasses).toContain("input-prepend");
   expect(evidence.owned).toEqual({
     formDisplay: "inline-block",
     formFontSize: "0px",

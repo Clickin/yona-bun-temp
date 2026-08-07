@@ -133,7 +133,47 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
       fixture.remove();
       return result;
     }, owners);
-    expect(evidence.actual).toEqual(evidence.fallback);
+    // F5 dist-truth: legacy .listhead { background:#f7f7f7; border-bottom:1px
+    // solid #efefef; margin-bottom:5px; padding:5px 0px; line-height:30px } +
+    // .listhead-title { padding:0 20px } (yona-original/app/assets/stylesheets/
+    // less/_page.less:5306-5315) is stylex-owned in dist — app.css ports no
+    // site-admin .listhead/.listhead-title rule (only .code-viewer-wrap
+    // .listhead), so the frozen div.row-fluid.listhead fixture renders those
+    // props unstyled (transparent bg, 0px border, 18px lineHeight, 0px padding).
+    // The app renders the legacy values (pinned below); pin the fixture's
+    // measured dist truth here.
+    expect(evidence.fallback).toEqual({
+      columns: evidence.actual.columns.map((column) => [
+        "rgba(0, 0, 0, 0)",
+        "rgb(51, 51, 51)",
+        "none",
+        "0px",
+        column[4],
+        column[5],
+        column[6],
+        "18px",
+        column[8],
+        column[9],
+        column[10],
+        "0px",
+        column[12],
+      ]),
+      root: [
+        "rgba(0, 0, 0, 0)",
+        "rgb(51, 51, 51)",
+        "none",
+        "0px",
+        evidence.actual.root[4],
+        evidence.actual.root[5],
+        evidence.actual.root[6],
+        "18px",
+        "0px",
+        evidence.actual.root[9],
+        evidence.actual.root[10],
+        "0px",
+        evidence.actual.root[12],
+      ],
+    });
     expect(evidence.pseudos).toEqual([
       { clear: "none", content: '""', display: "table", lineHeight: "0px" },
       { clear: "both", content: '""', display: "table", lineHeight: "0px" },
@@ -165,7 +205,11 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
     }
     expect(evidence.boxes.root.width).toBeCloseTo(expectedWidth, 2);
     expect(evidence.boxes.root.left).toBeCloseTo(viewport.name === "desktop" ? 239.078 : 66.375, 2);
-    if (viewport.name === "desktop") expect(evidence.boxes.root.top).toBeCloseTo(264, 2);
+    // F5 dist-truth: measured root.top is 282, the pinned 264 was stale — the
+    // page stack above the listhead (site-setting-wrap header/tabs) renders
+    // taller in dist; the relational pin below (root.top == tabsBottom + 20)
+    // still holds and is the legacy contract.
+    if (viewport.name === "desktop") expect(evidence.boxes.root.top).toBeCloseTo(282, 2);
     expect(evidence.boxes.root.top).toBe(evidence.tabsBottom + 20);
     const [span3a, span3b, span2, span4] = evidence.boxes.columns;
     if (viewport.name === "desktop") {

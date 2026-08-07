@@ -402,11 +402,18 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   );
   await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
   await expect(projectMenuLinks.nth(7)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  // F6 copy-fix: stylex compile-mode emits x-token classes on these links; the harness
+  // canonicalization strips them (project-pullrequest-overview.e2e.ts:2397-2403), so filter them here.
   expect(
     await projectMenuLinks.evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        className: link.getAttribute("class"),
+        className:
+          link
+            .getAttribute("class")
+            ?.split(/\s+/u)
+            .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+            .join(" ") || null,
         dataStatus: link.getAttribute("data-status"),
         text: link.textContent?.replace(/\s+/gu, " ").trim(),
       })),
@@ -428,7 +435,12 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
     await settingsTabLinks.evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        className: link.getAttribute("class"),
+        className:
+          link
+            .getAttribute("class")
+            ?.split(/\s+/u)
+            .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+            .join(" ") || null,
         dataStatus: link.getAttribute("data-status"),
         text: link.textContent?.replace(/\s+/gu, " ").trim(),
       })),

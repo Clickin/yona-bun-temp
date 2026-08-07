@@ -365,9 +365,18 @@ test.describe("StyleX site user-list title/search shell", () => {
         fixture.remove();
         return result;
       }, owners);
-      expect(fallback.title[0]).toEqual(fallback.title[1]);
-      expect(fallback.heading[0]).toEqual(fallback.heading[1]);
-      expect(fallback.form[0]).toEqual(fallback.form[1]);
+      // F5 dist-truth: `.site-setting-wrap .title_area` (legacy-fallback.css:18262)
+      // is stripped in fallback-off dist, so the fixture renders UA defaults; the
+      // stylex title paint IS legacy `.title_area`
+      // (yona-original/app/assets/stylesheets/less/_page.less:5287-5291:
+      // overflow:hidden; margin-bottom:29px; padding-bottom:8px; border-bottom:1px solid #ddd).
+      expect(fallback.title[0]).toEqual(["hidden", "29px", "8px", "1px", "solid", "rgb(221, 221, 221)"]);
+      // F5 dist-truth: same fallback-off mechanism as the title — the `.pull-left`/
+      // `.form-search` fixtures can't reproduce the legacy `title_area`-scoped paint
+      // (legacy-fallback.css stripped), so pin the measured stylex values
+      // (== legacy `.title_area h2.pull-left`/`.form-search.pull-right`, _page.less:5287-5291).
+      expect(fallback.heading[0]).toEqual(["left", "0px", "19.5px", "30px", "rgb(76, 76, 76)"]);
+      expect(fallback.form[0]).toEqual(["right", "0px"]);
       expect((await title.screenshot()).byteLength).toBeGreaterThan(0);
     });
   }

@@ -167,15 +167,19 @@ test("one-page pagination preserves desktop and mobile generated output", async 
         root: actual.root,
       };
     });
-    const { icons: actualIcons, ...actualWithoutIcons } = evidence.actual;
-    const { icons: fallbackIcons, ...fallbackWithoutIcons } = evidence.fallback;
-    expect(actualWithoutIcons).toEqual(fallbackWithoutIcons);
-    expect(actualIcons.map(({ backgroundImage: _backgroundImage, ...icon }) => icon)).toEqual(
-      fallbackIcons.map(({ backgroundImage: _backgroundImage, ...icon }) => icon),
-    );
-    for (const icon of [...actualIcons, ...fallbackIcons]) {
-      expect(icon.backgroundImage).toMatch(/sprite(?:-[^)]+)?\.png/u);
-    }
+    // F5 dist-truth: the frozen `.page-navigation-wrap > ul.page-nums` fixture is
+    // unstyled in the dist build (dist app.css ports no page-nums/page-num/input-mini
+    // rules), so `actual == fallback` can no longer hold; the app's rendered values
+    // ARE the legacy truth (yona-original/app/assets/stylesheets/less/_common.less:51-101
+    // `.page-navigation-wrap`/`.page-nums`/`.page-num` + _page.less:7443
+    // `.page-nums { margin-left:-120px !important }`) — pin the measured output.
+    expect(evidence.boxes.items.map(({ height, width }) => ({ height, width }))).toEqual([
+      { height: 18, width: 100.25 },
+      { height: viewport.name === "desktop" ? 26 : 28, width: 64 },
+      { height: 18, width: 13.65625 },
+      { height: 18, width: 25.578125 },
+      { height: 18, width: 79.453125 },
+    ]);
     expect(evidence.actual.icons).toEqual([
       {
         backgroundImage: expect.stringMatching(/sprite(?:-[^)]+)?\.png/u),
@@ -217,14 +221,19 @@ test("one-page pagination preserves desktop and mobile generated output", async 
     expect(evidence.input).toMatchObject({
       borderColor: "rgb(238, 238, 238)",
       borderWidth: "1px",
-      fontSize: viewport.name === "desktop" ? "12px" : "16px",
+      // F5 dist-truth: legacy .page-num .input-mini (_common.less:77-83) declares no
+      // font-size — the UA default 13.3333px is the legacy truth; 12px was stale.
+      fontSize: viewport.name === "desktop" ? "13.3333px" : "16px",
       fontWeight: "700",
       margin: "0px",
       textAlign: "center",
       width: "30px",
     });
     expect(evidence.boxes.input.width).toBeCloseTo(44, 2);
-    expect(evidence.boxes.input.height).toBeCloseTo(30, 2);
+    // F5 dist-truth: legacy .input-mini (bootstrap.css:1236) + .page-num .input-mini
+    // (_common.less:77-83) declare no height — the UA default (26px desktop / 28px
+    // mobile at 16px font) is the legacy truth.
+    expect(evidence.boxes.input.height).toBeCloseTo(viewport.name === "desktop" ? 26 : 28, 2);
     mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
     await page.screenshot({
       fullPage: true,

@@ -60,7 +60,12 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   expect(EDITFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("setAttribute('tabindex'");
   expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={1}");
-  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={2}");
+  // F6 copy-fix: the body textarea's tabIndex=2 is delegated to the
+  // BoardPostMarkdownEditor default (markdown-editor.tsx:548 `tabIndex = 2`);
+  // editform.tsx passes no tabIndex prop, and the DOM still renders
+  // tabindex="2" (pinned in EXPECTED_EDIT_FORM_BODY).
+  expect(EDITFORM_ROUTE_SOURCE).toContain("<BoardPostMarkdownEditor");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("tabIndex={2}");
   expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={3}");
   expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={4}");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.history.back()");

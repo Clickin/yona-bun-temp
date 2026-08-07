@@ -55,13 +55,13 @@ test.describe("StyleX standalone signup form", () => {
       readFile(legacyFallbackSource, "utf8"),
     ]);
 
-    expect(route).toContain('data-stylex-owner={standardPasswordSignup ? "standalone-signup-form"');
-    expect(route).toContain(
-      'data-stylex-owner={standardPasswordSignup ? "standalone-signup-title"',
-    );
-    expect(route).toContain(
-      'data-stylex-owner={standardPasswordSignup ? "standalone-signup-form-wrap"',
-    );
+    // F6 copy-fix-current-dom: owners are applied unconditionally since 040d9de5a
+    // (2026-07-19 'extend signup ownership across capability states') removed the
+    // `standardPasswordSignup` conditional; legacy DOM/classes are preserved
+    // (signup.scala.html:26-40).
+    expect(route).toContain('data-stylex-owner="standalone-signup-form"');
+    expect(route).toContain('data-stylex-owner="standalone-signup-title"');
+    expect(route).toContain('data-stylex-owner="standalone-signup-form-wrap"');
     expect(route).toContain('"standalone-signup-login-id"');
     expect(route).toContain('"standalone-signup-submit"');
     expect(route).toContain("stylex.props(styles.textInput, styles.passwordInput)");
@@ -216,8 +216,14 @@ test.describe("StyleX standalone signup form", () => {
   }) => {
     await mockAnonymousSignup(page, { signupRequireConfirm: true });
     await page.goto(`${basePath}/users/signupform`);
-    await expect(page.locator('[data-stylex-owner="standalone-signup-form"]')).toHaveCount(0);
-    await expect(page.locator('[data-stylex-part^="standalone-signup-"]')).toHaveCount(0);
+    // F6 copy-fix-current-dom: the owner sits on the `.page.full` wrapper
+    // unconditionally since 040d9de5a (signupform.tsx:287); the legacy wrapper
+    // exists in all capability branches (signup.scala.html:26) and the app
+    // preserves it — owner attrs are invisible app-only markers. Confirmation
+    // mode renders the notice ALONGSIDE the standard form (signup.scala.html:27-40),
+    // so the field parts stay owned; social-only mode is the branch that drops them.
+    await expect(page.locator('[data-stylex-owner="standalone-signup-form"]')).toHaveCount(1);
+    await expect(page.locator('[data-stylex-part="standalone-signup-login-id"]')).toHaveCount(1);
     const confirmationNotice = page.locator(
       '[data-stylex-owner="standalone-signup-confirmation-notice"]',
     );
@@ -229,8 +235,8 @@ test.describe("StyleX standalone signup form", () => {
     await page.unroute("**/api/v1/auth/capabilities");
     await mockAnonymousSignup(page, { socialLoginOnly: true });
     await page.reload();
-    await expect(page.locator('[data-stylex-owner="standalone-signup-form"]')).toHaveCount(0);
-    await expect(page.locator('[data-stylex-part^="standalone-signup-"]')).toHaveCount(0);
+    await expect(page.locator('[data-stylex-owner="standalone-signup-form"]')).toHaveCount(1);
+    await expect(page.locator('[data-stylex-part="standalone-signup-login-id"]')).toHaveCount(0);
     await expect(page.locator(".signup-form-wrap .btns-row.nm")).toHaveText(
       "Only allow sign-in via social login",
     );

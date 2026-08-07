@@ -42,6 +42,10 @@ for (const state of ["populated", "empty"] as const) {
       await page.goto(`${BASE_PATH}/`);
       await page.evaluate(() => document.fonts.ready);
       await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
+      // F5 dist-truth: the shell slides open with a 0.5s width transition
+      // (rootSidebarMotionStyles.shell); pseudo-element geometry only matches
+      // the settled layout, so wait it out (favorite-stars precedent waits 600ms).
+      await page.waitForTimeout(600);
 
       const root = page.locator('[data-stylex-owner="authenticated-sidenav-favorite-shell"]');
       const input = root.getByRole("textbox");

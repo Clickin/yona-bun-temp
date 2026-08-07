@@ -253,7 +253,10 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await expect(organizationTabLink).not.toHaveAttribute("data-status", /./);
   await expect(organizationTabLink).not.toHaveAttribute("aria-current", /./);
   await expect(navbarProjectLink).toHaveAttribute("href", `${basePath}/projects`);
-  await expect(navbarProjectLink).not.toHaveClass(/(?:^|\s)show-progress-bar(?:\s|$)/u);
+  // wave-33 retained-class retention (667398a04): show-progress-bar is deliberately retained on the
+  // gnb project-list link at frontend/src/routes/-home-route-screen.tsx:1901 (legacy
+  // yona-original/app/views/common/navbar.scala.html:46 uses the same class).
+  await expect(navbarProjectLink).toHaveClass(/(?:^|\s)show-progress-bar(?:\s|$)/u);
   await expect(navbarProjectLink).not.toHaveAttribute("data-status");
   await expect(navbarProjectLink).not.toHaveAttribute("aria-current");
 });

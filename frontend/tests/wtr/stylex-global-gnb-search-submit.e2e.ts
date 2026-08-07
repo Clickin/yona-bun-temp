@@ -90,7 +90,10 @@ test("global GNB search submit has complete global-theme StyleX ownership", () =
     route.indexOf("</div>", boxMarker),
   );
   expect(boxMarkup).toContain("globalGnbSearchBoxStyles.box");
-  expect(boxMarkup).not.toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
+  // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105
+  // renders <div class="search-box ..."> and the route retains className
+  // `search-box ...` (-home-route-screen.tsx:2028).
+  expect(boxMarkup).toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
   expect(appCss).not.toContain(".gnb-search-form .search-box button {");
 });
 

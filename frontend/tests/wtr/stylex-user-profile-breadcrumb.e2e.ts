@@ -113,7 +113,8 @@ for (const viewport of [
     );
     await expect(heading).toHaveText("Door User");
     await expect(outer).toHaveClass(/\bsite-breadcrumb-outer\b/u);
-    await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);
+    // wave-33 retained-class retention (667398a04)
+    await expect(inner).toHaveClass(/\bsite-breadcrumb-inner\b/u);
     await expect(inner).toHaveCSS("margin", "0px");
     await expect(heading).toHaveCSS("padding", "10px 10px 5px");
     await expect(heading).toHaveCSS("line-height", "30px");

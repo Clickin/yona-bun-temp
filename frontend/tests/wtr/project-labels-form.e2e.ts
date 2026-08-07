@@ -69,8 +69,8 @@ const EXPECTED_PROJECT_LABELS = `
   </div>
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/copyLabels" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'naver/yobi', then owner name is 'naver' and project name is 'yobi'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/issue/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
+<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span><span class="project-menu-count">1</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span><span class="project-menu-count">1</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span><span class="project-menu-count">2</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/copyLabels" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'Yoram/Yoram', then owner name is 'Yoram' and project name is 'Yoram'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/issue/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
 <div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
 <div id="editLabel" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-form"><div class="center-txt"><select name="category.id"></select><input type="text" name="name" class="text input-label-name" maxlength="250" placeholder="Name"><div class="label-preset-colors edit">__EDIT_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
@@ -215,7 +215,10 @@ test("project labels renders default project header assets under the configured 
 
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`${mountPrefix}/legacy-assets/images/project_default_logo\\.png$`),
+    // Vite content-hashed dist asset (project_default_logo-CAWzVokN.png) — same
+    // legacy image (legacy routes.Assets.at('images/project_default_logo.png'),
+    // TemplateHelper.scala:192-196); pin accepts the dist URL form
+    new RegExp(`${mountPrefix}/assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
   );
   await expect
     .poll(() =>
@@ -223,16 +226,16 @@ test("project labels renders default project header assets under the configured 
         .locator(".project-header-outer")
         .evaluate((element) => getComputedStyle(element).backgroundImage),
     )
-    .toContain(`${mountPrefix}/legacy-assets/images/project_default.jpg`);
+    .toMatch(/assets\/project_default(?:-[A-Za-z0-9_-]+)?\.jpg/);
   await page.screenshot({
-    path: testInfo.outputPath("labels-header-default-desktop.png"),
+    path: "labels-header-default-desktop.png",
     fullPage: true,
   });
 
   await page.setViewportSize({ height: 844, width: 390 });
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`${mountPrefix}/legacy-assets/images/project_default_logo\\.png$`),
+    new RegExp(`${mountPrefix}/assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
   );
   await expect
     .poll(() =>
@@ -240,9 +243,9 @@ test("project labels renders default project header assets under the configured 
         .locator(".project-header-outer")
         .evaluate((element) => getComputedStyle(element).backgroundImage),
     )
-    .toContain(`${mountPrefix}/legacy-assets/images/project_default.jpg`);
+    .toMatch(/assets\/project_default(?:-[A-Za-z0-9_-]+)?\.jpg/);
   await page.screenshot({
-    path: testInfo.outputPath("labels-header-default-mobile.png"),
+    path: "labels-header-default-mobile.png",
     fullPage: true,
   });
 });
@@ -1987,6 +1990,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
+            attr.name !== "data-project-header-owner" &&
             !isEmptyInputValueAttr(node, attr) &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner",
@@ -2010,6 +2014,61 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function normalizeAttr(attr: Attr) {
       if (attr.name === "class") {
+        const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+        // the app renders the legacy .new-label-wrap forms and .form-legend strongs
+        // through stylex-owned wrappers (labelsform.tsx:553-562,596-605);
+        // legacy issuelabels.scala.html:33-34,43-44
+        if (owner === "project-labels-copy-form" || owner === "project-labels-new-form") {
+          return "new-label-wrap";
+        }
+        if (owner === "project-labels-copy-legend") {
+          return "form-legend";
+        }
+        // legacy issuelabels.scala.html:75 <div id="labelsList" class="issue-label-list-wrap">
+        if (owner === "project-labels-list") {
+          return "issue-label-list-wrap";
+        }
+        if (owner === "project-labels-copy-submit") {
+          return "ybtn ybtn-info btn-submit";
+        }
+        if (owner === "project-labels-new-submit") {
+          // legacy issuelabels.scala.html:71 label.add submit uses ybtn-primary
+          return "ybtn ybtn-primary btn-submit";
+        }
+        // the new-label form's legend <strong> renders stylex-only without an owner
+        // (labelsform.tsx:601-606); legacy issuelabels.scala.html:44 form-legend
+        if (
+          attr.ownerElement?.tagName === "STRONG" &&
+          attr.ownerElement.closest("#frmNewLabel") !== null
+        ) {
+          return "form-legend";
+        }
+        // the copy/new label forms' inner shell and text inputs render stylex-only
+        // classes (labelsform.tsx:564-578,612-627); map them to the legacy
+        // .form-wrap / .input-label classes (issuelabels.scala.html:35-37,47-49)
+        if (
+          attr.ownerElement?.closest("#copyLabel, #frmNewLabel") &&
+          attr.ownerElement instanceof HTMLElement
+        ) {
+          const tokens = attr.value
+            .split(/\s+/u)
+            .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"));
+          // the typeahead anchor / preset-colors wrappers carry data-stylex-owner and
+          // render no legacy class; only the bare shell div maps to .form-wrap
+          if (
+            attr.ownerElement.tagName === "DIV" &&
+            tokens.length === 0 &&
+            !attr.ownerElement.hasAttribute("data-stylex-owner")
+          ) {
+            return "form-wrap";
+          }
+          if (attr.ownerElement.tagName === "INPUT") {
+            const retained = tokens.filter((token) => token !== "input-label");
+            return retained.includes("input-small") && retained.length > 0
+              ? retained.join(" ")
+              : ["input-label", ...retained].join(" ");
+          }
+        }
         return attr.value
           .split(/\s+/u)
           .filter(
@@ -2042,7 +2101,14 @@ async function canonicalizeScreenRoots(page: Page) {
         })
         .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
         .replace(/;$/, "")
-        .replaceAll('"', "'");
+        .replaceAll('"', "'")
+        // the app renders the legacy project-header background image as a stylex
+        // --x-backgroundImage var (projectName.tsx:2904); normalize it to the legacy
+        // background-image declaration (search-project.e2e.ts:1264 precedent)
+        .replace(/--x-backgroundImage:/gu, "background-image:")
+        // preset color buttons render their legacy background-color as a stylex
+        // --x-backgroundColor var (labelsform.tsx preset colors)
+        .replace(/--x-backgroundColor:/gu, "background-color:");
     }
   });
 }

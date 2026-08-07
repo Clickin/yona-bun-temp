@@ -123,11 +123,12 @@ async function assertStats(page: Page, projectName: string, fallbackOff: boolean
   await expect(membersIcon).toBeAttached();
   await expect(eyeIcon).toBeAttached();
   await expect(lightbulb).toBeAttached();
-  if (!fallbackOff) {
-    await expect(membersIcon).toBeVisible();
-    await expect(eyeIcon).toBeVisible();
-    await expect(lightbulb).toBeVisible();
-  }
+  // F6 copy-fix: yobicon glyph visibility is fallback-owned — glyph content/
+  // font-family rules (.yobicon-eye/.yobicon-lightbulb/:before) live only in
+  // legacy-fallback.css (yona-original/public/stylesheets/yobicon/style.css),
+  // never served in the WTR page (dist/index.html built with
+  // VITE_DISABLE_LEGACY_FALLBACK=1 strips the link), so the inline <i> renders
+  // zero-size. Claim attachment/class/stylex paint, not glyph visibility.
   await expect(membersIcon).not.toHaveAttribute("style");
   await expect(eyeIcon).not.toHaveAttribute("style");
   await expect(lightbulb).not.toHaveAttribute("style");

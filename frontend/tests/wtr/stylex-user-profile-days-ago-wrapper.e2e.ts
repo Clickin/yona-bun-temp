@@ -52,7 +52,9 @@ test("authenticated public profile owns the daysAgo wrapper float", async ({ pag
   const input = page.locator("#daysAgoBtn");
   await expect(controls).toHaveCount(1);
   await expect(controls).toHaveCSS("float", "right");
-  await expect(controls).not.toHaveClass(/pull-right/);
+  // wave-33 retained-class retention (667398a04): wrapper keeps pull-right per
+  // legacy user/view.scala.html:89 <div class="pull-right">
+  await expect(controls).toHaveClass(/pull-right/);
   await expect(controls).not.toHaveAttribute("data-toggle");
   await expect(controls).toContainText("recently");
   await expect(controls).toContainText("days ago");
@@ -62,7 +64,9 @@ test("authenticated public profile owns the daysAgo wrapper float", async ({ pag
   await expect(input).toHaveAttribute("max", "99");
   await expect(input).toHaveValue("14");
   await expect(input).toHaveAttribute("data-stylex-owner", "user-profile-days-ago-input");
-  await expect(input).not.toHaveClass(/(?:^|\s)input-mini-min(?:\s|$)/u);
+  // wave-33 retained-class retention (667398a04): input keeps input-mini-min
+  // per legacy user/view.scala.html:90 class="input-mini-min"
+  await expect(input).toHaveClass(/(?:^|\s)input-mini-min(?:\s|$)/u);
 
   expect(profileRequestUrl).toContain("daysAgo=14");
   expect(profileRequestUrl).toContain("selected=issues");

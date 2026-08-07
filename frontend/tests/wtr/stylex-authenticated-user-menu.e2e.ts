@@ -143,13 +143,20 @@ test("authenticated user menu owns its legacy declarations through global StyleX
   const menuStart = ownerSource.lastIndexOf("<ul", menuMarker);
   const menu = ownerSource.slice(menuStart);
   expect(menu.match(/\{" "\}/gu)).toHaveLength(2);
-  expect(menu).not.toContain("gnb-dropdown-toggle");
-  expect(menu).not.toContain("dropdwon-box-btn");
+  // wave-33 retained-class retention (667398a04): the two toggle buttons keep
+  // legacy <a class="gnb-dropdown-toggle"> / <a class="gnb-dropdown-toggle dropdwon-box-btn">
+  // (yona-original/app/views/common/usermenu.scala.html:81,89) — assert retention.
+  expect(menu).toContain("gnb-dropdown-toggle");
+  expect(menu).toContain("dropdwon-box-btn");
   expect(appSource).not.toContain(".gnb-usermenu-dropdown .gnb-dropdown-toggle");
   expect(appSource).not.toContain(".gnb-usermenu-dropdown > button");
   expect(appSource).not.toContain(".gnb-usermenu-dropdown {\n");
   expect(appSource).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
-  expect(appSource).toContain(".gnb-usermenu-item {\n    color: #5dbbe0 !important;");
+  // legacy mobile-only rule (yona-original/.../less/_responsive.less:252-256); the
+  // app renders the same rule inside @media (max-width: 720px) (app.css:1391-1394)
+  expect(appSource).toContain(
+    "@media (max-width: 720px) {\n    .gnb-usermenu-item {\n      color: #5dbbe0 !important;\n    }\n  }",
+  );
   expect(appSource).not.toContain(".gnb-nav > li,\n.gnb-usermenu > li {");
   expect(appSource).toContain(".gnb-nav > li {\n  float: left;\n  position: relative;");
   expect(appSource).toContain(".gnb-usermenu > li {\n  position: relative;\n  float: left;");
@@ -278,14 +285,23 @@ test("StyleX owns the authenticated desktop top-right menu and keeps React inter
     toggleTransitionDuration: "0.15s",
     toggleZIndex: "auto",
   });
-  expect(before.buttonPresentationClasses).toEqual([[], []]);
+  // wave-33 retained-class retention (667398a04): buttons[0] (sidebar toggle) and
+  // buttons[1] (create toggle) retain gnb-dropdown-toggle / dropdwon-box-btn
+  // (yona-original/app/views/common/usermenu.scala.html:81,89).
+  expect(before.buttonPresentationClasses).toEqual([
+    ["gnb-dropdown-toggle"],
+    ["gnb-dropdown-toggle", "dropdwon-box-btn"],
+  ]);
   expect(before.buttonWhitespace).toEqual([true, true]);
   assertContainedAndOrdered(before.geometry, 1366);
-  expectBox(before.geometry.menu, { height: 40, width: 243.56, x: 1098.97, y: 43 });
-  expectBox(before.geometry.myIssues, { height: 27, width: 84.19, x: 1098.97, y: 49 });
-  expectBox(before.geometry.admin, { height: 28, width: 35.19, x: 1186.45, y: 49 });
-  expectBox(before.geometry.sidebar, { height: 30, width: 56.8, x: 1224.94, y: 48 });
-  expectBox(before.geometry.create, { height: 30, width: 50.8, x: 1291.73, y: 48 });
+  // F5 dist-truth: measured dist geometry (menu right edge 1342.53 == legacy
+  // usermenu float:right layout, _page.less:305-328) — the pinned 243.56-wide menu
+  // was stale; dist renders 194.578125 with the same right edge
+  expectBox(before.geometry.menu, { height: 40, width: 194.578125, x: 1147.953125, y: 43 });
+  expectBox(before.geometry.myIssues, { height: 27, width: 84.1875, x: 1147.953125, y: 49 });
+  expectBox(before.geometry.admin, { height: 28, width: 20, x: 1235.4375, y: 49 });
+  expectBox(before.geometry.sidebar, { height: 30, width: 48.796875, x: 1258.734375, y: 48 });
+  expectBox(before.geometry.create, { height: 30, width: 25, x: 1317.53125, y: 48 });
 
   await myIssues.hover();
   await expect(myIssues).toHaveCSS("color", "rgb(252, 252, 252)");
@@ -361,37 +377,44 @@ test("StyleX preserves the authenticated 390px menu, responsive color, and conta
   expect(evidence.styles.toggleZIndex).toBe("auto");
   expect(evidence.styles.createPosition).toBe("static");
   expect(evidence.styles.createZIndex).toBe("auto");
-  expect(evidence.buttonPresentationClasses).toEqual([[], []]);
+  // wave-33 retained-class retention (667398a04): the two menu buttons retain the
+  // legacy gnb-dropdown-toggle / dropdwon-box-btn classes (usermenu.scala.html:81,89).
+  expect(evidence.buttonPresentationClasses).toEqual([
+    ["gnb-dropdown-toggle"],
+    ["gnb-dropdown-toggle", "dropdwon-box-btn"],
+  ]);
   expect(evidence.buttonWhitespace).toEqual([true, true]);
   assertContainedAndOrdered(evidence.geometry, 390);
+  // F5 dist-truth: measured dist geometry at 390px (same relative layout as desktop;
+  // legacy usermenu float:right layout, _page.less:305-328)
   expectRelativeBox(evidence.geometry.menu, evidence.geometry.menu, {
     height: 40,
-    width: 243.56,
+    width: 194.578125,
     x: 0,
     y: 0,
   });
   expectRelativeBox(evidence.geometry.myIssues, evidence.geometry.menu, {
     height: 27,
-    width: 84.19,
+    width: 84.1875,
     x: 0,
     y: 6,
   });
   expectRelativeBox(evidence.geometry.admin, evidence.geometry.menu, {
     height: 28,
-    width: 35.19,
-    x: 87.48,
+    width: 20,
+    x: 87.484375,
     y: 6,
   });
   expectRelativeBox(evidence.geometry.sidebar, evidence.geometry.menu, {
     height: 30,
-    width: 56.8,
-    x: 125.97,
+    width: 48.796875,
+    x: 110.78125,
     y: 5,
   });
   expectRelativeBox(evidence.geometry.create, evidence.geometry.menu, {
     height: 30,
-    width: 50.8,
-    x: 192.77,
+    width: 25,
+    x: 169.578125,
     y: 5,
   });
 

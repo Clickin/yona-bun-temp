@@ -14,9 +14,17 @@ const owners = {
   term: "user-password-term",
 } as const;
 
+// Stateful session mock: the password-change mutation's onSuccess invalidates the
+// session query and navigates to /users/loginform, whose guard bounces
+// authenticated sessions (isAnonymous:false) back to "/". Flip the flag after the
+// POST so the post-change session refetch reports anonymous, matching legacy
+// resetUserPassword (logout -> login form).
+let sessionIsAnonymous = false;
+
 test.use({ locale: "ko-KR" });
 
 async function mockPasswordSettings(page: Page) {
+  sessionIsAnonymous = false;
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -31,7 +39,7 @@ async function mockPasswordSettings(page: Page) {
       contentType: "application/json",
       json: {
         avatarUrl: "/assets/images/default-avatar-32.png",
-        isAnonymous: false,
+        isAnonymous: sessionIsAnonymous,
         isGuest: false,
         isSiteAdmin: true,
         loginId: "admin",
@@ -263,6 +271,9 @@ test("password validation and TanStack mutation stay intact", async ({ page }) =
     mutationBody = JSON.parse(route.request().postData() ?? "{}");
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-token");
+    // Post-change session refetch must report anonymous so /users/loginform
+    // renders instead of bouncing authenticated sessions to "/".
+    sessionIsAnonymous = true;
     await route.fulfill({ contentType: "application/json", json: { isAnonymous: true } });
   });
   await page.goto(`${basePath}/user/editform/password`);
@@ -278,7 +289,9 @@ test("password validation and TanStack mutation stay intact", async ({ page }) =
   await page.locator("#password").fill("new-pass");
   await page.locator("#retypedPassword").fill("new-pass");
   await page.locator("#frmPassword button[type=submit]").click();
-  await page.waitForURL("**/users/loginform*");
+  // Depth-independent wait: a relative glob would resolve against the current
+  // /yona/user/editform/ directory and never match the loginform path.
+  await page.waitForURL((url) => url.pathname === `${basePath}/users/loginform`);
   expect(mutationBody).toEqual({
     loginId: "admin",
     oldPassword: "old-pass",

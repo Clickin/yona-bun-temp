@@ -111,13 +111,12 @@ const createHash = (algorithm: string) => {
 };
 
 // copy-level node:fs existsSync: sync XHR over the WTR fixture server.
+// F6 copy-fix-current-dom: the original Playwright specs (frontend/tests/)
+// were deleted at the WTR cutover (98bfa308c), so ./<spec>.e2e.ts now resolves
+// to the WTR copy itself (tests/wtr/) — no remap needed.
 const existsSync = (source: URL | string) => {
   const href = (
     source instanceof URL ? source.href : new URL(source, import.meta.url).href
-  ).replace(
-    // WTR copies live one dir deeper; ./<spec>.e2e.ts targets the ORIGINAL specs.
-    "/tests/wtr/",
-    "/tests/frontend/tests/",
   );
   const request = new XMLHttpRequest();
   request.open("GET", href, false);
@@ -132,12 +131,11 @@ const read = (path: string) =>
   readFileSync(
     new URL(
       // Browser harness: URL objects pass through readFileSync unmapped; route
-      // ../public/ (frontend/public) onto the /tests/root/ fixture root and
-      // ./<spec>.e2e.ts (the ORIGINAL specs, one dir up from this copy) onto
-      // /tests/frontend/tests/.
-      new URL(path, import.meta.url).href
-        .replace("/tests/public/", "/tests/root/public/")
-        .replace("/tests/wtr/", "/tests/frontend/tests/"),
+      // ../public/ (frontend/public) onto the /tests/root/ fixture root.
+      // F6 copy-fix-current-dom: the original Playwright specs (frontend/tests/)
+      // were deleted at the WTR cutover (98bfa308c), so ./<spec>.e2e.ts now
+      // resolves to the WTR copy itself (tests/wtr/) — no remap needed.
+      new URL(path, import.meta.url).href.replace("/tests/public/", "/tests/root/public/"),
     ),
     "utf8",
   );

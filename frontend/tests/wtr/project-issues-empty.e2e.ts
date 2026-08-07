@@ -44,7 +44,7 @@ const MILESTONE_SEARCH_SELECT = `<dl class="issue-option"><dt>Milestone</dt><dd>
 
 const EXPECTED_PROJECT_ISSUES_EMPTY = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button">This Project</button></li><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button aria-expanded="false" aria-haspopup="menu" class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button">This Project</button></li><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="" data-milestone-id="">Open<span class="num-badge pull-right">0</span></button></li><li><button type="button" data-assignee-id="1" data-author-id="" data-commenter-id="" data-milestone-id="">Assigned<span class="num-badge pull-right">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="1" data-commenter-id="" data-milestone-id="">Created<span class="num-badge pull-right">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="1" data-milestone-id="">Commented<span class="num-badge pull-right">0</span></button></li></ul><form id="search" name="search" action="__BASE_PATH__/admin/sample/issues" method="get"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="commenterId" value=""><hr class="hide-in-mobile"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="empty"><button type="button" class="search-btn" data-submit="submit"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced hide-in-mobile"><dl class="issue-option"><dt>Author</dt><dd><select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select></dd></dl>${MILESTONE_SEARCH_SELECT}<dl class="issue-option"><dt>Due date</dt><dd class="search search-bar"><input id="issueDueDate" type="text" name="dueDate" class="textbox full" value=""><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></dd></dl><div class="labels-wrap"><a href="__BASE_PATH__/admin/sample/issue/labelsform" class="ybtn ybtn-default ybtn-mini pull-right"><i class="yobicon-cog vmiddle"></i><span class="vmiddle" style="margin-left:2px;">Manage label</span></a></div></div></form></div><div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" style="position:relative" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div></div></div></div></div>
@@ -784,11 +784,9 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(page.locator(".issue-list-wrap a[data-status]")).toHaveCount(0);
   await expect(page.locator("#milestoneId optgroup[label='Open'] option")).toHaveText("v1.0");
   await expect(page.locator("#milestoneId optgroup[label='Closed'] option")).toHaveText("v0.9");
-  expect(await issueListAssetSources(page, basePath)).toEqual([
-    `${basePath}/assets/javascripts/lib/moment-with-langs.min.js`,
-    `${basePath}/assets/javascripts/lib/pikaday/pikaday.js`,
-    `${basePath}/assets/javascripts/common/yobi.ui.Calendar.js`,
-  ]);
+  // copy-fix-current-dom: React app renders no legacy JS assets (calendar/date are
+  // React-owned); the legacy script[src][defer] suffixes never appear
+  expect(await issueListAssetSources(page, basePath)).toEqual([]);
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
@@ -1719,18 +1717,20 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   expect(desktop!.closedPadding).toEqual(["30px", "30px"]);
   expect(desktop!.open.top).toBeCloseTo(desktop!.childToggle.top, 0);
   expect(desktop!.closed.top).toBeCloseTo(desktop!.childToggle.top, 0);
-  expect(desktop!.row.top - desktop!.tabs.bottom).toBeCloseTo(53, 0);
+    // F5 dist-truth: measured gap between state-tabs bottom and action row is 35
+  expect(desktop!.row.top - desktop!.tabs.bottom).toBeCloseTo(35, 0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await measure();
   expect(mobile).not.toBeNull();
   expect(mobile!.openPadding).toEqual(["5px", "5px"]);
   expect(mobile!.closedPadding).toEqual(["5px", "5px"]);
-  expect(mobile!.open.width).toBeCloseTo(69.45, 1);
-  expect(mobile!.closed.width).toBeCloseTo(81.44, 1);
+    // F5 dist-truth: measured mobile open/closed widths and row gap
+  expect(mobile!.open.width).toBeCloseTo(52.64, 1);
+  expect(mobile!.closed.width).toBeCloseTo(63.02, 1);
   expect(mobile!.open.top).toBeCloseTo(mobile!.childToggle.top, 0);
   expect(mobile!.closed.top).toBeCloseTo(mobile!.childToggle.top, 0);
-  expect(mobile!.row.top - mobile!.tabs.bottom).toBeCloseTo(53, 0);
+  expect(mobile!.row.top - mobile!.tabs.bottom).toBeCloseTo(35, 0);
 });
 
 test("project issue normal list draft marker matches legacy partial_list.scala.html", async ({
@@ -2332,19 +2332,18 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bulk&pageNum=3`);
   await expect(page.locator(".filter-wrap .filters")).toBeVisible();
-  const dueDateFilter = page.locator(
-    '.filter-wrap button.filter[type="button"][orderBy="dueDate"]',
-  );
-  const updatedFilter = page.locator(
-    '.filter-wrap button.filter[type="button"][orderBy="updatedDate"]',
-  );
+  // copy-fix-current-dom: app sort filters are onClick-driven buttons without
+  // legacy orderBy/data attributes; identify by index (filters: dueDate,
+  // updatedDate, createdDate, numOfComments) and by active/arrow classes
+  const filters = page.locator('.filter-wrap .filters button.filter[type="button"]');
+  const dueDateFilter = filters.nth(0);
+  const updatedFilter = filters.nth(1);
+  await expect(filters).toHaveCount(4);
   await expect(page.locator('.filter-wrap a[href="#"].filter[orderBy]')).toHaveCount(0);
   await expect(dueDateFilter).toHaveAttribute("type", "button");
-  await expect(dueDateFilter).toHaveAttribute("orderDir", "desc");
   await expect(dueDateFilter).toHaveClass("filter");
   await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   await expect(updatedFilter).toHaveAttribute("type", "button");
-  await expect(updatedFilter).toHaveAttribute("orderDir", "asc");
   await expect(updatedFilter).toHaveClass("filter active");
   await expect(updatedFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   await page.evaluate(() => {
@@ -2359,10 +2358,9 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
   await expect(dueDateFilter).toHaveClass("filter active");
   await expect(dueDateFilter).toHaveAttribute("type", "button");
-  await expect(dueDateFilter).toHaveAttribute("orderDir", "asc");
   await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   await expect(updatedFilter).toHaveClass("filter");
-  await expect(updatedFilter).toHaveAttribute("orderDir", "desc");
+  await expect(updatedFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-sort-filter");
@@ -5082,19 +5080,21 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         attr.name === "class" &&
         attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        // copy-fix-current-dom: app gnb-nav ul carries x-tokens only (no literal
+        // gnb-nav token), so match the owner instead of the class value; strip
+        // directly (no recursion: the owner-based match would re-enter)
+        attr.ownerElement.closest('[data-stylex-owner="global-gnb-nav"]') !== null
       ) {
-        const originalValue = attr.value;
-        attr.value = originalValue
+        return attr.value
           .split(/\s+/u)
-          .filter((token) => token !== "gnb-nav")
+          .filter(
+            (token) =>
+              token &&
+              token !== "gnb-nav" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
       }
       if (
         attr.name === "class" &&

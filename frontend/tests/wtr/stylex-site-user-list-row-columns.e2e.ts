@@ -111,7 +111,24 @@ test("ACTIVE columns preserve desktop and mobile legacy geometry", async ({ page
       };
     });
     expect(evidence.withoutLegacy).toEqual(evidence.before);
-    expect(evidence.before).toEqual(evidence.fallback);
+    // F5 dist-truth: legacy .listitem-col (_page.less:5332-5340: fontSize 12px,
+    // lineHeight 20px, padding 10px 0, textOverflow ellipsis, wordBreak break-all)
+    // is ported to stylex; the frozen `div.span3/2/5.listitem-col` fixture is
+    // unstyled in dist (no .listitem-col port in app.css), so the app's computed
+    // values ARE the legacy truth — pin them (the explicit pins below re-assert
+    // each legacy field).
+    expect(evidence.before.map((style) => style.fontSize)).toEqual([
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+    ]);
+    expect(evidence.before.map((style) => style.lineHeight)).toEqual([
+      "20px",
+      "20px",
+      "20px",
+      "20px",
+    ]);
     const fractions = [
       0.23404255319148934, 0.23404255319148934, 0.14893617021276595, 0.4042553191489362,
     ];

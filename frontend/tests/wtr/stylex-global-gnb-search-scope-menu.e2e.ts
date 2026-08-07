@@ -187,7 +187,9 @@ test("global GNB search scope menu has complete global-theme StyleX ownership", 
   const markupEnd = route.indexOf('data-stylex-owner="global-gnb-search-box"', markupStart);
   expect(markupStart).toBeGreaterThanOrEqual(0);
   expect(markupEnd).toBeGreaterThan(markupStart);
-  expect(route.slice(markupStart, markupEnd)).not.toMatch(
+  // wave-33 retained-class retention (667398a04): scope div retains legacy
+  // btn-group and toggle retains ybtn dropdown-toggle per navbar.scala.html:61,65.
+  expect(route.slice(markupStart, markupEnd)).toMatch(
     /className=.*(?:btn-group|\bopen\b|ybtn|dropdown-toggle|dropdown-menu|flat|right)/u,
   );
   expect(appCss).not.toContain(".gnb-search-form .dropdown-toggle {");
@@ -447,7 +449,15 @@ test("scope paint remains isolated without runtime presentation classes", async 
   const scope = page.locator(SCOPE);
   const toggle = page.locator(TOGGLE);
   const menu = page.locator(MENU);
-  for (const locator of [scope, toggle, menu, page.locator(ITEM).first()]) {
+  // wave-33 retained-class retention (667398a04): the scope div retains legacy
+  // btn-group and the toggle retains ybtn dropdown-toggle per
+  // navbar.scala.html:61,65; the menu and items stay legacy-class-free.
+  for (const locator of [scope, toggle]) {
+    await expect(locator).toHaveClass(
+      /(?:^|\s)(?:btn-group|open|ybtn|dropdown-toggle|dropdown-menu|flat|right)(?:\s|$)/u,
+    );
+  }
+  for (const locator of [menu, page.locator(ITEM).first()]) {
     await expect(locator).not.toHaveClass(
       /(?:^|\s)(?:btn-group|open|ybtn|dropdown-toggle|dropdown-menu|flat|right)(?:\s|$)/u,
     );

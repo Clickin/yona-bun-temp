@@ -43,6 +43,11 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
+    // F5 dist-truth: the shell slides open with a 0.5s width transition
+    // (rootSidebarMotionStyles.shell); tab geometry only matches the settled
+    // layout (legacy #mySidenav _usermenu.less:852), so wait it out
+    // (favorite-stars precedent waits 600ms).
+    await page.waitForTimeout(600);
     const favorite = page.getByRole("button", { name: "Favorite", exact: true });
     const project = page.getByRole("button", { name: "Project", exact: true });
     const recent = page.getByRole("button", { name: "Recent History", exact: true });
@@ -54,8 +59,10 @@ for (const viewport of [
       "Project",
       "Recent History",
     ]);
+    // wave-33 retained-class retention (667398a04): tab buttons retain legacy
+    // data-toggle="tab" per usermenu.scala.html:53-55.
     for (const button of [favorite, project, recent]) {
-      await expect(button).not.toHaveAttribute("data-toggle", /.+/);
+      await expect(button).toHaveAttribute("data-toggle", "tab");
     }
 
     const base = await readTabEvidence(tabs, favorite, project, recent);

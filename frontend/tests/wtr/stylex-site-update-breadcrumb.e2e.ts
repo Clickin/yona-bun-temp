@@ -74,8 +74,10 @@ for (const viewport of [
       1,
     );
     await expect(heading).toHaveText("Site management");
-    await expect(outer).not.toHaveClass(/\bsite-breadcrumb-outer\b/u);
-    await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);
+    // wave-33 retained-class retention (667398a04)
+    await expect(outer).toHaveClass(/\bsite-breadcrumb-outer\b/u);
+    // wave-33 retained-class retention (667398a04)
+    await expect(inner).toHaveClass(/\bsite-breadcrumb-inner\b/u);
 
     const evidence = await page.evaluate((ownerNames) => {
       const get = (name: string) =>

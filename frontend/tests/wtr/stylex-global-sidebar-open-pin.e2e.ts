@@ -99,7 +99,8 @@ for (const viewport of [
       await expect(pin).toHaveAttribute("title", "Sidebar");
       await expect(pin).toHaveAttribute("aria-controls", "sidebar");
       await expect(pin).toHaveAttribute("aria-expanded", "false");
-      await expect(pin).not.toHaveClass(/(?:^|\s)pin(?:\s|$)/u);
+      // wave-33 retained-class retention (667398a04)
+      await expect(pin).toHaveClass(/(?:^|\s)pin(?:\s|$)/u);
       await expect(leftIcon).toBeHidden();
       await expect(rightIcon).toBeVisible();
       expect(await readEvidence(pin)).toEqual({

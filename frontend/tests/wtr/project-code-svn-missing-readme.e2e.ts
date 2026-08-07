@@ -29,7 +29,11 @@ test("missing svn README renders the legacy project code not-found state", async
   await expect(error.locator("a.ybtn.ybtn-primary")).not.toHaveAttribute("data-toggle", /.+/u);
   await expect(error.locator("a.ybtn.ybtn-primary")).not.toHaveAttribute("data-href", /.+/u);
   expect(await errorGeometry(page)).toEqual({
-    errorWidth: 1346,
+    // F5 dist-truth: legacy .error-wrap is an unconstrained block (padding:
+    // 100px 0px, no width — yona-original/app/assets/stylesheets/less/_page.less:5230-5233)
+    // inside .page-wrap-outer > .project-page-wrap, so it spans the full page
+    // width 1366 at the 1366 viewport; measured dist truth = 1366.
+    errorWidth: 1366,
     iconHeight: 80,
     iconWidth: 50,
     pageHeight: 450,

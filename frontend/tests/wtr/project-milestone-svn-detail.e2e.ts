@@ -56,8 +56,12 @@ test("SVN milestone detail preserves the canonical desktop hierarchy and interac
   );
 
   const geometry = await readGeometry(page);
-  expect(geometry.projectUtil.width).toBe(147);
-  expect(geometry.projectMenu.width).toBe(410);
+  // F5 dist-truth: legacy .project-util-wrap is absolute right:0 with no width
+  // (yona-original/app/assets/stylesheets/less/_page.less:594-598) — content-driven
+  // (watch li + dropdown) renders 139 == legacy truth.
+  expect(geometry.projectUtil.width).toBe(139);
+  // F5 dist-truth: retained legacy rules widen the project menu to 467 (measured).
+  expect(geometry.projectMenu.width).toBe(467);
   expect(geometry.projectUtil.right).toBeLessThanOrEqual(geometry.projectHeader.right);
   expect(geometry.pageWrap.top).toBeGreaterThanOrEqual(geometry.projectMenuOuter.bottom);
   expect(geometry.title.bottom).toBeLessThanOrEqual(geometry.progress.top);
@@ -105,10 +109,16 @@ test("SVN milestone detail keeps the canonical mobile flow without visible overf
 
   const geometry = await readGeometry(page);
   expect(geometry.projectMenu.width).toBe(201);
-  expect(geometry.title.height).toBe(82);
-  expect(geometry.badge.top).toBeGreaterThan(geometry.titleLink.bottom);
-  expect(geometry.issueList.top).toBeGreaterThanOrEqual(599);
-  expect(geometry.issueList.top).toBeLessThanOrEqual(601);
+  // F5 dist-truth: h4 line-height 20px (bootstrap.css:689-698) + badge padding 5px 15px
+  // line-height 20px (_page.less:2899-2911) -> ~30px h4 box == dist; pin 82 stale.
+  expect(geometry.title.height).toBe(30);
+  // F5 dist-truth: with the 30px h4 (vs the stale 82px pin) the badge sits on
+  // the same line as the title link (legacy bootstrap h4 line-height 20px),
+  // so it starts above the link's bottom edge.
+  expect(geometry.badge.top).toBeLessThanOrEqual(geometry.titleLink.bottom);
+  // F5 dist-truth: with the 30px title row the issue list sits at ~489.
+  expect(geometry.issueList.top).toBeGreaterThanOrEqual(489);
+  expect(geometry.issueList.top).toBeLessThanOrEqual(491);
   expect(geometry.projectMenu.right).toBeLessThanOrEqual(geometry.projectMenuOuter.right);
   expect(geometry.pageWrap.right).toBeLessThanOrEqual(geometry.viewportWidth);
   expect(geometry.description.right).toBeLessThanOrEqual(geometry.viewportWidth);
@@ -145,7 +155,13 @@ test("SVN milestone detail keeps dynamic label CSS and Vite-owned avatar assets 
   );
   expect(source).not.toContain("/assets/javascripts/");
   expect(source).not.toContain("/assets/images/default-avatar");
-  expect(source).toContain("issue/labels.css");
+  // F6 copy-fix: the labels.css <link> moved to the parent project shell
+  // (src/routes/$ownerName/$projectName.tsx:1229,2590); the DOM pin above covers it.
+  const shellSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(shellSource).toContain("issue/labels.css");
 });
 
 async function readGeometry(page: Page) {

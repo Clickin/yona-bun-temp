@@ -28,8 +28,15 @@ test("records compare diff owners and responsive containment", async ({ page }) 
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/weblabs/demo/compare/abc123...def456`);
     await expect(owner(page, "project-compare-browse")).toBeVisible();
-    await expect(owner(page, "project-compare-diff-body")).toBeVisible();
-    const geometry = await owner(page, "project-compare-diff-body").evaluate((element) => ({
+    // F6 copy-fix: the mock serves files:[] so the app renders the
+    // project-compare-empty noChanges alert — exactly legacy
+    // `@if(diff.isEmpty){<div class="alert">code.noChanges</div>}`
+    // (yona-original/app/views/code/compare.scala.html:29-30), which renders NO
+    // diff-body for empty diffs. data-stylex-owner="project-compare-diff-body"
+    // was also removed from the app's files branch in 38254cc9f (parity wave;
+    // it now emits plain div.diff-body discommentable like legacy).
+    await expect(owner(page, "project-compare-empty")).toBeVisible();
+    const geometry = await owner(page, "project-compare-empty").evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,
     }));

@@ -161,7 +161,9 @@ test("authenticated public profile owns child issue residuals", async ({ page })
   expect(messages).toContain("issue.state.open");
   expect(source).toContain('data-stylex-owner="user-profile-child-subtask-number"');
   expect(source).toContain('data-stylex-owner="user-profile-child-count-groups"');
-  expect(source).not.toContain("no-border-at-child");
+  // wave-33 retained-class retention (667398a04): route keeps no-border-at-child
+  // per legacy issue/partial_view_child.scala.html:23 (<span class="font12 no-border-at-child">)
+  expect(source).toContain("no-border-at-child");
   expect(styleSource).toContain("issueSubtaskNumber:");
   expect(styleSource).toContain('fontSize: "12px"');
   expect(styleSource).toContain(
@@ -174,8 +176,13 @@ test("authenticated public profile owns child issue residuals", async ({ page })
   await page.goto(`${basePath}/admin?selected=issues`, { waitUntil: "domcontentloaded" });
   const row = page.locator('[data-stylex-owner="user-profile-issue-row"]');
   const toggle = page.locator("#toggle-show-subtasks");
-  await expect(row.locator(".child-issue")).toHaveCount(0);
+  const childListEl = page.locator('[data-stylex-owner="user-profile-child-issue-list"]');
+  // Children are server-rendered inside the hidden list, matching legacy
+  // <div class="child-issue-list hide"> (partial_issues.scala.html) — assert the
+  // hidden state, not DOM absence (hidden elements still match count()).
+  await expect(childListEl).toHaveClass(/hide/);
   await toggle.check();
+  await expect(childListEl).not.toHaveClass(/hide/);
   const children = row.locator(".child-issue");
   await expect(children).toHaveCount(2);
   await expect(children.nth(0)).toContainText("#8Open child issue - Child Assignee");

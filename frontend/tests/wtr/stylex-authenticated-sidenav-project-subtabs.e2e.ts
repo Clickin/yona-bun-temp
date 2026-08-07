@@ -42,6 +42,11 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     await page.locator("#sidebar-open-btn > button").click();
+    // F5 dist-truth: the shell slides open with a 0.5s width transition
+    // (rootSidebarMotionStyles.shell); the frame x only matches the settled
+    // layout (legacy .right-menu width 350 at _page.less:7148-7151), so wait it
+    // out (favorite-stars precedent waits 600ms).
+    await page.waitForTimeout(600);
     await page.locator("#mySidenav .myProjectList > button").click();
 
     const owner = page.locator("#mySidenav #myProjectList .subtab-wrap.subtab-group");

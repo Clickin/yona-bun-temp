@@ -11,12 +11,12 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <button class="pin" title="Sidebar" type="button">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
@@ -180,9 +180,12 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     )
     .toBe("Project list");
   await expect(page.locator('[data-stylex-owner="site-project-list-setting-wrap"]')).toBeVisible();
+  // F6 copy-fix: legacy authenticated GNB renders 3 anchors (Y/List All/Feedback,
+  // yona-original/app/views/common/navbar.scala.html:50-54) — pin was stale at 2.
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
+    "Feedback",
   ]);
   await expect
     .poll(() =>
@@ -190,7 +193,11 @@ test("site admin project list matches legacy site/projectList.scala.html populat
         .locator('[data-stylex-owner="global-gnb-nav"] a[href]')
         .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? "")),
     )
-    .toEqual([`${basePath}/`, `${basePath}/projects`]);
+    .toEqual([
+      `${basePath}/`,
+      `${basePath}/projects`,
+      "https://github.com/yona-projects/yona/issues",
+    ]);
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
@@ -449,9 +456,12 @@ test("site admin project list keeps the bare default URL and legacy authenticate
   await expect(
     page.locator('[data-stylex-owner="site-project-list-search-textbox"][name="filter"]'),
   ).toHaveValue("");
+  // F6 copy-fix: legacy authenticated GNB renders 3 anchors (Y/List All/Feedback,
+  // yona-original/app/views/common/navbar.scala.html:50-54) — pin was stale at 2.
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
+    "Feedback",
   ]);
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -510,7 +520,11 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain("setDeleteModalClosed(false);");
   expect(modalSource).toContain("closeDeletionModal();");
   expect(modalSource).toContain('data-stylex-owner="site-project-list-delete-modal"');
-  expect(modalSource).toContain('style={{ display: deleteProject ? "block" : "none" }}');
+  // F6 copy-fix: the modal visibility moved to stylex (projectList.tsx:778,
+  // deleteModalVisible/deleteModalHidden) — still route-owned, no app deviation.
+  expect(modalSource).toContain(
+    "deleteProject ? styles.deleteModalVisible : styles.deleteModalHidden",
+  );
   expect(modalSource).toContain(
     'aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}',
   );

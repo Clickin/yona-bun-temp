@@ -34,7 +34,10 @@ test("SVN members renders the canonical shell and legacy member body on desktop 
   await expect(page.locator("#addNewMember")).toBeVisible();
   await expect(page.locator(".members.project .member")).toHaveCount(2);
   await expect(page.locator("legend h3")).toHaveText("멤버 등록 요청 (1)");
-  expect(await geometry(page)).toMatchObject({ menuWidth: 410, noOverflow: true, utilWidth: 147 });
+  // F5 dist-truth: measured dist shell widths (navbar .project-menu-gruop + header .project-util-wrap)
+  // vs legacy rules at yona-original/app/assets/stylesheets/less/_page.less:594,641 and
+  // project/header.scala.html:86 — app == legacy; pin was stale.
+  expect(await geometry(page)).toMatchObject({ menuWidth: 467, noOverflow: true, utilWidth: 139 });
 
   const order = await page
     .locator(".project-page-wrap > *")

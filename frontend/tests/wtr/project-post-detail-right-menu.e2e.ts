@@ -83,7 +83,10 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
       targetTop: get("#comment-1").top,
     };
   });
-  expect(desktop.body.width).toBeCloseTo(1346, 0);
+  // F5 dist-truth: legacy .page-wrap/.project-page-wrap/.board-body are full-width with no width
+  // declarations (yona-original/app/assets/stylesheets/less/_page.less:622-624,727,2914), so legacy
+  // truth at a 1366px viewport = 1366; 1346 assumed a 20px classic scrollbar gutter.
+  expect(desktop.body.width).toBeCloseTo(1366, 0);
   expect(desktop.left.right).toBeLessThanOrEqual(desktop.right.left);
   expect(desktop.right.right).toBeLessThanOrEqual(1366);
   expect(desktop.right.width).toBeGreaterThan(300);

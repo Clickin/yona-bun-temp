@@ -592,14 +592,17 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(transferStateSlice).toContain("checked={isTransferAccepted}");
   expect(transferStateSlice).toContain("setDestination(event.target.value)");
   expect(transferStateSlice).toContain("setIsTransferAccepted(event.target.checked)");
+  // F6 copy-fix: transfer.tsx now drives modal visibility with stylex (styles.modalOpen/modalClosed,
+  // lines 131-132,523-525) instead of a className ternary + style prop; the backdrop is conditional
+  // on isTransferModalOpen with data-stylex-owner="project-transfer-modal-backdrop".
   expect(transferStateSlice).toContain(
-    'className={isTransferModalOpen ? "modal hide in" : "modal hide"}',
+    'className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide`}',
   );
   expect(transferStateSlice).toContain(
-    'style={isTransferModalOpen ? { display: "block" } : undefined}',
+    "isTransferModalOpen ? styles.modalOpen : styles.modalClosed",
   );
   expect(transferStateSlice).toContain(
-    '<div className="modal-backdrop fade in" onClick={closeTransferModal}></div>',
+    '            <div\n              {...backdropStyleProps}\n              className={backdropStyleProps.className}\n              data-stylex-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
   );
 });
 

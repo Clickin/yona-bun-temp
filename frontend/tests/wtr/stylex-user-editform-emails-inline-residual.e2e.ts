@@ -16,7 +16,11 @@ test("records the legacy set-main email width owner", () => {
   expect(route).toContain('data-stylex-owner="user-email-primary-action"');
   expect(route).toContain('primaryEmailAction: {\n    width: "150px",');
   expect(route).not.toContain('style={{ width: "150px" }}');
-  expect(route).toContain("ybtn ybtn-small");
+  // F6 copy-fix-current-dom: ybtn/ybtn-small were deliberately retired from the
+  // primary-action button in 3cafbf310 (2026-07-19 'complete valid email row stylex
+  // ownership'); the full ybtn paint (font-size 13px, padding 3px 10px) is replicated
+  // via stylex secondaryAction (emails.tsx:143-173) + width primaryEmailAction (:204-206).
+  expect(route).not.toContain("ybtn ybtn-small");
 
   // legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
 });
@@ -39,8 +43,11 @@ test("pins the set-main email action width and containment on desktop/mobile", a
     await expect(action).toBeVisible();
     await expect(action).toHaveText("대표 이메일로 설정");
     await expect(action).toHaveCSS("width", "150px");
-    await expect(action).toHaveClass(/\bybtn\b/u);
-    await expect(action).toHaveClass(/\bybtn-small\b/u);
+    // F6 copy-fix-current-dom: ybtn/ybtn-small retired from the action button in
+    // 3cafbf310 (2026-07-19); classList is stylex tokens only, paint replicated via
+    // stylex secondaryAction + width primaryEmailAction (emails.tsx:143-173,204-206).
+    await expect(action).not.toHaveClass(/\bybtn\b/u);
+    await expect(action).not.toHaveClass(/\bybtn-small\b/u);
     await expect(action).not.toHaveAttribute("style");
     await expect(table).toContainText("admin@example.com");
     await expect(table).toContainText("valid@example.com");

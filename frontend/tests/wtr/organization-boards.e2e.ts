@@ -694,14 +694,16 @@ test("organization board route keeps only body navigation while the parent owns 
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain("<OrganizationMenu");
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain("<Outlet />");
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain('to="/organizations/$organizationName"');
+  // parent-owned menu links use template-literal targets (the parent route at
+  // src/routes/organizations/$organizationName.tsx:1060ff keeps the legacy header/menu Links)
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
-    'to="/organizations/$organizationName/issues"',
+    'to={`/organizations/${organizationName}/issues` as string}',
   );
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
-    'to="/organizations/$organizationName/boards"',
+    'to={`/organizations/${organizationName}/boards` as string}',
   );
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
-    'to="/organizations/$organizationName/pullrequests"',
+    'to={`/organizations/${organizationName}/pullrequests` as string}',
   );
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
     'to="/organizations/$organizationName/settingform"',
@@ -744,7 +746,13 @@ async function organizationBoardTwoColumnMetrics(page: Page) {
       textLineHeight: textStyle.lineHeight,
       textPadding: textStyle.padding,
       title: element.getAttribute("title"),
-      wrapperClass: element.getAttribute("class"),
+      // the app prepends stylex tokens to the retained legacy wrapper classes
+      // (two-column-mode-checkbox.tsx:102; legacy twoColumnModeCheckboxArea.scala.html:9)
+      wrapperClass: element
+        .getAttribute("class")
+        ?.split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+        .join(" "),
       wrapperPosition: wrapperStyle.position,
     };
   });

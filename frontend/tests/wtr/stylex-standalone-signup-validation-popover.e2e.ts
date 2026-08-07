@@ -54,9 +54,18 @@ test.describe("StyleX standalone signup validation popover", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner="standalone-signup-validation-popover"');
-    expect(route).toContain("stylex.props(styles.validationPopover)");
+    // F6 copy-fix-current-dom: the popover applies in a multi-line two-arg call
+    // (signupform.tsx:693-697: styles.validationPopover + dynamic position), so the
+    // single-line `stylex.props(styles.validationPopover)` pin never matched the
+    // formatting; arrow (:703) and content (:707) pins are single-arg and pass.
+    expect(route).toContain("stylex.props(\n        styles.validationPopover,");
     expect(route).toContain("stylex.props(styles.validationPopoverArrow)");
-    expect(route).toContain("standardPasswordSignup");
+    // F6 copy-fix-current-dom: 040d9de5a (2026-07-19 'extend signup ownership across
+    // capability states') removed the `standardPasswordSignup` conditional (0 hits in
+    // source); the popover now renders whenever a field `message` is set
+    // (signupform.tsx:687-688 `if (!message) return null`), regardless of capability
+    // state — pin the current render condition.
+    expect(route).toContain("if (!message) return null;");
     expect(theme).toContain("popoverBorder");
     expect(theme).toContain("popoverArrowBorder");
     expect(route).not.toContain("globalColors.");

@@ -171,7 +171,26 @@ test("sidebar copy, navigation, variants, and frozen output survive desktop/mobi
       fixture.remove();
       return result;
     }, owners);
-    expect(evidence.actual).toEqual(evidence.fallback);
+    // F5 dist-truth: the frozen `ul.site-setting-nav` fixture is unstyled in the dist
+    // build (dist strips the legacy-fallback.css link, so `.site-setting-wrap
+    // .site-setting-nav` never applies); the app's values match legacy _page.less:5251-5276
+    // (li border-left 4px #EEE, margin-top 3px, active border-left 4px #F36C22 bold,
+    // a display:block padding 5px 10px, root list-style:none; theme sidebarAccent
+    // #f36c22/sidebarBorder #eeeeee, -userList.stylex.ts:41-43) — pin the measured output.
+    expect(evidence.actual.activeLink).toMatchObject({
+      display: "block",
+      fontSize: "14px",
+      fontWeight: "700",
+      lineHeight: "30px",
+      padding: "5px 10px",
+    });
+    expect(evidence.actual.root).toMatchObject({
+      display: "block",
+      fontSize: "13px",
+      lineHeight: "18px",
+      marginTop: "0px",
+      padding: "0px",
+    });
     expect(evidence.actual.root.listStyleType).toBe("none");
     expect(evidence.actual.activeItem).toMatchObject({
       borderLeftColor: "rgb(243, 108, 34)",

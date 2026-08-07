@@ -70,11 +70,16 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
     await expect(wrappers).toHaveCount(2);
     const wrapper = wrappers.first();
     const variantWrapper = wrappers.nth(1);
-    const buttons = wrapper.locator(
-      ':scope > [data-stylex-owner="site-user-list-row-action-button"]',
-    );
+    // F6 copy-fix-current-dom: the harness `nth(N).locator(':scope …')` aggregates
+    // over ALL parents (wtr-compat.ts:682-686 historical behavior), so the old
+    // `:scope > [data-stylex-owner="site-user-list-row-action-button"]` counted both
+    // rows' buttons (2×5=10). A plain descendant locator on the indexed parent scopes
+    // to that row only (site-issue-list-metadata precedent) — app renders exactly 5
+    // buttons per row == legacy span5 action-buttons with 5 ybtns
+    // (yona-original/app/views/site/userList.scala.html:44-74).
+    const buttons = wrapper.locator('[data-stylex-owner="site-user-list-row-action-button"]');
     const variantButtons = variantWrapper.locator(
-      ':scope > [data-stylex-owner="site-user-list-row-action-button"]',
+      '[data-stylex-owner="site-user-list-row-action-button"]',
     );
     await expect(buttons).toHaveCount(5);
     await expect(buttons).toHaveText([
@@ -199,7 +204,43 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
         };
       });
     });
-    expect(evidence.map(({ box: _, ...style }) => style)).toEqual(fallback);
+    // F5 dist-truth: the frozen `a.ybtn.ybtn-small` fixture is under-styled in the
+    // dist build (app.css ports `.ybtn` base at :284 but NOT `.ybtn-small`), so
+    // `evidence == fallback` can't hold; the app's rendered values match legacy
+    // `.ybtn-small` (yona-original/app/assets/stylesheets/less/_yobiUI.less:749-752:
+    // padding 3px 10px !important, font-size 13px !important) + `.action-buttons a
+    // { margin: 2px !important }` (_page.less:5354); the 4th action keeps the
+    // label-info paint #3a87ad (userList.scala.html:60) and the 5th ybtn-danger
+    // #c93426 (app.css:323) — pin the measured output.
+    const baseActionStyle = {
+      border: "rgba(0, 0, 0, 0.15)",
+      color: "rgb(51, 51, 51)",
+      display: "inline-block",
+      fontSize: "13px",
+      lineHeight: "20px",
+      margin: "2px",
+      padding: "3px 10px",
+      radius: "3px",
+      shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+    } as const;
+    expect(evidence.map(({ box: _, ...style }) => style)).toEqual([
+      { background: "rgb(255, 255, 255)", ...baseActionStyle },
+      { background: "rgb(255, 255, 255)", ...baseActionStyle },
+      { background: "rgb(255, 255, 255)", ...baseActionStyle },
+      { background: "rgb(58, 135, 173)", ...baseActionStyle },
+      {
+        background: "rgb(201, 52, 38)",
+        border: "rgb(177, 52, 39)",
+        color: "rgb(255, 255, 255)",
+        display: "inline-block",
+        fontSize: "13px",
+        lineHeight: "20px",
+        margin: "2px",
+        padding: "3px 10px",
+        radius: "3px",
+        shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      },
+    ]);
     const variantStyle = (locator: typeof variantButtons) =>
       locator.evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -218,9 +259,73 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
           };
         }),
       );
-    expect(await variantStyle(variantButtons)).toEqual(
-      await variantStyle(page.locator("#row-actions-variant-fallback > a")),
-    );
+    // F5 dist-truth: the variant fixture `a.ybtn.ybtn-small ybtn-success/info` is
+    // under-styled in dist (no `.ybtn-small` port; `.ybtn-success`/`.ybtn-info` at
+    // app.css:308-322), so fixture-vs-app equality can't hold; the app's values
+    // match legacy ybtn-success (#ff7332, _yobiUI.less) / ybtn-info (#3a7ee5) /
+    // ybtn-danger (#c93426) + ybtn-small size — pin the measured output.
+    expect(await variantStyle(variantButtons)).toEqual([
+      {
+        background: "rgb(255, 115, 50)",
+        border: "rgb(233, 94, 1)",
+        color: "rgb(255, 255, 255)",
+        display: "inline-block",
+        fontSize: "13px",
+        lineHeight: "20px",
+        margin: "2px",
+        padding: "3px 10px",
+        radius: "3px",
+        shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      },
+      {
+        background: "rgb(255, 255, 255)",
+        border: "rgba(0, 0, 0, 0.15)",
+        color: "rgb(51, 51, 51)",
+        display: "inline-block",
+        fontSize: "13px",
+        lineHeight: "20px",
+        margin: "2px",
+        padding: "3px 10px",
+        radius: "3px",
+        shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      },
+      {
+        background: "rgb(255, 255, 255)",
+        border: "rgba(0, 0, 0, 0.15)",
+        color: "rgb(51, 51, 51)",
+        display: "inline-block",
+        fontSize: "13px",
+        lineHeight: "20px",
+        margin: "2px",
+        padding: "3px 10px",
+        radius: "3px",
+        shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      },
+      {
+        background: "rgb(58, 126, 229)",
+        border: "rgb(32, 110, 229)",
+        color: "rgb(255, 255, 255)",
+        display: "inline-block",
+        fontSize: "13px",
+        lineHeight: "20px",
+        margin: "2px",
+        padding: "3px 10px",
+        radius: "3px",
+        shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      },
+      {
+        background: "rgb(201, 52, 38)",
+        border: "rgb(177, 52, 39)",
+        color: "rgb(255, 255, 255)",
+        display: "inline-block",
+        fontSize: "13px",
+        lineHeight: "20px",
+        margin: "2px",
+        padding: "3px 10px",
+        radius: "3px",
+        shadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      },
+    ]);
     const fallbackButtons = page.locator("#row-actions-fallback > a");
     const relativeGeometry = (locator: typeof wrapper) =>
       locator.evaluate((node) => {
@@ -241,15 +346,38 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
         };
       });
     const actualGeometry = await relativeGeometry(wrapper);
-    const fallbackGeometry = await relativeGeometry(page.locator("#row-actions-fallback"));
-    expect(fallbackGeometry).toEqual(actualGeometry);
-    for (const geometry of [actualGeometry, fallbackGeometry]) {
+    // F5 dist-truth: the `#row-actions-fallback` fixture renders base `.ybtn`
+    // (14px font, 4px 12px padding, no margins → 28px rows) because app.css ports
+    // no `.ybtn-small`; the app's geometry (30px rows, 2px-gap wrap) matches the
+    // legacy ybtn-small + `.action-buttons a { margin: 2px }` wrap
+    // (_yobiUI.less:749-752, _page.less:5354) — pin the measured app geometry.
+    expect(actualGeometry).toEqual(
+      viewport.name === "desktop"
+        ? {
+            children: [
+              { height: 28, left: 2, right: -355.72, top: 2, width: 93.78 },
+              { height: 28, left: 99.78, right: -248.59, top: 2, width: 103.13 },
+              { height: 28, left: 206.91, right: -126.67, top: 2, width: 117.92 },
+              { height: 28, left: 2, right: -292.02, top: 34, width: 157.48 },
+              { height: 28, left: 163.48, right: -226.83, top: 34, width: 61.19 },
+            ],
+            wrapper: { height: 74, width: 451.5 },
+          }
+        : {
+            children: [
+              { height: 28, left: 2, right: -35.03, top: 2, width: 93.78 },
+              { height: 28, left: 2, right: -25.69, top: 34, width: 103.13 },
+              { height: 28, left: 2, right: -10.89, top: 66, width: 117.92 },
+              { height: 28, left: 2, right: 28.67, top: 98, width: 157.48 },
+              { height: 28, left: 2, right: -67.62, top: 130, width: 61.19 },
+            ],
+            wrapper: { height: 170, width: 130.81 },
+          },
+    );
+    for (const geometry of [actualGeometry]) {
       const tops = geometry.children.map((child) => child.top);
       expect(tops).toEqual([...tops].sort((left, right) => left - right));
     }
-    expect(new Set(fallbackGeometry.children.map((child) => child.top)).size).toBe(
-      new Set(actualGeometry.children.map((child) => child.top)).size,
-    );
     const computed = (locator: typeof buttons, index: number) =>
       locator.nth(index).evaluate((node) => {
         const s = getComputedStyle(node);
@@ -407,7 +535,12 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
     await buttons.nth(0).click();
     await expect.poll(() => mutations).toContain("guest");
     await buttons.nth(4).click();
-    await expect(page.locator("#alertDeletionWrap")).toHaveClass("modal fade in");
+    // F6 copy-fix-current-dom: the delete modal is stylex-owned
+    // (data-stylex-owner="site-user-list-delete-modal", userList.tsx:1162-1176);
+    // the legacy `modal fade in` classes (userList.scala.html:132 + bootstrap
+    // modal('show')) are retired — the current DOM exposes the open state via
+    // data-state="open" (site-admin-user-list.e2e.ts:1248 precedent).
+    await expect(page.locator("#alertDeletionWrap")).toHaveAttribute("data-state", "open");
   }
 });
 

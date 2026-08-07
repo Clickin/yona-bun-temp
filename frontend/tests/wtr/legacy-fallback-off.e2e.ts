@@ -396,7 +396,7 @@ test("issueform legacy insert bridge has no app.css arms", () => {
     "attachedFileInsertCopy: issueFormStyles.attachedFileInsertCopy",
   );
   expect(readFileSync("src/components/file-uploader.tsx", "utf8")).toContain(
-    'className={`btn-insert-copy ${styles.attachedFileInsertCopy ? stylex.props(styles.attachedFileInsertCopy).className ?? "" : ""}`.trim()}',
+    'className={`btn-insert-copy ${styles.attachedFileInsertCopy ? (stylex.props(styles.attachedFileInsertCopy).className ?? "") : ""}`.trim()}',
   );
 });
 
@@ -715,7 +715,13 @@ test("orange text required markers have StyleX ownership", () => {
   ] as const;
   for (const [sourcePath, owners] of sourceContracts) {
     const source = readFileSync(sourcePath, "utf8");
-    expect(source).not.toContain("orange-txt");
+    // wave-33 retained-class retention (667398a04): settingform keeps orange-txt
+    // per legacy organization/setting.scala.html:59 (<div class="orange-txt">)
+    if (sourcePath === "src/routes/organizations/$organizationName/settingform.tsx") {
+      expect(source).toContain("orange-txt");
+    } else {
+      expect(source).not.toContain("orange-txt");
+    }
     for (const owner of owners) expect(source).toContain(`data-stylex-owner="${owner}"`);
   }
 });
@@ -824,9 +830,11 @@ test("source-less number-of-comments bridge has no app.css arm", () => {
   expect(appCss).not.toContain(".number-of-comments {");
   expect(appCss).toContain(".commitMsg.short {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
+  // wave-33 retained-class retention (667398a04): code file route keeps
+  // number-of-comments per legacy code/partial_view_file.scala.html:49
   expect(
     runtimeSources.some((file) => readFileSync(file, "utf8").includes("number-of-comments")),
-  ).toBe(false);
+  ).toBe(true);
   expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
     ".number-of-comments",
   );
@@ -1053,7 +1061,8 @@ test("authenticated user-menu dropdown declaration bridge has no app.css arms", 
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".gnb-usermenu-dropdown {\n");
   expect(appCss).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
-  expect(appCss).toContain(".gnb-usermenu-item {\n    color: #5dbbe0 !important;");
+  // copy-fix-current-dom: the arm is nested inside @media (max-width: 720px) in app.css
+  expect(appCss).toContain("@media (max-width: 720px) {\n    .gnb-usermenu-item {\n      color: #5dbbe0 !important;");
   expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
     ".gnb-usermenu-dropdown {",
   );

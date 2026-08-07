@@ -459,10 +459,13 @@ test("project change-VCS empty header assets use the configured application cont
 
     await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
       "src",
-      new RegExp(`^${mountPrefix}/.+/project_default_logo\\.png$`),
+      // Vite content-hashed dist asset (e.g. project_default_logo-CAWzVokN.png),
+      // still basePath-prefixed — same legacy project_default_logo.png image
+      new RegExp(`^${mountPrefix}/.+/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
     );
     expect(await page.locator(".project-header-outer").getAttribute("style")).toMatch(
-      new RegExp(`${mountPrefix}/.+/project_default\\.jpg`),
+      // Vite content-hashed dist asset (project_default-<hash>.jpg), same legacy image
+      new RegExp(`${mountPrefix}/.+/project_default(?:-[A-Za-z0-9_-]+)?\\.jpg`),
     );
     expect(await page.locator(".project-header-outer").getAttribute("style")).not.toContain(
       "url('/assets/",
@@ -1206,7 +1209,12 @@ async function readLegacyAnchorStates(page: Page, selector: string) {
     (input) =>
       Array.from(document.querySelectorAll<HTMLAnchorElement>(input)).map((anchor) => ({
         ariaCurrent: anchor.getAttribute("aria-current"),
-        className: anchor.getAttribute("class") ?? "",
+        // retain legacy classes only; stylex token classes (e.g. xfungia x1iih0q2)
+        // are app-owned and not part of the legacy class contract
+        className: (anchor.getAttribute("class") ?? "")
+          .split(/\s+/u)
+          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+          .join(" "),
         dataStatus: anchor.getAttribute("data-status"),
         href: anchor.getAttribute("href"),
         text: (anchor.textContent ?? "").replace(/\s+/g, " ").trim(),

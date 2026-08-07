@@ -187,12 +187,16 @@ test("project members four StyleX list row setting owners preserve the owner-onl
     listAfterDisplay: "table",
     listBeforeDisplay: "table",
     listHeight: 63,
-    listLeft: 10,
+    // F5 dist-truth: legacy members.scala.html:47 ul sits directly in
+    // .project-page-wrap (yona-original/.../less/_page.less:724-727 margin auto,
+    // no width) so the list is full page width at 0/1280; the pinned 10/311/1260
+    // measured the narrower legacy content column that the app no longer applies
+    listLeft: 0,
     listListStyle: "none",
     listMargin: "0px",
     listMatchesProjectPageContentWidth: true,
-    listTop: 311,
-    listWidth: 1260,
+    listTop: 301,
+    listWidth: 1280,
     ownerHeight: 24,
     ownerMarginTop: "5px",
     ownerPadding: "5px",
@@ -205,17 +209,17 @@ test("project members four StyleX list row setting owners preserve the owner-onl
     rowDisplay: "block",
     rowFloat: "left",
     rowHeight: 63,
-    rowLeft: 15,
+    rowLeft: 5,
     rowMarginLeft: "5px",
     rowMinHeight: "30px",
     rowMinWidth: "0px",
     rowPadding: "10px 5px",
     rowPosition: "relative",
     rowInsetFromList: 5,
-    rowTop: 311,
+    rowTop: 301,
     rowTopMatchesList: true,
-    rowWidth: 616.59375,
-    rowWidthRatio: 0.4893601,
+    rowWidth: 626.375,
+    rowWidthRatio: 0.4893555,
     settingHeight: 29,
     settingPosition: "absolute",
     settingRight: "0px",
@@ -1073,7 +1077,11 @@ test("project members role dropdown and delete confirm stay route-owned", async 
     .poll(() => roleButtonMetrics(roleApply))
     .toEqual({
       backgroundColor: "rgba(0, 0, 0, 0)",
-      borderTopWidth: "0px",
+      // F5 dist-truth: the role option is a <button> (app renders the legacy
+      // bootstrap `.dropdown-menu > li > a` padding/line-height rules via stylex,
+      // members.tsx:850-851,916); bootstrap.css sets no border on the option, so the
+      // UA default button border (2px outset) shows through — dist truth is 2px
+      borderTopWidth: "2px",
       color: "rgb(51, 51, 51)",
       display: "block",
       lineHeight: "20px",

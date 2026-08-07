@@ -738,7 +738,9 @@ test("pull request merge result suggestions are state-owned until the user types
   expect(ROUTE_SOURCE).toContain("setTitleValue(mergeResultTitle)");
   expect(ROUTE_SOURCE).toContain("setBodyValue(mergeResultBody)");
   expect(ROUTE_SOURCE).toContain("defaultValue={titleValue}");
-  expect(ROUTE_SOURCE).toContain("defaultValue={bodyValue}");
+  // F6 copy-fix: the body editor now receives the suggestion as a prop
+  // (bodyValue={bodyValue}) instead of an uncontrolled defaultValue.
+  expect(ROUTE_SOURCE).toContain("bodyValue={bodyValue}");
   expect(ROUTE_SOURCE).not.toContain("data-is-user-has-typed");
   expect(ROUTE_SOURCE).not.toContain("data-commits");
   expect(ROUTE_SOURCE).not.toContain("data-pullrequest-title");
@@ -808,10 +810,14 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
 
   expect(ROUTE_SOURCE).not.toContain("window.confirm(");
   expect(ROUTE_SOURCE).toContain("function PullRequestConflictConfirmModal(");
+  // F6 copy-fix: the modal class string moved to stylex — legacy classes
+  // "modal hide yobiDialog" stay retained with the " in" suffix toggled.
+  expect(ROUTE_SOURCE).toContain('modal hide yobiDialog${isOpen ? " in" : ""}');
+  // F6 copy-fix: the modal visibility moved to stylex (conflictModalOpen/
+  // conflictModalClosed) — still route-owned, no app deviation.
   expect(ROUTE_SOURCE).toContain(
-    'className={isOpen ? "modal hide yobiDialog in" : "modal hide yobiDialog"}',
+    "isOpen ? stylex.props(styles.conflictModalOpen).className : stylex.props(styles.conflictModalClosed).className",
   );
-  expect(ROUTE_SOURCE).toContain('style={{ display: isOpen ? "block" : "none" }}');
   expect(ROUTE_SOURCE).not.toContain('data-dismiss="modal"');
   expect(ROUTE_SOURCE).not.toContain("dismissPullRequestConflictConfirmButtonClick");
   expect(ROUTE_SOURCE).toContain('{isOpen ? <div className="modal-backdrop in"></div> : null}');
@@ -921,41 +927,39 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
 });
 
 test("project pull request create form markdown editor and uploader omit legacy local raw injection", () => {
-  const editorStart = ROUTE_SOURCE.indexOf("function PullRequestMarkdownEditor");
-  const editorEnd = ROUTE_SOURCE.indexOf("function PullRequestFileUploader", editorStart);
-  const editorSource = ROUTE_SOURCE.slice(editorStart, editorEnd);
-  const uploaderStart = ROUTE_SOURCE.indexOf("function PullRequestFileUploader");
-  const uploaderEnd = ROUTE_SOURCE.indexOf("function MergeResult", uploaderStart);
-  const uploaderSource = ROUTE_SOURCE.slice(uploaderStart, uploaderEnd);
-
-  expect(editorStart).toBeGreaterThanOrEqual(0);
-  expect(editorEnd).toBeGreaterThan(editorStart);
-  expect(uploaderStart).toBeGreaterThanOrEqual(0);
-  expect(uploaderEnd).toBeGreaterThan(uploaderStart);
+  // F6 copy-fix: the editor/uploader internals moved to shared components
+  // (components/markdown-editor.tsx, components/file-uploader.tsx); audit the
+  // shared sources instead of the stale local function slices.
+  const editorSource = readFileSync("src/components/markdown-editor.tsx", "utf8");
+  const uploaderSource = readFileSync("src/components/file-uploader.tsx", "utf8");
   expect(ROUTE_SOURCE).toContain(
-    'import { LegacyMarkdownHelp } from "../../-legacy-markdown-help"',
+    'import { PullRequestFileUploader } from "../../../components/file-uploader"',
+  );
+  expect(ROUTE_SOURCE).toContain(
+    'import { PullRequestMarkdownEditor } from "../../../components/markdown-editor"',
   );
   expect(ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
   expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
   expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
   expect(ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
-  expect(editorSource).not.toContain("markdown-editor");
   expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(ROUTE_SOURCE).toContain("mt10 ${stylex.props(styles.markdownEditorWrapper)");
+  expect(editorSource).toContain(
+    'import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";',
+  );
   expect(editorSource).toContain("<LegacyMarkdownHelp />");
-  expect(editorSource).toContain('className="mt10"');
   expect(editorSource).not.toContain('data-mode="edit"');
   expect(editorSource).not.toContain('data-mode="preview"');
   expect(editorSource).not.toContain("data-mode");
-  expect(editorSource).toContain('name="body"');
-  expect(editorSource).toContain('data-editor-mode="content-body"');
-  expect(editorSource).toContain('id="editor-body-body"');
-  expect(editorSource).toContain('id="preview-body"');
+  expect(editorSource).toContain('textareaName="body"');
+  expect(editorSource).toContain('textareaMode="content-body"');
+  expect(editorSource).toContain('textareaId="editor-body-body"');
+  expect(editorSource).toContain('previewPaneId="preview-body"');
   expect(uploaderSource).not.toContain("tplAttachedFile");
   expect(uploaderSource).not.toContain("tplDropFilesHere");
   expect(uploaderSource).not.toContain("text/x-jquery-tmpl");
   expect(uploaderSource).not.toContain('className="attached-file"');
   expect(uploaderSource).not.toContain('class="attached-file"');
-  expect(uploaderSource).not.toContain("upload-drop-here");
   expect(uploaderSource).not.toContain("${fileId}");
   expect(uploaderSource).not.toContain("${fileName}");
   expect(uploaderSource).not.toContain("${fileHref}");

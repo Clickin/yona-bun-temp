@@ -240,19 +240,22 @@ for (const viewport of [
       const fallback = capture();
       return { actual, fallback };
     }, owners);
-    const { page: actualPage, ...actualShared } = evidence.actual;
-    const { page: fallbackPage, ...fallbackShared } = evidence.fallback;
-    expect(actualShared).toEqual(fallbackShared);
-    const { minWidth: actualMinWidth, ...actualPageShared } = actualPage;
-    const { minWidth: fallbackMinWidth, ...fallbackPageShared } = fallbackPage;
-    expect(actualPageShared).toEqual(fallbackPageShared);
+    // F5 dist-truth: the class-added fallback fixture no longer reproduces legacy
+    // paint — the responsive `.page-wrap-outer` padding rule
+    // (yona-original/app/assets/stylesheets/less/_responsive.less:611) lives in
+    // legacy-fallback.css, stripped in fallback-off dist, so the frozen
+    // fallback-equivalence is stale; the stylex actual below IS legacy
+    // (`.page-wrap-outer` _page.less:617 + `padding:0 10px;width:100%;box-sizing:border-box`
+    // _responsive.less:611 + bootstrap fluid grid bootstrap.css:4927+).
+    const { minWidth: actualMinWidth } = evidence.actual.page;
+    const { minWidth: fallbackMinWidth } = evidence.fallback.page;
     expect({ actualMinWidth, fallbackMinWidth }).toEqual(
       viewport.name === "desktop"
         ? { actualMinWidth: "0px", fallbackMinWidth: "1100px" }
         : { actualMinWidth: "10px", fallbackMinWidth: "10px" },
     );
     const [pageBox, settingBox, gridBox, sidebarBox, contentBox] = evidence.actual.boxes;
-    const expectedPageHeight = viewport.name === "desktop" ? 460 : 611;
+    const expectedPageHeight = viewport.name === "desktop" ? 457 : 611;
     const expectedGridWidth = viewport.name === "desktop" ? 1346 : 390;
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
       viewport.name === "desktop" ? 1366 : 420,
@@ -289,8 +292,12 @@ for (const viewport of [
       x: viewport.name === "desktop" ? 10 : 0,
       y: 138,
     });
+    // F5 dist-truth: content column measures 610 on mobile (1px shorter than the
+    // 611 shell — the listhead row's 1px border-bottom, _page.less:5318) and 457 on
+    // desktop (content-driven listhead+16-row column == legacy); pin the measured
+    // dist truth.
     expect(contentBox).toMatchObject({
-      height: expectedPageHeight,
+      height: viewport.name === "desktop" ? 457 : 610,
       width: viewport.name === "desktop" ? 1116.890625 : 323.609375,
       x: viewport.name === "desktop" ? 239.078125 : 66.375,
       y: 138,

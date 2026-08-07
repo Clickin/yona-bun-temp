@@ -545,8 +545,10 @@ async function assertStatisticsProjectSearchShell(
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
-  await expect(searchBox).not.toHaveClass(/\bselect\b/);
+  // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105
+  // <div class="search-box @if(project != null || org != null) {select}">
+  await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
+  await expect(searchBox).toHaveClass(/\bselect\b/);
   const scopeControls = page.locator(
     '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
   );

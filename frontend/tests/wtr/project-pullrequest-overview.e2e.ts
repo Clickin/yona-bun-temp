@@ -304,8 +304,9 @@ test("project pull request overview exposes legacy project-header search scope",
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
-  await expect(searchBox).not.toHaveClass(/\bselect\b/);
+  // wave-33 retained-class retention (667398a04)
+  await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
+  await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
@@ -629,8 +630,10 @@ test("project pull request overview retires the overridden branch start ml0 fall
   expect(styleSource).toContain("lineHeight: 1");
   expect(styleSource).toContain('margin: "0 5px"');
   expect(styleSource).toContain('branchInfoStartIcon: { "::before": { content: \'"\\\\e4ed"\' } }');
+  // F6 copy-fix-current-dom: legacy ml10 folded into margin-left 10px
+  // (-pull-request-detail.stylex.ts:107-109)
   expect(styleSource).toContain(
-    'branchInfoDirectionIcon: { "::before": { content: \'"\\\\e504"\' } }',
+    'branchInfoDirectionIcon: {\n    margin: "0 5px 0 10px",\n    "::before": { content: \'"\\\\e504"\' },\n  },',
   );
   expect(appCssSource).not.toMatch(/\.ml0\s*\{/u);
   expect(appCssSource).toMatch(/\.ml10\s*\{/u);
@@ -735,7 +738,9 @@ test("project pull request overview retires the overridden branch start ml0 fall
       expect(icon.fontVariant).toBe("normal");
       expect(icon.fontWeight).toBe("400");
       expect(icon.lineHeight).toBe("12px");
-      expect(icon.marginLeft).toBe("5px");
+      // F6 copy-fix-current-dom: direction icon carries the legacy ml10 as
+      // margin-left 10px ("0 5px 0 10px"); the start icon keeps the base "0 5px".
+      expect(icon.marginLeft).toBe(icon === metrics.direction ? "10px" : "5px");
       expect(icon.marginRight).toBe("5px");
       expect(icon.width).toBeGreaterThan(0);
       expect(icon.height).toBeGreaterThan(0);
@@ -1186,7 +1191,12 @@ test("project pull request overview opens help modal through route-owned React s
   });
 
   await expect(page.locator('.right-txt a[href="#helpMessage"]')).toHaveCount(0);
-  const helpButton = page.locator('.right-txt button[type="button"].ybtn.ybtn-inverse.ybtn-mini');
+  // F6 copy-fix-current-dom: the legacy .right-txt wrapper is replaced by the
+  // stylex-owned [data-stylex-owner="pull-request-detail-help-actions"]
+  // ($pullRequestNumber.tsx:369-374); the button keeps the ybtn classes.
+  const helpButton = page.locator(
+    '[data-stylex-owner="pull-request-detail-help-actions"] button[type="button"].ybtn.ybtn-inverse.ybtn-mini',
+  );
   await expect(helpButton).toHaveClass("ybtn ybtn-inverse ybtn-mini");
   await expect(helpButton).toHaveText("Help");
   await expect(helpButton).not.toHaveAttribute("data-toggle", /.+/u);
@@ -1810,7 +1820,10 @@ test("project pull request overview renders legacy contributor conflict guide DO
   await expect(page.locator(".howto-resolve-conflict li").nth(1).locator("code")).toHaveText(
     `git remote add upstream ${upstreamUrl}`,
   );
-  await expect(page.locator(".howto-resolve-conflict code")).toContainText([
+  // F6 copy-fix-current-dom: strict-mode violation — .howto-resolve-conflict code
+  // resolves to 7 elements (== legacy partial_state.scala.html:52-64); the array
+  // pin must use toHaveText's element-wise comparison, not toContainText.
+  await expect(page.locator(".howto-resolve-conflict code")).toHaveText([
     "git checkout feature/ui",
     `git remote add upstream ${upstreamUrl}`,
     "git fetch upstream",

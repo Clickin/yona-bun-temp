@@ -446,8 +446,12 @@ test("project code branch route source converts internal raw anchors to Link", a
     '<title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>',
   );
   expect(ROUTE_SOURCE).not.toContain("useProjectCodeBranchDocumentTitle");
-  expect(ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
-  expect(ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}");
+  // F6 copy-fix: since f70dbbc0b the SiteLayoutShell + projectSearchScope + showLegacyProjectHeaderLinks
+  // were hoisted out of code/$branch.tsx; the route is now a thin LastOutletTransition wrapper and the
+  // shell/search scope lives in the parent $projectName.tsx route.
+  expect(ROUTE_SOURCE).toContain("<LastOutletTransition routeId={Route.id} />");
+  expect(PROJECT_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(PROJECT_ROUTE_SOURCE).toContain('showLegacyProjectHeaderLinks={active === "search"}');
   expect(ROUTE_SOURCE).not.toContain("document.title");
   expect(ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
   expect(ROUTE_SOURCE).not.toContain('data-toggle="select2"');
@@ -470,11 +474,13 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).not.toContain("href={commitHref(");
   expect(ROUTE_SOURCE).not.toContain("href={`${projectHref(");
   expect(ROUTE_SOURCE).not.toContain('id="new-file-link"\n                      href=');
+  // F6 copy-fix: the legacy-assets images are now bundled imports resolved through
+  // prefixBasePath(basePath, defaultProjectBackgroundUrl / defaultProjectLogoUrl).
   expect(PROJECT_ROUTE_SOURCE).toContain(
-    'prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg")',
+    'prefixBasePath(basePath, defaultProjectBackgroundUrl)',
   );
   expect(PROJECT_ROUTE_SOURCE).toContain(
-    'prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png")',
+    'prefixBasePath(basePath, defaultProjectLogoUrl)',
   );
 });
 

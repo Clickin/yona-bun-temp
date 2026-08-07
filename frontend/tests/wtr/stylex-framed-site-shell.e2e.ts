@@ -262,6 +262,11 @@ for (const viewport of [
 
     await shell.getByRole("button", { name: "Sidebar" }).click();
     await expect(shell).toHaveAttribute("data-sidebar-open", "true");
+    // F5 dist-truth: the open state animates with a 0.5s width transition
+    // (leftSidebarOuterShellStyles.motion, -home-route-screen.tsx:2969-2975);
+    // the sidebar/main geometry only matches the settled layout, so wait it out
+    // (favorite-stars precedent waits 600ms).
+    await page.waitForTimeout(600);
     const open = await readShell(page);
     expect(open).toEqual({
       bodyOverflow: "hidden",

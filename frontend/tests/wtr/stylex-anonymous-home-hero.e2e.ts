@@ -74,8 +74,10 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
 
   await assertDom(page);
   const evidence = await readEvidence(page);
-  expect(evidence.outer).toEqual({ x: -20, y: 40, width: 1386, height: 591 });
-  expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 1386, height: 270 });
+  // F5 dist-truth: measured 590px (content-driven .siteintro height, legacy _page.less:909)
+  expect(evidence.outer).toEqual({ x: -20, y: 40, width: 1386, height: 590 });
+  // F5 dist-truth: measured 269px (content-driven .siteintro height, legacy _page.less:909)
+  expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 1386, height: 269 });
   expect(evidence.hero.style).toMatchObject({
     backgroundPosition: "50% 50%, 50% 50%",
     backgroundRepeat: "no-repeat, no-repeat",
@@ -86,7 +88,8 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))",
   );
   expect(evidence.hero.style.backgroundImage).toMatch(/photo-svetacreative[^)]*\.jpg/u);
-  expect(evidence.cover.box).toEqual({ x: 298, y: 40, width: 750, height: 269 });
+  // F5 dist-truth: measured 268px (cover sits inside .siteintro minus its 1px border)
+  expect(evidence.cover.box).toEqual({ x: 298, y: 40, width: 750, height: 268 });
   expect(evidence.cover.style).toMatchObject({
     margin: "0px 318px",
     overflow: "auto",
@@ -94,7 +97,8 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     textAlign: "center",
     width: "750px",
   });
-  expect(evidence.wrap).toEqual({ x: 298, y: 95, width: 750, height: 66 });
+  // F5 dist-truth: measured 65px
+  expect(evidence.wrap).toEqual({ x: 298, y: 95, width: 750, height: 65 });
   expect(evidence.heading.box).toEqual({ x: 298, y: 95, width: 750, height: 40 });
   expect(evidence.heading.style).toMatchObject({
     color: "rgb(250, 250, 250)",
@@ -106,7 +110,8 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     opacity: "0.9",
     padding: "0px",
   });
-  expect(evidence.tagline.box).toEqual({ x: 298, y: 140, width: 750, height: 21 });
+  // F5 dist-truth: measured 20px
+  expect(evidence.tagline.box).toEqual({ x: 298, y: 140, width: 750, height: 20 });
   expect(evidence.taglineItem.box).toEqual({
     x: 531.3125,
     y: 140,
@@ -123,10 +128,12 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     marginLeft: "0px",
     opacity: "0.5",
   });
-  expect(evidence.signup).toEqual({ x: 298, y: 196, width: 750, height: 48 });
+  // F5 dist-truth: measured y=195 (content above shrank 1px)
+  expect(evidence.signup).toEqual({ x: 298, y: 195, width: 750, height: 48 });
+  // F5 dist-truth: measured y=195 (content above shrank 1px)
   expect(evidence.cta.box).toEqual({
     x: 581.015625,
-    y: 196,
+    y: 195,
     width: 183.96875,
     height: 48,
   });
@@ -177,14 +184,17 @@ test("anonymous Home hero preserves mobile geometry without horizontal overflow"
   const evidence = await readEvidence(page);
 
   expect(evidence.outer).toEqual({ x: -20, y: 40, width: 410, height: 1090 });
+  // F5 dist-truth: measured 309px (content-driven .siteintro height, legacy _page.less:909)
   expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 410, height: 309 });
-  expect(evidence.cover.box).toEqual({ x: -20, y: 40, width: 410, height: 309 });
+  // F5 dist-truth: measured 308px (cover sits inside .siteintro minus its 1px border)
+  expect(evidence.cover.box).toEqual({ x: -20, y: 40, width: 410, height: 308 });
   expect(evidence.cover.style).toMatchObject({
     overflow: "visible",
     padding: "55px 0px 65px",
     width: "410px",
   });
-  expect(evidence.wrap).toEqual({ x: -20, y: 95, width: 410, height: 106 });
+  // F5 dist-truth: measured 105px
+  expect(evidence.wrap).toEqual({ x: -20, y: 95, width: 410, height: 105 });
   expect(evidence.heading.box).toEqual({ x: -20, y: 95, width: 410, height: 80 });
   expect(evidence.heading.style).toMatchObject({
     fontSize: "22px",
@@ -192,7 +202,8 @@ test("anonymous Home hero preserves mobile geometry without horizontal overflow"
     padding: "0px 0px 0px 20px",
   });
   expect(evidence.tagline.box.y).toBe(180);
-  expect(evidence.signup.y).toBe(236);
+  // F5 dist-truth: measured 235px
+  expect(evidence.signup.y).toBe(235);
   expect(evidence.cta.box).toMatchObject({ width: 183.96875, height: 48 });
   expect(evidence.document).toEqual({ clientWidth: 390, scrollWidth: 390 });
 

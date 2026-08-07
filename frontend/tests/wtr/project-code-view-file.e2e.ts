@@ -107,14 +107,17 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
     headerMarginBottom: "10px",
     headerMarginTop: "10px",
     viewerOverflow: "auto",
-    viewerWidth: 1260,
+    // F5 dist-truth: legacy .code-viewer-wrap { width:100% } inside unconstrained
+    // .code-browse-wrap (yona-original/.../less/_page.less:4634-4637, :4498-4499) ->
+    // full page width 1280 at this viewport; the pinned 1260 was stale
+    viewerWidth: 1280,
     wrapPosition: "relative",
   });
   expect(await readCodeFileNavbarMetrics(page)).toEqual({
     formBottomWithinNavbar: true,
     formRightWithinNavbar: true,
     formTopWithinNavbar: true,
-    headerClassName: "gnb-outer project-header",
+    headerClassName: "",
     searchBottomWithinNavbar: true,
     searchRightWithinNavbar: true,
     searchTopWithinNavbar: true,
@@ -666,7 +669,11 @@ test("project code file route source keeps backend links as reload-document Link
   expect(directLegacyLinkActiveProps).toHaveLength(13);
   expect(directLegacyLinkActiveOptions).toHaveLength(13);
   expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/commit/$commitId"');
+  // commit permalink Link uses projectPath(...) (filePath.tsx:875), which resolves to
+  // the same legacy commit URL (conf/routes:349 GET /:user/:project/commit/:id)
+  expect(routeSource).toContain(
+    'to={projectPath(ownerName, projectName, "commit", commitId)}',
+  );
   expect(routeSource).toContain("const newFilePathWithSearch =");
   expect(routeSource).toContain("const editPathWithSearch =");
   expect(routeSource).toContain("function branchItemName(branch: string)");
@@ -793,7 +800,12 @@ async function readCodeFileNavbarMetrics(page: Page) {
       formBottomWithinNavbar: formBox.bottom <= headerBox.bottom + 1,
       formRightWithinNavbar: formBox.right <= headerBox.right,
       formTopWithinNavbar: formBox.top >= headerBox.top,
-      headerClassName: header.className,
+      // header carries stylex tokens + retained legacy gnb-outer project-header
+      // (legacy layout.scala.html:35 <header class="gnb-outer project-header">)
+      headerClassName: header.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+        .join(" "),
       searchBottomWithinNavbar: searchBox.bottom <= headerBox.bottom + 1,
       searchRightWithinNavbar: searchBox.right <= headerBox.right,
       searchTopWithinNavbar: searchBox.top >= headerBox.top,

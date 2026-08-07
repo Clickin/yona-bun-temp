@@ -3,7 +3,7 @@ import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
-const fallbackSource = new URL("../src/app.css", import.meta.url);
+const legacyFallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockAnonymousSignup(page: Page, capabilities: Record<string, unknown> = {}) {
@@ -46,10 +46,10 @@ async function openConfirmationNotice(page: Page) {
 
 test.describe("StyleX standalone signup confirmation notice", () => {
   test("retires center-txt only for the confirmation state through a global theme variable", async () => {
-    const [route, theme, fallback] = await Promise.all([
+    const [route, theme, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
+      readFile(legacyFallbackSource, "utf8"),
     ]);
 
     expect(route).toContain('data-stylex-owner="standalone-signup-confirmation-notice"');
@@ -58,7 +58,11 @@ test.describe("StyleX standalone signup confirmation notice", () => {
     expect(route).not.toContain("center-txt ${confirmationNoticeClassName}");
     expect(theme).not.toContain("standaloneSignupConfirmationNotice");
     expect(route).not.toContain("globalColors.");
-    expect(fallback).toContain(".center-txt");
+    // F6 copy-fix-current-dom: `.center-txt` lives in the legacy fallback stylesheet
+    // (loaded only in fallback-ON builds; dist strips the link via
+    // src/legacy-fallback-mode.ts), not in src/app.css — the confirmation notice
+    // centers via stylex textAlign (signupform.tsx:308; legacy _common.less:162).
+    expect(legacyFallback).toContain(".center-txt");
   });
 
   test("preserves legacy two-paragraph copy, order, and obfuscated contact output", async ({
@@ -74,6 +78,10 @@ test.describe("StyleX standalone signup confirmation notice", () => {
     await expect(owner.locator(":scope > p").nth(1).locator(".obfuscate")).toHaveText(
       "moc.elpmaxe@nimda",
     );
+    // F6 copy-fix-current-dom: owners are unconditional since 040d9de5a (2026-07-19
+    // 'extend signup ownership across capability states'), so `owner ?? className`
+    // now returns the owners; assert the retained legacy classes directly
+    // (signup.scala.html:27,40) instead.
     expect(
       await page
         .locator(".page.full > *")
@@ -81,10 +89,12 @@ test.describe("StyleX standalone signup confirmation notice", () => {
           elements.map((element) => element.getAttribute("data-stylex-owner") ?? element.className),
         ),
     ).toEqual([
-      expect.stringContaining("tag-line-wrap signup"),
+      "standalone-signup-tagline",
       "standalone-signup-confirmation-notice",
-      "signup-form-wrap frm-wrap",
+      "standalone-signup-form-wrap",
     ]);
+    await expect(page.locator(".center-wrap.tag-line-wrap.signup")).toHaveCount(1);
+    await expect(page.locator(".signup-form-wrap.frm-wrap")).toHaveCount(1);
   });
 
   for (const viewport of [

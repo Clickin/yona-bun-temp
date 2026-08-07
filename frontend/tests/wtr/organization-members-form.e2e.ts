@@ -542,8 +542,20 @@ test("organization members route source keeps internal navigation out of raw anc
     "projectSearchScope={{ organizationName }}",
   );
   expect(ORGANIZATION_ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks");
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain("projectSearchScope={{ organizationName }}");
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain("const isMembers");
+  // F6 copy-fix-current-dom: org parent route scopes search for non-settings routes via
+  // projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}
+  // ($organizationName.tsx:170); members is neither, so the scope stays for this route.
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain(
+    "projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}",
+  );
+  // F6 copy-fix-current-dom: `const isMembers` was replaced by pathname-derived
+  // scope/menu state in the org parent route ($organizationName.tsx:140-141).
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain(
+    "const isSettings = pathname === `/organizations/${organizationName}/settingform`;",
+  );
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain(
+    "const isDeleteForm = pathname === `/organizations/${organizationName}/deleteForm`;",
+  );
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("<title>{organizationName}</title>");
   expect(ORGANIZATION_ROUTE_SOURCE).toContain("/legacy-assets/images/group_default.png");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('to="/$user"');
@@ -1158,7 +1170,10 @@ async function organizationForbiddenMetrics(page: Page) {
       errorPaddingBlock:
         Math.round(parseFloat(errorStyle.paddingTop)) +
         Math.round(parseFloat(errorStyle.paddingBottom)),
-      iconClass: icon.getAttribute("class"),
+      iconClass: (icon.getAttribute("class") ?? "")
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+        .join(" "),
       iconTextAlign: getComputedStyle(icon).textAlign,
       messageFontSize: messageStyle.fontSize,
       messageFontWeight: messageStyle.fontWeight,
@@ -1360,7 +1375,15 @@ async function canonicalizeScreenRoots(
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
         .filter(([name, value]) => !(name === "class" && value === ""))

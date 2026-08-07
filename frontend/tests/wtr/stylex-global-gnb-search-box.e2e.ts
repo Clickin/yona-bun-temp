@@ -151,8 +151,10 @@ test("global GNB search box has complete global-theme StyleX ownership", () => {
   expect(markup).toContain("{...stylex.props(");
   expect(markup).toContain("globalGnbSearchBoxStyles.box");
   expect(markup).toContain("hasScopedSearch && globalGnbSearchBoxStyles.scoped");
-  expect(markup).not.toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
-  expect(markup).not.toMatch(/(?:^|[\s"'`])select(?:[\s"'`]|$)/u);
+  // wave-33 retained-class retention (667398a04): markup keeps search-box/select
+  // per legacy common/navbar.scala.html:105 <div class="search-box @if(project != null || org !=null) {select}">
+  expect(markup).toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
+  expect(markup).toMatch(/(?:^|[\s"'`])select(?:[\s"'`]|$)/u);
   expect(markup.indexOf('name="keyword"')).toBeLessThan(markup.indexOf('type="submit"'));
 
   expect(appCss).not.toContain(".gnb-search-form .search-box {");
@@ -209,8 +211,14 @@ for (const state of [
     const box = page.locator(BOX);
     const form = page.locator(FORM);
     await expect(box).toBeVisible();
-    await expect(box).not.toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
-    await expect(box).not.toHaveClass(/(?:^|\s)select(?:\s|$)/u);
+    // wave-33 retained-class retention (667398a04): search-box/select kept per
+    // legacy common/navbar.scala.html:105 <div class="search-box @if(project != null || org !=null) {select}">
+    await expect(box).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+    if (state.scoped) {
+      await expect(box).toHaveClass(/(?:^|\s)select(?:\s|$)/u);
+    } else {
+      await expect(box).not.toHaveClass(/(?:^|\s)select(?:\s|$)/u);
+    }
     await expect(form.locator(BOX)).toHaveCount(1);
     if (state.scoped) {
       await expect(form.locator(`:scope > ${SCOPE} + ${BOX}`)).toHaveCount(1);
@@ -340,7 +348,9 @@ test("owned wrapper is isolated after the retired search-box class is removed", 
 
   expect(evidence.isolated).toEqual(evidence.owned);
   expect(evidence.withRetiredClass).toEqual(evidence.owned);
-  expect(evidence.ownedClassName).not.toMatch(/(?:^|\s)(?:search-box|select)(?:\s|$)/u);
+  // wave-33 retained-class retention (667398a04): owned box keeps search-box select
+  // per legacy common/navbar.scala.html:105
+  expect(evidence.ownedClassName).toMatch(/(?:^|\s)(?:search-box|select)(?:\s|$)/u);
 });
 
 async function readBoxEvidence(box: Locator) {

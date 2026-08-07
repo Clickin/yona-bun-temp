@@ -64,8 +64,8 @@ const EXPECTED_MIGRATION_SCREEN = `
     </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><a href="__BASE_PATH__/projects">List All</a></li>
-      <li></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -318,9 +318,15 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
     "Yoram",
   );
   for (const attribute of ["data-login", "data-placement", "data-toggle"]) {
-    await expect(page.locator(`[data-stylex-owner="global-gnb-outer"] [${attribute}]`)).toHaveCount(
-      0,
-    );
+    // F6 copy-fix: the anonymous sidenav (#mySidenav) legitimately carries 3
+    // data-toggle="tab" sidebar tab buttons inside global-gnb-outer, matching
+    // legacy usermenu.scala.html:53-67 (included at navbar.scala.html:112);
+    // scope the pin to the gnb chrome outside the sidenav.
+    await expect(
+      page.locator(
+        `[data-stylex-owner="global-gnb-outer"] [${attribute}]:not(#mySidenav [${attribute}])`,
+      ),
+    ).toHaveCount(0);
   }
 
   const actual = await canonicalizeScreenRoots(page);

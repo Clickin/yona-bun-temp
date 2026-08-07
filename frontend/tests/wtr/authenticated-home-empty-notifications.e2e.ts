@@ -1933,6 +1933,13 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   const workspace = await mockWorkspaceSidebarProjects(page);
+  // F6 copy-fix: the left sidebar opens only when shallWeOpenLeftNavigation ===
+  // 'true' (readStoredLeftSidebarOpen, -home-route-screen.tsx:7996; legacy
+  // layout.scala.html:44-51 redirects the same way) — prime the key like the
+  // sibling sidebar test does.
+  await page.addInitScript(() => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "true");
+  });
   // The SPA navigation to /admin/sample mounts the project route, whose shell
   // renders only when the project container query succeeds (the Playwright
   // ground truth gets this from the live backend; WTR must mock it).

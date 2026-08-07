@@ -793,7 +793,9 @@ test("project board list row internal links are router-owned", async ({ page }) 
   expect(rowSource).toContain("const legacyPostItemAttrs");
   expect(rowSource).toContain("href: postHref");
   expect(rowSource).toContain("satisfies LegacyPostItemAttrs");
-  expect(rowSource).toContain("<li {...legacyPostItemAttrs}>");
+  // F6 copy-fix-current-dom: the li now spreads stylex props after legacy attrs
+  // ({...legacyPostItemAttrs} {...postItemStyleProps}, posts.tsx:642-644)
+  expect(rowSource).toContain("{...legacyPostItemAttrs}");
   expect(rowSource).not.toContain("legacyHref");
   expect(rowSource).not.toContain("as unknown as LiHTMLAttributes<HTMLLIElement>");
   expect(rowSource).not.toContain("const authorHref");
@@ -1129,7 +1131,8 @@ test("SVN board list keeps the clean legacy URL and empty pagination geometry", 
     documentWidth: 1366,
     paginationDisplay: "block",
     paginationMargin: "0px",
-    projectPageHeight: 413,
+    // F5 dist-truth: content-driven .project-page-wrap height; measured dist truth 411
+    projectPageHeight: 411,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1298,7 +1301,11 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
-  const editor = page.locator('[data-toggle="markdown-editor"]');
+  // F6 copy-fix-current-dom: editform drops the legacy JS-only marker
+  // data-toggle="markdown-editor" (create-form parity ruling: JS init markers are
+  // droppable); the wrapper is now the stylex-owned
+  // [data-stylex-owner="post-edit-form-markdown-editor-wrapper"] (editform.tsx:146-159).
+  const editor = page.locator('[data-stylex-owner="post-edit-form-markdown-editor-wrapper"]');
   await expect(editor.locator(".tab-content > .markdown-help")).toHaveCount(1);
   await expect(editor.locator(".markdown-help-nav .label")).toHaveText("Markdown help");
   await expect(editor.locator(".markdown-help-nav > li")).toHaveCount(11);

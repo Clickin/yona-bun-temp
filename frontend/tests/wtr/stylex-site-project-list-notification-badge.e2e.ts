@@ -117,7 +117,12 @@ for (const viewport of [
       element.className = originalClassName;
       return { actual, fallback };
     });
-    expect(evidence.actual).toEqual(evidence.fallback);
+    // F5 dist-truth: `.notification-badge` is not in any dist CSS (legacy-fallback.css
+    // is stripped in fallback-off dist), so the class-added fixture renders unstyled;
+    // the stylex paint below IS legacy `.notification-badge`
+    // (yona-original/app/assets/stylesheets/less/_common.less:251-262,
+    // @yobi-primary=@yobi-orange #FF7332 _variables.less:63,77) — pin the measured
+    // dist truth instead of the stale fallback-equivalence.
     expect(evidence.actual.style).toEqual({
       backgroundColor: "rgb(255, 115, 50)",
       border: "2px solid rgb(255, 255, 255)",

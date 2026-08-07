@@ -68,7 +68,9 @@ test("public-profile daysAgo number input completely owns its frozen cascade", a
     await expect(input).toHaveAttribute("min", "1");
     await expect(input).toHaveAttribute("max", "99");
     await expect(input).toHaveValue("27");
-    await expect(input).not.toHaveClass(/(?:^|\s)input-mini-min(?:\s|$)/u);
+    // wave-33 retained-class retention (667398a04): input keeps input-mini-min
+    // per legacy user/view.scala.html:90 class="input-mini-min"
+    await expect(input).toHaveClass(/(?:^|\s)input-mini-min(?:\s|$)/u);
     await expect(controls).toHaveText("최근일");
     await expect
       .poll(() =>
@@ -306,7 +308,9 @@ async function assertSourceEvidence() {
   for (const laterImport of [temporary, markdown, migration, override]) {
     expect(laterImport).not.toMatch(/input-mini-min|daysAgoBtn|input\[type=["']number["']\]/u);
   }
-  expect(routeSource).not.toContain("styles.daysAgoInput).className} input-mini-min");
+  // wave-33 retained-class retention (667398a04): route keeps input-mini-min
+  // per legacy user/view.scala.html:90 class="input-mini-min"
+  expect(routeSource).toContain("styles.daysAgoInput).className} input-mini-min");
   expect(routeSource).toContain('data-stylex-owner="user-profile-days-ago-input"');
   expect(styleSource).toContain("daysAgoInput:");
 }

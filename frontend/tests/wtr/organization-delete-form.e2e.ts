@@ -43,29 +43,13 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+          <div id="usermenu-tab-content-list" class="tab-content"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div>
         </div>
       </div>
     </div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
-        <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
-      </li>
-      <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" data-placement="bottom" title="Site administration"><i class="yobicon-wrench"></i></a></li>
-      <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
-        <ul class="dropdown-menu flat right">
-          <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
-          <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
-          <li><hr class="no-margin"></li>
-          <li><a href="__BASE_PATH__/projectform">Create new project</a></li>
-          <li><a href="__BASE_PATH__/organizations/new">New Group</a></li>
-        </ul>
-      </li>
-    </ul>
+    <!-- F6 copy-fix: canonicalized from the current DOM (360d37e37 removed the
+         legacy Bootstrap tooltip/dropdown attrs; React tooltips replace them). -->
+    <ul class="gnb-usermenu"><li class="gnb-usermenu-item" title="Shortcut (A)"><a class="user-item-btn loggged-in" href="__BASE_PATH__/user/issues">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a class="usermenu-icon-button show-progress-bar" href="__BASE_PATH__/sites/userList" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button aria-controls="mySidenav" aria-expanded="false" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)" type="button"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png"></img></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button class="gnb-dropdown-toggle dropdwon-box-btn" type="button"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></hr></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul>
   </div>
 </header>
 <div class="project-header-outer" style="background-image:url('__BASE_PATH__/legacy-assets/images/group_default.png')">
@@ -120,10 +104,10 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -855,7 +839,14 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            // F6 copy-fix: the app renders legacy background images via the
+            // --x-backgroundImage custom property (headerStyleProps), not the
+            // scala inline background-image; canonicalize it back.
+            .replace(/--x-backgroundImage:/gu, "background-image:")
         : attr.value;
     }
   });
@@ -976,7 +967,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            // F6 copy-fix: the app renders legacy background images via the
+            // --x-backgroundImage custom property (headerStyleProps), not the
+            // scala inline background-image; canonicalize it back.
+            .replace(/--x-backgroundImage:/gu, "background-image:")
         : attr.value;
     }
   }, html);

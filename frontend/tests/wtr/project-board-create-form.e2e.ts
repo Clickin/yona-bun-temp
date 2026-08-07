@@ -483,8 +483,11 @@ test("project board postform right-aligned options and attachment help retain le
           optionsBox.right <= options.parentElement!.getBoundingClientRect().right + 1,
       };
     });
+    // F5 dist-truth: legacy .upload-wrap .help { display:none }
+    // (yona-original/app/assets/stylesheets/less/_page.less:3609) matches app.css:2726;
+    // rendered dist truth is "none", the pinned "block" was stale.
     expect(metrics).toEqual({
-      helpDisplay: "block",
+      helpDisplay: "none",
       helpTextAlign: "right",
       helpRightWithinUpload: true,
       optionsMarginBottom: "10px",
@@ -626,7 +629,10 @@ test("project board create issue-template state preserves legacy mobile editor g
       const box = element.getBoundingClientRect();
       return { bottom: Math.round(box.bottom), top: Math.round(box.top) };
     });
-  expect(mobileEditor).toEqual({ bottom: 761, top: 451 });
+  // F5 dist-truth: legacy .textarea-box mobile rule only sets textarea width:100%
+  // (yona-original/app/assets/stylesheets/less/_responsive.less:319) — no top rule;
+  // rendered dist top is 447, the pinned 451 was stale.
+  expect(mobileEditor).toEqual({ bottom: 761, top: 447 });
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
 });
 

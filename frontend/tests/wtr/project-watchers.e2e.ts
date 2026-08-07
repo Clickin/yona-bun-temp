@@ -130,7 +130,9 @@ test("project watchers empty avatar URL loads the Vite-managed legacy fallback u
         insideContextPath: url.pathname.startsWith(`${expectedBasePath}/`),
         naturalHeight: image.naturalHeight,
         naturalWidth: image.naturalWidth,
-        usesImportedFilename: url.pathname.endsWith("/default-avatar-128.png"),
+        // F6 copy-fix: the Vite-imported fallback is emitted hashed
+        // (dist/assets/default-avatar-128-<hash>.png), not the raw filename.
+        usesImportedFilename: /\/assets\/default-avatar-128-[\w-]+\.png$/.test(url.pathname),
       };
     }, basePath),
   ).toEqual({
@@ -234,8 +236,10 @@ test("protected org-owned project watchers expose legacy project-header search s
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
-  await expect(searchBox).not.toHaveClass(/\bselect\b/);
+  // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105
+  // <div class="search-box @if(project != null || org != null) {select}">
+  await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
+  await expect(searchBox).toHaveClass(/\bselect\b/);
   const searchScopeButtons = page.locator(
     "[data-stylex-owner=global-gnb-search-scope-item] > button",
   );

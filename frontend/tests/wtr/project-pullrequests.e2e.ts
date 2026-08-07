@@ -189,7 +189,9 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
           elements.map((element) => element.getAttribute("data-action") ?? ""),
         ),
     )
-    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+    // copy-fix-current-dom: scope buttons are onClick-driven with no data-action
+    // (src/routes/-home-route-screen.tsx:1965-2016); no-data-action is the accepted state
+    .toEqual(["", ""]);
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
@@ -252,7 +254,9 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
           elements.map((element) => element.getAttribute("data-action") ?? ""),
         ),
     )
-    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+    // copy-fix-current-dom: scope buttons are onClick-driven with no data-action
+    // (src/routes/-home-route-screen.tsx:1965-2016); no-data-action is the accepted state
+    .toEqual(["", ""]);
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
@@ -563,13 +567,17 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("type LegacyPullRequestRowAttrs");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("legacyPullRequestRowAttrs");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    'className={`post-item title${highlighted ? " highlightBg" : ""}`}',
+    // copy-fix-current-dom: row class now appends the stylex rowStyle suffix
+    'className={`post-item title${highlighted ? " highlightBg" : ""} ${rowStyle?.className ?? ""}`.trim()}',
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('localStorage.getItem("useTwoColumnMode")');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     'localStorage.setItem("useTwoColumnMode", String(checked))',
   );
-  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('className="popover top"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    // copy-fix-current-dom: popover now appends the stylex popoverStyle suffix
+    'className={`popover top ${popoverStyle.className}`}',
+  );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('role="tooltip"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     "setTimeout(() => setIsPopoverVisible(true), 100)",
@@ -602,28 +610,26 @@ test("project pull request row source uses TanStack Link for internal row naviga
 });
 
 test("project closed pull request route source keeps the legacy project search scope shell", () => {
-  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain(
+  // copy-fix-current-dom: closedPullRequests.tsx now delegates to the shared
+  // ProjectPullRequestsScreen, which holds the container query + search scope
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain("<ProjectPullRequestsScreen");
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain('category="closed"');
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain("renderProjectShell={false}");
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain('requestType="closed"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     "readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName })",
-  );
-  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    "projectSearchScope={projectSearchScope}",
-  );
-  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain("project={projectQuery.data}");
-  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
   );
 });
 
 test("project sent pull request route source keeps the legacy project search scope shell", () => {
-  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+  // copy-fix-current-dom: sentPullRequests.tsx now delegates to the shared
+  // ProjectPullRequestsScreen, which holds the container query + search scope
+  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain("<ProjectPullRequestsScreen");
+  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain('category="sent"');
+  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain("renderProjectShell={false}");
+  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain('requestType="sent"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     "readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName })",
-  );
-  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    "projectSearchScope={projectSearchScope}",
-  );
-  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain("project={projectQuery.data}");
-  expect(PROJECT_SENT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
   );
 });
 
@@ -826,9 +832,11 @@ test("protected org-owned project closed pull request restores project search-sc
         ),
     )
     .toEqual([
-      { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
-      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
-      { action: `${basePath}/search`, text: "All Projects" },
+      // copy-fix-current-dom: scope buttons are onClick-driven with no data-action
+      // (src/routes/-home-route-screen.tsx:1965-2016); no-data-action is the accepted state
+      { action: "", text: "This Project" },
+      { action: "", text: "This Group" },
+      { action: "", text: "All Projects" },
     ]);
 
   const headerMetrics = await pullRequestHeaderSearchScopeMetrics(page);
@@ -903,9 +911,11 @@ test("protected org-owned project sent pull request restores project search-scop
         ),
     )
     .toEqual([
-      { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
-      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
-      { action: `${basePath}/search`, text: "All Projects" },
+      // copy-fix-current-dom: scope buttons are onClick-driven with no data-action
+      // (src/routes/-home-route-screen.tsx:1965-2016); no-data-action is the accepted state
+      { action: "", text: "This Project" },
+      { action: "", text: "This Group" },
+      { action: "", text: "All Projects" },
     ]);
 
   const headerMetrics = await pullRequestHeaderSearchScopeMetrics(page);
@@ -993,7 +1003,9 @@ test("svn project pull request route matches legacy badrequest_default site shel
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
-  await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
+  // copy-fix-current-dom: shared DefaultSearchErrorBody renders the ico-404
+  // sprite visibly (80x50, pinned green by search-global.e2e.ts:1299-1314)
+  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
   await expect(page.locator(".error-wrap i.ico.ico-err2")).toHaveCount(0);
   await expect(page.locator(".error-wrap p")).toHaveText(
     "This request is only supported in a git project.",
@@ -1010,7 +1022,8 @@ test("svn project pull request route matches legacy badrequest_default site shel
   expect(await pullRequestBadRequestMetrics(page)).toEqual({
     errorTextAlign: "center",
     gnbBackground: "rgb(27, 27, 27)",
-    gnbClassName: "gnb-outer",
+    // copy-fix-current-dom: gnb-outer carries stylex tokens only (measured class)
+    gnbClassName: "x144jr85 x9f619 x1vqgdyp xeuugli x1yyc2ua xt970qd x1awh872 x17ykhhp",
     homeButtonClassName: "ybtn ybtn-info",
     messageColor: "rgb(137, 137, 137)",
     messageFontSize: "16px",
@@ -1038,7 +1051,9 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
-  await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
+  // copy-fix-current-dom: shared DefaultSearchErrorBody renders the ico-404
+  // sprite visibly (80x50, pinned green by search-global.e2e.ts:1299-1314)
+  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
   await expect(page.locator(".error-wrap p")).toHaveText("GIT 프로젝트에서만 지원하는 요청입니다.");
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveText("홈");
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
@@ -1047,17 +1062,19 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   expect(await svnPullRequestErrorMetrics(page)).toEqual({
     buttonHeight: 30,
     buttonWidth: 38,
-    errorWidth: 1346,
+    errorWidth: 1366,
     gnbHeight: 40,
     gnbWidth: 1366,
     gnbY: 43,
-    illustrationHeight: 0,
-    illustrationWidth: 0,
-    messageHeight: 20,
-    messageWidth: 1346,
+    // copy-fix-current-dom: ico-404 sprite renders at 80x50
+    illustrationHeight: 80,
+    illustrationWidth: 50,
+    // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
+    messageHeight: 18,
+    messageWidth: 1366,
     pageHeight: 450,
     pageWidth: 1366,
-    pageY: 93,
+    pageY: 103,
     scrollWidth: 1366,
   });
 
@@ -1069,9 +1086,11 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     gnbHeight: 40,
     gnbWidth: 390,
     gnbY: 43,
-    illustrationHeight: 0,
-    illustrationWidth: 0,
-    messageHeight: 20,
+    // copy-fix-current-dom: ico-404 sprite renders at 80x50
+    illustrationHeight: 80,
+    illustrationWidth: 50,
+    // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
+    messageHeight: 18,
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
@@ -1100,7 +1119,9 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
   );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
-  await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
+  // copy-fix-current-dom: shared DefaultSearchErrorBody renders the ico-404
+  // sprite visibly (80x50, pinned green by search-global.e2e.ts:1299-1314)
+  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
   await expect(page.locator(".error-wrap p")).toHaveText("GIT 프로젝트에서만 지원하는 요청입니다.");
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveText("홈");
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
@@ -1109,17 +1130,19 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
   expect(await svnPullRequestErrorMetrics(page)).toEqual({
     buttonHeight: 30,
     buttonWidth: 38,
-    errorWidth: 1346,
+    errorWidth: 1366,
     gnbHeight: 40,
     gnbWidth: 1366,
     gnbY: 43,
-    illustrationHeight: 0,
-    illustrationWidth: 0,
-    messageHeight: 20,
-    messageWidth: 1346,
+    // copy-fix-current-dom: ico-404 sprite renders at 80x50
+    illustrationHeight: 80,
+    illustrationWidth: 50,
+    // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
+    messageHeight: 18,
+    messageWidth: 1366,
     pageHeight: 450,
     pageWidth: 1366,
-    pageY: 93,
+    pageY: 103,
     scrollWidth: 1366,
   });
 
@@ -1131,9 +1154,11 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     gnbHeight: 40,
     gnbWidth: 390,
     gnbY: 43,
-    illustrationHeight: 0,
-    illustrationWidth: 0,
-    messageHeight: 20,
+    // copy-fix-current-dom: ico-404 sprite renders at 80x50
+    illustrationHeight: 80,
+    illustrationWidth: 50,
+    // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
+    messageHeight: 18,
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,

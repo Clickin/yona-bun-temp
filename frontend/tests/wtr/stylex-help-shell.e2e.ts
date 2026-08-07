@@ -157,7 +157,11 @@ for (const viewport of [
     if (viewport.name === "desktop") {
       expect(equivalence.fallback.breadcrumbOuter.height).toBe(46);
       expect(equivalence.fallback.page.width).toBe(1080);
-      expect(equivalence.fallback.page.margin).toBe("0px 133px");
+      // F5 dist-truth: legacy .page-wrap { margin: 0 auto } (_page.less:622-624)
+      // + app.css:461-462 body:has(.site-breadcrumb-outer) .page-wrap { width: 1080px }
+      // → auto margins in a 1366px viewport are (1366-1080)/2 = 143px per side;
+      // the 133px pin was internally inconsistent with the passing 1080px width.
+      expect(equivalence.fallback.page.margin).toBe("0px 143px");
     }
     expect(equivalence.fallback).not.toEqual(equivalence.migrated);
     expect((await pageOuter.screenshot()).byteLength).toBeGreaterThan(0);

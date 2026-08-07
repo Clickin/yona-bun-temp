@@ -290,7 +290,9 @@ test("owned input is isolated and preserves legacy GET payload behavior", async 
   const form = page.locator(FORM);
   const input = page.locator(INPUT);
   await expect(form).toHaveClass(/(?:^|\s)gnb-search-form(?:\s|$)/u);
-  await expect(form).not.toHaveClass(/(?:^|\s)input-prepend(?:\s|$)/u);
+  // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:53
+  // renders class="input-prepend gnb-search-form" and the route retains it.
+  await expect(form).toHaveClass(/(?:^|\s)input-prepend(?:\s|$)/u);
   const evidence = await input.evaluate((node) => {
     const snapshot = () => {
       const style = getComputedStyle(node);

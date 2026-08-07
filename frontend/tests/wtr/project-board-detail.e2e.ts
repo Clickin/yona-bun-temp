@@ -12,7 +12,11 @@ test("project board detail missing post preserves the legacy project error shell
   expect(ROUTE_SOURCE).toContain("function ProjectPostNotFoundTitle");
   expect(ROUTE_SOURCE).toContain("function ProjectPostNotFoundBody");
   expect(ROUTE_SOURCE).toContain('t("error.notfound.board_post")');
-  expect(ROUTE_SOURCE).toContain('<ProjectMenu active="board"');
+  // F6 copy-fix: the post route no longer renders <ProjectMenu> directly — it
+  // renders inside ProjectHomeRouteShell, which maps postDetail -> "board"
+  // ($projectName.tsx:1196-1197); the DOM still renders the Board menu active.
+  expect(ROUTE_SOURCE).toContain("ProjectNestedShellContext");
+  expect(ROUTE_SOURCE).not.toContain("ProjectMenu");
   expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(ROUTE_SOURCE).not.toContain("document.");
 

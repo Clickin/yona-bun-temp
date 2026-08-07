@@ -44,6 +44,10 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
     await page.locator("#sidebar-open-btn > button").click();
     await page.locator("#mySidenav .myProjectList > button").click();
+    // F5 dist-truth: the shell slides open with a 0.5s width transition
+    // (rootSidebarMotionStyles.shell); geometry only matches the settled
+    // layout, so wait it out (favorite-stars precedent waits 600ms).
+    await page.waitForTimeout(600);
 
     const owner = page.locator(
       '#mySidenav #myProjectList [data-stylex-owner="authenticated-sidenav-project-shell"]',

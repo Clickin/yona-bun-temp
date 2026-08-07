@@ -68,5 +68,8 @@ test("project code tags renders tags screen and handles tag state", async ({ pag
   await expect(page.locator(".tagName a")).toHaveText("v1.0.0");
   await expect(page.locator(".commit a")).toHaveText("abcdef1");
   await expect(page.locator(".creator")).toContainText("Admin");
-  await expect(page.locator(".message")).toHaveText("Release v1.0.0");
+  // F6 copy-fix: .message is not unique — the always-present hidden legacy
+  // #yobiDialog .message (__root.tsx:585, mirrors layout.scala.html dialog)
+  // matches too; scope to the tag-row commit-message cell.
+  await expect(page.locator(".tag-list-wrap tbody .message")).toHaveText("Release v1.0.0");
 });

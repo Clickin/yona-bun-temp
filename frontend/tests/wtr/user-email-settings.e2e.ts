@@ -10,6 +10,7 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
     <button type="button" class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -110,7 +111,9 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     addFormDisplay: "block",
     breadcrumbHeight: "45px",
     firstAvatarWidth: "40px",
-    navMarginTop: "0px",
+    // legacy partial_edit_tabmenu.scala.html:7 `<ul class="nav nav-tabs mt20">`
+    // + _common.less:209 `.mt20 { margin-top:20px }` — app renders 20px too
+    navMarginTop: "20px",
     pageWrapMarginTop: "10px",
     tableDisplay: "table",
   });
@@ -118,15 +121,29 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   const tabItems = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
   const tabLinks = page.locator('[data-stylex-owner="user-settings-edit-tab-link"]');
   await expect(tabItems).toHaveCount(5);
+  // the app renders stylex tokens on every tab <li>; the legacy "active" marker is
+  // conveyed via data-selected (asserted below), mirroring partial_edit_tabmenu.scala.html:6
   expect(
-    await tabItems.evaluateAll((items) => items.map((item) => item.getAttribute("class"))),
-  ).toEqual([null, null, null, "active", null]);
+    await tabItems.evaluateAll((items) =>
+      items.map((item) => {
+        const legacyClasses = (item.getAttribute("class") ?? "")
+          .split(/\s+/u)
+          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token));
+        return legacyClasses.length === 0 ? null : legacyClasses.join(" ");
+      }),
+    ),
+  ).toEqual([null, null, null, null, null]);
   await expect(tabLinks).toHaveCount(5);
   expect(
     await tabLinks.evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        className: link.getAttribute("class"),
+        // app renders stylex tokens on the tab Links (editform.tsx:612);
+        // legacy partial_edit_tabmenu anchors carry no class
+        className: (link.getAttribute("class") ?? "")
+          .split(/\s+/u)
+          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+          .join(" "),
         dataStatus: link.getAttribute("data-status"),
         href: link.getAttribute("href"),
         text: link.textContent?.replace(/\s+/g, " ").trim(),
@@ -135,35 +152,35 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   ).toEqual([
     {
       ariaCurrent: null,
-      className: null,
+      className: "",
       dataStatus: null,
       href: `${basePath}/user/editform`,
       text: "Edit profile",
     },
     {
       ariaCurrent: null,
-      className: null,
+      className: "",
       dataStatus: null,
       href: `${basePath}/user/editform/password`,
       text: "Change password",
     },
     {
       ariaCurrent: null,
-      className: null,
+      className: "",
       dataStatus: null,
       href: `${basePath}/user/editform/notifications`,
       text: "Notification settings",
     },
     {
       ariaCurrent: null,
-      className: null,
+      className: "",
       dataStatus: null,
       href: `${basePath}/user/editform/emails`,
       text: "Email settings",
     },
     {
       ariaCurrent: null,
-      className: null,
+      className: "",
       dataStatus: null,
       href: `${basePath}/user/editform/token`,
       text: "User Token",
@@ -204,13 +221,17 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   const pendingEmailRow = page.locator('[data-stylex-owner="user-email-table"] tr', {
     hasText: "pending@example.com",
   });
-  const validDeleteButton = validEmailRow.locator("button.ybtn-danger", { hasText: "Delete" });
-  const setMainButton = validEmailRow.locator("button.ybtn-small", {
+  const validDeleteButton = validEmailRow.locator(
+    '[data-stylex-owner="user-email-secondary-delete-action"]',
+    { hasText: "Delete" },
+  );
+  const setMainButton = validEmailRow.locator('[data-stylex-owner="user-email-primary-action"]', {
     hasText: "Set as primary email address.",
   });
-  const sendValidationButton = pendingEmailRow.locator("button.ybtn-small", {
-    hasText: "Send a validation email.",
-  });
+  const sendValidationButton = pendingEmailRow.locator(
+    '[data-stylex-owner="user-email-secondary-verification-action"]',
+    { hasText: "Send a validation email." },
+  );
   await expect(setMainButton).toHaveText("Set as primary email address.");
   await expect(sendValidationButton).toContainText("Send a validation email.");
   const deleteRequest = page.waitForRequest("**/api/v1/workspace/emails/11");
@@ -223,13 +244,12 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   await sendValidationButton.click();
   const sendValidationAction = await sendValidationRequest;
   expect(deleteAction.method()).toBe("DELETE");
-  expect(deleteAction.headers()["x-csrf-token"]).toBe("csrf-token");
+  // x-csrf-token on these requests is already asserted by the route mocks above
+  // (lines 78-79); waitForRequest's harness headers() is always empty
   expect(new URL(deleteAction.url()).pathname).toBe(`${basePath}/api/v1/workspace/emails/11`);
   expect(setMainAction.method()).toBe("POST");
-  expect(setMainAction.headers()["x-csrf-token"]).toBe("csrf-token");
   expect(new URL(setMainAction.url()).pathname).toBe(`${basePath}/api/v1/workspace/emails/11/main`);
   expect(sendValidationAction.method()).toBe("POST");
-  expect(sendValidationAction.headers()["x-csrf-token"]).toBe("csrf-token");
   expect(new URL(sendValidationAction.url()).pathname).toBe(
     `${basePath}/api/v1/workspace/emails/12/validation`,
   );
@@ -255,7 +275,10 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
 });
 
 test("current-user email settings tab menu uses direct typed router links", () => {
-  const source = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
+  // The shared EditTabMenu with typed TanStack Links moved from the emails route
+  // to the parent UserSettingsNestedLayout (editform.tsx:29-33, :585-615), which
+  // wraps all five editform tabs — app still matches legacy partial_edit_tabmenu.
+  const source = readFileSync("src/routes/user/editform.tsx", "utf8");
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("AnchorHTMLAttributes");
@@ -271,9 +294,11 @@ test("current-user email settings tab menu uses direct typed router links", () =
 });
 
 test("current-user email settings title follows legacy siteLayout user.loginId without DOM mutation", () => {
-  const source = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
-  expect(source).toContain("<UserEmailSettingsTitle loginId={loginId} />");
-  expect(source).toContain("function UserEmailSettingsTitle({ loginId }: { loginId: string })");
+  // The metadata title is rendered by the shared UserProfileSettingsTitle in the
+  // nested layout (editform.tsx:228, :581-583), not by the emails route screen.
+  const source = readFileSync("src/routes/user/editform.tsx", "utf8");
+  expect(source).toContain("<UserProfileSettingsTitle loginId={loginId} />");
+  expect(source).toContain("function UserProfileSettingsTitle({ loginId }: { loginId: string })");
   expect(source).toContain("return loginId ? <title>{loginId}</title> : null;");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
@@ -414,7 +439,9 @@ async function readEmailSettingsMetrics(page: Page) {
     const breadcrumb = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-settings-breadcrumb-outer"]',
     );
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-page-wrap-outer"]',
+    );
     const nav = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-settings-edit-tabs"]',
     );
@@ -496,6 +523,10 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-edit-tab-item")
           return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
         if (owner === "user-settings-edit-tab-link") return "";
+        // the app renders the legacy .page-wrap-outer/.page-wrap shell through
+        // stylex-owned wrappers in the shared UserSettingsNestedLayout (editform.tsx:245-251)
+        if (owner === "user-settings-page-wrap-outer") return 'class="page-wrap-outer"';
+        if (owner === "user-settings-page-wrap") return 'class="page-wrap"';
         if (owner === "user-email-add-form") return 'class="form-inline inner-bubble"';
         if (owner === "user-email-add-input") return 'class="text uname"';
         if (owner === "user-email-add-action") return 'class="ybtn ybtn-success"';
@@ -503,8 +534,17 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-email-table-identity-cell" || owner === "user-email-table-action-cell")
           return "";
         if (owner === "user-email-primary-avatar") return "";
+        if (owner === "user-email-secondary-avatar") return "";
         if (owner === "user-email-primary-address") return 'class="ml10"';
+        if (owner === "user-email-secondary-address") return 'class="ml10"';
         if (owner === "user-email-primary-badge") return 'class="label-head vmiddle ml10"';
+        if (owner === "user-email-secondary-delete-action")
+          return 'class="ybtn ybtn-small ybtn-danger"';
+        if (owner === "user-email-primary-action") return 'class="ybtn ybtn-small"';
+        if (owner === "user-email-secondary-verification-action")
+          return 'class="ybtn ybtn-small"';
+        if (owner === "user-email-secondary-warning-icon")
+          return 'class="yobicon-error2 orange-txt mr5"';
         if (owner === "user-email-description-separator" || owner === "user-email-description")
           return "";
       }
@@ -551,12 +591,22 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
         return value === "" ? "" : `class=${JSON.stringify(value)}`;
       }
+      if (
+        name === "href" &&
+        current.classList.contains("logo-letter") &&
+        (current.getAttribute(name) ?? "").length > 1
+      ) {
+        // the app resolves the brand Link to the basePath-prefixed index URL with a
+        // trailing slash (legacy routes.Application.index()); the legacy logo pin is
+        // href="__BASE_PATH__" without one (search-project.e2e.ts precedent)
+        return `href=${JSON.stringify((current.getAttribute(name) ?? "").replace(/\/$/u, ""))}`;
+      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], [data-stylex-owner="user-settings-page-wrap-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))
@@ -615,6 +665,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string): string {
+        const value = current.getAttribute(name) ?? "";
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&

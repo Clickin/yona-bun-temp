@@ -513,7 +513,9 @@ test("user profile avatar crop modal source stays route-owned", () => {
   expect(modalSource).not.toContain('data-dismiss="modal"');
   expect(modalSource).not.toContain("data-dismiss");
   expect(modalSource).toContain("aria-hidden=");
-  expect(modalSource).toContain('className={avatarCropModalOpen ? "modal hide in" : "modal hide"}');
+  expect(modalSource).toContain(
+    'className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className} ${avatarCropVisibleProps?.className ?? ""}`.trim()}',
+  );
   expect(modalSource).toContain("key={avatarFileInputKey}");
   expect(modalSource).toContain("onClick={dismissAvatarCropModal}");
   expect(modalSource).toContain("onClick={submitAvatarCrop}");

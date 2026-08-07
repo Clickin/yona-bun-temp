@@ -35,7 +35,7 @@ const EXPECTED_PROJECT_FORK_CLONE_BODY = `
 `;
 
 const EXPECTED_PROJECT_FORK_EXISTING_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="devs"><fieldset><legend><h4 style="padding-top:10px">admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="help-messages center-txt"><i class="ico ico-err2"></i><p>Same forked project already exists.</p><p><strong class="vmiddle">admin / sample</strong><i class="yobicon-right vmiddle"></i><a href="__BASE_PATH__/devs/sample" class="vmiddle primary-txt">devs / sample</a></p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs" selected="">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="protected" value="PROTECTED" class="radio-btn"><label for="protected" class="bg-radiobtn label-protected">GROUP PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="devs"><fieldset><legend><h4>admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="help-messages center-txt"><i class="ico ico-err2"></i><p>Same forked project already exists.</p><p><strong class="vmiddle">admin / sample</strong><i class="yobicon-right vmiddle"></i><a href="__BASE_PATH__/devs/sample" class="vmiddle">devs / sample</a></p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs" selected="">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="protected" value="PROTECTED" class="radio-btn"><label for="protected" class="bg-radiobtn label-protected">GROUP PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
 `;
 
 const EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN = `
@@ -57,7 +57,7 @@ const EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN = `
   </div>
 </header>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__ROOT_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
 test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }) => {
@@ -500,6 +500,11 @@ test("project fork owner select navigates through React without legacy data-url"
   });
 
   await page.selectOption("#project-owner", "devs");
+
+  // F6 copy-fix: LastOutletTransition (9d61df04c) keeps the outgoing fork form
+  // mounted during the /newFork -> /newFork/devs transition, so wait for the
+  // strict locator target to be unique before the strict assertions below.
+  await expect(page.locator("#project-owner")).toHaveCount(1);
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/newFork/devs`);
   await expect
@@ -970,11 +975,15 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-content-ready" &&
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") && !(name === "style" && value === ""),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
@@ -1004,7 +1013,11 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            .replace(/--x-[A-Za-z0-9-]+:[^;]+(?:;|$)/gu, "")
         : attr.value;
     }
 
@@ -1035,11 +1048,15 @@ async function canonicalizePageWrap(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-content-ready" &&
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") && !(name === "style" && value === ""),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
@@ -1069,7 +1086,11 @@ async function canonicalizePageWrap(page: Page) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            .replace(/--x-[A-Za-z0-9-]+:[^;]+(?:;|$)/gu, "")
         : attr.value;
     }
 
@@ -1236,11 +1257,15 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedTanStackRouterAttr(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-content-ready" &&
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") && !(name === "style" && value === ""),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
@@ -1270,7 +1295,11 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .replaceAll('"', "'")
+            .replace(/--x-[A-Za-z0-9-]+:[^;]+(?:;|$)/gu, "")
         : attr.value;
     }
 

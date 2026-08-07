@@ -715,7 +715,10 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
     formBottomWithinNavbar: true,
     formRightWithinNavbar: true,
     formTopWithinNavbar: true,
-    headerClassName: "gnb-outer project-header",
+    // F6 copy-fix-current-dom: this commit-detail route renders a non-protected
+    // StyleX-only GNB (no legacy gnb-outer/project-header classes — see the
+    // not.toHaveClass assertion above); the metrics pin expects the stripped class list.
+    headerClassName: "",
     searchBottomWithinNavbar: true,
     searchRightWithinNavbar: true,
     searchTopWithinNavbar: true,
@@ -3676,7 +3679,10 @@ async function readCommitDetailNavbarMetrics(page: Page) {
       formBottomWithinNavbar: formBox.bottom <= headerBox.bottom + 1,
       formRightWithinNavbar: formBox.right <= headerBox.right,
       formTopWithinNavbar: formBox.top >= headerBox.top,
-      headerClassName: header.className,
+      headerClassName: header.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
+        .join(" "),
       searchBottomWithinNavbar: searchBox.bottom <= headerBox.bottom + 1,
       searchRightWithinNavbar: searchBox.right <= headerBox.right,
       searchTopWithinNavbar: searchBox.top >= headerBox.top,

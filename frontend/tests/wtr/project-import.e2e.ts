@@ -499,9 +499,13 @@ test("project import form renders legacy server auth and owner validation state"
   await expect(page.locator("#useRepoAuth")).toBeChecked();
   await expect(page.locator("#repoAuth input[name='authId']")).toBeFocused();
   await expect(page.locator("#repoAuth")).toBeVisible();
-  const repoAuthStyle = await page.locator("#repoAuth").getAttribute("style");
-  expect(repoAuthStyle).toMatch(/(?:^|;)\s*--x-display\s*:\s*block\s*(?:;|$)/i);
-  expect(repoAuthStyle).not.toMatch(/(?:^|;)\s*display\s*:/i);
+  // F6 copy-fix: compile-mode stylex emits className only (styles.repoAuthVisible, [_]import.tsx:95,282-285) —
+  // no inline --x-display var; computed display:block parity holds vs legacy importing.scala.html:44.
+  const repoAuthDisplay = await page.evaluate(() => {
+    const el = document.querySelector("#repoAuth");
+    return el ? getComputedStyle(el).display : null;
+  });
+  expect(repoAuthDisplay).toBe("block");
   await expect(page.locator("#repoAuth input[name='authId']")).toHaveValue("deploy-bot");
   await expect(page.locator("#url")).toHaveValue("https://github.com/yona-projects/yona.git");
   await expect(page.locator("#project-name")).toHaveValue("restored-import");

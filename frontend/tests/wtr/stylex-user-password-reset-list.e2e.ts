@@ -12,7 +12,7 @@ test.use({ locale: "ko-KR" });
 
 test("reset list reuses the existing exact StyleX skeleton", () => {
   const route = readFileSync("src/routes/user/editform/password.tsx", "utf8");
-  const testSource = readFileSync("tests/stylex-user-password-reset-list.e2e.ts", "utf8");
+  const testSource = readFileSync("tests/wtr/stylex-user-password-reset-list.e2e.ts", "utf8");
   const scala = readFileSync("../yona-original/app/views/user/edit_password.scala.html", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");

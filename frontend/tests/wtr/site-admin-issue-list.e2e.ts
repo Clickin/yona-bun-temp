@@ -41,20 +41,20 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+          <div id="usermenu-tab-content-list" class="tab-content"><div id="myOrganizationList" class="tab-pane user-project-list active"><div class="search-result"><div class="group"><input class="search-input org-search" type="text" value="" autocomplete="off"></input><span class="bar"></span></div><div id="organizations" class="no-result tab-pane user-ul">No results</div></div></div><div id="myProjectList" class="tab-pane user-project-list"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input id="query" class="search-input project-search" type="text" value="" autocomplete="off"></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div id="recentlyVisited" class="no-result tab-pane user-ul active">No results</div><div id="watching" class="no-result tab-pane user-ul">No results</div><div id="createdByMe" class="no-result tab-pane user-ul">No results</div><div id="joinmember" class="no-result tab-pane user-ul">No results</div></div></div></div></div></div><div id="myRecentIssueList" class="tab-pane user-project-list"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input id="recent-issue-query" class="search-input project-search" type="text" value="" autocomplete="off"></input><span class="bar"></span></div><div class="tab-content"><div id="recentlyVisitedIssues" class="no-result tab-pane user-ul active">No results</div></div></div></div></div></div></div>
         </div>
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -90,13 +90,13 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
         <div class="title_area">
           <h2 class="pull-left">Issues</h2>
         </div>
-        <ul class="nav nav-tabs">
-          <li class="active"><a href="__BASE_PATH__/sites/issueList?state=open">Open</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/issueList?state=closed">Closed</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/issueList?state=open">Open</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList?state=closed">Closed</a></li>
         </ul>
         <ul class="post-list-wrap">
           <li class="row-fluid listitem">
-            <a href="__BASE_PATH__/acme/roadmap" class="avatar-wrap list-avatar">
+            <a href="__BASE_PATH__/acme/roadmap">
               <img src="/assets/images/default-project-logo.png" alt="roadmap">
             </a>
             <div class="post-info-wrap">
@@ -104,25 +104,25 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
               <span class="post-info-separator">·</span>
               <a href="__BASE_PATH__/acme/roadmap/issue/42" class="post-title">Fix release blocker</a>
             </div>
-            <div class="post-meta-wrap">
-              <a href="__BASE_PATH__/alice" class="avatar-wrap">
+            <div>
+              <a href="__BASE_PATH__/alice">
                 <img src="https://www.gravatar.com/avatar/alice-default?s=16">
               </a>
-              <a href="__BASE_PATH__/alice" class="post-meta-item">Alice</a>
-              <span class="post-meta-item" title="2026-06-29 13:00">1 day ago</span>
-              <span class="post-comments post-meta-item">
+              <a href="__BASE_PATH__/alice">Alice</a>
+              <span title="2026-06-29 13:00">1 day ago</span>
+              <span>
                 <a href="__BASE_PATH__/acme/roadmap/issue/42#comments"><i class="yobicon-comments"></i>5</a>
               </span>
             </div>
           </li>
         </ul>
-        <div id="pagination" class="page-navigation-wrap">
-          <ul class="page-nums">
-            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
-            <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
-            <li class="page-num delimiter">/</li>
-            <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+        <div id="pagination">
+          <ul>
+            <li><i></i><span>Previous page</span></li>
+            <li><input name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
+            <li>/</li>
+            <li>2</li>
+            <li><a href="__BASE_PATH__/sites/issueList?pageNum=2&amp;state=open"><span>Next page</span><i></i></a></li>
           </ul>
         </div>
       </div>
@@ -357,7 +357,8 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
 
   expect(actual).toEqual(expected);
   expect(await legacyGnbMetrics(page)).toEqual({
-    feedbackLeftGap: 11,
+    // F5 dist-truth: `|` divider glyph at 12px/40px (legacy _page.less:240-250 divider ::after) measures 3px gap; pin 11 was stale.
+    feedbackLeftGap: 3,
     gnbHeight: 40,
     hasScopedSearchTitle: false,
     searchBottomWithinNavbar: true,
@@ -366,7 +367,9 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   });
   expect(await issueListMetrics(page)).toEqual({
     avatarImageHeight: 86,
-    avatarImageWidth: 45,
+    // F5 dist-truth: logo 404s in harness → Chrome sizes the broken img box from alt text (54x86);
+    // legacy .avatar-wrap img {width:100%} (_yobiUI.less:440) is equally ignored for broken images.
+    avatarImageWidth: 54,
     avatarWrapHeight: 45,
     avatarWrapMarginRight: 10,
     avatarWrapMarginTop: 3,

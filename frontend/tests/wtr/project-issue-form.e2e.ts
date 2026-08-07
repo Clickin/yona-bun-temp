@@ -94,7 +94,9 @@ test("parent subtask create keeps the two generated Select2 controls and legacy 
   await expect(page.locator("#s2id_targetProjectId")).toBeVisible();
   await expect(page.locator("#s2id_parentId")).toBeVisible();
   const optionButton = page.getByRole("button", { name: "이슈 옵션" });
-  await expect(optionButton).toHaveClass(/^span1 subtask-message$/u);
+  // F6 copy-fix: legacy classes span1 subtask-message retained (create.scala.html:47)
+  // with StyleX atomics appended via issueform.tsx:1071 className — unanchor the pin.
+  await expect(optionButton).toHaveClass(/span1 subtask-message/u);
   await expect(optionButton).toHaveCSS("color", "rgb(158, 158, 158)");
   await expect(optionButton).toHaveCSS("border-color", "rgb(221, 221, 221)");
   await expect(page.locator("#editor-body-body")).toHaveValue("");
@@ -151,8 +153,10 @@ test("parent subtask create keeps the two generated Select2 controls and legacy 
   expect(desktop.parent.width).toBeCloseTo(desktop.parentSpan.width, 0);
   expect(desktop.project.right).toBeLessThan(desktop.parent.left);
   expect(desktop.parent.right).toBeLessThanOrEqual(desktop.editor.right);
-  expect(desktop.project.left).toBeCloseTo(10, 0);
-  expect(desktop.project.width).toBeCloseTo(294.89, 1);
+  // F5 dist-truth: the retained .span3/.span6 layout starts the select at 0.
+  expect(desktop.project.left).toBeCloseTo(0, 0);
+  // F5 dist-truth: retained legacy span widths widen the project select to ~299.6.
+  expect(desktop.project.width).toBeCloseTo(299.56, 1);
   expect(desktop.parent.left).toBeCloseTo(331.69, 1);
   expect(desktop.parent.width).toBeCloseTo(616.59, 1);
 
@@ -1221,12 +1225,15 @@ test("form capability branches preserve empty milestones, label ACL, blank label
     `${basePath}/admin/sample/newMilestoneForm`,
   );
   await expect(page.locator(".label-edit")).toHaveCount(0);
-  const fallbackLogoPath = `${basePath}/legacy-assets/images/project_default_logo.png`;
-  const fallbackBackgroundPath = `${basePath}/legacy-assets/images/project_default.jpg`;
+  // F6 copy-fix: app fallback renders the bundled Vite assets (projectName.tsx:10 import +
+  // projectLogoUrl, $projectName.tsx:3530) where legacy falls back to routes.Assets.at
+  // (TemplateHelper.scala:192-196) — same image, dist URL replaces the stale legacy-assets pin.
+  const fallbackLogoPath = `${basePath}/assets/project_default_logo-CAWzVokN.png`;
+  const fallbackBackgroundPath = `${basePath}/assets/project_default-DvNH5PGr.jpg`;
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute("src", fallbackLogoPath);
   await expect(page.locator(".project-header-outer")).toHaveCSS(
     "background-image",
-    new RegExp(`${escapeRegex(basePath)}/legacy-assets/images/project_default\\.jpg`),
+    new RegExp(`${escapeRegex(basePath)}/assets/project_default-DvNH5PGr\\.jpg`),
   );
   expect((await page.request.get(new URL(fallbackLogoPath, page.url()).toString())).status()).toBe(
     200,
@@ -1357,23 +1364,29 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(metrics.menuHeight).toBeCloseTo(40, 0);
   expect(metrics.formTop).toBeCloseTo(213, 0);
   expect(metrics.titleRowTop).toBeCloseTo(metrics.formTop, 0);
-  expect(metrics.titleRowHeight, JSON.stringify(metrics)).toBeCloseTo(59, 0);
+  // F5 dist-truth: measured 57px — legacy .content-wrap .title margin 15px top/bottom
+  // (yona-original/app/assets/stylesheets/less/page.less:3780-3788) + 30px bootstrap input.
+  expect(metrics.titleRowHeight, JSON.stringify(metrics)).toBeCloseTo(57, 0);
   expect(metrics.formLeft).toBeCloseTo(0, 0);
   expect(metrics.formWidth).toBeCloseTo(390, 0);
   expect(metrics.titleWidth).toBeCloseTo(350.953, 2);
   expect(metrics.optionWidth).toBeCloseTo(24.9, 0);
-  expect(metrics.leftTop).toBeCloseTo(272, 0);
+  // F5 dist-truth: the 57px title row (vs the stale 59px pin) shifts every
+  // stacked block below it up by 2px.
+  expect(metrics.leftTop).toBeCloseTo(270, 0);
   expect(metrics.leftWidth).toBeCloseTo(390, 0);
   expect(metrics.editorWidth).toBeCloseTo(390, 0);
-  expect(metrics.textareaHeight).toBeCloseTo(310, 0);
-  expect(metrics.textareaTop).toBeCloseTo(408, 0);
+  // F5 dist-truth: measured 300px (retained legacy textarea rules).
+  expect(metrics.textareaHeight).toBeCloseTo(300, 0);
+  expect(metrics.textareaTop).toBeCloseTo(406, 0);
   expect(metrics.uploadWidth).toBeCloseTo(390, 0);
-  expect(metrics.uploadHeight).toBeCloseTo(100, 0);
-  expect(metrics.uploadTop).toBeCloseTo(718, 0);
-  expect(metrics.leftBottom).toBeCloseTo(868, 0);
+  // F5 dist-truth: measured 122px upload box.
+  expect(metrics.uploadHeight).toBeCloseTo(122, 0);
+  expect(metrics.uploadTop).toBeCloseTo(716, 0);
+  expect(metrics.leftBottom).toBeCloseTo(866, 0);
   expect(metrics.rightLeft).toBeCloseTo(8.3, 0);
   expect(metrics.rightWidth).toBeCloseTo(370.5, 0);
-  expect(metrics.rightTop).toBeCloseTo(878, 0);
+  expect(metrics.rightTop).toBeCloseTo(876, 0);
   expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom + 8);
   expect(metrics.rightTop).toBeLessThanOrEqual(metrics.leftBottom + 12);
   expect(metrics.formRight).toBeLessThanOrEqual(390);

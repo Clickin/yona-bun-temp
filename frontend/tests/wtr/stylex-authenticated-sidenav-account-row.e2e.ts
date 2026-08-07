@@ -39,19 +39,22 @@ test("authenticated side-nav account actions have complete global-theme StyleX o
   const ownerEnd = route.indexOf("<ul", ownerMarker);
   const owner = route.slice(ownerStart, ownerEnd);
   expect(owner.match(/\{" "\}/gu)).toHaveLength(2);
-  expect(owner).not.toContain("row-fluid user-menu-wrap");
-  expect(owner).not.toContain("className={`user-menu");
-  expect(owner).not.toContain("user-menu logout label");
+  // wave-33 retained-class retention (667398a04, restore f54b9a330): the route
+  // retains row-fluid/user-menu-wrap/user-menu/logout/label (route
+  // -home-route-screen.tsx:5255-5297 == legacy usermenu.scala.html:42-49).
+  expect(owner).toContain("row-fluid user-menu-wrap");
+  expect(owner).toContain("className={`user-menu");
+  expect(owner).toContain("user-menu logout label");
   expect(owner).toContain("reloadDocument");
 });
 
 for (const viewport of [
   {
     geometry: {
-      account: { left: 230.03125, width: 52.625 },
-      logout: { left: 296.25, rightInset: 5, width: 48.75 },
-      profile: { left: 174.125, width: 42.3125 },
-      row: { height: 21, width: 350 },
+      account: { left: 220, width: 53 },
+      logout: { left: 286, rightInset: 15, width: 49 },
+      profile: { left: 164, width: 42 },
+      row: { height: 40, width: 350 },
     },
     height: 900,
     label: "desktop",
@@ -59,10 +62,10 @@ for (const viewport of [
   },
   {
     geometry: {
-      account: { left: 270.03125, width: 52.625 },
-      logout: { left: 336.25, rightInset: 5, width: 48.75 },
-      profile: { left: 214.125, width: 42.3125 },
-      row: { height: 21, width: 390 },
+      account: { left: 260, width: 53 },
+      logout: { left: 326, rightInset: 15, width: 49 },
+      profile: { left: 204, width: 42 },
+      row: { height: 40, width: 390 },
     },
     height: 844,
     label: "mobile",
@@ -81,6 +84,18 @@ for (const viewport of [
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    // The sidenav shell animates width 0 -> open (rootSidebarMotionStyles,
+    // 0.5s ease); wait for it to settle so the geometry is the stable
+    // post-transition state the wave-6 pins were measured against.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const shell = document.querySelector<HTMLElement>("#mySidenav");
+          return shell ? Math.round(shell.getBoundingClientRect().width) : 0;
+        }),
+      )
+      .toBe(viewport.width > 720 ? 362 : 392);
 
     const owner = page.locator(
       '#mySidenav [data-stylex-owner="authenticated-sidenav-account-actions"]',
@@ -102,7 +117,10 @@ for (const viewport of [
     expect(evidence).toEqual({
       actionOrder: ["SPAN", "SPAN", "A"],
       geometry: viewport.geometry,
-      legacyClasses: [],
+      // wave-33 retained-class retention (667398a04, restore f54b9a330): the route
+      // retains row-fluid/user-menu-wrap/user-menu/logout/label (route
+      // -home-route-screen.tsx:5255-5297 == legacy usermenu.scala.html:42-49).
+      legacyClasses: ["row-fluid", "user-menu-wrap", "user-menu", "logout", "label"],
       order: ["Profile", "Account", "Log out"],
       owner: "authenticated-sidenav-account-actions",
       styles: {
@@ -110,7 +128,9 @@ for (const viewport of [
           color: "rgb(0, 0, 0)",
           display: "inline",
           fontSize: "12px",
-          lineHeight: "20px",
+          // F6 dist-truth: retained legacy .user-menu (app.css .sidenav span.user-menu)
+          // applies 12px/18px line-height vs the wave-6 pre-retention 20px.
+          lineHeight: "18px",
           marginLeft: "5px",
           marginRight: "5px",
           padding: "3px",
@@ -134,15 +154,17 @@ for (const viewport of [
           color: "rgb(0, 0, 0)",
           display: "inline",
           fontSize: "12px",
-          lineHeight: "20px",
+          lineHeight: "18px",
           marginLeft: "5px",
           marginRight: "5px",
           padding: "3px",
         },
         row: {
-          boxSizing: "content-box",
-          color: "rgb(0, 0, 0)",
-          padding: "0px",
+          // F6 dist-truth: retained legacy .sidenav .user-menu-wrap (app.css:1359-1362,
+          // legacy _page.less:52-66) applies border-box/gray/10px padding.
+          boxSizing: "border-box",
+          color: "rgb(128, 128, 128)",
+          padding: "10px",
           pseudos: {
             after: { clear: "both", content: '""', display: "table", lineHeight: "0px" },
             before: { clear: "none", content: '""', display: "table", lineHeight: "0px" },
@@ -230,7 +252,14 @@ async function readAccountActionEvidence(owner: Locator) {
     };
     const box = (target: Element) => {
       const rect = target.getBoundingClientRect();
-      return { height: rect.height, left: rect.left, right: rect.right, width: rect.width };
+      // Whole-pixel canonicalization: the parent viewport resize can leave the
+      // iframe at fractional widths (0.0625px jitter run-to-run).
+      return {
+        height: Math.round(rect.height),
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        width: Math.round(rect.width),
+      };
     };
     const rowStyle = getComputedStyle(element);
     const rowBeforeStyle = getComputedStyle(element, "::before");
@@ -311,15 +340,10 @@ async function saveScreenshot(owner: Locator, filename: string) {
 }
 
 async function forceHoverAndReadBackground(page: Page, selector: string) {
-  const session = await page.context().newCDPSession(page);
-  await session.send("DOM.enable");
-  await session.send("CSS.enable");
-  const { root } = await session.send("DOM.getDocument");
-  const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId, selector });
-  await session.send("CSS.forcePseudoState", { forcedPseudoClasses: ["hover"], nodeId });
-  const background = await page
+  // F6 copy-fix: CDP forcePseudoState is unavailable in the WTR harness; the
+  // C1 real-mouse bridge (Phase B) applies real CSS :hover instead.
+  await page.locator(selector).hover();
+  return page
     .locator(selector)
     .evaluate((element) => getComputedStyle(element).backgroundColor);
-  await session.detach();
-  return background;
 }

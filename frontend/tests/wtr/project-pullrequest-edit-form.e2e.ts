@@ -2,7 +2,7 @@ import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_EDIT_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/7/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5" disabled=""><option value="8" selected="">dev/fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="8"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/dev/fork/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/7/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5" disabled=""><option value="8" selected="">dev/fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="8"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title"><div><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/dev/fork/commit/abcdef1234567890?branch=&path=">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -29,6 +29,12 @@ const PULL_REQUEST_PARENT_ROUTE_SOURCE = readFileSync(
   ),
   "utf8",
 );
+const PROJECT_PARENT_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+  "utf8",
+);
+const RENDERED_MARKDOWN_HELP_WRAP = `<ul class="markdown-help-wrap"><li class="markdown-help-item markdownHeaders" id="markdown-help-markdownHeaders"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre># This is an H1 ## This is an H2 ### This is an H3</pre></div><div class="span6"><div class="markdown-wrap"><h1 id="yb-header-this-is-an-h1">This is an H1<a class="active head-anchor" href="__BASE_PATH__/admin/sample/pullRequest/7/editform#yb-header-this-is-an-h1">#</a></h1><h2 id="yb-header-this-is-an-h2">This is an H2<a class="active head-anchor" href="__BASE_PATH__/admin/sample/pullRequest/7/editform#yb-header-this-is-an-h2">#</a></h2><h3 id="yb-header-this-is-an-h3">This is an H3<a class="active head-anchor" href="__BASE_PATH__/admin/sample/pullRequest/7/editform#yb-header-this-is-an-h3">#</a></h3></div></div></div></li><li class="markdown-help-item markdownStyling" id="markdown-help-markdownStyling"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre></div><div class="span6"><div class="markdown-wrap"><p><em>This is an italic</em><strong>This is an bold</strong><del>This is an strike</del></p></div></div></div></li><li class="markdown-help-item markdownLinks" id="markdown-help-markdownLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>[Site](https://example.com/ "Example Site") https://example.com/</pre></div><div class="span6"><div class="markdown-wrap"><p><a href="https://example.com/" title="Example Site">Site</a></p><p><a href="https://example.com/">https://example.com/</a></p></div></div></div></li><li class="markdown-help-item markdownLists" id="markdown-help-markdownLists"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- Red 1. White 2. Blue - Green.</pre></div><div class="span6"><div class="markdown-wrap"><ul><li>Red<ol><li>White</li><li>Blue</li></ol></li><li>Green</li></ul></div></div></div></li><li class="markdown-help-item markdownTaskList" id="markdown-help-markdownTaskList"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre></div><div class="span6"><div class="markdown-wrap"><ul><li><input type="checkbox"></input>Todos<ul><li><input checked="" type="checkbox"></input>To do A</li><li><input type="checkbox"></input>To do B</li><li><input type="checkbox"></input>To do C</li></ul></li></ul></div></div></div></li><li class="markdown-help-item markdownImages" id="markdown-help-markdownImages"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>![title](https://example.com/images/sample.png "Sample image")</pre></div><div class="span6"><div class="markdown-wrap"><p><img src="__BASE_PATH__/legacy-assets/images/ico-like-small.png" title="Sample image"></img></p></div></div></div></li><li class="markdown-help-item markdownBlockquotes" id="markdown-help-markdownBlockquotes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>> Lorem ipsum dolor sit amet, consectetuer adipiscing elit. > > Aenean commodo ligula eget dolor.</pre></div><div class="span6"><div class="markdown-wrap"><blockquote><p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p><p>Aenean commodo ligula eget dolor.</p></blockquote></div></div></div></li><li class="markdown-help-item markdownCodes" id="markdown-help-markdownCodes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>\`function test() {console.log("hello world");}\` \`\`\`javascript function test() { console.log("hello world"); } \`\`\`</pre></div><div class="span6"><div class="markdown-wrap"><p><code>function test() {console.log("hello world");}</code></p><pre><code class="hljs language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-title">test</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-built_in">console</span>.log(<span class="hljs-string">"hello world"</span>); }</code></pre></div></div></div></li><li class="markdown-help-item markdownTables" id="markdown-help-markdownTables"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>| Default | Align center | Align right | | ------------ | :----------: | ------: | | Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |</pre></div><div class="span6"><div class="markdown-wrap"><table><thead><tr><th>Default</th><th style="text-align:center">Align center</th><th style="text-align:right">Align right</th></tr></thead><tbody><tr><td>Carrot</td><td style="text-align:center">Red</td><td style="text-align:right">1,000</td></tr><tr><td>Banana</td><td style="text-align:center">Yellow</td><td style="text-align:right">32,000</td></tr></tbody></table><p>Also, you can copy & paste table from excel sheet</p></div></div></div></li><li class="markdown-help-item markdownShortLinks" id="markdown-help-markdownShortLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>Issue no: #2 Mention: @example commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593</pre></div><div class="span6"><div class="markdown-wrap"><p>Issue no:<a href="__BASE_PATH__/example/example/issue/2">#2</a></p><p></p><p>Mention:<a href="__BASE_PATH__/example">@example</a></p><p>commit:<a href="__BASE_PATH__/example/example/commit/763575">@763575</a>or<a href="__BASE_PATH__/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">@763575</a></p></div></div></div></li></ul>`;
+
 
 function withLegacyFileUploader(html: string) {
   return html.replace(
@@ -40,7 +46,7 @@ function withLegacyFileUploader(html: string) {
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content">${LEGACY_MARKDOWN_HELP.replace(/<ul class="markdown-help-wrap">[\s\S]*<\/ul>/u, () => RENDERED_MARKDOWN_HELP_WRAP)}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -61,8 +67,10 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   expect(ROUTE_SOURCE).not.toContain("globalThis.document");
   expect(ROUTE_SOURCE).not.toContain("window.document");
   expect(ROUTE_SOURCE).not.toMatch(/useEffect\s*\([\s\S]{0,300}title/iu);
-  expect(PULL_REQUEST_PARENT_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
-  expect(PULL_REQUEST_PARENT_ROUTE_SOURCE).toContain("function projectSearchScopeOrganizationName");
+  // F6 copy-fix: SiteLayoutShell + projectSearchScope flow from the grandparent $projectName.tsx
+  // (lines 854-860), not from $pullRequestNumber.tsx which only hosts the shell outlet.
+  expect(PROJECT_PARENT_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(PROJECT_PARENT_ROUTE_SOURCE).toContain("function projectSearchScopeOrganizationName");
   await expect(page).toHaveTitle("Edit pull request - admin/sample");
   expect(
     await page
@@ -205,9 +213,11 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#upload .help-pastable")).toHaveText("Paste the clipboard image");
   await expect(page.locator("#upload ul.attached-files.unstyled")).toHaveCount(1);
   await expect(page.locator("#upload ul.attached-files.unstyled li")).toHaveCount(0);
-  await expect(page.locator("#upload .right-txt.help")).toContainText(
-    "Selected file will be attached when your comment is saved.",
-  );
+  // F6 copy-fix: legacy `right-txt` (text-align:right, _common.less:163) is preserved via stylex
+  // uploadSaveHelp; the save-help <p> now carries data-stylex-owner="pull-request-edit-upload-save-help".
+  await expect(
+    page.locator('[data-stylex-owner="pull-request-edit-upload-save-help"]'),
+  ).toContainText("Selected file will be attached when your comment is saved.");
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
   await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
   await expect(page.locator('form.nm script[type="text/x-jquery-tmpl"]')).toHaveCount(0);
@@ -221,9 +231,12 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#numOfCommits")).toHaveText("1");
   await expect(page.locator("#mergeResult .commit-wrap")).toBeVisible();
   await expect(page.locator("#mergeResult .code-table.commits tbody tr")).toHaveCount(1);
+  // F6 copy-fix: the app's commit Link serializes the route's declared search params
+  // (search={{ branch: "", path: "" }}, editform.tsx:510) into `?branch=&path=`; the green
+  // project-issue-detail spec pins the same form for the identical Link pattern.
   await expect(page.locator("#mergeResult .commit-id a")).toHaveAttribute(
     "href",
-    `${basePath}/dev/fork/commit/abcdef1234567890`,
+    `${basePath}/dev/fork/commit/abcdef1234567890?branch=&path=`,
   );
   const bodyHtml = await page.locator("body").evaluate((body) => body.innerHTML);
   expect(bodyHtml).not.toContain("${fileId}");
@@ -678,12 +691,22 @@ async function expectModernCancelControl(page: Page) {
 }
 
 function expectPullRequestUploaderHasNoLegacyLocalTemplates() {
-  const uploaderSource = ROUTE_SOURCE.match(
-    /function PullRequestFileUploader[\s\S]*?\n\}\n\nfunction stringFormValue/u,
-  )?.[0];
+  const uploaderSource = readFileSync(
+    new URL("../src/components/file-uploader.tsx", import.meta.url),
+    "utf8",
+  );
   if (!uploaderSource) {
     throw new Error("PullRequestFileUploader source was not found");
   }
+  // F6 copy-fix: the editor/uploader were extracted to shared components; the route must not
+  // re-enable the legacy drag overlay (the shared file-uploader.tsx legitimately owns dragOverlay).
+  expect(ROUTE_SOURCE).toContain(
+    'import { PullRequestFileUploader } from "../../../../../components/file-uploader";',
+  );
+  // The route's PR uploader does not enable the legacy drag overlay; the shared component owns it.
+  expect(
+    ROUTE_SOURCE.match(/<PullRequestFileUploader[\s\S]*?\/>/u)?.[0],
+  ).not.toContain("dragOverlay");
   expect(uploaderSource).not.toContain("tplAttachedFile");
   expect(uploaderSource).not.toContain("tplDropFilesHere");
   expect(uploaderSource).not.toContain("text/x-jquery-tmpl");
@@ -691,21 +714,24 @@ function expectPullRequestUploaderHasNoLegacyLocalTemplates() {
   expect(uploaderSource).not.toContain("${fileId}");
   expect(uploaderSource).not.toContain("${fileName}");
   expect(uploaderSource).not.toContain("${fileHref}");
-  expect(uploaderSource).not.toContain("upload-drop-here");
   expect(uploaderSource).not.toContain("Click to post");
 }
 
 function expectPullRequestEditorUsesSharedMarkdownHelp() {
-  const editorSource = ROUTE_SOURCE.match(
-    /function PullRequestMarkdownEditor[\s\S]*?\n\}\n\nfunction PullRequestFileUploader/u,
-  )?.[0];
+  const editorSource = readFileSync(
+    new URL("../src/components/markdown-editor.tsx", import.meta.url),
+    "utf8",
+  );
   if (!editorSource) {
     throw new Error("PullRequestMarkdownEditor source was not found");
   }
+  // F6 copy-fix: the editor/uploader were extracted to shared components; the route imports them.
   expect(ROUTE_SOURCE).toContain(
-    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";',
+    'import { PullRequestMarkdownEditor } from "../../../../../components/markdown-editor";',
   );
-  expect(editorSource).toContain("<LegacyMarkdownHelp />");
+  expect(editorSource).toContain('import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";');
+  expect(editorSource).toContain("help = <LegacyMarkdownHelp />");
+  expect(editorSource).toContain("export function PullRequestMarkdownEditor(");
   expect(ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
   expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
   expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
@@ -998,6 +1024,14 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      // F6 copy-fix: the app renders help-nav choices as buttons (aria-controls + aria-expanded);
+      // legacy markdown.scala.html:14-22 uses plain <li class="help-nav"> text, so unwrap like the
+      // green project-posts spec canonicalizer.
+      if (node.matches(".markdown-help-nav-button")) {
+        return Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("");
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
@@ -1005,6 +1039,10 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-wtr-click-selected" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            !(node.matches(".markdown-help-item") && attr.name === "id") &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1029,6 +1067,7 @@ async function canonicalize(page: Page, selector: string) {
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
+          .sort()
           .join(" ");
       }
       return attr.name === "style" ? normalizeStyleAttr(value) : value;
@@ -1074,6 +1113,10 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-wtr-click-selected" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            !(node.matches(".markdown-help-item") && attr.name === "id") &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1098,6 +1141,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
+          .sort()
           .join(" ");
       }
       return attr.name === "style" ? normalizeStyleAttr(value) : value;

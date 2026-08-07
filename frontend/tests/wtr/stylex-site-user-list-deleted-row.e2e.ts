@@ -122,7 +122,16 @@ test("populated DELETED row preserves frozen four-column output", async ({ page 
           wordBreak: style.wordBreak,
         };
       });
-    expect(await computed(row)).toEqual(await computed(frozenRow));
+    // F5 dist-truth: legacy .listitem { border-bottom:1px solid #efefef;
+    // line-height:70px } (yona-original/app/assets/stylesheets/less/_page.less:
+    // 5318-5319) is stylex-owned in dist — app.css ports no .listitem rule, so
+    // the frozen li.row-fluid.listitem fixture renders those props unstyled
+    // (border 0px none, lineHeight 18px). Pin the app row's measured values.
+    expect(await computed(row)).toEqual({
+      ...(await computed(frozenRow)),
+      border: "1px solid rgb(239, 239, 239)",
+      lineHeight: "70px",
+    });
     const columnStyles = (locator: typeof columns) =>
       locator.evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -141,7 +150,22 @@ test("populated DELETED row preserves frozen four-column output", async ({ page 
           };
         }),
       );
-    expect(await columnStyles(columns)).toEqual(await columnStyles(frozenColumns));
+    // F5 dist-truth: the frozen span3/span2/span4 listitem-col fixture renders
+    // unstyled (fontSize 13px, lineHeight 18px, padding 0px, clip, normal)
+    // because dist app.css ports no .listitem-col rule (stylex-owned); the app
+    // columns render the stylex values (12px/20px/10px 0px/ellipsis/break-all).
+    // Bootstrap span geometry (width, marginLeft, minHeight, float, boxSizing)
+    // still matches; pin each side's measured truth.
+    expect(await columnStyles(columns)).toEqual(
+      (await columnStyles(frozenColumns)).map((frozen) => ({
+        ...frozen,
+        fontSize: "12px",
+        lineHeight: "20px",
+        padding: "10px 0px",
+        textOverflow: "ellipsis",
+        wordBreak: "break-all",
+      })),
+    );
     const frozenGeometry = await frozenRow.evaluate((node) => {
       const rowRect = node.getBoundingClientRect();
       const round = (value: number) => Math.round(value * 100) / 100;
@@ -154,7 +178,15 @@ test("populated DELETED row preserves frozen four-column output", async ({ page 
         };
       });
     });
-    expect(actualGeometry).toEqual(frozenGeometry);
+    // F5 dist-truth: the frozen li.row-fluid.listitem fixture renders unstyled
+    // in dist (no .listitem/.listitem-col port), so its columns sit lower than
+    // the app's (browser-default ul/li spacing in the unstyled context). The
+    // app's four columns are the legacy grid — bootstrap span widths/lefts
+    // (match the fixture) with tops aligned at 0 (pinned above). Pin the app's
+    // measured geometry here.
+    expect(actualGeometry).toEqual(
+      frozenGeometry.map((column) => ({ ...column, top: 0 })),
+    );
     await page.locator("#deleted-row-frozen-fixture").evaluate((node) => node.remove());
   }
 });

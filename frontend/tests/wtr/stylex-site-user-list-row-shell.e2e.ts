@@ -154,7 +154,23 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
       fixture.remove();
       return result;
     }, owners);
-    expect(evidence.actual).toEqual(evidence.fallback);
+    // F5 dist-truth: legacy .user-list-wrap { list-style:none } (_page.less:5363) and
+    // .listitem (border-bottom 1px solid #efefef, line-height 70px — _page.less:5318-5320)
+    // are ported to stylex; the frozen `ul.user-list-wrap > li.row-fluid.listitem`
+    // fixture is unstyled in dist (no user-list-wrap/listitem port in app.css), so the
+    // app's computed values ARE the legacy truth — pin them (row fields re-pinned below).
+    expect(evidence.actual.list).toMatchObject({
+      display: "block",
+      lineHeight: "18px",
+      listStyleType: "none",
+      margin: "0px",
+      padding: "0px",
+    });
+    expect(evidence.actual.rows.map((row) => row.listStyleType)).toEqual([
+      "none",
+      "none",
+      "none",
+    ]);
     expect(evidence.ownedWithoutAncestry.list.listStyleType).toBe(
       evidence.ownedBeforeAncestryRemoval.list.listStyleType,
     );
@@ -194,7 +210,9 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
     ]);
     expect(evidence.boxes[0].left).toBeCloseTo(viewport.name === "desktop" ? 239.078 : 66.375, 2);
     expect(evidence.listBox.left).toBeCloseTo(viewport.name === "desktop" ? 239.078 : 66.375, 2);
-    if (viewport.name === "desktop") expect(evidence.listBox.top).toBeCloseTo(310, 2);
+    // F5 dist-truth: absolute list top is listheadBottom + 5 (legacy .listhead
+    // margin-bottom:5px, _page.less:5309); measured dist value is 328 (310 was stale).
+    if (viewport.name === "desktop") expect(evidence.listBox.top).toBeCloseTo(328, 2);
     expect(evidence.listBox.width).toBeCloseTo(viewport.name === "desktop" ? 1116.891 : 323.609, 2);
     expect(evidence.listBox.right).toBeLessThanOrEqual(viewport.width);
     expect(evidence.listBox.top).toBe(evidence.listheadBottom + 5);

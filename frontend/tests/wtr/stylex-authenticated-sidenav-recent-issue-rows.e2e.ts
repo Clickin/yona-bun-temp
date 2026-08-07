@@ -64,6 +64,11 @@ for (const viewport of [
     await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
     await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
+    // F5 dist-truth: the shell slides open with a 0.5s width transition
+    // (rootSidebarMotionStyles.shell); row geometry only matches the settled
+    // layout (legacy #mySidenav {position:absolute;right:0} _usermenu.less:852),
+    // so wait it out (favorite-stars precedent waits 600ms).
+    await page.waitForTimeout(600);
     await page.getByRole("button", { exact: true, name: "Recent History" }).click();
 
     const row = page.locator('[data-stylex-owner="authenticated-sidenav-recent-issue-rows"]');

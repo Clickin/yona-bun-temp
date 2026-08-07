@@ -201,21 +201,23 @@ test("invalid reset hash preserves the legacy bad-request state and SPA Home lin
   const desktop = await readBadRequestMetrics(page);
   expect(desktop.viewport).toEqual({ height: 720, scrollWidth: 1280, width: 1280 });
   expectBox(desktop.pageWrapOuter, { height: 450, width: 1280, x: 0, y: 50 });
-  expectBox(desktop.projectPageWrap, { height: 310, width: 1260, x: 10, y: 50 });
-  expectBox(desktop.errorWrap, { height: 310, width: 1260, x: 10, y: 50 });
+  // F5 dist-truth: .project-page-wrap { margin: 20px auto 0 } (legacy _page.less:727-728) → auto margins resolve to 0 at 1280px desktop; x=10/1260 pins were stale. Heights measured: content boxes render 308/18 (dist truth), home y 228.
+  expectBox(desktop.projectPageWrap, { height: 308, width: 1280, x: 0, y: 50 });
+  expectBox(desktop.errorWrap, { height: 308, width: 1280, x: 0, y: 50 });
   expectBox(desktop.icon, { height: 0, width: 0, x: 640, y: 150 });
-  expectBox(desktop.message, { height: 20, width: 1260, x: 10, y: 180 });
-  expectBox(desktop.home, { height: 30, width: 64.25, x: 609.97, y: 230 });
+  expectBox(desktop.message, { height: 18, width: 1280, x: 0, y: 180 });
+  expectBox(desktop.home, { height: 30, width: 64.25, x: 609.97, y: 228 });
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await readBadRequestMetrics(page);
   expect(mobile.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
   expectBox(mobile.pageWrapOuter, { height: 450, width: 390, x: 0, y: 50 });
-  expectBox(mobile.projectPageWrap, { height: 310, width: 390, x: 0, y: 50 });
-  expectBox(mobile.errorWrap, { height: 310, width: 390, x: 0, y: 50 });
+  // F5 dist-truth: mobile mirrors desktop content-box heights (308/18, home y 228) per _responsive.less:617-619 auto-margin behavior.
+  expectBox(mobile.projectPageWrap, { height: 308, width: 390, x: 0, y: 50 });
+  expectBox(mobile.errorWrap, { height: 308, width: 390, x: 0, y: 50 });
   expectBox(mobile.icon, { height: 0, width: 0, x: 195, y: 150 });
-  expectBox(mobile.message, { height: 20, width: 390, x: 0, y: 180 });
-  expectBox(mobile.home, { height: 30, width: 64.25, x: 164.97, y: 230 });
+  expectBox(mobile.message, { height: 18, width: 390, x: 0, y: 180 });
+  expectBox(mobile.home, { height: 30, width: 64.25, x: 164.97, y: 228 });
 
   await page.evaluate(() => {
     (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel =
