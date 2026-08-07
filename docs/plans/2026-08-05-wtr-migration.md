@@ -1039,3 +1039,37 @@ dev-vs-dist; user-files-screen; :hover ceilings (email-add-form,
 secondary-row).
 
 Remaining: 112 of 858 specs converted.
+
+## Wave 32 — committed `52ee04f95` (24 files)
+
+Specs (24): stylex-user-files-{search,static-owners}, stylex-user-issues-
+{action-floats,child-list,default-login-popover,default-login-visibility,
+error-wrap,inline-residual,left-menu-overflow,list,pagination,row-residual,
+static-popovers,two-column-margin}, stylex-user-notification-project-tabs,
+stylex-user-notifications-table, stylex-user-password-{actions,form,
+reset-list,validation}, stylex-user-profile-{breadcrumb,child-row,
+days-ago-input-complete,days-ago-wrapper}.
+
+Suite: 771 files, 2299 passed / 625 failed / 1 skipped (~33 min; +33 passed,
++14 = the documented bucket-2/ceiling families).
+
+Shim fixes (main, wtr-compat.ts):
+- `locator("> A, > B")` comma lists scope each leading-combinator part
+  (":scope " per part) — unblocked user-issues-error-wrap;
+- `press('Enter')` on a `<form>` element triggers implicit submission
+  (requestSubmit) — unblocked left-menu-overflow + static-popovers.
+
+Bucket-3 copy fixes (agents, PW-verified via temp wtrfix copies, deleted):
+- user-files-search: fallbackShellOffset 42 → 20 (y +22px both runners);
+- user-files-static-owners: userFilesStyles.header/row pins
+  (files.tsx:260/322);
+- user-issues-action-floats: rail count 2 + nth hidden (strict-mode);
+- notification-project-tabs: app.css @layer re-indent pins.
+
+Bucket-2 MATCH (evidence): notification project-item height 34 vs legacy
+36 (bootstrap.css:180 line-height); password form tag-level input cascade
+absent from dist (bootstrap.css:1031-1052, _yobiUI.less:15-18/38-43);
+password reset-list cascade; waitForURL transient navigation (documented
+harness divergence); profile breadcrumb/daysAgo geometry; :hover ceilings.
+
+Remaining: 88 of 858 specs converted.
