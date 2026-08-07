@@ -175,7 +175,7 @@ test("one-page pagination preserves desktop and mobile generated output", async 
     // `.page-nums { margin-left:-120px !important }`) — pin the measured output.
     expect(evidence.boxes.items.map(({ height, width }) => ({ height, width }))).toEqual([
       { height: 18, width: 100.25 },
-      { height: viewport.name === "desktop" ? 26 : 28, width: 64 },
+      { height: 30, width: 64 },
       { height: 18, width: 13.65625 },
       { height: 18, width: 25.578125 },
       { height: 18, width: 79.453125 },
@@ -221,19 +221,20 @@ test("one-page pagination preserves desktop and mobile generated output", async 
     expect(evidence.input).toMatchObject({
       borderColor: "rgb(238, 238, 238)",
       borderWidth: "1px",
-      // F5 dist-truth: legacy .page-num .input-mini (_common.less:77-83) declares no
-      // font-size — the UA default 13.3333px is the legacy truth; 12px was stale.
-      fontSize: viewport.name === "desktop" ? "13.3333px" : "16px",
+      // D1 dist-truth: desktop ports legacy tag-level font-size:12px
+      // (bootstrap.css:1031-1052 + _yobiUI.less:15-18); mobile 16px comes from
+      // _responsive.less:166-172 `input[type=...] { font-size:16px !important }`
+      fontSize: viewport.name === "desktop" ? "12px" : "16px",
       fontWeight: "700",
       margin: "0px",
       textAlign: "center",
       width: "30px",
     });
     expect(evidence.boxes.input.width).toBeCloseTo(44, 2);
-    // F5 dist-truth: legacy .input-mini (bootstrap.css:1236) + .page-num .input-mini
-    // (_common.less:77-83) declare no height — the UA default (26px desktop / 28px
-    // mobile at 16px font) is the legacy truth.
-    expect(evidence.boxes.input.height).toBeCloseTo(viewport.name === "desktop" ? 26 : 28, 2);
+    // D1 dist-truth: app.css @layer legacy ports height:20px + padding:4px 6px
+    // (bootstrap.css:1031-1052) tag-level → 20+8+2 border = 30px box; the UA
+    // default 26/28px was a dist gap, now matching legacy.
+    expect(evidence.boxes.input.height).toBeCloseTo(30, 2);
     mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
     await page.screenshot({
       fullPage: true,
