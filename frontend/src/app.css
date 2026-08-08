@@ -1513,8 +1513,14 @@
        (app.css:2455) come later in source order — pin the issue-list-wrap
        search rail specifically (project-nested-layout search overflow). The
        global !important form broke org-issues/pullrequests/user-issues
-       pagination rails (negative left), so scope to the issue list only. */
-    .issue-list-wrap [class*="span"] {
+       pagination rails (negative left); the [class*=span] form also breaks
+       the org/user-issues pagination list centering (span10 keeps its 2.12%
+       margin like the pullrequests route, whose rail stays green), so reset
+       only the left-menu span2 search rail. */
+    .issue-list-wrap .left-menu.span2 {
+      margin-left: 0 !important;
+    }
+    [data-stylex-owner="project-search-page"] .row-fluid [class*="span"] {
       margin-left: 0 !important;
     }
 
