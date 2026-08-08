@@ -1940,6 +1940,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-content-ready" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1967,6 +1968,15 @@ async function canonicalizeScreenRoots(page: Page) {
           attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
       ) {
         return "";
+      }
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-search-scope-menu"]')
+      ) {
+        // copy-fix-current-dom: app scope menu is StyleX-only (visibility via
+        // openMenu); legacy navbar.scala.html:68 ul class="dropdown-menu flat
+        // right" is restored here (same ruling as project-issues-empty.e2e.ts:5118).
+        return "dropdown-menu flat right";
       }
       if (
         attr.name === "class" &&
@@ -2120,6 +2130,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-content-ready" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
