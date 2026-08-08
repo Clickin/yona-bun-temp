@@ -377,32 +377,44 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
             return undefined;
           },
           postDataBuffer: () => {
-            // Playwright's APIRequest.postDataBuffer(): raw body bytes. The
-            // XHR bridge passes iframe-realm FormData (parent-realm
-            // `instanceof FormData` is false), so duck-type it and rebuild a
-            // multipart body — mock handlers extract filename="..." from it.
-            if (typeof init?.body === "string") {
-              return new TextEncoder().encode(init.body);
-            }
-            if (init?.body && typeof (init.body as FormData).forEach === "function") {
-              const boundary = `----wtr-boundary-${Math.random().toString(36).slice(2)}`;
-              const chunks: string[] = [];
-              (init.body as FormData).forEach((value: FormDataEntryValue, key: string) => {
-                if (typeof value === "string") {
-                  chunks.push(
-                    `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
-                  );
-                  return;
-                }
-                const file = value as File;
-                chunks.push(
-                  `--${boundary}\r\nContent-Disposition: form-data; name="${key}"; filename="${file.name}"\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n${file.name}\r\n`,
-                );
-              });
-              chunks.push(`--${boundary}--\r\n`);
-              return new TextEncoder().encode(chunks.join(""));
-            }
-            return undefined;
+            // Playwright's APIRequest.postDataBuffer() returns a Node Buffer
+            // whose .toString("utf8") yields the raw body. The mock handlers
+            // call postDataBuffer()?.toString("utf8") to parse multipart
+            // filename="...". In the browser realm there is no Buffer, so
+            // return a String object that answers .toString("utf8") with the
+            // raw text (the XHR bridge passes iframe-realm FormData; duck-type
+            // it and rebuild multipart).
+            const raw =
+              typeof init?.body === "string"
+                ? init.body
+                : init?.body && typeof (init.body as FormData).forEach === "function"
+                  ? (() => {
+                      const boundary = `----wtr-boundary-${Math.random().toString(36).slice(2)}`;
+                      const chunks: string[] = [];
+                      (init.body as FormData).forEach(
+                        (value: FormDataEntryValue, key: string) => {
+                          if (typeof value === "string") {
+                            chunks.push(
+                              `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
+                            );
+                            return;
+                          }
+                          const file = value as File;
+                          chunks.push(
+                            `--${boundary}\r\nContent-Disposition: form-data; name="${key}"; filename="${file.name}"\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n${file.name}\r\n`,
+                          );
+                        },
+                      );
+                      chunks.push(`--${boundary}--\r\n`);
+                      return chunks.join("");
+                    })()
+                  : undefined;
+            if (raw === undefined) return undefined;
+            return {
+              toString: (encoding?: string) =>
+                encoding === "utf8" || encoding === "utf-8" ? raw : raw,
+              length: raw.length,
+            };
           },
           postDataJSON: () => {
             if (typeof init?.body !== "string") return undefined;
