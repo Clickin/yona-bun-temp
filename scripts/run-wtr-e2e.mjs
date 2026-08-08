@@ -10,8 +10,9 @@ import { fileURLToPath } from "node:url";
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDirectory, "..");
 
-async function run(command, args, env = process.env) {
-  const child = spawn(command, args, { cwd: repoRoot, env, stdio: "inherit" });
+async function run(command, args, options = {}) {
+  const { env = process.env, cwd = repoRoot } = options;
+  const child = spawn(command, args, { cwd, env, stdio: "inherit" });
   const code = await new Promise((resolveExit) => {
     child.once("error", (error) => {
       console.error(`failed to spawn ${command}:`, error.message);

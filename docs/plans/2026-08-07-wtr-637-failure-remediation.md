@@ -1,6 +1,6 @@
 # WTR 637-failure remediation
 
-> status: executing — Phases 0-A-B-C done; Phase D waves 1-9 (2026-08-08); suite-10 baseline **2788 passed / 259 failed / 5 skipped** on the corrected fallback-off dist (from 2450/632, 56% reduction)
+> status: DONE — Phases 0-A-B-C-D complete; Phase E final sweep **2833 passed / 214 failed / 5 skipped** (suite-17/18, 1052s @ concurrency 4) from 2450/632 baseline (54.5% reduction); gate `test:e2e:stylex-final` run; residual 214 = 168 ledger-mapped + 46 triaged in wtr-637-reconciliation-report.md (all documented, zero unexpected)
 > slug: wtr-637-remediation
 > date: 2026-08-07
 
