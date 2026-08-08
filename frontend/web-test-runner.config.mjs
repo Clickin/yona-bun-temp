@@ -212,15 +212,19 @@ const fixturePlugin = {
       console.log("FIXSERVE", pathname.slice(0, 80));
     }
     if (pathname.startsWith("/yona/legacy-assets/")) {
-      // eslint-disable-next-line no-console
-      console.log("LEGACY-ASSETS-SERVE", pathname);
       const rel = pathname
         .replace(/^\/yona\/legacy-assets\//, "")
         .split("/")
         .filter(Boolean);
-      const diskPath = join(legacyDir, "public", ...rel.map((part) => part.replace(/\.\./g, "")));
-      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: contentTypeFor(diskPath) };
+      // Source images live in yona-original/public (images/...); the generated
+      // legacy-fallback.css is a dist build artifact (frontend/dist/legacy-assets).
+      const sourcePath = join(legacyDir, "public", ...rel.map((part) => part.replace(/\.\./g, "")));
+      if (existsSync(sourcePath) && statSync(sourcePath).isFile()) {
+        return { body: readFileSync(sourcePath), type: contentTypeFor(sourcePath) };
+      }
+      const distPath = join(distDir, "legacy-assets", ...rel.map((part) => part.replace(/\.\./g, "")));
+      if (existsSync(distPath) && statSync(distPath).isFile()) {
+        return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
       }
       return undefined;
     }
