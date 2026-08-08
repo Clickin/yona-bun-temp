@@ -1771,6 +1771,14 @@
     margin-bottom: -1px;
   }
 
+  /* legacy _page.less:724-739 — `.project-page-wrap .nav-tabs > li { margin-bottom: -2px }`
+     beats the bootstrap -1px inside project pages (editor checklist/clear-temp/
+     notice li's have no stylex margin of their own; tab li's carry stylex and
+     are unaffected since unlayered stylex wins over this layer). */
+  .project-page-wrap .nav-tabs > li {
+    margin-bottom: -2px;
+  }
+
   /* frozen bootstrap.css:3903-3905 — .nav > li > a display:block makes the
      tab anchor's 8px vertical padding expand the line box (legacy tab height
      37px); without it the inline anchor collapses the li to 20px. */
@@ -3827,6 +3835,16 @@
     line-height: 30px;
   }
 
+  /* legacy bootstrap h3 { font-size: 24.5px; line-height: 40px } bootstrap.css:
+     714-728 — changeVCS/transfer/deleteform bubble headings fall back to the UA
+     1.17em default without the tag-level rule; restore bootstrap h3 on the
+     bubble (bootstrap.css:714 h3 inherits line-height 40px from the h1-h6
+     block at 689-703). */
+  .bubble-wrap h3 {
+    font-size: 24.5px;
+    line-height: 40px;
+  }
+
   .lst-stacked li {
     padding: 8px;
     font-size: 13px;
@@ -4526,6 +4544,15 @@
   /* source:_yobiUI.less — legacy .popover-content line-height:120% at the 11px code-view context, ported for the fallback-off profile */
   .popover-content {
     line-height: 13.2px;
+  }
+
+  /* source:bootstrap — legacy .popover is position:absolute and sits above the anchor (bootstrap.css:5334 .popover / .popover.top bottom:100%); the org-issues React popover keeps an exact `popover top` classList (no stylex tokens), so its geometry lives here instead of atomic classes */
+  [data-stylex-owner="organization-issues-two-column-popover"] {
+    bottom: 100%;
+    display: block;
+    left: -75px;
+    position: absolute;
+    top: -74px;
   }
 
   /* source:select2 — legacy select2.css base, ported for the fallback-off profile */

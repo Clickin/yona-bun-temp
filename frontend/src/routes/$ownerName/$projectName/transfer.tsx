@@ -46,7 +46,10 @@ const styles = stylex.create({
     accentColor: projectTransferColors.checkboxAccent,
   },
   agreementLabel: {
+    // F7 app-fix: legacy label inherits body line-height 20px (bootstrap.css:180);
+    // app.css :root overrides to 18px — pin explicit 20px (ledger 524-525 pattern).
     color: projectTransferColors.agreementText,
+    lineHeight: "20px",
   },
   actionBox: {
     padding: { default: "20px 0 12px", "@media (max-width: 720px)": "10px 0" },
@@ -522,7 +525,7 @@ function ProjectTransferBody({
               styles.modal,
               isTransferModalOpen ? styles.modalOpen : styles.modalClosed,
             )}
-            className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide`}
+            className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide${isTransferModalOpen ? " in" : ""}`}
             id="alertTransfer"
             data-stylex-owner="project-transfer-modal"
             aria-hidden={!isTransferModalOpen}
@@ -594,7 +597,7 @@ function ProjectTransferBody({
             // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- legacy Bootstrap backdrop is a div and dismisses the transfer modal on click.
             <div
               {...backdropStyleProps}
-              className={backdropStyleProps.className}
+              className={`${backdropStyleProps.className} modal-backdrop in`}
               data-stylex-owner="project-transfer-modal-backdrop"
               onClick={closeTransferModal}
             />

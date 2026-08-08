@@ -1482,7 +1482,10 @@ test("project home route owns project-util dropdown state and explicit Link sema
   );
 
   expect(source).not.toMatch(/<a\b/u);
-  expect(source).not.toMatch(/<\/a>/u);
+  // F6 copy-fix: the route's only `</a>` literal lives in the JSX comment
+  // documenting the legacy malformed `</a>\n<li>` menu node (cascade 9),
+  // never in rendered JSX — strip comments before the anchor-literal check.
+  expect(source.replace(/\/\*[\s\S]*?\*\//gu, "")).not.toMatch(/<\/a>/u);
   expect(source).not.toContain("LegacyLink");
   expect(source).not.toContain("RoutedLegacyLink");
   expect(source).not.toContain("useLinkProps");

@@ -531,6 +531,8 @@ export type BoardPostMarkdownEditorProps = {
   tabListStyle?: MarkdownEditorStyleProps;
   tabContentClassName: string;
   notificationStyle?: MarkdownEditorStyleProps;
+  /** Markdown help block rendered above the panes; default <LegacyMarkdownHelp />. */
+  help?: ReactNode;
   owners?: {
     wrapper?: string;
     tabs?: string;
@@ -552,6 +554,7 @@ export function BoardPostMarkdownEditor({
   tabListStyle,
   tabContentClassName,
   notificationStyle,
+  help,
   owners = NO_OWNERS,
 }: BoardPostMarkdownEditorProps) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -599,6 +602,7 @@ export function BoardPostMarkdownEditor({
       notificationClassName={`${notificationStyle?.className ?? ""} notification-receiver`.trim()}
       notificationStyleProps={notificationStyle}
       notificationOwner={owners.notification}
+      help={help}
     />
   );
 }

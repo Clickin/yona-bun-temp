@@ -195,8 +195,13 @@ const projectHeaderStyles = stylex.create({
     ":hover": { color: "#fc491e", textDecoration: "underline" },
   },
   breadcrumbFavoriteStar: {
+    // legacy .material-icons base (yona-original/.../_usermenu.less:28-43):
+    // inline-block + line-height 1 keeps the star from inflating the 30px
+    // breadcrumb line box (star 24px box -> wrap height 34, not 37).
     color: "rgba(255, 255, 255, 0.22)",
+    display: "inline-block",
     fontSize: "24px",
+    lineHeight: "1",
     ":hover": { color: "#e91e63", cursor: "pointer" },
   },
   breadcrumbFavoriteStarred: { color: "#e91e63" },

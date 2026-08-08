@@ -1277,7 +1277,13 @@ test("project board post create form uploader shell matches legacy fileUploader.
       fileInputMultiple: fileInput.multiple,
       plainText: plain.textContent?.trim(),
       pastableText: pastable.textContent?.trim(),
-      attachedFilesClass: attachedFiles.className,
+      // F6 copy-fix-current-dom: the attached-files ul also carries stylex
+      // paint tokens (attachedFilesStyleProps in the route); strip them so
+      // the pin stays on the legacy literals.
+      attachedFilesClass: attachedFiles.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
       attachedFilesDisplay: attachedFilesStyle.display,
       attachedFilesPadding: attachedFilesStyle.padding,
       helpText: help.textContent?.trim(),
@@ -1408,7 +1414,13 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
       fileInputMultiple: fileInput.multiple,
       plainText: plain.textContent?.trim(),
       pastableText: pastable.textContent?.trim(),
-      attachedFilesClass: attachedFiles.className,
+      // F6 copy-fix-current-dom: the attached-files ul also carries stylex
+      // paint tokens (attachedFilesStyleProps in the route); strip them so
+      // the pin stays on the legacy literals.
+      attachedFilesClass: attachedFiles.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
       attachedFilesDisplay: attachedFilesStyle.display,
       attachedFilesPadding: attachedFilesStyle.padding,
       helpText: help.textContent?.trim(),
@@ -3836,7 +3848,14 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         editorNav: measure('[data-stylex-owner="post-detail-comment-create-editor-nav"]'),
         editorItems: Array.from(
           form.querySelectorAll<HTMLElement>(
-            ':scope [data-stylex-owner="post-detail-comment-create-editor-nav"] > [data-stylex-owner="post-detail-comment-create-editor-nav-item"]',
+            // F6 copy-fix-current-dom + F7 parity: the shared MarkdownEditor
+            // applies the nav-item owner only to the two tab <li>s; the
+            // checklist / clear-temporary / notice-label <li>s carry their own
+            // owners (same convention as the update-form metrics). All five
+            // are direct <li> children of the nav, and legacy
+            // _page.less:738 `.project-page-wrap .nav-tabs > li { margin-bottom:
+            // -2px }` styles every one of them.
+            ':scope [data-stylex-owner="post-detail-comment-create-editor-nav"] > li',
           ),
         ).map((item) => ({
           float: getComputedStyle(item).float,
@@ -5718,7 +5737,14 @@ test("project board detail auto-links commit references in parent and child Mark
   await mockProjectPosts(page, "comment");
   await page.goto(`${basePath}/admin/sample/posts`);
   await page.goto(`${basePath}/admin/sample/post/3`);
-  await expect(page.locator("#comments a[href*='/commit/']")).toHaveCount(0);
+  // F6 copy-fix-current-dom: the no-commit-reference pin is scoped to the
+  // comment bodies; the markdown-help panel (inside #comments) legitimately
+  // carries its own @763575 example links (legacy help/markdown.scala.html:253).
+  await expect(
+    page.locator(
+      "#comment-21 .comment-body a[href*='/commit/'], #comment-21 .child-comments .contents a[href*='/commit/']",
+    ),
+  ).toHaveCount(0);
   for (const [viewport, filename] of [
     [{ width: 1366, height: 900 }, "board-post-commit-references-fallback-off-desktop.png"],
     [{ width: 390, height: 844 }, "board-post-commit-references-fallback-off-mobile.png"],
@@ -7569,7 +7595,15 @@ test("authenticated populated board post owns the comment-card skeleton in Style
     }
     expect(normal.documentWidth).toBeLessThanOrEqual(normal.viewportWidth);
 
-    await page.goto(`${basePath}/admin/sample/post/1#comment-21`);
+    // F2-harness workaround: wtr-compat goto() compares full href against the
+    // target URL; a same-URL hash-only src reassignment fires no iframe load
+    // event, so goto('/post/1#comment-21') hangs for the full timeout. Reload
+    // the bare URL and drive the fragment through the iframe realm — the
+    // :target state (comment highlight border) is identical.
+    await page.goto(`${basePath}/admin/sample/post/1`);
+    await page.evaluate(() => {
+      location.hash = "comment-21";
+    });
     const targeted = await comment.evaluate((row) => {
       const media = row.querySelector<HTMLElement>(
         '[data-stylex-owner="post-detail-comment-media"]',
@@ -7585,6 +7619,11 @@ test("authenticated populated board post owns the comment-card skeleton in Style
       expect(targeted.pointerBorderColor).toBe("rgb(3, 169, 244)");
       expect(targeted.pointerBorderWidth).toBe("0px 0px 2px 2px");
     }
+    // Clear the fragment so the next iteration's same-URL goto reloads
+    // (location.reload) instead of hanging on a hash-only src reassignment.
+    await page.evaluate(() => {
+      location.hash = "";
+    });
   }
 });
 
@@ -8287,7 +8326,7 @@ test("authenticated populated board post owns open parent comment update form in
     /@Messages\("button\.upload"\)[\s\S]*?@Messages\("button\.cancel"\)[\s\S]*?@Messages\("button\.save"\)/u,
   );
   expect(legacyUpdateFormSource).toMatch(
-    /<span class="file-upload">\s*<label for="upload-@comment\.id" class="file-upload__label ybtn">[\s\S]*?<input id="upload-@comment\.id" class="" type="file" name="filePath" multiple>/u,
+    /<span class="file-upload">\s*<label for="upload-@comment\.id" class="file-upload__label ybtn">[\s\S]*?<input id="upload-@comment\.id" class="file-upload__input" type="file" name="filePath" multiple>/u,
   );
   expect(legacyUpdateFormSource).toMatch(
     /<div class="upload-drop-here">\s*<div class="msg-wrap">\s*<div class="msg">@Messages\("common\.attach\.dropFilesHere"\)<\/div>\s*<\/div>\s*<\/div>/u,
@@ -8908,7 +8947,10 @@ test("authenticated populated board post owns open parent comment update form in
       const editorNav = get("post-detail-comment-update-editor-nav");
       const editorNavItems = Array.from(
         editorNav.querySelectorAll<HTMLElement>(
-          ':scope > [data-stylex-owner="post-detail-comment-update-editor-nav-item"]',
+          // F6 copy-fix-current-dom: the nav-item owner rides only the two tab
+          // <li>s; the checklist / clear-temporary / notice-label <li>s are
+          // direct li children too (legacy _page.less:738 styles every one).
+          ':scope > li',
         ),
       );
       const editTab = editorNavItems[0]!.querySelector<HTMLElement>("a")!;
@@ -9193,10 +9235,11 @@ test("authenticated populated board post owns open parent comment update form in
         position: "relative",
         textAlign: "center",
         textShadow: "none",
-        transition: "background 0.3s",
         verticalAlign: "middle",
         whiteSpace: "nowrap",
         zIndex: "2",
+        // F6 copy-fix-current-dom: computed-style enumeration order.
+        transition: "background 0.3s",
       },
       cancelButton: {
         backgroundColor: "rgb(255, 255, 255)",
@@ -9296,11 +9339,9 @@ test("authenticated populated board post owns open parent comment update form in
         cursor: "pointer",
         display: "inline-block",
         fontSize: "13px",
-        fontWeight: "600",
         lineHeight: "20px",
         marginBottom: "0px",
         marginLeft: "0px",
-        marginTop: "1px",
         padding: "1px 10px",
         position: "relative",
         textAlign: "center",
@@ -9308,6 +9349,9 @@ test("authenticated populated board post owns open parent comment update form in
         verticalAlign: "middle",
         whiteSpace: "nowrap",
         zIndex: "2",
+        // F6 copy-fix-current-dom: computed-style enumeration order.
+        fontWeight: "600",
+        marginTop: "1px",
       },
       checklistIcon: {
         backgroundImage: "none",

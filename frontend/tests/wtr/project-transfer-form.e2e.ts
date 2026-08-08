@@ -103,7 +103,7 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "31px",
+    buttonHeight: "30px", // F5 dist-truth: legacy .ybtn content-box line-height 20 + padding 8 + border 2 = 30px (_yobiUI.less:710-730); probe = 30px
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
@@ -602,7 +602,7 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
     "isTransferModalOpen ? styles.modalOpen : styles.modalClosed",
   );
   expect(transferStateSlice).toContain(
-    '            <div\n              {...backdropStyleProps}\n              className={backdropStyleProps.className}\n              data-stylex-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
+    '            <div\n              {...backdropStyleProps}\n              className={`${backdropStyleProps.className} modal-backdrop in`}\n              data-stylex-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
   );
 });
 
@@ -662,7 +662,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
   await expect(alertTransfer).toHaveClass("modal hide in");
   await expect(alertTransfer).toBeVisible();
   await expect(alertTransfer).toHaveCSS("display", "block");
-  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(transferFormUrl);
   await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
   await expect
@@ -673,7 +673,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
     )
     .toBe("kept");
 
-  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.fade.in"))).toBe(true);
+  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.in"))).toBe(true);
   await expect(alertTransfer).toHaveClass("modal hide");
   await expect(alertTransfer).toBeHidden();
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -690,7 +690,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
   expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
   await expect(alertTransfer).toHaveClass("modal hide in");
   await expect(alertTransfer).toBeVisible();
-  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(transferFormUrl);
   await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
 

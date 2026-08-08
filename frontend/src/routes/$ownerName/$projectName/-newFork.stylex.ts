@@ -67,7 +67,10 @@ export const styles = stylex.create({
   cancel: { color: "#333" },
   // F7 app-fix: legacy .radio-btn { margin: 2px !important } (_common.less:178-180)
   // overrides the UA radio margin; the dist port omits it so pin it here.
+  // The margin must NOT reach the label (legacy labels carry no margin) or the
+  // input→label gap grows 6px -> 8px (git/fork.scala.html:89-96).
   radio: { color: forkColors.radioText, margin: "2px" },
+  radioLabel: { color: forkColors.radioText },
   helpInline: { color: forkColors.helpInlineText },
   // F7 app-fix: legacy clone.scala.html progress screen geometry — .page-wrap-outer
   // min-height:450px + margin-top:10px (_page.less:617-620), responsive

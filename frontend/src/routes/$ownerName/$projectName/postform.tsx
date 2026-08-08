@@ -262,7 +262,11 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   </div>
                 ) : null}
               </dd>
-              <dd {...sx.editorWrapper} data-stylex-owner="project-postform-editor-wrapper">
+              <dd
+                {...sx.editorWrapper}
+                style={{ position: "relative" }}
+                data-stylex-owner="project-postform-editor-wrapper"
+              >
                 <BoardPostMarkdownEditor
                   focusRequest={bodyFocusRequest}
                   search={compactBoardPostFormSearch(search)}
@@ -332,7 +336,11 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               ) : null}
             </div>
 
-            <div {...sx.actions} data-stylex-owner="project-postform-actions">
+            <div
+              {...sx.actions}
+              className={`actions ${sx.actions.className ?? ""}`.trim()}
+              data-stylex-owner="project-postform-actions"
+            >
               <button {...sx.save} data-stylex-owner="project-postform-save" tabIndex={3}>
                 {t("button.save")}
               </button>

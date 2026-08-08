@@ -4,7 +4,6 @@ import {
   Link,
   type Register,
   type SearchSchemaInput,
-  stripSearchParams,
   useRouter,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
@@ -103,6 +102,24 @@ const resetLegacyBoardSortSearch = ({
   };
 };
 
+// Legacy BoardApp sort links carry ONLY orderBy/orderDir; the reset middleware
+// re-adds empty defaults, so strip them back out — but only when they were
+// NOT explicitly present in the URL (legacy keeps pageNum=1 the user
+// navigated to; yobi.Pagination.js urlWithPageNum never drops it).
+const stripLegacyBoardSearchDefaults = ({
+  search,
+  next,
+}: {
+  search: OrganizationBoardsSearchInput;
+  next: (search: OrganizationBoardsSearchInput) => OrganizationBoardsSearch;
+}) => {
+  const result = { ...next(search) };
+  if (!("filter" in search)) delete result.filter;
+  if (!("pageNum" in search)) delete result.pageNum;
+  if (!("projectNames" in search) && !("projectNames[]" in search)) delete result.projectNames;
+  return result;
+};
+
 function validateOrganizationBoardsSearch(
   search: OrganizationBoardsSearchInput,
 ): OrganizationBoardsSearch {
@@ -122,12 +139,7 @@ export const Route = createFileRoute("/organizations/$organizationName/boards")<
   component: OrganizationBoardsRoute,
   validateSearch: validateOrganizationBoardsSearch,
   search: {
-    middlewares: [
-      // Legacy BoardApp sort links carry ONLY orderBy/orderDir; the reset
-      // middleware re-adds empty defaults, so strip them back out.
-      stripSearchParams({ filter: "", pageNum: 1, projectNames: [] }),
-      resetLegacyBoardSortSearch,
-    ],
+    middlewares: [stripLegacyBoardSearchDefaults, resetLegacyBoardSortSearch],
   },
 });
 

@@ -3073,10 +3073,13 @@ const leftSidebarProfileIdentityStyles = stylex.create({
     width: "100%",
   },
   label: {
+    // F7 app-fix: legacy caret-text inherits body line-height 20px (bootstrap.css:180,
+    // sidebar.scala.html:10-12); app.css :root overrides to 18px (app.css:9) — pin explicit 20px.
     display: {
       default: "inline",
       "@media (max-width: 720px)": "none",
     },
+    lineHeight: "20px",
   },
 });
 

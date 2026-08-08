@@ -612,7 +612,7 @@ test("React editor restores drafts and translates title heads, mentions, markdow
     "Click to post",
   );
   await expect(page.locator(".attached-file", { hasText: "notes.txt" })).toHaveClass(/complete/u);
-  await page.locator(".attached-file", { hasText: "notes.txt" }).getByText("notes.txt").click();
+  await page.locator(".attached-file", { hasText: "notes.txt" }).getByText("notes.txt", { exact: true }).click();
   await expect(body).toHaveValue(new RegExp(`Files: \\[notes\\.txt\\]\\(${basePath}/files/501\\)`));
 
   await fileInput.setInputFiles({
@@ -620,7 +620,8 @@ test("React editor restores drafts and translates title heads, mentions, markdow
     mimeType: "image/png",
     name: "diagram.png",
   });
-  await page.locator(".attached-file", { hasText: "diagram.png" }).getByText("diagram.png").click();
+  await expect(page.locator(".attached-file", { hasText: "diagram.png" })).toHaveClass(/complete/u);
+  await page.locator(".attached-file", { hasText: "diagram.png" }).getByText("diagram.png", { exact: true }).click();
   await expect(body).toHaveValue(new RegExp(`!\\[diagram\\.png\\]\\(${basePath}/files/502\\)`));
   await page.getByRole("button", { name: "Delete notes.txt" }).click();
   await expect.poll(() => state.deletedAttachmentIds).toEqual([501]);
@@ -639,7 +640,8 @@ test("React editor restores drafts and translates title heads, mentions, markdow
     mimeType: "video/mp4",
     name: "demo.mp4",
   });
-  await page.locator(".attached-file", { hasText: "demo.mp4" }).getByText("demo.mp4").click();
+  await expect(page.locator(".attached-file", { hasText: "demo.mp4" })).toHaveClass(/complete/u);
+  await page.locator(".attached-file", { hasText: "demo.mp4" }).getByText("demo.mp4", { exact: true }).click();
   await expect(body).toHaveValue(
     /<video class="video-js" data-setup="\{\}" controls><source src=.*type="video\/mp4"><\/video>\[demo\.mp4\]/u,
   );

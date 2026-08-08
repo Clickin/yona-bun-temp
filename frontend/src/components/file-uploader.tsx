@@ -185,9 +185,9 @@ function UploaderShell({
       {showHelp ? (
         <p
           {...(helpStyleFirst ? helpStyleProps : undefined)}
-          className={helpClassName}
           data-stylex-owner={helpOwner}
           {...(helpStyleFirst ? undefined : helpStyleProps)}
+          className={helpClassName}
         >
           <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
         </p>

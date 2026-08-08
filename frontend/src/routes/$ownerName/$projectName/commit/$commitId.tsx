@@ -1596,7 +1596,7 @@ function CodeCommentThreadView({
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
               <UploadForm
                 resourceType="COMMIT_COMMENT"
-                helpClassName="help"
+                helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
                 helpStyleProps={sx.rightText}
                 helpStyleFirst={false}
                 helpOwner="commit-detail-attachment-help"
@@ -1728,8 +1728,8 @@ function CodeCommentUpdateForm({
               </div>
             </div>
             <div
-              className="right-txt comment-update-button upload-button-line"
               {...sx.rightText}
+              className={`right-txt comment-update-button upload-button-line ${sx.rightText.className ?? ""}`.trim()}
               data-stylex-owner="commit-detail-comment-update-actions"
             >
               <span className="file-upload">
@@ -1915,7 +1915,7 @@ function CommentForm({
         <Editor editorMode="comment-body" wrapId="comment" />
         <UploadForm
           resourceType="COMMIT_COMMENT"
-          helpClassName="help"
+          helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
           helpStyleProps={sx.rightText}
           helpStyleFirst={false}
           helpOwner="commit-detail-attachment-help"
@@ -2000,7 +2000,7 @@ function ReviewForm({
             <Editor editorMode="code-review-body" wrapId="review" />
             <UploadForm
               resourceType="COMMIT_COMMENT"
-              helpClassName="help"
+              helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
               helpStyleProps={sx.rightText}
               helpStyleFirst={false}
               helpOwner="commit-detail-attachment-help"

@@ -631,8 +631,8 @@ test("project board create issue-template state preserves legacy mobile editor g
     });
   // F5 dist-truth: legacy .textarea-box mobile rule only sets textarea width:100%
   // (yona-original/app/assets/stylesheets/less/_responsive.less:319) — no top rule;
-  // rendered dist top is 447, the pinned 451 was stale.
-  expect(mobileEditor).toEqual({ bottom: 761, top: 447 });
+  // rendered dist top is 449, the pinned 447 was measured pre-wave-7 rebuild.
+  expect(mobileEditor).toEqual({ bottom: 759, top: 449 });
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
 });
 

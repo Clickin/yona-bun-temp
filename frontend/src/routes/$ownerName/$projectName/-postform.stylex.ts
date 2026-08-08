@@ -50,6 +50,11 @@ export const styles = stylex.create({
     borderRadius: "5px",
     // legacy .upload-wrap{padding:10px !important} (_page.less:3606)
     padding: "10px",
+    // legacy inherits bootstrap body line-height 20px (bootstrap.css:180);
+    // the app :root line-height 18px would shrink the droppable-hint line
+    // box (mobile #upload height 100 -> 98) — mirror the write-comment-box
+    // compensation (app.css:3059).
+    lineHeight: "20px",
   },
   actions: { margin: "10px 0px", textAlign: "right" },
   pasteHelpVisible: { display: "block" },

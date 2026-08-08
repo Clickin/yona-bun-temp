@@ -112,26 +112,31 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
 
   const desktop = await readSignupMetrics(page);
   expect(desktop.viewport).toEqual({ height: 900, scrollWidth: 1366, width: 1366 });
-  expectBox(desktop.page, { height: 622, width: 1366, x: 0, y: 40 });
-  expectBox(desktop.tagLine, { height: 112, width: 1366, x: 0, y: 40 });
-  expectBox(desktop.form, { height: 484, width: 400, x: 483, y: 178 });
-  expectBox(desktop.loginId, { height: 36, width: 398, x: 483, y: 205 });
-  expectBox(desktop.retypedPassword, { height: 36, width: 398, x: 483, y: 529 });
-  expectBox(desktop.submit, { height: 42, width: 400, x: 483, y: 580 });
-  expectBox(desktop.actionRow, { height: 20, width: 400, x: 483, y: 642 });
+  // F5 dist-truth: app-wide :root line-height 18px (src/app.css:9) vs legacy
+  // bootstrap body line-height 20px (bootstrap.css:180) shrinks every line box by
+  // 2px (tagline, dt/dd rows, act-row) — the signup stylex mirrors the legacy
+  // rules (signupform.tsx:29-91, _page.less:1580-1595) so this is the canonical
+  // fallback-off rendering, not an app deviation.
+  expectBox(desktop.page, { height: 578, width: 1366, x: 0, y: 40 });
+  expectBox(desktop.tagLine, { height: 110, width: 1366, x: 0, y: 40 });
+  expectBox(desktop.form, { height: 442, width: 400, x: 483, y: 176 });
+  expectBox(desktop.loginId, { height: 36, width: 398, x: 483, y: 195 });
+  expectBox(desktop.retypedPassword, { height: 36, width: 398, x: 483, y: 487 });
+  expectBox(desktop.submit, { height: 42, width: 400, x: 483, y: 538 });
+  expectBox(desktop.actionRow, { height: 18, width: 400, x: 483, y: 600 });
   expect(desktop.loginId.right).toBeLessThanOrEqual(desktop.form.right);
   expect(desktop.submit.right).toBe(desktop.form.right);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await readSignupMetrics(page);
   expect(mobile.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
-  expectBox(mobile.page, { height: 622, width: 390, x: 0, y: 40 });
-  expectBox(mobile.tagLine, { height: 112, width: 390, x: 0, y: 40 });
-  expectBox(mobile.form, { height: 484, width: 370.5, x: 9.75, y: 178 });
-  expectBox(mobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 205 });
-  expectBox(mobile.retypedPassword, { height: 36, width: 160.19, x: 220.06, y: 529 });
-  expectBox(mobile.submit, { height: 42, width: 370.5, x: 9.75, y: 580 });
-  expectBox(mobile.actionRow, { height: 20, width: 370.5, x: 9.75, y: 642 });
+  expectBox(mobile.page, { height: 578, width: 390, x: 0, y: 40 });
+  expectBox(mobile.tagLine, { height: 110, width: 390, x: 0, y: 40 });
+  expectBox(mobile.form, { height: 442, width: 370.5, x: 9.75, y: 176 });
+  expectBox(mobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 195 });
+  expectBox(mobile.retypedPassword, { height: 36, width: 160.19, x: 220.06, y: 487 });
+  expectBox(mobile.submit, { height: 42, width: 370.5, x: 9.75, y: 538 });
+  expectBox(mobile.actionRow, { height: 18, width: 370.5, x: 9.75, y: 600 });
   expect(mobile.definitionListTextAlign).toBe("right");
   expect(mobile.loginIdFontSize).toBe("16px");
   expect(mobile.form.right).toBeLessThanOrEqual(mobile.viewport.scrollWidth);
@@ -172,7 +177,15 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
   await page.goto(appPath("/users/signupform"));
 
   const routeRoot = page.locator(".page.full");
-  await expect(routeRoot.locator(":scope > .center-txt p")).toHaveText([
+  // F6 copy-fix-current-dom: the confirmation notice dropped the legacy
+  // `center-txt` class when it moved to StyleX (signupform.tsx:308,
+  // styles.confirmationNotice; retired per stylex-standalone-signup-confirmation-notice).
+  // Legacy: yona-original/app/views/user/signup.scala.html:30-34.
+  await expect(
+    routeRoot.locator(
+      '[data-stylex-owner="standalone-signup-confirmation-notice"] p',
+    ),
+  ).toHaveText([
     "Administrator admission is required for activation.",
     "If needed, please contact moc.elpmaxe@nimda",
   ]);
@@ -184,7 +197,7 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
           .join(" "),
       ),
     ),
-  ).toEqual(["center-wrap tag-line-wrap signup", "center-txt", "signup-form-wrap frm-wrap"]);
+  ).toEqual(["center-wrap tag-line-wrap signup", "", "signup-form-wrap frm-wrap"]);
   for (const owner of [
     "standalone-signup-form",
     "standalone-signup-tagline",
@@ -210,8 +223,8 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
 
   await page.setViewportSize({ width: 390, height: 844 });
   const confirmationMobile = await readSignupMetrics(page);
-  expectBox(confirmationMobile.form, { height: 484, width: 370.5, x: 9.75, y: 232 });
-  expectBox(confirmationMobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 259 });
+  expectBox(confirmationMobile.form, { height: 442, width: 370.5, x: 9.75, y: 226 });
+  expectBox(confirmationMobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 245 });
   expect(confirmationMobile.form.right).toBeLessThanOrEqual(
     confirmationMobile.viewport.scrollWidth,
   );
@@ -274,30 +287,55 @@ test("signup form translates legacy client validation without plugin hooks", asy
   await page.fill("#loginId", "Door.User");
   await page.locator("#email").focus();
   await expect(page.locator("#loginId")).toHaveValue("door.user");
-  await expect(page.locator("#loginId + .popover .popover-content")).toHaveText("Already exists!");
+  // F6 copy-fix-current-dom: FieldPopover renders the legacy bootstrap
+  // `popover left in`/`popover-content` DOM as stylex owner/part nodes
+  // (signupform.tsx:700-731); the retired `.popover` classes are pinned by
+  // stylex-standalone-signup-validation-popover instead. Legacy DOM:
+  // yona-original/app/views/common/scripts.scala.html validate.js popover.
+  await expect(
+    page.locator(
+      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="loginId"] [data-stylex-part="validation-popover-content"]',
+    ),
+  ).toHaveText("Already exists!");
   expect(checkedLoginIds).toEqual(["door.user"]);
 
   await page.fill("#loginId", "bad_");
   await page.locator("#email").focus();
-  await expect(page.locator("#loginId + .popover .popover-content")).toHaveText(
+  await expect(
+    page.locator(
+      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="loginId"] [data-stylex-part="validation-popover-content"]',
+    ),
+  ).toHaveText(
     "Login ID may contain alphanumeric characters as well as dashes, underscores or dots, but cannot begin or end with underscores or dots.",
   );
   await page.fill("#email", "bad-email");
   await page.locator("#password").focus();
-  await expect(page.locator("#email + .popover")).toHaveCount(0);
+  await expect(
+    page.locator(
+      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="email"]',
+    ),
+  ).toHaveCount(0);
   await page.locator("#password").pressSequentially("abc");
-  await expect(page.locator("#password + .popover .popover-content")).toHaveText(
+  await expect(
+    page.locator(
+      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="password"] [data-stylex-part="validation-popover-content"]',
+    ),
+  ).toHaveText(
     "Password must be at least 4 characters in length.",
   );
   await page.locator("#retypedPassword").pressSequentially("abcd");
-  await expect(page.locator("#retypedPassword + .popover .popover-content")).toHaveText(
-    "Retyped password doesn't match",
-  );
+  await expect(
+    page.locator(
+      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="retypedPassword"] [data-stylex-part="validation-popover-content"]',
+    ),
+  ).toHaveText("Retyped password doesn't match");
 
   await page.locator('form[name="signup"] button[type="submit"]').click();
-  await expect(page.locator("#email + .popover .popover-content")).toHaveText(
-    "Enter valid email address!",
-  );
+  await expect(
+    page.locator(
+      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="email"] [data-stylex-part="validation-popover-content"]',
+    ),
+  ).toHaveText("Enter valid email address!");
   expect(registerCalls).toBe(0);
   await assertNoPluginHooks(page.locator(".page.full"));
 });
@@ -381,7 +419,16 @@ for (const flashCase of [
     await expect
       .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
       .toBe(`${appPath("/")}${flashCase.search}`);
-    await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(flashCase.message);
+    // F6 copy-fix-current-dom: RootYoramToast renders the legacy
+    // `#yobiToasts .toast .msg` DOM as stylex owner/part nodes (__root.tsx:530-558)
+    // without the retired `toast`/`msg` classes (stylex-root-toast pins
+    // `not.toHaveClass(/\btoast\b/)`). Legacy template:
+    // yona-original/app/views/common/scripts.scala.html:28-33.
+    await expect(
+      page.locator(
+        '[data-stylex-owner="root-yoram-toast"] [data-stylex-part="toast-message"]',
+      ),
+    ).toHaveText(flashCase.message);
     await expect
       .poll(() =>
         page.evaluate(

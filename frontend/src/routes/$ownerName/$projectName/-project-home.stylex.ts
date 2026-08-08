@@ -10,12 +10,32 @@ export const styles = stylex.create({
   projectUtil: { listStyle: "none", margin: "0" },
   projectUtilItem: { float: "left", marginLeft: "15px", position: "relative" },
   projectUtilIcons: { margin: "10px 0px 10px 25px" },
-  watcherCount: { border: "0px", opacity: 0.9, textShadow: "none" },
+  watcherCount: {
+    // legacy .btn base (bootstrap.css:3141-3176) + .watcher-count (_page.less:6918-6922)
+    border: "0px",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    opacity: 0.9,
+    padding: "4px 12px",
+    textAlign: "center",
+    textShadow: "none",
+    verticalAlign: "middle",
+  },
   watcherOn: { backgroundColor: "#b6da54", backgroundImage: "none" },
   watchButtonGroup: {
     "@media all and (max-width: 720px)": { display: "none" },
   },
-  watchButton: { padding: "4px 10px" },
+  watchButton: {
+    // legacy .btn base (bootstrap.css:3141) + .no-border (_common.less:233) +
+    // .watch-btn > button padding (_page.less:6933-6935)
+    border: "0px",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    padding: "4px 10px",
+    verticalAlign: "middle",
+  },
   menuCount: {
     backgroundColor: "#ff7332",
     borderRadius: "9px",
@@ -40,7 +60,13 @@ export const styles = stylex.create({
   page: { backgroundColor: projectHomeTheme.pageSurface },
   projectHome: { padding: "10px" },
   header: { marginBottom: "20px", padding: "5px 0", position: "relative" },
-  overview: { borderLeft: "3px solid #fc491e", padding: "0 10px" },
+  overview: {
+    // longhands: stylex drops border shorthand (legacy _page.less:2524 border-left:3px solid #fc491e)
+    borderLeftColor: "#fc491e",
+    borderLeftStyle: "solid",
+    borderLeftWidth: "3px",
+    padding: "0 10px",
+  },
   overviewHeading: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
   markdownParagraph: { display: "inline-block", margin: "0" },
   readmeEditLink: { marginLeft: "5px" },
@@ -130,6 +156,8 @@ export const styles = stylex.create({
   milestoneProgressWrap: {
     color: "#999",
     fontSize: "11px",
+    // legacy .project-home .milestone-info .progress-wrap { margin: 0 5px } (_page.less:2324)
+    margin: "0 5px",
     overflow: "hidden",
   },
   milestoneProgressCount: { float: "right" },

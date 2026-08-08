@@ -309,7 +309,11 @@ function OrganizationIssuesBody({
               id="span10"
               data-stylex-owner="organization-issues-results"
             >
-              <ul {...stylex.props(styles.tabs)} data-stylex-owner="organization-issues-tabs">
+              <ul
+                {...stylex.props(styles.tabs)}
+                className={`nav nav-tabs nm ${stylex.props(styles.tabs).className ?? ""}`.trim()}
+                data-stylex-owner="organization-issues-tabs"
+              >
                 <StateTab
                   active={search.state === "open"}
                   count={issues.openIssueCount}
@@ -846,7 +850,6 @@ function OrganizationIssueItem({
                   projectName: issue.projectName,
                   milestoneId: String(issue.milestoneId),
                 }}
-                search={{ state: "open" }}
                 title={t("milestone")}
               >
                 {issue.milestoneTitle}
@@ -1013,8 +1016,7 @@ function TwoColumnModeCheckbox() {
       </label>
       {showPopover ? (
         <div
-          {...stylex.props(styles.twoColumnPopover)}
-          className={`popover top ${stylex.props(styles.twoColumnPopover).className ?? ""}`.trim()}
+          className="popover top"
           data-stylex-owner="organization-issues-two-column-popover"
           role="tooltip"
         >

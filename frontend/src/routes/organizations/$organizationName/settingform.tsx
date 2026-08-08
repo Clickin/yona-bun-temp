@@ -246,7 +246,7 @@ function OrganizationSettingsBody({
                   className={`${settingBoxStyleProps.className} ${settingBoxRightStyleProps.className} setting-box right`}
                   data-stylex-owner="organization-setting-box-right"
                 >
-                  <dt>
+                  <dt className={stylex.props(organizationSettingStyles.fieldTerm).className}>
                     <label
                       {...stylex.props(organizationSettingStyles.fieldTermLabel)}
                       className={stylex.props(organizationSettingStyles.fieldTermLabel).className}
@@ -288,7 +288,7 @@ function OrganizationSettingsBody({
                       </span>
                     </div>
                   </dd>
-                  <dt>
+                  <dt className={stylex.props(organizationSettingStyles.fieldTerm).className}>
                     <label
                       {...stylex.props(organizationSettingStyles.fieldTermLabel)}
                       className={stylex.props(organizationSettingStyles.fieldTermLabel).className}
@@ -348,6 +348,7 @@ function OrganizationSettingMenu({
             className: undefined,
             "data-status": undefined,
           }}
+          search={() => ({ tabId: undefined })}
           to="/organizations/$organizationName/settingform"
           params={{ organizationName }}
         >
@@ -362,7 +363,7 @@ function OrganizationSettingMenu({
             className: undefined,
             "data-status": undefined,
           }}
-          search={{}}
+          search={() => ({ tabId: undefined })}
           to="/organizations/$organizationName/members"
           params={{ organizationName }}
         >
@@ -377,7 +378,7 @@ function OrganizationSettingMenu({
             className: undefined,
             "data-status": undefined,
           }}
-          search={{}}
+          search={() => ({ tabId: undefined })}
           to="/organizations/$organizationName/deleteForm"
           params={{ organizationName }}
         >

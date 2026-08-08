@@ -500,9 +500,9 @@ function ProjectForkBody({
                     defaultChecked
                   />{" "}
                   <label
-                    {...stylex.props(styles.radio)}
+                    {...stylex.props(styles.radioLabel)}
                     htmlFor="public"
-                    className={`${stylex.props(styles.radio).className} bg-radiobtn label-public`}
+                    className={`${stylex.props(styles.radioLabel).className} bg-radiobtn label-public`}
                     data-stylex-owner="project-fork-public-label"
                   >
                     {t("project.public")}
@@ -524,9 +524,9 @@ function ProjectForkBody({
                         data-stylex-owner="project-fork-protected-radio"
                       />{" "}
                       <label
-                        {...stylex.props(styles.radio)}
+                        {...stylex.props(styles.radioLabel)}
                         htmlFor="protected"
-                        className={`${stylex.props(styles.radio).className} bg-radiobtn label-protected`}
+                        className={`${stylex.props(styles.radioLabel).className} bg-radiobtn label-protected`}
                         data-stylex-owner="project-fork-protected-label"
                       >
                         {t("project.protected")}
@@ -543,9 +543,9 @@ function ProjectForkBody({
                     data-stylex-owner="project-fork-private-radio"
                   />{" "}
                   <label
-                    {...stylex.props(styles.radio)}
+                    {...stylex.props(styles.radioLabel)}
                     htmlFor="private"
-                    className={`${stylex.props(styles.radio).className} bg-radiobtn label-private`}
+                    className={`${stylex.props(styles.radioLabel).className} bg-radiobtn label-private`}
                     data-stylex-owner="project-fork-private-label"
                   >
                     {t("project.private")}

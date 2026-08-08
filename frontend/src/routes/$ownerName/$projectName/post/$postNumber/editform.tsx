@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BoardPostFileUploader } from "../../../../../components/file-uploader";
 import { BoardPostMarkdownEditor } from "../../../../../components/markdown-editor";
+import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -146,6 +147,7 @@ function ProjectBoardEditFormBody({
                   <BoardPostMarkdownEditor
                     focusRequest={bodyFocusRequest}
                     value={post.bodyMarkdown}
+                    help={<LegacyMarkdownHelp />}
                     wrapperClassName={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
                     tabListStyle={stylex.props(styles.editorTabs)}
                     tabContentClassName={`${stylex.props(styles.editorContent).className} tab-content`}

@@ -54,6 +54,8 @@ export const organizationSettingStyles = stylex.create({
   descsItem: { marginTop: "10px" },
   descsLast: { marginTop: "25px" },
   fieldGeometry: { width: "380px" },
+  // legacy _page.less:3738-3740 `.frm-wrap dt { margin: 3px 0px 1px 0px }`
+  fieldTerm: { margin: "3px 0px 1px" },
   fieldTermLabel: { fontWeight: "bold" },
   textareaGeometry: {
     width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },

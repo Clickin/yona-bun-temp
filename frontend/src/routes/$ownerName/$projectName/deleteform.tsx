@@ -417,13 +417,13 @@ function ProjectDeleteFormBody({
           >
             <div
               {...headerStyleProps}
-              className={headerStyleProps.className}
+              className={`${headerStyleProps.className} modal-header`.trim()}
               data-stylex-owner="project-delete-modal-header"
             >
               <button
                 {...closeStyleProps}
                 type="button"
-                className={closeStyleProps.className}
+                className={`${closeStyleProps.className} close`.trim()}
                 data-stylex-owner="project-delete-modal-header"
                 onClick={dismissDeletionModal}
               >
@@ -439,7 +439,7 @@ function ProjectDeleteFormBody({
             </div>
             <div
               {...bodyStyleProps}
-              className={bodyStyleProps.className}
+              className={`${bodyStyleProps.className} modal-body`.trim()}
               data-stylex-owner="project-delete-modal-body"
             >
               <p> {t("project.delete.description")}</p>
@@ -447,7 +447,7 @@ function ProjectDeleteFormBody({
             </div>
             <div
               {...footerStyleProps}
-              className={footerStyleProps.className}
+              className={`${footerStyleProps.className} modal-footer`.trim()}
               data-stylex-owner="project-delete-modal-footer"
             >
               <button
@@ -573,6 +573,7 @@ function ProjectSettingMenu({
         id="subMenuProjectChangeVCS"
         className=""
         {...(showCode ? {} : stylex.props(styles.codeMenuHidden))}
+        style={showCode ? undefined : { display: "none" }}
         data-stylex-owner="project-delete-code-menu"
       >
         <Link

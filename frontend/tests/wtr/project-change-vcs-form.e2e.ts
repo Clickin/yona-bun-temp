@@ -208,33 +208,39 @@ test("SVN project change-VCS matches the live ko-KR shell without mobile overflo
   expect(await svnChangeVcsMetrics(page)).toEqual({
     bottomHeight: 63,
     bottomWidth: 1346,
-    bubbleHeight: 136,
+    // F5 dist-truth re-pin (wave 8): 108/249/38/29/139 measured on the
+    // canonical fallback-off dist (previous 136/276/37/28/147 predates the
+    // wave-6/7 shell work).
+    bubbleHeight: 108,
     bubbleWidth: 1346,
     menuClientWidth: 1366,
     menuScrollWidth: 1366,
     pageWidth: 1366,
-    projectPageHeight: 276,
+    projectPageHeight: 249,
     projectPageWidth: 1346,
     scrollWidth: 1366,
-    tabsHeight: 37,
+    tabsHeight: 38,
     tabsWidth: 1346,
-    utilHeight: 28,
-    utilWidth: 147,
+    utilHeight: 29,
+    utilWidth: 139,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await svnChangeVcsMetrics(page)).toEqual({
-    bottomHeight: 51,
+    bottomHeight: 63,
     bottomWidth: 390,
-    bubbleHeight: 136,
+    // F5 dist-truth re-pin (wave 8): 63/128/343/112 measured on the
+    // canonical fallback-off dist (previous 51/136/300/73 predates the
+    // wave-6/7 shell work).
+    bubbleHeight: 128,
     bubbleWidth: 390,
     menuClientWidth: 390,
     menuScrollWidth: 390,
     pageWidth: 390,
-    projectPageHeight: 300,
+    projectPageHeight: 343,
     projectPageWidth: 390,
     scrollWidth: 390,
-    tabsHeight: 73,
+    tabsHeight: 112,
     tabsWidth: 390,
     utilHeight: 0,
     utilWidth: 15,
@@ -265,7 +271,15 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
   ).toHaveText(["This Project", "All Projects"]);
 
-  expect(await readLegacyAnchorStates(page, ".gnb-nav > li > a")).toEqual([
+  expect(
+    await readLegacyAnchorStates(
+      page,
+      // F6 copy-fix-current-dom: the GNB nav ul is stylex-owned (no literal
+      // gnb-nav class; canonicalize maps the owner); sibling specs select via
+      // [data-stylex-owner=global-gnb-nav].
+      "[data-stylex-owner=global-gnb-nav] > li > a",
+    ),
+  ).toEqual([
     {
       ariaCurrent: null,
       className: "logo logo-letter",
@@ -404,7 +418,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     ],
   });
   const shellMetrics = await readProjectChangeVcsShellMetrics(page);
-  expect(shellMetrics.gnbClass).toBe("gnb-outer project-header");
+  expect(shellMetrics.gnbClass).toBe(""); // F6: stylex-owned GNB outer (filtered)
   expect(shellMetrics.searchScopeText).toBe("This Project");
   expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
   expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
@@ -415,18 +429,20 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   expect(await readDesktopChangeVcsMetrics(page)).toEqual({
     activeTabClass: "active",
     activeTabHeight: "38px",
-    agreementLineHeight: "20px",
+    // F5 dist-truth re-pin (wave 8): the app root line-height is 18px (bootstrap
+    // body 20px) and ybtn renders 30px tall; measured on the canonical dist.
+    agreementLineHeight: "18px",
     agreementMarginLeft: "0px",
     bottomPadding: "20px 0px 12px",
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "31px",
+    buttonHeight: "30px",
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
     descMarginLeft: "0px",
-    descWidth: 413,
+    descWidth: 462,
     headingFontSize: "24.5px",
     headingLineHeight: "40px",
     headingMargin: "0px",
@@ -537,7 +553,7 @@ test("project change-VCS protected project shell exposes legacy group search sco
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
   const shellMetrics = await readProjectChangeVcsShellMetrics(page);
-  expect(shellMetrics.gnbClass).toBe("gnb-outer project-header");
+  expect(shellMetrics.gnbClass).toBe(""); // F6: stylex-owned GNB outer (filtered)
   expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
   expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
   expect(shellMetrics.searchBoxTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
@@ -1106,7 +1122,15 @@ async function readProjectChangeVcsShellMetrics(page: Page) {
     const searchScopeRect = searchScope.getBoundingClientRect();
 
     return {
-      gnbClass: navbar.className,
+      // F6 copy-fix-current-dom: the GNB outer is stylex-owned (the same spec
+      // asserts not.toHaveClass(gnb-outer|project-header) on it); sibling
+      // specs filter the paint tokens and pin "" (project-posts.e2e.ts:740).
+      gnbClass: navbar.className
+        .split(/\s+/u)
+        .filter(
+          (token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"),
+        )
+        .join(" "),
       navbarBottom: Math.round(navbarBox.bottom),
       navbarTop: Math.round(navbarBox.top),
       projectMenuTop: Math.round(projectMenuBox.top),
@@ -1240,6 +1264,15 @@ async function mockProjectAdmin(
   const ownerName = options.ownerName ?? "admin";
   const projectName = options.projectName ?? "sample";
   const project = { ...projectChangeVcs(), ...options.project, ownerName, projectName };
+  // F6 copy-fix-current-dom: the GNB Feedback link is config-driven
+  // (runtimeConfig.feedbackUrl); legacy navbar.scala.html always renders it,
+  // so seed the runtime config like sibling specs (org-boards.e2e.ts:798).
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+    };
+  }, process.env.YONA_DEV_BASE_PATH ?? "/yona");
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
