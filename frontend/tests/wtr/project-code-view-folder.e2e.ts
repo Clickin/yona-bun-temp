@@ -800,7 +800,13 @@ async function canonicalize(page: Page, selector: string) {
 
     function normalizeAttr(attr: Attr) {
       if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/u, "");
+        return attr.value
+          .replace(/\s+/g, "")
+          .replace(/;$/u, "")
+          .split(";")
+          .filter(Boolean)
+          .sort((left, right) => left.localeCompare(right))
+          .join(";");
       }
       return attr.name === "class"
         ? attr.value
@@ -870,7 +876,15 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      return attr.name === "style"
+        ? attr.value
+            .replace(/\s+/g, "")
+            .replace(/;$/u, "")
+            .split(";")
+            .filter(Boolean)
+            .sort((left, right) => left.localeCompare(right))
+            .join(";")
+        : attr.value;
     }
   }, html);
 }

@@ -159,12 +159,8 @@ function UploaderShell({
         </span>
         {attachSpacing ? " " : null}
         <span
-          {...(pasteHelpStyleFirst
-            ? {
-                ...(pasteSupported && pasteHelpStyleProps ? pasteHelpStyleProps : undefined),
-                ...pasteHelpFixedStyleProps,
-              }
-            : undefined)}
+          {...(pasteSupported && pasteHelpStyleProps ? pasteHelpStyleProps : undefined)}
+          {...pasteHelpFixedStyleProps}
           className={`${pasteHelpClassName} ${
             pasteHelpStyleFirst
               ? ""
@@ -175,12 +171,6 @@ function UploaderShell({
                 ((pasteHelpFixedStyleProps as { className?: string } | undefined)?.className ?? "")
           }`.trim()}
           data-stylex-owner={pasteHelpOwner}
-          {...(pasteHelpStyleFirst
-            ? undefined
-            : {
-                ...(pasteSupported && pasteHelpStyleProps ? pasteHelpStyleProps : undefined),
-                ...pasteHelpFixedStyleProps,
-              })}
         >
           {t("common.attach.pastehere")}
         </span>

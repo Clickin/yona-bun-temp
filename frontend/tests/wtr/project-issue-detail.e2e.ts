@@ -20,7 +20,7 @@ const EXPECTED_ISSUE_DETAIL = `
 `;
 
 const TASKLIST = `<div class="tasklist task-show"><div class="task-title" style="width:0%">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0" title="Tasklist"></div></div></div>`;
-const COMMENT_UPDATE_FORM = `<div id="comment-editform-77" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments/77" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-77">Comment **markdown**</textarea></div></div><div id="preview-77" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-77" class="file-upload__label ybtn">File upload</label><input id="upload-77" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="77">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-77"></div><div class="attachment-files"></div><div id="upload-77" data-resourcetype="ISSUE_COMMENT" data-resourceid="77"></div></div></form></div>`;
+const COMMENT_UPDATE_FORM = `<div id="comment-editform-77" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments/77" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="markdown-editor mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div class="markdown-help"><ul class="markdown-help-nav"><li><span class="label">Markdown help</span></li><li class="help-nav"><button aria-controls="markdown-help-markdownHeaders" aria-expanded="false" class="markdown-help-nav-button" type="button">Header</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownStyling" aria-expanded="false" class="markdown-help-nav-button" type="button">Text Style</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownLinks" aria-expanded="false" class="markdown-help-nav-button" type="button">Link</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownLists" aria-expanded="false" class="markdown-help-nav-button" type="button">List</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownTaskList" aria-expanded="false" class="markdown-help-nav-button" type="button">Checklist</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownImages" aria-expanded="false" class="markdown-help-nav-button" type="button">Image</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownBlockquotes" aria-expanded="false" class="markdown-help-nav-button" type="button">Blockquote</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownCodes" aria-expanded="false" class="markdown-help-nav-button" type="button">Code</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownTables" aria-expanded="false" class="markdown-help-nav-button" type="button">Table</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownShortLinks" aria-expanded="false" class="markdown-help-nav-button" type="button">Short Link</button></li></ul><ul class="markdown-help-wrap"><li class="markdown-help-item markdownHeaders" id="markdown-help-markdownHeaders"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre># This is an H1 ## This is an H2 ### This is an H3</pre></div><div class="span6"><div class="markdown-wrap"><h1 id="yb-header-this-is-an-h1">This is an H1<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h1">#</a></h1><h2 id="yb-header-this-is-an-h2">This is an H2<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h2">#</a></h2><h3 id="yb-header-this-is-an-h3">This is an H3<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h3">#</a></h3></div></div></div></li><li class="markdown-help-item markdownStyling" id="markdown-help-markdownStyling"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre></div><div class="span6"><div class="markdown-wrap"><p><em>This is an italic</em><strong>This is an bold</strong><del>This is an strike</del></p></div></div></div></li><li class="markdown-help-item markdownLinks" id="markdown-help-markdownLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>[Site](https://example.com/ "Example Site") https://example.com/</pre></div><div class="span6"><div class="markdown-wrap"><p><a href="https://example.com/" title="Example Site">Site</a></p><p><a href="https://example.com/">https://example.com/</a></p></div></div></div></li><li class="markdown-help-item markdownLists" id="markdown-help-markdownLists"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- Red 1. White 2. Blue - Green.</pre></div><div class="span6"><div class="markdown-wrap"><ul><li>Red<ol><li>White</li><li>Blue</li></ol></li><li>Green</li></ul></div></div></div></li><li class="markdown-help-item markdownTaskList" id="markdown-help-markdownTaskList"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre></div><div class="span6"><div class="markdown-wrap"><ul><li><input type="checkbox"></input>Todos<ul><li><input checked="" type="checkbox"></input>To do A</li><li><input type="checkbox"></input>To do B</li><li><input type="checkbox"></input>To do C</li></ul></li></ul></div></div></div></li><li class="markdown-help-item markdownImages" id="markdown-help-markdownImages"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>![title](https://example.com/images/sample.png "Sample image")</pre></div><div class="span6"><div class="markdown-wrap"><p><img src="__BASE_PATH__/legacy-assets/images/ico-like-small.png" title="Sample image"></img></p></div></div></div></li><li class="markdown-help-item markdownBlockquotes" id="markdown-help-markdownBlockquotes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>> Lorem ipsum dolor sit amet, consectetuer adipiscing elit. > > Aenean commodo ligula eget dolor.</pre></div><div class="span6"><div class="markdown-wrap"><blockquote><p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p><p>Aenean commodo ligula eget dolor.</p></blockquote></div></div></div></li><li class="markdown-help-item markdownCodes" id="markdown-help-markdownCodes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>\`function test() {console.log("hello world");}\` \`\`\`javascript function test() { console.log("hello world"); } \`\`\`</pre></div><div class="span6"><div class="markdown-wrap"><p><code>function test() {console.log("hello world");}</code></p><pre><code class="hljs language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-title">test</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-built_in">console</span>.log(<span class="hljs-string">"hello world"</span>); }</code></pre></div></div></div></li><li class="markdown-help-item markdownTables" id="markdown-help-markdownTables"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>| Default | Align center | Align right | | ------------ | :----------: | ------: | | Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |</pre></div><div class="span6"><div class="markdown-wrap"><table><thead><tr><th>Default</th><th style="text-align:center">Align center</th><th style="text-align:right">Align right</th></tr></thead><tbody><tr><td>Carrot</td><td style="text-align:center">Red</td><td style="text-align:right">1,000</td></tr><tr><td>Banana</td><td style="text-align:center">Yellow</td><td style="text-align:right">32,000</td></tr></tbody></table><p>Also, you can copy & paste table from excel sheet</p></div></div></div></li><li class="markdown-help-item markdownShortLinks" id="markdown-help-markdownShortLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>Issue no: #2 Mention: @example commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593</pre></div><div class="span6"><div class="markdown-wrap"><p>Issue no:<a href="__BASE_PATH__/example/example/issue/2">#2</a></p><p></p><p>Mention:<a href="__BASE_PATH__/example">@example</a></p><p>commit:<a href="__BASE_PATH__/example/example/commit/763575">@763575</a>or<a href="__BASE_PATH__/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">@763575</a></p></div></div></div></li></ul></div><div id="edit-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-77">Comment **markdown**</textarea></div></div><div id="preview-77" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-77" class="file-upload__label ybtn">File upload</label><input id="upload-77" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="77">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-77"></div><div class="attachment-files"></div><div id="upload-77" data-resourcetype="ISSUE_COMMENT" data-resourceid="77"></div></div></form></div>`;
 const COMMENT_FORM = `<form action="__BASE_PATH__/admin/sample/issue/11/comments" enctype="multipart/form-data" id="comment-form" method="post"><div class="write-comment-box"><div class="write-comment-wrap"><div class="markdown-editor mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button class="add-task-list-button ybtn ybtn-danger-no-outline ybtn-small" type="button"><i class="task-list-icon yobicon-list"></i>Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button class="ybtn ybtn-small ybtn-warning" id="button-clear-temporary" type="button">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div class="markdown-help"><ul class="markdown-help-nav"><li><span class="label">Markdown help</span></li><li class="help-nav"><button aria-controls="markdown-help-markdownHeaders" aria-expanded="false" class="markdown-help-nav-button" type="button">Header</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownStyling" aria-expanded="false" class="markdown-help-nav-button" type="button">Text Style</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownLinks" aria-expanded="false" class="markdown-help-nav-button" type="button">Link</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownLists" aria-expanded="false" class="markdown-help-nav-button" type="button">List</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownTaskList" aria-expanded="false" class="markdown-help-nav-button" type="button">Checklist</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownImages" aria-expanded="false" class="markdown-help-nav-button" type="button">Image</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownBlockquotes" aria-expanded="false" class="markdown-help-nav-button" type="button">Blockquote</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownCodes" aria-expanded="false" class="markdown-help-nav-button" type="button">Code</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownTables" aria-expanded="false" class="markdown-help-nav-button" type="button">Table</button></li><li class="help-nav"><button aria-controls="markdown-help-markdownShortLinks" aria-expanded="false" class="markdown-help-nav-button" type="button">Short Link</button></li></ul><ul class="markdown-help-wrap"><li class="markdown-help-item markdownHeaders" id="markdown-help-markdownHeaders"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre># This is an H1 ## This is an H2 ### This is an H3</pre></div><div class="span6"><div class="markdown-wrap"><h1 id="yb-header-this-is-an-h1">This is an H1<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h1">#</a></h1><h2 id="yb-header-this-is-an-h2">This is an H2<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h2">#</a></h2><h3 id="yb-header-this-is-an-h3">This is an H3<a class="active head-anchor" href="__BASE_PATH__/admin/sample/issue/11#yb-header-this-is-an-h3">#</a></h3></div></div></div></li><li class="markdown-help-item markdownStyling" id="markdown-help-markdownStyling"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre></div><div class="span6"><div class="markdown-wrap"><p><em>This is an italic</em><strong>This is an bold</strong><del>This is an strike</del></p></div></div></div></li><li class="markdown-help-item markdownLinks" id="markdown-help-markdownLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>[Site](https://example.com/ "Example Site") https://example.com/</pre></div><div class="span6"><div class="markdown-wrap"><p><a href="https://example.com/" title="Example Site">Site</a></p><p><a href="https://example.com/">https://example.com/</a></p></div></div></div></li><li class="markdown-help-item markdownLists" id="markdown-help-markdownLists"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- Red 1. White 2. Blue - Green.</pre></div><div class="span6"><div class="markdown-wrap"><ul><li>Red<ol><li>White</li><li>Blue</li></ol></li><li>Green</li></ul></div></div></div></li><li class="markdown-help-item markdownTaskList" id="markdown-help-markdownTaskList"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre></div><div class="span6"><div class="markdown-wrap"><ul><li><input type="checkbox"></input>Todos<ul><li><input checked="" type="checkbox"></input>To do A</li><li><input type="checkbox"></input>To do B</li><li><input type="checkbox"></input>To do C</li></ul></li></ul></div></div></div></li><li class="markdown-help-item markdownImages" id="markdown-help-markdownImages"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>![title](https://example.com/images/sample.png "Sample image")</pre></div><div class="span6"><div class="markdown-wrap"><p><img src="__BASE_PATH__/legacy-assets/images/ico-like-small.png" title="Sample image"></img></p></div></div></div></li><li class="markdown-help-item markdownBlockquotes" id="markdown-help-markdownBlockquotes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>> Lorem ipsum dolor sit amet, consectetuer adipiscing elit. > > Aenean commodo ligula eget dolor.</pre></div><div class="span6"><div class="markdown-wrap"><blockquote><p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p><p>Aenean commodo ligula eget dolor.</p></blockquote></div></div></div></li><li class="markdown-help-item markdownCodes" id="markdown-help-markdownCodes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>\`function test() {console.log("hello world");}\` \`\`\`javascript function test() { console.log("hello world"); } \`\`\`</pre></div><div class="span6"><div class="markdown-wrap"><p><code>function test() {console.log("hello world");}</code></p><pre><code class="hljs language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-title">test</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-built_in">console</span>.log(<span class="hljs-string">"hello world"</span>); }</code></pre></div></div></div></li><li class="markdown-help-item markdownTables" id="markdown-help-markdownTables"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>| Default | Align center | Align right | | ------------ | :----------: | ------: | | Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |</pre></div><div class="span6"><div class="markdown-wrap"><table><thead><tr><th>Default</th><th style="text-align:center">Align center</th><th style="text-align:right">Align right</th></tr></thead><tbody><tr><td>Carrot</td><td style="text-align:center">Red</td><td style="text-align:right">1,000</td></tr><tr><td>Banana</td><td style="text-align:center">Yellow</td><td style="text-align:right">32,000</td></tr></tbody></table><p>Also, you can copy & paste table from excel sheet</p></div></div></div></li><li class="markdown-help-item markdownShortLinks" id="markdown-help-markdownShortLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>Issue no: #2 Mention: @example commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593</pre></div><div class="span6"><div class="markdown-wrap"><p>Issue no:<a href="__BASE_PATH__/example/example/issue/2">#2</a></p><p></p><p>Mention:<a href="__BASE_PATH__/example">@example</a></p><p>commit:<a href="__BASE_PATH__/example/example/commit/763575">@763575</a>or<a href="__BASE_PATH__/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">@763575</a></p></div></div></div></li></ul></div><div class="active tab-pane" id="edit-contents"><div class="textarea-box"><textarea class="comment content editorSeries nm" data-editor-mode="comment-body" id="editor-contents-contents" markdown="true" name="contents"></textarea></div></div><div class="tab-pane" id="preview-contents"><div class="comment-body markdown-preview markdown-wrap" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="content-footer upload-wrap" data-resource-type="ISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag & Drop files to attach here or</span><div class="btn-wrap"><div class="fake-file-wrap medium nbtn white"><i class="yobicon-upload"></i>File upload<input class="file" multiple="" name="filePath" type="file"></input></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="help"><i class="yobicon-supportrequest"></i>Selected file will be attached when your comment is saved.</p></div><div><button class="hidden ybtn" id="dynamic-comment-btn" type="button"></button><button class="ybtn ybtn-success" type="submit">Add a comment</button></div></div></div></form>`;
 const CHILD_COMMENT_ANCHORS = `<div id="comment-78"></div>`;
 const CHILD_COMMENTS = `<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Child <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/qa1" class="usf-group" title="qa1"><strong>QA One</strong></a><a href="__BASE_PATH__/admin/sample/issue/11#comment-78" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="77"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="__CHILD_REPLY_PLACEHOLDER__"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>`;
@@ -2733,15 +2733,21 @@ test("project issue detail toggles legacy comment update form through React-owne
     "data-resourceid",
     "77",
   );
+  // F5 dist-truth: the update form lives inside `.board-comment-wrap .comments`,
+  // so the nested overrides apply (legacy _page.less:3019-3027:
+  // `.comments .comment-update-form .textarea-box { padding-right:2px;
+  // margin-bottom:10px } .write-comment-box { padding:10px }` and
+  // _page.less:3485-3487 `.comment-update-button { margin-top:10px }`) —
+  // not the top-level `.textarea-box`/`.write-comment-box` defaults.
   expect(await commentUpdateFormMetrics(page)).toEqual({
     bodyDisplay: "none",
-    buttonLineMarginTop: "0px",
+    buttonLineMarginTop: "10px",
     formDisplay: "block",
     replyDisplay: "none",
-    textareaBoxMarginBottom: "0px",
-    textareaBoxPaddingRight: "14px",
+    textareaBoxMarginBottom: "10px",
+    textareaBoxPaddingRight: "2px",
     textareaValue: "Comment **markdown**",
-    writeCommentBoxPadding: "0px 0px 15px 54px",
+    writeCommentBoxPadding: "10px",
   });
 
   await updatePreviewTab.click();
@@ -7230,6 +7236,15 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      // copy-fix-current-dom: legacy help-nav items are plain text
+      // (markdown.scala.html:14-23); the app wraps each in a button
+      // (markdown-editor.tsx) — unwrap the button to its text on both sides
+      if (
+        node.tagName === "BUTTON" &&
+        (node as HTMLElement).classList.contains("markdown-help-nav-button")
+      ) {
+        return normalizeText(node.textContent ?? "");
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
@@ -7240,10 +7255,28 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "aria-controls" &&
             !(attr.name === "id" && /^_r_\d+_$/u.test(attr.value)) &&
+            // copy-fix-current-dom: app gives markdown-help items ids
+            // (markdown-help-markdownHeaders etc.) that legacy never renders
+            // (markdown.scala.html:26 plain <li>) — drop on both sides
+            !(attr.name === "id" && /^markdown-help-/u.test(attr.value)) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
+            attr.name !== "data-stylex-owner-issue-info" &&
+            !(attr.name === "class" && normalizeAttr(attr) === "") &&
+            // copy-fix-current-dom: legacy hides the comment share-link via
+            // inline style="display:none" (partial_comment.scala.html:44); the
+            // app owns the hidden state via stylex shareLinkHidden
+            // (-issue-detail.stylex.ts:93) — drop the style attr on both sides
+            !(attr.name === "style" && normalizeAttr(attr) === "display:none") &&
+            // copy-fix-current-dom: legacy editor tab-content pins an inline
+            // style="position:relative;overflow:visible" (editor.scala.html);
+            // the app owns it via stylex editorTabContent
+            // (-issue-detail.stylex.ts:481-484) — drop on both sides
+            !(
+              attr.name === "style" &&
+              normalizeAttr(attr) === "position:relative;overflow:visible"
+            ),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7269,11 +7302,30 @@ async function canonicalize(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              // pull-left/pull-right: app owns the comment attachments float
+              // (commentAttachments -issue-detail.stylex.ts:316-318) and the
+              // child-comment Reply float (childCommentReply :324-335) via
+              // stylex; legacy renders literal classes
+              // (partial_comment.scala.html:112, childComments.scala.html:62)
+              token !== "pull-left" &&
+              token !== "pull-right" &&
               // copy-fix-current-dom: strip app-owned shell/voter tokens that
               // legacy templates never render (issue/view.scala.html page shell,
               // partial_voters.scala.html:19 plain <li>)
               token !== "issue-detail-page" &&
               token !== "voter-list-item" &&
+              // ml10/ml6/pt5px/mb10: app owns issue/comment action spacing via
+              // stylex (issueActionEdit/commentActionEdit/sharerTitle in
+              // -issue-detail.stylex.ts:293-313); legacy view.scala.html:237,
+              // :252 and partial_comment.scala.html:99 render literal classes
+              token !== "ml10" &&
+              token !== "ml6" &&
+              token !== "pt5px" &&
+              token !== "mb10" &&
+              // mb20: app owns the right-pane margin-bottom via stylex sidebar
+              // (-issue-detail.stylex.ts:348-350); legacy view.scala.html:293
+              // renders the literal class
+              token !== "mb20" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -7327,6 +7379,15 @@ async function canonicalizeAll(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      // copy-fix-current-dom: legacy help-nav items are plain text
+      // (markdown.scala.html:14-23); the app wraps each in a button
+      // (markdown-editor.tsx) — unwrap the button to its text on both sides
+      if (
+        node.tagName === "BUTTON" &&
+        (node as HTMLElement).classList.contains("markdown-help-nav-button")
+      ) {
+        return normalizeText(node.textContent ?? "");
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
@@ -7337,10 +7398,28 @@ async function canonicalizeAll(page: Page, selector: string) {
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "aria-controls" &&
             !(attr.name === "id" && /^_r_\d+_$/u.test(attr.value)) &&
+            // copy-fix-current-dom: app gives markdown-help items ids
+            // (markdown-help-markdownHeaders etc.) that legacy never renders
+            // (markdown.scala.html:26 plain <li>) — drop on both sides
+            !(attr.name === "id" && /^markdown-help-/u.test(attr.value)) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
+            attr.name !== "data-stylex-owner-issue-info" &&
+            !(attr.name === "class" && normalizeAttr(attr) === "") &&
+            // copy-fix-current-dom: legacy hides the comment share-link via
+            // inline style="display:none" (partial_comment.scala.html:44); the
+            // app owns the hidden state via stylex shareLinkHidden
+            // (-issue-detail.stylex.ts:93) — drop the style attr on both sides
+            !(attr.name === "style" && normalizeAttr(attr) === "display:none") &&
+            // copy-fix-current-dom: legacy editor tab-content pins an inline
+            // style="position:relative;overflow:visible" (editor.scala.html);
+            // the app owns it via stylex editorTabContent
+            // (-issue-detail.stylex.ts:481-484) — drop on both sides
+            !(
+              attr.name === "style" &&
+              normalizeAttr(attr) === "position:relative;overflow:visible"
+            ),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7366,11 +7445,30 @@ async function canonicalizeAll(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              // pull-left/pull-right: app owns the comment attachments float
+              // (commentAttachments -issue-detail.stylex.ts:316-318) and the
+              // child-comment Reply float (childCommentReply :324-335) via
+              // stylex; legacy renders literal classes
+              // (partial_comment.scala.html:112, childComments.scala.html:62)
+              token !== "pull-left" &&
+              token !== "pull-right" &&
               // copy-fix-current-dom: strip app-owned shell/voter tokens that
               // legacy templates never render (issue/view.scala.html page shell,
               // partial_voters.scala.html:19 plain <li>)
               token !== "issue-detail-page" &&
               token !== "voter-list-item" &&
+              // ml10/ml6/pt5px/mb10: app owns issue/comment action spacing via
+              // stylex (issueActionEdit/commentActionEdit/sharerTitle in
+              // -issue-detail.stylex.ts:293-313); legacy view.scala.html:237,
+              // :252 and partial_comment.scala.html:99 render literal classes
+              token !== "ml10" &&
+              token !== "ml6" &&
+              token !== "pt5px" &&
+              token !== "mb10" &&
+              // mb20: app owns the right-pane margin-bottom via stylex sidebar
+              // (-issue-detail.stylex.ts:348-350); legacy view.scala.html:293
+              // renders the literal class
+              token !== "mb20" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -7435,6 +7533,15 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      // copy-fix-current-dom: legacy help-nav items are plain text
+      // (markdown.scala.html:14-23); the app wraps each in a button
+      // (markdown-editor.tsx) — unwrap the button to its text on both sides
+      if (
+        node.tagName === "BUTTON" &&
+        (node as HTMLElement).classList.contains("markdown-help-nav-button")
+      ) {
+        return normalizeText(node.textContent ?? "");
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
@@ -7445,9 +7552,28 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "aria-controls" &&
             !(attr.name === "id" && /^_r_\d+_$/u.test(attr.value)) &&
+            // copy-fix-current-dom: app gives markdown-help items ids
+            // (markdown-help-markdownHeaders etc.) that legacy never renders
+            // (markdown.scala.html:26 plain <li>) — drop on both sides
+            !(attr.name === "id" && /^markdown-help-/u.test(attr.value)) &&
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-stylex-owner-issue-info" &&
             !isRemovedReactOwnedDataApi(attr) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")) &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
+            !(attr.name === "class" && normalizeAttr(attr) === "") &&
+            // copy-fix-current-dom: legacy hides the comment share-link via
+            // inline style="display:none" (partial_comment.scala.html:44); the
+            // app owns the hidden state via stylex shareLinkHidden
+            // (-issue-detail.stylex.ts:93) — drop the style attr on both sides
+            !(attr.name === "style" && normalizeAttr(attr) === "display:none") &&
+            // copy-fix-current-dom: legacy editor tab-content pins an inline
+            // style="position:relative;overflow:visible" (editor.scala.html);
+            // the app owns it via stylex editorTabContent
+            // (-issue-detail.stylex.ts:481-484) — drop on both sides
+            !(
+              attr.name === "style" &&
+              normalizeAttr(attr) === "position:relative;overflow:visible"
+            ),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -7473,11 +7599,30 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              // pull-left/pull-right: app owns the comment attachments float
+              // (commentAttachments -issue-detail.stylex.ts:316-318) and the
+              // child-comment Reply float (childCommentReply :324-335) via
+              // stylex; legacy renders literal classes
+              // (partial_comment.scala.html:112, childComments.scala.html:62)
+              token !== "pull-left" &&
+              token !== "pull-right" &&
               // copy-fix-current-dom: strip app-owned shell/voter tokens that
               // legacy templates never render (issue/view.scala.html page shell,
               // partial_voters.scala.html:19 plain <li>)
               token !== "issue-detail-page" &&
               token !== "voter-list-item" &&
+              // ml10/ml6/pt5px/mb10: app owns issue/comment action spacing via
+              // stylex (issueActionEdit/commentActionEdit/sharerTitle in
+              // -issue-detail.stylex.ts:293-313); legacy view.scala.html:237,
+              // :252 and partial_comment.scala.html:99 render literal classes
+              token !== "ml10" &&
+              token !== "ml6" &&
+              token !== "pt5px" &&
+              token !== "mb10" &&
+              // mb20: app owns the right-pane margin-bottom via stylex sidebar
+              // (-issue-detail.stylex.ts:348-350); legacy view.scala.html:293
+              // renders the literal class
+              token !== "mb20" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

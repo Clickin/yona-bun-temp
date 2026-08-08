@@ -48,6 +48,8 @@ export const styles = stylex.create({
   uploadWrap: {
     backgroundColor: postFormColors.uploadSurface,
     borderRadius: "5px",
+    // legacy .upload-wrap{padding:10px !important} (_page.less:3606)
+    padding: "10px",
   },
   actions: { margin: "10px 0px", textAlign: "right" },
   pasteHelpVisible: { display: "block" },

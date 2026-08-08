@@ -93,9 +93,12 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
   });
   expect(geometry).toEqual({
     documentWidth: 1366,
-    error: { height: 310, width: 1346, x: 10, y: 93 },
+    // F5 dist-truth: shared DefaultSearchErrorBody renders the ico-404 sprite
+    // visibly (80px, blessed by project-pullrequests.e2e.ts + search-global
+    // specs); legacy badrequest_default.scala.html's bare ico-404 has no CSS.
+    error: { height: 388, width: 1346, x: 10, y: 93 },
     page: { height: 450, width: 1366, x: 0, y: 93 },
-    projectPage: { height: 310, width: 1346, x: 10, y: 93 },
+    projectPage: { height: 388, width: 1346, x: 10, y: 93 },
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -125,9 +128,9 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
   });
   expect(mobileGeometry).toEqual({
     documentWidth: 390,
-    error: { height: 310, width: 390, x: 0, y: 93 },
+    error: { height: 388, width: 390, x: 0, y: 93 },
     page: { height: 450, width: 390, x: 0, y: 93 },
-    projectPage: { height: 310, width: 390, x: 0, y: 93 },
+    projectPage: { height: 388, width: 390, x: 0, y: 93 },
   });
 });
 
@@ -1183,7 +1186,7 @@ async function mockProjectPullRequestCreateForm(
   } = {},
 ) {
   const project = { ...DEFAULT_PROJECT_ROUTE, ...options.project };
-  const containerPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/container`;
+  const containerPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/container**`;
   const formOptionsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/form-options**`;
   const mergeResultPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/merge-result?*`;
   const pullRequestsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests`;

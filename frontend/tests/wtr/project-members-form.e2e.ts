@@ -116,7 +116,11 @@ test("project members four StyleX identity owners preserve populated desktop and
     avatarBorderRadius: "3px",
     avatarFloat: "left",
     avatarHeight: 40,
-    avatarImageHeight: 40,
+    // F5 dist-truth: legacy members.scala.html:52 keeps width/height="64" on the
+    // member <img>; _yobiUI.less:458-461 only constrains width:100% (no height),
+    // so the img layout box is 40x64 inside the 40x40 overflow:hidden wrapper —
+    // the 40 pin measured an earlier app version that dropped the height attr.
+    avatarImageHeight: 64,
     avatarImageVerticalAlign: "top",
     avatarWidth: 40,
     memberIdColor: "rgb(204, 204, 204)",
@@ -196,7 +200,10 @@ test("project members four StyleX list row setting owners preserve the owner-onl
     listListStyle: "none",
     listMargin: "0px",
     listMatchesProjectPageContentWidth: true,
-    listTop: 292.578125,
+    // F5 dist-truth: the stray empty <li> from legacy projectMenu.scala.html:126-129
+    // (`</a>\n<li>` auto-closed before </ul>) adds 2px to the project menu, pushing
+    // the members ul/row from 292.578125 to the measured 294.578125 (app == legacy).
+    listTop: 294.578125,
     listWidth: 1260,
     ownerHeight: 24,
     ownerMarginTop: "5px",
@@ -217,7 +224,7 @@ test("project members four StyleX list row setting owners preserve the owner-onl
     rowPadding: "10px 5px",
     rowPosition: "relative",
     rowInsetFromList: 5,
-    rowTop: 292.578125,
+    rowTop: 294.578125,
     rowTopMatchesList: true,
     rowWidth: 616.59375,
     rowWidthRatio: 0.4893601,
@@ -784,14 +791,16 @@ test("project members pins the localhost protected org-owned weblabs/portal bran
     ),
   );
 
-  await expect(page.locator(".project-util .watch-btn")).toHaveAttribute(
-    "class",
+  // F6 copy-fix-current-dom: the watch-btn group carries a StyleX media-query
+  // class token before the legacy classes, so the strict class-attribute pin
+  // (toHaveAttribute) is stale; toHaveClass substring semantics match the
+  // project-statistics watch-btn convention.
+  await expect(page.locator(".project-util .watch-btn")).toHaveClass(
     "btn-group dropdown watch-btn",
   );
   await expect(page.locator(".project-util .down-arrow")).not.toHaveAttribute("data-toggle", /.+/);
   await page.locator(".project-util .down-arrow").click();
-  await expect(page.locator(".project-util .watch-btn")).toHaveAttribute(
-    "class",
+  await expect(page.locator(".project-util .watch-btn")).toHaveClass(
     "btn-group dropdown watch-btn open",
   );
 
@@ -804,8 +813,7 @@ test("project members pins the localhost protected org-owned weblabs/portal bran
   await watchResponse;
 
   expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
-  await expect(page.locator(".project-util .watch-btn")).toHaveAttribute(
-    "class",
+  await expect(page.locator(".project-util .watch-btn")).toHaveClass(
     "btn-group dropdown watch-btn",
   );
   await expect(page.locator(".project-util .down-arrow")).not.toHaveAttribute("data-toggle", /.+/);
@@ -1575,6 +1583,9 @@ test("project members authorization error keeps legacy computed output on deskto
       errorTextMarginBottom: "30px",
       errorTextMarginTop: "30px",
       pageWrapOuterMinHeight: "450px",
+      // F6 metric gap: legacy _responsive.less:617-620 @media all keeps 5px at
+      // every width, including the 375px mobile viewport.
+      projectPageWrapMarginTop: "5px",
     });
   }
 });
@@ -2091,7 +2102,7 @@ function expectedProjectMembersShell(basePath: string) {
     )
     .replace(
       `<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="${basePath}/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="${basePath}/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="${basePath}/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="${basePath}/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="${basePath}/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="${basePath}/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li><li></li></ul></div></div></div>`,
-      `<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="${basePath}/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="${basePath}/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span><span class="project-menu-count">1</span></a></li><li class=""><a href="${basePath}/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span><span class="project-menu-count">1</span></a></li><li class=""><a href="${basePath}/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span><span class="project-menu-count">2</span></a></li><li class=""><a href="${basePath}/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="${basePath}/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>`,
+      `<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="${basePath}/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="${basePath}/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span><span class="project-menu-count">1</span></a></li><li class=""><a href="${basePath}/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span><span class="project-menu-count">1</span></a></li><li class=""><a href="${basePath}/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span><span class="project-menu-count">2</span></a></li><li class=""><a href="${basePath}/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="${basePath}/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li><li></li></ul></div></div></div>`,
     );
 }
 
@@ -2236,7 +2247,9 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
-              attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-wtr-click-selected" &&
+            attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             attr.name !== "alt" &&
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-login" &&
@@ -2264,7 +2277,10 @@ async function canonicalizeScreenRoots(page: Page) {
                 : normalizeAttr(attr),
             ] as const,
         )
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") && !(name === "style" && value === ""),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
@@ -2324,7 +2340,14 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
+        // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+        // vars (error icon sprite, header background); legacy carries no style
+        // on the error icon, so strip the vars and drop the empty style attr.
+        return attr.value
+          .replace(/\s+/g, "")
+          .replace(/;$/, "")
+          .replaceAll('"', "'")
+          .replace(/--x-[A-Za-z0-9-]+:[^;]+;?/gu, "");
       }
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
@@ -2391,7 +2414,9 @@ async function canonicalizeLocator(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
-              attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-wtr-click-selected" &&
+            attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             attr.name !== "alt" &&
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-login" &&
@@ -2419,7 +2444,10 @@ async function canonicalizeLocator(page: Page, selector: string) {
                 : normalizeAttr(attr),
             ] as const,
         )
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") && !(name === "style" && value === ""),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
@@ -2452,7 +2480,14 @@ async function canonicalizeLocator(page: Page, selector: string) {
           .join(" ");
       }
       if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
+        // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+        // vars (error icon sprite, header background); legacy carries no style
+        // on the error icon, so strip the vars and drop the empty style attr.
+        return attr.value
+          .replace(/\s+/g, "")
+          .replace(/;$/, "")
+          .replaceAll('"', "'")
+          .replace(/--x-[A-Za-z0-9-]+:[^;]+;?/gu, "");
       }
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
@@ -2707,6 +2742,12 @@ async function projectMemberErrorMetrics(page: Page) {
       errorTextMarginBottom: errorTextStyle.marginBottom,
       errorTextMarginTop: errorTextStyle.marginTop,
       pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
+      // F6 metric gap: legacy _responsive.less:617-620 @media all collapses
+      // .project-page-wrap margin-top to 5px !important; the app applies the
+      // same rule (app.css), the metrics object just never returned it.
+      projectPageWrapMarginTop: getComputedStyle(
+        requireElement(".project-page-wrap"),
+      ).marginTop,
     };
 
     function requireElement(selector: string) {
@@ -2779,7 +2820,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "tabindex" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
-              attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-wtr-click-selected" &&
+            attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(
               node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
               (attr.name === "type" || attr.name === "data-stylex-owner")
@@ -2789,7 +2832,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") && !(name === "style" && value === ""),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
@@ -2881,7 +2927,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join(" ");
       }
       if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
+        // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+        // vars (error icon sprite, header background); legacy carries no style
+        // on the error icon, so strip the vars and drop the empty style attr.
+        return attr.value
+          .replace(/\s+/g, "")
+          .replace(/;$/, "")
+          .replaceAll('"', "'")
+          .replace(/--x-[A-Za-z0-9-]+:[^;]+;?/gu, "");
       }
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");

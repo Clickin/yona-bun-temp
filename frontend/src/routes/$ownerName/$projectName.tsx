@@ -985,6 +985,10 @@ function ProjectMembersErrorRouteShell({
                 activeOptions={legacyProjectShellLinkActiveOptions}
                 activeProps={legacyProjectShellLinkActiveProps}
                 className="ybtn ybtn-primary"
+                // Legacy error/forbidden.scala.html:31 login link carries
+                // data-login="required"; members.tsx's standalone error body
+                // mirrors it — keep the shell error link identical.
+                data-login="required"
                 search={{ redirectUrl: `/${ownerName}/${projectName}/members` }}
                 to="/users/loginform"
                 data-stylex-owner="project-members-error-login"

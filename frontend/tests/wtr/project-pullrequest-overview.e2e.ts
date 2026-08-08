@@ -584,7 +584,7 @@ test("project pull request overview route source uses direct Links", async () =>
 });
 
 test("project pull request overview retires the overridden branch start ml0 fallback", async ({
-  browser,
+  page,
 }) => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
@@ -642,7 +642,9 @@ test("project pull request overview retires the overridden branch start ml0 fall
     { height: 900, name: "desktop", width: 1280 },
     { height: 844, name: "mobile", width: 390 },
   ]) {
-    const page = await browser.newPage({ viewport });
+    // F2-harness: the in-browser harness passes no `browser` fixture
+    // (runWithPage only provides { page }); resize the fixture page instead.
+    await page.setViewportSize(viewport);
     const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
     await mockPullRequestOverview(page);
     await page.goto(`${basePath}/admin/sample/pullRequest/9`);
@@ -1029,7 +1031,8 @@ test("project pull request overview renders legacy commit-changed event DOM", as
     commitIdFloat: "left",
     commitIdFontSize: "12px",
     commitIdTextAlign: "center",
-    commitIdWidth: 74,
+    // F5 dist-truth: legacy .commit-id width:70px (_page.less:3349-3355); pin was stale at 74
+    commitIdWidth: 70,
     commitInfoPadding: "10px 5px",
     commitListBackground: "rgb(253, 253, 253)",
     commitListBorderRadius: "3px",

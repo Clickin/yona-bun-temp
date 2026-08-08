@@ -48,6 +48,7 @@ const sx = {
   commitAuthorAvatar: stylex.props(styles.commitAuthorAvatar),
   commitIdWrap: stylex.props(styles.commitIdWrap),
   commitId: stylex.props(styles.commitId),
+  commitIdSvn: stylex.props(styles.commitIdSvn),
   commitMessage: stylex.props(styles.commitMessage),
   commitDescription: stylex.props(styles.commitDescription),
   footerWatchLeft: stylex.props(styles.footerWatchLeft),
@@ -733,7 +734,8 @@ function SvnCommitDetailBody({
             </span>
             <strong
               {...sx.commitId}
-              className={`${sx.commitId.className} commitId`}
+              {...sx.commitIdSvn}
+              className={`${sx.commitId.className} ${sx.commitIdSvn.className} commitId`}
               data-stylex-owner="commit-detail-svn-id"
             >
               @{commit?.commitId ?? commitId}
@@ -1726,7 +1728,7 @@ function CodeCommentUpdateForm({
               </div>
             </div>
             <div
-              className="comment-update-button upload-button-line"
+              className="right-txt comment-update-button upload-button-line"
               {...sx.rightText}
               data-stylex-owner="commit-detail-comment-update-actions"
             >

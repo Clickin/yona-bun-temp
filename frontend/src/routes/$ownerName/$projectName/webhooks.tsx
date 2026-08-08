@@ -270,7 +270,7 @@ function ProjectWebhooksBody({
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/webhooks`)}
             method="post"
             {...stylex.props(styles.form)}
-            className={stylex.props(styles.form).className}
+            className={`${stylex.props(styles.form).className} new-webhook-wrap`}
             data-stylex-owner="project-webhooks-new-form"
             onSubmit={onSubmit}
           >

@@ -622,6 +622,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             {lastPushedLabel ? (
               <span
                 {...stylex.props(styles.smallFont)}
+                className={`${stylex.props(styles.smallFont).className} small-font`}
                 data-stylex-owner="organization-home-project-code-update"
               >
                 , {t("project.codeUpdate")}{" "}
@@ -634,7 +635,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
         </div>
       </div>
       <div
-        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap`}
+        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap pull-right`}
         data-stylex-owner="organization-home-project-card-stats"
       >
         <div

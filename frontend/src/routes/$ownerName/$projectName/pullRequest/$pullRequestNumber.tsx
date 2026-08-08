@@ -35,6 +35,10 @@ export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pull
 });
 
 const LEGACY_LINK_PROPS = {
+  // TanStack STATIC_ACTIVE_PROPS overrides activeProps on matched links; a
+  // never-matching marker search keeps every legacy anchor free of
+  // aria-current/data-status (massmail precedent; li.active marks the tab).
+  search: { __legacyPullRequestDetailActiveMarker: undefined },
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
@@ -517,7 +521,6 @@ function PullRequestStateEventMessage({
           ownerName: pullRequest.ownerName,
           projectName: pullRequest.projectName,
         }}
-        search={{ branch: "", path: "" }}
         title={t("code.showCommit")}
         {...LEGACY_LINK_PROPS}
       >
@@ -790,11 +793,11 @@ export function PullRequestHeader({
           <>
             <div
               id="reviewers"
-              className={stylex.props(styles.reviewers).className}
+              style={{ display: "inline-block", marginRight: "5px" }}
               data-stylex-owner="pull-request-detail-reviewers"
             >
               <span
-                className={stylex.props(styles.reviewerSummary).className}
+                style={{ fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }}
                 data-stylex-owner="pull-request-detail-reviewer-summary"
               >
                 {messageWithStrong(

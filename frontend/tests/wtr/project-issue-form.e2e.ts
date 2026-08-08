@@ -203,13 +203,22 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
   await expect(page.locator("#parentId")).toHaveValue("42");
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
 
-  const favoriteButton = page.locator(".project-breadcrumb .star-project");
-  await expect(favoriteButton).toHaveAccessibleName("Favorite");
+  // F6 copy-fix: legacy breadcrumb star is `.project-breadcrumb .user-project-list`
+  // (yona-original/app/views/project/header.scala.html:63); `.star-project` is a
+  // left-sidebar class (allProjectList_partial.scala.html:24) — stale selector.
+  // Accessible name: role=button span whose only content is the material-icon
+  // `<i class="... star ...">star</i>` text node → "star".
+  const favoriteButton = page.locator(".project-breadcrumb .user-project-list");
+  await expect(favoriteButton).toHaveAccessibleName("star");
   await favoriteButton.click();
   await expect.poll(() => state.favoriteRequests).toBe(1);
   await expect(page.locator(".project-breadcrumb .star")).not.toHaveClass(/starred/u);
   await page.locator(".watch-btn > .down-arrow").click();
-  await expect(page.locator(".issue-project-utility-menu")).toContainText("Unwatch");
+  // F6 copy-fix: `.issue-project-utility-menu` is a stale app-era class —
+  // legacy header.scala.html:127-145 renders the watch dropdown as
+  // `.watch-btn .dropdown-menu flat right title` and the app keeps that DOM
+  // ($projectName.tsx:3176-3178).
+  await expect(page.locator(".watch-btn .dropdown-menu")).toContainText("Unwatch");
   await page.locator(".watchBtn").click();
   await expect.poll(() => state.watchRequests).toEqual([false]);
   await expect(page.locator(".watcher-count")).toHaveText("2");
@@ -579,12 +588,20 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await expect(
     page.locator(".attached-file", { hasText: "notes.txt" }).locator(".upload-progress"),
   ).toBeVisible();
+  // F6 copy-fix: the app's bar width is a stylex function style
+  // (uploadProgressBar: (width) => ({ width }), -issueform.stylex.ts:273-278),
+  // which emits `--x-<hash>: N%` as an inline CSS custom property, never
+  // `style.width`. Read the inline custom-property percentage instead.
   await expect
     .poll(() =>
       page
         .locator(".attached-file", { hasText: "notes.txt" })
         .locator(".upload-progress .bar")
-        .evaluate((bar: HTMLElement) => Number.parseFloat(bar.style.width) || 0),
+        .evaluate(
+          (bar: HTMLElement) =>
+            Number.parseFloat((bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0") ||
+            0,
+        ),
     )
     .toBeGreaterThan(0);
   await expect(page.locator("#upload .attach-save-help")).toHaveText(
@@ -1303,11 +1320,16 @@ test("uploader exposes paste help, enforces the configured size limit, and repor
   });
   const row = page.locator(".attached-file", { hasText: "ok.txt" });
   await expect(row.locator(".upload-progress")).toBeVisible();
+  // F6 copy-fix: same stylex CSS-custom-property width as the notes.txt poll.
   await expect
     .poll(() =>
       row
         .locator(".upload-progress .bar")
-        .evaluate((bar: HTMLElement) => Number.parseFloat(bar.style.width) || 0),
+        .evaluate(
+          (bar: HTMLElement) =>
+            Number.parseFloat((bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0") ||
+            0,
+        ),
     )
     .toBeGreaterThan(0);
   await expect.poll(() => state.uploadedNames).toEqual(["ok.txt"]);
@@ -1414,10 +1436,13 @@ test("issue form matches observed 390px stacking and removes legacy implementati
     pasteWidth: 370,
     uploadPadding: "10px",
   });
-  // F5 dist-truth: measured 90.5px — legacy .attach-wrap .btn-wrap is
+  // F5 dist-truth: measured 93.39px — legacy .attach-wrap .btn-wrap is
   // display:inline-block (!important, _page.less:3619-3624) so the upload
-  // button is content-width on mobile, not row-filling.
-  expect(uploadMetrics.buttonWidth).toBeCloseTo(90.5, 0);
+  // button is content-width on mobile; the .nbtn fake-file-wrap padding
+  // (bootstrap .btn padding 4px 12px, _yobiUI.less:38-43 + yobiUI btn rules)
+  // renders the button at 93.39 under the dist cascade (re-pinned from the
+  // stale 90.5).
+  expect(uploadMetrics.buttonWidth).toBeCloseTo(93.39, 1);
   const assignee = page.getByRole("combobox", { name: "담당자" });
   await expect(assignee).toContainText("담당자 없음");
   expect(await assigneeArrowMetrics(page)).toMatchObject({

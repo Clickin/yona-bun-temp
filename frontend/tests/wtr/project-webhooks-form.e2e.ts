@@ -133,7 +133,10 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
-  await expect(page.locator(".project-menu-outer li")).toHaveCount(8);
+  // F6 copy-fix-current-dom: legacy projectMenu.scala.html:126-129 leaves the
+  // setting <li> unclosed (`</a>\n<li>`), so the browser auto-closes it and
+  // starts a second empty <li> — the settings menu renders 9 li (8 anchors).
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
   expect(await readLegacyGnbTexts(page)).toEqual([
     "Y",
@@ -283,7 +286,10 @@ test("project webhooks localhost legacy portal success shell is restored", async
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
-  await expect(page.locator(".project-menu-outer li")).toHaveCount(8);
+  // F6 copy-fix-current-dom: legacy projectMenu.scala.html:126-129 leaves the
+  // setting <li> unclosed (`</a>\n<li>`), so the browser auto-closes it and
+  // starts a second empty <li> — the settings menu renders 9 li (8 anchors).
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
   expect(await readLegacyGnbTexts(page)).toEqual([
     "Y",
@@ -386,7 +392,10 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   await assertNoTanStackActiveMarkers(headerProjectLink);
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
-  await expect(page.locator(".project-menu-outer li")).toHaveCount(8);
+  // F6 copy-fix-current-dom: legacy projectMenu.scala.html:126-129 leaves the
+  // setting <li> unclosed (`</a>\n<li>`), so the browser auto-closes it and
+  // starts a second empty <li> — the settings menu renders 9 li (8 anchors).
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
   await expect(projectMenuLinks).toHaveCount(8);
   await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/code`);

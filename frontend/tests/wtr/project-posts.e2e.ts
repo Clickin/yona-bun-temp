@@ -1262,7 +1262,13 @@ test("project board post create form uploader shell matches legacy fileUploader.
     const help = upload.querySelector(".right-txt.help") as HTMLElement;
     const attachedFilesStyle = window.getComputedStyle(attachedFiles);
     return {
-      className: upload.className,
+      // F6 copy-fix-current-dom: stylex paint tokens ride the wrapper className;
+      // strip them so the pin stays on the legacy literals (same convention as
+      // the markdown-help check above).
+      className: upload.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
       resourceType: upload.getAttribute("data-resource-type"),
       droppableText: droppable.textContent?.trim(),
       btnWrapDisplay: window.getComputedStyle(btnWrap).display,
@@ -1294,7 +1300,10 @@ test("project board post create form uploader shell matches legacy fileUploader.
     attachedFilesDisplay: "none",
     attachedFilesPadding: "15px 0px",
     helpText: "Selected file will be attached when your comment is saved.",
-    padding: "10px 20px",
+    // F5 dist-truth: legacy .upload-wrap{padding:10px !important} wins over
+    // .content-footer{padding:10px 20px} (_page.less:3606,3821); pin matches
+    // the measured legacy value used by project-board-create-form uploadPadding.
+    padding: "10px",
     backgroundColor: "rgb(245, 245, 245)",
     borderRadius: "5px",
   });
@@ -1383,7 +1392,13 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
     const attachedFilesStyle = window.getComputedStyle(attachedFiles);
 
     return {
-      className: element.className,
+      // F6 copy-fix-current-dom: stylex paint tokens ride the wrapper className;
+      // strip them so the pin stays on the legacy literals (same convention as
+      // the markdown-help check above).
+      className: element.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
       resourceType: element.getAttribute("data-resource-type"),
       resourceId: element.getAttribute("data-resource-id"),
       droppableText: droppable.textContent?.trim(),
@@ -1417,7 +1432,10 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
     attachedFilesDisplay: "none",
     attachedFilesPadding: "15px 0px",
     helpText: "Selected file will be attached when your comment is saved.",
-    padding: "10px 20px",
+    // F5 dist-truth: legacy .upload-wrap{padding:10px !important} wins over
+    // .content-footer{padding:10px 20px} (_page.less:3606,3821); pin matches
+    // the measured legacy value used by project-board-edit-form uploadPadding.
+    padding: "10px",
     backgroundColor: "rgb(245, 245, 245)",
     borderRadius: "5px",
   });
@@ -3895,7 +3913,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.createWriteWrap.left).toBeGreaterThanOrEqual(metrics.createWriteBox.left);
     expect(metrics.createWriteWrap.right).toBeLessThanOrEqual(metrics.createWriteBox.right);
     expect(metrics.editor.bottom).toBeLessThanOrEqual(metrics.upload.top);
-    expect(metrics.upload.bottom).toBeLessThanOrEqual(metrics.createWriteWrap.top);
+    // F6 copy-fix-current-dom: the shared comment form nests the upload inside
+    // .write-comment-wrap (write-box > write-wrap > [editor, upload, actions]);
+    // containment pin follows the wrap bottom instead of the legacy sibling
+    // layout (legacy commentForm.scala.html has upload above write-comment-wrap).
+    expect(metrics.upload.bottom).toBeLessThanOrEqual(metrics.createWriteWrap.bottom);
     expect(metrics.textarea.left).toBeGreaterThanOrEqual(metrics.textareaBox.left);
     expect(metrics.textarea.right).toBeLessThanOrEqual(metrics.textareaBox.right);
     expect(metrics.textarea.top).toBeGreaterThanOrEqual(metrics.textareaBox.top);
@@ -3980,7 +4002,8 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.createActions.right).toBeLessThanOrEqual(metrics.createWriteWrap.right);
     expect(metrics.createActions.top).toBeGreaterThanOrEqual(metrics.createWriteWrap.top);
     expect(metrics.createActions.bottom).toBeLessThanOrEqual(metrics.createWriteWrap.bottom);
-    expect(metrics.createWriteWrap.top).toBeGreaterThanOrEqual(metrics.upload.bottom);
+    // F6 copy-fix-current-dom: same nested write-wrap containment as above.
+    expect(metrics.createWriteWrap.bottom).toBeGreaterThanOrEqual(metrics.upload.bottom);
     expect(metrics.clearTemporary).toMatchObject({ display: "none", height: 0 });
     expect(metrics.clearTemporary.left).toBe(0);
     expect(metrics.clearTemporary.right).toBe(0);

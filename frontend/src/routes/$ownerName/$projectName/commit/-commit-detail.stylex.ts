@@ -228,12 +228,23 @@ export const styles = stylex.create({
     marginTop: "5px",
     fontFamily: 'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace',
   },
+  // legacy svnDiff.scala.html renders <strong class="commitId pull-right"> —
+  // the SVN variant floats right; Git's does not (see commitId comment above).
+  // (F7-app-fix-applied — needs dist rebuild)
+  commitIdSvn: { float: "right" },
   reviewPanelCollapsed: { display: "none" },
-  commitMessage: { color: commitDetailColors.commitText },
+  commitMessage: {
+    color: commitDetailColors.commitText,
+    // legacy _page.less:4604 .commitMsg.short { font-size:18px; white-space:normal; }
+    // (F7-app-fix-applied — needs dist rebuild)
+    fontSize: "18px",
+    whiteSpace: "normal",
+  },
   commitDescription: {
     backgroundColor: commitDetailColors.diffSurface,
     color: commitDetailColors.commitText,
-    margin: "5px 0px",
+    // legacy _page.less:4605 .commitMsg.desc { margin:5px; } (F7-app-fix-applied)
+    margin: "5px",
     padding: "10px",
     whiteSpace: "pre-wrap",
   },
