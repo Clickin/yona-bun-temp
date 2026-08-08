@@ -1154,6 +1154,8 @@ function IssueSortFilter({
   return (
     <button
       type="button"
+      orderBy={field}
+      orderDir={orderDir}
       className={active ? "filter active" : "filter"}
       onClick={selectIssueSortFilter}
     >

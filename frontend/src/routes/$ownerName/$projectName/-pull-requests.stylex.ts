@@ -49,6 +49,7 @@ export const styles = stylex.create({
     "@media (max-width: 720px)": { display: "none" },
   },
   searchColumnHidden: { display: "none" },
+  advancedSearch: { marginTop: "10px" },
   searchBar: {
     borderColor: pullRequestColors.inputBorder,
     borderStyle: "solid",
@@ -69,6 +70,7 @@ export const styles = stylex.create({
     backgroundColor: "transparent",
     borderStyle: "none",
     borderWidth: "0px",
+    height: "20px",
     position: "absolute",
     right: "5px",
     top: "5px",
@@ -101,7 +103,12 @@ export const styles = stylex.create({
   },
   content: { clear: "both", paddingTop: "15px" },
   twoColumnAnchor: { marginRight: "10px", position: "relative" },
-  twoColumnPopover: { display: "block", left: "-75px", top: "-74px" },
+  twoColumnPopover: {
+    bottom: "calc(100% + 10px)",
+    display: "block",
+    left: "-75px",
+    position: "absolute",
+  },
   rowPointer: { cursor: "pointer" },
   grayTextSeparator: { color: pullRequestColors.grayText },
 });

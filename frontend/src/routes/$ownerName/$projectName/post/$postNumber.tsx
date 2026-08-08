@@ -1530,7 +1530,7 @@ function PostCommentForm({
             </p>
           </div>
           <div
-            className={sx.commentActions.className}
+            className={`${sx.commentActions.className} right-txt`.trim()}
             data-stylex-owner="post-detail-comment-actions"
           >
             <button
@@ -3026,6 +3026,7 @@ function TasklistBar() {
         <div
           className={`${stylex.props(styles.taskProgressBar).className} ${sx.tasklistProgress.className} bar red`}
           data-stylex-owner="post-detail-tasklist-progress"
+          style={{ width: 0 }}
           title="Tasklist"
         ></div>
       </div>

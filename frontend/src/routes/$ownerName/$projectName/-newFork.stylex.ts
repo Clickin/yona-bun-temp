@@ -61,7 +61,37 @@ export const styles = stylex.create({
     padding: "4px 12px",
     textDecoration: "none",
   },
-  cancel: { color: "#333", marginLeft: "5px" },
-  radio: { color: forkColors.radioText },
+  // F7 app-fix: legacy fork.scala.html:59 renders the cancel anchor as a plain
+  // .ybtn (margin 0 in the dist port); the 5px margin was app-only and pushed
+  // cancelGap 4 -> 9 (_yobiUI.less:733 .ybtn margin-left:.3em is not ported).
+  cancel: { color: "#333" },
+  // F7 app-fix: legacy .radio-btn { margin: 2px !important } (_common.less:178-180)
+  // overrides the UA radio margin; the dist port omits it so pin it here.
+  radio: { color: forkColors.radioText, margin: "2px" },
   helpInline: { color: forkColors.helpInlineText },
+  // F7 app-fix: legacy clone.scala.html progress screen geometry — .page-wrap-outer
+  // min-height:450px + margin-top:10px (_page.less:617-620), responsive
+  // padding:0 10px / .project-page-wrap margin-top:5px !important
+  // (_responsive.less:612-619), and bootstrap legend (bootstrap.css:989-1000).
+  clonePage: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    padding: "0px 10px",
+    width: "100%",
+  },
+  cloneProjectPage: { marginTop: "5px", width: "100%" },
+  cloneLegend: {
+    border: "0px",
+    borderBottomColor: "#e5e5e5",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    color: "#333333",
+    display: "block",
+    fontSize: "21px",
+    lineHeight: "40px",
+    marginBottom: "20px",
+    padding: "0px",
+    width: "100%",
+  },
 });

@@ -109,17 +109,32 @@ export function SitePagination({
   return (
     <div
       {...stylex.props(paginationStyles.root, paginationDynamicStyles.sprite(legacySpriteUrl))}
+      className={`${stylex.props(paginationStyles.root).className ?? ""} page-navigation-wrap`.trim()}
       data-stylex-owner="site-pagination-root"
       id="pagination"
     >
-      <ul {...stylex.props(paginationStyles.list)} data-stylex-owner="site-pagination-list">
-        <li {...stylex.props(paginationStyles.item, paginationStyles.iconItem)}>
+      <ul
+        {...stylex.props(paginationStyles.list)}
+        className={`${stylex.props(paginationStyles.list).className ?? ""} page-nums`.trim()}
+        data-stylex-owner="site-pagination-list"
+      >
+        <li
+          {...stylex.props(paginationStyles.item, paginationStyles.iconItem)}
+          className={`${
+            stylex.props(paginationStyles.item, paginationStyles.iconItem).className ?? ""
+          } page-num ikon`.trim()}
+        >
           {hasPrev ? (
             <Link
               {...stylex.props(paginationStyles.link)}
               to={stripBasePath(basePath, pageHref(currentPage - 1))}
             >
-              <i {...stylex.props(paginationStyles.icon, paginationStyles.prevIcon)}></i>
+              <i
+                {...stylex.props(paginationStyles.icon, paginationStyles.prevIcon)}
+                className={`${
+                  stylex.props(paginationStyles.icon, paginationStyles.prevIcon).className ?? ""
+                } ico btn-pg-prev`.trim()}
+              ></i>
               <span {...stylex.props(paginationStyles.label)}>{prevPageLabel}</span>
             </Link>
           ) : (
@@ -130,16 +145,29 @@ export function SitePagination({
                   paginationStyles.prevIcon,
                   paginationStyles.prevIconDisabled,
                 )}
+                className={`${
+                  stylex.props(
+                    paginationStyles.icon,
+                    paginationStyles.prevIcon,
+                    paginationStyles.prevIconDisabled,
+                  ).className ?? ""
+                } ico btn-pg-prev off`.trim()}
               ></i>
-              <span {...stylex.props(paginationStyles.label, paginationStyles.labelDisabled)}>
+              <span
+                {...stylex.props(paginationStyles.label, paginationStyles.labelDisabled)}
+                className={`${
+                  stylex.props(paginationStyles.label, paginationStyles.labelDisabled).className ?? ""
+                } off`.trim()}
+              >
                 {prevPageLabel}
               </span>
             </>
           )}
         </li>
-        <li {...stylex.props(paginationStyles.item)}>
+        <li {...stylex.props(paginationStyles.item)} className={`${stylex.props(paginationStyles.item).className ?? ""} page-num`.trim()}>
           <input
             {...stylex.props(paginationStyles.input)}
+            className={`${stylex.props(paginationStyles.input).className ?? ""} input-mini nospinner`.trim()}
             defaultValue={currentPage}
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
@@ -165,20 +193,44 @@ export function SitePagination({
             type="number"
           />
         </li>
-        <li {...stylex.props(paginationStyles.item, paginationStyles.delimiter)}>/</li>
-        <li {...stylex.props(paginationStyles.item)}>{totalPages}</li>
-        <li {...stylex.props(paginationStyles.item, paginationStyles.iconItem)}>
+        <li
+          {...stylex.props(paginationStyles.item, paginationStyles.delimiter)}
+          className={`${
+            stylex.props(paginationStyles.item, paginationStyles.delimiter).className ?? ""
+          } page-num delimiter`.trim()}
+        >
+          /
+        </li>
+        <li {...stylex.props(paginationStyles.item)} className={`${stylex.props(paginationStyles.item).className ?? ""} page-num`.trim()}>
+          {totalPages}
+        </li>
+        <li
+          {...stylex.props(paginationStyles.item, paginationStyles.iconItem)}
+          className={`${
+            stylex.props(paginationStyles.item, paginationStyles.iconItem).className ?? ""
+          } page-num ikon`.trim()}
+        >
           {hasNext ? (
             <Link
               {...stylex.props(paginationStyles.link)}
               to={stripBasePath(basePath, pageHref(currentPage + 1))}
             >
               <span {...stylex.props(paginationStyles.label)}>{nextPageLabel}</span>
-              <i {...stylex.props(paginationStyles.icon, paginationStyles.nextIcon)}></i>
+              <i
+                {...stylex.props(paginationStyles.icon, paginationStyles.nextIcon)}
+                className={`${
+                  stylex.props(paginationStyles.icon, paginationStyles.nextIcon).className ?? ""
+                } ico btn-pg-next`.trim()}
+              ></i>
             </Link>
           ) : (
             <>
-              <span {...stylex.props(paginationStyles.label, paginationStyles.labelDisabled)}>
+              <span
+                {...stylex.props(paginationStyles.label, paginationStyles.labelDisabled)}
+                className={`${
+                  stylex.props(paginationStyles.label, paginationStyles.labelDisabled).className ?? ""
+                } off`.trim()}
+              >
                 {nextPageLabel}
               </span>
               <i
@@ -187,6 +239,13 @@ export function SitePagination({
                   paginationStyles.nextIcon,
                   paginationStyles.nextIconDisabled,
                 )}
+                className={`${
+                  stylex.props(
+                    paginationStyles.icon,
+                    paginationStyles.nextIcon,
+                    paginationStyles.nextIconDisabled,
+                  ).className ?? ""
+                } ico btn-pg-next off`.trim()}
               ></i>
             </>
           )}

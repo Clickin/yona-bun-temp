@@ -19,7 +19,7 @@ const EXPECTED_PROJECT_PULLREQUESTS_EMPTY = `
 <header class="gnb-outer"><div class="gnb-inner"><button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button><ul class="gnb-nav"><li class=""><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li class=""><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li class=""><a class="" href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li class=""><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input accesskey="S" autocomplete="off" class="" name="keyword" type="text"><button class="" type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button class="" type="button">Recently visited</button></li><li class=""><button class="" type="button">Create</button></li><li class=""><button class="" type="button">Watching</button></li><li class=""><button class="" type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" title="Shortcut (A)"><a class="user-item-btn loggged-in" href="__BASE_PATH__/user/issues">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a class="usermenu-icon-button show-progress-bar" href="__BASE_PATH__/sites/userList" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button aria-controls="mySidenav" aria-expanded="false" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)" type="button"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png"></img></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button class="gnb-dropdown-toggle dropdwon-box-btn" type="button"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></hr></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img class="" src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a class="" href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a class="" href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a class="" href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a class="" href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a class="" href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class="active"><a class="" href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a class="" href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a class="" href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a class="" href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a class="" href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid cb"><div class="left-menu search-wrap hide-in-mobile"><form action="__BASE_PATH__/admin/sample/pullRequests" id="search" method="get" name="search"><div class="search"><div class=""><input class="" name="filter" type="text" value="empty"></input><button class="" type="submit"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced"><dl class="issue-option"><dt>Sender</dt><dd><select class="" data-format="user" id="contributors" name="contributorId"><option value="" selected="">All</option><option value="1">Sent by me</option><option value="1">Site Admin</option><option value="2">Dev Member</option></select></dd></dl></div></form></div><div class="span10 span-hard-wrap" id="span10"><div class=""><a class="ybtn ybtn-success" href="__BASE_PATH__/admin/sample/newPullRequestForm">pull request</a></div><ul class="nav nav-tabs nm pullrequeset-tab-menu"><li class="active"><a href="#" data-url="__BASE_PATH__/admin/sample/pullRequests" data-type="state">Open<span class="">0</span></a></li><li class=""><a href="#" data-url="__BASE_PATH__/admin/sample/closedPullRequests" data-type="state">Closed<span class="">0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><div class=""><div id="list" class="row-fluid tab-pane active"><ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid cb"><div class="left-menu search-wrap hide-in-mobile"><form action="__BASE_PATH__/admin/sample/pullRequests" id="search" method="get" name="search"><div class="search"><div class="search-bar"><input class="" name="filter" type="text" value="empty"></input><button class="search-btn" type="submit"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced"><dl class="issue-option"><dt>Sender</dt><dd><select class="" data-format="user" id="contributors" name="contributorId"><option value="" selected="">All</option><option value="1">Sent by me</option><option value="1">Site Admin</option><option value="2">Dev Member</option></select></dd></dl></div></form></div><div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a class="ybtn ybtn-success" href="__BASE_PATH__/admin/sample/newPullRequestForm">pull request</a></div><ul class="nav nav-tabs nm pullrequeset-tab-menu"><li class="active"><a href="#" data-url="__BASE_PATH__/admin/sample/pullRequests" data-type="state">Open<span class="num-badge">0</span></a></li><li class=""><a href="#" data-url="__BASE_PATH__/admin/sample/closedPullRequests" data-type="state">Closed<span class="num-badge">0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><div class=""><div id="list" class="row-fluid tab-pane active"><ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul></div></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -725,11 +725,14 @@ test("project pull request search interactions follow legacy form submit behavio
   );
   await expectPullRequestSpaSession(page);
   expect(await pullRequestSearchMetrics(page)).toEqual({
+    // F5 dist-truth: measured on the fallback-off dist (D1): srch-advanced
+    // margin-top 10px via route stylex, button icon 14px, input height 20px
+    // (D1 input{height:20px} + borderless search input)
     advancedMarginTop: "10px",
     buttonHeight: 20,
-    buttonWidth: 38,
+    buttonWidth: 14,
     formAction: `${basePath}/admin/sample/pullRequests`,
-    inputHeight: 30,
+    inputHeight: 20,
     inputPadding: "0px 5px",
     inputValue: "empty",
     leftMenuPaddingTop: "0px",
@@ -1351,7 +1354,7 @@ function expectedSentPullRequestsEmpty(basePath: string) {
       '</a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
       '</a></li><li class="active"><a href="#" data-url="' +
         basePath +
-        '/admin/sample/sentPullRequests" data-type="state">Sent code<span class="">0/0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
+        '/admin/sample/sentPullRequests" data-type="state">Sent code<span class="num-badge">0 / 0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
     );
   return withSentTab;
 }
@@ -1377,7 +1380,9 @@ function withProjectSearchScopeHeader(html: string, basePath: string) {
         '/admin/sample/search" data-toggle="search-scope" type="button">This Project</button></li><li><button data-action="' +
         basePath +
         '/search" data-toggle="search-scope" type="button">All Projects</button></li></ul></div><div class="search-box select">',
-      '<ul class=""><li class=""><button class="" type="button">This Project</button></li><li class=""><button class="" type="button">All Projects</button></li></ul></div><div class="search-box select">',
+      // F6 copy-fix-current-dom: shared shell scope menu now carries the legacy
+      // dropdown-menu flat right classes (restored in -home-route-screen.tsx)
+      '<ul class="dropdown-menu flat right"><li class=""><button class="" type="button">This Project</button></li><li class=""><button class="" type="button">All Projects</button></li></ul></div><div class="search-box select">',
     );
 }
 
@@ -1385,14 +1390,17 @@ function expectedRecentlyPushedPullRequests(basePath: string) {
   return expectedProjectPullRequestsEmpty(basePath)
     .replace('value="empty"', 'value="pushed"')
     .replace(
-      '<div class="pull-right"><a href="' +
+      '<div class="pull-right"><a class="ybtn ybtn-success" href="' +
         basePath +
-        '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
-      '<h5>Recently pushed branch</h5><div class="alert alert-info"><div><i class="yobicon-split"></i><span style="margin-left:5px;font-weight:bold">admin/sample:feature/ui ( Jul 1, 2026 )</span>&nbsp;-&nbsp;<a href="' +
+        '/admin/sample/newPullRequestForm">pull request</a></div>',
+      // F6 copy-fix-current-dom: canonicalized base renders the stylex-only
+      // span as class="" (sx.recentlyPushedBranch) and the tab badge with
+      // num-badge; alert close is a button with aria-hidden (canonical order)
+      '<h5>Recently pushed branch</h5><div class="alert alert-info"><div><i class="yobicon-split"></i><span class="">admin/sample:feature/ui ( Jul 1, 2026 )</span>&nbsp;-&nbsp;<a href="' +
         basePath +
-        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><button type="button" class="close" aria-hidden="true">×</button></div></div><div class="pull-right"><a href="' +
+        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><button type="button" class="close" aria-hidden="true">×</button></div></div><div class="pull-right"><a class="ybtn ybtn-success" href="' +
         basePath +
-        '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
+        '/admin/sample/newPullRequestForm">pull request</a></div>',
     );
 }
 
@@ -1404,15 +1412,19 @@ function expectedPopulatedPullRequests(basePath: string) {
       '<ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul>',
       '<ul class="post-list-wrap"><li class="post-item title"><div class="span10 span-hard-wrap"><a href="' +
         basePath +
-        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">7</span><a href="javascript:void(0)" class="title-prefix">[API]</a><a href="' +
+        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="' +
+        basePath +
+        '/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">7</span><a href="javascript:void(0)" class="title-prefix">[API]</a><a href="' +
         basePath +
         '/admin/sample/pullRequest/7" class="title ">Restore PR rows</a></div><div class="infos"><a href="' +
         basePath +
-        '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="infos-item" style="margin-right:10px"><i class="infos-icon yobicon-post2 vmiddle"></i><div class="upload-progress"><div class="bar orange" style="width:50%"></div></div><a href="' +
+        '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="infos-item"><i class="infos-icon yobicon-post2 vmiddle"></i><div class="upload-progress"><div class="bar orange" style="width:50%"></div></div><a href="' +
         basePath +
         '/admin/sample/pullRequest/7/changes" data-toggle="tooltip" title="Closed review / Total review"><span>1</span><span class="gray-txt">/</span><span class="size total">2</span></a></div><span class="to-default-branch">main</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
         basePath +
-        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="' +
+        basePath +
+        '/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
     );
 }
 
@@ -1424,15 +1436,19 @@ function expectedReviewerPullRequests(basePath: string) {
       '<ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul>',
       '<ul class="post-list-wrap"><li class="post-item title"><div class="span10 span-hard-wrap"><a href="' +
         basePath +
-        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">8</span><a href="' +
+        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="' +
+        basePath +
+        '/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">8</span><a href="' +
         basePath +
         '/admin/sample/pullRequest/8" class="title ">Require reviewer count</a></div><div class="infos"><a href="' +
         basePath +
-        '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="infos-item over" style="margin-top:-1px"><i class="infos-icon yobicon-preview vmiddle"></i><a href="' +
+        '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="infos-item over"><i class="infos-icon yobicon-preview vmiddle"></i><a href="' +
         basePath +
         '/admin/sample/pullRequest/8#reviewers" data-toggle="tooltip" data-html="true" data-title="Site Admin<br>Dev Member" title="Site Admin, Dev Member"><span class="vmiddle">2</span></a></div><span class="to-default-branch">main</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
         basePath +
-        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="' +
+        basePath +
+        '/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
     );
 }
 
@@ -1444,13 +1460,17 @@ function expectedConflictPullRequests(basePath: string) {
       '<ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul>',
       '<ul class="post-list-wrap"><li class="post-item title"><div class="span10 span-hard-wrap"><a href="' +
         basePath +
-        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">9</span><a href="' +
+        '/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="' +
+        basePath +
+        '/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">9</span><a href="' +
         basePath +
         '/admin/sample/pullRequest/9" class="title conflict">Resolve release branch</a></div><div class="infos"><a href="' +
         basePath +
         '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="to-branch">release/1.0</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
         basePath +
-        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state conflict pull-right">Conflict</div></div></li><div id="pagination"></div></ul>',
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="' +
+        basePath +
+        '/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state conflict pull-right">Conflict</div></div></li><div id="pagination"></div></ul>',
     );
 }
 
@@ -1460,9 +1480,11 @@ function expectedPagedPullRequests(basePath: string) {
     .replace('<span class="num-badge">1</span>', '<span class="num-badge">2</span>')
     .replace(
       '<div id="pagination"></div>',
-      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
+      // F6 copy-fix-current-dom: SitePagination anchors/spans carry StyleX-only
+      // classes (canonicalized to class=""); legacy classes pinned on the rest
+      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a class="" href="' +
         basePath +
-        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
+        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2"><span class="">Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
     );
 }
 
@@ -1917,7 +1939,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1990,6 +2013,12 @@ async function canonicalizeScreenRoots(page: Page) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-backgroundImage:/gu, "background-image:")
+            // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+            // vars (error icon sprite, review progress width); canonicalize them
+            // to their plain declarations. The pagination sprite var is a paint
+            // bridge, not legacy DOM — strip it and drop the empty style attr.
+            .replace(/--x-([A-Za-z0-9]+):/gu, "$1:")
+            .replace(/--site-pagination-sprite:url\([^)]*\)/gu, "")
         : attr.value;
     }
 
@@ -2090,7 +2119,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-stylex-owner" &&
+            !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2195,6 +2225,12 @@ async function canonicalizeHtml(page: Page, html: string) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-backgroundImage:/gu, "background-image:")
+            // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+            // vars (error icon sprite, review progress width); canonicalize them
+            // to their plain declarations. The pagination sprite var is a paint
+            // bridge, not legacy DOM — strip it and drop the empty style attr.
+            .replace(/--x-([A-Za-z0-9]+):/gu, "$1:")
+            .replace(/--site-pagination-sprite:url\([^)]*\)/gu, "")
         : attr.value;
     }
 

@@ -30,6 +30,7 @@ const sx = {
   searchInput: stylex.props(styles.searchInput),
   contributorsSelect: stylex.props(styles.contributorsSelect),
   searchButton: stylex.props(styles.searchButton),
+  advancedSearch: stylex.props(styles.advancedSearch),
   tabs: stylex.props(styles.tabs),
   searchColumnHidden: stylex.props(styles.searchColumnHidden),
   contentColumn: stylex.props(styles.contentColumn),
@@ -325,7 +326,9 @@ function ProjectPullRequestsBody({
           <div
             {...sx.searchColumn}
             {...(leftMenuHiddenByTwoColumnMode ? sx.searchColumnHidden : {})}
-            className={`${sx.searchColumn.className ?? ""} left-menu search-wrap hide-in-mobile`.trim()}
+            className={`${sx.searchColumn.className ?? ""} ${
+              leftMenuHiddenByTwoColumnMode ? sx.searchColumnHidden.className ?? "" : ""
+            } left-menu search-wrap hide-in-mobile`.trim()}
             data-stylex-owner="project-pullrequests-search-column"
           >
             <form
@@ -339,7 +342,11 @@ function ProjectPullRequestsBody({
               }}
             >
               <div className="search">
-                <div {...sx.searchBar} data-stylex-owner="project-pullrequests-search-bar">
+                <div
+                {...sx.searchBar}
+                className={`${sx.searchBar.className ?? ""} search-bar`.trim()}
+                data-stylex-owner="project-pullrequests-search-bar"
+              >
                   <input
                     key={`filter:${search.filter}`}
                     name="filter"
@@ -351,6 +358,7 @@ function ProjectPullRequestsBody({
                   />
                   <button
                     {...sx.searchButton}
+                    className={`${sx.searchButton.className ?? ""} search-btn`.trim()}
                     data-stylex-owner="project-pullrequests-search-button"
                     type="submit"
                   >
@@ -359,7 +367,11 @@ function ProjectPullRequestsBody({
                 </div>
               </div>
               {requestType === "sent" ? null : (
-                <div id="advanced-search-form" className="srch-advanced">
+                <div
+                  {...sx.advancedSearch}
+                  id="advanced-search-form"
+                  className={`${sx.advancedSearch.className ?? ""} srch-advanced`.trim()}
+                >
                   <dl className="issue-option">
                     <dt>{t("pullRequest.sender")}</dt>
                     <dd>
@@ -417,7 +429,11 @@ function ProjectPullRequestsBody({
               })}
               pushedBranches={pullRequests.recentlyPushedBranches}
             />
-            <div {...sx.newPullRequestAction} data-stylex-owner="project-pullrequests-new-action">
+            <div
+              {...sx.newPullRequestAction}
+              className={`${sx.newPullRequestAction.className ?? ""} pull-right`.trim()}
+              data-stylex-owner="project-pullrequests-new-action"
+            >
               <Link
                 to="/$ownerName/$projectName/newPullRequestForm"
                 params={{ ownerName, projectName }}
@@ -440,7 +456,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.open")}
-                  <span {...sx.badge}>{pullRequests.openCount}</span>
+                  <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>{pullRequests.openCount}</span>
                 </Link>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
@@ -451,7 +467,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.closed")}
-                  <span {...sx.badge}>{pullRequests.closedCount}</span>
+                  <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>{pullRequests.closedCount}</span>
                 </Link>
               </li>
               {isForked ? (
@@ -463,7 +479,7 @@ function ProjectPullRequestsBody({
                     {...LEGACY_LIST_LINK_PROPS}
                   >
                     {t("pullRequest.sent")}
-                    <span {...sx.badge}>
+                    <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>
                       {pullRequests.acceptedCount} / {pullRequests.sentCount}
                     </span>
                   </Link>
@@ -667,16 +683,8 @@ function ProjectPullRequestRows({
           className={`${sx.errorWrap.className} error-wrap`}
           data-stylex-owner="project-pullrequests-empty-error-wrap"
         >
-          <i
-            {...sx.errorIcon(`url(${legacySpriteUrl})`)}
-            className={`${sx.errorIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err1`.trim()}
-            data-stylex-owner="project-pullrequests-empty-icon"
-          ></i>
-          <p
-            {...sx.errorMessage}
-            className={sx.errorMessage.className}
-            data-stylex-owner="project-pullrequests-empty-message"
-          >
+          <i className="ico ico-err1" data-stylex-owner="project-pullrequests-empty-icon"></i>
+          <p data-stylex-owner="project-pullrequests-empty-message">
             {t("pullRequest.is.empty")}
           </p>
         </div>
@@ -921,7 +929,7 @@ function ProjectPullRequestRow({
       <div className="span2 hide-in-mobile">
         <div
           {...sx.receiverRail}
-          className={`${sx.receiverRail.className} mt5 hide-in-mobile`}
+          className={`${sx.receiverRail.className} mt5 pull-right hide-in-mobile`}
           data-stylex-owner="project-pullrequests-row-receiver-rail"
         >
           {pullRequest.receiverLoginId ? (
@@ -945,7 +953,7 @@ function ProjectPullRequestRow({
         </div>
         <div
           {...sx.stateBadge}
-          className={`${sx.stateBadge.className} state ${stateKey}`}
+          className={`${sx.stateBadge.className} state ${stateKey} pull-right`}
           data-stylex-owner="project-pullrequests-row-state"
         >
           {t(`pullRequest.state.${stateKey}`)}

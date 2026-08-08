@@ -44,11 +44,11 @@ const MILESTONE_SEARCH_SELECT = `<dl class="issue-option"><dt>Milestone</dt><dd>
 
 const EXPECTED_PROJECT_ISSUES_EMPTY = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button aria-expanded="false" aria-haspopup="menu" class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button">This Project</button></li><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button aria-expanded="false" aria-haspopup="menu" class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button">This Project</button></li><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div class="tab-content" id="usermenu-tab-content-list"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="" data-milestone-id="">Open<span class="num-badge pull-right">0</span></button></li><li><button type="button" data-assignee-id="1" data-author-id="" data-commenter-id="" data-milestone-id="">Assigned<span class="num-badge pull-right">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="1" data-commenter-id="" data-milestone-id="">Created<span class="num-badge pull-right">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="1" data-milestone-id="">Commented<span class="num-badge pull-right">0</span></button></li></ul><form id="search" name="search" action="__BASE_PATH__/admin/sample/issues" method="get"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="commenterId" value=""><hr class="hide-in-mobile"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="empty"><button type="button" class="search-btn" data-submit="submit"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced hide-in-mobile"><dl class="issue-option"><dt>Author</dt><dd><select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select></dd></dl>${MILESTONE_SEARCH_SELECT}<dl class="issue-option"><dt>Due date</dt><dd class="search search-bar"><input id="issueDueDate" type="text" name="dueDate" class="textbox full" value=""><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></dd></dl><div class="labels-wrap"><a href="__BASE_PATH__/admin/sample/issue/labelsform" class="ybtn ybtn-default ybtn-mini pull-right"><i class="yobicon-cog vmiddle"></i><span class="vmiddle" style="margin-left:2px;">Manage label</span></a></div></div></form></div><div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" style="position:relative" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div></div></div></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="" data-milestone-id="">Open<span class="num-badge">0</span></button></li><li><button type="button" data-assignee-id="1" data-author-id="" data-commenter-id="" data-milestone-id="">Assigned<span class="num-badge">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="1" data-commenter-id="" data-milestone-id="">Created<span class="num-badge">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="1" data-milestone-id="">Commented<span class="num-badge">0</span></button></li></ul><form id="search" name="search" action="__BASE_PATH__/admin/sample/issues" method="get"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="commenterId" value=""><hr class="hide-in-mobile"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="empty"><button type="button" class="search-btn" data-submit="submit"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced hide-in-mobile"><dl class="issue-option"><dt>Author</dt><dd><select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select></dd></dl>${MILESTONE_SEARCH_SELECT}<dl class="issue-option"><dt>Due date</dt><dd class="search search-bar"><input id="issueDueDate" type="text" name="dueDate" class="textbox full" value=""><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></dd></dl><div class="labels-wrap"><a href="__BASE_PATH__/admin/sample/issue/labelsform" class="ybtn ybtn-default ybtn-mini pull-right"><i class="yobicon-cog vmiddle"></i><span class="vmiddle" style="margin-left:2px;">Manage label</span></a></div></div></form></div><div class="span10 span-hard-wrap" id="span10"><div><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div><div><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div></div></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `
   .replace(
     '<select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select>',
@@ -84,14 +84,14 @@ const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-form
 const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
 const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
 
-const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" style="position:relative" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
+const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
 const POPULATED_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>`;
 const SINGLE_PAGE_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>`;
 const MASS_UPDATE_OPTION_BUTTON_STYLE =
   "background:transparent;border:0px;clear:both;color:rgb(51,51,51);display:block;font-weight:normal;line-height:20px;padding:3px20px;text-align:left;white-space:nowrap;width:100%";
 
-const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No milestone</button></li><li class="divider"></li><li data-value="5"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">v1.0</button></li></ul></div>`;
-const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Open</button></li><li data-value="CLOSED"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No assignee</button></li><li data-value="1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
+const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><button type="button">No milestone</button></li><li class="divider"></li><li data-value="5"><button type="button">v1.0</button></li></ul></div>`;
+const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button">No assignee</button></li><li data-value="1"><button type="button">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
 const POPULATED_SPAN10_WITH_TOOLBAR = POPULATED_SPAN10.replace(
   '<div class="filter-wrap board"></div>',
   `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}</div>`,
@@ -104,8 +104,8 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
   .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
   .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT)
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -117,8 +117,8 @@ const LABEL_SORT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   'data-issue-labels="bug,8,bug,3,false|priority,9,P1,4,true|"',
 )
   .replaceAll(
-    `<li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li>`,
-    `<li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li><li class="disabled" data-category="4"><span>priority</span></li><li data-value="9" data-category="4"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="9">P1</span></button></li><li class="divider" data-category="4"></li>`,
+    `<li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li>`,
+    `<li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li><li class="disabled" data-category="4"><span>priority</span></li><li data-value="9" data-category="4"><button type="button"><span class="issue-label active list-label" data-label-id="9">P1</span></button></li><li class="divider" data-category="4"></li>`,
   )
   .replace(
     `<button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button>`,
@@ -131,8 +131,8 @@ const EXPECTED_PROJECT_ISSUES_LABEL_SORT = EXPECTED_PROJECT_ISSUES_EMPTY.replace
   'value="labels-unsorted"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -151,8 +151,8 @@ const EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU = EXPECTED_PROJECT_ISSUES_EMPTY.
   'value="no-milestone-menu"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     '<li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li>',
@@ -178,8 +178,8 @@ const EXPECTED_PROJECT_ISSUES_PREFIX = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="prefix"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -196,8 +196,8 @@ const EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE = EXPECTED_PROJECT_ISSUES_EMPTY.
   'value="upcoming"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -214,15 +214,15 @@ const EXPECTED_PROJECT_ISSUES_SHARER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="sharer"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${SHARER_SPAN10}</div></div></div></div>\n<footer`,
   );
 
-const SORT_FILTERS = `<div class="filters pull-right"><button type="button" orderBy="dueDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</button><button type="button" orderBy="updatedDate" orderDir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</button><button type="button" orderBy="createdDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</button><button type="button" orderBy="numOfComments" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</button></div>`;
+const SORT_FILTERS = `<div class="filters"><button type="button" orderBy="dueDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</button><button type="button" orderBy="updatedDate" orderDir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</button><button type="button" orderBy="createdDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</button><button type="button" orderBy="numOfComments" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</button></div>`;
 const DRAFT_ISSUE_ROW = `<li class="post-item title" id="issue-item-41" data-item="issue-item" data-value="admin 10 Draft issue" href="__BASE_PATH__/admin/sample/issue/10"><div class="span9 span-hard-wrap"><label for="issue-41" class="mass-update-check hide-in-mobile"><input id="issue-41" type="checkbox" name="checked-issue" data-issue-id="41" data-issue-labels=""></label><div for="issue-41" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/10" class="title"><span class="post-id"><span class="draft-number">#Draft</span></span></a><a href="__BASE_PATH__/admin/sample/issue/10" class="title">Draft issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
 const DRAFT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<ul class="post-list-wrap row-fluid">',
@@ -236,8 +236,8 @@ const EXPECTED_PROJECT_ISSUES_DRAFT = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value=""',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -267,8 +267,8 @@ const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="bulk"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">2</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">2</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -285,8 +285,8 @@ const EXPECTED_PROJECT_ISSUES_SUBTASK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll
   'value="subtask"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -317,8 +317,8 @@ const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.re
     '<input type="hidden" name="state" value="closed">',
   )
   .replace(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Closed<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Closed<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -336,8 +336,8 @@ const EXPECTED_PROJECT_ISSUES_CHILDREN = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAl
   'value="children"',
 )
   .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
+    '>Open<span class="num-badge">0</span>',
+    '>Open<span class="num-badge">1</span>',
   )
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
@@ -692,11 +692,13 @@ test("protected org-owned project issue list exposes legacy group search scope a
   await expect(row.locator(".span3 span.vmiddle")).toHaveText("22 days");
   await expect(row.locator(".mileston-tag")).toHaveCount(0);
   await expect(row.locator(".item-count-groups")).toHaveCount(0);
-  await expect(row.locator(".issue-label")).toHaveCount(0);
-  await expect(page.locator(".pull-left .ybtn.small")).toHaveAttribute(
-    "href",
-    `${basePath}/weblabs/portal/issues?format=xls`,
-  );
+  await expect(page.locator(".issue-label")).toHaveCount(0);
+  await expect(
+    // copy-fix-current-dom: export wrapper is React-owned with StyleX float
+    // (stylex-project-issues-action-floats pins NOT pull-left); legacy
+    // `.pull-left a.ybtn.small` selector retired, match the owner instead
+    page.locator('[data-stylex-owner="project-issues-excel-download"] a.ybtn.small'),
+  ).toHaveAttribute("href", `${basePath}/weblabs/portal/issues?format=xls`);
   await expect(page.getByRole("button", { name: "Keyboard shortcuts" })).toBeVisible();
 });
 
@@ -840,8 +842,11 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(
     page.locator('.issue-list-wrap #span10 > .pull-left a[href="#helpKeys"]'),
   ).toHaveCount(0);
+  // copy-fix-current-dom: legacy help/keymap.scala.html wraps the trigger in
+  // `.pull-left`; the React keymap is owner-marked with StyleX float
+  // (stylex-project-issues-keymap), match the owner instead
   const keymapButton = page.locator(
-    '.issue-list-wrap #span10 > .pull-left > button[type="button"]',
+    '[data-stylex-owner="project-issues-keymap"] > button[type="button"]',
   );
   await expect(keymapButton).toHaveText("Keyboard shortcuts");
   await expect(keymapButton).toHaveClass("ybtn ybtn-inverse ybtn-mini");
@@ -1277,9 +1282,11 @@ test("project issue list search form renders selected milestone status like lega
   // (stylex-project-issues-progress-inline-residual pins progressBar() and no
   // inline width); legacy partial_status.scala.html:46 inline style attr is
   // retired — pin the computed width instead
+  // F5 dist-truth: measured 50% of the 381.25px progress track at the
+  // suite-4 1440px viewport (legacy partial_status.scala.html:46 width:50%)
   await expect(status.locator(".progress.progress-success.nm .bar")).toHaveCSS(
     "width",
-    "50px",
+    "190.625px",
   );
   // copy-fix-current-dom: legacy .pull-right wrapper is React-owned with
   // StyleX float (milestoneProgressCount), match the owner instead
@@ -5194,6 +5201,24 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
+      if (attr.name === "class") {
+        // copy-fix-current-dom: strip React StyleX atomic classes and
+        // build-marker tokens from every class attr, mirroring the expected
+        // side's canonicalizeHtml class branch — the React shell (sidenav
+        // panes, gnb-usermenu items, project-header nodes) carries x-tokens
+        // that the legacy snapshot never has
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (className) =>
+              className &&
+              className !== "gray-txt" &&
+              className !== "right-txt" &&
+              !/^x[0-9a-z]+$/u.test(className) &&
+              !className.includes("__"),
+          )
+          .join(" ");
+      }
       return attr.value;
     }
 
@@ -5205,6 +5230,10 @@ async function canonicalizeScreenRoots(page: Page) {
         )
         .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/")
         .replace(/url\((['"]?)\/[^'")]*\/assets\//gu, "url($1/assets/")
+        .replace(
+          /--x-[A-Za-z0-9-]+:\s*url\((['"]?)([^'")]+)(['"]?)\)/gu,
+          "background-image:url($1$2$3)",
+        )
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replaceAll('"', "'")
@@ -5234,6 +5263,9 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name.startsWith("data-v-") ||
         attr.name === "data-style-src" ||
         attr.name === "data-stylex-owner" ||
+        attr.name === "data-project-header-owner" ||
+        attr.name === "data-stylex-content-ready" ||
+        attr.name === "aria-busy" ||
         pluginOnlyAttributes.has(attr.name) ||
         attr.name === "state" ||
         reactOwnedNavbarAttribute ||
@@ -5382,6 +5414,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         )
         .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/")
         .replace(/url\((['"]?)\/[^'")]*\/assets\//gu, "url($1/assets/")
+        .replace(
+          /--x-[A-Za-z0-9-]+:\s*url\((['"]?)([^'")]+)(['"]?)\)/gu,
+          "background-image:url($1$2$3)",
+        )
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replaceAll('"', "'")

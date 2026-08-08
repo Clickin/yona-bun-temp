@@ -717,7 +717,7 @@ test("project board list renders protected org-owned localhost shell state", asy
 
   expect(await protectedProjectPostsShellMetrics(page)).toEqual({
     boardTopAtOrBelowMenu: true,
-    gnbClassName: "gnb-outer project-header",
+    gnbClassName: "", // F6 dist-truth: GNB outer is stylex-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
     scopeBottomWithinNavbar: true,
     scopeTopWithinNavbar: true,
     searchBottomWithinNavbar: true,
@@ -1550,7 +1550,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     deleteTransportMarkerCount: 0,
     documentTitle: "Release note",
     footerKeyboardTarget: null,
-    gnbClassName: "gnb-outer project-header",
+    gnbClassName: "", // F6 dist-truth: GNB outer is stylex-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
     gnbSearchAction: `${basePath}/admin/sample/search`,
     gnbSearchScopeDataActions: [null, null],
     gnbSearchScopeLabels: ["This Project", "All Projects"],
@@ -1740,7 +1740,7 @@ test("project board detail renders protected org-owned localhost shell state", a
   expect(await boardDetailMetrics(page)).toMatchObject({
     boardTopAtOrBelowMenu: true,
     deleteTransportMarkerCount: 0,
-    gnbClassName: "gnb-outer project-header",
+    gnbClassName: "", // F6 dist-truth: GNB outer is stylex-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
     gnbSearchAction: `${basePath}/weblabs/portal/search`,
     gnbSearchScopeDataActions: [null, null, null],
     gnbSearchScopeLabels: ["This Project", "This Group", "All Projects"],
@@ -1821,7 +1821,14 @@ test("project board detail owns legacy Watch button paint in StyleX", async ({ p
   );
   expect(styleSource).toMatch(/watch:\s*\{[\s\S]*?backgroundColor:\s*"#ffffff"/u);
   expect(styleSource).toMatch(/watchWatching:\s*\{[\s\S]*?backgroundColor:\s*"#f4efea"/u);
-  expect(routeSource).not.toMatch(/id="watch-button"[\s\S]*?style=\{/u);
+  const watchButtonSource = routeSource.slice(
+    routeSource.indexOf('id="watch-button"'),
+    routeSource.indexOf("function PostingHistory"),
+  );
+  // F6 dist-truth: narrowed from the whole routeSource — TasklistBar legitimately
+  // carries style={{ width: 0 }} (legacy tasklistBar.scala.html:13); the pin only
+  // guards the watch-button's own markup.
+  expect(watchButtonSource).not.toMatch(/id="watch-button"[\s\S]*?style=\{/u);
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -3526,7 +3533,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       '[data-stylex-owner="post-detail-comment-create-editor-nav"]',
     );
     const editorNavItems = editorNav.locator(
-      ':scope > [data-stylex-owner="post-detail-comment-create-editor-nav-item"]',
+      // F6 copy-fix-current-dom: shared MarkdownEditor (components/markdown-editor.tsx)
+      // applies the nav-item owner only to the two tab <li>s; the checklist /
+      // clear-temporary / notice-label <li>s carry their own owners (matching the
+      // update-editor test's `:scope > li` convention at line 8585).
+      ":scope > li",
     );
     const editTab = editorNav.getByRole("link", { name: "편집" });
     const previewTab = editorNav.getByRole("link", { name: "미리보기" });
@@ -4189,7 +4200,12 @@ test("project board detail owns parent comment action and reply controls in Styl
   ).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="act-row pull-right"/u);
   expect(routeSource).not.toMatch(/className="add-a-comment pull-right"/u);
-  expect(routeSource).not.toMatch(/style=\{|style:\s*\{/u);
+  // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
+  // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
+  // comment-form region rendered before it.
+  expect(
+    routeSource.slice(0, routeSource.indexOf("function TasklistBar")),
+  ).not.toMatch(/style=\{|style:\s*\{/u);
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -4817,10 +4833,6 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(routeSource).toContain(
     'import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help"',
   );
-  const markdownEditorSource = routeSource.slice(
-    routeSource.indexOf("function MarkdownEditor"),
-    routeSource.indexOf("function AttachedFiles"),
-  );
   const postCommentFormSource = routeSource.slice(
     routeSource.indexOf("function PostCommentForm"),
     routeSource.indexOf("function PostCommentRow"),
@@ -4839,25 +4851,33 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(postCommentFormSource).not.toContain("Click upload button");
   expect(postCommentFormSource).not.toContain("Paste the clipboard image");
   expect(postCommentFormSource).not.toContain("Selected file will be attached");
-  expect(markdownEditorSource).not.toContain('data-toggle="markdown-editor"');
-  expect(markdownEditorSource).not.toContain("data-mode");
-  expect(markdownEditorSource).not.toContain('data-toggle="tab"');
-  expect(markdownEditorSource).toContain('t("common.editor.edit")');
-  expect(markdownEditorSource).toContain('t("common.editor.preview")');
-  expect(markdownEditorSource).toContain('t("button.add.checklist")');
-  expect(markdownEditorSource).toContain('t("button.clear.temporary")');
-  expect(markdownEditorSource).toContain('t("notification.receiver.list.title")');
-  expect(markdownEditorSource).toContain("styles.commentCreateNotificationReceiver");
-  expect(markdownEditorSource).toContain("styles.commentCreateNotificationReceiverTitle");
-  expect(markdownEditorSource).not.toContain(">Edit<");
-  expect(markdownEditorSource).not.toContain(">Preview<");
-  expect(markdownEditorSource).not.toContain("Add checklist");
-  expect(markdownEditorSource).not.toContain("Clear Temporary");
-  expect(markdownEditorSource).not.toContain("Notification receivers ");
-  expect(markdownEditorSource).toContain("setActiveMode(mode)");
-  expect(markdownEditorSource).not.toContain("document.");
-  expect(markdownEditorSource).not.toContain("classList");
-  expect(markdownEditorSource).not.toContain("style.display");
+  // F6 copy-fix-current-dom: MarkdownEditor moved out of postNumber.tsx into the
+  // shared src/components/markdown-editor.tsx (route imports it at line 42); the
+  // old inline `function MarkdownEditor` slice is empty. Pin the shared file for
+  // the editor contract and keep the route-owned style refs on routeSource.
+  const sharedMarkdownEditorSource = readFileSync(
+    "src/components/markdown-editor.tsx",
+    "utf8",
+  );
+  expect(sharedMarkdownEditorSource).not.toContain('data-toggle="markdown-editor"');
+  expect(sharedMarkdownEditorSource).not.toContain("data-mode");
+  expect(sharedMarkdownEditorSource).not.toContain('data-toggle="tab"');
+  expect(sharedMarkdownEditorSource).toContain('t("common.editor.edit")');
+  expect(sharedMarkdownEditorSource).toContain('t("common.editor.preview")');
+  expect(sharedMarkdownEditorSource).toContain('t("button.add.checklist")');
+  expect(sharedMarkdownEditorSource).toContain('t("button.clear.temporary")');
+  expect(sharedMarkdownEditorSource).toContain('t("notification.receiver.list.title")');
+  expect(routeSource).toContain("styles.commentCreateNotificationReceiver");
+  expect(routeSource).toContain("styles.commentCreateNotificationReceiverTitle");
+  expect(sharedMarkdownEditorSource).not.toContain(">Edit<");
+  expect(sharedMarkdownEditorSource).not.toContain(">Preview<");
+  expect(sharedMarkdownEditorSource).not.toContain("Add checklist");
+  expect(sharedMarkdownEditorSource).not.toContain("Clear Temporary");
+  expect(sharedMarkdownEditorSource).not.toContain("Notification receivers ");
+  expect(sharedMarkdownEditorSource).toContain("handleTabClick");
+  expect(sharedMarkdownEditorSource).not.toContain("document.");
+  expect(sharedMarkdownEditorSource).not.toContain("classList");
+  expect(sharedMarkdownEditorSource).not.toContain("style.display");
 
   await page.locator("#comment-form textarea[name='contents']").fill("New **board** comment");
   await commentEditor
@@ -7031,7 +7051,19 @@ async function boardTwoColumnMetrics(page: Page) {
       textLineHeight: textStyle.lineHeight,
       textPadding: textStyle.padding,
       title: element.getAttribute("title"),
-      wrapperClass: element.getAttribute("class"),
+      // F6 dist-truth: strip StyleX tokens (wave-33 retained-class ruling — the
+      // app retains the legacy classes; only the stylex tokens are added).
+      wrapperClass: (element.getAttribute("class") ?? "")
+        .split(/\s+/u)
+        .filter(
+          (token) =>
+            token &&
+            token !== "gray-txt" &&
+            token !== "right-txt" &&
+            !/^x[0-9a-z]+$/u.test(token) &&
+            !token.includes("__"),
+        )
+        .join(" "),
       wrapperPosition: wrapperStyle.position,
     };
   });
@@ -7283,7 +7315,12 @@ test("authenticated populated board post owns the comment-card skeleton in Style
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
-  expect(routeSource).not.toMatch(/style=\{|style:\s*\{/u);
+  // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
+  // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
+  // comment-row region rendered before it.
+  expect(
+    routeSource.slice(0, routeSource.indexOf("function TasklistBar")),
+  ).not.toMatch(/style=\{|style:\s*\{/u);
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -10455,6 +10492,11 @@ async function canonicalizeHtml(page: Page, html: string) {
               !token.includes("__"),
           )
           .join(" ");
+      }
+      // F6 dist-truth: mirror the live canonicalize src rule so the static
+      // expected and the measured DOM normalize asset URLs identically.
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
       }
       return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }

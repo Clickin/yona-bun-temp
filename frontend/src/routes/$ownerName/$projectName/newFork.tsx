@@ -38,6 +38,9 @@ const sx = {
   input: stylex.props(styles.input),
   action: stylex.props(styles.action),
   cancel: stylex.props(styles.action, styles.cancel),
+  clonePage: stylex.props(styles.clonePage),
+  cloneProjectPage: stylex.props(styles.cloneProjectPage),
+  cloneLegend: stylex.props(styles.cloneLegend),
 } as const;
 
 type ForkCloneProgress = {
@@ -561,6 +564,7 @@ function ProjectForkBody({
                   <Link
                     to={pullRequestsPath(ownerName, projectName)}
                     {...sx.cancel}
+                    className={`${sx.cancel.className ?? ""} ybtn`.trim()}
                     data-stylex-owner="project-fork-cancel"
                     activeOptions={legacyProjectShellLinkActiveOptions}
                     activeProps={legacyProjectShellLinkActiveProps}
@@ -581,10 +585,16 @@ function ProjectForkCloneProgress({ progress }: { progress: ForkCloneProgress })
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
+    <div
+      {...sx.clonePage}
+      className={`${sx.clonePage.className ?? ""} page-wrap-outer`.trim()}
+    >
+      <div
+        {...sx.cloneProjectPage}
+        className={`${sx.cloneProjectPage.className ?? ""} project-page-wrap`.trim()}
+      >
         <div className="content-wrap frm-wrap">
-          <legend>
+          <legend {...sx.cloneLegend} className={sx.cloneLegend.className}>
             {t("fork.forking", {
               args: [
                 progress.originalOwnerName,

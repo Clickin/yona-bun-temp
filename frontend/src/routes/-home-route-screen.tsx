@@ -1962,6 +1962,10 @@ export function SiteLayoutShell({
                           globalGnbSearchScopeStyles.menu,
                           isSearchScopeMenuOpen && globalGnbSearchScopeStyles.openMenu,
                         )}
+                        className={`dropdown-menu flat right ${stylex.props(
+                          globalGnbSearchScopeStyles.menu,
+                          isSearchScopeMenuOpen && globalGnbSearchScopeStyles.openMenu,
+                        ).className}`.trim()}
                         data-stylex-owner="global-gnb-search-scope-menu"
                       >
                         {projectSearchAction ? (

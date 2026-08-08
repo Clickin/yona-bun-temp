@@ -164,7 +164,7 @@ function ProjectBoardEditFormBody({
                 resourceId={String(post.id)}
                 wrapperStyleProps={stylex.props(styles.upload)}
                 pasteHelpStyleProps={stylex.props(styles.pasteHelpVisible)}
-                helpClassName={`${stylex.props(styles.uploadSaveHelp).className} help`}
+                helpClassName={`right-txt help ${stylex.props(styles.uploadSaveHelp).className}`.trim()}
                 owners={{
                   wrapper: "post-edit-form-uploader",
                   pasteHelp: "post-edit-form-paste-help",
