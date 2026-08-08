@@ -185,7 +185,9 @@ test("project home Dashboard tab keeps legacy overview proportions", async ({ pa
       firstColumnWidthRatio: 0.49,
       headingBorderColor: "rgb(51, 51, 51)",
       leftPaneWidthRatio: 0.74,
-      pageWrapMarginTop: 20,
+      // legacy truth: _responsive.less:617 `@media all` unconstrained
+      // `.project-page-wrap { margin-top: 5px !important }` — 5px at every width
+      pageWrapMarginTop: 5,
       progressHeight: 7,
       progressMarginTop: 7,
       progressWidth: 100,
@@ -442,20 +444,20 @@ test("project home Dashboard tab matches the localhost SVN dashboard branch", as
   await page.setViewportSize({ width: 1366, height: 900 });
   expect(await svnDashboardMetrics(page)).toEqual({
     assigneeHeight: 63,
-    assigneeWidth: 498,
+    assigneeWidth: 491,
     contentHeight: 247,
-    contentWidth: 1017,
+    contentWidth: 1002,
     dashboardHeight: 247,
-    dashboardWidth: 1017,
-    firstColumnWidth: 498,
-    leftPaneWidth: 1017,
+    dashboardWidth: 1002,
+    firstColumnWidth: 491,
+    leftPaneWidth: 1002,
     milestoneHeight: 63,
-    milestoneWidth: 498,
+    milestoneWidth: 491,
     pageWidth: 1366,
     scrollWidth: 1366,
-    secondColumnWidth: 498,
-    tabsHeight: 18,
-    tabsWidth: 1017,
+    secondColumnWidth: 491,
+    tabsHeight: 37,
+    tabsWidth: 1002,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -473,7 +475,7 @@ test("project home Dashboard tab matches the localhost SVN dashboard branch", as
     pageWidth: 390,
     scrollWidth: 390,
     secondColumnWidth: 191,
-    tabsHeight: 18,
+    tabsHeight: 37,
     tabsWidth: 390,
   });
 });

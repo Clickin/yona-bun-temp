@@ -109,6 +109,7 @@ function ProjectCodeFileHistoryScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { branch, filePath, ownerName, projectName } = routeParams;
+  const { t } = useLegacyMessages();
   const historyQuery = useQuery(
     codeHistoryQueryOptions(runtimeConfig, {
       branch,
@@ -123,7 +124,12 @@ function ProjectCodeFileHistoryScreen({
     return null;
   }
 
-  return <ProjectCodeFileHistoryBody history={historyQuery.data} routeParams={routeParams} />;
+  return (
+    <>
+      <title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>
+      <ProjectCodeFileHistoryBody history={historyQuery.data} routeParams={routeParams} />
+    </>
+  );
 }
 
 function ProjectCodeFileHistoryBody({
@@ -148,8 +154,12 @@ function ProjectCodeFileHistoryBody({
       data-stylex-owner="commit-file-page"
     >
       <div className="project-page-wrap">
-        <div {...sx.repo} data-stylex-owner="commit-file-repo">
-          <div data-stylex-owner="commit-file-browse">
+        <div
+          {...sx.repo}
+          className={`bubble-wrap dark-gray repo-wrap ${sx.repo.className ?? ""}`.trim()}
+          data-stylex-owner="commit-file-repo"
+        >
+          <div className="code-browse-wrap" data-stylex-owner="commit-file-browse">
             <div
               {...sx.breadcrumbs}
               className={`code-breadcrumb-wrap ${sx.breadcrumbs.className ?? ""}`.trim()}

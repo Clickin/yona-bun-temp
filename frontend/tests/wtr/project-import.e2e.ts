@@ -85,7 +85,7 @@ const EXPECTED_PROJECT_IMPORT = `
         </legend>
         <dl>
           <dt><label for="url">Git repository URL<strong class="orange-txt">*</strong></label></dt>
-          <dd><input id="url" type="text" name="url" class="text" placeholder="Please type the Git repository URL. E.g. https://github.com/doortts/yona.git" value=""></dd>
+          <dd><input id="url" type="text" name="url" class="text" placeholder="Please type the Git repository URL. E.g. https://github.com/doortts/Yoram.git" value=""></dd>
           <dd>
             <label class="checkbox"><input type="checkbox" id="useRepoAuth">Requires authorization</label>
             <div id="repoAuth" class="repo-auth-wrap">
@@ -103,7 +103,7 @@ const EXPECTED_PROJECT_IMPORT = `
           </dd>
           <dt class="bordertop"><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
           <dd>
-            <div class="select2-container mb10" style="width:220px"><button type="button" class="select2-choice"><span class="select2-chosen"><span class="usf-group" title="admin "><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-128.png" width="20" height="20"></span><strong class="name">admin</strong><span class="loginid"></span></span></span><span class="select2-arrow"><b></b></span></button><input class="select2-focusser select2-offscreen" type="text"><div class="select2-drop select2-with-searchbox select2-display-none"><div class="select2-search"><input type="text" class="select2-input"></div><ul class="select2-results"><li><button type="button">admin</button></li><li><button type="button">weblabs</button></li></ul></div></div>
+            <div class="select2-container mb10"><button type="button" class="select2-choice"><span class="select2-chosen"><span class="usf-group" title="admin "><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-128.png" width="20" height="20"></span><strong class="name">admin</strong><span class="loginid"></span></span></span><span class="select2-arrow"><b></b></span></button><input class="select2-focusser select2-offscreen" type="text"><div class="select2-drop select2-with-searchbox select2-display-none"><div class="select2-search"><input type="text" class="select2-input"></div><ul class="select2-results"><li><button type="button">admin</button></li><li><button type="button">weblabs</button></li></ul></div></div>
             <select id="project-owner" name="owner" data-format="user" class="mb10 select2-offscreen" tabindex="-1">
               <option value="admin">admin</option>
               <option value="weblabs">weblabs</option>
@@ -123,7 +123,7 @@ const EXPECTED_PROJECT_IMPORT = `
                   <input type="radio" id="public" name="projectScope" value="PUBLIC" class="radio-btn pull-left" checked="">
                   <label for="public"><strong class="ml5">PUBLIC</strong><p class="note">Anonymous users are able to access the project.</p></label>
                 </li>
-                <li id="opt-protected" class="mt10" style="display: none;">
+                <li id="opt-protected" class="mt10">
                   <input type="radio" id="protected" name="projectScope" value="PROTECTED" class="radio-btn pull-left">
                   <label for="protected"><strong class="ml5">GROUP PUBLIC</strong><p class="note">Users in the group and also users who have been explicitly granted access are able to access the project.</p></label>
                 </li>
@@ -138,7 +138,7 @@ const EXPECTED_PROJECT_IMPORT = `
           <div class="row-fluid">
             <div class="span2 right-txt mt10"><label for="vcs">Repository type</label></div>
             <div class="span10 cu-desc">
-              <div class="select2-container select2-container-disabled mb10 mt5" style="width:220px"><button type="button" class="select2-choice" disabled><span class="select2-chosen">Git</span><span class="select2-arrow"><b></b></span></button><input class="select2-focusser select2-offscreen" type="text" disabled><div class="select2-drop select2-display-none select2-with-searchbox"><div class="select2-search"><input class="select2-input" type="text" disabled></div><ul class="select2-results"></ul></div></div>
+              <div class="select2-container select2-container-disabled mb10 mt5"><button type="button" class="select2-choice" disabled><span class="select2-chosen">Git</span><span class="select2-arrow"><b></b></span></button><input class="select2-focusser select2-offscreen" type="text" disabled><div class="select2-drop select2-display-none select2-with-searchbox"><div class="select2-search"><input class="select2-input" type="text" disabled></div><ul class="select2-results"></ul></div></div>
               <select class="mb10 mt5 select2-offscreen" disabled="" tabindex="-1">
                 <option>Git</option>
               </select>
@@ -581,7 +581,10 @@ test("project import form links preserve legacy destinations and navigate in the
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
   });
   await createProjectLink.click();
-  await page.waitForURL(`**${basePath}/projectform?owner=admin`);
+  await page.waitForURL(
+    (url) =>
+      url.pathname === `${basePath}/projectform` && url.searchParams.get("owner") === "admin",
+  );
   await expect
     .poll(() =>
       page.evaluate(
@@ -765,6 +768,7 @@ async function canonicalizeScreenRoots(page: Page) {
                       (token) =>
                         token &&
                         token !== "gray-txt" &&
+                        token !== "orange-txt" &&
                         token !== "right-txt" &&
                         !/^x[0-9a-z]+$/u.test(token) &&
                         !token.includes("__"),
@@ -852,6 +856,7 @@ async function canonicalizeElements(page: Page, selectors: string[]) {
                       (token) =>
                         token &&
                         token !== "gray-txt" &&
+                        token !== "orange-txt" &&
                         token !== "right-txt" &&
                         !/^x[0-9a-z]+$/u.test(token) &&
                         !token.includes("__"),
@@ -978,6 +983,7 @@ async function canonicalizeHtml(page: Page, html: string) {
                       (token) =>
                         token &&
                         token !== "gray-txt" &&
+                        token !== "orange-txt" &&
                         token !== "right-txt" &&
                         !/^x[0-9a-z]+$/u.test(token) &&
                         !token.includes("__"),

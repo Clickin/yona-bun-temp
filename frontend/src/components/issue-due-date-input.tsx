@@ -49,20 +49,25 @@ export function IssueDueDateInput({
   );
 
   useEffect(() => {
+    // Controlled consumers pass `value`; uncontrolled ones (edit form, list
+    // quicksearch) rely on defaultValue and never get a `value` prop — skip
+    // the sync so the native picker keeps its defaultValue-derived state.
+    if (value === undefined) return;
     setNativeDateValue(NATIVE_DATE_PATTERN.test(value ?? "") ? (value ?? "") : "");
   }, [value]);
 
   const openPicker = () => {
-    dueDateRef.current?.focus();
     const picker = datePickerRef.current;
-    if (!picker) {
+    if (picker) {
+      picker.focus();
+      try {
+        picker.showPicker?.();
+      } catch {
+        // native picker unavailable — the native input still has focus
+      }
       return;
     }
-    try {
-      picker.showPicker?.();
-    } catch {
-      // native picker unavailable — the visible input already has focus
-    }
+    dueDateRef.current?.focus();
   };
 
   const handleNativeChange = (nextValue: string) => {

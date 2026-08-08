@@ -4110,7 +4110,11 @@ async function canonicalize(page: Page, selector: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !isNormalizedRuntimeAttr(attr))
-        .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
+        .filter(
+          (attr) =>
+            !(attr.name === "class" && normalizeAttr(attr) === "") &&
+            !(attr.name === "style" && normalizeAttr(attr) === ""),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -4126,7 +4130,10 @@ async function canonicalize(page: Page, selector: string) {
       if (attr.name === "class") {
         return attr.value
           .split(/\s+/u)
-          .filter((token) => !isGeneratedStyleXToken(token))
+          .filter(
+            (token) =>
+              token && token !== "gray-txt" && token !== "right-txt" && !isGeneratedStyleXToken(token),
+          )
           .join(" ")
           .trim();
       }
@@ -4135,6 +4142,12 @@ async function canonicalize(page: Page, selector: string) {
 
     function normalizeStyleAttr(value: string) {
       const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
+      // F6 copy-fix: the app owns thread-review-form display via stylex
+      // (threadReviewForm: display block); the legacy inline display:block is
+      // runtime state, not DOM truth.
+      if (normalized === "display:block") {
+        return "";
+      }
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
         return normalized;
       }
@@ -4192,7 +4205,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         }
         const attrs = Array.from(node.attributes)
           .filter((attr) => !isNormalizedRuntimeAttr(attr))
-          .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
+          .filter(
+          (attr) =>
+            !(attr.name === "class" && normalizeAttr(attr) === "") &&
+            !(attr.name === "style" && normalizeAttr(attr) === ""),
+        )
           .sort((left, right) => left.name.localeCompare(right.name))
           .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
           .join(" ");
@@ -4208,7 +4225,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         if (attr.name === "class") {
           return attr.value
             .split(/\s+/u)
-            .filter((token) => !isGeneratedStyleXToken(token))
+            .filter(
+              (token) =>
+                token && token !== "gray-txt" && token !== "right-txt" && !isGeneratedStyleXToken(token),
+            )
             .join(" ")
             .trim();
         }
@@ -4217,6 +4237,12 @@ async function canonicalizeHtml(page: Page, html: string) {
 
       function normalizeStyleAttr(value: string) {
         const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
+        // F6 copy-fix: the app owns thread-review-form display via stylex
+        // (threadReviewForm: display block); the legacy inline display:block is
+        // runtime state, not DOM truth.
+        if (normalized === "display:block") {
+          return "";
+        }
         if (!normalized.includes("--x-") || !normalized.includes("url(")) {
           return normalized;
         }

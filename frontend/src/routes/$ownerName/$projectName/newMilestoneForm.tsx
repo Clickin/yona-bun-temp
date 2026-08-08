@@ -253,7 +253,6 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                     >
                       <MilestoneMarkdownEditor
                         contentsRef={contentsRef}
-                        dataToggle
                         wrapperClassName={`mt10 ${markdownEditorWrapperStyleProps.className ?? ""}`.trim()}
                         tabContentClassName={`tab-content ${stylex.props(newMilestoneFormStyles.editorTabContent).className}`}
                         owners={{

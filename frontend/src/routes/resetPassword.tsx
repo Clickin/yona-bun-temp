@@ -50,6 +50,11 @@ const styles = stylex.create({
     marginTop: "10px",
     marginBottom: "0px",
     fontSize: "1.2em",
+    // legacy inherits bootstrap body line-height 20px (bootstrap.css:180);
+    // the app :root line-height 18px shrinks the tag-line box 20 -> 18px,
+    // cascading 2px up into taglineWrap/page height and the form position
+    // (reset-password pins 338/152/246) — mirror the postform compensation.
+    lineHeight: "20px",
     color: resetPasswordTheme.taglineText,
   },
   formWrap: {

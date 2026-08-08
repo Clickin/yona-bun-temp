@@ -1481,6 +1481,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "yobicon-middle" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1580,6 +1581,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "yobicon-middle" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1721,6 +1723,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "yobicon-middle" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

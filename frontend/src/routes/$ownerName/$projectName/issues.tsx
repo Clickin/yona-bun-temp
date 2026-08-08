@@ -706,7 +706,7 @@ function ProjectIssuesBody({
           >
             <div
               {...stylex.props(styles.newIssueAction)}
-              className="pull-right"
+              className={stylex.props(styles.newIssueAction).className ?? ""}
               data-stylex-owner="project-issues-new-issue-action"
             >
               <Link

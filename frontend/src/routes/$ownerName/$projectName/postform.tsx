@@ -25,8 +25,6 @@ const sx = {
   form: stylex.props(styles.form),
   editor: stylex.props(styles.editor),
   actions: stylex.props(styles.actions),
-  save: stylex.props(styles.save),
-  cancel: stylex.props(styles.cancel),
 } as const;
 
 type BoardPostFormSearch = {
@@ -341,7 +339,11 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               className={`actions ${sx.actions.className ?? ""}`.trim()}
               data-stylex-owner="project-postform-actions"
             >
-              <button {...sx.save} data-stylex-owner="project-postform-save" tabIndex={3}>
+              <button
+                className="ybtn ybtn-success"
+                data-stylex-owner="project-postform-save"
+                tabIndex={3}
+              >
                 {t("button.save")}
               </button>
               <HistoryBackLink onCancel={() => router.history.back()}>
@@ -358,7 +360,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
 function HistoryBackLink({ children, onCancel }: { children: string; onCancel: () => void }) {
   return (
     <button
-      {...sx.cancel}
+      className="ybtn"
       data-stylex-owner="project-postform-cancel"
       type="button"
       tabIndex={4}

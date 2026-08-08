@@ -687,7 +687,7 @@ function PullRequestConflictConfirmModal({
             <p className="msg">{message}</p>
           </div>
           <div
-            className={`${stylex.props(styles.conflictActions).className} buttons mt20 mb20`}
+            className={`${stylex.props(styles.conflictActions).className} center-txt buttons mt20 mb20`}
             data-stylex-owner="new-pull-request-conflict-actions"
           >
             <button type="button" className="ybtn ybtn-default" onClick={onClose}>

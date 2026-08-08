@@ -221,9 +221,9 @@ for (const viewport of [
     const expected =
       viewport.label === "desktop"
         ? {
-            button: { height: 30, width: 869.390625, x: 10, y: 280 },
-            item: { height: 50, width: 887.78125, x: 10, y: 260 },
-            list: { height: 141, width: 887.78125, x: 10, y: 169 },
+            button: { height: 30, width: 869.390625, x: 10, y: 281 },
+            item: { height: 50, width: 887.78125, x: 10, y: 261 },
+            list: { height: 141, width: 887.78125, x: 10, y: 170 },
           }
         : {
             button: { height: 30, width: 396.5, x: 0, y: 292 },

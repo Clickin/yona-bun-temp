@@ -1593,7 +1593,7 @@ function CodeCommentThreadView({
             className={`${sx.reviewWriteCommentBox.className} write-comment-box`}
           >
             <div className="write-comment-wrap">
-              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
+              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} threadHeight100 />
               <UploadForm
                 resourceType="COMMIT_COMMENT"
                 helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
@@ -2026,11 +2026,13 @@ function Editor({
   textareaName = "contents",
   value = "",
   wrapId,
+  threadHeight100 = false,
 }: {
   editorMode: string;
   textareaName?: string;
   value?: string;
   wrapId: string;
+  threadHeight100?: boolean;
 }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
@@ -2089,12 +2091,18 @@ function Editor({
           <div className="textarea-box">
             <textarea
               name={textareaName}
-              className="editorSeries content comment nm"
+              {...(editorMode === "code-review-body" && threadHeight100 ? sx.reviewTextarea : {})}
+              className={
+                editorMode === "code-review-body" && threadHeight100
+                  ? `${sx.reviewTextarea.className} editorSeries content comment nm`
+                  : "editorSeries content comment nm"
+              }
               data-editor-mode={editorMode}
               id={`editor-${textareaName}-${wrapId}`}
               defaultValue={value}
-              {...(editorMode === "code-review-body" ? sx.reviewTextarea : {})}
-              {...(editorMode === "code-review-body" ? { style: { height: "100px" } } : {})}
+              {...(editorMode === "code-review-body" && threadHeight100
+                ? { style: { height: "100px" } }
+                : {})}
               data-stylex-owner={
                 editorMode === "code-review-body" ? "commit-detail-review-textarea" : undefined
               }

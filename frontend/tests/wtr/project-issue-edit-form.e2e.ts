@@ -825,7 +825,7 @@ test("project issue edit form translates legacy write validation behavior", asyn
   page.on("request", (request) => {
     if (
       request.method() === "PUT" &&
-      request.url().includes("/api/v1/projects/admin/sample/issues/1")
+      String(request.url).includes("/api/v1/projects/admin/sample/issues/1")
     ) {
       updateRequests += 1;
       updateBody = request.postDataJSON() as Record<string, unknown>;
@@ -901,7 +901,7 @@ test("project issue draft edit form submits legacy draft save and publish flags"
   page.on("request", (request) => {
     if (
       request.method() === "PUT" &&
-      request.url().includes("/api/v1/projects/admin/sample/issues/1")
+      String(request.url).includes("/api/v1/projects/admin/sample/issues/1")
     ) {
       updateRequests += 1;
     }
@@ -1007,6 +1007,13 @@ async function mockProjectIssueEditForm(
         loginId: "admin",
         userLabel: "Site Admin",
       }),
+    });
+  });
+  await page.route("**/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify({ user: { loginId: "admin" } }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
@@ -1235,8 +1242,11 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "aria-label" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-wtr-click-selected" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))

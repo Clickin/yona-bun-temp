@@ -55,28 +55,4 @@ export const styles = stylex.create({
     borderRadius: "6px",
     overflow: "hidden",
   },
-  fileHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f6f8fa",
-    borderBottomWidth: "1px",
-    borderBottomStyle: "solid",
-    borderBottomColor: "#d0d7de",
-    padding: "8px 16px",
-    cursor: "pointer",
-    userSelect: "none",
-  },
-  fileHeaderTitle: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "13px",
-    fontWeight: 600,
-  },
-  fileToggleIcon: {
-    fontSize: "12px",
-    color: "#57606a",
-    marginRight: "6px",
-  },
 });

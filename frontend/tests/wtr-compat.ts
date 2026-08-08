@@ -36,6 +36,9 @@ export type Page = any;
 
 // Minimal Buffer polyfill: specs call Buffer.from(...) for upload fixtures.
 class WtrBuffer {
+  static alloc(size: number): Uint8Array {
+    return new Uint8Array(size);
+  }
   static from(input: string | Uint8Array | ArrayLike<number>): Uint8Array {
     if (typeof input === "string") return new TextEncoder().encode(input);
     return new Uint8Array(input as ArrayLike<number>);
@@ -1324,7 +1327,19 @@ export class Locator {
   }
 
   async click(options?: { force?: boolean; position?: { x: number; y: number } }): Promise<void> {
-    const element = await this.waitForElement();
+    let element = await this.waitForElement();
+    // Playwright waits for actionability: a disabled control becomes enabled
+    // before the click lands (apps enable buttons after async work — upload
+    // deletes, draft saves). Without the wait, React drops the synthetic
+    // click on the still-disabled button and the flow dead-ends. Re-resolve
+    // each poll so a React re-render that swaps the node cannot strand us.
+    if (!options?.force) {
+      const deadline = Date.now() + 15000;
+      while ((element as HTMLButtonElement).disabled === true && Date.now() < deadline) {
+        await sleep(50);
+        element = await this.waitForElement();
+      }
+    }
     // Playwright clicks the topmost element at the target point (an inner
     // <button> inside an <li> receives the click, not the <li>).
     let target: HTMLElement = element;

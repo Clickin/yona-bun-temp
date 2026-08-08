@@ -1,7 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const postFormColors = stylex.defineVars({
-  action: "#51a351",
   attachedFilesBorder: "#e0e0e0",
   editorBorder: "#dddddd",
   inputBorder: "#cccccc",
@@ -59,22 +58,4 @@ export const styles = stylex.create({
   actions: { margin: "10px 0px", textAlign: "right" },
   pasteHelpVisible: { display: "block" },
   uploadAttachSaveHelp: { textAlign: "right" },
-  save: {
-    backgroundColor: postFormColors.action,
-    borderColor: postFormColors.action,
-    borderRadius: "4px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: "#fff",
-    padding: "4px 12px",
-  },
-  cancel: {
-    borderColor: "#ccc",
-    borderRadius: "4px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: "#333",
-    marginLeft: "4px",
-    padding: "4px 12px",
-  },
 });

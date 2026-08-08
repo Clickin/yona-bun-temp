@@ -622,7 +622,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             {lastPushedLabel ? (
               <span
                 {...stylex.props(styles.smallFont)}
-                className={`${stylex.props(styles.smallFont).className} small-font`}
+                className={stylex.props(styles.smallFont).className}
                 data-stylex-owner="organization-home-project-code-update"
               >
                 , {t("project.codeUpdate")}{" "}

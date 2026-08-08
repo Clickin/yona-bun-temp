@@ -93,7 +93,9 @@ test("project settingform restores the legacy page shell and desktop geometry", 
   expect(desktop).toMatchObject({
     outerMinWidth: "1100px",
     outerMinHeight: "450px",
-    shellMarginTop: "20px",
+    // F5 dist-truth: legacy _responsive.less:617 `@media all .project-page-wrap
+    // { margin-top: 5px !important }` wins over the settingform stylex 20px.
+    shellMarginTop: "5px",
     outerWidth: 1366,
     shellWidth: 1366,
   });

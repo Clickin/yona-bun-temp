@@ -378,7 +378,7 @@ export function ProjectCodeHistoryBody({
                             </button>
                             <Link
                               to={showCommitPath}
-                              search={{}}
+                              search={selectedBranch ? { branch: selectedBranch } : {}}
                               activeOptions={legacyCodeHistoryLinkActiveOptions}
                               activeProps={legacyCodeHistoryLinkActiveProps}
                               title={t("code.showCommit")}
@@ -401,6 +401,7 @@ export function ProjectCodeHistoryBody({
                             ) : null}
                             <CommitMessage
                               message={commit.message}
+                              search={selectedBranch ? { branch: selectedBranch } : {}}
                               shortMessage={commit.shortMessage}
                               to={showCommitPath}
                             />
@@ -490,10 +491,12 @@ export function ProjectCodeHistoryBody({
 
 function CommitMessage({
   message,
+  search,
   shortMessage,
   to,
 }: {
   message: string;
+  search: Record<string, string>;
   shortMessage: string;
   to: string;
 }) {
@@ -506,7 +509,7 @@ function CommitMessage({
     <>
       <Link
         to={to}
-        search={{}}
+        search={search}
         activeOptions={legacyCodeHistoryLinkActiveOptions}
         activeProps={legacyCodeHistoryLinkActiveProps}
         className={`${stylex.props(styles.commitMessage).className} commitMsg short`}

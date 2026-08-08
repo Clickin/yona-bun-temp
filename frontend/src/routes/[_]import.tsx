@@ -370,8 +370,8 @@ function ProjectImportScreen({
                       aria-label={t("project.owner")}
                     />
                     <div
-                      className={`select2-drop select2-display-none select2-with-searchbox${ownerMenuOpen ? " select2-drop-active" : ""}`}
                       {...(ownerMenuOpen ? stylex.props(styles.selectDropOpen) : {})}
+                      className={`${ownerMenuOpen ? `${stylex.props(styles.selectDropOpen).className} ` : ""}select2-drop select2-display-none select2-with-searchbox${ownerMenuOpen ? " select2-drop-active" : ""}`}
                     >
                       <div className="select2-search">
                         <input

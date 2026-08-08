@@ -267,7 +267,7 @@ function OrganizationSettingsBody({
                     />
                     <div
                       {...stylex.props(styles.validationMessage)}
-                      className={stylex.props(styles.validationMessage).className ?? ""}
+                      className={`orange-txt ${stylex.props(styles.validationMessage).className ?? ""}`.trim()}
                       data-stylex-owner="organization-setting-validation-message"
                     >
                       {serverNameError ? (

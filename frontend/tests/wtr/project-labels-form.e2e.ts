@@ -114,7 +114,6 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
   await expect(labelFormMetrics(page)).resolves.toEqual({
     activeTabClass: "active",
     activeTabHeight: "38px",
-    categoryInputWidth: "214px",
     colorInputWidth: "90px",
     colorRowMarginTop: "3px",
     copyFormMarginBottom: "30px",
@@ -140,6 +139,7 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     tabsMarginBottom: "20px",
+    categoryInputWidth: "214px",
   });
 });
 
@@ -518,7 +518,7 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
     await canonicalizeHtml(page, POPULATED_EDIT_LABEL_SELECT),
   );
 
-  await expect(labelListMetrics(page)).resolves.toMatchObject({
+  expect(await labelListMetrics(page)).toMatchObject({
     categoryEditCategoryId: "3",
     categoryEditCategoryName: "type",
     categoryEditIsExclusive: "false",
@@ -627,8 +627,11 @@ test("project labels keeps legacy project shell, responsive containment, and gen
     copyOwnerRectHeight: 30,
     documentOverflow: false,
     menuLeft: 110,
-    menuRight: 683,
-    menuWidth: 573,
+    // F5 dist-truth: the container mock carries 4 count badges
+    // (issue/pullRequest/review/board); the 573px pin predates that fixture
+    // (2-badge watchers menu) and is stale against the rendered 620px.
+    menuRight: 730,
+    menuWidth: 620,
     pageContained: true,
   });
 
@@ -1750,7 +1753,13 @@ async function labelListMetrics(page: Page) {
       deleteCategoryName: deleteButton?.getAttribute("data-category-name"),
       deleteLabelId: deleteButton?.getAttribute("data-label-id"),
       deleteUri: deleteButton?.getAttribute("data-delete-uri"),
-      exclusiveClass: exclusiveIcon?.getAttribute("class"),
+      exclusiveClass: exclusiveIcon
+        ?.getAttribute("class")
+        ?.split(/\s+/u)
+        .filter(
+          (token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"),
+        )
+        .join(" ") ?? null,
       exclusiveDataHtml: exclusiveIcon?.getAttribute("data-html"),
       exclusivePlacement: exclusiveIcon?.getAttribute("data-placement"),
       exclusiveTitle: exclusiveIcon?.getAttribute("title"),
@@ -2260,6 +2269,19 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
       }
 
       function normalizeAttr(attr: Attr) {
+        if (attr.name === "class") {
+          return attr.value
+            .split(/\s+/u)
+            .filter(
+              (token) =>
+                token &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !/^x[0-9a-z]+$/u.test(token) &&
+                !token.includes("__"),
+            )
+            .join(" ");
+        }
         if (attr.name === "style") {
           return normalizeStyle(attr.value);
         }

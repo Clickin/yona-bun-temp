@@ -1125,7 +1125,11 @@ test("project reviews to settings keeps the legacy project shell DOM nodes mount
   await page.locator(".project-setting a[href$='/admin/sample/setting']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/setting(?:\?|$)/);
   await expect(page.locator("#saveSetting")).toBeVisible();
-  await expect(page.locator(".project-setting li")).toHaveClass(/active/);
+  // legacy projectMenu.scala.html:121-125 malformed </a><li> parse yields 2 li
+  // under .project-setting (setting link + empty li) — pin the owned item.
+  await expect(
+    page.locator("[data-stylex-owner=project-menu-item-setting]"),
+  ).toHaveClass(/active/);
   await expectProjectShellNodesToPersist(page);
   await expectProjectSettingsGeometry(page);
 
@@ -1178,7 +1182,11 @@ test("project settings alias to canonical settings form keeps the legacy project
   await expect(page).toHaveURL(/\/admin\/sample\/settingform(?:\?|$)/);
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
-  await expect(page.locator(".project-setting li")).toHaveClass(/active/);
+  // legacy projectMenu.scala.html malformed </a><li> parse yields 2 li under
+  // .project-setting — pin the owned item.
+  await expect(
+    page.locator("[data-stylex-owner=project-menu-item-setting]"),
+  ).toHaveClass(/active/);
   await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);

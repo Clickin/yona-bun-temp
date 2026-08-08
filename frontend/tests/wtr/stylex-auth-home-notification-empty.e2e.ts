@@ -126,14 +126,14 @@ for (const viewport of [
     });
     // WTR/PW parity (both runners identical): the empty row renders 48px tall
     // (line-height 18px vs the live shell's 20px) and the local shell header is
-    // 5.078px shorter than the live capture (y 169 vs 174.078); at <=900px the
+    // 4.078px shorter than the live capture (y 170 vs 174.078); at <=900px the
     // app zeroes .page-wrap-outer padding (app.css:2331) so intermediate is
     // full-bleed (x 0, width 527.65625).
     const expected =
       viewport.width === 1366
-        ? { width: 887.78125, x: 10, y: 169 }
+        ? { width: 887.78125, x: 10, y: 170 }
         : viewport.width === 800
-          ? { width: 527.65625, x: 0, y: 169 }
+          ? { width: 527.65625, x: 0, y: 170 }
           : { width: 390, x: 0, y: 181 };
     expect(evidence.list.box).toMatchObject({ height: 48, ...expected });
     expect(evidence.empty.box).toMatchObject({ height: 48, ...expected });

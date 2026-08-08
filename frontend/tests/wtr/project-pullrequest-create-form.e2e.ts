@@ -566,7 +566,7 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator("#upload .plain")).toHaveText("Click upload button");
   await expect(page.locator("#upload .help-pastable")).toHaveText("Paste the clipboard image");
   await expect(page.locator("#upload ul.attached-files.unstyled > li")).toHaveCount(0);
-  await expect(page.locator("#upload .right-txt.help")).toContainText(
+  await expect(page.locator("#upload p.help")).toContainText(
     "Selected file will be attached when your comment is saved.",
   );
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);

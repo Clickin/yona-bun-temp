@@ -18,6 +18,11 @@ export const styles = stylex.create({
   upload: {
     backgroundColor: "#f5f5f5",
     borderRadius: "5px",
+    // legacy inherits bootstrap body line-height 20px (bootstrap.css:180);
+    // the app :root line-height 18px would shrink the droppable-hint line
+    // box (#upload height 70 -> 68 desktop, 100 -> 98 mobile) — mirror the
+    // postform uploadWrap compensation (-postform.stylex.ts).
+    lineHeight: "20px",
     padding: "10px",
   },
   uploadSaveHelp: { textAlign: "right" },

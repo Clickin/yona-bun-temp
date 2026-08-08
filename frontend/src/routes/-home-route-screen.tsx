@@ -3153,11 +3153,16 @@ const leftSidebarFooterStyles = stylex.create({
   footer: {
     bottom: "8px",
     color: homeColors.leftSidebarFooterText,
+    fontSize: "13px",
+    lineHeight: "20px",
     position: "absolute",
     right: "15px",
   },
   heart: {
     color: homeColors.leftSidebarFooterHeart,
+    display: "inline-block",
+    fontSize: "13px",
+    lineHeight: "13px",
     verticalAlign: "middle",
   },
 });

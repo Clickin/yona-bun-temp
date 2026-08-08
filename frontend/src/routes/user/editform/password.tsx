@@ -21,6 +21,7 @@ const styles = stylex.create({
   },
   list: {
     display: "block",
+    lineHeight: "20px",
     margin: "0px",
     padding: "0px",
   },
