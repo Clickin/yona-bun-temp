@@ -668,7 +668,7 @@
 
 ## Phase E reconciliation (2026-08-09, suite-17/18)
 
-**Final sweep (concurrency 4): 2833 passed / 214 failed / 5 skipped — 1052s wall** (serial 1047s; no parallel speedup, browser-bound). Plateau identical to suite-13 (2834/213 ±1 flake). Plan's residual gate = ledger rows only; the 214 red rows decompose as:
+**Final sweep (concurrency 4): 2833 passed / 214 failed / 5 skipped — 1052s wall**; gate `test:e2e:stylex-final -- .` (fresh fallback-off build + preview runtime config): **2835 passed / 213 failed — 1035s** (2 extra green vs plateau: anonymous-site-signup + sidenav-subtabs flakes green in preview; framed-site-shell hash stable). Gate exit 1 = 213 documented residual rows (all ledger-mapped or triaged), no unexpected failures. (serial 1047s; no parallel speedup, browser-bound). Plateau identical to suite-13 (2834/213 ±1 flake). Plan's residual gate = ledger rows only; the 214 red rows decompose as:
 
 - **168 mapped** to the original 632 triage rows: 134 app-fix (genuine F7 gaps, deferred — Phase D waves exhausted), 9 copy-fix-current-dom, 9 copy-fix-dist-truth, 6 retained-class-retention, 5 C1-passed (hover flakes), 2 harness-investigate, 2 C2-retire, 1 flaky-in-sweep.
 - **46 unmapped** (wave-era specs added after the 632 triage): triaged in `wtr-637-reconciliation-report.md` → 17 F5 copy-fix-dist-truth, 21 F6 copy-fix-current-dom (source/retained-class pins), 3 F7 app-fix, 5 F9 flaky/timeout, 1 F2 harness-investigate.
