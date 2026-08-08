@@ -779,16 +779,36 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const attrs = Array.from(node.attributes)
+      // The app owns the editor wrapper's position via StyleX
+      // (milestone-edit-form-editor-wrapper { position: relative }), which the
+      // legacy milestone/edit.scala.html renders as an inline style — restore
+      // the legacy attribute like other stylex-owner mappings in this file.
+      const stylexInlineStyles: Record<string, string> = {};
+      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-wrapper") {
+        stylexInlineStyles["style"] = "position:relative";
+      }
+      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-content") {
+        stylexInlineStyles["style"] = "position:relative;overflow:visible";
+      }
+      const mergedAttrs: Record<string, string> = { ...stylexInlineStyles };
+      for (const attr of Array.from(node.attributes)) {
+        if (attr.name === "data-stylex-owner") continue;
+        if (attr.name in mergedAttrs) {
+          mergedAttrs[attr.name] = `${mergedAttrs[attr.name]};${normalizeAttr(attr)}`;
+        } else {
+          mergedAttrs[attr.name] = normalizeAttr(attr);
+        }
+      }
+      const attrs = Object.entries(mergedAttrs)
         .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+          ([name, value]) =>
+            !name.startsWith("data-v-") &&
+            name !== "alt" &&
+            name !== "data-style-src" &&
+            !(name === "class" && value.trim() === ""),
         )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -852,16 +872,36 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const attrs = Array.from(node.attributes)
+      // The app owns the editor wrapper's position via StyleX
+      // (milestone-edit-form-editor-wrapper { position: relative }), which the
+      // legacy milestone/edit.scala.html renders as an inline style — restore
+      // the legacy attribute like other stylex-owner mappings in this file.
+      const stylexInlineStyles: Record<string, string> = {};
+      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-wrapper") {
+        stylexInlineStyles["style"] = "position:relative";
+      }
+      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-content") {
+        stylexInlineStyles["style"] = "position:relative;overflow:visible";
+      }
+      const mergedAttrs: Record<string, string> = { ...stylexInlineStyles };
+      for (const attr of Array.from(node.attributes)) {
+        if (attr.name === "data-stylex-owner") continue;
+        if (attr.name in mergedAttrs) {
+          mergedAttrs[attr.name] = `${mergedAttrs[attr.name]};${normalizeAttr(attr)}`;
+        } else {
+          mergedAttrs[attr.name] = normalizeAttr(attr);
+        }
+      }
+      const attrs = Object.entries(mergedAttrs)
         .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+          ([name, value]) =>
+            !name.startsWith("data-v-") &&
+            name !== "alt" &&
+            name !== "data-style-src" &&
+            !(name === "class" && value.trim() === ""),
         )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
