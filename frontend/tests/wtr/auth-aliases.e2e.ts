@@ -60,6 +60,14 @@ test("invalid credentials render the translated login error, not the raw message
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/sign-in", (route) =>
+    route.fulfill({
+      status: 401,
+      json: {
+        error: { code: "invalid_credentials", message: "user.login.invalid", status: 401 },
+      },
+    }),
+  );
 
   await page.goto(`${basePath}/users/loginform`);
   await page.fill("#loginIdOrEmailD", "no-such-user");
