@@ -920,7 +920,7 @@ function OrganizationIssueItem({
       <div className="span2 hide-in-mobile">
         <div
           {...assigneeRailStyleProps}
-          className={`mt5 pull-right ${assigneeRailStyleProps.className ?? ""}`.trim()}
+          className={`mt5 ${assigneeRailStyleProps.className ?? ""}`.trim()}
           data-stylex-owner="organization-issues-assignee-rail"
         >
           {issue.assigneeLoginId ? (
@@ -943,7 +943,7 @@ function OrganizationIssueItem({
         {issue.dueDateLabel ? (
           <div
             {...dueDateStyleProps}
-            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
+            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-issues-due-date"
             title={issue.dueDateLabel}
           >

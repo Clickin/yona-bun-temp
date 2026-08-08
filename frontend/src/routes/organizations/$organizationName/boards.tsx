@@ -233,7 +233,7 @@ function OrganizationBoardsBody({
               {...searchFormStyleProps}
               id="option_form"
               method="get"
-              className={`pull-left ${searchFormStyleProps.className ?? ""}`.trim()}
+              className={searchFormStyleProps.className}
               data-stylex-owner="organization-boards-search-form"
             >
               <input type="hidden" name="orderBy" value={search.orderBy} />
