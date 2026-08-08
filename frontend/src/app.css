@@ -470,6 +470,81 @@
     text-decoration: none;
   }
 
+  /* Frozen less/_usermenu.less:141-144 .user-li — sidebar row fallback paint */
+  .user-project-list .user-li {
+    cursor: pointer;
+    line-height: normal;
+  }
+
+  /* Frozen less/_usermenu.less:444-534,609-621 — sidebar row fallback layout
+     (project-flex-container / project-item-container / projectName-owner / site-logo) */
+  .user-project-list .project-avatar {
+    color: #000;
+  }
+
+  .user-project-list .site-logo {
+    width: 26px;
+    flex-shrink: 0;
+    margin-left: 2px;
+    padding-top: 3px;
+    overflow: hidden;
+    text-align: center;
+
+    img {
+      width: 16px;
+      height: auto;
+      margin-right: 0;
+      border-radius: 3px;
+      vertical-align: text-top;
+    }
+  }
+
+  .user-project-list .project-flex-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .user-project-list .project-item-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    flex-grow: 1;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .user-project-list .project-item {
+    font-size: 14px;
+    font-weight: 400;
+    overflow: hidden;
+  }
+
+  .user-project-list .project-item .project-name {
+    min-width: 50px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-project-list .project-item .all-project-names {
+    padding-left: 22px;
+  }
+
+  .user-project-list .projectName-owner {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    flex-grow: 1;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1px 0;
+    overflow: hidden;
+  }
+
   .sidebar-row-link:hover,
   .sidebar-row-link:focus {
     text-decoration: none;
@@ -1239,6 +1314,27 @@
     z-index: 900;
   }
 
+  /* source: _page.less:5502-5507 .mass-update-form (position) +
+     _page.less:5506-5507 .mass-update-list (max-height/overflow-y) */
+  .mass-update-form {
+    position: relative;
+    -webkit-transition: padding 0.5s;
+  }
+
+  .mass-update-form .mass-update-list {
+    max-height: 350px;
+    overflow-y: auto;
+  }
+
+  /* source: bootstrap.css:1121-1125 input[type="radio"], input[type="checkbox"]
+     margin 4px 0 0 — dist has no tag-level checkbox rule, so the mass-update
+     check-all checkbox fell back to the UA 3px 3px 3px 4px margin */
+  input[type="radio"],
+  input[type="checkbox"] {
+    margin: 4px 0 0;
+    line-height: normal;
+  }
+
   .issue-label {
     font-size: 11px;
     line-height: 12px;
@@ -1506,6 +1602,13 @@
   #mySidenav.sidenav-open {
     width: 360px;
     border: 1px solid #ccc;
+  }
+
+  /* Frozen less/_page.less:7148-7151 .right-menu — root sidebar tab row inset */
+  .right-menu {
+    margin-top: 10px;
+    margin-left: 10px;
+    width: 350px;
   }
 
   .sidenav .user-menu-wrap {

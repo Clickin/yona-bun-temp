@@ -86,6 +86,23 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
 
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
   await expect(page).toHaveTitle("Edit post - admin/sample");
+  // TEMP DEBUG
+  console.log(
+    "D5S3-BOARD-DEBUG",
+    JSON.stringify(
+      await page.locator("form.nm").evaluate((form) => {
+        const style = getComputedStyle(form);
+        const rect = form.getBoundingClientRect();
+        return {
+          display: style.display,
+          visibility: style.visibility,
+          rect: { height: rect.height, width: rect.width },
+          offsetParent: form.offsetParent ? form.offsetParent.tagName : null,
+          className: form.className,
+        };
+      }),
+    ),
+  );
   expect(
     await page
       .locator("head > title")

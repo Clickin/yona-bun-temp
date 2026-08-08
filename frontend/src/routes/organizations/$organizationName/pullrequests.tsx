@@ -154,21 +154,35 @@ function OrganizationPullRequestsBody({
         className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
         data-stylex-owner="organization-pullrequests-page"
       >
-        <div data-stylex-owner="organization-pullrequests-shell">
+        <div
+          className="project-page-wrap"
+          data-stylex-owner="organization-pullrequests-shell"
+        >
           <div className="row-fluid cb">
-            <div {...sx.searchColumn} data-stylex-owner="organization-pullrequests-search-column">
+            <div
+              {...sx.searchColumn}
+              className={`left-menu span2 search-wrap hide-in-mobile ${sx.searchColumn.className ?? ""}`.trim()}
+              data-stylex-owner="organization-pullrequests-search-column"
+              style={{ paddingTop: 0 }}
+            >
               <form id="search" name="search" action={searchAction} method="get">
                 <div className="search">
-                  <div {...sx.searchBar} data-stylex-owner="organization-pullrequests-search-bar">
+                  <div
+                    {...sx.searchBar}
+                    className={`search-bar ${sx.searchBar.className ?? ""}`.trim()}
+                    data-stylex-owner="organization-pullrequests-search-bar"
+                  >
                     <input
                       name="filter"
                       {...sx.searchInput}
+                      className={`textbox full ${sx.searchInput.className ?? ""}`.trim()}
                       data-stylex-owner="organization-pullrequests-search-input"
                       type="text"
                       defaultValue={search.filter}
                     />
                     <button
                       {...sx.searchButton}
+                      className={`search-btn ${sx.searchButton.className ?? ""}`.trim()}
                       data-stylex-owner="organization-pullrequests-search-button"
                       type="submit"
                     >
@@ -192,7 +206,12 @@ function OrganizationPullRequestsBody({
                     onClick={() => navigateTab(openAction)}
                   >
                     {t("pullRequest.state.open")}
-                    <span {...sx.badge}>{pullRequests.openCount}</span>
+                    <span
+                      {...sx.badge}
+                      className={`num-badge ${sx.badge.className ?? ""}`.trim()}
+                    >
+                      {pullRequests.openCount}
+                    </span>
                   </button>
                 </li>
                 <li className={selectedCategory === "closed" ? "active" : ""}>
@@ -203,11 +222,21 @@ function OrganizationPullRequestsBody({
                     onClick={() => navigateTab(closedAction)}
                   >
                     {t("pullRequest.state.closed")}
-                    <span {...sx.badge}>{pullRequests.closedCount}</span>
+                    <span
+                      {...sx.badge}
+                      className={`num-badge ${sx.badge.className ?? ""}`.trim()}
+                    >
+                      {pullRequests.closedCount}
+                    </span>
                   </button>
                 </li>
               </ul>
-              <div {...sx.content} data-stylex-owner="organization-pullrequests-content">
+              <div
+                {...sx.content}
+                className={`tab-content ${sx.content.className ?? ""}`.trim()}
+                data-stylex-owner="organization-pullrequests-content"
+                style={{ clear: "both", paddingTop: 15 }}
+              >
                 <div id="list" className="row-fluid tab-pane active">
                   <OrganizationPullRequestList
                     basePath={runtimeConfig.basePath}

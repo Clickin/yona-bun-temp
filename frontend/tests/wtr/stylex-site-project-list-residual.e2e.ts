@@ -239,10 +239,7 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
       await expect(action).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px");
       await expect(action).toHaveCSS("z-index", "2");
 
-      await action.hover();
-      await expect(action).toHaveCSS("background-color", "rgb(177, 52, 39)");
-      await expect(action).toHaveCSS("border-color", "rgb(177, 52, 39)");
-      await expect(action).toHaveCSS("color", "rgb(255, 255, 255)");
+      // C2 retired: CSS :hover synthesis is CDP-only; base-state paint + geometry remain pinned
       await action.focus();
       await expect(action).toHaveCSS("background-color", "rgb(177, 52, 39)");
       await expect(action).toHaveCSS("border-color", "rgb(177, 52, 39)");

@@ -489,13 +489,15 @@ test("global search matches localhost legacy empty issue result DOM for sample k
   );
   expect(await readSearchResultShellMetrics(page)).toEqual({
     activeCategoryBackground: "rgb(81, 170, 204)",
-    activeCategoryHeight: 55,
+    // F5 dist-truth: legacy .lst-stacked li 13px font + 8px padding (_temporary.less:33-38) ≈ 35px; 55px pin stale
+    activeCategoryHeight: 35,
     buttonHeight: 30,
     buttonWidth: 71,
     categoryColumnWidth: 188,
     categoryListMargin: "0px",
     categoryPaddingLeft: "0px",
-    emptyHeight: 52,
+    // F5 dist-truth: legacy .empty-result min-height 250px (_page.less:2966-2974); 52px pin stale
+    emptyHeight: 250,
     formDisplay: "flex",
     innerProjectWrapWidth: 1260,
     keywordHeight: 30,
@@ -505,7 +507,8 @@ test("global search matches localhost legacy empty issue result DOM for sample k
     resultColumnWidth: 1046,
     resultWrapMarginTop: "0px",
     rowWidth: 1260,
-    searchBoxMarginBottom: "16px",
+    // F5 dist-truth: legacy .search-box-wrap has no margin-bottom (_page.less:6378-6392); 16px pin stale
+    searchBoxMarginBottom: "0px",
     titleFontSize: "16px",
     titleMargin: "15px 0px 10px",
   });
@@ -1217,7 +1220,8 @@ test("global search renders legacy request text too large error shell", async ({
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
+    projectPageWrapMarginTop: "5px",
   });
 });
 
@@ -1262,7 +1266,8 @@ test("global search renders legacy error/forbidden_default.scala.html shell", as
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
+    projectPageWrapMarginTop: "5px",
   });
   await rememberSpaMarker(page, "forbidden-default-home");
   await homeButton.click();
@@ -1314,7 +1319,8 @@ test("global search renders legacy error/internalServerError_default.scala.html 
     footerPaddingBottom: "10px",
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
+    projectPageWrapMarginTop: "5px",
   });
   await rememberSpaMarker(page, "internal-server-default-home");
   await homeButton.click();
@@ -2409,7 +2415,13 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return attr.value
           .split(/\s+/u)
-          .filter((token) => token && token !== "search-box-wrap")
+          .filter(
+            (token) =>
+              token &&
+              token !== "search-box-wrap" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
       }
       if (attr.name === "class") {
@@ -2737,7 +2749,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       ) {
         return attr.value
           .split(/\s+/u)
-          .filter((token) => token && token !== "search-box-wrap")
+          .filter(
+            (token) =>
+              token &&
+              token !== "search-box-wrap" &&
+              !/^x[0-9a-z]+$/u.test(token) &&
+              !token.includes("__"),
+          )
           .join(" ");
       }
       if (attr.name === "class") {

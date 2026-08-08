@@ -564,10 +564,14 @@ function ProjectIssuesBody({
       startPath: location.pathname,
       yonaIssueListHighlightedIssueId: issueId,
     };
+    // ponytail: bypass the router's patched pushState/replaceState (TanStack
+    // BrowserHistory notifies the router and would remount the list); legacy
+    // yona.twoColumnMode.js pushState keeps the list mounted (pageslide).
+    // Same pattern as pullRequests.tsx applyTwoColumnLocation.
     if (!history.state) {
-      history.pushState(nextState, title, href);
+      History.prototype.pushState.call(history, nextState, title, href);
     } else {
-      history.replaceState(nextState, title, href);
+      History.prototype.replaceState.call(history, nextState, title, href);
     }
   };
   const handleTwoColumnIssueTarget = (issueId: string, href: string, title: string) => {
@@ -702,6 +706,7 @@ function ProjectIssuesBody({
           >
             <div
               {...stylex.props(styles.newIssueAction)}
+              className="pull-right"
               data-stylex-owner="project-issues-new-issue-action"
             >
               <Link
@@ -2397,6 +2402,13 @@ function IssueSubtaskSummary({
   const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
   const parentIssueNumber = stringField(issue.parentIssueNumber, "");
   const parentIssueTitle = issue.parentIssueTitle ?? "";
+  // spread includes the dynamic width var (progressBar) — destructuring only
+  // className before dropped it, leaving the bar at width:0 like UA default
+  const subtaskBarProps = stylex.props(
+    styles.subtaskProgressBar,
+    styles.progressBar(`${percentage}%`),
+    percentage === 100 ? styles.subtaskProgressDoneBar : styles.subtaskProgressOpenBar,
+  );
 
   return (
     <>
@@ -2409,7 +2421,8 @@ function IssueSubtaskSummary({
             data-stylex-owner="project-issues-subtask-progress"
           >
             <div
-              className={`${stylex.props(styles.subtaskProgressBar, styles.progressBar(`${percentage}%`), percentage === 100 ? styles.subtaskProgressDoneBar : styles.subtaskProgressOpenBar).className} bar ${percentage === 100 ? "done" : "red"}`}
+              {...subtaskBarProps}
+              className={`${subtaskBarProps.className ?? ""} bar ${percentage === 100 ? "done" : "red"}`}
               title="Subtask"
               data-stylex-owner="project-issues-subtask-progress-bar"
             ></div>

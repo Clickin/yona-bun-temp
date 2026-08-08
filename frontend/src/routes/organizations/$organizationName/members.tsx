@@ -683,6 +683,10 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           params={{ organizationName }}
+          // TanStack STATIC_ACTIVE_PROPS overrides activeProps on matched links;
+          // a never-matching marker search keeps the active tab anchor free of
+          // aria-current/data-status (li.active marks the tab, massmail precedent).
+          search={{ __legacyOrganizationSettingMenuActiveMarker: undefined }}
           to="/organizations/$organizationName/settingform"
         >
           {t("organization.settingFrom")}
@@ -697,6 +701,7 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           params={{ organizationName }}
+          search={{ __legacyOrganizationSettingMenuActiveMarker: undefined }}
           to="/organizations/$organizationName/members"
         >
           {t("organization.member")}
@@ -711,6 +716,7 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           params={{ organizationName }}
+          search={{ __legacyOrganizationSettingMenuActiveMarker: undefined }}
           to="/organizations/$organizationName/deleteForm"
         >
           {t("organization.delete")}

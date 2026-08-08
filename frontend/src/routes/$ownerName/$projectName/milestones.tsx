@@ -463,7 +463,10 @@ function MilestoneRow({
               </span>
             </>
           ) : null}
-          <div {...sx.completion} className={sx.completion.className}>
+          <div
+            {...sx.completion}
+            className={`${sx.completion.className} pull-right`.trim()}
+          >
             <span
               {...sx.completionNumber}
               className={`${sx.completionNumber.className} number completion-rate`}

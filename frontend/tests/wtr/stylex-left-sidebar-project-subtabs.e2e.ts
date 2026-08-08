@@ -14,8 +14,8 @@ for (const viewport of [
   {
     height: 900,
     label: "desktop",
-    live: { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 147 },
-    local: { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 147 },
+    live: { listHeight: 61, listWidth: 270, wrapHeight: 72, wrapWidth: 270, wrapY: 147 },
+    local: { listHeight: 61, listWidth: 270, wrapHeight: 72, wrapWidth: 270, wrapY: 147 },
     width: 1366,
   },
   {
@@ -24,14 +24,14 @@ for (const viewport of [
     live: {
       listHeight: 31,
       listWidth: 317.6875,
-      wrapHeight: 46,
+      wrapHeight: 44,
       wrapWidth: 317.6875,
       wrapY: 120,
     },
     local: {
       listHeight: 31,
       listWidth: 317.6875,
-      wrapHeight: 46,
+      wrapHeight: 44,
       wrapWidth: 317.6875,
       wrapY: 120,
     },
@@ -80,11 +80,11 @@ for (const viewport of [
     });
     expect(viewport.live).toEqual(
       viewport.label === "desktop"
-        ? { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 147 }
+        ? { listHeight: 61, listWidth: 270, wrapHeight: 72, wrapWidth: 270, wrapY: 147 }
         : {
             listHeight: 31,
             listWidth: 317.6875,
-            wrapHeight: 46,
+            wrapHeight: 44,
             wrapWidth: 317.6875,
             wrapY: 120,
           },

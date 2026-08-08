@@ -6,6 +6,9 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$")(
     const isEmptySplat = params._splat === "" || params._splat === "/";
     const needsCanonicalRedirect = location.pathname.endsWith("/");
     if (isEmptySplat && needsCanonicalRedirect) {
+      // legacy code/CodeApp stripTrailingSlash replaces the bare pathname
+      // (query+hash dropped); the router would otherwise carry the current
+      // search/hash onto the canonical URL
       throw redirect({
         params: {
           branch: params.branch,
@@ -15,6 +18,8 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$")(
         replace: true,
         statusCode: 303,
         to: "/$ownerName/$projectName/code/$branch",
+        search: {},
+        hash: "",
       });
     }
   },

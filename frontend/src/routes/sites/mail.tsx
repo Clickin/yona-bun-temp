@@ -339,6 +339,12 @@ function SiteMailScreen({
                 activeTo="/sites/mail"
                 badgeOwner="site-mail-sidebar-badge"
                 baseLinkProps={legacySiteSidebarLinkProps}
+                linkPropsByTo={{
+                  // TanStack STATIC_ACTIVE_PROPS overrides activeProps on matched
+                  // links; a never-matching marker search keeps the active anchor
+                  // free of aria-current/data-status (massmail precedent).
+                  "/sites/mail": { search: { __legacySiteSidebarActiveMarker: undefined } },
+                }}
                 navOwner="site-mail-sidebar"
                 ownerPrefix="site-mail-sidebar"
                 showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
