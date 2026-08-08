@@ -1519,7 +1519,7 @@ export class Locator {
       if (marker && typeof marker.__wtrHandleSource === "string") {
         resolvedInit[key] = this.page
           .window()
-          .eval(`(function () { return (${marker.__wtrHandleSource})(); })()`);
+          .eval(`(function () { return (${marker.__wtrHandleSource}); })()`);
       }
     }
     // Playwright dispatches TYPED events (a "click" is a MouseEvent with
@@ -2237,9 +2237,12 @@ class PageFacade {
     await locator.dispatchEvent(type, init);
   }
 
-  async evaluateHandle(fn: () => unknown): Promise<unknown> {
+  async evaluateHandle(fn: (arg: unknown) => unknown, arg?: unknown): Promise<unknown> {
     // Lazy iframe-realm handle: resolved when passed into dispatchEvent init.
-    return { __wtrHandleSource: fn.toString() };
+    // Playwright passes fn args through; serialize the arg into the source so
+    // the iframe-realm re-evaluation receives it.
+    const serializedArg = arg === undefined ? "" : `, ${JSON.stringify(arg)}`;
+    return { __wtrHandleSource: `(${fn.toString()})(${serializedArg})` };
   }
 
   async evaluate<T>(fn: (arg: never) => T, arg?: unknown): Promise<T> {
@@ -3147,6 +3150,16 @@ expect.poll = (fn: () => unknown) => ({
     await expectPoll(
       async () => Number(await fn()) > expected,
       `poll().toBeGreaterThan(${expected})`,
+    );
+  },
+  toBeCloseTo: async (expected: number, precision?: number) => {
+    await expectPoll(
+      async () => {
+        const actual = Number(await fn());
+        const threshold = 10 ** -(precision ?? 2) / 2;
+        return Math.abs(actual - expected) < threshold;
+      },
+      `poll().toBeCloseTo(${expected})`,
     );
   },
   toHaveLength: async (length: number) => {

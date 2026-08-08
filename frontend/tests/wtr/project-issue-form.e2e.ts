@@ -317,7 +317,7 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
   expect(metrics.editorWidth).toBeCloseTo(metrics.leftWidth, 0);
   expect(metrics.editorHeight).toBeGreaterThanOrEqual(370);
   expect(metrics.editorHeight).toBeLessThanOrEqual(382);
-  expect(metrics.textareaHeight).toBeCloseTo(310, 0);
+  expect(metrics.textareaHeight).toBeCloseTo(300, 0); // F6 dist-truth: legacy _page.less:3784
   expect(metrics.uploadTop).toBeCloseTo(metrics.editorBottom, 0);
   expect(metrics.uploadWidth).toBeCloseTo(metrics.leftWidth, 0);
   expect(metrics.uploadHeight).toBeCloseTo(70, 0);
@@ -413,11 +413,13 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await expect.poll(() => body.evaluate((textarea) => textarea.selectionStart)).toBe(2);
 
   const initialTextareaHeight = (await body.boundingBox())?.height ?? 0;
-  expect(initialTextareaHeight).toBeCloseTo(310, 0);
+  // F6 dist-truth: legacy _page.less:3784 `textarea.content { height: 300px }`
+  // — the app's base textareaContentHeight is 300 (issueform.tsx:1820).
+  expect(initialTextareaHeight).toBeCloseTo(300, 0);
   await body.fill(Array.from({ length: 40 }, (_, index) => `Line ${index}`).join("\n"));
-  await expect.poll(async () => (await body.boundingBox())?.height ?? 0).toBeGreaterThan(310);
+  await expect.poll(async () => (await body.boundingBox())?.height ?? 0).toBeGreaterThan(300);
   await body.fill("Short again");
-  await expect.poll(async () => (await body.boundingBox())?.height ?? 0).toBeCloseTo(310, 0);
+  await expect.poll(async () => (await body.boundingBox())?.height ?? 0).toBeCloseTo(300, 0);
 
   await body.fill(
     `Line one\nLine two\n${CHECKLIST}\n\nSee #11 and @alice and [external](https://example.com/docs)\n\n<video class="video-js" controls><source src="${basePath}/files/preview-video" type="video/mp4"></video><script>unsafe()</script>`,

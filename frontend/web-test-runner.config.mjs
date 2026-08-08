@@ -211,6 +211,19 @@ const fixturePlugin = {
       // eslint-disable-next-line no-console
       console.log("FIXSERVE", pathname.slice(0, 80));
     }
+    if (pathname.startsWith("/yona/legacy-assets/")) {
+      // eslint-disable-next-line no-console
+      console.log("LEGACY-ASSETS-SERVE", pathname);
+      const rel = pathname
+        .replace(/^\/yona\/legacy-assets\//, "")
+        .split("/")
+        .filter(Boolean);
+      const diskPath = join(legacyDir, "public", ...rel.map((part) => part.replace(/\.\./g, "")));
+      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
+        return { body: readFileSync(diskPath), type: contentTypeFor(diskPath) };
+      }
+      return undefined;
+    }
     if (pathname.startsWith("/tests/frontend/")) {
       const rel = stripTxtSuffix(
         pathname
