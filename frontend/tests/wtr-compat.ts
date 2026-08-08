@@ -2367,6 +2367,7 @@ interface ExpectResult {
   toBe(expected: unknown, options?: { timeout?: number }): Promise<void>;
   toHaveTitle(expected: string | RegExp, options?: { timeout?: number }): Promise<void>;
   toHaveJSProperty(name: string, expected: unknown, options?: { timeout?: number }): Promise<void>;
+  toHaveAccessibleName(expected: string | RegExp, options?: { timeout?: number }): Promise<void>;
   toMatchObject(expected: Record<string, unknown>, options?: { timeout?: number }): Promise<void>;
   toEqual(expected: unknown, options?: { timeout?: number }): Promise<void>;
   toBeLessThan(expected: number, options?: { timeout?: number }): Promise<void>;
@@ -2935,6 +2936,42 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           return negate ? !matches : matches;
         },
         `toHaveAttribute(${name}) — actual: ${await describeAttribute()}`,
+        options?.timeout,
+      );
+    },
+    toHaveAccessibleName: async (expected: string | RegExp, options?: { timeout?: number }) => {
+      const actualName = async () => {
+        if (!(target instanceof Locator)) return "";
+        const element = target.currentSafe();
+        if (!element) return "";
+        // Minimal accessible-name computation matching the tests' usage:
+        // aria-label, aria-labelledby target, title, then text content.
+        const label = element.getAttribute("aria-label");
+        if (label) return label;
+        const labelledBy = element.getAttribute("aria-labelledby");
+        if (labelledBy) {
+          const ref = element.ownerDocument.getElementById(labelledBy);
+          if (ref) return ref.textContent ?? "";
+        }
+        const title = element.getAttribute("title");
+        if (title) return title;
+        return (element.textContent ?? "").trim();
+      };
+      const describeName = async () => {
+        try {
+          return String(await actualName());
+        } catch (error) {
+          return `(unavailable: ${error instanceof Error ? error.message : String(error)})`;
+        }
+      };
+      await expectPoll(
+        async () => {
+          const actual = await actualName();
+          return typeof expected === "string"
+            ? actual === expected
+            : expected.test(actual);
+        },
+        `toHaveAccessibleName(${String(expected)}) — actual: ${await describeName()}`,
         options?.timeout,
       );
     },

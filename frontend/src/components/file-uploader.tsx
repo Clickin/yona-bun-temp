@@ -303,6 +303,7 @@ export type BoardPostFileUploaderProps = {
   btnWrapStyleProps?: MarkdownEditorStyleProps;
   plainStyleProps?: MarkdownEditorStyleProps;
   pasteHelpStyleProps?: MarkdownEditorStyleProps;
+  pasteHelpFixedStyleProps?: MarkdownEditorStyleProps;
   attachedFilesStyleProps?: MarkdownEditorStyleProps;
   helpClassName: string;
   helpStyleProps?: MarkdownEditorStyleProps;
@@ -324,6 +325,7 @@ export function BoardPostFileUploader({
   btnWrapStyleProps,
   plainStyleProps,
   pasteHelpStyleProps,
+  pasteHelpFixedStyleProps,
   attachedFilesStyleProps,
   helpClassName,
   helpStyleProps,
@@ -347,6 +349,7 @@ export function BoardPostFileUploader({
       plainStyleProps={plainStyleProps}
       plainOwner={owners.plain}
       pasteHelpStyleProps={pasteHelpStyleProps}
+      pasteHelpFixedStyleProps={pasteHelpFixedStyleProps}
       pasteHelpOwner={owners.pasteHelp}
       attachedFilesClassName={`attached-files unstyled ${attachedFilesStyleProps?.className ?? ""}`.trim()}
       attachedFilesStyleProps={attachedFilesStyleProps}
