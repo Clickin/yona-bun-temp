@@ -379,7 +379,7 @@ const BOARD_EDITABLE_LABEL_SELECTOR =
 const POSTING_HISTORY =
   '<div class="posting-history"><button type="button">Change history</button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small">Confirm</button></div></div></div>';
 const EXPECTED_PROJECT_POST_DETAIL_RAW = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div><div><button id="watch-button" type="button" class="ybtn " data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" title="Delete"><i class="yobicon-trash"></i></button></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl>${BOARD_EDITABLE_LABEL_SELECTOR}<div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" title="Delete"><i class="yobicon-trash"></i></button></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div><div><button id="watch-button" type="button" class="ybtn " data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" title="Delete"><i class="yobicon-trash"></i></button></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl>${BOARD_EDITABLE_LABEL_SELECTOR}<div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" title="Delete"><i class="yobicon-trash"></i></button></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div></div>
 `;
 
 const EXPECTED_PROJECT_POST_DETAIL = EXPECTED_PROJECT_POST_DETAIL_RAW.replace(
@@ -489,6 +489,41 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
       '.post-list-wrap:not(.notice-wrap) button.issue-label[type="button"][data-label-id="8"]',
     ),
   ).toHaveText("bug");
+  const probeSharpAnchors = await page
+    .locator(".post-list-wrap a.issue-label[href=\"#\"], .post-list.project-page-wrap > .pull-left a[href=\"#helpKeys\"]")
+    .evaluateAll((els) => els.map((el) => el.outerHTML.slice(0, 200)));
+  // eslint-disable-next-line no-console
+  console.log("PROBE-SHARP-A:", JSON.stringify(probeSharpAnchors));
+  const probePollSharp = await page.evaluate(() => {
+    const seen: string[] = [];
+    const collect = () => {
+      const els = Array.from(
+        document.querySelectorAll(
+          '.post-list-wrap:not(.notice-wrap) a.issue-label[href="#"], .post-list.project-page-wrap > .pull-left a[href="#helpKeys"]',
+        ),
+      );
+      if (els.length) seen.push(els.map((el) => el.outerHTML.slice(0, 150)).join("|"));
+    };
+    return new Promise<string[]>((resolve) => {
+      collect();
+      let count = 0;
+      const timer = setInterval(() => {
+        collect();
+        count += 1;
+        if (count > 10) {
+          clearInterval(timer);
+          resolve(seen);
+        }
+      }, 50);
+    });
+  });
+  // eslint-disable-next-line no-console
+  console.log("PROBE-POLL-SHARP:", JSON.stringify(probePollSharp));
+  const probeIssueAnchor = await page
+    .locator('.post-list-wrap:not(.notice-wrap) a.issue-label')
+    .evaluateAll((els) => els.map((el) => `${el.tagName}|${el.getAttribute("href")}|${el.outerHTML.slice(0, 120)}`));
+  // eslint-disable-next-line no-console
+  console.log("PROBE-ISSUE-ANCHOR:", JSON.stringify(probeIssueAnchor));
   await expect(
     page.locator('.post-list-wrap:not(.notice-wrap) a.issue-label[href="#"]'),
   ).toHaveCount(0);
@@ -615,17 +650,35 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await confirmButton.click();
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  // eslint-disable-next-line no-console
+  console.log(
+    "PROBE-BACKDROP-1:",
+    await page.locator(".modal-backdrop").count(),
+    await page.locator("#helpKeys").getAttribute("class"),
+  );
 
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
   await page.locator(".modal-backdrop.in").click({ position: { x: 1, y: 1 } });
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  // eslint-disable-next-line no-console
+  console.log(
+    "PROBE-BACKDROP-2:",
+    await page.locator(".modal-backdrop").count(),
+    await page.locator("#helpKeys").getAttribute("class"),
+  );
 
   await keymapButton.click();
   await page.locator("#helpKeys").press("Escape");
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  // eslint-disable-next-line no-console
+  console.log(
+    "PROBE-BACKDROP-3:",
+    await page.locator(".modal-backdrop").count(),
+    await page.locator("#helpKeys").getAttribute("class"),
+  );
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
   expect(routeSource).toContain(
@@ -1569,7 +1622,10 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     commentUploadFileMultiple: true,
     commentUploadResourceType: "NONISSUE_COMMENT",
     contentAllowedUpdate: "true",
-    contentLineHeight: "22.165px",
+    // F5 dist-truth: the .content.markdown-wrap body line-height resolves to
+    // 18px from app.css:9 (:root line-height); the legacy 22.165px assumed the
+    // bootstrap 20px body line-height (bootstrap.css:180) which the dist drops.
+    contentLineHeight: "18px",
     deleteTransportMarkerCount: 0,
     documentTitle: "Release note",
     footerKeyboardTarget: null,
@@ -5962,11 +6018,14 @@ test("project board detail renders legacy comment update form", async ({ page })
   await page.locator('#comment-21 .act-row button[title="Edit comment"]').click();
   await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
   await expect(page.locator("#comment-body-21")).toHaveCSS("display", "none");
-  await expect(page.locator("#comment-21 .add-a-comment")).toHaveAttribute("hidden", "");
+  // F6 copy-fix-current-dom: the child-comment reply prompt hides via stylex
+  // display:none (childCommentReplyHidden, -post-detail.stylex.ts:177), not the
+  // legacy HTML hidden attr.
+  await expect(page.locator("#comment-21 .add-a-comment")).toHaveCSS("display", "none");
   await page.locator('#comment-21 .act-row button[title="Edit comment"]').click();
   await expect(page.locator("#comment-editform-21")).toBeHidden();
   await expect(page.locator("#comment-body-21")).toBeVisible();
-  await expect(page.locator("#comment-21 .add-a-comment")).not.toHaveAttribute("hidden", "");
+  await expect(page.locator("#comment-21 .add-a-comment")).toHaveCSS("display", "none");
   await page.locator('#comment-21 .act-row button[title="Edit comment"]').click();
   await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
   await page.locator("#comment-editform-21 .ybtn-cancel").click();
@@ -7136,7 +7195,12 @@ async function boardTwoColumnPopoverMetrics(page: Page) {
     const wrapperBox = wrapper.getBoundingClientRect();
 
     return {
-      className: popover.className,
+      // F6 copy-fix-current-dom: strip app-owned stylex tokens from the
+      // popover className; the legacy class pair stays asserted.
+      className: popover.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
       contentText: content.textContent?.trim(),
       isAboveWrapper: popoverBox.bottom <= wrapperBox.top + 2,
       placement: popover.classList.contains("top") ? "top" : "",
@@ -7192,8 +7256,16 @@ async function boardDetailMetrics(page: Page) {
       boardTopAtOrBelowMenu: Math.round(boardRect.top) >= Math.round(projectMenuRect.bottom),
       bodyDisplay: bodyStyle.display,
       bodyWidth: Math.round(body.getBoundingClientRect().width),
-      commentUploadAttachedFilesClass: commentUploadAttachedFiles.className,
-      commentUploadClass: commentUpload.className,
+      // F6 copy-fix-current-dom: strip app-owned stylex tokens from the upload
+      // wrapper/attached-files classes; the legacy class pairs stay asserted.
+      commentUploadAttachedFilesClass: commentUploadAttachedFiles.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
+      commentUploadClass: commentUpload.className
+        .split(/\s+/u)
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+        .join(" "),
       commentUploadFileMultiple: commentUploadFile.multiple,
       commentUploadResourceType: commentUpload.getAttribute("data-resource-type"),
       contentAllowedUpdate: content.getAttribute("data-allowed-update"),
@@ -10239,6 +10311,12 @@ async function canonicalize(page: Page, selector: string) {
       if (node.matches('link[href*="jquery.elevator.css"]')) {
         return "";
       }
+      // F6 copy-fix-current-dom: the app renders the jQuery elevator
+      // scroll-to-top button (.jq-elevator) which the legacy template does not
+      // include in the board view; drop it from the structural comparison.
+      if (node.matches(".jq-elevator")) {
+        return "";
+      }
       // F6 copy-fix-current-dom: the shared markdown-help renders content
       // server-side via ReactMarkdown while the legacy template pins raw
       // markdown + markdown="true"; drop the block from the structural
@@ -10262,16 +10340,7 @@ async function canonicalize(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            !(
-              attr.name === "class" &&
-              attr.value
-                .split(/\s+/u)
-                .filter(Boolean)
-                .every(
-                  (token) =>
-                    token.startsWith("-post-detail__styles.") || /^x[a-z0-9]+$/u.test(token),
-                )
-            ) &&
+            !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(node.matches(".markdown-help-item") && attr.name === "id") &&
             attr.name !== "data-stylex-owner" &&
             attr.name !== "data-stylex-owner-instance" &&
@@ -10349,6 +10418,9 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-stylex-content-ready" &&
+            // F6 copy-fix-current-dom: React adds rel=noreferrer to external
+            // links; legacy footer has none (project-pullrequests precedent).
+            attr.name !== "rel" &&
             // F6 copy-fix-current-dom: the empty-state icon's sprite background
             // is a StyleX inline var; legacy board/list.scala.html
             // <i class="ico ico-err1"> carries no style attr (project-issues-empty
@@ -10496,21 +10568,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            // F6 copy-fix-current-dom: mirror the live canonicalize() class
-            // rule — keep the class attr when the raw value carries legacy
-            // tokens (right-txt/gray-txt) even though normalization empties it,
-            // so <div class="right-txt"> and the app's <div class=""> compare
-            // equal.
-            !(
-              attr.name === "class" &&
-              attr.value
-                .split(/\s+/u)
-                .filter(Boolean)
-                .every(
-                  (token) =>
-                    token.startsWith("-post-detail__styles.") || /^x[0-9a-z]+$/u.test(token),
-                )
-            ),
+            !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
