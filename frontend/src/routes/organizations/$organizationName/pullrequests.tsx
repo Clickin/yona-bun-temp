@@ -149,7 +149,11 @@ function OrganizationPullRequestsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div {...sx.page} data-stylex-owner="organization-pullrequests-page">
+      <div
+        {...sx.page}
+        className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
+        data-stylex-owner="organization-pullrequests-page"
+      >
         <div data-stylex-owner="organization-pullrequests-shell">
           <div className="row-fluid cb">
             <div {...sx.searchColumn} data-stylex-owner="organization-pullrequests-search-column">

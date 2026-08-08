@@ -98,7 +98,11 @@ function ProjectWatchersBody({
           <strong>{t("project.watcher.title")}</strong>
         </h4>
         <p>{t("project.watcher.description")}</p>
-        <ul data-stylex-owner="project-watchers-list" {...stylex.props(styles.memberList)}>
+        <ul
+          data-stylex-owner="project-watchers-list"
+          {...stylex.props(styles.memberList)}
+          className={`${stylex.props(styles.memberList).className} members project row-fluid`}
+        >
           {watchers.watchers.map((watcher) => {
             const loginId = stringField(watcher.loginId, "");
             return (
@@ -106,6 +110,7 @@ function ProjectWatchersBody({
                 data-stylex-owner="project-watchers-member"
                 key={stringField(watcher.userId, loginId)}
                 {...stylex.props(styles.member)}
+                className={`${stylex.props(styles.member).className} member span6 span-hard-wrap`}
               >
                 <Link
                   to="/$user"

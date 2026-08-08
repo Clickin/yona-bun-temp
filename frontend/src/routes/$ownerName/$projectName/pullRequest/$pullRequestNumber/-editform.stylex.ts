@@ -53,7 +53,11 @@ export const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: "1px",
     color: pullRequestEditColors.inputText,
-    width: "97%",
+    // D1 dist-truth: legacy git/edit.scala.html:92 title input is plain
+    // bootstrap input[type=text] (width: 206px, app.css D1 cascade); the old
+    // 97% content-box width + padding/borders overflowed the 390px form
+    // (title.right 392.3 > form.right 390).
+    width: "206px",
   },
   editorWrap: { position: "relative" },
   markdownEditorWrapper: { marginTop: "10px" },

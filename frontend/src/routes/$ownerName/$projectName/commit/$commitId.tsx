@@ -37,6 +37,7 @@ const sx = {
   codediffLayout: stylex.props(styles.codediffLayout),
   diffsLayout: stylex.props(styles.diffsLayout),
   reviewPanel: stylex.props(styles.reviewPanel),
+  reviewPanelCollapsed: stylex.props(styles.reviewPanelCollapsed),
   reviewContainer: stylex.props(styles.reviewContainer),
   page: stylex.props(styles.page),
   browse: stylex.props(styles.browse),
@@ -374,7 +375,11 @@ function ProjectCommitDetailBody({
                 className={`${sx.diffsLayout.className} diffs-wrap`}
                 data-stylex-owner="commit-detail-diffs"
               >
-                <div {...sx.commitInfo} data-stylex-owner="commit-detail-info">
+                <div
+                  {...sx.commitInfo}
+                  className={`${sx.commitInfo.className} commitInfo`}
+                  data-stylex-owner="commit-detail-info"
+                >
                   <div
                     {...sx.commitAuthor}
                     className={`${sx.commitAuthor.className} commitAuthor`}
@@ -534,8 +539,12 @@ function ProjectCommitDetailBody({
               </div>
 
               <div
-                {...sx.reviewPanel}
-                className={`${sx.reviewPanel.className} review-wrap span-hard-wrap`}
+                {...(reviewCardsCollapsed ? sx.reviewPanelCollapsed : sx.reviewPanel)}
+                className={`${
+                  reviewCardsCollapsed
+                    ? sx.reviewPanelCollapsed.className
+                    : sx.reviewPanel.className
+                } review-wrap span-hard-wrap`}
                 data-stylex-owner="commit-detail-review-panel"
               >
                 <div
@@ -1861,11 +1870,19 @@ function CommitMessage({ message, shortMessage }: { message: string; shortMessag
   const detail = lines.slice(1).join("\n");
   return (
     <>
-      <span {...sx.commitMessage} data-stylex-owner="commit-detail-short-message">
+      <span
+        {...sx.commitMessage}
+        className={`${sx.commitMessage.className} commitMsg short`}
+        data-stylex-owner="commit-detail-short-message"
+      >
         {shortMessage || t("code.commitMsg.empty")}
       </span>
       {detail ? (
-        <pre {...sx.commitDescription} data-stylex-owner="commit-detail-description">
+        <pre
+          {...sx.commitDescription}
+          className={`${sx.commitDescription.className} commitMsg desc`}
+          data-stylex-owner="commit-detail-description"
+        >
           {detail}
         </pre>
       ) : null}
@@ -2075,6 +2092,7 @@ function Editor({
               id={`editor-${textareaName}-${wrapId}`}
               defaultValue={value}
               {...(editorMode === "code-review-body" ? sx.reviewTextarea : {})}
+              {...(editorMode === "code-review-body" ? { style: { height: "100px" } } : {})}
               data-stylex-owner={
                 editorMode === "code-review-body" ? "commit-detail-review-textarea" : undefined
               }

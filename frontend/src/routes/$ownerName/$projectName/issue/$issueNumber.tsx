@@ -979,7 +979,7 @@ function IssueDetailBody({
                     </LegacyHoverPopover>
                   ) : null}
                   <span
-                    className={`${stylex.props(styles.mobileNewSubtask).className} project-btn-item hide show-in-mobile-inline`}
+                    className={`${stylex.props(styles.mobileNewSubtask).className} project-btn-item hide show-in-mobile-inline ml4`}
                     data-stylex-owner="project-issue-detail-mobile-new-subtask"
                   >
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
@@ -1673,7 +1673,7 @@ function IssueVoterListDialog({
       <div
         ref={modalRef}
         id={id}
-        className={`${stylex.props(styles.modal).className} ${stylex.props(styles.votersModalVisible).className ?? ""} ${open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}`.trim()}
+        className={`${stylex.props(styles.modal).className} ${open ? `${stylex.props(styles.votersModalVisible).className ?? ""} modal hide voters-dialog in` : "modal hide voters-dialog"}`.trim()}
         data-stylex-owner="issue-detail-voters-modal"
         {...(open ? { style: stylex.props(styles.votersModalVisible).style } : {})}
         tabIndex={open ? -1 : undefined}
@@ -2264,10 +2264,10 @@ function LegacyLabelControl({
           className={`select2-search-field ${stylex.props(styles.labelSearchField).className}`}
         >
           <input
-            className="select2-input"
+            {...stylex.props(styles.labelSearchInput)}
+            className={`${stylex.props(styles.labelSearchInput).className} select2-input`}
             aria-label={t("label.select")}
             autoComplete="off"
-            {...stylex.props(styles.labelSearchInput)}
             data-stylex-owner="project-issue-detail-label-search-input"
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
@@ -4065,8 +4065,8 @@ function CommentUpdateForm({
   return (
     <div
       id={`comment-editform-${commentId}`}
-      className="comment-update-form"
       {...(formOpen ? stylex.props(styles.replyVisible) : {})}
+      className={`${formOpen ? `${stylex.props(styles.replyVisible).className} ` : ""}comment-update-form`}
     >
       <form
         action={prefixBasePath(

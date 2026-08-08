@@ -2474,13 +2474,20 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         if (!element) return "";
         return target.page.window().getComputedStyle(element).getPropertyValue(name).trim();
       };
+      const describeActual = async () => {
+        try {
+          return String(await actualValue());
+        } catch (error) {
+          return `(unavailable: ${error instanceof Error ? error.message : String(error)})`;
+        }
+      };
       await expectPoll(
         async () => {
           const actual = await actualValue();
           const matches = typeof value === "string" ? actual === value : value.test(actual);
           return negate ? !matches : matches;
         },
-        `toHaveCSS(${name}) — actual: ${await actualValue()}`,
+        `toHaveCSS(${name}) — actual: ${await describeActual()}`,
         options?.timeout,
       );
     },
@@ -2856,6 +2863,13 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         }
         return null;
       };
+      const describeAttribute = async () => {
+        try {
+          return String(await actualValue());
+        } catch (error) {
+          return `(unavailable: ${error instanceof Error ? error.message : String(error)})`;
+        }
+      };
       await expectPoll(
         async () => {
           const actual = await actualValue();
@@ -2871,7 +2885,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
                     : String(actual) === String(expected);
           return negate ? !matches : matches;
         },
-        `toHaveAttribute(${name}) — actual: ${await actualValue()}`,
+        `toHaveAttribute(${name}) — actual: ${await describeAttribute()}`,
         options?.timeout,
       );
     },
@@ -2898,12 +2912,19 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
     },
     toHaveCount: async (count, options) => {
       const actualCount = async () => (target instanceof Locator ? target.count() : 0);
+      const describeCount = async () => {
+        try {
+          return String(await actualCount());
+        } catch (error) {
+          return `(unavailable: ${error instanceof Error ? error.message : String(error)})`;
+        }
+      };
       await expectPoll(
         async () => {
           const matches = (await actualCount()) === count;
           return negate ? !matches : matches;
         },
-        `toHaveCount(${count}) — actual: ${await actualCount()}`,
+        `toHaveCount(${count}) — actual: ${await describeCount()}`,
         options?.timeout,
       );
     },
@@ -2939,12 +2960,19 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         }
         return value;
       };
+      const describeProperty = async () => {
+        try {
+          return String(await actualValue());
+        } catch (error) {
+          return `(unavailable: ${error instanceof Error ? error.message : String(error)})`;
+        }
+      };
       await expectPoll(
         async () => {
           const matches = (await actualValue()) === expected;
           return negate ? !matches : matches;
         },
-        `toHaveJSProperty(${name}) — actual: ${String(await actualValue())}`,
+        `toHaveJSProperty(${name}) — actual: ${await describeProperty()}`,
         options?.timeout,
       );
     },
@@ -2965,13 +2993,22 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
     },
     toHaveValue: async (value: string | RegExp, options?: { timeout?: number }) => {
       const actualValue = async () => (target instanceof Locator ? target.inputValue() : "");
+      const describeActual = async () => {
+        try {
+          return String(await actualValue());
+        } catch (error) {
+          // Transient element absence must not fail the matcher before the
+          // retry loop polls — report it in the message instead.
+          return `(unavailable: ${error instanceof Error ? error.message : String(error)})`;
+        }
+      };
       await expectPoll(
         async () => {
           const actual = await actualValue();
           const matches = typeof value === "string" ? actual === value : value.test(actual);
           return negate ? !matches : matches;
         },
-        `toHaveValue(${String(value)}) — actual: ${await actualValue()}`,
+        `toHaveValue(${String(value)}) — actual: ${await describeActual()}`,
         options?.timeout,
       );
     },

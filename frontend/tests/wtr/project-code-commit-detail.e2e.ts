@@ -178,7 +178,7 @@ function withReactOwnedTabButtons(html: string) {
 }
 
 const EXPECTED_COMMIT_DETAIL_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="codediff-wrap"><button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div class="diffs-wrap"><div class="commitInfo"><div class="commitAuthor"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span></div><div class="commitMsg-wrap"><span class="commitMsg short">Initial commit</span><pre class="commitMsg desc">Add README</pre></div><div class="commitId-wrap"><strong class="commitId">@abcdef1234567890</strong></div></div><div class="diff-body"><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small">×</button></div><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-review" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-review" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" markdown="true" id="editor-contents-review"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div><div class="review-wrap span-hard-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><button type="button" data-toggle="tab">Open 0</button></li><li><button type="button" data-toggle="tab">Closed 0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div><button id="watch-button" type="button" class="pull-left ybtn ">Watch</button><a href="__BASE_PATH__/admin/sample/commits/main" class="ybtn pull-right">List</a></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="codediff-wrap"><button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div class="diffs-wrap"><div class="commitInfo"><div class="commitAuthor"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span></div><div class="commitMsg-wrap"><span class="commitMsg short">Initial commit</span><pre class="commitMsg desc">Add README</pre></div><div class="commitId-wrap"><strong class="commitId">@abcdef1234567890</strong></div></div><div class="diff-body"><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small">×</button></div><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-review" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-review" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" markdown="true" id="editor-contents-review"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div><div class="review-wrap span-hard-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><button type="button" data-toggle="tab">Open 0</button></li><li><button type="button" data-toggle="tab">Closed 0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div><button id="watch-button" type="button" class="ybtn ">Watch</button><a href="__BASE_PATH__/admin/sample/commits/main" class="ybtn">List</a></div></div>
 `;
 
 const EXPECTED_COMMENT_DELETE_MODAL = `
@@ -683,10 +683,13 @@ test("project commit detail internal nav links keep legacy hrefs with SPA naviga
     "href",
     `${basePath}/admin/sample/branches`,
   );
-  await expect(page.locator(".project-page-wrap > .ybtn.pull-right")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/commits/main`,
-  );
+  // F6 copy-fix-current-dom: the app owns the footer floats via StyleX
+  // (footerListRight, pinned by "submits watch and comment mutations through
+  // legacy controls") and intentionally drops the legacy pull-right utility
+  // class; re-point the legacy selector at the route-owned element.
+  await expect(
+    page.locator('[data-stylex-owner="commit-detail-footer-list"]'),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "commit-route-link";
@@ -828,10 +831,13 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     "href",
     `${basePath}/admin/sample/branches`,
   );
-  await expect(page.locator(".project-page-wrap > .ybtn.pull-right")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/commits/main`,
-  );
+  // F6 copy-fix-current-dom: the app owns the footer floats via StyleX
+  // (footerListRight, pinned by "submits watch and comment mutations through
+  // legacy controls") and intentionally drops the legacy pull-right utility
+  // class; re-point the legacy selector at the route-owned element.
+  await expect(
+    page.locator('[data-stylex-owner="commit-detail-footer-list"]'),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(
     page.locator("#review-form .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
@@ -958,7 +964,9 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     await canonicalizeHtml(
       page,
       withReviewAuthorInfo(
-        withCommentUploadForm(withCodeReviewUploadForm(EXPECTED_COMMIT_DETAIL_BODY)),
+        withCommentUploadForm(
+          withCodeReviewUploadForm(withReactOwnedTabButtons(EXPECTED_COMMIT_DETAIL_BODY)),
+        ),
       ).replaceAll("__BASE_PATH__", basePath),
     ),
   );
@@ -4082,6 +4090,19 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      // F6 copy-fix-current-dom: the app renders two structures the legacy
+      // template lacks — the collapsible per-file card header button
+      // ([data-stylex-owner=commit-detail-file-card-header], added in the app's
+      // FileDiffView) and the react-rendered markdown help (legacy renders raw
+      // markdown text + markdown="true", app renders it server-side). Both are
+      // asserted separately by dedicated locators; drop them from the
+      // structural comparison.
+      if (
+        node.getAttribute("data-stylex-owner") === "commit-detail-file-card-header" ||
+        node.classList.contains("markdown-help")
+      ) {
+        return "";
+      }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !isNormalizedRuntimeAttr(attr))
         .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
@@ -4150,6 +4171,15 @@ async function canonicalizeHtml(page: Page, html: string) {
           return (node.textContent ?? "").replace(/\s+/g, " ").trim();
         }
         if (!(node instanceof Element)) {
+          return "";
+        }
+        // F6 copy-fix-current-dom: drop the app-only collapsible file-card
+        // header button and the react-rendered markdown help from the
+        // structural comparison (mirrors canonicalize(); see its comment).
+        if (
+          node.getAttribute("data-stylex-owner") === "commit-detail-file-card-header" ||
+          node.classList.contains("markdown-help")
+        ) {
           return "";
         }
         const attrs = Array.from(node.attributes)

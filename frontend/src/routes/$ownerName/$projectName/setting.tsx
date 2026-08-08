@@ -1123,8 +1123,14 @@ function ProjectSettingBody({
   );
 
   return renderProjectPage ? (
-    <div {...sx.page} data-stylex-owner="project-setting-page">
-      <div data-stylex-owner="project-setting-shell">{settingContent}</div>
+    <div
+      {...sx.page}
+      className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
+      data-stylex-owner="project-setting-page"
+    >
+      <div className="project-page-wrap" data-stylex-owner="project-setting-shell">
+        {settingContent}
+      </div>
     </div>
   ) : (
     settingContent
@@ -1450,6 +1456,7 @@ function ProjectSettingMenu({
           stylex.props(showCode ? styles.changeVcsMenuVisible : styles.changeVcsMenuHidden)
             .className
         }`}
+        style={showCode ? undefined : { display: "none" }}
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link

@@ -48,7 +48,11 @@ export const styles = stylex.create({
     textAlign: "right",
     color: "rgba(0, 0, 0, 0.3)",
     whiteSpace: "nowrap",
-    borderRight: "1px solid #e5e5e5",
+    // longhand: the stylex build drops the borderRight shorthand (atomic
+    // compile), leaving .linenum without its legacy 1px #e5e5e5 divider.
+    borderRightWidth: "1px",
+    borderRightStyle: "solid",
+    borderRightColor: "#e5e5e5",
     width: "50px",
     padding: "0px 3px",
     userSelect: "none",
@@ -216,12 +220,15 @@ export const styles = stylex.create({
   commitAuthorAgo: { marginLeft: "5px", color: "#bbb" },
   commitAuthorAvatar: { marginRight: "5px" },
   commitIdWrap: { padding: "10px 5px" },
+  // wave-33 retention: legacy .commitId has NO float (_page.less:4595-4597);
+  // the app's float:right collapsed .commitId-wrap to its padding (wrapHeight
+  // 20 vs legacy 41) and pushed the id outside the wrap. Dropped to match legacy.
   commitId: {
-    float: "right",
     color: "#51aacc",
     marginTop: "5px",
     fontFamily: 'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace',
   },
+  reviewPanelCollapsed: { display: "none" },
   commitMessage: { color: commitDetailColors.commitText },
   commitDescription: {
     backgroundColor: commitDetailColors.diffSurface,

@@ -90,9 +90,14 @@ function ProjectStatisticsRouteShell({
       <title>{`statistics - ${ownerName}/${projectName}`}</title>
       <div
         {...stylex.props(styles.pageWrapOuter)}
+        className={`${stylex.props(styles.pageWrapOuter).className} page-wrap-outer`}
         data-stylex-owner="project-statistics-page-outer"
       >
-        <div {...stylex.props(styles.projectPageWrap)} data-stylex-owner="project-statistics-page">
+        <div
+          {...stylex.props(styles.projectPageWrap)}
+          className={`${stylex.props(styles.projectPageWrap).className} project-page-wrap`}
+          data-stylex-owner="project-statistics-page"
+        >
           <h1 {...stylex.props(styles.heading)}>Under Construction</h1>
         </div>
       </div>

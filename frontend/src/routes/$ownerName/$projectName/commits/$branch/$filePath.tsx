@@ -142,7 +142,11 @@ function ProjectCodeFileHistoryBody({
   const historyPath = projectRoutePath(ownerName, projectName, "commits", encodedBranch, filePath);
 
   return (
-    <div {...sx.page} data-stylex-owner="commit-file-page">
+    <div
+      {...sx.page}
+      className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
+      data-stylex-owner="commit-file-page"
+    >
       <div className="project-page-wrap">
         <div {...sx.repo} data-stylex-owner="commit-file-repo">
           <div data-stylex-owner="commit-file-browse">

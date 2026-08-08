@@ -1168,6 +1168,12 @@
     padding: 0 5px 0 0;
   }
 
+  /* source:_page.less:7593-7595 — .no-border-at-child .item-count-groups
+     (child issue rows render the legacy no-border-at-child wrapper) */
+  .no-border-at-child .item-count-groups {
+    border: none !important;
+  }
+
   /* source:_page.less:1821 + 3748-3764 — issue list shell + search option rows */
   .issue-list-wrap {
     clear: both;
@@ -1380,6 +1386,10 @@
   }
 
   @media (width <= 767px) {
+    .row-fluid [class*="span"] {
+      margin-left: 0;
+    }
+
     .modal {
       left: inherit !important;
       margin-left: inherit !important;
@@ -2459,6 +2469,11 @@
       padding: 0 !important;
     }
 
+    /* source:_responsive.less:40-42 — @media (max-width:720px) .board-comment-wrap */
+    .board-comment-wrap {
+      padding: 2px;
+    }
+
     .page-wrap-outer:has(.secret-wrap) .page-wrap {
       width: 100%;
     }
@@ -2875,6 +2890,66 @@
     line-height: 30px;
   }
 
+  /* source:_yobiUI.less:193-267 — .nbtn cascade (file upload buttons etc.);
+     the fake-file button must stay narrow enough to share the attach-wrap
+     line with the droppable hint (mobile upload-wrap height parity). */
+  .nbtn {
+    text-align: center;
+    font-weight: bold;
+    font-size: 11px;
+    line-height: 18px;
+    border: 0;
+    padding: 0;
+    margin-right: 5px;
+    white-space: nowrap;
+  }
+
+  a.nbtn,
+  div.nbtn,
+  span.nbtn,
+  p.nbtn {
+    vertical-align: middle;
+  }
+
+  a.nbtn.small,
+  div.nbtn.small,
+  span.nbtn.small,
+  p.nbtn.small {
+    padding: 3px 10px;
+  }
+
+  a.nbtn.medium,
+  div.nbtn.medium,
+  span.nbtn.medium,
+  p.nbtn.medium {
+    padding: 6px 20px;
+  }
+
+  .nbtn.white {
+    color: #222;
+    background-color: #fff;
+  }
+
+  /* source:_yobiUI.less:305-320 — .fake-file-wrap + input.file */
+  .fake-file-wrap {
+    position: relative;
+    display: block;
+    clear: both;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .fake-file-wrap .file {
+    position: absolute;
+    z-index: 2;
+    cursor: pointer;
+    top: 0;
+    left: 5px;
+    min-width: 100px;
+    width: 100%;
+    opacity: 0;
+  }
+
   .upload-wrap .attached-files {
     display: none;
     padding: 15px 0;
@@ -3029,6 +3104,20 @@
     /* legacy truth: _responsive.less:553-687 `@media all` unconstrained override
        (compiled after _page.less:3561) pins 15px 0 0 10px at every width */
     padding: 15px 0 0 10px;
+  }
+
+  /* legacy truth: _responsive.less:611-617 `@media all` unconstrained override —
+     page content is inset 10px per side and the project page margin collapses
+     to 5px at every width (compiled after _page.less:617-730) */
+  .page-wrap-outer {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .project-page-wrap {
+    width: 100%;
+    margin-top: 5px !important;
   }
 
   .issue-info dl {

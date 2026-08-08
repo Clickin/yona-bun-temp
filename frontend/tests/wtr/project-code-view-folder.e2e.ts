@@ -770,6 +770,12 @@ async function canonicalize(page: Page, selector: string) {
       if (node.matches(".select2-container")) {
         return "";
       }
+      // App-owned React enhancement (270ee07ff find-file/grep panel) with its
+      // own parity spec (project-code-search.e2e.ts); legacy code/view.scala.html
+      // has no such panel — normalize it out of the legacy-DOM compare.
+      if (node.matches('[data-testid="code-search-panel"]')) {
+        return "";
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>

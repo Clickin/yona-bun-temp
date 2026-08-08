@@ -136,7 +136,11 @@ function ProjectCodeCompareBody({
         className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
         data-stylex-owner="project-compare-browse"
       >
-        <p {...sx.commitInfo} data-stylex-owner="project-compare-commit-info">
+        <p
+          {...sx.commitInfo}
+          className={`commitInfo ${sx.commitInfo.className ?? ""}`.trim()}
+          data-stylex-owner="project-compare-commit-info"
+        >
           <strong className="commitId">
             @{commitA}..{commitB}
           </strong>

@@ -325,7 +325,11 @@ function GlobalSearchSuccessBody({
                 className={`span10 ${stylex.props(styles.globalSearchResultsColumn).className}`}
                 data-stylex-owner="global-search-results-column"
               >
-                <div {...stylex.props(styles.searchBox)} data-stylex-owner="global-search-box-wrap">
+                <div
+                  {...stylex.props(styles.searchBox)}
+                  className={`search-box-wrap ${stylex.props(styles.searchBox).className ?? ""}`.trim()}
+                  data-stylex-owner="global-search-box-wrap"
+                >
                   <form
                     id="searchInnerForm"
                     method="get"

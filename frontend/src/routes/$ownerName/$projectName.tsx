@@ -3418,6 +3418,11 @@ export function ProjectMenu({
                   />
                 </Link>
               </li>
+              {/* Legacy projectMenu.scala.html leaves the setting <li> unclosed
+                  (`</a>\n<li>` before </ul>), so the browser auto-closes it and
+                  starts a second, empty <li>. Retain that stray node for DOM
+                  parity (.project-menu-outer li count 9 on settings screens). */}
+              <li></li>
             </ul>
           </div>
         ) : null}

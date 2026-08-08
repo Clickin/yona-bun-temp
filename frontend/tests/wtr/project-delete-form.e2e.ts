@@ -715,7 +715,11 @@ test("project delete settings tab follows legacy enrolled user badge and hidden 
   await expect(page.locator(".project-setting a .project-menu-count")).toHaveText("2");
 
   const changeVcsTab = page.locator("#subMenuProjectChangeVCS");
-  await expect(changeVcsTab).toHaveAttribute("style", "display: none;");
+  // F6 copy-fix-current-dom: app retains the legacy hidden VCS branch via an
+  // inline style on the <li> (legacy partial_settingmenu.scala.html:46
+  // style="@if(!project.menuSetting.code){display:none;}"); React serializes
+  // style={{display:"none"}} as "display: none" (no trailing semicolon).
+  await expect(changeVcsTab).toHaveAttribute("style", "display: none");
   await expect(changeVcsTab).toBeHidden();
   await expect(changeVcsTab.locator("a")).toHaveAttribute(
     "href",

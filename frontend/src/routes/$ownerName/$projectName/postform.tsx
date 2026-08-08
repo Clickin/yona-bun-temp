@@ -200,6 +200,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
           method="post"
           encType="multipart/form-data"
           {...sx.form}
+          className={`nm ${sx.form.className ?? ""}`.trim()}
           data-stylex-owner="project-postform-form"
           onSubmit={(event) => {
             event.preventDefault();

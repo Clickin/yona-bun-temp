@@ -4040,7 +4040,6 @@ const authenticatedSidenavFavoriteStarStyles = stylex.create({
     width: "29px",
   },
   icon: {
-    color: "inherit",
     direction: "ltr",
     display: "inline-block",
     fontFamily: "Material Icons",

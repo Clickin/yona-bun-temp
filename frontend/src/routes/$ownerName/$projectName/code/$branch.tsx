@@ -191,7 +191,7 @@ function ProjectCodeFolderBody({
                 aria-label={t("title.branches")}
               />
               <div
-                className={`select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
+                className={`select2-drop select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : " select2-display-none"}`}
                 {...(branchMenuOpen ? stylex.props(styles.pickerDropOpen) : {})}
                 data-stylex-owner="project-code-branch-picker-drop"
               >
@@ -376,6 +376,7 @@ function ProjectCodeFolderBody({
           >
             <div
               {...stylex.props(styles.spinner)}
+              style={{ left: "50%", position: "fixed", top: "50%" }}
               data-stylex-owner="project-code-branch-spinner"
               id="spin"
             ></div>
