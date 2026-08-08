@@ -346,7 +346,8 @@ esbuild.resolveMimeType = (context) => {
   if (
     pathname.startsWith("/yona/") &&
     !pathname.startsWith("/yona/assets/") &&
-    !pathname.startsWith("/yona/api/")
+    !pathname.startsWith("/yona/api/") &&
+    !pathname.startsWith("/yona/legacy-assets/")
   ) {
     // SPA fallback routes under /yona/ are served as text/html by the
     // fixture plugin; without an explicit override the core falls back to the
