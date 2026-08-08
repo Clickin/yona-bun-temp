@@ -1,11 +1,11 @@
 # WTR e2e 632-failure remediation ledger
 
-> status: in progress — Phase D wave 8 (2026-08-08)
+> status: in progress — Phase D wave 9 (2026-08-08)
 > source: `/tmp/fails.json` regenerated from the Phase-0 full-suite run (`/tmp/suite-1.log`), runner summary **2450 passed / 632 failed / 5 skipped**
 > reconciliation: 632 parsed rows == runner failed count; 210 specs; 0 missing / 0 duplicated rows
 > families: F1 harness-fixed | F2 harness-investigate | F3 C1-candidate | F4 C2-retire | F5 dist-geometry | F6 pin-stale | F7 app-fix | F8 mirror | F9 flaky/timeout
 > dispositions: fixed-Phase0 | harness-investigate | C1-candidate | C2-retire | copy-fix-dist-truth | retained-class-retention | copy-fix-current-dom | app-fix | mirror-skip | flaky-green
-> progress: Phase 0 (f6efea020) → Phase B bridge (d3e701bd8, 65/87 F3 green) → F4 retirements (30c55317b) → Phase C waves 1-2 (e58de0f6a, 9db0d935a) → Phase D waves 1-8 (547bc0bf3…a34b2620e): D1 input cascade + input:focus !important; F2 harness fixes (doc-request dedup, cancelable keydown, evaluateHandle args + postDataBuffer utf8 multipart, poll toBeCloseTo, lazy matcher messages, waitForRequest timeout, toHaveAccessibleName, legacy-assets serving+mime); app parity across ~55 screens; canonicalizer conventions (scope-menu/rel/data-wtr/right-txt/--x- stripping, style-decl sort, `<li></li>` malformed-menu retention). Suite-8 (corrected /yona fallback-off dist): **2764 passed / 283 failed / 5 skipped** (2450/632 baseline, 55% reduction).
+> progress: Phase 0 (f6efea020) → Phase B bridge (d3e701bd8, 65/87 F3 green) → F4 retirements (30c55317b) → Phase C waves 1-2 (e58de0f6a, 9db0d935a) → Phase D waves 1-9 (547bc0bf3…60b821f5f): D1 input cascade + input:focus !important; F2 harness fixes (doc-request dedup, cancelable keydown, evaluateHandle args + postDataBuffer utf8 multipart, poll toBeCloseTo, lazy matcher messages, waitForRequest timeout, toHaveAccessibleName, legacy-assets serving+mime); app parity across ~65 screens; canonicalizer conventions (scope-menu/rel/data-wtr/right-txt/--x- stripping, style-decl sort, `<li></li>` malformed-menu retention, sprite-var drop, empty-style-attr drop); org boards/issues fully green (17/17 each) — boards search middleware meta.explicit for sort-link URL truth, labelIds Number serialization, avatar prefixBasePath, StyleX-float ownership (no literal pull-* classes). Suite-10 (corrected /yona fallback-off dist): **2788 passed / 259 failed / 5 skipped** (2450/632 baseline, 56% reduction).
 
 ## Family counts (632 triage rows)
 
