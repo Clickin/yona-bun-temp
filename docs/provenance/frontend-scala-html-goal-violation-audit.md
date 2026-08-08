@@ -4701,3 +4701,6 @@ Manual evidence-only exception note: historical commit 2f60ce50a1a2865d85007bcc8
 
 Manual evidence-only exception note: historical commit 1028ed59a6f401e1be2ce2f13527b2f3979d108e (wtr-637: plan doc suite-6 sync) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
 Manual evidence-only exception note: historical commit fe5c498124ccc7f36006c7ddc5e90f852b6472c9 (wtr-637: plan doc suite-6 sync) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+
+Manual evidence-only exception note: historical commit 8c413c8692dd69dce5b6424880e7d129c0fc5981 (wtr-637: remove posts debug probes) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.
+Manual evidence-only exception note: historical commit 2527db12edc2683456fd87a8f2286d6170ed8134 (wtr-637: remove posts debug probes) changes frontend evidence or harness behavior without a route implementation; the scope is retained and explicitly documented for the Scala HTML history audit.

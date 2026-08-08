@@ -522,8 +522,6 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   const probeIssueAnchor = await page
     .locator('.post-list-wrap:not(.notice-wrap) a.issue-label')
     .evaluateAll((els) => els.map((el) => `${el.tagName}|${el.getAttribute("href")}|${el.outerHTML.slice(0, 120)}`));
-  // eslint-disable-next-line no-console
-  console.log("PROBE-ISSUE-ANCHOR:", JSON.stringify(probeIssueAnchor));
   await expect(
     page.locator('.post-list-wrap:not(.notice-wrap) a.issue-label[href="#"]'),
   ).toHaveCount(0);
