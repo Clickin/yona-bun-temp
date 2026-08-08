@@ -1,6 +1,6 @@
 # WTR 637-failure remediation
 
-> status: executing — Phases 0-A-B-C done; Phase D waves 1-7 (2026-08-08); suite-7 baseline **2738 passed / 309 failed / 5 skipped** on the corrected fallback-off dist (from 2450/632, 51% reduction)
+> status: executing — Phases 0-A-B-C done; Phase D waves 1-8 (2026-08-08); suite-8 baseline **2764 passed / 283 failed / 5 skipped** on the corrected fallback-off dist (from 2450/632, 55% reduction)
 > slug: wtr-637-remediation
 > date: 2026-08-07
 
