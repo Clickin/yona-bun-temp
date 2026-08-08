@@ -29,7 +29,10 @@ test("moves board post editor layout declarations to route-local StyleX", async 
   const tabContent = owner(page, "project-postform-editor-tab-content");
   await expect(wrapper).toBeVisible();
   await expect(tabContent).toBeVisible();
-  await expect(wrapper).not.toHaveAttribute("style", /.+/);
+  // Retention per wave-33 ruling: legacy create.scala.html:76 renders
+  // <dd style="position: relative;"> — the app keeps the same inline style
+  // alongside the stylex editorWrapper class (board-create-form pins dd[style]).
+  await expect(wrapper).toHaveAttribute("style", "position: relative;");
   await expect(tabContent).not.toHaveAttribute("style", /.+/);
   await expect(wrapper).toHaveCSS("position", "relative");
   await expect(tabContent).toHaveCSS("position", "relative");

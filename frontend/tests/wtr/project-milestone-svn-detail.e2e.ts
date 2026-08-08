@@ -58,8 +58,9 @@ test("SVN milestone detail preserves the canonical desktop hierarchy and interac
   const geometry = await readGeometry(page);
   // F5 dist-truth: legacy .project-util-wrap is absolute right:0 with no width
   // (yona-original/app/assets/stylesheets/less/_page.less:594-598) — content-driven
-  // (watch li + dropdown) renders 139 == legacy truth.
-  expect(geometry.projectUtil.width).toBe(139);
+  // (watch li + dropdown) renders 163 == legacy truth (wave-8 restored .btn base
+  // geometry on the watcher count — bootstrap.css:3141, header.scala.html:128).
+  expect(geometry.projectUtil.width).toBe(163);
   // F5 dist-truth: suite-5 measured 410 (legacy rules retained; 467 was the
   // wave-2 measurement before the menu-shell cleanup).
   expect(geometry.projectMenu.width).toBe(410);

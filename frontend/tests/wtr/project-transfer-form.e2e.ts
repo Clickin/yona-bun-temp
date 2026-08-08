@@ -596,7 +596,7 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   // lines 131-132,523-525) instead of a className ternary + style prop; the backdrop is conditional
   // on isTransferModalOpen with data-stylex-owner="project-transfer-modal-backdrop".
   expect(transferStateSlice).toContain(
-    'className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide`}',
+    'className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide${isTransferModalOpen ? " in" : ""}`}',
   );
   expect(transferStateSlice).toContain(
     "isTransferModalOpen ? styles.modalOpen : styles.modalClosed",

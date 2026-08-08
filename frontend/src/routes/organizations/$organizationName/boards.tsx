@@ -83,24 +83,13 @@ type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &
   SearchSchemaInput & {
     "projectNames[]"?: unknown;
   };
-const resetLegacyBoardSortSearch = ({
-  next,
-  search,
-}: {
-  next: (search: OrganizationBoardsSearch) => OrganizationBoardsSearch;
-  search: OrganizationBoardsSearch;
-}) => {
-  const result = next(search);
-  if (result.orderBy === search.orderBy && result.orderDir === search.orderDir) {
-    return result;
-  }
-  return {
-    ...result,
-    filter: "",
-    pageNum: 1,
-    projectNames: [],
-  };
-};
+// Legacy BoardApp sort links carry ONLY orderBy/orderDir (urlToList?orderBy=..&orderDir=..);
+// validateSearch supplies runtime defaults for the rest. Do NOT re-add empty params
+// to the URL here — stripLegacyBoardSearchDefaults removes anything not explicit.
+// Legacy BoardApp sort links carry ONLY orderBy/orderDir; validateSearch supplies
+// runtime defaults for the rest. stripLegacyBoardSearchDefaults removes anything
+// not explicitly present in the URL (see below).
+
 
 // Legacy BoardApp sort links carry ONLY orderBy/orderDir; the reset middleware
 // re-adds empty defaults, so strip them back out — but only when they were
@@ -113,10 +102,47 @@ const stripLegacyBoardSearchDefaults = ({
   search: OrganizationBoardsSearchInput;
   next: (search: OrganizationBoardsSearchInput) => OrganizationBoardsSearch;
 }) => {
-  const result = { ...next(search) };
-  if (!("filter" in search)) delete result.filter;
-  if (!("pageNum" in search)) delete result.pageNum;
-  if (!("projectNames" in search) && !("projectNames[]" in search)) delete result.projectNames;
+  // TanStack merges the Link's search over the CURRENT search; next(search,
+  // true) returns { search, meta } where meta.explicit records exactly what
+  // the navigation itself supplied (the Link's search object). Presence
+  // checks must use that, not `search` (which always carries the current
+  // page's params).
+  const nextResult = next(search, true);
+  const result = nextResult.search;
+  const explicit = nextResult.meta?.explicit ?? search;
+  // Org menu Board links pass the FULL default search object (filter:"",
+  // orderBy:"updatedDate", orderDir:"desc", pageNum:1, projectNames:[]) —
+  // legacy renders those as a bare @routes.BoardApp.board() href with no
+  // query, so collapse the all-defaults case to an empty search.
+  const allKeysPresent =
+    "filter" in explicit &&
+    "pageNum" in explicit &&
+    ("projectNames" in explicit || "projectNames[]" in explicit) &&
+    "orderBy" in explicit &&
+    "orderDir" in explicit;
+  const isAllDefaults =
+    allKeysPresent &&
+    (explicit.filter === "" || explicit.filter === undefined) &&
+    (explicit.pageNum === undefined || Number(explicit.pageNum) === 1) &&
+    (explicit.projectNames === undefined || explicit.projectNames?.length === 0) &&
+    (explicit["projectNames[]"] === undefined || explicit["projectNames[]"]?.length === 0) &&
+    explicit.orderBy === "updatedDate" &&
+    explicit.orderDir === "desc";
+  if (isAllDefaults) {
+    delete result.filter;
+    delete result.pageNum;
+    delete result.projectNames;
+    delete result.orderBy;
+    delete result.orderDir;
+    return result;
+  }
+  // Sort links pass only orderBy/orderDir; pagination/filter navigation keeps
+  // its explicit params. Strip keys absent from the navigation's own search
+  // (legacy sort links carry ONLY orderBy/orderDir; yobi.Pagination.js never
+  // drops explicitly navigated pageNum).
+  if (!("filter" in explicit)) delete result.filter;
+  if (!("pageNum" in explicit)) delete result.pageNum;
+  if (!("projectNames" in explicit) && !("projectNames[]" in explicit)) delete result.projectNames;
   return result;
 };
 
@@ -139,7 +165,7 @@ export const Route = createFileRoute("/organizations/$organizationName/boards")<
   component: OrganizationBoardsRoute,
   validateSearch: validateOrganizationBoardsSearch,
   search: {
-    middlewares: [stripLegacyBoardSearchDefaults, resetLegacyBoardSortSearch],
+    middlewares: [stripLegacyBoardSearchDefaults],
   },
 });
 
@@ -207,7 +233,7 @@ function OrganizationBoardsBody({
               {...searchFormStyleProps}
               id="option_form"
               method="get"
-              className={searchFormStyleProps.className}
+              className={`pull-left ${searchFormStyleProps.className ?? ""}`.trim()}
               data-stylex-owner="organization-boards-search-form"
             >
               <input type="hidden" name="orderBy" value={search.orderBy} />

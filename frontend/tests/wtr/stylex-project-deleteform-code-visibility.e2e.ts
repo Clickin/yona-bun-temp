@@ -27,6 +27,10 @@ test("project delete form code menu uses conditional StyleX visibility", async (
   expect(legacyMenu).toContain("subMenuProjectChangeVCS");
   expect(route).toContain('data-stylex-owner="project-delete-code-menu"');
   expect(route).toContain('codeMenuHidden: { display: "none" }');
-  expect(route).not.toContain('style={showCode ? undefined : { display: "none" }}');
+  // Retention per wave-33 ruling: legacy partial_settingmenu.scala.html:46
+  // renders style="@if(!project.menuSetting.code){display:none;}" — the app
+  // keeps the same inline conditional alongside the stylex codeMenuHidden class
+  // (project-delete-form pins toHaveAttribute(style, "display: none")).
+  expect(route).toContain('style={showCode ? undefined : { display: "none" }}');
   expect(route).toContain("menuSetting.code");
 });

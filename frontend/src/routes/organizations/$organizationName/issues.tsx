@@ -234,7 +234,11 @@ function OrganizationIssuesBody({
     <>
       <title>{organizationName}</title>
       <div className="page-wrap-outer" data-stylex-owner="organization-issues-page">
-        <div {...stylex.props(styles.page)} data-stylex-owner="organization-issues-wrap">
+        <div
+          {...stylex.props(styles.page)}
+          className={`page-wrap ${stylex.props(styles.page).className ?? ""}`.trim()}
+          data-stylex-owner="organization-issues-wrap"
+        >
           <div className="row-fluid issue-list-wrap" data-stylex-owner="organization-issues-list">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
@@ -283,17 +287,20 @@ function OrganizationIssuesBody({
                   <div className="search">
                     <div
                       {...stylex.props(styles.searchBar)}
+                      className={`search-bar ${stylex.props(styles.searchBar).className ?? ""}`.trim()}
                       data-stylex-owner="organization-issues-search-bar"
                     >
                       <input
                         name="filter"
                         {...stylex.props(styles.searchInput)}
+                        className={`textbox full ${stylex.props(styles.searchInput).className ?? ""}`.trim()}
                         data-stylex-owner="organization-issues-search-input"
                         type="text"
                         defaultValue={search.filter}
                       />
                       <button
                         {...stylex.props(styles.searchButton)}
+                        className={`search-btn ${stylex.props(styles.searchButton).className ?? ""}`.trim()}
                         data-stylex-owner="organization-issues-search-button"
                         type="submit"
                       >
@@ -806,7 +813,10 @@ function OrganizationIssueItem({
           data-stylex-owner="organization-issues-row-avatar"
           title={issue.authorLoginId}
         >
-          <img src={issue.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
+          <img
+            src={prefixBasePath(basePath, issue.authorAvatarUrl || "/assets/images/default-avatar-32.png")}
+            alt=""
+          />
         </Link>
         <div
           {...stylex.props(styles.titleWrap)}
@@ -892,17 +902,10 @@ function OrganizationIssueItem({
               to="/$ownerName/$projectName/issues"
               params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
               search={{
-                assigneeId: "",
-                authorId: "",
-                commenterId: "",
-                dueDate: "",
-                filter: "",
-                labelIds: [String(label.id)],
-                milestoneId: "",
-                orderBy: "updatedDate",
-                orderDir: "desc",
-                pageNum: 1,
                 state: state === "closed" ? "closed" : "open",
+                // ponytail: partial search; missing fields get route defaults.
+                // Number passes plain (labelIds=8); strings JSON-encode.
+                labelIds: Number(label.id),
               }}
               className="label list-label"
               color={label.color}
@@ -917,7 +920,7 @@ function OrganizationIssueItem({
       <div className="span2 hide-in-mobile">
         <div
           {...assigneeRailStyleProps}
-          className={`mt5 ${assigneeRailStyleProps.className ?? ""}`.trim()}
+          className={`mt5 pull-right ${assigneeRailStyleProps.className ?? ""}`.trim()}
           data-stylex-owner="organization-issues-assignee-rail"
         >
           {issue.assigneeLoginId ? (
@@ -927,7 +930,7 @@ function OrganizationIssueItem({
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
             >
               <img
-                src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
+                src={prefixBasePath(basePath, issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png")}
                 width="32"
                 height="32"
                 alt={issue.assigneeLabel}
@@ -940,7 +943,7 @@ function OrganizationIssueItem({
         {issue.dueDateLabel ? (
           <div
             {...dueDateStyleProps}
-            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
+            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-issues-due-date"
             title={issue.dueDateLabel}
           >

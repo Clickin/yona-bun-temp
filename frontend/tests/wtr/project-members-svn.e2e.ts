@@ -39,7 +39,10 @@ test("SVN members renders the canonical shell and legacy member body on desktop 
   // F5 dist-truth: measured dist shell widths at 1366x900 (navbar
   // .project-menu-gruop + header .project-util-wrap); legacy menu group is
   // content-sized (float:left li at _page.less:594,641) so 410 is the truth.
-  expect(await geometry(page)).toMatchObject({ menuWidth: 410, noOverflow: true, utilWidth: 139 });
+  // utilWidth 163: wave-8 restored legacy .btn base geometry on the watcher
+  // count (display/padding 4px 12px/font 14px/lineHeight 20px — bootstrap.css:
+  // 3141, header.scala.html:128 <a class="btn watcher-count no-border">).
+  expect(await geometry(page)).toMatchObject({ menuWidth: 410, noOverflow: true, utilWidth: 163 });
 
   const order = await page
     .locator(".project-page-wrap > *")
