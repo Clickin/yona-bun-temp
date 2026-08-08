@@ -1094,15 +1094,19 @@ function PullRequestFileDiff({
           {pendingBlock ? (
             /* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy btnPop is a plain positioned div around the post button. */
             <div
-              className="btnPop"
+              {...stylex.props(
+                styles.pendingBlockPosition(pendingBlock.top, pendingBlock.left),
+                styles.pendingBlockVisible,
+              )}
+              className={`btnPop ${stylex
+                .props(styles.pendingBlockPosition(pendingBlock.top, pendingBlock.left), styles.pendingBlockVisible)
+                .className ?? ""}`.trim()}
               onMouseDown={(event) => {
                 event.stopPropagation();
               }}
               onMouseUp={(event) => {
                 event.stopPropagation();
               }}
-              {...stylex.props(styles.pendingBlockPosition(pendingBlock.top, pendingBlock.left))}
-              {...stylex.props(styles.pendingBlockVisible)}
               data-stylex-owner="pull-request-changes-pending-block"
             >
               <button
@@ -1396,14 +1400,14 @@ function readDiffSelectionBlock(
   const selection = container.ownerDocument.getSelection();
   const selectionText = selection?.toString() ?? "";
   if (selectionText.length === 0 || !selection?.rangeCount) {
-    return null;
+      return null;
   }
 
   const range = selection.getRangeAt(selection.rangeCount - 1);
   const startRow = closestDiffRow(range.startContainer);
   const endRow = closestDiffRow(range.endContainer);
   if (!startRow || !endRow || startRow.closest("table") !== endRow.closest("table")) {
-    return null;
+      return null;
   }
 
   const startIndex = tableRowIndex(startRow);
@@ -1419,7 +1423,7 @@ function readDiffSelectionBlock(
       (row) => !row.matches("tr[data-line]") && !row.matches("tr.comments") && !rowHasCodeCell(row),
     )
   ) {
-    return null;
+      return null;
   }
 
   const startLine = Number(firstRow.getAttribute("data-line") ?? "");
@@ -1427,7 +1431,7 @@ function readDiffSelectionBlock(
   const startType = diffRowType(firstRow);
   const endType = diffRowType(lastRow);
   if (!Number.isFinite(startLine) || !Number.isFinite(endLine)) {
-    return null;
+      return null;
   }
 
   const codeBox = diffRowCodeCell(lastRow)?.getBoundingClientRect();

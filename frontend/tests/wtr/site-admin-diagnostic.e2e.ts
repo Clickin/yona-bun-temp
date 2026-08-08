@@ -14,10 +14,9 @@ const EXPECTED_DIAGNOSTIC_NO_ERROR_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
-      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -41,7 +40,7 @@ const EXPECTED_DIAGNOSTIC_NO_ERROR_SCREEN = `
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+          <div id="usermenu-tab-content-list" class="tab-content"><div id="myOrganizationList" class="tab-pane user-project-list active"><div class="search-result"><div class="group"><input class="search-input org-search" type="text" value="" autocomplete="off"></input><span class="bar"></span></div><div id="organizations" class="no-result tab-pane user-ul">No results</div></div></div><div id="myProjectList" class="tab-pane user-project-list"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input id="query" class="search-input project-search" type="text" value="" autocomplete="off"></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div id="recentlyVisited" class="no-result tab-pane user-ul active">No results</div><div id="watching" class="no-result tab-pane user-ul">No results</div><div id="createdByMe" class="no-result tab-pane user-ul">No results</div><div id="joinmember" class="no-result tab-pane user-ul">No results</div></div></div></div></div></div><div id="myRecentIssueList" class="tab-pane user-project-list"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input id="recent-issue-query" class="search-input project-search" type="text" value="" autocomplete="off"></input><span class="bar"></span></div><div class="tab-content"><div id="recentlyVisitedIssues" class="no-result tab-pane user-ul active">No results</div></div></div></div></div></div></div>
         </div>
       </div>
     </div>
@@ -130,23 +129,21 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
         .evaluate((title) => title.textContent),
     )
     .toBe("Site settings");
+  // F6 copy-fix: this mock sets no runtimeConfig.feedbackUrl, so the legacy
+  // navbar (navbar.scala.html:50-54) renders only Y + List All — Feedback is
+  // conditional on appFeedbackUrl.
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
-    "Feedback",
   ]);
+  // F6 copy-fix: this mock sets no runtimeConfig.feedbackUrl, so the GNB has
+  // only Y + List All (no Feedback anchor) — same reasoning as the toHaveText
+  // pin above (navbar.scala.html:50-54 renders Feedback only when set).
   expect(
     await page
       .locator('[data-stylex-owner="global-gnb-nav"] > li > a')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
-  ).toEqual([
-    `${basePath}`,
-    `${basePath}/projects`,
-    "https://github.com/yona-projects/yona/issues",
-  ]);
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] > li > a').nth(2),
-  ).toHaveAttribute("target", "_blank");
+  ).toEqual([`${basePath}/`, `${basePath}/projects`]);
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
@@ -208,9 +205,16 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   await expect(siteAdminShellLink).toHaveAttribute("data-toggle", "tooltip");
   await expect(siteAdminShellLink).toHaveAttribute("data-placement", "bottom");
   const navbarMetrics = await diagnosticNavbarMetrics(page);
-  expect(navbarMetrics.navLinkTexts).toEqual(["Y", "List All", "Feedback"]);
-  expect(navbarMetrics.navSearchGap).toBeGreaterThanOrEqual(80);
-  expect(navbarMetrics.navSearchGap).toBeLessThanOrEqual(110);
+  // F6 copy-fix-current-dom: legacy navbar.scala.html:50-54 renders the
+  // Feedback link only when feedbackUrl is configured; this mock sets none,
+  // so the legacy-intended DOM is the 2-anchor GNB.
+  expect(navbarMetrics.navLinkTexts).toEqual(["Y", "List All"]);
+  // F5 dist-truth: with the Feedback link absent (no feedbackUrl in this
+  // mock), the search form li directly follows the List All li — legacy
+  // .gnb-nav li float:left leaves only the form's 10px padding-left as gap
+  // (legacy _page.less:240-247, gnb-search-form padding 0 10px).
+  expect(navbarMetrics.navSearchGap).toBeGreaterThanOrEqual(0);
+  expect(navbarMetrics.navSearchGap).toBeLessThanOrEqual(30);
   expect(navbarMetrics.searchBottomWithinNavbar).toBe(true);
   expect(navbarMetrics.searchRightWithinNavbar).toBe(true);
   expect(navbarMetrics.searchTopWithinNavbar).toBe(true);
@@ -559,6 +563,14 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "class") {
+        // F6 copy-fix-current-dom: strip stylex atomic tokens (shared GNB
+        // pin, usermenu) like the project-list spec — legacy classes only.
+        return value
+          .split(/\s+/u)
+          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+          .join(" ");
+      }
       return value;
     }
 
@@ -584,6 +596,13 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter((name) => current.hasAttribute(name))
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
+        .filter(
+          (attr) =>
+            !(
+              attr.startsWith("class=") &&
+              JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, "class")) === '""'
+            ),
         )
         .join(" ");
       const open = attrs
@@ -663,6 +682,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter((token) => token !== retiredToken)
           .join(" ");
       }
+      if (name === "class") {
+        // F6 copy-fix-current-dom: strip stylex atomic tokens (shared GNB
+        // pin, usermenu) like the project-list spec — legacy classes only.
+        return value
+          .split(/\s+/u)
+          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+          .join(" ");
+      }
       return value;
     }
 
@@ -688,6 +715,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         .filter((name) => current.hasAttribute(name))
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
+        .filter(
+          (attr) =>
+            !(
+              attr.startsWith("class=") &&
+              JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, "class")) === '""'
+            ),
         )
         .join(" ");
       const open = attrs

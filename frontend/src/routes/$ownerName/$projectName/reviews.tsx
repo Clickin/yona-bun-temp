@@ -201,7 +201,7 @@ function ProjectReviewsBody({
   return (
     <div
       {...pageWrapOuterProps}
-      className={`page-wrap-outer ${pageWrapOuterProps.className ?? ""}`.trim()}
+      className={pageWrapOuterProps.className ?? ""}
       data-stylex-owner="project-reviews-page-wrap-outer"
     >
       <div
@@ -348,6 +348,7 @@ function ProjectReviewsBody({
             >
               <Link
                 href={`${action}${exportQuery}`}
+                search={{}}
                 to={`${baseRoute}${exportQuery}`}
                 reloadDocument
                 className="ybtn small"

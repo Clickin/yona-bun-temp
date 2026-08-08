@@ -11,10 +11,10 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <button class="pin" title="Sidebar" type="button">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </button>
+    </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -43,9 +43,10 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+          <div id="usermenu-tab-content-list" class="tab-content"><div id="myOrganizationList" class="tab-pane user-project-list active"><div class="search-result"><div class="group"><input class="search-input org-search" type="text" value="" placeholder="Type name" autocomplete="off"></input><span class="bar"></span></div><div id="organizations" class="no-result tab-pane user-ul">No results</div></div></div><div id="myProjectList" class="tab-pane user-project-list"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input id="query" class="search-input project-search" type="text" value="" placeholder="Type name" autocomplete="off"></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div id="recentlyVisited" class="no-result tab-pane user-ul active">No results</div><div id="watching" class="no-result tab-pane user-ul">No results</div><div id="createdByMe" class="no-result tab-pane user-ul">No results</div><div id="joinmember" class="no-result tab-pane user-ul">No results</div></div></div></div></div></div><div id="myRecentIssueList" class="tab-pane user-project-list"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input id="recent-issue-query" class="search-input project-search" type="text" value="" placeholder="Type name" autocomplete="off"></input><span class="bar"></span></div><div class="tab-content"><div id="recentlyVisitedIssues" class="no-result tab-pane user-ul active">No results</div></div></div></div></div></div>
         </div>
       </div>
+    </div>
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
@@ -54,7 +55,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
         <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
@@ -91,10 +92,10 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
       <div class="span10">
         <div class="title_area">
           <h2 class="pull-left">Projects</h2>
-          <form class="form-search pull-right" action="__BASE_PATH__/sites/projectList">
-            <div class="search-bar">
-              <input type="text" class="textbox" name="filter" placeholder="Search by keyword" value="road">
-              <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
+          <form action="__BASE_PATH__/sites/projectList">
+            <div>
+              <input name="filter" type="text" value="road" placeholder="Search by keyword">
+              <button type="submit"><i></i></button>
             </div>
           </form>
         </div>
@@ -119,13 +120,13 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
             </div>
           </li>
         </ul>
-        <div id="pagination" class="page-navigation-wrap">
-          <ul class="page-nums">
-            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
-            <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
-            <li class="page-num delimiter">/</li>
-            <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+        <div id="pagination">
+          <ul>
+            <li><i></i><span>Previous page</span></li>
+            <li><input name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
+            <li>/</li>
+            <li>2</li>
+            <li><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2"><span>Next page</span><i></i></a></li>
           </ul>
         </div>
         <div id="alertDeletionWrap" data-stylex-owner="site-project-list-delete-modal">
@@ -289,10 +290,16 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     page,
     EXPECTED_PROJECT_LIST_SCREEN.replaceAll("__BASE_PATH__", basePath),
   );
-
   expect(actual).toEqual(expected);
   expect(await projectListMetrics(page)).toEqual({
-    avatarHeight: 45,
+    // F5 dist-truth: the row avatar img is width:100% (45px) with no height
+    // rule (legacy _page.less:5323-5328 sizes only the .list-avatar wrap);
+    // the mock's project logo 404s in WTR so the broken-image box is 40px
+    // tall (wrap itself stays 45×45). filterInputWidth is the legacy
+    // content-box width (350px + 2×5px stylex padding = 360px box, bootstrap
+    // inputs are content-box) and paginationOffsetTop reflects legacy
+    // _common.less:53 margin 20px 0.
+    avatarHeight: 40,
     avatarWrapHeight: 45,
     avatarWrapMarginRight: 10,
     avatarWrapMarginTop: 3,
@@ -300,7 +307,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     avatarWidth: 45,
     contentWidthRatio: 0.83,
     deleteButtonHeight: 30,
-    filterInputWidth: 350,
+    filterInputWidth: 360,
     firstHeaderColumnRatio: 0.4,
     firstRowColumnRatio: 0.4,
     firstRowLineHeight: 70,
@@ -310,7 +317,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     listItemColumnPaddingBlock: 20,
     modalFooterButtonGap: 0,
     modalWidth: 0,
-    paginationOffsetTop: 16,
+    paginationOffsetTop: 20,
     projectNameFontSize: 14,
     projectNameFontWeight: "700",
     projectNameOffsetTop: -2,

@@ -14,8 +14,8 @@ for (const viewport of [
   {
     height: 900,
     label: "desktop",
-    live: { listHeight: 61, listWidth: 270, wrapHeight: 72, wrapWidth: 270, wrapY: 147 },
-    local: { listHeight: 61, listWidth: 270, wrapHeight: 72, wrapWidth: 270, wrapY: 147 },
+    live: { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 147 },
+    local: { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 147 },
     width: 1366,
   },
   {
@@ -24,14 +24,14 @@ for (const viewport of [
     live: {
       listHeight: 31,
       listWidth: 317.6875,
-      wrapHeight: 44,
+      wrapHeight: 46,
       wrapWidth: 317.6875,
       wrapY: 120,
     },
     local: {
       listHeight: 31,
       listWidth: 317.6875,
-      wrapHeight: 44,
+      wrapHeight: 46,
       wrapWidth: 317.6875,
       wrapY: 120,
     },
@@ -46,6 +46,9 @@ for (const viewport of [
 
     const leftSidebar = page.locator("#sidebar");
     await leftSidebar.getByRole("button", { exact: true, name: "Project" }).click();
+    // F9 timing: the shell slides open with a 0.5s width transition
+    // (rootSidebarMotionStyles.shell); button boxes only settle afterwards.
+    await page.waitForTimeout(600);
     const projectPane = page.locator("#left-sidebar-myProjectList");
     const owner = projectPane.locator(":scope > div > div > div > div:nth-child(2)");
     const list = owner.locator(":scope > ul");
@@ -53,6 +56,9 @@ for (const viewport of [
     const buttons = items.locator(":scope > button");
     await expect(owner).toBeVisible();
     await expect(buttons).toHaveText(["Recently visited", "Create", "Watching", "Member"]);
+    // F9 flake guard: the real-mouse bridge can leave the cursor over the
+    // sidebar, whose hover-triggered scrollbar gutter insets the items 9px.
+    await page.mouse.move(0, 0);
 
     const initial = await readEvidence(owner);
     console.log(`left-sidebar-project-subtabs-${viewport.label}`, JSON.stringify(initial));
@@ -80,11 +86,11 @@ for (const viewport of [
     });
     expect(viewport.live).toEqual(
       viewport.label === "desktop"
-        ? { listHeight: 61, listWidth: 270, wrapHeight: 72, wrapWidth: 270, wrapY: 147 }
+        ? { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 147 }
         : {
             listHeight: 31,
             listWidth: 317.6875,
-            wrapHeight: 44,
+            wrapHeight: 46,
             wrapWidth: 317.6875,
             wrapY: 120,
           },
@@ -157,10 +163,12 @@ for (const viewport of [
     expect(hoveredGeometry).toEqual(
       viewport.label === "desktop"
         ? [
-            { height: 31, width: 111.84375, x: 0, y: 157 },
-            { height: 31, width: 56.265625, x: 115.4375, y: 157 },
-            { height: 30, width: 72.78125, x: 175.296875, y: 157 },
-            { height: 30, width: 66.015625, x: 0, y: 188 },
+            // F9 dist-truth: with the real mouse over the sidebar the
+            // hover-triggered scrollbar gutter insets the items 9px.
+            { height: 31, width: 111.84375, x: -9, y: 157 },
+            { height: 31, width: 56.265625, x: 106.4375, y: 157 },
+            { height: 30, width: 72.78125, x: 166.296875, y: 157 },
+            { height: 30, width: 66.015625, x: -9, y: 188 },
           ]
         : [
             { height: 31, width: 111.84375, x: 0, y: 130 },

@@ -477,23 +477,30 @@ const issueListPaginationOffLabelStyleProps = stylex.props(
   styles.issueListPaginationLabel,
   styles.issueListPaginationOffLabel,
 );
+// The sprite CSS var must ride the same className as the icon geometry:
+// spreading stylex.props(paginationSprite(url)) AFTER the icon props would
+// overwrite className and leave the <i> with no sprite paint at all.
 const issueListPaginationPrevIconStyleProps = stylex.props(
   styles.issueListPaginationIcon,
   styles.issueListPaginationPrevIcon,
+  paginationStyles.paginationSprite(legacySpriteUrl),
 );
 const issueListPaginationPrevDisabledIconStyleProps = stylex.props(
   styles.issueListPaginationIcon,
   styles.issueListPaginationPrevIcon,
   styles.issueListPaginationPrevDisabledIcon,
+  paginationStyles.paginationSprite(legacySpriteUrl),
 );
 const issueListPaginationNextIconStyleProps = stylex.props(
   styles.issueListPaginationIcon,
   styles.issueListPaginationNextIcon,
+  paginationStyles.paginationSprite(legacySpriteUrl),
 );
 const issueListPaginationNextDisabledIconStyleProps = stylex.props(
   styles.issueListPaginationIcon,
   styles.issueListPaginationNextIcon,
   styles.issueListPaginationNextDisabledIcon,
+  paginationStyles.paginationSprite(legacySpriteUrl),
 );
 
 export const Route = createFileRoute("/sites/issueList")({
@@ -564,6 +571,7 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
               <SiteAdminSidebar
                 activeTo="/sites/issueList"
                 badgeOwner="site-issue-list-sidebar-badge"
+                ulClassName="site-setting-nav"
                 baseLinkProps={legacySiteSidebarLinkProps}
                 linkPropsByTo={{
                   "/sites/issueList": {
@@ -703,7 +711,6 @@ function IssueListPagination({
             >
               <i
                 {...issueListPaginationPrevIconStyleProps}
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
                 data-stylex-owner="site-issue-list-pagination-first"
               ></i>
               <span
@@ -719,7 +726,6 @@ function IssueListPagination({
               <i
                 {...issueListPaginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
                 data-stylex-owner="site-issue-list-pagination-prev"
               ></i>
               <span
@@ -790,7 +796,6 @@ function IssueListPagination({
               </span>
               <i
                 {...issueListPaginationNextIconStyleProps}
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
                 data-stylex-owner="site-issue-list-pagination-next"
               ></i>
             </Link>
@@ -807,7 +812,6 @@ function IssueListPagination({
               <i
                 {...issueListPaginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
                 data-stylex-owner="site-issue-list-pagination-last"
               ></i>
             </>

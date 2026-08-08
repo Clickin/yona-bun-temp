@@ -589,7 +589,8 @@ const styles = stylex.create({
     inset: "0px",
     zIndex: 1040,
     backgroundColor: siteProjectListTheme.modalBackdropSurface,
-    opacity: 0.8,
+    // legacy _override.less:2-4 overrides bootstrap's 0.8 backdrop to 50%
+    opacity: 0.5,
   },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
@@ -633,17 +634,31 @@ const paginationOffLabelStyleProps = stylex.props(
   styles.paginationLabel,
   styles.paginationOffLabel,
 );
-const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+// The sprite CSS var must ride the same className as the icon geometry:
+// spreading stylex.props(styles.paginationSprite(url)) AFTER the icon props
+// would overwrite className and leave the <i> with no sprite paint at all
+// (width auto, background-image none).
+const paginationPrevIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationPrevIcon,
+  styles.paginationSprite(legacySpriteUrl),
+);
 const paginationPrevDisabledIconStyleProps = stylex.props(
   styles.paginationIcon,
   styles.paginationPrevIcon,
   styles.paginationPrevDisabledIcon,
+  styles.paginationSprite(legacySpriteUrl),
 );
-const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
+const paginationNextIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationNextIcon,
+  styles.paginationSprite(legacySpriteUrl),
+);
 const paginationNextDisabledIconStyleProps = stylex.props(
   styles.paginationIcon,
   styles.paginationNextIcon,
   styles.paginationNextDisabledIcon,
+  styles.paginationSprite(legacySpriteUrl),
 );
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
@@ -806,6 +821,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               <SiteAdminSidebar
                 activeTo="/sites/projectList"
                 badgeOwner="site-project-list-notification-badge"
+                ulClassName="site-setting-nav"
                 baseLinkProps={legacyLinkSuppressionProps}
                 dataSelected="always"
                 navOwner="site-project-list-sidebar-nav"
@@ -1071,7 +1087,6 @@ function ProjectListPagination({
               <i
                 {...paginationPrevIconStyleProps}
                 data-disabled="false"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -1087,7 +1102,6 @@ function ProjectListPagination({
                 {...paginationPrevDisabledIconStyleProps}
                 data-disabled="true"
                 data-pagination-state="off"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationOffLabelStyleProps}
@@ -1173,7 +1187,6 @@ function ProjectListPagination({
               <i
                 {...paginationNextIconStyleProps}
                 data-disabled="false"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -1190,7 +1203,6 @@ function ProjectListPagination({
                 {...paginationNextDisabledIconStyleProps}
                 data-disabled="true"
                 data-pagination-state="off"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}

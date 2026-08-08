@@ -10,34 +10,4 @@
     font-weight: normal;
     font-style: normal;
   }
-
-  /* F7 app-fix: the generated legacy fallback (which carried the yobicon glyph
-   * rules from yona-original/public/stylesheets/yobicon/style.css) is not linked
-   * in canonical fallback-off dists, so yobicon icons rendered with zero width
-   * (no ::before content). Port the base icon rule + lock glyph so the
-   * project-private badge paints (style.css:15-16 base, :4177-4179 lock). */
-  [data-yobicon],
-  [class^="yobicon-"],
-  [class*=" yobicon-"] {
-    font-family: "yobicon";
-    font-style: normal;
-    font-variant: normal;
-    font-weight: normal;
-    line-height: 1;
-    display: inline-block;
-    text-decoration: none;
-    background-image: none;
-    vertical-align: baseline;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  [data-yobicon]:before {
-    content: attr(data-yobicon);
-  }
-
-  .yobicon-lock:before {
-    content: "\e21e";
-  }
 }
-

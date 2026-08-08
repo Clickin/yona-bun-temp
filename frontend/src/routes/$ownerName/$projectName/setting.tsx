@@ -620,10 +620,13 @@ function ProjectSettingBody({
                 </ul>
               </div>
             </div>
-            {/* Keep the legacy setting-box/right owner adjacent to the StyleX border cascade. */}
+            {/* Keep the legacy setting-box/right owner adjacent to the StyleX border cascade.
+                settingFields is NOT merged here: its paddingLeft "0px" would override
+                settingBoxRight's 20px and shrink the box to 400px vs legacy 420px
+                (399px + 20px padding + 1px border, _page.less:2081/2106-2109). */}
             <dl
-              {...stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields)}
-              className={`${stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields).className} setting-box right`}
+              {...stylex.props(styles.settingBox, styles.settingBoxRight)}
+              className={`${stylex.props(styles.settingBox, styles.settingBoxRight).className} setting-box right`}
               data-stylex-owner="project-setting-setting-box-right"
             >
               <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">

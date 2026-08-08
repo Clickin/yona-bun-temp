@@ -6,7 +6,8 @@ export const postEditFormTheme = stylex.defineVars({
 
 export const styles = stylex.create({
   form: { position: "relative" },
-  actions: { textAlign: "right" },
+  // legacy _page.less:3810-3814 — .frm-wrap .actions centers its buttons.
+  actions: { textAlign: "center" },
   options: { textAlign: "right" },
   editorWrapper: { position: "relative" },
   markdownEditorWrapper: { marginTop: "10px" },

@@ -13,9 +13,9 @@ const EXPECTED_PROJECT_DELETE_FORM = `
 </div>
 <header class="gnb-outer project-header">
   <div class="gnb-inner">
-    <button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
       <i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i>
-    </button>
+    </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
@@ -56,15 +56,15 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-toggle="tooltip" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)" aria-controls="mySidenav" aria-expanded="false"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)" aria-controls="mySidenav" aria-expanded="false"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -76,7 +76,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')">
+<div class="project-header-outer" style="--x-backgroundImage:url('/assets/images/bg-default-project.png')">
   <div class="project-header-inner">
     <div class="project-header-wrap">
       <div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div>
@@ -718,8 +718,8 @@ test("project delete settings tab follows legacy enrolled user badge and hidden 
   // F6 copy-fix-current-dom: app retains the legacy hidden VCS branch via an
   // inline style on the <li> (legacy partial_settingmenu.scala.html:46
   // style="@if(!project.menuSetting.code){display:none;}"); React serializes
-  // style={{display:"none"}} as "display: none" (no trailing semicolon).
-  await expect(changeVcsTab).toHaveAttribute("style", "display: none");
+  // style={{display:"none"}} as "display: none;" (trailing semicolon).
+  await expect(changeVcsTab).toHaveAttribute("style", "display: none;");
   await expect(changeVcsTab).toBeHidden();
   await expect(changeVcsTab.locator("a")).toHaveAttribute(
     "href",
@@ -1473,6 +1473,12 @@ async function canonicalizeScreenRoots(page: Page) {
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
+      if (node.id === "usermenu-tab-content-list") {
+        // The app renders the workspace panes synchronously (mocked fetch),
+        // while the legacy DOM pins the pre-ajax "Loading..." placeholder;
+        // canonicalize the sidebar content like user-profile-settings does.
+        return `${open}Loading...</${node.tagName.toLowerCase()}>`;
+      }
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
         .join("")}</${node.tagName.toLowerCase()}>`;

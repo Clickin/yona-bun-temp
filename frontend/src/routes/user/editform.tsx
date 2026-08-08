@@ -244,9 +244,14 @@ function UserSettingsNestedLayout({
       </div>
       <div
         {...stylex.props(styles.settingsPageOuter)}
+        className={`page-wrap-outer ${stylex.props(styles.settingsPageOuter).className ?? ""}`.trim()}
         data-stylex-owner="user-settings-page-wrap-outer"
       >
-        <div {...stylex.props(styles.settingsPage)} data-stylex-owner="user-settings-page-wrap">
+        <div
+          {...stylex.props(styles.settingsPage)}
+          className={`page-wrap ${stylex.props(styles.settingsPage).className ?? ""}`.trim()}
+          data-stylex-owner="user-settings-page-wrap"
+        >
           <EditTabMenu active={activeTab} />
           {activeTab === "profile" ? (
             <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
@@ -604,6 +609,7 @@ function EditTabMenu({ active }: { active: string }) {
           <li
             key={tab.key}
             {...stylex.props(styles.editTabItem)}
+            className={`${stylex.props(styles.editTabItem).className}${selected ? " active" : ""}`.trim()}
             data-selected={selected}
             data-stylex-owner="user-settings-edit-tab-item"
           >

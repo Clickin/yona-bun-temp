@@ -11,17 +11,25 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { codeColors, searchStyles } from "./-code.stylex";
 
 const styles = stylex.create({
-  noHeadPage: { margin: "20px auto 0px" },
-  noHeadColumn: { padding: "0px 10px" },
+  // legacy _page.less:617-620 — .page-wrap-outer margin-top 10px (no auto)
+  noHeadPage: { margin: "10px 0px 0px" },
+  // legacy span12 (bootstrap.css:379-382) is 100% width with no padding —
+  // the 10px gutters shrank the alert to 1326 vs legacy 1346
+  noHeadColumn: {},
   noHeadAlert: {
     backgroundColor: codeColors.alertSurface,
     borderColor: codeColors.alertBorder,
     borderStyle: "solid",
     borderWidth: "1px",
     color: codeColors.alertText,
-    padding: "8px 35px 8px 14px",
+    // legacy bootstrap.css:3883-3886 .alert-block overrides the .alert
+    // 8px top/bottom with 14px (the app's 8px came from the .alert base)
+    padding: "14px 35px 14px 14px",
   },
-  noHeadHeading: { color: codeColors.headingText, fontSize: "14px", lineHeight: "20px" },
+  noHeadHeading: { color: codeColors.headingText, fontSize: "17.5px", lineHeight: "20px" },
+  // legacy bootstrap.css:689-696, 735-738 — h5 defaults (14px, margin 10px 0)
+  // the app's UA h5 renders 10.79px/18px without these
+  noHeadCloneHeading: { fontSize: "14px", lineHeight: "20px", margin: "10px 0px" },
 });
 
 export const Route = createFileRoute("/$ownerName/$projectName/code")({
@@ -301,7 +309,12 @@ function ProjectCodeNoHead({
               {booleanField(project.viewerCanUpdate) ? (
                 isSvn ? (
                   <>
-                    <h5>{t("code.nohead.svn.clone", { args: [siteName] })}</h5>
+                    <h5
+                      {...stylex.props(styles.noHeadCloneHeading)}
+                      data-stylex-owner="project-code-nohead-clone-heading"
+                    >
+                      {t("code.nohead.svn.clone", { args: [siteName] })}
+                    </h5>
                     <pre>
                       <code>{`svn co ${codeUrl}${svnUsernameSuffix}
 cd ${projectName}/

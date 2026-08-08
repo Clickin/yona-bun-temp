@@ -16,7 +16,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 const ISSUE_DETAIL_KEYMAP = `<div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button><div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue details</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">L</span><span class="help-inline">List</span><br><span class="ybtn ybtn-small">E</span><span class="help-inline">Edit</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"><h5>Issue Comments</h5><span class="ybtn ybtn-small">SHIFT</span> + <span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Comment &amp; Close issue</span><br></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div></div>`;
 
 const EXPECTED_ISSUE_DETAIL = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id">11</strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="hide show-in-mobile"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="issue-11" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/issues/11/content"><textarea>Body **markdown**</textarea></form></div><div id="issue-body-11"><div class="content markdown-wrap" data-allowed-update="true"><p>Body <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " title="Watch this issue" data-watching="false">Subscribe</button><button id="issue-share-button" type="button" class="ybtn">Issue Sharing</button><span class="project-btn-item hide show-in-mobile-inline ml4"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></span><span class="issue-weight"><span class="divider">|</span><button id="upvote-issue-weight" class="ybtn ybtn-small" title="Issue weight: Upvote"><i class="yobicon-arrow-up-alt"></i></button><button class="ybtn ybtn-small" id="down-vote-issue-weight" title="Issue weight: Down vote"><i class="yobicon-arrow-down-alt"></i></button><span class="weight-number">2</span></span></div></div><div id="vote" class="vote-wrap voter-exists"><button type="button" class="" title="Vote this issue"><span class="heart"><i class="yobicon-hearts"></i></span></button><div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div></div><div id="voters" class="modal hide voters-dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">People who agree with this</h5></div><div class="modal-body"><ul class="unstyled"><li><a href="__BASE_PATH__/admin" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li><a href="__BASE_PATH__/dev" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div class="modal-footer"><button id="copyEmailBtn" class="ybtn ybtn-info ybtn-small">Copy email list</button><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Close</button></div></div><span class="act-row"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></span></div><dl class="sharer-list hideFromDisplayOnly"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="hideFromDisplayOnly"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value=""></dd></dl><div class="watcher-list"></div><div class="subtasks"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info"><form id="issueUpdateForm" action="__BASE_PATH__/admin/sample/issues" method="post"><input type="hidden" name="issues[0].id" value="42"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></dd><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="admin" style="width:100%"></dd></dl><dl><dt>Milestone</dt><dd><select id="milestone" name="milestone.id" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd></dl><dl><dt>Due date<span class="duedate-status "></span></dt><dd><div class="search search-bar"><input type="text" name="dueDate" value="Jul 5, 2026" class="textbox full" autocomplete="off"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></div></dd></dl><dl><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select></dd></dl><div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></div></form><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div></div></div><div><input type="hidden" id="issueBodyChecksum" value="body-sha1"><input type="hidden" id="numOfComments" value="0"><input type="hidden" id="issueUpdateDate" value="1782892800000"></div><div class="board-footer">${ISSUE_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Are you sure you want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id">11</strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="hide show-in-mobile"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="issue-11" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/issues/11/content"><textarea>Body **markdown**</textarea></form></div><div id="issue-body-11"><div class="content markdown-wrap" data-allowed-update="true"><p>Body <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " title="Watch this issue" data-watching="false">Subscribe</button><button id="issue-share-button" type="button" class="ybtn">Issue Sharing</button><span class="project-btn-item hide show-in-mobile-inline ml4"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></span><span class="issue-weight"><span class="divider">|</span><button id="upvote-issue-weight" class="ybtn ybtn-small" title="Issue weight: Upvote"><i class="yobicon-arrow-up-alt"></i></button><button class="ybtn ybtn-small" id="down-vote-issue-weight" title="Issue weight: Down vote"><i class="yobicon-arrow-down-alt"></i></button><span class="weight-number">2</span></span></div></div><div id="vote" class="vote-wrap voter-exists"><button type="button" class="" title="Vote this issue"><span class="heart"><i class="yobicon-hearts"></i></span></button><div class="voter-list-wrap"><ul class="voter-list"><li class="voter-list-item"><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div></div><div id="voters" class="modal hide voters-dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">People who agree with this</h5></div><div class="modal-body"><ul class="unstyled"><li><a href="__BASE_PATH__/admin" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li><a href="__BASE_PATH__/dev" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div class="modal-footer"><button id="copyEmailBtn" class="ybtn ybtn-info ybtn-small">Copy email list</button><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Close</button></div></div><span class="act-row"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></span></div><dl class="sharer-list hideFromDisplayOnly"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="hideFromDisplayOnly"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value=""></dd></dl><div class="watcher-list"></div><div class="subtasks"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info"><form id="issueUpdateForm" action="__BASE_PATH__/admin/sample/issues" method="post"><input type="hidden" name="issues[0].id" value="42"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></dd><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="admin" style="width:100%"><div aria-expanded="false" aria-label="Assignee" class="bigdrop select2-container" role="combobox"><div class="select2-choice" role="button" tabindex="0"><span class="select2-chosen"><span class="usf-group"><strong class="name">Site Admin</strong><span class="loginid">admin</span></span></span><span aria-hidden="true" class="select2-arrow"><b></b></span></div></div></dd></dl><dl><dt>Milestone</dt><dd><select class="select2-offscreen" id="milestone" name="milestone.id" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select><div aria-expanded="false" aria-label="Milestone" class="fullsize select2-container" role="combobox"><div class="select2-choice" role="button" tabindex="0"><span class="select2-chosen">v1.0</span><span aria-hidden="true" class="select2-arrow"><b></b></span></div><div class="select2-display-none select2-drop"><ul class="select2-results" role="listbox"><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">No milestone</div></li><li class="select2-highlighted"><div aria-selected="true" class="select2-result-label" role="option" tabindex="-1">v1.0</div></li><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">v2.0</div></li><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">v0.9</div></li></ul></div></div></dd></dl><dl><dt>Due date<span class="duedate-status "></span></dt><dd><div class="search search-bar"><input type="text" name="dueDate" value="Jul 5, 2026" class="textbox full" autocomplete="off"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></div></dd></dl><dl><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select><div class="bordered fullsize issue-labels select2-container select2-container-multi"><ul class="select2-choices"><li class="select2-search-choice"><div><strong class="active issue-label label static" data-label-id="8" style="background:rgb(81,170,204)">bug</strong></div><span aria-label="bug Delete" class="select2-search-choice-close" role="button" tabindex="0"></span></li><li class="select2-search-field"><input aria-label="Select label" autocomplete="off" class="select2-input"></input></li></ul></div></dd></dl><div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight" title="Delete"><i class="yobicon-trash"></i></button></div></form><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div></div></div><div><input type="hidden" id="issueBodyChecksum" value="body-sha1"><input type="hidden" id="numOfComments" value="0"><input type="hidden" id="issueUpdateDate" value="1782892800000"></div><div class="board-footer">${ISSUE_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
 `;
 
 const TASKLIST = `<div class="tasklist task-show"><div class="task-title" style="width:0%">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0" title="Tasklist"></div></div></div>`;
@@ -309,7 +309,10 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     leftPaneWidth: 938,
     outerMarginTop: "10px",
     outerMinHeight: "450px",
-    projectMarginTop: "20px",
+    // F5 dist-truth: legacy _responsive.less:553-617 `@media all` unconstrained
+    // override pins .project-page-wrap margin-top 5px !important at EVERY
+    // width (compiled after _page.less:727) — the 20px pin was stale.
+    projectMarginTop: "5px",
     rightPaneWidth: 295,
     titleBackground: "rgb(242, 242, 242)",
     titleBorderRadius: "10px",
@@ -335,11 +338,15 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     avatarMarginRight: "0px",
     avatarWidth: 37,
     bodyMinHeight: "0px",
-    bodyPadding: "15px 20px",
+    // F5 dist-truth: legacy _page.less:3215-3218 pins .comment-body
+    // padding 5px 20px; _page.less:3151-3153 pins .meta-info height 22px
+    // (app.css fixed to height not min-height) = 32px box; .media-body has
+    // no overflow rule (computed visible). Stale pins predated the fixes.
+    bodyPadding: "5px 20px",
     commentDisplay: "list-item",
     commentPaddingBottom: "10px",
     commentWidth: 938,
-    mediaBodyOverflow: "hidden",
+    mediaBodyOverflow: "visible",
     metaHeight: 32,
     metaPaddingTop: "5px",
     replyDisplay: "none",
@@ -802,7 +809,12 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
 }
 
 async function expectIssueDetailTooltipMetadata(page: Page) {
-  await expect(page.locator('[data-toggle="tooltip"]')).toHaveCount(0);
+  // F6 copy-fix: the shared authenticated GNB renders 4 legacy tooltips (pin
+  // div navbar.scala.html:39, My Issues li + site-admin wrench link +
+  // sidebar-open button usermenu.scala.html:71-73,92-96,97-101); the count-0
+  // pin predates the tooltip attrs on the GNB and only checks the issue page
+  // itself carries none beyond the shell.
+  await expect(page.locator('[data-toggle="tooltip"]')).toHaveCount(4);
   await expect(page.locator("#watch-button")).toHaveAttribute("title", "Watch this issue");
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-placement", "top");
   await expect(page.locator("#upvote-issue-weight")).toHaveAttribute(
@@ -1635,9 +1647,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
       '.posting-history [data-toggle="modal"], .posting-history [data-target="#-yona-posting-history"], .posting-history [data-dismiss="modal"]',
     ),
   ).toHaveCount(0);
-  const trigger = page.locator(
-    '.posting-history button[type="button"]:has(span:has-text("edited"))',
-  );
+  const trigger = page.locator('.posting-history > button[type="button"]');
   await expect(trigger).toContainText("edited");
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "posting-history-modal";
@@ -3638,7 +3648,7 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   );
 
   const expected =
-    `<dl><dt>Issue Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="issue-label active label static" data-label-id="8" style="background-color:rgb(81, 170, 204);box-shadow:rgb(81, 170, 204) 2px 0px 0px inset;color:white;border:0px">bug</a></dd></dl>`.replaceAll(
+    `<dl><dt>Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="issue-label active label static" data-label-id="8" style="background-color:rgb(81, 170, 204);box-shadow:rgb(81, 170, 204) 2px 0px 0px inset;color:white;border:0px">bug</a></dd></dl>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3648,7 +3658,9 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   expect(await selectedLabelMetrics(page)).toEqual({
     ddPadding: "5px 0px",
     dlMarginBottom: "20px",
-    dtText: "Issue Label",
+    // F6 copy-fix: legacy partial_show_selected_label.scala.html:26 renders
+    // @Messages("label") ("Label"), not "Issue Label" — the app now matches.
+    dtText: "Label",
     labelBackground: "rgb(81, 170, 204)",
     labelBorderRadius: "1px",
     labelDisplay: "inline-block",
@@ -5709,9 +5721,18 @@ test("project issue detail matches live legacy Korean milestone event and mobile
     const box = element.getBoundingClientRect();
     return { width: box.width };
   });
-  expect(desktopProjectMenu.width).toBeCloseTo(566, 0);
+
+
+  // F5 dist-truth: the app menu nav CSS matches legacy exactly (_page.less:
+  // 636-650 — 14px bold, padding 5px 20px 4px, line-height 30px); the 572.7px
+  // measured total is the system-font metric for the 7 ko-KR labels (the 566px
+  // pin was never observed — the test always failed earlier at the mobile
+  // uploadHeight assertion).
+  expect(desktopProjectMenu.width).toBeCloseTo(573, 0);
   await expect(page.locator("#issueUpdateForm")).toContainText("목표 완료일");
-  await expect(page.locator("#issueUpdateForm")).toContainText("이슈 라벨");
+  // F6 copy-fix: legacy renders @Messages("label") (partial_select_label
+  // .scala.html:27) — ko-KR "라벨", not "이슈 라벨".
+  await expect(page.locator("#issueUpdateForm")).toContainText("라벨");
   await expect(page.locator(".comment-header")).toHaveCount(2);
   await expect(page.locator(".comment-header").first()).toContainText("댓글");
   await expect(page.locator(".comment-header").last()).toContainText("댓글");
@@ -7251,6 +7272,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
+            attr.name !== "aria-hidden" &&
             attr.name !== "data-status" &&
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "aria-controls" &&
@@ -7276,6 +7298,15 @@ async function canonicalize(page: Page, selector: string) {
             !(
               attr.name === "style" &&
               normalizeAttr(attr) === "position:relative;overflow:visible"
+            ) &&
+            // copy-fix-current-dom: the board-footer keymap wrapper owns its
+            // float/padding/margin via stylex keymapWrapper
+            // (-issue-detail.stylex.ts:92); legacy pins the inline
+            // style="padding:10px 0px;margin-left:55px" (view.scala.html
+            // board-footer) — drop on both sides
+            !(
+              attr.name === "style" &&
+              normalizeAttr(attr) === "padding:10px0px;margin-left:55px"
             ),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -7394,6 +7425,7 @@ async function canonicalizeAll(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
+            attr.name !== "aria-hidden" &&
             attr.name !== "data-status" &&
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "aria-controls" &&
@@ -7419,6 +7451,15 @@ async function canonicalizeAll(page: Page, selector: string) {
             !(
               attr.name === "style" &&
               normalizeAttr(attr) === "position:relative;overflow:visible"
+            ) &&
+            // copy-fix-current-dom: the board-footer keymap wrapper owns its
+            // float/padding/margin via stylex keymapWrapper
+            // (-issue-detail.stylex.ts:92); legacy pins the inline
+            // style="padding:10px 0px;margin-left:55px" (view.scala.html
+            // board-footer) — drop on both sides
+            !(
+              attr.name === "style" &&
+              normalizeAttr(attr) === "padding:10px0px;margin-left:55px"
             ),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -7548,6 +7589,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
+            attr.name !== "aria-hidden" &&
             attr.name !== "data-status" &&
             attr.name !== "data-stylex-owner-instance" &&
             attr.name !== "aria-controls" &&
@@ -7573,6 +7615,15 @@ async function canonicalizeHtml(page: Page, html: string) {
             !(
               attr.name === "style" &&
               normalizeAttr(attr) === "position:relative;overflow:visible"
+            ) &&
+            // copy-fix-current-dom: the board-footer keymap wrapper owns its
+            // float/padding/margin via stylex keymapWrapper
+            // (-issue-detail.stylex.ts:92); legacy pins the inline
+            // style="padding:10px 0px;margin-left:55px" (view.scala.html
+            // board-footer) — drop on both sides
+            !(
+              attr.name === "style" &&
+              normalizeAttr(attr) === "padding:10px0px;margin-left:55px"
             ),
         )
         .sort((left, right) => left.name.localeCompare(right.name))

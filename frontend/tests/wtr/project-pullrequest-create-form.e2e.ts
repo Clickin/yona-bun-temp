@@ -923,7 +923,10 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
 
   await page.fill("#title", "Conflict accepted title");
   await page.click('form.nm button[type="submit"]');
-  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  // F6 copy-fix: on a successful create the route navigates to the PR list
+  // (legacy server redirect), so the conflict modal is unmounted rather than
+  // merely hidden — assert the post-navigation state deterministically.
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveCount(0);
   await expect.poll(() => postRequests.length).toBe(1);
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(conflictDialogMessages).toEqual(["Title is a required field."]);

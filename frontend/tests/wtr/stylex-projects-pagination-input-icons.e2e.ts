@@ -361,8 +361,10 @@ for (const viewport of [
       verticalAlign: "middle",
       width: "30px",
     });
+    // F6 copy-fix: the dist sprite asset is content-hashed (sprite-<hash>.png);
+    // pin the asset prefix instead of the un-hashed source name.
     expect(actual.previousStyle).toEqual({
-      backgroundImage: expect.stringContaining("sprite.png"),
+      backgroundImage: expect.stringContaining("assets/sprite-"),
       backgroundPosition: "-164px -2px",
       backgroundRepeat: "no-repeat",
       display: "inline-block",
@@ -371,7 +373,7 @@ for (const viewport of [
       width: "6px",
     });
     expect(actual.nextStyle).toEqual({
-      backgroundImage: expect.stringContaining("sprite.png"),
+      backgroundImage: expect.stringContaining("assets/sprite-"),
       backgroundPosition: "-23px -13px",
       backgroundRepeat: "no-repeat",
       display: "inline-block",

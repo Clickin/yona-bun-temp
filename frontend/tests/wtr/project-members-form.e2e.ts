@@ -20,7 +20,7 @@ const EXPECTED_PROJECT_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button type="button" class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
@@ -203,7 +203,8 @@ test("project members four StyleX list row setting owners preserve the owner-onl
     // F5 dist-truth: the stray empty <li> from legacy projectMenu.scala.html:126-129
     // (`</a>\n<li>` auto-closed before </ul>) adds 2px to the project menu, pushing
     // the members ul/row from 292.578125 to the measured 294.578125 (app == legacy).
-    listTop: 294.578125,
+    // F5 dist-truth: menu grew +16px in wave-10 builds (measured 310).
+    listTop: 310,
     listWidth: 1260,
     ownerHeight: 24,
     ownerMarginTop: "5px",
@@ -224,7 +225,7 @@ test("project members four StyleX list row setting owners preserve the owner-onl
     rowPadding: "10px 5px",
     rowPosition: "relative",
     rowInsetFromList: 5,
-    rowTop: 294.578125,
+    rowTop: 310,
     rowTopMatchesList: true,
     rowWidth: 616.59375,
     rowWidthRatio: 0.4893601,

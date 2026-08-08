@@ -248,6 +248,7 @@ function ProjectCreateScreen({
                     data-format="user"
                     className={`${stylex.props(projectFormLayout.select).className} mb10`}
                     data-stylex-owner="project-form-owner"
+                    style={{ minWidth: "220px" }}
                     value={ownerName}
                     onChange={(event) => {
                       const nextOwner = event.currentTarget.value;
@@ -452,6 +453,7 @@ function ProjectCreateScreen({
                       data-dropdown-css-class="select2-without-searchbox"
                       className={`${stylex.props(projectFormLayout.select).className} mb10 mt5`}
                       data-stylex-owner="project-form-vcs"
+                      style={{ minWidth: "220px" }}
                       value={vcs}
                       onChange={(event) => {
                         const nextVcs = event.currentTarget.value;

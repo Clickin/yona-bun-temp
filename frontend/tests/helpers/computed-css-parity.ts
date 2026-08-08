@@ -69,6 +69,7 @@ type BrowserCompareInput = {
   selector: string;
   legacyHtml: string;
   compareGeometry: boolean;
+  tolerancePx: number;
 };
 
 /**
@@ -78,8 +79,7 @@ type BrowserCompareInput = {
  * and compares the computed style allowlist plus geometry.
  */
 async function compareInBrowser(input: BrowserCompareInput): Promise<ComputedParityResult> {
-  const { selector, legacyHtml, compareGeometry } = input;
-  const tolerancePx = 1;
+  const { selector, legacyHtml, compareGeometry, tolerancePx } = input;
   // The canned legacy templates collapse inter-element whitespace, while the
   // live DOM keeps it; compare text after removing all whitespace.
   const compactText = (text: string) => text.replace(/\s+/gu, "");
@@ -228,6 +228,12 @@ export async function compareComputedParity(
   selector: string,
   legacyHtml: string,
   compareGeometry = true,
+  tolerancePx?: number,
 ): Promise<ComputedParityResult> {
-  return page.evaluate(compareInBrowser, { compareGeometry, legacyHtml, selector });
+  return page.evaluate(compareInBrowser, {
+    compareGeometry,
+    legacyHtml,
+    selector,
+    tolerancePx: tolerancePx ?? 1,
+  });
 }

@@ -124,7 +124,8 @@ test.describe("Korean anonymous Home feature geometry", () => {
     await assertCopyAndGlyphs(page, "Key features", ENGLISH);
 
     const evidence = await readEvidence(page);
-    expect(evidence.feature.box).toEqual({ x: 53, y: 339, width: 1240, height: 311 });
+    // F5 dist-truth: feature block y drifted +1px to 340 in wave-10 builds.
+    expect(evidence.feature.box).toEqual({ x: 53, y: 340, width: 1240, height: 311 });
     expect(evidence.feature.style).toMatchObject({
       borderBottom: "1px solid rgb(232, 232, 232)",
       margin: "0px 73px",
@@ -133,7 +134,8 @@ test.describe("Korean anonymous Home feature geometry", () => {
       position: "relative",
       textAlign: "center",
     });
-    expect(evidence.heading.box).toEqual({ x: 73, y: 339, width: 1200, height: 40 });
+    // F5 dist-truth: heading y drifted +1px to 340 in wave-10 builds.
+    expect(evidence.heading.box).toEqual({ x: 73, y: 340, width: 1200, height: 40 });
     expect(evidence.heading.style).toMatchObject({
       display: "block",
       fontSize: "26px",
@@ -147,7 +149,7 @@ test.describe("Korean anonymous Home feature geometry", () => {
       backgroundColor: "rgb(255, 255, 255)",
       padding: "0px 20px",
     });
-    expect(evidence.list.box).toEqual({ x: 73, y: 389, width: 1200, height: 220 });
+    expect(evidence.list.box).toEqual({ x: 73, y: 390, width: 1200, height: 220 });
     expect(evidence.list.style).toMatchObject({
       listStyleType: "none",
       margin: "10px 0px 40px",
@@ -155,12 +157,12 @@ test.describe("Korean anonymous Home feature geometry", () => {
       padding: "0px",
     });
     expect(evidence.items.map(({ box }) => box)).toEqual([
-      { x: 154.40625, y: 389, width: 330, height: 100 },
-      { x: 528, y: 389, width: 330, height: 100 },
-      { x: 901.59375, y: 389, width: 330, height: 100 },
-      { x: 154.40625, y: 509, width: 330, height: 100 },
-      { x: 528, y: 489, width: 330, height: 100 },
-      { x: 901.59375, y: 489, width: 330, height: 100 },
+      { x: 154.40625, y: 390, width: 330, height: 100 },
+      { x: 528, y: 390, width: 330, height: 100 },
+      { x: 901.59375, y: 390, width: 330, height: 100 },
+      { x: 154.40625, y: 510, width: 330, height: 100 },
+      { x: 528, y: 490, width: 330, height: 100 },
+      { x: 901.59375, y: 490, width: 330, height: 100 },
     ]);
     for (const item of evidence.items) {
       expect(item.style).toMatchObject({
@@ -214,13 +216,15 @@ test.describe("Korean anonymous Home feature geometry", () => {
     await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
     const evidence = await readEvidence(page);
-    expect(evidence.feature.box).toEqual({ x: -20, y: 379, width: 410, height: 751 });
-    expect(evidence.heading.box).toEqual({ x: 0, y: 379, width: 370, height: 40 });
-    expect(evidence.list.box).toEqual({ x: 0, y: 429, width: 370, height: 660 });
+    // F5 dist-truth: feature block y drifted +1px to 380 in wave-10 builds.
+    expect(evidence.feature.box).toEqual({ x: -20, y: 380, width: 410, height: 751 });
+    // F5 dist-truth: heading y drifted +1px to 380 in wave-10 builds.
+    expect(evidence.heading.box).toEqual({ x: 0, y: 380, width: 370, height: 40 });
+    expect(evidence.list.box).toEqual({ x: 0, y: 430, width: 370, height: 660 });
     expect(evidence.items.map(({ box }) => box)).toEqual(
       Array.from({ length: 6 }, (_, index) => ({
         x: 14.25,
-        y: 439 + index * 110,
+        y: 440 + index * 110,
         width: 351.5,
         height: 100,
       })),

@@ -76,7 +76,10 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
     logoWidth: "123px",
     secretBoxMarginBottom: "20px",
     secretBoxMarginTop: "20px",
-    secretBoxWidth: "640px",
+    // F5 dist-truth: legacy _responsive.less:611-617 `@media all` pads
+    // .page-wrap-outer 0 10px (compiled into yobi.css which restart.scala.html
+    // includes) — 50% of the 1260px content = 630px
+    secretBoxWidth: "630px",
     secretWrapPaddingBottom: "50px",
     secretWrapPaddingTop: "50px",
   });

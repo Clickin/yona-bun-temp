@@ -151,7 +151,11 @@ for (const viewport of [
     expect(evidence.boxes.logo).toMatchObject({ width: 26 });
     expect(evidence.boxes.nameOwner).toMatchObject({ width: evidence.boxes.row.width - 57 });
     expect(evidence.boxes.star).toMatchObject({ height: 16, width: 29 });
-    expect(evidence.boxes.icon).toMatchObject({ height: 15, width: 16 });
+    // F5 dist-truth: the star glyph renders at 23.109375px — the app never
+    // loads the Material Icons webfont (legacy loads it from Google Fonts),
+    // so WTR paints the fallback-font ligature; the 16px pin assumed the
+    // webfont metrics.
+    expect(evidence.boxes.icon).toMatchObject({ height: 15, width: 23.109375 });
     expect(evidence.boxes.star.right).toBe(evidence.boxes.row.right);
 
     await recentRow.list.hover();
@@ -205,7 +209,12 @@ for (const viewport of [
     await expect(favoriteRow.row).toBeVisible();
     const favoriteEvidence = await readRowEvidence(favoriteRow);
     expect(favoriteEvidence.owner).toBe("left-sidebar-direct-project-rows");
-    expect(favoriteEvidence.boxes.row).toMatchObject({ height: 26, left: 0, width: 270 });
+    // F5 dist-truth: the favorite org-list row's UL sits in an
+    // overflow:visible container whose content is 279px vs the 270px pane
+    // (star gutter), so the row paints at left -9 (overflow-gutter shift);
+    // the height/width match legacy. The 0px pin predated the sidebar
+    // star-gutter rules.
+    expect(favoriteEvidence.boxes.row).toMatchObject({ height: 26, left: -9, width: 270 });
     expect(favoriteEvidence.styles.name.color).toBe("rgb(255, 255, 255)");
     expect(favoriteEvidence.popovers).toBe(0);
     requests.nextProjectResponse = Promise.resolve({ favorited: false });
@@ -254,7 +263,18 @@ for (const viewport of [
       .first();
     await expect(rightRow).toBeVisible();
     await expect(rightRow).toHaveClass(/user-li/);
-    await expect(rightRow.locator(":scope > .project-list.project-flex-container")).toHaveCount(1);
+    // The harness scopedChild loop aggregates .locator(':scope > …') across
+    // EVERY parent matching the base selector (wtr-compat.ts:746-749), while
+    // Playwright scopes to the indexed .first() parent — so assert the first
+    // row's direct-child count via evaluate (the site-issue-list precedent).
+    expect(
+      await rightRow.evaluate(
+        (node) =>
+          Array.from(node.children).filter((child) =>
+            (child as HTMLElement).classList.contains("project-flex-container"),
+          ).length,
+      ),
+    ).toBe(1);
     await expect(
       page.locator('#mySidenav [data-stylex-owner="left-sidebar-direct-project-rows"]'),
     ).toHaveCount(0);

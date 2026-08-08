@@ -9,7 +9,6 @@ import {
   sendWorkspaceEmailValidationRest,
   setMainWorkspaceEmailRest,
 } from "../../../api/workspace";
-import defaultEmailAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
@@ -294,7 +293,9 @@ type WorkspaceEmailRow = {
   valid?: unknown;
 };
 
-const DEFAULT_EMAIL_AVATAR_SRC = defaultEmailAvatarUrl;
+// Legacy UserApp.DEFAULT_AVATAR_URL shape (unhashed /assets/images/... served
+// from public/images); the bundled asset import would break usesImportedFilename.
+const DEFAULT_EMAIL_AVATAR_SRC = "/assets/images/default-avatar-128.png";
 function UserEmailSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   return <UserEmailSettingsScreen runtimeConfig={runtimeConfig} />;
@@ -393,7 +394,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
               <img
                 {...primaryAvatarStyleProps}
-                src={avatarSrc(profile?.avatarUrl)}
+                src={avatarSrc(profile?.avatarUrl, runtimeConfig.basePath)}
                 width="40"
                 height="40"
                 data-stylex-owner="user-email-primary-avatar"
@@ -423,7 +424,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
                   <img
                     {...secondaryAvatarStyleProps}
-                    src={avatarSrc(row.avatarUrl)}
+                    src={avatarSrc(row.avatarUrl, runtimeConfig.basePath)}
                     width="40"
                     height="40"
                     data-stylex-owner="user-email-secondary-avatar"
@@ -484,6 +485,8 @@ function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-function avatarSrc(value: unknown): string {
-  return stringValue(value) || DEFAULT_EMAIL_AVATAR_SRC;
+function avatarSrc(value: unknown, basePath: string): string {
+  // The legacy rows fall back to UserApp.DEFAULT_AVATAR_URL; prefix the
+  // context path so the unhashed /assets/images/... URL resolves.
+  return stringValue(value) || prefixBasePath(basePath, DEFAULT_EMAIL_AVATAR_SRC);
 }

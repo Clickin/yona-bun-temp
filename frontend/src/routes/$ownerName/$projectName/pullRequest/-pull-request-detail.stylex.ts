@@ -41,6 +41,8 @@ export const styles = stylex.create({
   badgeMerged: { backgroundColor: "#65c9df" },
   badgeConflict: { backgroundColor: "#c0392b" },
   headerStateDate: { marginRight: "10px", marginTop: "10px" },
+  reviewers: { display: "inline-block", marginRight: "5px" },
+  reviewerSummary: { fontSize: "13px", margin: "0px 10px", verticalAlign: "middle" },
   author: {
     color: pullRequestDetailColors.accentText,
     marginTop: "20px",

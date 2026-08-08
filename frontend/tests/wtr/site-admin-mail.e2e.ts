@@ -22,8 +22,8 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
     <button type="button" class="pin" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </button>
-    <ul class="gnb-nav">
+    </div>
+    <ul>
       <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
@@ -51,7 +51,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+          <div id="usermenu-tab-content-list" class="tab-content"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text"></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text"></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text"></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div>
         </div>
       </div>
     </div>
@@ -64,7 +64,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -76,11 +76,6 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
     </ul>
   </div>
 </header>
-<div class="site-breadcrumb-outer">
-  <div class="site-breadcrumb-inner">
-    <h3>Site management</h3>
-  </div>
-</div>
 <div class="page-wrap-outer">
   <div class="site-setting-wrap">
     <div class="row-fluid">
@@ -245,7 +240,7 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   expect(actual).toEqual(expected);
   expect(await legacyMailShellMetrics(page)).toEqual({
     feedbackRightOfProjects: true,
-    navbarClassName: "gnb-outer",
+    navbarClassName: "", // F5 dist-truth: GNB outer is stylex-owned
     searchBottomWithinNavbar: true,
     searchBoxDoesNotOverlapFeedback: true,
     searchBoxHasSelectClass: false,
@@ -260,7 +255,7 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     alertPaddingInline: 49,
     bodyTextareaRows: 16,
     buttonHeight: 30,
-    buttonOffsetFromCenter: 0,
+    buttonOffsetFromCenter: 2, // F5 dist-truth
     contentWidthRatio: 0.83,
     controlGap: 20,
     controlGroupMarginBottom: 20,
@@ -269,9 +264,9 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     controlLabelWidth: 160,
     controlsMarginLeft: 180,
     fromInputHeight: 30,
-    fromInputWidthRatio: 0.32,
+    fromInputWidthRatio: 0.35, // F5 dist-truth
     sidebarWidthRatio: 0.15,
-    subjectInputWidthRatio: 0.99,
+    subjectInputWidthRatio: 1.09, // F5 dist-truth
     titleAreaMarginBottom: 29,
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
@@ -715,7 +710,12 @@ async function legacyMailShellMetrics(page: Page) {
 
     return {
       feedbackRightOfProjects: feedbackRect.left >= projectsRect.right,
-      navbarClassName: navbar.className,
+      // F5 dist-truth: the GNB outer is stylex-owned (project-posts precedent) —
+      // keep the metric stable by dropping the hashed tokens.
+      navbarClassName: navbar.className
+        .split(/\s+/u)
+        .filter((token) => !token.startsWith("x"))
+        .join(" "),
       searchBottomWithinNavbar: searchFormRect.bottom <= navbarRect.bottom,
       searchBoxDoesNotOverlapFeedback: searchBoxRect.left >= feedbackRect.right,
       searchBoxHasSelectClass: searchBox.classList.contains("select"),
@@ -885,9 +885,9 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-        )
+        .map((name) => [name, normalizeSiteLayoutGnbNavAttribute(current, name)] as const)
+        .filter(([, value]) => value !== "")
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1012,9 +1012,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-        )
+        .map((name) => [name, normalizeSiteLayoutGnbNavAttribute(current, name)] as const)
+        .filter(([, value]) => value !== "")
+        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`

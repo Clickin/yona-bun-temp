@@ -118,9 +118,9 @@ const styles = stylex.create({
     borderWidth: "1px",
     color: siteUserListColors.stateTabText,
     display: "block",
-    fontWeight: "700",
+    // legacy bootstrap .nav-tabs > li > a sets neither font-weight (400) nor
+    // margin-right (0) — the fallback fixture pins that baseline.
     lineHeight: "20px",
-    marginRight: "2px",
     padding: {
       default: "8px 30px",
       "@media (max-width: 720px)": "8px 5px",
@@ -1009,6 +1009,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <SiteAdminSidebar
                 activeTo="/sites/userList"
                 badgeOwner="site-user-list-sidebar-notification-badge"
+                ulClassName="site-setting-nav"
                 baseLinkProps={LEGACY_SITE_SETTING_NAV_LINK_PROPS}
                 dataSelected="active-only"
                 navOwner="site-user-list-sidebar-nav"

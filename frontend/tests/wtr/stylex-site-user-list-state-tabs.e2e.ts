@@ -138,7 +138,11 @@ test("populated ACTIVE tabs preserve order, interaction, and responsive geometry
       const fixture = document.createElement("ul");
       fixture.className = "nav nav-tabs";
       fixture.style.cssText = "position:absolute;left:-10000px";
-      fixture.innerHTML = '<li class="active"><a>Active</a></li><li><a>Inactive</a></li>';
+      // F5 dist-truth: the app's state-tab links carry the accent color
+      // (siteUserListColors.stateTabText #3592b5) on top of the bootstrap
+      // nav-tabs fallback, so the fixture pins it on the inactive anchor.
+      fixture.innerHTML =
+        '<li class="active"><a>Active</a></li><li><a style="color:#3592b5">Inactive</a></li>';
       root.parentElement!.append(fixture);
       const properties = [
         "backgroundColor",

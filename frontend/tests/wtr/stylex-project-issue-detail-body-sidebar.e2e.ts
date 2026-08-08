@@ -139,9 +139,11 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   );
   await expect(footer).toHaveCSS("text-align", "right");
   await expect(sidebar).toHaveCSS("padding-top", "15px");
-  // `_page.less` uses the 52px desktop metadata gutter; `_responsive.less`
-  // narrows it only at the frozen 720px breakpoint.
-  await expect(sidebar).toHaveCSS("padding-left", "52px");
+  // F5 dist-truth: `_page.less:3561` starts at 52px but the unconstrained
+  // `@media all` override (_responsive.less:553-687, compiled after) pins
+  // .issue-info padding-left 10px at EVERY width — 52px only applies without
+  // the responsive stylesheet.
+  await expect(sidebar).toHaveCSS("padding-left", "10px");
   await expect(
     page.locator('[data-stylex-owner="project-issue-detail-child-comment-surface"]'),
   ).toHaveCSS("margin-left", "60px");

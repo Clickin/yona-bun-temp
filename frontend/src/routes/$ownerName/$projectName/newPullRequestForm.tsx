@@ -363,6 +363,7 @@ function ProjectNewPullRequestBody({
                   />
                 </div>
                 <PullRequestFileUploader
+                  wrapperStyleProps={stylex.props(styles.uploadWrap)}
                   helpClassName={`${stylex.props(styles.uploadSaveHelp).className} help`}
                   pasteHelpStyleProps={stylex.props(uploadStyles.pasteHelpVisible)}
                   owners={{

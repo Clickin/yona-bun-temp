@@ -81,7 +81,7 @@ test("breadcrumb source owns exactly the frozen route-local declarations", () =>
   expect(route).toContain('"@media (max-width: 720px)": "10px"');
   expect(appCss).toContain(".site-breadcrumb-outer {\n    border-bottom: 1px solid #ddd;");
   expect(appCss).toContain(
-    ".site-breadcrumb-inner h3 {\n    margin: 0;\n    padding: 10px 10px 5px;\n    font-weight: 400;",
+    ".site-breadcrumb-inner h3 {\n    margin: 0;\n    padding: 10px 10px 5px;\n    /* legacy bootstrap h3 { font-size: 24.5px } bootstrap.css:726-728 — the\n       app has no bootstrap typography cascade, so restore it on the breadcrumb */\n    font-size: 24.5px;\n    font-weight: 400;",
   );
   expect(breadcrumb).not.toContain("borderBottom");
   expect(breadcrumb).not.toContain('fontWeight: "400"');

@@ -39,7 +39,9 @@ test("project svn compare patch state matches legacy code/compare_svn.scala.html
     commitIdMarginTop: "5px",
     commitInfoBackground: "rgba(0, 0, 0, 0)",
     commitInfoBorderTopWidth: "0px",
-    commitInfoMarginBottom: "16px",
+    // F5 dist-truth: legacy bootstrap.css:603-605 p { margin: 0 0 10px } —
+    // the 16px pin predated the shared compare page padding removal
+    commitInfoMarginBottom: "10px",
     commitInfoPadding: "0px",
     diffBodyDisplay: "none",
     diffWrapMarginBottom: "20px",

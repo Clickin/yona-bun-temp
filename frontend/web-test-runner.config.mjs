@@ -42,9 +42,15 @@ const FETCH_MOCK_SCRIPT = `<script>
         this.__wtrUrl = url;
         return super.open(method, url, asyncFlag, username, password);
       }
+      setRequestHeader(name, value) {
+        // Forward CSRF/auth headers to the mock registry (the app uploads
+        // via XHR with x-csrf-token; without this the CSRF checks read "").
+        this.__wtrHeaders = this.__wtrHeaders ?? {};
+        this.__wtrHeaders[name] = value;
+      }
       send(body) {
         const xhr = this;
-        parent.__wtrMockFetch(this.__wtrUrl, { method: this.__wtrMethod, body })
+        parent.__wtrMockFetch(this.__wtrUrl, { method: this.__wtrMethod, body, headers: this.__wtrHeaders ?? {} })
           .then((response) => {
             return response.text().then((text) => {
               Object.defineProperty(xhr, "status", { configurable: true, get: () => response.status });
@@ -210,6 +216,24 @@ const fixturePlugin = {
     if (pathname.startsWith("/tests/")) {
       // eslint-disable-next-line no-console
       console.log("FIXSERVE", pathname.slice(0, 80));
+    }
+    if (pathname.startsWith("/yona/assets/images/")) {
+      const rel = pathname
+        .replace(/^\/yona\/assets\/images\//, "")
+        .split("/")
+        .filter(Boolean);
+      // Vite copies public/images to dist/images; legacy /assets/images/...
+      // avatar fallbacks resolve through this alias.
+      const distPath = join(
+        distDir,
+        "legacy-assets",
+        "images",
+        ...rel.map((part) => part.replace(/\.\./g, "")),
+      );
+      if (existsSync(distPath) && statSync(distPath).isFile()) {
+        return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
+      }
+      return undefined;
     }
     if (pathname.startsWith("/yona/legacy-assets/")) {
       const rel = pathname

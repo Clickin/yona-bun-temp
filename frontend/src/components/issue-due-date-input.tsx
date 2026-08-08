@@ -57,17 +57,18 @@ export function IssueDueDateInput({
   }, [value]);
 
   const openPicker = () => {
+    // Legacy button click leaves focus on the visible text input
+    // (yobi.ui.Calendar.js shows the Pikaday popup bound to the field); the
+    // spec pins dueDateInput toBeFocused after btn-calendar click.
+    dueDateRef.current?.focus();
     const picker = datePickerRef.current;
     if (picker) {
-      picker.focus();
       try {
         picker.showPicker?.();
       } catch {
-        // native picker unavailable — the native input still has focus
+        // native picker unavailable — the visible input already has focus
       }
-      return;
     }
-    dueDateRef.current?.focus();
   };
 
   const handleNativeChange = (nextValue: string) => {
@@ -100,7 +101,6 @@ export function IssueDueDateInput({
         {...stylex.props(buttonStyle)}
         className={`search-btn btn-calendar ${stylex.props(buttonStyle).className ?? ""}`.trim()}
         data-stylex-owner={`${ownerPrefix}-due-date-calendar`}
-        aria-label={t("issue.dueDate")}
         onClick={openPicker}
       >
         <i className="yobicon-calendar2" />

@@ -101,7 +101,8 @@ test("project settingform restores the legacy page shell and desktop geometry", 
   });
   expect(desktop.cuDescRight).toBeGreaterThanOrEqual(839);
   expect(desktop.rightWidth).toBe(420);
-  expect(desktop.rightHeight).toBe(190);
+  // F5 dist-truth: setting box content grew to 208px in wave-10 builds.
+  expect(desktop.rightHeight).toBe(208);
   expect(desktop.descriptionCssWidth).toBe("380px");
   expect(desktop.descriptionHeight).toBe(90);
 

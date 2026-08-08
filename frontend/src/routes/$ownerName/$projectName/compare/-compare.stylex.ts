@@ -9,7 +9,10 @@ export const compareColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
-  page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  // legacy compare.scala.html / compare_svn.scala.html use the unpadded
+  // .page-wrap-outer + .code-browse-wrap; the 10px gutters shrank the
+  // svn diff-wrap to 1260 vs legacy 1280 (project page width)
+  page: { margin: "20px auto 0px", width: "100%", boxSizing: "border-box" },
   browse: { width: "100%" },
   commitInfo: { color: compareColors.title, margin: "10px 0px" },
   empty: {

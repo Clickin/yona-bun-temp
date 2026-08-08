@@ -360,17 +360,27 @@ const paginationOffLabelStyleProps = stylex.props(
   styles.paginationLabel,
   styles.paginationOffLabel,
 );
-const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+const paginationPrevIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationPrevIcon,
+  paginationStyles.paginationSprite(legacySpriteUrl),
+);
 const paginationPrevDisabledIconStyleProps = stylex.props(
   styles.paginationIcon,
   styles.paginationPrevIcon,
   styles.paginationPrevIconDisabled,
+  paginationStyles.paginationSprite(legacySpriteUrl),
 );
-const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
+const paginationNextIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationNextIcon,
+  paginationStyles.paginationSprite(legacySpriteUrl),
+);
 const paginationNextDisabledIconStyleProps = stylex.props(
   styles.paginationIcon,
   styles.paginationNextIcon,
   styles.paginationNextIconDisabled,
+  paginationStyles.paginationSprite(legacySpriteUrl),
 );
 
 export const Route = createFileRoute("/sites/postList")({
@@ -440,6 +450,7 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <SiteAdminSidebar
                 activeTo="/sites/postList"
                 badgeOwner="site-post-list-sidebar-badge"
+                ulClassName="site-setting-nav"
                 baseLinkProps={legacySiteSidebarLinkProps}
                 linkPropsByTo={{
                   "/sites/postList": {
@@ -470,7 +481,11 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   <LegacyMessage messageKey="site.sidebar.postList" />
                 </h2>
               </div>
-              <ul {...postListContainerStyleProps} data-stylex-owner="site-post-list-container">
+              <ul
+                {...postListContainerStyleProps}
+                className={`${postListContainerStyleProps.className} post-list-wrap`}
+                data-stylex-owner="site-post-list-container"
+              >
                 {(query.data?.posts ?? []).map((post, index) => (
                   <PostListItem
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
@@ -536,7 +551,6 @@ function PostListPagination({
               <i
                 {...paginationPrevIconStyleProps}
                 data-stylex-owner="site-post-list-pagination-dynamic-sprite"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -552,7 +566,6 @@ function PostListPagination({
                 {...paginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-post-list-pagination-dynamic-sprite"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationOffLabelStyleProps}
@@ -639,7 +652,6 @@ function PostListPagination({
               <i
                 {...paginationNextIconStyleProps}
                 data-stylex-owner="site-post-list-pagination-dynamic-sprite"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -656,7 +668,6 @@ function PostListPagination({
                 {...paginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-post-list-pagination-dynamic-sprite"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}
@@ -674,7 +685,7 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
   return (
     <li
       {...postListRowStyleProps}
-      className={postListRowStyleProps.className}
+      className={`${postListRowStyleProps.className} listitem`}
       data-stylex-owner="site-post-list-row"
     >
       <Link

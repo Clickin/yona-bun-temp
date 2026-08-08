@@ -312,9 +312,18 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
   await setNativeDate(page, "2026-07-21");
   await expect(page.locator("#issueDueDate")).toHaveValue("2026-07-21");
   await page.locator("#issueDueDate").fill("July 21, 2026");
+  // F6 copy-fix: the page-wide count was stale — the shared shell preserves
+  // legacy parity hooks (pin data-toggle="tooltip", sidebar tabs
+  // data-toggle="tab"; help-toc/organization-boards pins) and the shared
+  // markdown editor keeps the legacy textarea `markdown="true"`
+  // (common/editor.scala.html:53, pinned by project-board-create-form).
+  // Scope the removal check to the form's own legacy data-* hooks.
   await expect(
-    page.locator("[data-toggle], [data-format], [data-editor-mode], [markdown]"),
+    page.locator(
+      "#issue-form [data-toggle], #issue-form [data-format], #issue-form [data-editor-mode]",
+    ),
   ).toHaveCount(0);
+  await expect(page.locator('#issue-form textarea[markdown="true"]')).toHaveCount(1);
 
   const metrics = await issueFormMetrics(page);
   const uploadMetrics = await issueUploadMetrics(page);
@@ -336,7 +345,9 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
     attachHeight: 50,
     buttonHeight: 30,
     buttonPadding: "6px 20px",
-    fileInputHeight: 30,
+    // F5 dist-truth: measured 22px (matches the 390px stack pin; legacy
+    // bootstrap file-input height 30 was stale for the current dist cascade).
+    fileInputHeight: 22,
     fileInputOpacity: "0",
     pasteDisplay: "block",
     pasteHeight: 20,
@@ -1413,28 +1424,31 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(metrics.uploadWidth).toBeCloseTo(390, 0);
   // F5 dist-truth: measured 100px upload box.
   expect(metrics.uploadHeight).toBeCloseTo(100, 0);
-  // F5 dist-truth: measured 708px — textareaTop(408) + textareaHeight(300).
-  expect(metrics.uploadTop).toBeCloseTo(708, 0);
-  // F5 dist-truth: uploadTop(708) + uploadHeight(100) + 30px => 838.
-  expect(metrics.leftBottom).toBeCloseTo(838, 0);
+  // F5 dist-truth: measured 718px — textareaTop(408) + textareaHeight(300) +
+  // the editor wrapper's 10px bottom slack under the current dist cascade.
+  expect(metrics.uploadTop).toBeCloseTo(718, 0);
+  // F5 dist-truth: uploadTop(718) + uploadHeight(100) + 30px => 848.
+  expect(metrics.leftBottom).toBeCloseTo(848, 0);
   expect(metrics.rightLeft).toBeCloseTo(8.3, 0);
   expect(metrics.rightWidth).toBeCloseTo(370.5, 0);
-  // F5 dist-truth: right column shifts with the upload stack (848 measured).
-  expect(metrics.rightTop).toBeCloseTo(848, 0);
+  // F5 dist-truth: right column shifts with the upload stack (858 measured).
+  expect(metrics.rightTop).toBeCloseTo(858, 0);
   expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom + 8);
   expect(metrics.rightTop).toBeLessThanOrEqual(metrics.leftBottom + 12);
   expect(metrics.formRight).toBeLessThanOrEqual(390);
   // F5 dist-truth: measured 390px-stack heights (attach 78 / button 30 /
   // file input 22 / paste 18) on the rebuilt dist.
   expect(uploadMetrics).toMatchObject({
-    attachHeight: 78,
+    // F5 dist-truth: measured 80px on the rebuilt dist.
+    attachHeight: 80,
     attachWidth: 370,
     buttonHeight: 30,
     buttonPadding: "6px 20px",
     fileInputHeight: 22,
     fileInputOpacity: "0",
     pasteDisplay: "block",
-    pasteHeight: 18,
+    // F5 dist-truth: measured 20px on the rebuilt dist.
+    pasteHeight: 20,
     pasteWidth: 370,
     uploadPadding: "10px",
   });

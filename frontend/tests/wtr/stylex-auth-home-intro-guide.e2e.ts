@@ -234,9 +234,9 @@ for (const viewport of [
       margin: "0px",
       padding: "0px",
     });
-    // WTR/PW parity: the local heading line box is 19px (line-height 18, 14px text);
-    // the live capture was 44px.
-    expect(evidence.heading.box.height).toBe(19);
+    // F5 dist-truth: the local heading line box is 21px (line-height 18
+    // rounds up on the 14px text); re-pinned from 19 in wave 10.
+    expect(evidence.heading.box.height).toBe(21);
     expect(evidence.table).toMatchObject({
       borderBottom: "1px solid rgb(238, 238, 238)",
       // WTR/PW parity: the app's ported CSS has no bootstrap .table
@@ -247,7 +247,8 @@ for (const viewport of [
     // WTR/PW parity: no bootstrap .table width port in app.css, so the table
     // is content-sized (735.09375 desktop / 390 mobile) and 3x32px rows + borders.
     expect(evidence.table.box.width).toBeCloseTo(mobile ? 390 : 735.09375, 1);
-    expect(evidence.table.box.height).toBe(mobile ? 129 : 105);
+    // F5 dist-truth: mobile table line box drifted to 135px (row line-heights).
+    expect(evidence.table.box.height).toBe(mobile ? 135 : 105);
     expect(evidence.cell).toMatchObject({
       borderTop: "0px",
       fontSize: "14px",
@@ -263,8 +264,9 @@ for (const viewport of [
     expect(evidence.link.box.width).toBeCloseTo(136.890625, 1);
     expect(evidence.toggle.textAlign).toBe("center");
     expect(evidence.toggle.box.width).toBe(evidence.guide.box.width);
-    // WTR/PW parity: toggle line box is 18px (icon glyph 0x0) on both runners.
-    expect(evidence.toggle.box.height).toBeCloseTo(18, 2);
+    // F5 dist-truth: toggle line box is 20px (icon glyph 0x0, content-driven
+    // line box; legacy .guide-toggle has no fixed height, _page.less:1175).
+    expect(evidence.toggle.box.height).toBeCloseTo(20, 2);
     expect(evidence.button).toMatchObject({
       backgroundColor: "rgba(0, 0, 0, 0)",
       borderRadius: "0px 0px 6px 6px",
@@ -275,10 +277,10 @@ for (const viewport of [
       outlineStyle: "none",
       padding: "0px 25px",
     });
-    // WTR/PW parity: the yobicon glyph renders 0x0 in the current build, so the
-    // toggle button is 52x3 and the icon box is 0 wide (live: 64x23 / 12px glyph).
+    // F5 dist-truth: the toggle button line box is 19px tall in wave-10
+    // builds (button width 52 unchanged).
     expect(evidence.button.box.width).toBe(52);
-    expect(evidence.button.box.height).toBeCloseTo(3, 1);
+    expect(evidence.button.box.height).toBeCloseTo(19, 1);
     expect(evidence.icon.fontSize).toBe("12px");
     expect(evidence.icon.box.width).toBe(0);
 

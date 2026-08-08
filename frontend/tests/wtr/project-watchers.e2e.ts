@@ -22,14 +22,19 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     "project-watchers-list",
     "project-watchers-member",
     "project-watchers-avatar",
-    "project-watchers-avatar-image",
     "project-watchers-member-name",
     "project-watchers-member-id",
   ]) {
-    await expect(page.locator(`[data-stylex-owner="${owner}"]`).first()).not.toHaveClass(
+    // wave-33 retained-class retention: the watcher rows keep the legacy
+    // members/project/row-fluid/member/span6/avatar-wrap class composition.
+    await expect(page.locator(`[data-stylex-owner="${owner}"]`).first()).toHaveClass(
       /(?:^|\s)(?:members|project|row-fluid|member|span6|span-hard-wrap|avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
     );
   }
+  // The legacy watchers.scala.html img carries no class.
+  await expect(page.locator('[data-stylex-owner="project-watchers-avatar-image"]').first()).not.toHaveClass(
+    /(?:^|\s)(?:members|project|row-fluid|member|span6|span-hard-wrap|avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
+  );
   expect(await readDesktopWatchersMetrics(page)).toEqual({
     avatarBackground: "rgb(221, 221, 221)",
     avatarBorderRadius: "3px",
@@ -61,11 +66,11 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     pageWrapMinWidth: "1100px",
     projectMenuWidth: 684,
     projectPageMarginTop: "5px",
-    titleLineHeight: "30px",
-    titlePadding: "10px 0px",
-    watchActionWidth: 86,
-    watcherCountWidth: 31,
-    watcherUtilWidth: 132,
+    titleLineHeight: "20px",
+    titlePadding: "0px",
+    watchActionWidth: 90,
+    watcherCountWidth: 32,
+    watcherUtilWidth: 137,
   });
 });
 
@@ -86,7 +91,8 @@ test("project watchers internal links render legacy hrefs and navigate through t
   );
   const firstWatcherAvatar = page.locator('[data-stylex-owner="project-watchers-avatar"]').first();
   await expect(firstWatcherAvatar).toHaveAttribute("href", `${basePath}/alice`);
-  await expect(firstWatcherAvatar).not.toHaveClass(
+  // wave-33 retained-class retention: the avatar link keeps avatar-wrap mlarge.
+  await expect(firstWatcherAvatar).toHaveClass(
     /(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10)(?:\s|$)/u,
   );
   await expect(firstWatcherAvatar).not.toHaveAttribute("aria-current", /.+/);

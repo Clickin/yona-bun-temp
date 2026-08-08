@@ -642,6 +642,11 @@ function createTypedEvent(
   if (type.startsWith("key")) {
     return new KeyboardEvent(type, options as KeyboardEventInit);
   }
+  if (type.startsWith("drag") || type === "drop") {
+    // DragEventInit carries dataTransfer; a generic Event drops it and the
+    // app's drop handlers read event.dataTransfer.files (issueform.tsx:1040).
+    return new DragEvent(type, options as DragEventInit);
+  }
   if (type.startsWith("touch")) {
     return new TouchEvent(type, options as TouchEventInit);
   }
@@ -1364,6 +1369,37 @@ export class Locator {
     for (const type of ["pointerup", "click"]) {
       this.page.dispatch(target, type, options?.position);
     }
+    await sleep(30);
+  }
+
+  async dblclick(options?: { force?: boolean }): Promise<void> {
+    // Two click cycles (pointerdown/mousedown + pointerup/click) with a
+    // dblclick event — the legacy confirm-modal "Yes" button flow uses
+    // jQuery .dblclick() on the button. No enabled-wait between the cycles:
+    // the second cycle lands immediately on the same node.
+    const cycle = async () => {
+      let element = await this.waitForElement();
+      let target: HTMLElement = element;
+      if (!options?.force) {
+        const rect = element.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const topmost = this.page.document().elementFromPoint(x, y) as HTMLElement | null;
+        if (topmost && element.contains(topmost)) target = topmost;
+      }
+      for (const type of ["pointerdown", "mousedown"]) {
+        this.page.dispatch(target, type);
+      }
+      await sleep(10);
+      element.focus();
+      for (const type of ["pointerup", "click"]) {
+        this.page.dispatch(target, type);
+      }
+      await sleep(10);
+    };
+    await cycle();
+    await cycle();
+    this.page.dispatch(await this.waitForElement(), "dblclick");
     await sleep(30);
   }
 
@@ -2637,6 +2673,17 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         syncAssert(
           JSON.stringify(actual) === JSON.stringify(expected),
           `resolves.toEqual(${JSON.stringify(expected)})`,
+        );
+      },
+      toMatchObject: async (expected: Record<string, unknown>) => {
+        if (stringTarget === null) return;
+        const actual = (await (stringTarget() as Promise<unknown>)) as Record<string, unknown>;
+        const passes = Object.entries(expected).every(
+          ([key, value]) => JSON.stringify(actual[key]) === JSON.stringify(value),
+        );
+        syncAssert(
+          passes,
+          `resolves.toMatchObject(${JSON.stringify(expected)}) — actual: ${JSON.stringify(actual)}`,
         );
       },
     },

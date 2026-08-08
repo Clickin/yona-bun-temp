@@ -185,7 +185,12 @@ function ProjectCodeFileHistoryBody({
               ))}
             </div>
 
-            <div {...sx.history} data-stylex-owner="commit-file-history" id="history">
+            <div
+              {...sx.history}
+              className={`commit-wrap ${sx.history.className ?? ""}`.trim()}
+              data-stylex-owner="commit-file-history"
+              id="history"
+            >
               <table
                 {...sx.historyTable}
                 className={`code-table commits mt10 ${sx.historyTable.className ?? ""}`.trim()}
@@ -238,7 +243,12 @@ function ProjectCodeFileHistoryBody({
                               title={t("code.copyCommitId")}
                               data-commitid={commit.commitId}
                               onClick={async () => {
-                                await navigator.clipboard?.writeText(commit.commitId);
+                                try {
+                                  await navigator.clipboard?.writeText(commit.commitId);
+                                } catch {
+                                  // clipboard write can reject in sandboxed
+                                  // iframes; the toast must still fire
+                                }
                                 copyToastCounterRef.current += 1;
                                 setRootToast({
                                   durationMs: 1000,
@@ -268,6 +278,7 @@ function ProjectCodeFileHistoryBody({
                             {commit.commentCount > 0 ? (
                               <span
                                 {...sx.commentCount}
+                                className={`number-of-comments ${sx.commentCount.className ?? ""}`.trim()}
                                 data-stylex-owner="commit-file-comment-count"
                               >
                                 <i className="yobicon-comments"></i> {commit.commentCount}
@@ -320,8 +331,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: Math.max(0, history.page - 1) }}
-                {...sx.paginationLink}
-                className={`ybtn ${sx.paginationLink.className ?? ""}`.trim()}
+                className="ybtn pull-left"
                 data-stylex-owner="commit-file-history-pagination-newer"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
@@ -333,8 +343,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: history.page + 1 }}
-                {...sx.paginationLink}
-                className={`ybtn ${sx.paginationLink.className ?? ""}`.trim()}
+                className="ybtn pull-left"
                 data-stylex-owner="commit-file-history-pagination-older"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
