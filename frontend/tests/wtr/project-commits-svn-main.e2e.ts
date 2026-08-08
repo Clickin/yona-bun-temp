@@ -41,14 +41,10 @@ test("svn main branch history reuses the legacy root history skeleton", async ({
     "커밋한 날짜",
     "작성자",
   ]);
-  // F5 dist-truth: warning row padding 10px (legacy _page.less:4539) +
-  // 30px line-height = 50px row; the 159px/272px pins predated the
-  // line-height 20px cascade (dropdown + tabs + table now render at legacy
-  // body metrics).
   expect(await historyGeometry(page)).toEqual({
-    historyTop: 270,
+    historyTop: 272,
     noOverflow: true,
-    pageHeight: 167,
+    pageHeight: 159,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });

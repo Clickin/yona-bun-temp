@@ -28,11 +28,10 @@ export const styles = stylex.create({
   },
   watchButton: {
     // legacy .btn base (bootstrap.css:3141) + .no-border (_common.less:233) +
-    // .watch-btn > button padding (_page.less:6933-6935) + .btn-group > .btn
-    // font-size 12px (_yobiUI.less:19-22 — the button is a .btn-group child)
+    // .watch-btn > button padding (_page.less:6933-6935)
     border: "0px",
     display: "inline-block",
-    fontSize: "12px",
+    fontSize: "14px",
     lineHeight: "20px",
     padding: "4px 10px",
     verticalAlign: "middle",
@@ -68,7 +67,7 @@ export const styles = stylex.create({
     borderLeftWidth: "3px",
     padding: "0 10px",
   },
-  overviewHeading: { fontSize: "14px", fontWeight: "normal", lineHeight: "20px" },
+  overviewHeading: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
   markdownParagraph: { display: "inline-block", margin: "0" },
   readmeEditLink: { marginLeft: "5px" },
   descriptionEditInput: { margin: "0" },
@@ -89,9 +88,11 @@ export const styles = stylex.create({
     borderRight: "none",
     cursor: "pointer",
     float: "left",
-    marginBottom: "10px",
+    marginBottom: "0",
     maxWidth: "125px",
     outline: "0",
+    position: "absolute",
+    right: "86px",
     textAlign: "right",
     transition: "width 0.15s",
     width: "100px",

@@ -336,7 +336,6 @@ function SiteMailScreen({
           <div className="row-fluid" data-stylex-owner="site-mail-setting-grid">
             <div className="span2" data-stylex-owner="site-mail-sidebar-column">
               <SiteAdminSidebar
-                activeItemClassName="active"
                 activeTo="/sites/mail"
                 badgeOwner="site-mail-sidebar-badge"
                 baseLinkProps={legacySiteSidebarLinkProps}

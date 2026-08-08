@@ -115,8 +115,7 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
         .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
     )
     .toBe(70);
-  // F5 dist-truth: the legacy label/button margin cascade (label margin-bottom 5px) settles the action gap at 8px.
-  expect(await boardActionWhitespace(page)).toEqual({ gap: 8, whitespaceNode: true });
+  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
@@ -294,8 +293,7 @@ test("project board edit form preserves uploader and action whitespace on mobile
         .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
     )
     .toBe(100);
-  // F5 dist-truth: the legacy label/button margin cascade (label margin-bottom 5px) settles the action gap at 8px.
-  expect(await boardActionWhitespace(page)).toEqual({ gap: 8, whitespaceNode: true });
+  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
 });
 
 async function boardActionWhitespace(page: Page) {
@@ -508,9 +506,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([, value]) => value !== "")
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -574,9 +570,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-stylex-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([, value]) => value !== "")
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`

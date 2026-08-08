@@ -21,12 +21,9 @@ test("svn main folder preserves legacy branch history and native select fallback
     `${basePath}/admin/svnplayground/code/main`,
   );
   await expect(tabs.nth(1).locator("a")).toHaveText("커밋");
-  // F6 dist-truth: TanStack strips the legacy route's trailing slash
-  // (conf/routes:347 GET /:user/:project/commits/:branch/); the git branches
-  // spec pins the same no-slash href as canonical.
   await expect(tabs.nth(1).locator("a")).toHaveAttribute(
     "href",
-    `${basePath}/admin/svnplayground/commits/main`,
+    `${basePath}/admin/svnplayground/commits/main/`,
   );
   await expect(page.locator("#branches option:checked")).toHaveText("HEAD");
   await expect(page.locator(".select2-chosen")).toHaveText("HEAD");

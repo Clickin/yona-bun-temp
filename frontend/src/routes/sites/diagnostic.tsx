@@ -200,21 +200,30 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
   return (
     <>
       <title>{t("title.siteSetting")}</title>
-      <div className="site-breadcrumb-outer" data-stylex-owner="site-diagnostic-breadcrumb-outer">
-        <div className="site-breadcrumb-inner" data-stylex-owner="site-diagnostic-breadcrumb-inner">
-          <h3 data-stylex-owner="site-diagnostic-breadcrumb-heading">
+      <div
+        {...stylex.props(styles.breadcrumbOuter)}
+        data-stylex-owner="site-diagnostic-breadcrumb-outer"
+      >
+        <div
+          {...stylex.props(styles.breadcrumbInner)}
+          data-stylex-owner="site-diagnostic-breadcrumb-inner"
+        >
+          <h3
+            {...stylex.props(styles.breadcrumbHeading)}
+            data-stylex-owner="site-diagnostic-breadcrumb-heading"
+          >
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer" data-stylex-owner="site-diagnostic-page">
-        <div className="site-setting-wrap" data-stylex-owner="site-diagnostic-content">
+      <div {...stylex.props(styles.page)} data-stylex-owner="site-diagnostic-page">
+        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-diagnostic-content">
           <div
-            className="row-fluid"
+            {...stylex.props(styles.settingGrid)}
             data-stylex-owner="site-diagnostic-setting-grid"
           >
             <div
-              className="span2"
+              {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
               data-stylex-owner="site-diagnostic-sidebar-column"
             >
               <SiteAdminSidebar
@@ -237,7 +246,7 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
               />
             </div>
             <div
-              className="span10"
+              {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
               data-stylex-owner="site-diagnostic-setting-content-column"
             >
               <div

@@ -189,11 +189,8 @@ test("project transfer reuses the ko-KR legacy project shell geometry", async ({
   });
   expect(geometry).toEqual({
     menuWidth: 573,
-    // F5 dist-truth: legacy measured the down-arrow without the trailing
-    // space the copy pins in toHaveText("그만 지켜보기 "); with the space the
-    // 12px .btn-group > .btn button settles 4px wider.
-    utilWidth: 151,
-    watchActionWidth: 106,
+    utilWidth: 147,
+    watchActionWidth: 102,
     watcherCountWidth: 30,
   });
 });

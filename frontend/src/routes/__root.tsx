@@ -548,7 +548,6 @@ function RootYoramToast({
   return (
     <div
       {...stylex.props(styles.rootToast)}
-      className={`toast ${stylex.props(styles.rootToast).className ?? ""}`.trim()}
       tabIndex={-1}
       data-stylex-owner="root-yoram-toast"
       data-stylex-part="toast"
@@ -560,11 +559,7 @@ function RootYoramToast({
       </div>
       <div>
         <span {...stylex.props(styles.rootToastSpacer)} />
-        <div
-          {...stylex.props(styles.rootToastMessage)}
-          className={`msg ${stylex.props(styles.rootToastMessage).className ?? ""}`.trim()}
-          data-stylex-part="toast-message"
-        >
+        <div {...stylex.props(styles.rootToastMessage)} data-stylex-part="toast-message">
           {message}
         </div>
       </div>

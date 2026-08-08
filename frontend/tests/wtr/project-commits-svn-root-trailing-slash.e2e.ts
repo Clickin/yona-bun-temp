@@ -28,7 +28,7 @@ test("svn commits trailing slash replaces to the canonical legacy root before hi
   await expect(page.locator(".select2-choice")).toHaveAttribute("aria-expanded", "false");
   expect(await historyGeometry(page)).toEqual({
     contained: true,
-    historyTop: 270,
+    historyTop: 272,
     ordered: true,
   });
   await expect.poll(historyRequests).toBe(2);

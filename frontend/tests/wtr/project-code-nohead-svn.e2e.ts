@@ -73,22 +73,18 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
   await expect(page.locator(".project-page-wrap h5")).toContainText("Yoram");
   await expect(page.locator(".project-page-wrap h5")).not.toContainText("Yona");
   await expect(page.locator(".project-util-wrap")).toContainText("그만 지켜보기");
-  // F5 dist-truth: legacy .alert-block (bootstrap.css:3883-3886) = 14px
-  // top/bottom padding + h4 20px line + 2px border = 50px; utilWidth is the
-  // legacy body line-height 20px (bootstrap.css:176) sizing of the ko-KR
-  // util button — both pins predated the line-height/alert fixes.
   expect(await readNoHeadSvnShellMetrics(page)).toEqual({
-    alertHeight: 50,
+    alertHeight: 80,
     alertWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
     pageY: 213,
     projectWidth: 1346,
-    utilWidth: 151,
+    utilWidth: 147,
   });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readNoHeadSvnShellMetrics(page)).toEqual({
-    alertHeight: 50,
+    alertHeight: 80,
     alertWidth: 390,
     pageHeight: 450,
     pageWidth: 390,

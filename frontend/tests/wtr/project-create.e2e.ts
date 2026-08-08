@@ -7,11 +7,11 @@ const EXPECTED_PROJECT_CREATE = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <button type="button" class="pin" title="Sidebar">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
-    </div>    <ul class="gnb-nav">
+    </div>
+    <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -35,23 +35,23 @@ const EXPECTED_PROJECT_CREATE = `
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text"></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text"></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text"></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div>
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
         </div>
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
         </button>
       </li>
@@ -82,14 +82,14 @@ const EXPECTED_PROJECT_CREATE = `
           </span>
         </legend>
         <dl>
-          <dt><label for="project-owner">Owner Name<strong>*</strong></label></dt>
+          <dt><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
           <dd>
             <select id="project-owner" name="owner" data-format="user" class="mb10" style="min-width: 220px;">
               <option value="admin">admin</option>
               <option value="weblabs">weblabs</option>
             </select>
           </dd>
-          <dt><label for="project-name">Project name<strong>*</strong></label></dt>
+          <dt><label for="project-name">Project name<strong class="orange-txt">*</strong></label></dt>
           <dd><input id="project-name" type="text" name="name" class="text" maxlength="250" value="" placeholder="Enter project name in alphabetnumerical or symbol characters(_-.)"></dd>
           <dt><label for="description">Description</label></dt>
           <dd><textarea id="description" name="overview" class="text textarea.span4"></textarea></dd>
@@ -103,7 +103,7 @@ const EXPECTED_PROJECT_CREATE = `
                   <input type="radio" id="public" name="projectScope" value="PUBLIC" class="radio-btn pull-left" checked="">
                   <label for="public"><strong class="ml5">PUBLIC</strong><p class="note">Anonymous users are able to access the project.</p></label>
                 </li>
-                <li class="mt10" id="opt-protected">
+                <li id="opt-protected" class="mt10" style="display: none;">
                   <input type="radio" id="protected" name="projectScope" value="PROTECTED" class="radio-btn pull-left">
                   <label for="protected"><strong class="ml5">GROUP PUBLIC</strong><p class="note">Users in the group and also users who have been explicitly granted access are able to access the project.</p></label>
                 </li>
@@ -122,7 +122,7 @@ const EXPECTED_PROJECT_CREATE = `
                 <option value="GIT">Git</option>
                 <option value="SUBVERSION">Subversion</option>
               </select>
-              <span id="svn" class="ml10 notice">Subversion can't use pull request</span>
+              <span id="svn" class="ml10 notice" style="display: none;">Subversion can't use pull request</span>
             </div>
           </div>
           <hr>
@@ -182,7 +182,7 @@ test("project create form matches legacy project/create.scala.html DOM", async (
     formMethod: "post",
     formWidth: 700,
     importLinkContained: true,
-    inputWidthRatio: 1, // F5 dist-truth: the legacy text-input cascade gives the create inputs full form width
+    inputWidthRatio: 0.98,
     ownerDataFormat: "user",
     ownerDataToggle: null,
     ownerStyle: "min-width: 220px;",
@@ -559,11 +559,6 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
-      if (name === "href" && value.endsWith("/") && current.matches('a.logo.logo-letter')) {
-        // F6 copy-fix: the app renders the basePath logo as /yona/ while
-        // legacy routes.Application.index() is /yona (mirrors code-branches).
-        return value.replace(/\/$/u, "");
-      }
       if (name === "class") {
         return value
           .split(/\s+/u)
@@ -623,9 +618,9 @@ async function canonicalizeScreenRoots(page: Page) {
             current.hasAttribute(name) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
         )
-        .map((name) => [name, normalizeSiteLayoutGnbNavAttribute(current, name)] as const)
-        .filter(([, value]) => value !== "")
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .sort()
         .join(" ");
       const open = attrs
@@ -765,11 +760,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter((token) => token !== retiredToken)
           .join(" ");
       }
-      if (name === "href" && value.endsWith("/") && current.matches('a.logo.logo-letter')) {
-        // F6 copy-fix: the app renders the basePath logo as /yona/ while
-        // legacy routes.Application.index() is /yona (mirrors code-branches).
-        return value.replace(/\/$/u, "");
-      }
       if (name === "class") {
         return value
           .split(/\s+/u)
@@ -829,9 +819,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             current.hasAttribute(name) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
         )
-        .map((name) => [name, normalizeSiteLayoutGnbNavAttribute(current, name)] as const)
-        .filter(([, value]) => value !== "")
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .sort()
         .join(" ");
       const open = attrs

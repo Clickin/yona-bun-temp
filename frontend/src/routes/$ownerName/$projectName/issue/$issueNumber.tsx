@@ -1137,6 +1137,7 @@ function IssueDetailBody({
                           name="assigneeLoginId"
                           placeholder={t("issue.noAssignee")}
                           value={selectedAssigneeLoginId}
+                          readOnly
                           style={{ width: "100%" }}
                           data-stylex-owner="issue-detail-assignee-input"
                         />
@@ -2025,7 +2026,7 @@ function IssueLabelSelect({
   return (
     <dl>
       <dt>
-        {t("label")}{" "}
+        {t("issue.label")}{" "}
         {canManageLabels ? (
           <Link
             {...LEGACY_LINK_PROPS}
@@ -2333,7 +2334,7 @@ function IssueSelectedLabels({
 
   return (
     <dl>
-      <dt>{t("label")}</dt>
+      <dt>{t("issue.label")}</dt>
       <dd>
         {labels.map((label) => (
           <IssueLabel

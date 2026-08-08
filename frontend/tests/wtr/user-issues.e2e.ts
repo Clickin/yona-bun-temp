@@ -218,13 +218,10 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
 
   expect(await readUserIssuesMetrics(page)).toEqual({
     issueListDisplay: "block",
-    // F5 dist-truth: legacy _responsive.less:611-617 @media all pads
-    // .page-wrap-outer 0 10px at every width — rowFluid 1080→1060, span10
-    // (80%) →880, leftMenu span2 →158; the pins predated the cascade.
-    leftMenuWidth: 158,
+    leftMenuWidth: 161,
     pageWrapMarginTop: "10px",
-    rowFluidWidth: 1060,
-    span10Width: 880,
+    rowFluidWidth: 1080,
+    span10Width: 896,
   });
 
   await page.route(

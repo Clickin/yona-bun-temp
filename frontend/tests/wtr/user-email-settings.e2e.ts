@@ -7,7 +7,7 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <button type="button" class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <button type="button" class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
@@ -26,7 +26,7 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -123,7 +123,6 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   await expect(tabItems).toHaveCount(5);
   // the app renders stylex tokens on every tab <li>; the legacy "active" marker is
   // conveyed via data-selected (asserted below), mirroring partial_edit_tabmenu.scala.html:6
-  // F6: the emails tab retains the legacy "active" class (partial_edit_tabmenu.scala.html:38).
   expect(
     await tabItems.evaluateAll((items) =>
       items.map((item) => {
@@ -133,7 +132,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
         return legacyClasses.length === 0 ? null : legacyClasses.join(" ");
       }),
     ),
-  ).toEqual([null, null, null, "active", null]);
+  ).toEqual([null, null, null, null, null]);
   await expect(tabLinks).toHaveCount(5);
   expect(
     await tabLinks.evaluateAll((links) =>

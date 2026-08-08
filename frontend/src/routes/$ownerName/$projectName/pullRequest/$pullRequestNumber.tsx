@@ -793,13 +793,11 @@ export function PullRequestHeader({
           <>
             <div
               id="reviewers"
-              {...stylex.props(styles.reviewers)}
-              className={stylex.props(styles.reviewers).className}
+              style={{ display: "inline-block", marginRight: "5px" }}
               data-stylex-owner="pull-request-detail-reviewers"
             >
               <span
-                {...stylex.props(styles.reviewerSummary)}
-                className={stylex.props(styles.reviewerSummary).className}
+                style={{ fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }}
                 data-stylex-owner="pull-request-detail-reviewer-summary"
               >
                 {messageWithStrong(
@@ -916,10 +914,12 @@ export function PullRequestBranchInfo({
         className={`${stylex.props(styles.branchInfoCode).className} from`}
         title={t("pullRequest.from")}
       >
-        {/* legacy _page.less:4093-4104 colors these anchors via the
-            .pullRequest-branchInfo code a rule — no class attributes (F7:
-            the stylex branchInfoLink class broke the no-class DOM) */}
-        <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
+        <Link
+          to="/$user"
+          params={{ user: pullRequest.fromOwnerName }}
+          {...LEGACY_LINK_PROPS}
+          {...stylex.props(styles.branchInfoLink)}
+        >
           {pullRequest.fromOwnerName}
         </Link>
         <span>/</span>
@@ -930,6 +930,7 @@ export function PullRequestBranchInfo({
             projectName: pullRequest.fromProjectName,
           }}
           {...LEGACY_LINK_PROPS}
+          {...stylex.props(styles.branchInfoLink)}
         >
           {pullRequest.fromProjectName}
         </Link>
@@ -941,7 +942,7 @@ export function PullRequestBranchInfo({
             ownerName: pullRequest.fromOwnerName,
             projectName: pullRequest.fromProjectName,
           }}
-          className={`${stylex.props(styles.branchName).className} branchName`}
+          className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
           {...LEGACY_LINK_PROPS}
         >
           {fromBranchName}
@@ -955,7 +956,12 @@ export function PullRequestBranchInfo({
         className={`${stylex.props(styles.branchInfoCode).className} to`}
         title={t("pullRequest.to")}
       >
-        <Link to="/$user" params={{ user: pullRequest.ownerName }} {...LEGACY_LINK_PROPS}>
+        <Link
+          to="/$user"
+          params={{ user: pullRequest.ownerName }}
+          {...LEGACY_LINK_PROPS}
+          {...stylex.props(styles.branchInfoLink)}
+        >
           {pullRequest.ownerName}
         </Link>
         <span>/</span>
@@ -963,6 +969,7 @@ export function PullRequestBranchInfo({
           to="/$ownerName/$projectName"
           params={{ ownerName: pullRequest.ownerName, projectName: pullRequest.projectName }}
           {...LEGACY_LINK_PROPS}
+          {...stylex.props(styles.branchInfoLink)}
         >
           {pullRequest.projectName}
         </Link>
@@ -974,7 +981,7 @@ export function PullRequestBranchInfo({
             ownerName: pullRequest.ownerName,
             projectName: pullRequest.projectName,
           }}
-          className={`${stylex.props(styles.branchName).className} branchName`}
+          className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
           {...LEGACY_LINK_PROPS}
         >
           {toBranchName}

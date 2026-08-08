@@ -64,10 +64,7 @@ const EXPECTED_PULL_REQUEST_NO_WATCH_BUTTON = EXPECTED_PULL_REQUEST_OVERVIEW.rep
 
 const EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
-  // F6 copy-fix-current-dom: the reviewers wrapper/summary own their
-  // inline-block/5px/13px geometry via stylex (-pull-request-detail.stylex.ts
-  // reviewers/reviewerSummary) — legacy inline styles are not emitted.
-  `<div class="pull-right"><div id="reviewers"><span><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><button type="button" class="ybtn ybtn-default">Cancel review</button><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
+  `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><button type="button" class="ybtn ybtn-default">Cancel review</button><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
 );
 
 const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
@@ -261,9 +258,7 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     badgeLineHeight: "20px",
     badgePadding: "5px 15px",
     boardBodyContentMinHeight: "150px",
-    // F5 dist-truth: legacy _page.less:2925 .board-body .content
-    // padding 0 20px — the 15px pin predated the css cascade
-    boardBodyContentPadding: "0px 20px",
+    boardBodyContentPadding: "15px 20px",
     boardFooterMarginTop: "20px",
     boardFooterOverflow: "auto",
     boardFooterPaddingRight: "15px",
@@ -2347,13 +2342,7 @@ async function expectLegacyAnchor(
   if (attrs.class === undefined) {
     await expect(locator).not.toHaveAttribute("class", /.+/u);
   } else {
-    // F6: retained legacy class sits alongside stylex tokens
-    // (branchName on branch links) — match the class list, not the
-    // exact attribute value.
-    await expect(locator).toHaveAttribute(
-      "class",
-      new RegExp(`(?:^|\\s)${attrs.class}(?:\\s|$)`),
-    );
+    await expect(locator).toHaveAttribute("class", attrs.class);
   }
   if (attrs.title === undefined) {
     await expect(locator).not.toHaveAttribute("title", /.+/u);

@@ -18,7 +18,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 <div class="admin-logged-in-affix">You are Admin now! <span class="small-font">With great power comes great responsibility</span></div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <button type="button" class="pin" title="Sidebar">
+    <button class="pin" type="button" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
     </button>

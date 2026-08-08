@@ -151,21 +151,12 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
   ]);
   expect(
     await editTabLinks.evaluateAll((links) =>
-      links.map((link) => {
-        const className = link.getAttribute("class");
-        return {
-          ariaCurrent: link.getAttribute("aria-current"),
-          // F6: the app rides stylex atomic tokens on the tab links (legacy
-          // partial_edit_tabmenu anchors are classless) — normalize the
-          // token soup to null so the no-legacy-class contract holds.
-          className:
-            className === null || /^x[0-9a-z]+(?: x[0-9a-z]+)*$/u.test(className)
-              ? null
-              : className,
-          dataStatus: link.getAttribute("data-status"),
-          text: link.textContent?.trim(),
-        };
-      }),
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+        text: link.textContent?.trim(),
+      })),
     ),
   ).toEqual([
     { ariaCurrent: null, className: null, dataStatus: null, text: "Edit profile" },
@@ -318,15 +309,13 @@ function expectTokenOwnerMetrics(
   expect(form.box).toEqual({ ...wrapper, height: 90 });
   expect(form.cssFloat).toBe("left");
   expect(form.marginBottom).toBe("2px");
-  // F6: form.width is a CSS string ("1225.4px") while wrapper.width is a
-  // device-pixel rect (1225.390625) — sub-pixel, not sub-4-decimals.
-  expect(Number.parseFloat(form.width)).toBeCloseTo(wrapper.width, 1);
+  expect(Number.parseFloat(form.width)).toBeCloseTo(wrapper.width, 4);
 
-  expect(input.box.x).toBeCloseTo(form.box.x, 1);
-  expect(input.box.y - form.box.y).toBeCloseTo(20, 1);
+  expect(input.box.x).toBeCloseTo(form.box.x, 4);
+  expect(input.box.y - form.box.y).toBeCloseTo(20, 4);
   expect(input.box.height).toBe(30);
-  expect(input.box.width).toBeCloseTo(form.box.width * 0.9 + 14, 1);
-  expect(Number.parseFloat(input.width)).toBeCloseTo(form.box.width * 0.9, 1);
+  expect(input.box.width).toBeCloseTo(form.box.width * 0.9 + 14, 4);
+  expect(Number.parseFloat(input.width)).toBeCloseTo(form.box.width * 0.9, 4);
   expect(input.box.x + input.box.width).toBeLessThanOrEqual(form.box.x + form.box.width + 0.01);
   expect(input).toMatchObject({
     backgroundColor: "rgb(238, 238, 238)",
@@ -336,8 +325,8 @@ function expectTokenOwnerMetrics(
     lineHeight: "20px",
   });
 
-  expect(action.box.x).toBeCloseTo(form.box.x, 1);
-  expect(action.box.y - form.box.y).toBeCloseTo(60, 1);
+  expect(action.box.x).toBeCloseTo(form.box.x, 4);
+  expect(action.box.y - form.box.y).toBeCloseTo(60, 4);
   expect(action.box.height).toBe(30);
   expect(action.box.width).toBeGreaterThan(0);
   expect(action.box.x + action.box.width).toBeLessThanOrEqual(form.box.x + form.box.width + 0.01);
@@ -463,20 +452,6 @@ async function canonicalizeScreenRoots(page: Page) {
         (current.getAttribute("data-stylex-owner") ?? "").startsWith("user-token-settings-")
       ) {
         return "";
-      }
-      if (
-        name === "class" &&
-        ["user-settings-page-wrap-outer", "user-settings-page-wrap"].includes(
-          current.getAttribute("data-stylex-owner") ?? "",
-        )
-      ) {
-        // F6: retain the legacy page-wrap-outer/page-wrap classes, drop stylex
-        // atomic tokens (they ride the same className as the geometry)
-        const retained = (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((token) => token === "page-wrap-outer" || token === "page-wrap")
-          .join(" ");
-        return retained.length > 0 ? `class="${retained}"` : "";
       }
       if (
         name === "class" &&

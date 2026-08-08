@@ -184,9 +184,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
     logoWidth: "44px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    // F5 dist-truth: legacy _responsive.less:553 `@media all` unconstrained
-    // override collapses .project-page-wrap margin-top to 5px at every width.
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
     providerFontSize: "9px",
   });
 });

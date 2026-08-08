@@ -119,7 +119,6 @@ function ProjectWatchersBody({
                   activeOptions={legacyLinkActiveOptions}
                   activeProps={legacyLinkActiveProps}
                   {...stylex.props(styles.avatar)}
-                  className={`${stylex.props(styles.avatar).className} avatar-wrap mlarge`}
                 >
                   <img
                     data-stylex-owner="project-watchers-avatar-image"
@@ -136,14 +135,12 @@ function ProjectWatchersBody({
                 <div
                   data-stylex-owner="project-watchers-member-name"
                   {...stylex.props(styles.memberName)}
-                  className={`${stylex.props(styles.memberName).className} member-name`}
                 >
                   {stringField(watcher.userLabel, loginId)}
                 </div>
                 <div
                   data-stylex-owner="project-watchers-member-id"
                   {...stylex.props(styles.memberId)}
-                  className={`${stylex.props(styles.memberId).className} member-id`}
                 >
                   @{loginId}
                 </div>
@@ -197,10 +194,8 @@ const styles = stylex.create({
     verticalAlign: "middle",
     width: "40px",
   },
-  // _yobiUI.less `.avatar-wrap img` — the 64x64 attrs stay, but the 40px
-  // mlarge box renders the image at 40px via the intrinsic ratio.
+  // _yobiUI.less `.avatar-wrap img`.
   avatarImage: {
-    height: "auto",
     verticalAlign: "top",
     width: "100%",
   },

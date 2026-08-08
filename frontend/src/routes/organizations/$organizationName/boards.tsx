@@ -107,23 +107,9 @@ const stripLegacyBoardSearchDefaults = ({
   // the navigation itself supplied (the Link's search object). Presence
   // checks must use that, not `search` (which always carries the current
   // page's params).
-  // TanStack's real next() accepts (search, true) and returns { search, meta };
-  // the destructured type here only declares one param — cast at the call.
-  const nextResult = (
-    next as unknown as (
-      search: OrganizationBoardsSearchInput,
-      explicit: boolean,
-    ) => {
-      search: OrganizationBoardsSearch;
-      meta?: { explicit?: OrganizationBoardsSearchInput };
-    }
-  )(search, true);
-  // The middleware deletes non-explicit keys from the merged search before
-  // returning it; a mutable record keeps the delete legal while the return
-  // type stays OrganizationBoardsSearch.
-  const result = { ...nextResult.search } as Record<string, unknown>;
-  const explicit: OrganizationBoardsSearchInput =
-    nextResult.meta?.explicit ?? search;
+  const nextResult = next(search, true);
+  const result = nextResult.search;
+  const explicit = nextResult.meta?.explicit ?? search;
   // Org menu Board links pass the FULL default search object (filter:"",
   // orderBy:"updatedDate", orderDir:"desc", pageNum:1, projectNames:[]) —
   // legacy renders those as a bare @routes.BoardApp.board() href with no
@@ -139,8 +125,7 @@ const stripLegacyBoardSearchDefaults = ({
     (explicit.filter === "" || explicit.filter === undefined) &&
     (explicit.pageNum === undefined || Number(explicit.pageNum) === 1) &&
     (explicit.projectNames === undefined || explicit.projectNames?.length === 0) &&
-    (explicit["projectNames[]"] === undefined ||
-      (explicit["projectNames[]"] as unknown as unknown[] | undefined)?.length === 0) &&
+    (explicit["projectNames[]"] === undefined || explicit["projectNames[]"]?.length === 0) &&
     explicit.orderBy === "updatedDate" &&
     explicit.orderDir === "desc";
   if (isAllDefaults) {
@@ -149,7 +134,7 @@ const stripLegacyBoardSearchDefaults = ({
     delete result.projectNames;
     delete result.orderBy;
     delete result.orderDir;
-    return result as unknown as OrganizationBoardsSearch;
+    return result;
   }
   // Sort links pass only orderBy/orderDir; pagination/filter navigation keeps
   // its explicit params. Strip keys absent from the navigation's own search
@@ -158,7 +143,7 @@ const stripLegacyBoardSearchDefaults = ({
   if (!("filter" in explicit)) delete result.filter;
   if (!("pageNum" in explicit)) delete result.pageNum;
   if (!("projectNames" in explicit) && !("projectNames[]" in explicit)) delete result.projectNames;
-  return result as unknown as OrganizationBoardsSearch;
+  return result;
 };
 
 function validateOrganizationBoardsSearch(
@@ -180,7 +165,7 @@ export const Route = createFileRoute("/organizations/$organizationName/boards")<
   component: OrganizationBoardsRoute,
   validateSearch: validateOrganizationBoardsSearch,
   search: {
-    middlewares: [stripLegacyBoardSearchDefaults as unknown as never],
+    middlewares: [stripLegacyBoardSearchDefaults],
   },
 });
 

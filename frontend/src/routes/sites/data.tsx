@@ -236,7 +236,6 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             >
               <SiteAdminSidebar
                 badgeOwner="site-data-sidebar-badge"
-                ulClassName="site-setting-nav"
                 baseLinkProps={legacySiteSidebarLinkProps}
                 navOwner="site-data-sidebar"
                 ownerPrefix="site-data-sidebar"

@@ -16,7 +16,7 @@ const EXPECTED_POST_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
@@ -54,7 +54,7 @@ const EXPECTED_POST_LIST_SCREEN = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-toggle="tooltip" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
         <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
@@ -77,7 +77,7 @@ const EXPECTED_POST_LIST_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
+        <ul>
           <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
           <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
           <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
@@ -1327,11 +1327,6 @@ async function canonicalizeScreenRoots(page: Page) {
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
-      if (current.id === "usermenu-tab-content-list") {
-        // The app renders the workspace panes synchronously (mocked fetch);
-        // canonicalize the sidebar content to the legacy Loading... placeholder.
-        return `${open}Loading...</${current.tagName.toLowerCase()}>`;
-      }
       const children = Array.from(current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {

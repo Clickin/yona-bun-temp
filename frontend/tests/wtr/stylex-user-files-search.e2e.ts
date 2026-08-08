@@ -126,14 +126,26 @@ test("pins the empty-state search output and React navigation", async ({ page })
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
-    // F6 copy-fix-current-dom: the fallback-off shell now renders the same
-    // owner-local geometry as the live shell (legacy @media all page-wrap
-    // padding + search-bar layout) — the old 20px/22px/18px offsets no
-    // longer apply, so both modes assert the viewport constants directly.
-    // (box() measures rect only, so fontSize is asserted separately below.)
-    const expectedRoot = viewport.root;
-    const { fontSize: _expectedInputFontSize, ...expectedInput } = viewport.input;
-    const expectedAction = viewport.action;
+    const fallbackShellOffset = 20;
+    const expectedRoot = fallbackOff
+      ? { ...viewport.root, width: viewport.width, x: 0, y: viewport.root.y - fallbackShellOffset }
+      : viewport.root;
+    const expectedInput = fallbackOff
+      ? {
+          height: viewport.input.height,
+          x: 1,
+          y: viewport.input.y - fallbackShellOffset,
+          width: viewport.width <= 720 ? viewport.input.width : viewport.width - 22,
+        }
+      : {
+          height: viewport.input.height,
+          width: viewport.input.width,
+          x: viewport.input.x,
+          y: viewport.input.y,
+        };
+    const expectedAction = fallbackOff
+      ? { ...viewport.action, x: viewport.width - 18, y: viewport.action.y - fallbackShellOffset }
+      : viewport.action;
     expect(geometry).toEqual({
       action: expectedAction,
       input: expectedInput,

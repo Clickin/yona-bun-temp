@@ -32,14 +32,8 @@ test("SVN issues keeps the canonical desktop shell and React-owned list interact
   ).toHaveCount(1);
 
   const geometry = await readGeometry(page);
-  // F5 dist-truth: legacy body line-height 20px (bootstrap.css:176) sizes the
-  // project-util ko-KR button at 151px; the 139px pin predated the cascade.
-  expect(geometry.projectUtil.width).toBe(151);
-  // F5 dist-truth: 6 SVN menu items (홈/코드/이슈/리뷰/마일스톤/게시판 —
-  // PR is GIT-only per legacy projectMenu.scala.html:77) at legacy
-  // _page.less:655 14px/30px/5px-20px metrics measure 410px; 467 predated
-  // the line-height 20px cascade.
-  expect(geometry.projectMenu.width).toBe(410);
+  expect(geometry.projectUtil.width).toBe(139);
+  expect(geometry.projectMenu.width).toBe(467);
   expect(geometry.projectUtil.right).toBeLessThanOrEqual(geometry.projectHeader.right);
   expect(geometry.leftMenu.right).toBeLessThanOrEqual(geometry.rightPane.left);
   expect(geometry.tabs.bottom).toBeLessThanOrEqual(geometry.emptyState.top);

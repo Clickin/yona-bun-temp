@@ -33,13 +33,4 @@ export const styles = stylex.create({
   conflictMessage: { textAlign: "center" },
   conflictActions: { textAlign: "center" },
   uploadSaveHelp: { textAlign: "right" },
-  // legacy .upload-wrap{padding:10px !important} + .content-footer
-  // (bg #f5f5f5, radius 5px) — _page.less:3606,3821; the app otherwise
-  // renders the attach/paste lines without the wrap padding
-  // (#upload height 50 vs legacy 70 desktop, 80 vs 100 mobile).
-  uploadWrap: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: "5px",
-    padding: "10px",
-  },
 });

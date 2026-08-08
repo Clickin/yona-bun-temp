@@ -329,10 +329,18 @@ function BranchRow({
               className: undefined,
               "data-status": undefined,
             }}
-            className={`${stylex.props(styles.pullRequestLink, pullRequestDotStyle(branch.pullRequest.state)).className} blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
+            className={`${stylex.props(styles.pullRequestLink).className} pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
             data-stylex-owner="project-branches-pull-request-link"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >
+            <span
+              aria-hidden="true"
+              data-stylex-owner="project-branches-pull-request-dot"
+              {...stylex.props(
+                styles.pullRequestDot,
+                pullRequestDotStyle(branch.pullRequest.state),
+              )}
+            />
             pullRequest-{branch.pullRequest.pullRequestNumber}
           </Link>
         ) : (
@@ -433,16 +441,6 @@ const styles = stylex.create({
   },
   pullRequestLink: {
     color: projectBranchesTheme.pullRequestLink,
-    // Frozen _page.less:6316-6336 — the state dot is a CSS ::before, not DOM.
-    "::before": {
-      borderRadius: "10px",
-      content: '""',
-      display: "inline-block",
-      height: "10px",
-      marginRight: "5px",
-      verticalAlign: "middle",
-      width: "10px",
-    },
   },
   defaultBadge: {
     backgroundColor: projectBranchesTheme.defaultBadgeBackground,
@@ -476,9 +474,17 @@ const styles = stylex.create({
     textAlign: "right",
     width: "220px",
   },
-  openDot: { "::before": { backgroundColor: projectBranchesTheme.openDot } },
-  closedDot: { "::before": { backgroundColor: projectBranchesTheme.closedDot } },
-  mergedDot: { "::before": { backgroundColor: projectBranchesTheme.mergedDot } },
+  pullRequestDot: {
+    borderRadius: "10px",
+    display: "inline-block",
+    height: "10px",
+    marginRight: "5px",
+    verticalAlign: "middle",
+    width: "10px",
+  },
+  openDot: { backgroundColor: projectBranchesTheme.openDot },
+  closedDot: { backgroundColor: projectBranchesTheme.closedDot },
+  mergedDot: { backgroundColor: projectBranchesTheme.mergedDot },
   disabledPullRequest: {
     color: projectBranchesTheme.disabledPullRequestText,
   },

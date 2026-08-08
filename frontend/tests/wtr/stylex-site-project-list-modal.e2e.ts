@@ -249,9 +249,7 @@ test.describe("StyleX site project-list delete modal", () => {
       await expect(backdrop).toHaveCSS("inset", "0px");
       await expect(backdrop).toHaveCSS("z-index", "1040");
       await expect(backdrop).toHaveCSS("background-color", "rgb(0, 0, 0)");
-      // legacy _override.less:2-4 pins backdrop opacity 50% (overriding
-      // bootstrap's 0.8) — the app matches the override.
-      await expect(backdrop).toHaveCSS("opacity", "0.5");
+      await expect(backdrop).toHaveCSS("opacity", "0.8");
 
       const boxes = await page.evaluate((selectors) => {
         const rect = (selector: string) => {
@@ -347,10 +345,8 @@ test.describe("StyleX site project-list delete modal", () => {
       expect(evidence.fallback.footer).toEqual(evidence.migrated.footer);
       expect(evidence.fallback.backdrop.position).toBe(evidence.migrated.backdrop.position);
       expect(evidence.fallback.backdrop.opacity).toBe(evidence.migrated.backdrop.opacity);
-      // F5 dist-truth: legacy _override.less:2-4 overrides bootstrap's 0.8
-      // backdrop to .opacity(50) — both legacy and stylex paint 0.5.
-      expect(evidence.fallback.backdrop.opacity).toBe("0.5");
-      expect(evidence.migrated.backdrop.opacity).toBe("0.5");
+      expect(evidence.fallback.backdrop.opacity).toBe("0.8");
+      expect(evidence.migrated.backdrop.opacity).toBe("0.8");
     });
   }
 

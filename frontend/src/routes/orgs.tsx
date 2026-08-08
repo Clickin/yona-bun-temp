@@ -429,6 +429,7 @@ function OrganizationListItem({
           {...sx.identity}
           {...sx.privateIdentity}
           className={`info-wrap ${sx.identity.className ?? ""} ${sx.privateIdentity.className ?? ""}`.trim()}
+          style={{ opacity: 0.3 }}
           data-stylex-owner="organization-directory-private"
         >
           <div

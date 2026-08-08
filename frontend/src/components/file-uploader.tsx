@@ -490,13 +490,10 @@ export function IssuePostFileUploader({
               ) : null}
             </button>
             {row.status === "uploading" ? (
-              // D2 wrapper-class retention: legacy fileUploader.scala.html:31
-              // wraps the upload progress in `<div class="pull-right">`.
               <div
                 {...(styles.uploadProgressWrapper
                   ? stylex.props(styles.uploadProgressWrapper)
                   : undefined)}
-                className={`pull-right ${styles.uploadProgressWrapper ? (stylex.props(styles.uploadProgressWrapper).className ?? "") : ""}`.trim()}
                 data-stylex-owner="project-issue-form-upload-progress-wrapper"
               >
                 <div

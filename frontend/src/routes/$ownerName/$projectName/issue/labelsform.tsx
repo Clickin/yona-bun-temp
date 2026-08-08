@@ -1303,7 +1303,7 @@ function IssueLabelConfirmModal({
           </div>
           <div
             {...stylex.props(styles.confirmActions)}
-            className={`${stylex.props(styles.confirmActions).className} buttons mt20 mb20`}
+            className={`${stylex.props(styles.confirmActions).className} center-txt buttons mt20 mb20`}
             data-stylex-owner="project-labels-confirm-actions"
           >
             {buttons.map((button) => (

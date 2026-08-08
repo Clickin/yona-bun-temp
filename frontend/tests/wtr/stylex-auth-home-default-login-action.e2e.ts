@@ -160,8 +160,7 @@ test("authenticated Home default-login action preserves desktop paint and popove
     height: 30,
     width: expect.closeTo(130.4609375, 1),
     x: expect.closeTo(298.5234375, 1),
-    // F5 dist-truth: the popover settles 2px lower after the :root line-height 20px port.
-    y: expect.closeTo(113, 2),
+    y: expect.closeTo(111, 2),
   });
   expect(base.style).toMatchObject({
     backgroundColor: "rgb(255, 255, 255)",
@@ -184,9 +183,6 @@ test("authenticated Home default-login action preserves desktop paint and popove
   });
 
   await button.hover();
-  // F9 timing: the hover popover slides in with a transition; wait it out so
-  // its y settles (the real-mouse bridge otherwise catches mid-flight frames).
-  await page.waitForTimeout(600);
   await expect(button).toHaveCSS("background-color", "rgb(241, 241, 241)");
   await expect(button).toHaveCSS("border", "1px solid rgba(0, 0, 0, 0.25)");
   await expect(button).toHaveCSS("color", "rgb(41, 41, 41)");
@@ -197,28 +193,25 @@ test("authenticated Home default-login action preserves desktop paint and popove
     height: expect.closeTo(88.203125, 1),
     width: 280,
     x: expect.closeTo(223.75, 1),
-    // F5 dist-truth: the hover popover settles 2px lower after the :root
-    // line-height port; the settle wait above makes the y deterministic.
-    y: expect.closeTo(154, -1),
+    y: expect.closeTo(151, 2),
   });
   expect(evidence.title.box).toEqual({
     height: 35,
     width: 276,
     x: expect.closeTo(225.75, 1),
-    y: expect.closeTo(154, -1),
+    y: expect.closeTo(153, 2),
   });
   expect(evidence.content.box).toEqual({
     height: expect.closeTo(49.203125, 1),
     width: 276,
     x: expect.closeTo(225.75, 1),
-    // F5/F9 dist-truth: the whole popover settles 2px lower after the :root line-height port (same flap as the popover y).
-    y: expect.closeTo(189, -1),
+    y: expect.closeTo(188, 2),
   });
   expect(evidence.arrow.box).toEqual({
     height: 11,
     width: 22,
     x: expect.closeTo(352.75, 1),
-    y: expect.closeTo(142, -1),
+    y: expect.closeTo(141, 2),
   });
   expect(evidence.popover.style).toEqual({
     backgroundClip: "padding-box",

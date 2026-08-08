@@ -47,9 +47,7 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator("#button-save")).toBeVisible();
   await expect(page.locator("#draft-save-btn")).toBeVisible();
-  // F5 dist-truth: the gnb pin + user menu now carry legacy data-toggle
-  // tooltip attrs (navbar.scala.html:39), so the page emits 8 such elements.
-  await expect(page.locator("[data-toggle], [data-request-method], [data-dismiss]")).toHaveCount(8);
+  await expect(page.locator("[data-toggle], [data-request-method], [data-dismiss]")).toHaveCount(3);
 
   const geometry = await page
     .locator('[data-stylex-owner="project-issue-form-columns"]')

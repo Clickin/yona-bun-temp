@@ -30,12 +30,6 @@ export const webhooksStyles = stylex.create({
     margin: "30px 0px",
   },
   listItemHeading: { paddingLeft: "8px" },
-  listItem: {
-    // legacy _page.less:6691-6698 — .webhook-list-wrap .list-item border.
-    borderBottomColor: webhooksColors.border,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-  },
   payloadHeading: { marginRight: "20px" },
   truncate: {
     whiteSpace: "nowrap",

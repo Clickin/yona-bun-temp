@@ -325,10 +325,8 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               data-stylex-owner="site-massmail-sidebar-column"
             >
               <SiteAdminSidebar
-                activeItemClassName="active"
                 activeTo="/sites/massmail"
                 badgeOwner="site-massmail-sidebar-badge"
-                ulClassName="site-setting-nav"
                 baseLinkProps={legacySiteSidebarLinkProps}
                 linkPropsByTo={{ "/sites/massmail": { search: legacyMassMailSidebarSearch } }}
                 navOwner="site-massmail-sidebar"

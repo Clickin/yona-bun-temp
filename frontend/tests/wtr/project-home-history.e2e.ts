@@ -63,10 +63,7 @@ test("project home History tab keeps legacy stream proportions", async ({ page }
   await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
 
   const desktop = await projectHistoryLayoutMetrics(page);
-  // F5 dist-truth: legacy _responsive.less:553-617 `@media all` unconstrained
-  // override pins .project-page-wrap margin-top 5px !important at EVERY width
-  // (compiled after _page.less:727) — desktop is 5px, not the 20px default.
-  expect(desktop.pageWrapMarginTop).toBe(5);
+  expect(desktop.pageWrapMarginTop).toBe(20);
   expect(desktop.mainStreamMarginBottom).toBe(15);
   expect(desktop.activityStreamsMarginTop).toBe(0);
   expect(desktop.activityPaddingTop).toBe(1);
@@ -136,32 +133,26 @@ test("SVN project home History tab preserves the live legacy empty stream", asyn
     "마일스톤",
     "게시판",
   ]);
-  // F5 dist-truth: legacy span9 = 74.47% of the padded row (1366-20 = 1346)
-  // → 1002 (bootstrap.css:1004 .row-fluid .span9), nav-tabs 38 - 2 margin + 1 border
-  // = 37 (_page.less:738, bootstrap.css:4026-4030), +20 tab margin-bottom
-  // (bootstrap.css:4008) + 15 content margin (_page.less:1197-1198) = 72 left pane.
   expect(await emptyHistoryMetrics(page)).toEqual({
     contentHeight: 0,
-    contentWidth: 1002,
-    leftPaneHeight: 72,
-    leftPaneWidth: 1002,
+    contentWidth: 1017,
+    leftPaneHeight: 53,
+    leftPaneWidth: 1017,
     listHeight: 0,
-    listWidth: 1002,
+    listWidth: 1017,
     pageWidth: 1366,
     scrollWidth: 1366,
     streamHeight: 0,
-    streamWidth: 1002,
-    tabsHeight: 37,
-    tabsWidth: 1002,
+    streamWidth: 1017,
+    tabsHeight: 18,
+    tabsWidth: 1017,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  // F5 dist-truth: same tab/left-pane geometry as desktop (see above);
-  // only the widths collapse to the 390px viewport.
   expect(await emptyHistoryMetrics(page)).toEqual({
     contentHeight: 0,
     contentWidth: 390,
-    leftPaneHeight: 72,
+    leftPaneHeight: 53,
     leftPaneWidth: 390,
     listHeight: 0,
     listWidth: 390,
@@ -169,7 +160,7 @@ test("SVN project home History tab preserves the live legacy empty stream", asyn
     scrollWidth: 390,
     streamHeight: 0,
     streamWidth: 390,
-    tabsHeight: 37,
+    tabsHeight: 18,
     tabsWidth: 390,
   });
 });

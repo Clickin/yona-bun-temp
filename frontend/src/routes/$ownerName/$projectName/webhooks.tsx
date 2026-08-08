@@ -37,11 +37,7 @@ const styles = stylex.create({
     fontSize: "14px",
     lineHeight: "20px",
     padding: "4px 6px",
-    width: {
-      default: "355px",
-      // legacy _responsive.less:122-124 — payload re-inherits at ≤720px.
-      "@media (max-width: 720px)": "inherit",
-    },
+    width: "355px",
   },
   secret: {
     borderColor: webhooksColors.fieldBorder,
@@ -287,7 +283,7 @@ function ProjectWebhooksBody({
             </strong>
             <div
               {...stylex.props(styles.formWrap)}
-              className={`${stylex.props(styles.formWrap).className} form-wrap form-actions`}
+              className={`${stylex.props(styles.formWrap).className} form-actions`}
               data-stylex-owner="project-webhooks-form-fields"
             >
               <div>
@@ -393,7 +389,7 @@ function ProjectWebhooksBody({
         <div
           {...stylex.props(styles.list)}
           id="webhooksList"
-          className={`${stylex.props(styles.list).className} webhook-list-wrap`}
+          className={stylex.props(styles.list).className}
           data-stylex-owner="project-webhooks-list"
         >
           <ProjectWebhooksList
@@ -504,7 +500,7 @@ function ProjectWebhooksList({
       </div>
       {webhooks.map((webhook) => (
         <div
-          className={`${stylex.props(webhooksStyles.listItem).className} row-fluid list-item vertical-align`}
+          className={`${stylex.props(styles.listItem).className} row-fluid list-item vertical-align`}
           data-webhook-id={webhook.id}
           key={webhook.id}
         >

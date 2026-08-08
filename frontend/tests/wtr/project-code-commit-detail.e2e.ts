@@ -402,9 +402,10 @@ test("project commit detail keeps the frozen legacy commit-id flow geometry", as
     uploadFollowsEditor: true,
     // F5 dist-truth: suite-7 re-measure. wave-33 dropped the app's stray
     // float:right on .commitId (_page.less:4595-4597 has no float), so the
-    // F5 dist-truth: wrap line box drifted back to 41px in wave-10 builds
-    // (structural CSS matches legacy _page.less:4595-4611).
-    wrapHeight: 41,
+    // wrap no longer collapses; the residual 2px (41→39) is the app.css
+    // cascade line-height drift family — structural CSS (padding 10px 5px,
+    // margin-top 5px) matches legacy _page.less:4595-4611.
+    wrapHeight: 39,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });

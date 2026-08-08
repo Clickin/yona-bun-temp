@@ -585,6 +585,14 @@ test("project board create issue-template state matches legacy query-owned visib
       const box = element.getBoundingClientRect();
       return { bottom: Math.round(box.bottom), top: Math.round(box.top) };
     });
+  expect(desktopEditor).toEqual({ bottom: 678, top: 368 });
+
+  await page.fill("#editor-body-body", "Template body");
+  const postResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/projects/admin/sample/posts") &&
+      response.request().method() === "POST",
+  );
   await page.click("form.nm .actions .ybtn-success");
   await postResponsePromise;
   expect(postRequests).toEqual([

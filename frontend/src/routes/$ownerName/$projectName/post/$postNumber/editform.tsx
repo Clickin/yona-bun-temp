@@ -142,7 +142,6 @@ function ProjectBoardEditFormBody({
                 </dd>
                 <dd
                   {...stylex.props(styles.editorWrapper)}
-                  style={{ position: "relative" }}
                   data-stylex-owner="post-edit-form-editor"
                 >
                   <BoardPostMarkdownEditor

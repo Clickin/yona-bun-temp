@@ -635,7 +635,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
         </div>
       </div>
       <div
-        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap`}
+        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap pull-right`}
         data-stylex-owner="organization-home-project-card-stats"
       >
         <div

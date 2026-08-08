@@ -42,10 +42,6 @@ for (const viewport of [
 
     const toggle = page.getByRole("button", { name: "User menu, Shortcut (F)" });
     await toggle.click();
-    // F9 timing: the shell slides open with a 0.5s width transition
-    // (rootSidebarMotionStyles.shell); frame geometry only matches the
-    // settled layout (sidenav-tabs precedent waits 600ms).
-    await page.waitForTimeout(600);
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
 
     const profile = page.getByRole("link", { name: "Profile", exact: true });
