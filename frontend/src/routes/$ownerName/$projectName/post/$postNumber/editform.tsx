@@ -163,7 +163,7 @@ function ProjectBoardEditFormBody({
               <BoardPostFileUploader
                 resourceId={String(post.id)}
                 wrapperStyleProps={stylex.props(styles.upload)}
-                pasteHelpStyleProps={stylex.props(styles.pasteHelpVisible)}
+                pasteHelpFixedStyleProps={{ style: { display: "block" } }}
                 helpClassName={`right-txt help ${stylex.props(styles.uploadSaveHelp).className}`.trim()}
                 owners={{
                   wrapper: "post-edit-form-uploader",

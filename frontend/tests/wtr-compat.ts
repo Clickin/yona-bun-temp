@@ -376,6 +376,34 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
             }
             return undefined;
           },
+          postDataBuffer: () => {
+            // Playwright's APIRequest.postDataBuffer(): raw body bytes. The
+            // XHR bridge passes iframe-realm FormData (parent-realm
+            // `instanceof FormData` is false), so duck-type it and rebuild a
+            // multipart body — mock handlers extract filename="..." from it.
+            if (typeof init?.body === "string") {
+              return new TextEncoder().encode(init.body);
+            }
+            if (init?.body && typeof (init.body as FormData).forEach === "function") {
+              const boundary = `----wtr-boundary-${Math.random().toString(36).slice(2)}`;
+              const chunks: string[] = [];
+              (init.body as FormData).forEach((value: FormDataEntryValue, key: string) => {
+                if (typeof value === "string") {
+                  chunks.push(
+                    `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
+                  );
+                  return;
+                }
+                const file = value as File;
+                chunks.push(
+                  `--${boundary}\r\nContent-Disposition: form-data; name="${key}"; filename="${file.name}"\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n${file.name}\r\n`,
+                );
+              });
+              chunks.push(`--${boundary}--\r\n`);
+              return new TextEncoder().encode(chunks.join(""));
+            }
+            return undefined;
+          },
           postDataJSON: () => {
             if (typeof init?.body !== "string") return undefined;
             try {
@@ -2262,7 +2290,7 @@ class PageFacade {
     // Lazy iframe-realm handle: resolved when passed into dispatchEvent init.
     // Playwright passes fn args through; serialize the arg into the source so
     // the iframe-realm re-evaluation receives it.
-    const serializedArg = arg === undefined ? "" : `, ${JSON.stringify(arg)}`;
+    const serializedArg = arg === undefined ? "" : JSON.stringify(arg);
     return { __wtrHandleSource: `(${fn.toString()})(${serializedArg})` };
   }
 

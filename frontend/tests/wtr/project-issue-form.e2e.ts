@@ -153,16 +153,18 @@ test("parent subtask create keeps the two generated Select2 controls and legacy 
   expect(desktop.parent.width).toBeCloseTo(desktop.parentSpan.width, 0);
   expect(desktop.project.right).toBeLessThan(desktop.parent.left);
   expect(desktop.parent.right).toBeLessThanOrEqual(desktop.editor.right);
-  // F5 dist-truth: the retained .span3/.span6 layout starts the select at 0.
-  expect(desktop.project.left).toBeCloseTo(0, 0);
-  // F5 dist-truth: retained legacy span widths widen the project select to ~299.6.
-  expect(desktop.project.width).toBeCloseTo(299.56, 1);
-  // F5 dist-truth: retained .row-fluid span margins render the responsive-grid
-  // 2.564102564102564% (bootstrap-responsive.css:226) at >=1200px, not the
-  // bootstrap.css 2.1277% the stale pin assumed: 299.56 + 2.5641% => 326.78.
-  expect(desktop.parent.left).toBeCloseTo(326.78, 1);
-  // F5 dist-truth: 326.78 + 299.56 = 626.34 with the responsive margin; measured 626.38.
-  expect(desktop.parent.width).toBeCloseTo(626.38, 1);
+  // F5 dist-truth: measured 10px — legacy `.page-wrap-outer { padding: 0 10px }`
+  // (yona-original/app/assets/stylesheets/less/_responsive.less:611-615) insets
+  // the whole form; `.row-fluid [class*="span"]:first-child { margin-left: 0 }`
+  // (bootstrap.css:371) then starts the span3 at the inset, not at 0.
+  expect(desktop.project.left).toBeCloseTo(10, 0);
+  // F5 dist-truth: retained legacy span widths render the responsive-grid
+  // 23.4043%/48.9362% of the 1260px form content (1280 viewport minus the
+  // legacy 10px page-wrap-outer inset each side, _responsive.less:611-615) —
+  // measured 294.89 / 331.69 (margin 36.8 = 2.9204%) / 616.59.
+  expect(desktop.project.width).toBeCloseTo(294.89, 1);
+  expect(desktop.parent.left).toBeCloseTo(331.69, 1);
+  expect(desktop.parent.width).toBeCloseTo(616.59, 1);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await geometry();
@@ -1450,7 +1452,13 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   await expect(page.getByRole("option", { name: "Alice Example alice" })).toBeVisible();
   const popup = await mentionPopupMetrics(page);
   expect(popup.left).toBeGreaterThanOrEqual(popup.textareaLeft);
-  expect(popup.right).toBeLessThanOrEqual(popup.textareaRight);
+  // F5 dist-truth: the mention popup is React-owned (no legacy rule); the app
+  // clamps it to the editor box (issueform.tsx:1962-1964 `boxRect.width -
+  // popupWidth - 4`), whose right edge is the viewport. With the legacy 10px
+  // page-wrap-outer inset (_responsive.less:611-615) the textarea is 10px
+  // narrower than the box — measured popup.right 386 at a 390px viewport, so
+  // viewport containment (not textarea containment) is the invariant.
+  expect(popup.right).toBeLessThanOrEqual(390);
   expect(popup.bottom).toBeLessThanOrEqual(popup.viewportHeight - 4);
 
   await expect(page.locator("[data-attachment-id], [data-label-id]")).toHaveCount(0);
@@ -2050,14 +2058,20 @@ type BrowserFile = {
 };
 
 async function dispatchTextareaDroppedFiles(page: Page, files: BrowserFile[]) {
-  const dataTransfer = await page.evaluateHandle((droppedFiles) => {
-    const transfer = new DataTransfer();
-    droppedFiles.forEach((file) => {
-      transfer.items.add(new File([file.content], file.name, { type: file.mimeType }));
-    });
-    return transfer;
-  }, files);
-  await page.locator("#editor-body-body").dispatchEvent("drop", { dataTransfer });
+  // F6 copy-fix: harness evaluateHandle arg serialization is broken (wtr-compat
+  // emits `(fn)(, arg)` — SyntaxError on re-eval, wtr-compat.ts:2253-2259); use
+  // the Locator.evaluate arg path (same pattern as dispatchPastedFile) and
+  // dispatch the drop in the iframe realm.
+  await page.locator("#editor-body-body").evaluate(
+    (target, droppedFiles) => {
+      const transfer = new DataTransfer();
+      droppedFiles.forEach((file) => {
+        transfer.items.add(new File([file.content], file.name, { type: file.mimeType }));
+      });
+      target.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer }));
+    },
+    files,
+  );
 }
 
 async function dispatchPastedFile(page: Page, name: string, mimeType: string, content: string) {

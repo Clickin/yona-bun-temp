@@ -107,10 +107,11 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
     headerMarginBottom: "10px",
     headerMarginTop: "10px",
     viewerOverflow: "auto",
-    // F5 dist-truth: legacy .code-viewer-wrap { width:100% } inside unconstrained
-    // .code-browse-wrap (yona-original/.../less/_page.less:4634-4637, :4498-4499) ->
-    // full page width 1280 at this viewport; the pinned 1260 was stale
-    viewerWidth: 1280,
+    // F5 dist-truth: legacy .code-viewer-wrap { width:100% } inside
+    // .code-browse-wrap inside .page-wrap-outer { padding: 0 10px; width: 100%;
+    // box-sizing: border-box } (yona-original/.../less/_responsive.less:611-615) ->
+    // 1260 at this 1280 viewport; app renders 1260 == legacy, pin was stale
+    viewerWidth: 1260,
     wrapPosition: "relative",
   });
   expect(await readCodeFileNavbarMetrics(page)).toEqual({

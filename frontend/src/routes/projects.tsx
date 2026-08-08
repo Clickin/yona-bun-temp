@@ -428,6 +428,7 @@ const styles = stylex.create({
     color: projectsDirectoryColors.paginationText,
     display: "inline-block",
     fontSize: "12px",
+    lineHeight: "20px",
     padding: "0px 10px",
   },
   directoryPaginationIconItem: { padding: "0px 5px" },
@@ -567,20 +568,24 @@ const directoryPaginationInputStyleProps = stylex.props(styles.directoryPaginati
 const directoryPaginationPreviousIconStyleProps = stylex.props(
   styles.directoryPaginationIcon,
   styles.directoryPaginationPreviousIcon,
+  styles.paginationSprite(legacySpriteUrl),
 );
 const directoryPaginationPreviousDisabledIconStyleProps = stylex.props(
   styles.directoryPaginationIcon,
   styles.directoryPaginationPreviousIcon,
   styles.directoryPaginationPreviousIconDisabled,
+  styles.paginationSprite(legacySpriteUrl),
 );
 const directoryPaginationNextIconStyleProps = stylex.props(
   styles.directoryPaginationIcon,
   styles.directoryPaginationNextIcon,
+  styles.paginationSprite(legacySpriteUrl),
 );
 const directoryPaginationNextDisabledIconStyleProps = stylex.props(
   styles.directoryPaginationIcon,
   styles.directoryPaginationNextIcon,
   styles.directoryPaginationNextIconDisabled,
+  styles.paginationSprite(legacySpriteUrl),
 );
 
 export const Route = createFileRoute("/projects")({
@@ -832,7 +837,6 @@ function ProjectsPagination({
                 {...directoryPaginationPreviousIconStyleProps}
                 data-disabled="false"
                 data-stylex-owner="projects-directory-pagination-prev-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...directoryPaginationLabelStyleProps}
@@ -848,7 +852,6 @@ function ProjectsPagination({
                 {...directoryPaginationPreviousDisabledIconStyleProps}
                 data-disabled="true"
                 data-stylex-owner="projects-directory-pagination-prev-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...directoryPaginationDisabledLabelStyleProps}
@@ -921,7 +924,6 @@ function ProjectsPagination({
                 {...directoryPaginationNextIconStyleProps}
                 data-disabled="false"
                 data-stylex-owner="projects-directory-pagination-next-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -937,7 +939,6 @@ function ProjectsPagination({
                 {...directoryPaginationNextDisabledIconStyleProps}
                 data-disabled="true"
                 data-stylex-owner="projects-directory-pagination-next-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}

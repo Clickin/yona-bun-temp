@@ -18,6 +18,7 @@ const legacyUpdateSidebarSearch = { __legacySiteSidebarActiveMarker: undefined }
 const styles = stylex.create({
   breadcrumbOuter: {
     boxSizing: "border-box",
+    borderBottomWidth: "0px",
     minWidth: {
       default: null,
       "@media (max-width: 720px)": "10px",

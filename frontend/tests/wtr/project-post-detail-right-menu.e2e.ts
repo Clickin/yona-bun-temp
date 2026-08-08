@@ -28,7 +28,9 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   expect(route).toContain("board-body row-fluid");
   expect(route).toContain("content markdown-wrap");
   expect(route).toContain("board-actrow");
-  expect(route).not.toContain("right-txt");
+  // wave-33 retained-class retention (667398a04): legacy board/view.scala.html:97
+  // is `<div class="board-actrow right-txt">`; the app retains the class
+  expect(route).toContain("right-txt");
   expect(route).toContain('className="act-row right-menu-icons"');
   expect(route).toContain('data-stylex-owner="post-detail-sidebar-actions"');
 
@@ -83,10 +85,11 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
       targetTop: get("#comment-1").top,
     };
   });
-  // F5 dist-truth: legacy .page-wrap/.project-page-wrap/.board-body are full-width with no width
-  // declarations (yona-original/app/assets/stylesheets/less/_page.less:622-624,727,2914), so legacy
-  // truth at a 1366px viewport = 1366; 1346 assumed a 20px classic scrollbar gutter.
-  expect(desktop.body.width).toBeCloseTo(1366, 0);
+  // F5 dist-truth: legacy .board-body width:100% inside .project-page-wrap inside
+  // .page-wrap-outer { padding: 0 10px; width: 100%; box-sizing: border-box }
+  // (yona-original/app/assets/stylesheets/less/_responsive.less:611-615) -> 1346 at a
+  // 1366px viewport; app renders 1346 == legacy, pin was stale
+  expect(desktop.body.width).toBeCloseTo(1346, 0);
   expect(desktop.left.right).toBeLessThanOrEqual(desktop.right.left);
   expect(desktop.right.right).toBeLessThanOrEqual(1366);
   expect(desktop.right.width).toBeGreaterThan(300);

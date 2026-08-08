@@ -480,7 +480,7 @@ function ProjectPullRequestsBody({
                   >
                     {t("pullRequest.sent")}
                     <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>
-                      {pullRequests.acceptedCount} / {pullRequests.sentCount}
+                      {`${pullRequests.acceptedCount} / ${pullRequests.sentCount}`}
                     </span>
                   </Link>
                 </li>
@@ -876,8 +876,8 @@ function ProjectPullRequestRow({
           </span>
           {pullRequest.commentThreadCount > 0 ? (
             <div
-              className="infos-item"
               {...sx.reviewProgressItem}
+              className={`${sx.reviewProgressItem.className ?? ""} infos-item`.trim()}
               data-stylex-owner="project-pullrequests-review-progress"
             >
               <i className="infos-icon yobicon-post2 vmiddle"></i>
@@ -907,8 +907,8 @@ function ProjectPullRequestRow({
           ) : null}
           {showReviewerCount ? (
             <div
-              className={reviewerClass}
               {...sx.reviewerCount}
+              className={`${sx.reviewerCount.className ?? ""} ${reviewerClass}`.trim()}
               data-stylex-owner="project-pullrequests-reviewer-count"
             >
               <i className="infos-icon yobicon-preview vmiddle"></i>

@@ -569,7 +569,11 @@ function ThreadReplyFormBody({
             helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
             helpOwner="pull-request-changes-upload-help"
           />
-          <div {...sx.threadActions} data-stylex-owner="pull-request-changes-thread-actions">
+          <div
+            {...sx.threadActions}
+            className={`right-txt ${sx.threadActions.className ?? ""}`.trim()}
+            data-stylex-owner="pull-request-changes-thread-actions"
+          >
             <button
               type="button"
               className="ybtn ybtn-default ybtn-small"

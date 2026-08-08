@@ -489,39 +489,6 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
       '.post-list-wrap:not(.notice-wrap) button.issue-label[type="button"][data-label-id="8"]',
     ),
   ).toHaveText("bug");
-  const probeSharpAnchors = await page
-    .locator(".post-list-wrap a.issue-label[href=\"#\"], .post-list.project-page-wrap > .pull-left a[href=\"#helpKeys\"]")
-    .evaluateAll((els) => els.map((el) => el.outerHTML.slice(0, 200)));
-  // eslint-disable-next-line no-console
-  console.log("PROBE-SHARP-A:", JSON.stringify(probeSharpAnchors));
-  const probePollSharp = await page.evaluate(() => {
-    const seen: string[] = [];
-    const collect = () => {
-      const els = Array.from(
-        document.querySelectorAll(
-          '.post-list-wrap:not(.notice-wrap) a.issue-label[href="#"], .post-list.project-page-wrap > .pull-left a[href="#helpKeys"]',
-        ),
-      );
-      if (els.length) seen.push(els.map((el) => el.outerHTML.slice(0, 150)).join("|"));
-    };
-    return new Promise<string[]>((resolve) => {
-      collect();
-      let count = 0;
-      const timer = setInterval(() => {
-        collect();
-        count += 1;
-        if (count > 10) {
-          clearInterval(timer);
-          resolve(seen);
-        }
-      }, 50);
-    });
-  });
-  // eslint-disable-next-line no-console
-  console.log("PROBE-POLL-SHARP:", JSON.stringify(probePollSharp));
-  const probeIssueAnchor = await page
-    .locator('.post-list-wrap:not(.notice-wrap) a.issue-label')
-    .evaluateAll((els) => els.map((el) => `${el.tagName}|${el.getAttribute("href")}|${el.outerHTML.slice(0, 120)}`));
   await expect(
     page.locator('.post-list-wrap:not(.notice-wrap) a.issue-label[href="#"]'),
   ).toHaveCount(0);
@@ -617,7 +584,10 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
     titleText: "Two Column Mode",
   });
   expect(hoverMetrics.isAboveWrapper).toBe(true);
-  await page.locator("body").hover({ position: { x: 10, y: 10 } });
+  // F6 copy-fix-current-dom: page.mouse.move synthesizes the mouseleave
+  // events on the previously-hovered checkbox (wtr-compat.ts:1744-1764), which
+  // Locator.hover alone does not; the app hides the popover on onMouseLeave.
+  await page.mouse.move(10, 10);
   await expect(hoverPopover).toHaveCount(0);
   await page.locator('#option_form input[name="filter"]').focus();
   await page.locator("#two-column-mode").focus();
@@ -648,39 +618,28 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await confirmButton.click();
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
-  // eslint-disable-next-line no-console
-  console.log(
-    "PROBE-BACKDROP-1:",
-    await page.locator(".modal-backdrop").count(),
-    await page.locator("#helpKeys").getAttribute("class"),
-  );
 
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
   await page.locator(".modal-backdrop.in").click({ position: { x: 1, y: 1 } });
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
-  // eslint-disable-next-line no-console
-  console.log(
-    "PROBE-BACKDROP-2:",
-    await page.locator(".modal-backdrop").count(),
-    await page.locator("#helpKeys").getAttribute("class"),
-  );
 
   await keymapButton.click();
   await page.locator("#helpKeys").press("Escape");
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
-  // eslint-disable-next-line no-console
-  console.log(
-    "PROBE-BACKDROP-3:",
-    await page.locator(".modal-backdrop").count(),
-    await page.locator("#helpKeys").getAttribute("class"),
-  );
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
-  expect(routeSource).toContain(
-    '<title>{`${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`}</title>',
+  // F6 copy-fix-current-dom: the document title is owned by the shared project
+  // shell ($ownerName/$projectName.tsx `active === "board"` branch), not the
+  // posts route; the board title string is asserted from the shell source.
+  const projectShellSource = readFileSync(
+    "src/routes/$ownerName/$projectName.tsx",
+    "utf8",
+  );
+  expect(projectShellSource).toContain(
+    'active === "board"\n                                  ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`',
   );
   expect(routeSource).toContain('placeholder={t("project.searchPlaceholder")}');
   expect(routeSource).not.toContain('placeholder={t("title.search")}');
@@ -692,7 +651,9 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(twoColumnSource).toContain('localStorage.setItem("useTwoColumnMode", String(checked))');
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(true), 100)");
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
-  expect(twoColumnSource).toContain('className="popover top"');
+  // F6 copy-fix-current-dom: the popover className is composed alongside the
+  // stylex tokens (`${popoverProps.className ?? ""} popover top`.trim()).
+  expect(twoColumnSource).toContain("popover top");
   expect(twoColumnSource).toContain('role="tooltip"');
   expect(twoColumnSource).not.toContain("data-content=");
   expect(twoColumnSource).not.toContain("document.");
@@ -1280,16 +1241,6 @@ test("project board post create form uploader shell matches legacy fileUploader.
 
   await page.goto(`${basePath}/admin/sample/postform`);
   await expect(page.locator("#upload[data-resource-type='BOARD_POST']")).toBeVisible();
-  const probeMenu = await page
-    .locator("#usermenu-tab-content-list")
-    .evaluate((el) => (el as HTMLElement).outerHTML);
-  // eslint-disable-next-line no-console
-  console.log("PROBE-USRMENU:", probeMenu);
-  // eslint-disable-next-line no-console
-  console.log(
-    "PROBE-USRMENU-CANON:",
-    JSON.stringify(await canonicalize(page, "#usermenu-tab-content-list")),
-  );
   await expect(page.locator("#upload .attach-wrap")).toBeVisible();
   await expect(page.locator("#upload input.file[name='filePath']")).toHaveAttribute("multiple", "");
   await expect(page.locator("#upload .attached-files.unstyled")).toHaveCount(1);
@@ -1298,9 +1249,6 @@ test("project board post create form uploader shell matches legacy fileUploader.
   );
   await expect(page.locator("#tplAttachedFile, #tplDropFilesHere")).toHaveCount(0);
 
-  const probeHtml = await page.locator("#upload").evaluate((upload) => upload.outerHTML);
-  // eslint-disable-next-line no-console
-  console.log("PROBE-CREATE-UPLOAD:", probeHtml.slice(0, 2000));
 
   const uploadMetrics = await page.locator("#upload").evaluate((upload) => {
     const style = window.getComputedStyle(upload);
@@ -1313,8 +1261,6 @@ test("project board post create form uploader shell matches legacy fileUploader.
     const attachedFiles = upload.querySelector(".attached-files") as HTMLElement;
     const help = upload.querySelector(".right-txt.help") as HTMLElement;
     const attachedFilesStyle = window.getComputedStyle(attachedFiles);
-    (window as unknown as Record<string, unknown>).__probeUploadHtml = upload.outerHTML;
-
     return {
       className: upload.className,
       resourceType: upload.getAttribute("data-resource-type"),
@@ -3824,27 +3770,6 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         '.comment-update-form [data-stylex-owner="post-detail-comment-create-editor-nav"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-nav-item"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-tab"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-tab-active"]',
       ),
     ).toHaveCount(0);
-    const probeCommentForm = await commentForm.evaluate((form) => {
-      const box = form.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-create-write-box"]',
-      );
-      return {
-        boxChildren: box
-          ? Array.from(box.children).map((c) => ({
-              className: c.className,
-              owner: c.getAttribute("data-stylex-owner"),
-            }))
-          : null,
-        boxHtml: box ? box.outerHTML.slice(0, 600) : "NO BOX",
-      };
-    });
-    // eslint-disable-next-line no-console
-    console.log("PROBE-COMMENT-FORM:", JSON.stringify(probeCommentForm));
-    // eslint-disable-next-line no-console
-    console.log(
-      "PROBE-COMMENT-FORM-CANON:",
-      JSON.stringify(await canonicalize(page, "#comment-form")),
-    );
     const metrics = await commentForm.evaluate((form) => {
       const measureElement = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();

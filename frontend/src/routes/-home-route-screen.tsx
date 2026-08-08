@@ -6858,6 +6858,7 @@ const leftSidebarProjectSubtabStyles = stylex.create({
     cursor: "pointer",
     display: "block",
     font: "inherit",
+    lineHeight: "20px",
     margin: 0,
     padding: "5px 8px",
     ":hover": {

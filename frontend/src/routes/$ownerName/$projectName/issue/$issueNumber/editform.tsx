@@ -353,7 +353,11 @@ function ProjectIssueEditFormBody({
                       <span className="draft">{t("issue.state.draft")}</span>
                     ) : (
                       <label htmlFor="title">
-                        <strong {...sx.issueNumber} data-stylex-owner="issue-editform-issue-number">
+                        <strong
+                          {...sx.issueNumber}
+                          className={`${sx.issueNumber.className ?? ""} secondary-txt`.trim()}
+                          data-stylex-owner="issue-editform-issue-number"
+                        >
                           #{issueNumber}
                         </strong>
                       </label>

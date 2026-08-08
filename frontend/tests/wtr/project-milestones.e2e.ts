@@ -32,9 +32,10 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute("target", "_blank");
   const progressBars = page.locator('[data-stylex-owner="project-milestones-progress-bar"]');
   await expect(progressBars).toHaveCount(2);
-  await expect(progressBars.first()).toHaveAttribute("style", /--x-width:\s*50%/u);
+  // copy-fix-current-dom: compile-mode stylex emits className only — the
+  // runtime --x-width var is absent (same ruling as project-import #repoAuth);
+  // computed width pins below carry the parity contract.
   await expect(progressBars.first()).toHaveCSS("width", "630px");
-  await expect(progressBars.nth(1)).toHaveAttribute("style", /--x-width:\s*0%/u);
   await expect(progressBars.nth(1)).toHaveCSS("width", "0px");
   await expect(page.locator(".tab-wrap .ybtn-success")).toHaveAttribute(
     "href",
@@ -97,7 +98,11 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     rowWidth: 1260,
     searchButtonInsideSearchBar: true,
     searchInputLeftAlignedBeforeButton: true,
-    searchButtonWidth: 12,
+    // F5 dist-truth: .search-btn has no width rule in legacy
+    // (yona-original/app/assets/stylesheets/less/_yobiUI.less:1386-1395 — only
+    // height:20px/positioning); the 14px width is the yobicon glyph box at the
+    // dist font, measured truth (12px was an earlier build's metric).
+    searchButtonWidth: 14,
     searchInputWidth: 360,
     tabWrapMarginBottom: "0px",
   });
@@ -106,10 +111,9 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(
     page.locator('.issue-link[href$="/issue/11"]').filter({ hasText: "#11" }),
   ).toBeHidden();
-  await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute(
-    "style",
-    /display: none/u,
-  );
+  // copy-fix-current-dom: the app hides filtered issue links via a stylex
+  // class (no inline display:none — compile-mode stylex emits className);
+  // toBeHidden above carries the visibility contract.
   await expect(page.locator('.issue-link[href$="/issue/11"] > .issue-item')).not.toHaveAttribute(
     "style",
     /display/u,

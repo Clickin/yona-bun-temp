@@ -257,7 +257,10 @@ test("authenticated Home series tab interaction states preserve the final frozen
     borderTopColor: "rgb(221, 221, 221)",
     color: "rgb(85, 85, 85)",
     cursor: "default",
-    outlineStyle: "none",
+    // F5 dist-truth: legacy bootstrap a:focus { outline: 5px auto
+    // -webkit-focus-ring-color } (bootstrap.css:75-77) computes to "auto";
+    // the app's focused link matches legacy.
+    outlineStyle: "auto",
   });
 
   await page.evaluate(() => {

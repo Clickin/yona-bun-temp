@@ -165,7 +165,15 @@ function UploaderShell({
                 ...pasteHelpFixedStyleProps,
               }
             : undefined)}
-          className={pasteHelpClassName}
+          className={`${pasteHelpClassName} ${
+            pasteHelpStyleFirst
+              ? ""
+              : (pasteSupported && pasteHelpStyleProps
+                  ? (pasteHelpStyleProps as { className?: string }).className ?? ""
+                  : "") +
+                " " +
+                ((pasteHelpFixedStyleProps as { className?: string } | undefined)?.className ?? "")
+          }`.trim()}
           data-stylex-owner={pasteHelpOwner}
           {...(pasteHelpStyleFirst
             ? undefined

@@ -53,9 +53,17 @@ test("records global search owners and responsive containment", async ({ page })
     expect(geometry.pageLeft).toBe(0);
     expect(geometry.pageRight).toBe(viewport.width);
     expect(geometry.pageScrollWidth).toBe(viewport.width);
-    expect(geometry.projectLeft).toBe(0);
-    expect(geometry.projectRight).toBe(viewport.width);
-    expect(geometry.projectScrollWidth).toBe(viewport.width);
+    // F5 dist-truth: desktop .project-page-wrap sits inside .page-wrap-outer
+    // whose @media all padding:0 10px (yona-original/app/assets/stylesheets/
+    // less/_responsive.less:611-614) insets the wrap by 10px; at 390px the
+    // wrap spans the viewport edge-to-edge. Measured dist truth.
+    expect(geometry.projectLeft).toBe(viewport.width === 1366 ? 10 : 0);
+    expect(geometry.projectRight).toBe(
+      viewport.width === 1366 ? viewport.width - 10 : viewport.width,
+    );
+    expect(geometry.projectScrollWidth).toBe(
+      viewport.width === 1366 ? viewport.width - 20 : viewport.width,
+    );
   }
 });
 

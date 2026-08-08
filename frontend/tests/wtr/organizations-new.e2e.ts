@@ -197,7 +197,11 @@ test("organization create form matches legacy organization/create.scala.html DOM
     descriptionWidth: 700,
     formWidth: 700,
     nameInputWidth: 700,
-    pageWrapWidth: 1280,
+    // F5 dist-truth: legacy .project-page-wrap { width: 100% } inside
+    // .page-wrap-outer { padding: 0 10px; width: 100%; box-sizing: border-box }
+    // (yona-original/.../less/_responsive.less:611-615) -> 1260 at this 1280
+    // viewport; app renders 1260 == legacy, pin was stale
+    pageWrapWidth: 1260,
     submitButtonHeight: 30,
     titleFontSize: 21,
     warningDisplay: "none",
