@@ -1,6 +1,6 @@
 # WTR 637-failure remediation
 
-> status: executing — Phase A (triage) complete 2026-08-08; ledger committed; Phases B–E pending
+> status: executing — Phases 0-A-B-C done; Phase D waves 1-3 running (2026-08-08); suite-4 baseline **2655 passed / 381 failed / 5 skipped** on the corrected fallback-off dist (from 2450/632)
 > slug: wtr-637-remediation
 > date: 2026-08-07
 
@@ -38,7 +38,17 @@ Verify: tsc 0; the 4 affected specs run **19 passed / 8 failed / 4 skipped**, wh
 | F4 C2-retire | 4 | C2-retire 4 (Phase C) |
 | **total** | **632** | |
 
-## Phase B — C1 real-mouse bridge (main agent; applies to the 87 F3 rows)
+## Phase D — bucket-2 app fixes (IN PROGRESS, waves 1-3)
+
+- **D1 done**: `frontend/src/app.css` `@layer legacy` input/select/textarea tag-level cascade (bootstrap.css:1031-1052 + _yobiUI.less:15-18,38-43): inputs 20px height/12px font/2px radius, selects 30px, textarea auto. `input:focus { border-color:#f36c22 !important }` (legacy _yobiUI.less:45-48). Plus `.avatar-wrap.small` (24px), `.item-count-groups`, `.affix`, `issue-list-wrap`, `.issue-option` blocks.
+- **F2 harness fixes (committed)**: document-request double-emit dedup (goto), keydown cancelable + preventDefault-respecting synthetic activation (both press paths), evaluateHandle arg serialization, poll().toBeCloseTo, legacy-assets serving (images from yona-original/public + fallback CSS from dist) + mime exemption, auth-aliases sign-in mock.
+- **Waves 1-3 (commits 547bc0bf3…125ab4127)**: issues-empty excel/status/mass-update pins + canonicalizers; posts keymap pull-left + labelIds URL + gnbClassName + markdown-editor source; PR list pull-right/two-column-popover/SitePagination classes + canonicalizer scope-menu & rel mapping; milestone edit focus `!important` + canonicalizer stylex style mapping; webhooks/site-admin/history-file F7 deferrals.
+- **Known residual cascades**: issues-empty due-date-region canonicalize diff (7 rows); PR sent/populated num-badge & infos-item pins (4 rows); posts board-actrow region (7 rows); milestone edit uploader paste-help span (1 row).
+- Dist is gitignored; rebuilds: `VITE_YONA_BASE_PATH=/yona VITE_DISABLE_LEGACY_FALLBACK=1 pnpm exec vite build` in frontend/.
+
+## Phase B — C1 real-mouse bridge (DONE, commit d3e701bd8)
+
+> status: done — 65/87 F3 rows flipped green via the bridge; 22 red reclassified by RedF3Triage (13 F7, 4 C2, rest F5/F6); committed.
 
 Real CSS `:hover`/`:active` require a real mouse; the WTR launcher is Playwright, so expose its mouse to the test page:
 
