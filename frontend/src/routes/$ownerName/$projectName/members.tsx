@@ -728,6 +728,8 @@ function ProjectMemberListItem({
         <img
           data-stylex-owner="project-members-avatar-image"
           src={stringField(member.avatarUrl, "") || defaultAvatarUrl}
+          width="64"
+          height="64"
           alt=""
           {...stylex.props(styles.memberAvatarImage)}
         />

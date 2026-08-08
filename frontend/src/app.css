@@ -57,6 +57,30 @@
     line-height: 0;
   }
 
+  /* legacy _page.less:81-83 — desktop hides the menu short letters; the
+     stylex mobileShort media rule (unlayered) re-shows them under 720px */
+  .short-menu {
+    display: none;
+  }
+
+  /* frozen bootstrap.css:1240 — .input-small width (label color input) */
+  .input-small {
+    width: 90px;
+  }
+
+  /* legacy _page.less:6756-6764 — preset colors hidden until name focus;
+     the app's stylex presetColorsVisible (unlayered) re-shows them */
+  .label-preset-colors {
+    display: none;
+    vertical-align: top;
+    margin-top: 3px;
+  }
+
+  .label-preset-colors.edit {
+    display: block;
+    margin-top: 10px;
+  }
+
   .hide {
     display: none;
   }
@@ -1640,6 +1664,15 @@
   .nav-tabs > li {
     float: left;
     margin-bottom: -1px;
+  }
+
+  /* frozen bootstrap.css:4016-4024 + _yobiUI.less:470-485 — .nav-tabs > li > a
+     tab padding (bootstrap vertical 8px, yobiUI horizontal 30px) */
+  .nav-tabs > li > a {
+    padding: 8px 30px;
+    line-height: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
   }
 
   #mySidenav .right-menu > .nav-tabs.nm > li > button,
@@ -4060,6 +4093,12 @@
     font: inherit;
     line-height: inherit;
     white-space: pre;
+  }
+
+  .diff-container {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
   }
 
   .diff-container tr.comments {

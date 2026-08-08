@@ -1370,51 +1370,52 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(metrics.menuHeight).toBeCloseTo(40, 0);
   expect(metrics.formTop).toBeCloseTo(213, 0);
   expect(metrics.titleRowTop).toBeCloseTo(metrics.formTop, 0);
-  // F5 dist-truth: measured 57px — legacy .content-wrap .title margin 15px top/bottom
+  // F5 dist-truth: measured 59px — legacy .content-wrap .title margin 15px top/bottom
   // (yona-original/app/assets/stylesheets/less/page.less:3780-3788) + 30px bootstrap input.
-  expect(metrics.titleRowHeight, JSON.stringify(metrics)).toBeCloseTo(57, 0);
+  expect(metrics.titleRowHeight, JSON.stringify(metrics)).toBeCloseTo(59, 0);
   expect(metrics.formLeft).toBeCloseTo(0, 0);
   expect(metrics.formWidth).toBeCloseTo(390, 0);
   expect(metrics.titleWidth).toBeCloseTo(350.953, 2);
   expect(metrics.optionWidth).toBeCloseTo(24.9, 0);
-  // F5 dist-truth: the 57px title row (vs the stale 59px pin) shifts every
-  // stacked block below it up by 2px.
-  expect(metrics.leftTop).toBeCloseTo(270, 0);
+  // F5 dist-truth: the 59px title row shifts every stacked block below it.
+  expect(metrics.leftTop).toBeCloseTo(272, 0);
   expect(metrics.leftWidth).toBeCloseTo(390, 0);
   expect(metrics.editorWidth).toBeCloseTo(390, 0);
   // F5 dist-truth: measured 300px (retained legacy textarea rules).
   expect(metrics.textareaHeight).toBeCloseTo(300, 0);
-  expect(metrics.textareaTop).toBeCloseTo(406, 0);
+  expect(metrics.textareaTop).toBeCloseTo(408, 0);
   expect(metrics.uploadWidth).toBeCloseTo(390, 0);
-  // F5 dist-truth: measured 122px upload box.
-  expect(metrics.uploadHeight).toBeCloseTo(122, 0);
-  // F5 dist-truth: measured 710px — textareaTop(406) + textareaHeight(300) + 4px gap.
-  expect(metrics.uploadTop).toBeCloseTo(710, 0);
-  // F5 dist-truth: uploadTop(710) + uploadHeight(122) + 30px => 862.
-  expect(metrics.leftBottom).toBeCloseTo(862, 0);
+  // F5 dist-truth: measured 100px upload box.
+  expect(metrics.uploadHeight).toBeCloseTo(100, 0);
+  // F5 dist-truth: measured 708px — textareaTop(408) + textareaHeight(300).
+  expect(metrics.uploadTop).toBeCloseTo(708, 0);
+  // F5 dist-truth: uploadTop(708) + uploadHeight(100) + 30px => 838.
+  expect(metrics.leftBottom).toBeCloseTo(838, 0);
   expect(metrics.rightLeft).toBeCloseTo(8.3, 0);
   expect(metrics.rightWidth).toBeCloseTo(370.5, 0);
-  // F5 dist-truth: right column shifts with the 4px upload stack (872 measured).
-  expect(metrics.rightTop).toBeCloseTo(872, 0);
+  // F5 dist-truth: right column shifts with the upload stack (848 measured).
+  expect(metrics.rightTop).toBeCloseTo(848, 0);
   expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom + 8);
   expect(metrics.rightTop).toBeLessThanOrEqual(metrics.leftBottom + 12);
   expect(metrics.formRight).toBeLessThanOrEqual(390);
-  // F5 dist-truth: measured 390px-stack heights (attach 102 / button 36 /
-  // file input 24 / paste 18) after the 57px title-row stacking shift.
+  // F5 dist-truth: measured 390px-stack heights (attach 78 / button 30 /
+  // file input 22 / paste 18) on the rebuilt dist.
   expect(uploadMetrics).toMatchObject({
-    attachHeight: 102,
+    attachHeight: 78,
     attachWidth: 370,
-    buttonHeight: 36,
+    buttonHeight: 30,
     buttonPadding: "6px 20px",
-    fileInputHeight: 24,
+    fileInputHeight: 22,
     fileInputOpacity: "0",
     pasteDisplay: "block",
     pasteHeight: 18,
     pasteWidth: 370,
     uploadPadding: "10px",
   });
-  // F5 dist-truth: measured 307.8px — the 390px-stacked upload button fills the row.
-  expect(uploadMetrics.buttonWidth).toBeCloseTo(307.8, 0);
+  // F5 dist-truth: measured 90.5px — legacy .attach-wrap .btn-wrap is
+  // display:inline-block (!important, _page.less:3619-3624) so the upload
+  // button is content-width on mobile, not row-filling.
+  expect(uploadMetrics.buttonWidth).toBeCloseTo(90.5, 0);
   const assignee = page.getByRole("combobox", { name: "담당자" });
   await expect(assignee).toContainText("담당자 없음");
   expect(await assigneeArrowMetrics(page)).toMatchObject({

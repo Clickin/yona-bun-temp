@@ -52,6 +52,8 @@ const styles = stylex.create({
     borderWidth: "1px",
     color: labelsFormColors.white,
     cursor: "pointer",
+    fontSize: "14px",
+    lineHeight: "20px",
     minWidth: "100px",
     padding: "4px 12px",
     textAlign: "center",
@@ -64,6 +66,8 @@ const styles = stylex.create({
     borderWidth: "1px",
     color: labelsFormColors.white,
     cursor: "pointer",
+    fontSize: "14px",
+    lineHeight: "20px",
     minWidth: "100px",
     padding: "4px 12px",
     textAlign: "center",
@@ -667,7 +671,6 @@ function ProjectLabelsBody({
                     />
                     {showCategoryTypeahead ? (
                       <ul
-                        className="typeahead dropdown-menu"
                         {...stylex.props(
                           labelsFormDynamicStyles.typeaheadPosition(
                             newLabelCategoryInputRef.current
@@ -678,6 +681,16 @@ function ProjectLabelsBody({
                               : undefined,
                           ),
                         )}
+                        className={`typeahead dropdown-menu ${stylex.props(
+                          labelsFormDynamicStyles.typeaheadPosition(
+                            newLabelCategoryInputRef.current
+                              ? `${newLabelCategoryInputRef.current.offsetWidth}px`
+                              : undefined,
+                            newLabelCategoryInputRef.current
+                              ? `${newLabelCategoryInputRef.current.offsetHeight}px`
+                              : undefined,
+                          ),
+                        ).className ?? ""}`.trim()}
                         data-stylex-owner="project-labels-typeahead-menu"
                       >
                         {categoryTypeaheadSuggestions.map((suggestion, index) => (
@@ -713,10 +726,10 @@ function ProjectLabelsBody({
                     ) : null}
                   </div>
                   <div
-                    className="label-preset-colors"
                     {...(isNewLabelColorsVisible
                       ? stylex.props(labelsFormStyles.presetColorsVisible)
                       : undefined)}
+                    className={`label-preset-colors${isNewLabelColorsVisible ? ` ${stylex.props(labelsFormStyles.presetColorsVisible).className}` : ""}`.trim()}
                     data-stylex-owner="project-labels-preset-colors"
                   >
                     {NEW_LABEL_COLORS.map((color) => (
@@ -730,7 +743,14 @@ function ProjectLabelsBody({
                     <input
                       type="text"
                       name="color"
-                      className="input-small input-label-color"
+                      {...(colorInputStyle(newLabelNameColor)
+                        ? stylex.props(
+                            labelsFormDynamicStyles.colorInputBoxShadow(
+                              colorInputStyle(newLabelNameColor)!,
+                            ),
+                          )
+                        : {})}
+                      className={`input-small input-label-color${colorInputStyle(newLabelNameColor) ? ` ${stylex.props(labelsFormDynamicStyles.colorInputBoxShadow(colorInputStyle(newLabelNameColor)!)).className ?? ""}` : ""}`.trim()}
                       placeholder={t("label.customColor")}
                       value={newLabelColor}
                       onBlur={onNewLabelColorBlur}
@@ -741,13 +761,6 @@ function ProjectLabelsBody({
                           setNewLabelNameColor(refinedColor);
                         }
                       }}
-                      {...(colorInputStyle(newLabelNameColor)
-                        ? stylex.props(
-                            labelsFormDynamicStyles.colorInputBoxShadow(
-                              colorInputStyle(newLabelNameColor)!,
-                            ),
-                          )
-                        : {})}
                     />
                   </div>
                 </div>
@@ -766,7 +779,7 @@ function ProjectLabelsBody({
           <div
             {...stylex.props(styles.list)}
             id="labelsList"
-            className={stylex.props(styles.list).className}
+            className={`${stylex.props(styles.list).className} issue-label-list-wrap`}
             data-stylex-owner="project-labels-list"
           >
             <ProjectLabelsList
@@ -1290,7 +1303,7 @@ function IssueLabelConfirmModal({
           </div>
           <div
             {...stylex.props(styles.confirmActions)}
-            className={`${stylex.props(styles.confirmActions).className} buttons`}
+            className={`${stylex.props(styles.confirmActions).className} center-txt buttons mt20 mb20`}
             data-stylex-owner="project-labels-confirm-actions"
           >
             {buttons.map((button) => (

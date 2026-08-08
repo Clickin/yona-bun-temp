@@ -759,7 +759,9 @@ function CommentDeleteModal({
       <div
         {...(isOpen ? sx.commentDeleteModalVisible : undefined)}
         id="comment-delete-modal"
-        className={isOpen ? "modal hide fade in" : "modal hide fade"}
+        className={`${
+          isOpen ? "modal hide fade in" : "modal hide fade"
+        } ${(isOpen ? sx.commentDeleteModalVisible.className : undefined) ?? ""}`.trim()}
         data-stylex-owner="pull-request-changes-comment-delete-modal"
       >
         <div className="modal-header">
@@ -1001,7 +1003,9 @@ function PullRequestFileDiff({
         </div>
         {/* oxlint-disable jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock uses mouse selection on the plain diff container. */}
         <div
-          className="diff-partial-code"
+          className={`diff-partial-code ${
+            isExpanded ? "" : (stylex.props(styles.diffCodeHidden).className ?? "")
+          }`.trim()}
           data-hashcode={file.path}
           onMouseDown={(event) => {
             const start = diffSelectionLine(event.target);
@@ -1021,7 +1025,6 @@ function PullRequestFileDiff({
             );
             setPendingBlock(block);
           }}
-          {...(isExpanded ? {} : stylex.props(styles.diffCodeHidden))}
         >
           <div className="patch-header">
             {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
@@ -1683,7 +1686,9 @@ function CommitDropdown({
         <li>
           <Link
             to={changesPath}
-            activeOptions={legacyLinkActiveOptions}
+            hash="pull-request-changes-all-active-sentinel"
+            mask={{ to: changesPath }}
+            activeOptions={legacyHashLinkActiveOptions}
             activeProps={legacyLinkActiveProps}
             onClick={closeDropdown}
           >

@@ -118,11 +118,11 @@ const PRIOR_COMMIT = {
 
 const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
   `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></span>`,
+  `<span class="d-label"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></span>`,
 )
   .replace(
     `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
+    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
   )
   .replace(
     `<div class="diff-body diffs-wrap-scroll">`,
@@ -135,11 +135,11 @@ const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.repl
 
 const EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
   `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label"><strong class="blue-txt mr10 commit-hash">0000000</strong><span>No author metadata</span></span>`,
+  `<span class="d-label"><strong class="mr10 commit-hash">0000000</strong><span>No author metadata</span></span>`,
 )
   .replace(
     `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/0000000000000000"><strong class="blue-txt mr10 commit-hash">0000000</strong><span>No author metadata</span></a></li></ul>`,
+    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/0000000000000000"><strong class="mr10 commit-hash">0000000</strong><span>No author metadata</span></a></li></ul>`,
   )
   .replace(
     `<div class="diff-body diffs-wrap-scroll">`,
@@ -152,11 +152,11 @@ const EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE = EXPECTED_PULL_REQUEST_CH
 
 const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
   `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label"><strong class="blue-txt mr10 commit-hash">1234567</strong><span>Old UI (Outdated)</span></span>`,
+  `<span class="d-label"><strong class="mr10 commit-hash">1234567</strong><span>Old UI (Outdated)</span></span>`,
 )
   .replace(
     `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
+    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
   )
   .replace(
     `<div class="diff-body diffs-wrap-scroll">`,
@@ -169,11 +169,11 @@ const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace
 
 const EXPECTED_PULL_REQUEST_UNKNOWN_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
   `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label">All commit changes (Outdated - <strong class="blue-txt mr10">fedcba9</strong>)</span>`,
+  `<span class="d-label">All commit changes (Outdated - <strong class="mr10">fedcba9</strong>)</span>`,
 )
   .replace(
     `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="blue-txt mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
+    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
   )
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
@@ -1678,7 +1678,10 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain("const [isOpen, setIsOpen] = useState(false)");
   expect(routeSource).toContain("const closeDropdown = () => setIsOpen(false)");
   expect(routeSource).toContain("onClick={closeDropdown}");
-  expect(routeSource).toContain('className={isOpen ? "modal hide fade in" : "modal hide fade"}');
+  // F6 copy-fix: modal className is a template that appends the StyleX
+  // commentDeleteModalVisible token (display:block) — pin the substring form
+  // like project-code-commit-detail.e2e.ts:622.
+  expect(routeSource).toContain('isOpen ? "modal hide fade in" : "modal hide fade"');
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(routeSource).toContain("event.stopPropagation()");
 });

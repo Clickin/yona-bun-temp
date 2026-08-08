@@ -124,7 +124,11 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         <div {...sx.breadcrumbOuter} data-stylex-owner="organization-directory-breadcrumb-outer">
           <div {...sx.breadcrumbInner} data-stylex-owner="organization-directory-breadcrumb-inner">
             <div className="title_area" data-stylex-owner="organization-directory-title-area">
-              <ul {...sx.tabsList} data-stylex-owner="organization-directory-tabs-list">
+              <ul
+                {...sx.tabsList}
+                className={`${sx.tabsList.className ?? ""} nav nav-tabs`.trim()}
+                data-stylex-owner="organization-directory-tabs-list"
+              >
                 <li {...sx.tabsItem} data-stylex-owner="organization-directory-tabs-item">
                   <Link
                     {...sx.tabsLink}
@@ -140,7 +144,11 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     {t("project.public")} {t("title.projectList")}
                   </Link>
                 </li>
-                <li {...sx.tabsItem} data-stylex-owner="organization-directory-tabs-item">
+                <li
+                  {...sx.tabsItem}
+                  className={`${sx.tabsItem.className ?? ""} active`.trim()}
+                  data-stylex-owner="organization-directory-tabs-item"
+                >
                   <Link
                     activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                     activeProps={{
@@ -165,10 +173,15 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             data-stylex-owner="organization-directory-page"
             data-stylex-page-shell="organization-directory-page-shell"
           >
-            <div {...sx.searchWrap} data-stylex-owner="organization-directory-search-wrap">
+            <div
+              {...sx.searchWrap}
+              className={`search-wrap ${sx.searchWrap.className ?? ""}`.trim()}
+              data-stylex-owner="organization-directory-search-wrap"
+            >
               <div
                 id="search"
                 {...sx.searchContainer}
+                className={`${sx.searchContainer.className ?? ""} pull-left`.trim()}
                 data-stylex-owner="organization-directory-search-container"
               >
                 <form
@@ -176,11 +189,16 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   action={prefixBasePath(runtimeConfig.basePath, "/orgs")}
                   method="get"
                 >
-                  <div {...sx.searchBar} data-stylex-owner="organization-directory-search-bar">
+                  <div
+                    {...sx.searchBar}
+                    className={`search-bar ${sx.searchBar.className ?? ""}`.trim()}
+                    data-stylex-owner="organization-directory-search-bar"
+                  >
                     <input
                       autoFocus
                       name="filter"
                       {...sx.searchInput}
+                      className={`${sx.searchInput.className ?? ""} textbox`.trim()}
                       data-stylex-owner="organization-directory-search-input"
                       type="text"
                       placeholder={t("site.organization.filter")}
@@ -188,6 +206,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     />
                     <button
                       {...sx.searchButton}
+                      className={`${sx.searchButton.className ?? ""} search-btn`.trim()}
                       data-stylex-owner="organization-directory-search-button"
                       type="submit"
                     >
@@ -214,7 +233,11 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               </div>
             ) : (
               <>
-                <ul {...sx.list} data-stylex-owner="organization-directory-list">
+                <ul
+                  {...sx.list}
+                  className={`${sx.list.className ?? ""} all-projects`.trim()}
+                  data-stylex-owner="organization-directory-list"
+                >
                   {organizations.map((organization) => (
                     <OrganizationListItem
                       basePath={runtimeConfig.basePath}
@@ -279,9 +302,22 @@ function OrganizationsPagination({
   };
 
   return (
-    <div {...sx.pagination} data-stylex-owner="organization-directory-pagination" id="pagination">
-      <ul {...sx.paginationList} data-stylex-owner="organization-directory-pagination-list">
-        <li {...sx.paginationIconItem} data-stylex-owner="organization-directory-pagination-item">
+    <div
+      {...sx.pagination}
+      className={`page-navigation-wrap ${sx.pagination.className ?? ""}`.trim()}
+      data-stylex-owner="organization-directory-pagination"
+      id="pagination"
+    >
+      <ul
+        {...sx.paginationList}
+        className={`page-nums ${sx.paginationList.className ?? ""}`.trim()}
+        data-stylex-owner="organization-directory-pagination-list"
+      >
+        <li
+          {...sx.paginationIconItem}
+          className={`page-num ikon ${sx.paginationIconItem.className ?? ""}`.trim()}
+          data-stylex-owner="organization-directory-pagination-item"
+        >
           {hasPrev ? (
             <Link
               activeProps={{
@@ -298,11 +334,17 @@ function OrganizationsPagination({
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span {...sx.paginationDisabled}>{t("button.prevPage")}</span>
+              <span className={`off ${sx.paginationDisabled.className ?? ""}`.trim()}>
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li {...sx.paginationItem} data-stylex-owner="organization-directory-pagination-item">
+        <li
+          {...sx.paginationItem}
+          className={`page-num ${sx.paginationItem.className ?? ""}`.trim()}
+          data-stylex-owner="organization-directory-pagination-item"
+        >
           <input
             {...sx.paginationInput}
             data-stylex-owner="organization-directory-pagination-input"
@@ -319,13 +361,25 @@ function OrganizationsPagination({
             type="number"
           />
         </li>
-        <li {...sx.paginationDelimiter} data-stylex-owner="organization-directory-pagination-item">
+        <li
+          {...sx.paginationDelimiter}
+          className={`page-num delimiter ${sx.paginationDelimiter.className ?? ""}`.trim()}
+          data-stylex-owner="organization-directory-pagination-item"
+        >
           /
         </li>
-        <li {...sx.paginationItem} data-stylex-owner="organization-directory-pagination-item">
+        <li
+          {...sx.paginationItem}
+          className={`page-num ${sx.paginationItem.className ?? ""}`.trim()}
+          data-stylex-owner="organization-directory-pagination-item"
+        >
           {totalPages}
         </li>
-        <li {...sx.paginationIconItem} data-stylex-owner="organization-directory-pagination-item">
+        <li
+          {...sx.paginationIconItem}
+          className={`page-num ikon ${sx.paginationIconItem.className ?? ""}`.trim()}
+          data-stylex-owner="organization-directory-pagination-item"
+        >
           {hasNext ? (
             <Link
               activeProps={{
@@ -341,7 +395,9 @@ function OrganizationsPagination({
             </Link>
           ) : (
             <>
-              <span {...sx.paginationDisabled}>{t("button.nextPage")}</span>
+              <span className={`off ${sx.paginationDisabled.className ?? ""}`.trim()}>
+                {t("button.nextPage")}
+              </span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
@@ -364,17 +420,24 @@ function OrganizationListItem({
       <li
         {...sx.row}
         {...sx.privateRow}
+        className={`project ${sx.row.className ?? ""} ${sx.privateRow.className ?? ""}`.trim()}
+        style={{ backgroundColor: "#fcfcfc" }}
         data-stylex-owner="organization-directory-row"
         data-stylex-owner-private="organization-directory-private-row"
       >
         <div
           {...sx.identity}
           {...sx.privateIdentity}
+          className={`info-wrap ${sx.identity.className ?? ""} ${sx.privateIdentity.className ?? ""}`.trim()}
+          style={{ opacity: 0.3 }}
           data-stylex-owner="organization-directory-private"
         >
-          <div {...sx.avatar}>
+          <div
+            {...sx.avatar}
+            className={`owner-avatar-wrap ${sx.avatar.className ?? ""}`.trim()}
+          >
             <img
-              src={prefixBasePath(basePath, "/assets/images/organization_default_logo.png")}
+              src="/assets/images/organization_default_logo.png"
               alt={organizationName}
             />
           </div>
@@ -391,9 +454,20 @@ function OrganizationListItem({
   const createdTitle = stringField(organization, "createdTitle", createdLabel);
 
   return (
-    <li {...sx.row} data-stylex-owner="organization-directory-row">
-      <div data-stylex-owner="organization-directory-info">
-        <div {...sx.avatar} data-stylex-owner="organization-directory-avatar">
+    <li
+      {...sx.row}
+      className={`project ${sx.row.className ?? ""}`.trim()}
+      data-stylex-owner="organization-directory-row"
+    >
+      <div
+        className="info-wrap"
+        data-stylex-owner="organization-directory-info"
+      >
+        <div
+          {...sx.avatar}
+          className={`owner-avatar-wrap ${sx.avatar.className ?? ""}`.trim()}
+          data-stylex-owner="organization-directory-avatar"
+        >
           <Link
             to="/organizations/$organizationName"
             params={{ organizationName }}
@@ -406,8 +480,11 @@ function OrganizationListItem({
             {logoUrl ? <img {...sx.avatarImage} src={logoUrl} alt={organizationName} /> : null}
           </Link>
         </div>
-        <div {...sx.identity}>
-          <div {...sx.header}>
+        <div {...sx.identity} style={{ float: "left" }}>
+          <div
+            {...sx.header}
+            className={`header ${sx.header.className ?? ""}`.trim()}
+          >
             <Link
               to="/organizations/$organizationName"
               params={{ organizationName }}
@@ -417,12 +494,18 @@ function OrganizationListItem({
                 "data-status": undefined,
               }}
               {...sx.titleLink}
+              className={`black ${sx.titleLink.className ?? ""}`.trim()}
             >
               {organizationName}
             </Link>
           </div>
-          <div {...sx.description}>{organizationDescription(organization)}</div>
-          <p {...sx.nameTag}>
+          <div
+            {...sx.description}
+            className={`desc ${sx.description.className ?? ""}`.trim()}
+          >
+            {organizationDescription(organization)}
+          </div>
+          <p {...sx.nameTag} className={`name-tag ${sx.nameTag.className ?? ""}`.trim()}>
             created <strong title={createdTitle}>{createdLabel}</strong>
           </p>
         </div>

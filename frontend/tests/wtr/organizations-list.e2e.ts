@@ -79,7 +79,7 @@ const EXPECTED_ORGANIZATIONS_LIST = `
   <div class="site-breadcrumb-inner">
     <div class="title_area">
       <ul class="nav nav-tabs">
-        <li><a href="__BASE_PATH__/projects">PUBLICProject list</a></li>
+        <li><a href="__BASE_PATH__/projects">PUBLIC Project list</a></li>
         <li class="active"><a href="__BASE_PATH__/orgs">Group List</a></li>
       </ul>
     </div>

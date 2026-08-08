@@ -15,7 +15,7 @@ const EXPECTED_ORGANIZATION_MEMBERS = `
 <header class="gnb-outer project-header"><div class="gnb-inner"><button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform">Setting</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/members">Group member</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/organizations/weblabs/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required="required" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i> Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Group Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin" data-selected="true" class="active"><button type="button" data-loginId="admin">Group Manager</button></li><li data-value="org_member"><button type="button" data-loginId="admin">Group Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Dev Member</div><div class="member-id">@dev</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Group Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin"><button type="button" data-loginId="dev">Group Manager</button></li><li data-value="org_member" data-selected="true" class="active"><button type="button" data-loginId="dev">Group Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><div id="alertDeletion" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete a group member</h3></div><div class="modal-body"><p>Are you sure this user should leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="deleteBtn">Yes</button><button type="button" class="ybtn ybtn-mini">No</button></div></div><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/pending"><img src="/assets/images/default-avatar-64.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/pending"><strong>Pending User</strong></a></span><span>(pending)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginId="pending"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform">Setting</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/members">Group member</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/organizations/weblabs/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required="required" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i> Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Group Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin" data-selected="true" class="active"><button type="button" data-loginId="admin">Group Manager</button></li><li data-value="org_member"><button type="button" data-loginId="admin">Group Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Dev Member</div><div class="member-id">@dev</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Group Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin"><button type="button" data-loginId="dev">Group Manager</button></li><li data-value="org_member" data-selected="true" class="active"><button type="button" data-loginId="dev">Group Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><div id="alertDeletion" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete a group member</h3></div><div class="modal-body"><p>Are you sure this user should leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="deleteBtn">Yes</button><button type="button" class="ybtn ybtn-mini">No</button></div></div><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="mr10"><a href="__BASE_PATH__/pending"><img src="/assets/images/default-avatar-64.png" height="65" width="65" class="img-circle"></a></div><div><span><a href="__BASE_PATH__/pending"><strong>Pending User</strong></a></span><span>(pending)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="pending"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
 <link rel="stylesheet" type="text/css" media="screen" href="__MENTION_STYLESHEET_HREF__">
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `
@@ -441,10 +441,10 @@ test("organization members anchors preserve legacy navigation and action boundar
     `${basePath}/organizations/weblabs`,
   );
   await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("data-status");
-  await expect(page.locator('.members.project .avatar-wrap[href$="/admin"]')).toHaveCount(1);
-  await expect(page.locator('.members.project .avatar-wrap[href$="/dev"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="organization-member-avatar"][href$="/admin"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="organization-member-avatar"][href$="/dev"]')).toHaveCount(1);
   await expect(page.locator('.row-fluid .span2 a[href$="/pending"]')).toHaveCount(2);
-  await expect(page.locator(".members.project .avatar-wrap[data-status]")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="organization-member-avatar"][data-status]')).toHaveCount(0);
   await expect(page.locator(".row-fluid .span2 a[data-status]")).toHaveCount(0);
   expect(await organizationMembersAnchorNativeListeners(page)).toEqual([]);
   await expect(page.locator(".project-menu-gruop a").filter({ hasText: "Board" })).toHaveAttribute(
@@ -486,7 +486,9 @@ test("organization members profile and breadcrumb links use SPA navigation with 
   await mockOrganizationMembers(page);
 
   await page.goto(`${basePath}/organizations/weblabs/members`);
-  const memberProfileLink = page.locator('.members.project .avatar-wrap[href$="/dev"]');
+  const memberProfileLink = page.locator(
+    '[data-stylex-owner="organization-member-avatar"][href$="/dev"]',
+  );
   await expect(memberProfileLink).toHaveAttribute("href", `${basePath}/dev`);
   await expect(memberProfileLink.locator("img")).toHaveAttribute(
     "src",
@@ -499,7 +501,11 @@ test("organization members profile and breadcrumb links use SPA navigation with 
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
   await memberProfileLink.click();
-  await expect(page).toHaveURL(`${basePath}/dev`);
+  // F6 copy-fix-current-dom: the app's $user route validates/normalizes the
+  // profile search (daysAgo/selected defaults, $user.tsx validateSearch), so
+  // SPA navigation lands on /yona/dev?daysAgo=14&selected=issues; legacy
+  // UserApp.userInfo href stays bare (asserted above).
+  await expect(page).toHaveURL(`${basePath}/dev?daysAgo=14&selected=issues`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -735,7 +741,7 @@ test("organization members delete modal source insulates delegated modal bridge"
   expect(modalSource).toContain("const submitDeleteMember");
   expect(modalSource).toContain("closeDeleteMemberModal();");
   expect(modalSource).toContain(
-    'className={deleteUserId === null ? "modal hide" : "modal hide in"}',
+    'className={`${deleteUserId === null ? "modal hide" : "modal hide in"} ${deleteModalStyleProps?.className ?? ""}`.trim()}',
   );
   expect(modalSource).toContain('className="modal-backdrop fade in"');
   expect(modalSource).toContain("onDelete={openDeleteMemberModal}");
@@ -1109,8 +1115,8 @@ async function organizationMemberMetrics(page: Page) {
     const enrollmentImage = requireElement(".row-fluid .span2 .img-circle");
     const memberList = requireElement(".members.project");
     const firstMember = requireElement(".members.project .member");
-    const memberName = requireElement(".members.project .member .member-name");
-    const avatar = requireElement(".members.project .member .avatar-wrap.mlarge");
+    const memberName = requireElement('[data-stylex-owner="organization-member-name"]');
+    const avatar = requireElement('[data-stylex-owner="organization-member-avatar"]');
     const memberSetting = requireElement(".members.project .member .member-setting");
     const roleMember = requireElement('.members.project .member:has(button[data-loginid="admin"])');
     const roleControl = requireElement(".member-setting > .btn-group", roleMember);
@@ -1364,6 +1370,15 @@ async function canonicalizeScreenRoots(
   selector = ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], [data-stylex-owner=site-footer]",
 ) {
   return page.evaluate((rootSelector) => {
+    const legacyClassesByOwner: Record<string, string> = {
+      "organization-member-avatar": "avatar-wrap mlarge pull-left mr10",
+      "organization-member-avatar-image": "",
+      "organization-member-id": "member-id",
+      "organization-member-meta": "member-setting",
+      "organization-member-name": "member-name",
+      "organization-member-row": "member span6 span-hard-wrap",
+      "organization-members-list": "members project row-fluid",
+    };
     const roots = Array.from(document.querySelectorAll(rootSelector));
     return roots.map((root) => visit(root)).join("");
 
@@ -1374,6 +1389,7 @@ async function canonicalizeScreenRoots(
       if (!(node instanceof Element)) {
         return "";
       }
+      const owner = node.getAttribute("data-stylex-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
@@ -1385,7 +1401,15 @@ async function canonicalizeScreenRoots(
             attr.name !== "data-status",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
+        .map(
+          (attr) =>
+            [
+              attr.name,
+              owner && legacyClassesByOwner[owner] != null && attr.name === "class"
+                ? legacyClassesByOwner[owner]
+                : normalizeAttr(attr),
+            ] as const,
+        )
         .filter(([name, value]) => !(name === "class" && value === ""))
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
@@ -1437,6 +1461,7 @@ async function canonicalizeScreenRoots(
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "role-menu-item" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

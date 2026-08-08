@@ -12,7 +12,6 @@ import {
 } from "react";
 import {
   addOrganizationMemberRest,
-  acceptOrganizationEnrollmentRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
   updateOrganizationMemberRoleRest,
@@ -153,11 +152,16 @@ function OrganizationMembersBody({
   });
   const acceptEnrollmentMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
-        organizationName,
-        userId,
-      });
+      // Legacy yobi.organization.Member.js _onClickEnrollAcceptBtns fills
+      // #loginId with the pending loginId and submits the #addNewMember add
+      // form; the accept happens through the add-member REST call.
+      const pending = organization.enrollmentRequests.find(
+        (entry) => numberField(entry.userId) === userId,
+      );
+      const loginId = stringField(pending?.loginId, "");
+      if (loginId) {
+        addLoginId(loginId);
+      }
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: adminQueryKey });
@@ -365,8 +369,8 @@ function OrganizationMembersBody({
 
           <div
             id="alertDeletion"
-            className={deleteUserId === null ? "modal hide" : "modal hide in"}
             {...deleteModalStyleProps}
+            className={`${deleteUserId === null ? "modal hide" : "modal hide in"} ${deleteModalStyleProps?.className ?? ""}`.trim()}
             data-stylex-owner="organization-members-delete-modal"
           >
             <div className="modal-header">
@@ -672,7 +676,7 @@ function OrganizationSettingMenu({
     <ul className="nav nav-tabs">
       <li className="">
         <Link
-          activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }}
           activeProps={{
             "aria-current": undefined,
             className: undefined,
@@ -686,7 +690,7 @@ function OrganizationSettingMenu({
       </li>
       <li className={active === "members" ? "active" : ""}>
         <Link
-          activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }}
           activeProps={{
             "aria-current": undefined,
             className: undefined,
@@ -700,7 +704,7 @@ function OrganizationSettingMenu({
       </li>
       <li className="">
         <Link
-          activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }}
           activeProps={{
             "aria-current": undefined,
             className: undefined,
