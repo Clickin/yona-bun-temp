@@ -1510,8 +1510,11 @@
   @media (width <= 767px) {
     /* legacy bootstrap-responsive.css loads after bootstrap.css so its mobile
        .row-fluid [class*=span] margin-left:0 wins; here the base span rules
-       (app.css:2455) come later in source order — pin with !important. */
-    .row-fluid [class*="span"] {
+       (app.css:2455) come later in source order — pin the issue-list-wrap
+       search rail specifically (project-nested-layout search overflow). The
+       global !important form broke org-issues/pullrequests/user-issues
+       pagination rails (negative left), so scope to the issue list only. */
+    .issue-list-wrap [class*="span"] {
       margin-left: 0 !important;
     }
 
@@ -2113,128 +2116,6 @@
     color: #51aacc;
   }
 
-  .project-home-header {
-    padding: 5px 0;
-    margin-bottom: 20px;
-    position: relative;
-  }
-
-  /* legacy truth: _page.less:2521-2524 — `.project-home-header .project-overview`
-     border-left + padding; h3 line-height 30px; markdown p inline-block; edit
-     input margin 0; clone-button absolute right (compiled yobi.css) */
-  .project-home-header .project-overview {
-    border-left: 3px solid #fc491e;
-    padding: 0 10px;
-  }
-
-  .project-home-header .project-overview h3 {
-    line-height: 30px;
-    font-size: 14px;
-    font-weight: normal;
-  }
-
-  .project-home-header .project-overview h3 .markdown-wrap p {
-    margin: 0;
-    display: inline-block;
-  }
-
-  .project-home-header .project-overview .project-description-edit input,
-  .project-description-edit input {
-    margin: 0;
-  }
-
-  .project-home-header .project-clone-wrap .project-clone-button {
-    margin-left: 0;
-    position: absolute;
-    right: 0;
-    width: 86px;
-    padding: 4px 0 !important;
-    -webkit-border-radius: 0 3px 3px 0;
-    -moz-border-radius: 0 3px 3px 0;
-    border-radius: 0 3px 3px 0;
-    float: left;
-  }
-
-  /* legacy truth: _page.less:2513-2556 — `.project-overview-home` block
-     (h5/small/progress/num/empty/overview-label/assignee/pullrequest) */
-  .project-overview-home h5 {
-    margin-bottom: 20px;
-    border-left: 3px solid #ff7332;
-    padding-left: 10px;
-  }
-
-  .project-overview-home small {
-    color: #999;
-    margin-left: 3px;
-    width: 35px;
-    display: inline-block;
-  }
-
-  .project-overview-home .progress {
-    margin-top: 7px;
-    width: 100px;
-    height: 7px;
-  }
-
-  .project-overview-home .num {
-    text-align: right;
-    padding-right: 15px;
-  }
-
-  .project-overview-home .empty {
-    text-align: center;
-  }
-
-  .project-overview-home .empty p {
-    margin-bottom: 15px;
-    color: #999;
-    font-size: 13px;
-  }
-
-  .project-overview-home .overview-label {
-    border-bottom: 1px solid #eee;
-    padding: 5px 0;
-  }
-
-  .project-overview-home .overview-label dt {
-    width: 120px;
-    line-height: 30px;
-  }
-
-  .project-overview-home .overview-label dd {
-    margin-left: 140px;
-    line-height: 30px;
-  }
-
-  .project-overview-home .overview-label:first-of-type {
-    padding-top: 0;
-  }
-
-  .project-overview-home .overview-label:last-of-type {
-    border-bottom: none;
-  }
-
-  .project-overview-home .overview-assignee .usf-group {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .project-overview-home .overview-pullrequest .title {
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .project-overview-home .overview-pullrequest .review {
-    text-align: right;
-  }
-
-  .project-overview-home .overview-pullrequest .review.disabled {
-    color: #ddd;
-  }
 
   .project-home-header .project-clone-wrap .project-clone-url:focus {
     width: 450px !important;

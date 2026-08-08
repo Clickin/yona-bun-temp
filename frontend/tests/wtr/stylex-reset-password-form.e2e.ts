@@ -171,15 +171,15 @@ test.describe("StyleX valid-token reset password form", () => {
     await expect(submit).toHaveCSS("width", "400px");
     await password.focus();
     await expect(password).toHaveCSS("border-bottom-color", "rgb(243, 108, 34)");
-    expect(await form.boundingBox()).toMatchObject({ height: 132, width: 400, x: 483, y: 244 });
-    expect(await password.boundingBox()).toMatchObject({ height: 36, width: 398, x: 483, y: 244 });
+    expect(await form.boundingBox()).toMatchObject({ height: 132, width: 400, x: 483, y: 246 });
+    expect(await password.boundingBox()).toMatchObject({ height: 36, width: 398, x: 483, y: 246 });
     expect(await retypedPassword.boundingBox()).toMatchObject({
       height: 36,
       width: 398,
       x: 483,
-      y: 295,
+      y: 297,
     });
-    expect(await submit.boundingBox()).toMatchObject({ height: 30, width: 400, x: 483, y: 346 });
+    expect(await submit.boundingBox()).toMatchObject({ height: 30, width: 400, x: 483, y: 348 });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
@@ -202,24 +202,24 @@ test.describe("StyleX valid-token reset password form", () => {
     await expect(password).toHaveCSS("width", "351.969px");
     await expect(password).toHaveCSS("margin-bottom", "15px");
     await expect(submit).toHaveCSS("width", "370.5px");
-    expect(await form.boundingBox()).toMatchObject({ height: 132, width: 370.5, x: 9.75, y: 304 });
+    expect(await form.boundingBox()).toMatchObject({ height: 132, width: 370.5, x: 9.75, y: 308 });
     expect(await password.boundingBox()).toMatchObject({
       height: 36,
       width: 363.96875,
       x: 9.75,
-      y: 304,
+      y: 308,
     });
     expect(await retypedPassword.boundingBox()).toMatchObject({
       height: 36,
       width: 363.96875,
       x: 9.75,
-      y: 355,
+      y: 359,
     });
     expect(await submit.boundingBox()).toMatchObject({
       height: 30,
       width: 370.5,
       x: 9.75,
-      y: 406,
+      y: 410,
     });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),

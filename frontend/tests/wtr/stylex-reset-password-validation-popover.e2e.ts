@@ -84,13 +84,13 @@ test.describe("StyleX valid-token reset password validation popover", () => {
       height: 37.59375,
       width: 111.796875,
       x: 361,
-      y: 243,
+      y: 245,
     });
     expect(await second.boundingBox()).toMatchObject({
       height: 37.59375,
       width: 111.796875,
       x: 361,
-      y: 294,
+      y: 296,
     });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -112,13 +112,13 @@ test.describe("StyleX valid-token reset password validation popover", () => {
       height: 37.59375,
       width: 111.796875,
       x: -112.25,
-      y: 303,
+      y: 307,
     });
     expect(await second.boundingBox()).toMatchObject({
       height: 37.59375,
       width: 111.796875,
       x: -112.25,
-      y: 354,
+      y: 358,
     });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
