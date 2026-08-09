@@ -101,9 +101,12 @@ test("project settingform restores the legacy page shell and desktop geometry", 
   });
   expect(desktop.cuDescRight).toBeGreaterThanOrEqual(839);
   expect(desktop.rightWidth).toBe(420);
-  expect(desktop.rightHeight).toBe(190);
+  // The populated fixture wraps the overview to three legacy textarea lines;
+  // autosize expands the 80px minimum to 120px CSS height and the right box
+  // consequently measures 222px.
+  expect(desktop.rightHeight).toBe(222);
   expect(desktop.descriptionCssWidth).toBe("380px");
-  expect(desktop.descriptionHeight).toBe(90);
+  expect(desktop.descriptionHeight).toBe(130);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();

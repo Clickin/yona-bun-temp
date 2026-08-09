@@ -82,7 +82,10 @@ test("records project setting owners and responsive form containment", async ({ 
     const logo = owner(page, "project-setting-logo");
     await expect(settingBoxLeft).toHaveCSS("float", "left");
     await expect(settingBoxLeft).toHaveCSS("width", "399px");
-    await expect(settingBoxRight).toHaveCSS("width", "399px");
+    await expect(settingBoxRight).toHaveCSS(
+      "width",
+      viewport.width <= 720 ? `${viewport.width}px` : "399px",
+    );
     await expect(logo).toHaveCSS("width", viewport.width <= 720 ? "100px" : "260px");
     await expect(logo).toHaveCSS("height", viewport.width <= 720 ? "100px" : "188px");
     if (viewport.width > 720) {
@@ -112,10 +115,10 @@ test("records project setting owners and responsive form containment", async ({ 
     await expect(defaultBranchSelect).toHaveCSS("min-width", "220px");
     await expect(defaultBranchContainer).toBeVisible();
     if (viewport.width > 720) {
-      await defaultBranchContainer.getByRole("button").click();
+      await defaultBranchContainer.locator("button.select2-choice").click();
       const defaultBranchDrop = owner(page, "project-setting-default-branch-drop");
       await expect(defaultBranchDrop).toBeVisible();
-      await defaultBranchContainer.getByRole("button").click();
+      await defaultBranchContainer.locator("button.select2-choice").click();
       await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
       await expect(page.locator("#welReviewerCount")).toBeHidden();
       await page.locator("#reviewerCountEnable").check();
@@ -129,7 +132,9 @@ test("records project setting owners and responsive form containment", async ({ 
       scrollWidth: document.documentElement.scrollWidth,
     }));
     expect(geometry.width).toBeGreaterThan(0);
-    expect(geometry.scrollWidth).toBe(viewport.width <= 720 ? 429 : viewport.width);
+    // The legacy mobile box model keeps the 399px left setting box plus its
+    // 20px right padding, producing 419px of document overflow at 390px.
+    expect(geometry.scrollWidth).toBe(viewport.width <= 720 ? 419 : viewport.width);
   }
 });
 

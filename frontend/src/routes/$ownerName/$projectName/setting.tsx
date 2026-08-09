@@ -403,11 +403,12 @@ function ProjectSettingBody({
       setOverviewHeight(legacyAutosizeContentHeight(textarea));
     }
   }, [overview]);
+  const textareaHeightProps = stylex.props(styles.textareaHeight(`${overviewHeight}px`));
   const textareaClassName = [
     "textarea",
     sx.textarea.className,
     stylex.props(styles.legacyTextareaHeight).className,
-    stylex.props(styles.textareaHeight(`${overviewHeight}px`)).className,
+    textareaHeightProps.className,
     stylex.props(textareaStaticStyles.overflow).className,
   ]
     .filter(Boolean)
@@ -688,6 +689,7 @@ function ProjectSettingBody({
                 data-stylex-owner="project-setting-description-field"
               >
                 <textarea
+                  {...textareaHeightProps}
                   ref={overviewRef}
                   id="project-desc"
                   name="overview"
