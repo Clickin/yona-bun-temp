@@ -38,7 +38,7 @@ test("moves milestone editor layout declarations to route-local StyleX", async (
   await expect(page.locator("#preview-content-body")).toHaveClass(/active/);
 });
 
-async function mockMilestoneEdit(page: import("@playwright/test").Page) {
+async function mockMilestoneEdit(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",

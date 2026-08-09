@@ -93,7 +93,6 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
   test.setTimeout(60_000);
   expect(process.env.VITE_DISABLE_LEGACY_FALLBACK).toBe("1");
   // YONA_E2E_FALLBACK_MODE guard is runner-env-specific (fails in both runners under baseline commands).
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const importNames = [
     "_variables",

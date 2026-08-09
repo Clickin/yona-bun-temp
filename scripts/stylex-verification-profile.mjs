@@ -49,7 +49,6 @@ export function stylexVerificationEnvironment(profileName) {
     VITE_DISABLE_LEGACY_FALLBACK: "1",
     YONA_E2E_FALLBACK_MODE: "fallback-off",
     YONA_E2E_TRACE_MODE: profile.name === "fast" ? "off" : "retain-on-failure",
-    PW_CHANNEL: "chrome",
     ...(profile.name === "final"
       ? {
           YONA_E2E_FRONTEND_MODE: "preview",
@@ -108,11 +107,15 @@ async function main() {
 
   if (stylexVerificationBuildRequired(profile.name)) {
     console.log("[stylex-harness] building fallback-off production frontend");
-    const build = spawn("pnpm", ["--dir", "frontend", "build"], {
-      cwd: path.resolve(scriptDirectory, ".."),
-      env,
-      stdio: "inherit",
-    });
+    const build = spawn(
+      "pnpm",
+      ["--config.store-dir=/Users/senghyunjo/.pnpm-store", "--dir", "frontend", "build"],
+      {
+        cwd: path.resolve(scriptDirectory, ".."),
+        env,
+        stdio: "inherit",
+      },
+    );
     const buildCode = await new Promise((resolve, reject) => {
       build.once("error", reject);
       build.once("exit", (exitCode, signal) => resolve(signal ? 1 : (exitCode ?? 1)));

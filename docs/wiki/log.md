@@ -36,3 +36,22 @@ reported a non-failing Vite shutdown timeout after the tests completed.
 Production frontend build and the StyleX verifier passed. The generated
 fallback artifact remained deterministic at SHA-256
 `8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6`.
+
+## [2026-08-09] runner | WTR Chrome boundary
+
+Replaced the active WTR `@web/test-runner-playwright` launcher with
+`@web/test-runner-chrome` and retained the real-mouse bridge through Chrome's
+Puppeteer page. Moved the remaining WTR Page/Locator/Route type imports into
+`tests/wtr-compat.ts`, removed WTR `PW_CHANNEL` setup, and verified
+`stylex-user-profile-edit-control-classes.e2e.ts` passed 1/1 in system Chrome.
+The 214 full-suite residual failures remain documented as open WTR-637 work.
+
+## [2026-08-09] runner | real-data sweep on WTR
+
+Moved `scripts/visual-parity-sweep.mjs`, live route discovery, and legacy
+localhost browser seeding to the shared `scripts/wtr-browser.mjs` adapter.
+The adapter launches the same installed Chrome through
+`@web/test-runner-chrome`, preserves isolated seed contexts, request/response
+telemetry, form interactions, screenshots, and local Gravatar interception.
+The real-data sweep remains read-only and still serializes legacy-to-local
+route discovery where the local target consumes the legacy path list.

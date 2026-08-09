@@ -22,7 +22,7 @@
   - frontend server state가 TanStack Query provider/client/hook 경계로 이동한다.
   - implemented application flows가 `/api/v1/**` REST endpoint를 통해 동작한다.
   - frontend/server runtime RPC references가 제거되어 있다.
-  - Phase 1~3의 기존 parity tests 또는 동등한 REST/route/Playwright tests가 통과한다.
+  - Phase 1~3의 기존 parity tests 또는 동등한 REST/route/WTR tests가 통과한다.
 
 ## Phase 0: Rust Pivot 정리
 

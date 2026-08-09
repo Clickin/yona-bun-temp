@@ -1,5 +1,5 @@
 import { readFile } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -193,10 +193,7 @@ test("authenticated public-profile sidebar identity follows the final frozen pai
   );
 });
 
-async function assertIdentityPaintAndGeometry(
-  page: import("@playwright/test").Page,
-  viewportWidth: number,
-) {
+async function assertIdentityPaintAndGeometry(page: Page, viewportWidth: number) {
   const result = await page.evaluate(() => {
     const required = (selector: string) => {
       const node = document.querySelector<HTMLElement>(selector);

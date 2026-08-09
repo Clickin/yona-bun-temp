@@ -18,6 +18,15 @@ updated: 2026-08-09
 | F7 residuals | non-zero in the current ledger | zero, with every other item reclassified or fixed |
 | final profile | not yet run green | `stylex-final`, build verifier, Scala audit, and full fallback-off suite green |
 
+## WTR runner boundary
+
+The active parity runner is WTR with `@web/test-runner-chrome`. `Page`,
+`Locator`, and `Route` are the local facade in `frontend/tests/wtr-compat.ts`;
+WTR specs do not import Playwright packages or depend on `PW_CHANNEL`. The
+legacy localhost seeding, route discovery, and the real-data sweep use the
+same `scripts/wtr-browser.mjs` WTR system-Chrome adapter. This runner boundary
+does not change the fallback exit conditions.
+
 ## Classification
 
 Each `app.css` rule belongs to exactly one migration disposition for the active

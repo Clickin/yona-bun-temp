@@ -1,5 +1,10 @@
 # WTR 637-failure reconciliation report
 
+> Current boundary update (2026-08-09): active WTR browser execution now uses
+> `@web/test-runner-chrome`; WTR specs use `tests/wtr-compat.ts` for Page,
+> Locator, and Route types. The full-suite residual inventory below remains
+> unchanged until a new complete fallback-off run is recorded.
+
 > Generated 2026-08-09 (suite-17: 2833 passed / 214 failed / 5 skipped)
 
 ## Task A — 47 unmapped triage rows
@@ -57,3 +62,12 @@
 ## Task B — 20 sampled app-fix rows
 
 All 20 sampled ledger rows with disposition `app-fix` still red at suite-17 confirmed as GENUINE F7 app gaps: the React route still differs from the cited legacy source (DOM classes, geometry, or interaction). No stale-pin reclassification warranted. Examples: project-board-create-form form.nm class, project-webhooks-form form-wrap, stylex-authenticated-sidenav-* geometry, site-admin-* shells.
+
+## Phase F runner boundary update (2026-08-09)
+
+The real-data browser path now uses the same WTR system-Chrome launcher as the
+focused parity suite. `scripts/wtr-browser.mjs` owns the Puppeteer page facade;
+`scripts/visual-parity-sweep.mjs`, `scripts/build-real-data-route-manifest.mjs`,
+and `scripts/legacy-localhost.mjs` no longer import `@playwright/test` or read
+`PW_CHANNEL`. This changes the browser/runtime boundary only; the 214 residual
+failures and their F1/F2/F5/F6/F7/F8/F9 dispositions remain unchanged.

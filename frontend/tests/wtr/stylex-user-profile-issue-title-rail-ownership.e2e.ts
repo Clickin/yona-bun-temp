@@ -71,7 +71,6 @@ test.beforeEach(async ({ page }) => {
 
 test(`profile issue title rail owns exact legacy presentation (${mode})`, async ({ page }) => {
   test.setTimeout(60_000);
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [
     route,

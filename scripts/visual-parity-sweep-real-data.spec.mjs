@@ -15,6 +15,18 @@ import {
 
 const sweepSource = readFileSync(resolve("scripts/visual-parity-sweep.mjs"), "utf8");
 
+test("real-data browser discovery and sweep use the shared WTR Chrome adapter", () => {
+  const manifestSource = readFileSync(
+    resolve("scripts/build-real-data-route-manifest.mjs"),
+    "utf8",
+  );
+  const seedSource = readFileSync(resolve("scripts/legacy-localhost.mjs"), "utf8");
+  for (const source of [sweepSource, manifestSource, seedSource]) {
+    assert.match(source, /launchWtrBrowser/u);
+    assert.doesNotMatch(source, /@playwright\/test|PW_CHANNEL/u);
+  }
+});
+
 test("sweep waits for public profile readiness before collecting metrics", () => {
   assert.ok(sweepSource.includes('if (path === "/admin")'));
   assert.match(
@@ -42,7 +54,7 @@ test("real-data artifacts use a caller-owned output directory and redact text-be
   assert.match(sweepSource, /captureRouteSqlFromLogs/u);
   assert.match(sweepSource, /sanitizeTargetForArtifact/u);
   assert.match(sweepSource, /\["title", "text", "chromeText", "chromeAttributes"\]/u);
-  assert.match(sweepSource, /writeFileSync\(resolve\(outputDir, "write-ledger\.json"\)/u);
+  assert.match(sweepSource, /writeFileSync\(\s*resolve\(outputDir, "write-ledger\.json"\)/u);
 });
 
 test("write parity refuses to proceed without a verified restore input", () => {
@@ -69,16 +81,20 @@ test("SQL records retain route markers while removing literals and sensitive val
     route: "/alice/sample/issues?page=2",
     requestMarker: marker,
     networkSummary: [{ method: "GET", path: "/alice/sample/issues?page=2", status: 200 }],
-    legacyRecords: [{
-      source: "legacy",
-      routeMarker: marker,
-      sql: "SELECT id, title FROM issue WHERE owner_id = 123456789 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
-    }],
-    yoramRecords: [{
-      source: "yoram",
-      routeMarker: marker,
-      sql: "SELECT id, title FROM issue WHERE owner_id = 123456789 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
-    }],
+    legacyRecords: [
+      {
+        source: "legacy",
+        routeMarker: marker,
+        sql: "SELECT id, title FROM issue WHERE owner_id = 123456789 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
+      },
+    ],
+    yoramRecords: [
+      {
+        source: "yoram",
+        routeMarker: marker,
+        sql: "SELECT id, title FROM issue WHERE owner_id = 123456789 AND title LIKE 'private title' LIMIT 20 OFFSET 20",
+      },
+    ],
   });
   const serialized = JSON.stringify(artifact);
   assert.equal(artifact.queries.legacy[0].correlation, "matched");
@@ -91,11 +107,13 @@ test("SQL redaction covers sensitive field-name suffixes", () => {
   const artifact = buildRouteSqlArtifacts({
     route: "/admin",
     requestMarker: "route-admin-redaction",
-    legacyRecords: [{
-      source: "legacy",
-      routeMarker: "route-admin-redaction",
-      sql: "SELECT email_validated, password_hash, image FROM user_credential WHERE user_id = 42",
-    }],
+    legacyRecords: [
+      {
+        source: "legacy",
+        routeMarker: "route-admin-redaction",
+        sql: "SELECT email_validated, password_hash, image FROM user_credential WHERE user_id = 42",
+      },
+    ],
   });
   const query = artifact.queries.legacy[0];
   assert.equal(query.sensitiveFieldsRemoved, true);
@@ -129,11 +147,13 @@ test("plain SQL parsing prefers the complete db.statement over a truncated query
   const artifact = buildRouteSqlArtifacts({
     route: "/admin",
     requestMarker: "route-test",
-    legacyRecords: [{
-      source: "legacy",
-      routeMarker: "route-test",
-      sql: "SELECT t0.id FROM pull_request t0 WHERE t0.contributor_id = 1 AND t0.updated >= 2 ORDER BY t0.updated DESC",
-    }],
+    legacyRecords: [
+      {
+        source: "legacy",
+        routeMarker: "route-test",
+        sql: "SELECT t0.id FROM pull_request t0 WHERE t0.contributor_id = 1 AND t0.updated >= 2 ORDER BY t0.updated DESC",
+      },
+    ],
     yoramRecords: records,
   });
   assert.equal(artifact.queries.yoram[0].filters.length, 2);
@@ -145,8 +165,20 @@ test("FTS-only implementation differences are intentional, while missing filters
   const fts = buildRouteSqlArtifacts({
     route: "/search",
     requestMarker: marker,
-    legacyRecords: [{ routeMarker: marker, source: "legacy", sql: "SELECT id FROM issue WHERE title LIKE 'needle' LIMIT 20" }],
-    yoramRecords: [{ routeMarker: marker, source: "yoram", sql: "SELECT id FROM issue WHERE MATCH(title) AGAINST ('needle') LIMIT 20" }],
+    legacyRecords: [
+      {
+        routeMarker: marker,
+        source: "legacy",
+        sql: "SELECT id FROM issue WHERE title LIKE 'needle' LIMIT 20",
+      },
+    ],
+    yoramRecords: [
+      {
+        routeMarker: marker,
+        source: "yoram",
+        sql: "SELECT id FROM issue WHERE MATCH(title) AGAINST ('needle') LIMIT 20",
+      },
+    ],
   });
   assert.equal(fts.comparison.warnings.length, 0);
   assert.equal(fts.comparison.errors.length, 0);
@@ -155,7 +187,13 @@ test("FTS-only implementation differences are intentional, while missing filters
   const regression = buildRouteSqlArtifacts({
     route: "/alice/sample/issues?page=2",
     requestMarker: marker,
-    legacyRecords: [{ routeMarker: marker, source: "legacy", sql: "SELECT id FROM issue WHERE owner_id = 42 LIMIT 20" }],
+    legacyRecords: [
+      {
+        routeMarker: marker,
+        source: "legacy",
+        sql: "SELECT id FROM issue WHERE owner_id = 42 LIMIT 20",
+      },
+    ],
     yoramRecords: [{ routeMarker: marker, source: "yoram", sql: "SELECT id FROM issue" }],
   });
   assert.ok(regression.comparison.errors.length >= 1);
@@ -207,9 +245,15 @@ test("background and ambiguous SQL are excluded from route queries", () => {
       { source: "legacy", timestamp: 150, sql: "SELECT id FROM project" },
     ],
   });
-  assert.equal(artifact.queries.legacy.filter((query) => query.correlation === "matched").length, 1);
+  assert.equal(
+    artifact.queries.legacy.filter((query) => query.correlation === "matched").length,
+    1,
+  );
   assert.equal(artifact.excludedQueries.legacy.length, 2);
-  assert.match(artifact.excludedQueries.legacy.map((query) => query.exclusionReason).join(" "), /background|ambiguous|marker/u);
+  assert.match(
+    artifact.excludedQueries.legacy.map((query) => query.exclusionReason).join(" "),
+    /background|ambiguous|marker/u,
+  );
 });
 
 test("isolated request windows exclude login and startup SQL outside the route", () => {
@@ -247,6 +291,11 @@ test("structured SQL timestamps are normalized and remain distinct for route cor
 test("SQL artifacts are written only as structured legacy/yoram/comparison files", () => {
   const outputDir = mkdtempSync(join(tmpdir(), "yona-sql-capture-"));
   const artifact = buildRouteSqlArtifacts({ route: "/projects", requestMarker: "route-test" });
-  writeRouteSqlArtifacts({ outputDir, legacy: artifact, yoram: artifact, comparison: artifact.comparison });
+  writeRouteSqlArtifacts({
+    outputDir,
+    legacy: artifact,
+    yoram: artifact,
+    comparison: artifact.comparison,
+  });
   assert.match(readFileSync(join(outputDir, "sql", "legacy.json"), "utf8"), /rawSqlStored/u);
 });

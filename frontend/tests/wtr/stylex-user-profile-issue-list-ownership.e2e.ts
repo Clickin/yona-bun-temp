@@ -82,7 +82,6 @@ test(`profile open/closed issue roots own the frozen legacy list geometry (${mod
   page,
 }) => {
   test.setTimeout(60_000);
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [
     route,

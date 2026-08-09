@@ -37,5 +37,8 @@ authoritative; this index only points to the smallest useful reading set.
 
 The StyleX migration is transitional. `frontend/src/app.css` is still imported
 by `frontend/src/main.tsx`; fallback-off and final visual-lock work are not
-complete. Do not rename it to `global.css` until the exit conditions in
-[[stylex-fallback-baseline]] are green.
+complete. WTR now owns the browser runner through the system-Chrome launcher
+and `tests/wtr-compat.ts`; legacy seeding, route discovery, and real-data
+visual sweep use the same `scripts/wtr-browser.mjs` adapter. Do not rename `app.css` to
+`global.css` until the exit conditions in [[stylex-fallback-baseline]] are
+green.

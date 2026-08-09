@@ -83,7 +83,6 @@ test(`profile issue author/meta classes have direct StyleX ownership (${mode})`,
   page,
 }) => {
   test.setTimeout(60_000);
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [route, styles, view, partial, yobi, common, pageLess, responsive, messages] =
     await Promise.all([

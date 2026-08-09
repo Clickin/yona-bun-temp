@@ -1,5 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
-import type { Route } from "@playwright/test";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. resolve only builds page.screenshot paths

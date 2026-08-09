@@ -39,10 +39,16 @@ if (!existsSync(resolve(repoRoot, "frontend", "dist", "index.html"))) {
 }
 
 console.log("[wtr] running web-test-runner");
-const wtrCode = await run("npx", [
-  "web-test-runner",
-  "--config",
-  "web-test-runner.config.mjs",
-  ...forwardedArgs,
-], { ...process.env, cwd: resolve(repoRoot, "frontend") });
+const wtrCode = await run(
+  "pnpm",
+  [
+    "--config.store-dir=/Users/senghyunjo/.pnpm-store",
+    "exec",
+    "web-test-runner",
+    "--config",
+    "web-test-runner.config.mjs",
+    ...forwardedArgs,
+  ],
+  { cwd: resolve(repoRoot, "frontend") },
+);
 process.exit(wtrCode);

@@ -1,15 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { resolve, relative } from "node:path";
+import { createWtrSweepPage, launchWtrBrowser } from "./wtr-browser.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
-const require = createRequire(new URL("../frontend/package.json", import.meta.url));
-const { chromium } = require("@playwright/test");
 const outputDir = resolve(
   repoRoot,
   process.env.YORAM_SWEEP_OUTPUT_DIR ?? ".agent/real-data-parity/2026-08-01",
 );
-const legacyBaseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://127.0.0.1:9000").replace(/\/$/u, "");
+const legacyBaseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://127.0.0.1:9000").replace(
+  /\/$/u,
+  "",
+);
 const outputPath = resolve(outputDir, "route-manifest.json");
 const knownLegacyOnlyGaps = [
   "/sites/setting",
@@ -95,14 +96,12 @@ function auditPages() {
 }
 
 async function discoverLivePaths() {
-  const browser = await chromium.launch({
-    ...(process.env.PW_CHANNEL && process.env.PW_CHANNEL !== "chromium"
-      ? { channel: process.env.PW_CHANNEL }
-      : {}),
-    headless: true,
+  const browser = await launchWtrBrowser();
+  const page = await createWtrSweepPage(browser, {
+    height: 900,
+    locale: "ko-KR",
+    width: 1366,
   });
-  const context = await browser.newContext({ locale: "ko-KR" });
-  const page = await context.newPage();
   const queue = [...discoverySeeds];
   const seen = new Set();
   const discovered = new Set();
@@ -111,20 +110,23 @@ async function discoverLivePaths() {
     if (seen.has(path)) continue;
     seen.add(path);
     discovered.add(path);
-    await page.goto(`${legacyBaseUrl}${path}`, {
-      waitUntil: "domcontentloaded",
-      timeout: 20_000,
-    }).catch(() => {});
+    await page
+      .goto(`${legacyBaseUrl}${path}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 20_000,
+      })
+      .catch(() => {});
     const hrefs = await page
       .locator("a[href]")
       .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? ""))
       .catch(() => []);
     for (const href of hrefs) {
       const normalized = normalizePath(legacyBaseUrl, href);
-      if (normalized && !seen.has(normalized) && !queue.includes(normalized)) queue.push(normalized);
+      if (normalized && !seen.has(normalized) && !queue.includes(normalized))
+        queue.push(normalized);
     }
   }
-  await context.close().catch(() => {});
+  await page.close().catch(() => {});
   await browser.close().catch(() => {});
   return sortedUnique([...discovered]);
 }
@@ -155,7 +157,8 @@ const manifest = {
     frontendRouteFiles: frontendRouteFiles().length,
     legacyAuditPages: auditPages().length,
     liveLegacyPaths: livePaths.length,
-    reachableParameterizedInstances: livePaths.filter((path) => /\/[^/]+\/[^/]+/u.test(path)).length,
+    reachableParameterizedInstances: livePaths.filter((path) => /\/[^/]+\/[^/]+/u.test(path))
+      .length,
   },
 };
 mkdirSync(outputDir, { recursive: true });

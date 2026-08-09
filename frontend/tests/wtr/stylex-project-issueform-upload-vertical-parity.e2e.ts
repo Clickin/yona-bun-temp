@@ -1,5 +1,5 @@
 import { readFile } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = "../src/routes/$ownerName/$projectName/issueform.tsx";
 const styleSource = "../src/routes/$ownerName/$projectName/-issueform.stylex.ts";
@@ -158,7 +158,7 @@ test("issueform upload shell stays immediately after the border-box editor on bo
   }
 });
 
-async function mockIssueForm(page: import("@playwright/test").Page) {
+async function mockIssueForm(page: Page) {
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({
       contentType: "application/json",

@@ -14,7 +14,7 @@
 - Play model test -> Rust domain test
 - `AccessControlTest` 류 -> domain ACL test + route authorization test
 - `playRepository` test -> protocol integration test
-- end-user flow -> Playwright E2E
+- end-user flow -> WTR E2E (`frontend/tests/wtr/**/*.e2e.ts`, Chrome launcher)
 
 ## 필수 provenance
 

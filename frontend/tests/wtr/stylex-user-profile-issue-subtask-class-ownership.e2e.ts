@@ -120,7 +120,6 @@ test(`profile issue subtask summary owns title-cell styles without inapplicable 
   page,
 }) => {
   test.setTimeout(60_000);
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [route, styles, view, issues, subtask, yobi, common, pageLess, bootstrap, messages, js] =
     await Promise.all([

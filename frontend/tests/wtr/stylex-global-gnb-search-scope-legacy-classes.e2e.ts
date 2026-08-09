@@ -1,9 +1,7 @@
 import { expect, test } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
-// wtr-compat's process.env polyfill lacks PW_CHANNEL (bucket-1 gap, reported);
-// the WTR runner launches real Chrome — mirror the PW baseline env guard.
-process.env.PW_CHANNEL = "chrome";
+// the WTR runner launches the same installed Chrome used by the parity sweep.
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
@@ -86,8 +84,6 @@ test.beforeEach(async ({ page }) => {
 test(`scoped global GNB search keeps the exact legacy scope button classes (${mode})`, async ({
   page,
 }) => {
-  expect(process.env.PW_CHANNEL).toBe("chrome");
-
   const [
     navbar,
     scripts,

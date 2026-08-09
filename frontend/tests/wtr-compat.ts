@@ -20,7 +20,7 @@ declare const it: (name: string, fn: (this: unknown) => void | Promise<void>) =>
 declare const beforeEach: (fn: () => void | Promise<void>) => void;
 declare const afterEach: (fn: () => void | Promise<void>) => void;
 
-export type Page = any;
+export type Page = PageFacade;
 
 // The specs read process.env.YONA_DEV_BASE_PATH at module top level; the
 // browser has no process — provide the same value the app is built with.
@@ -28,8 +28,6 @@ export type Page = any;
   env: {
     YONA_DEV_BASE_PATH: "/yona",
     VITE_DISABLE_LEGACY_FALLBACK: "1",
-    // Specs guard on the runner channel; WTR runs real Chrome.
-    PW_CHANNEL: "chrome",
   },
   cwd: () => "/",
 };
@@ -317,6 +315,7 @@ type MockRoute = {
   fulfill: (opts: Record<string, unknown>) => Promise<void>;
   fallback: () => Promise<void>;
 };
+export type Route = MockRoute;
 type MockHandler = (route: MockRoute) => void | Promise<void>;
 const mockRegistry: Array<{ regex: RegExp; handler: MockHandler }> = [];
 
@@ -394,20 +393,18 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
                   ? (() => {
                       const boundary = `----wtr-boundary-${Math.random().toString(36).slice(2)}`;
                       const chunks: string[] = [];
-                      (init.body as FormData).forEach(
-                        (value: FormDataEntryValue, key: string) => {
-                          if (typeof value === "string") {
-                            chunks.push(
-                              `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
-                            );
-                            return;
-                          }
-                          const file = value as File;
+                      (init.body as FormData).forEach((value: FormDataEntryValue, key: string) => {
+                        if (typeof value === "string") {
                           chunks.push(
-                            `--${boundary}\r\nContent-Disposition: form-data; name="${key}"; filename="${file.name}"\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n${file.name}\r\n`,
+                            `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
                           );
-                        },
-                      );
+                          return;
+                        }
+                        const file = value as File;
+                        chunks.push(
+                          `--${boundary}\r\nContent-Disposition: form-data; name="${key}"; filename="${file.name}"\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n${file.name}\r\n`,
+                        );
+                      });
                       chunks.push(`--${boundary}--\r\n`);
                       return chunks.join("");
                     })()
@@ -3041,9 +3038,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       await expectPoll(
         async () => {
           const actual = await actualName();
-          return typeof expected === "string"
-            ? actual === expected
-            : expected.test(actual);
+          return typeof expected === "string" ? actual === expected : expected.test(actual);
         },
         `toHaveAccessibleName(${String(expected)}) — actual: ${await describeName()}`,
         options?.timeout,

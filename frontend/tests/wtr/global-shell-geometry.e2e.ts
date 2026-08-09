@@ -1,5 +1,5 @@
 import { readFileSync } from "../wtr-compat.ts";
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const LEGACY_FEEDBACK_URL = "https://github.com/yona-projects/yona/issues";
@@ -656,7 +656,7 @@ async function mockSession(page: Page, overrides: Record<string, unknown>) {
 }
 
 async function mockSiteUserListData(page: Page) {
-  const fulfillAuthSession = (route: import("@playwright/test").Route) =>
+  const fulfillAuthSession = (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       headers: { "x-csrf-token": "csrf-global-shell" },
@@ -815,7 +815,7 @@ function expectBox(
   expect(Math.abs(actual.height - expected.height)).toBeLessThanOrEqual(1);
 }
 
-async function readElementBox(locator: import("@playwright/test").Locator) {
+async function readElementBox(locator: Locator) {
   return locator.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };

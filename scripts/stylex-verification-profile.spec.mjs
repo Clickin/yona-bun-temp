@@ -14,7 +14,6 @@ test("StyleX fast profile is fallback-off and target-scoped", () => {
     VITE_DISABLE_LEGACY_FALLBACK: "1",
     YONA_E2E_FALLBACK_MODE: "fallback-off",
     YONA_E2E_TRACE_MODE: "off",
-    PW_CHANNEL: "chrome",
   });
 });
 

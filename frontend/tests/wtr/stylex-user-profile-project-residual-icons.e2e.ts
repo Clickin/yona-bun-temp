@@ -94,7 +94,6 @@ test("Projects residual member, watch, and trash icons are direct StyleX owners"
   test.setTimeout(60_000);
   expect(process.env.VITE_DISABLE_LEGACY_FALLBACK).toBe("1");
   // YONA_E2E_FALLBACK_MODE guard is runner-env-specific (fails in both runners under baseline commands).
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [route, styles, view, partial, messages, yobicon, common, yobiUi, focusedTest] =
     await Promise.all([

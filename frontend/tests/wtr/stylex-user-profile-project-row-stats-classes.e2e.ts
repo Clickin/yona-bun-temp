@@ -94,7 +94,6 @@ test("Projects rows retire only project and stats literals under fallback-off", 
   test.setTimeout(60_000);
   expect(process.env.VITE_DISABLE_LEGACY_FALLBACK).toBe("1");
   // YONA_E2E_FALLBACK_MODE guard is runner-env-specific (fails in both runners under baseline commands).
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [route, styles, view, partial, fallback, focusedTest] = await Promise.all([
     readFile("../src/routes/$user.tsx"),

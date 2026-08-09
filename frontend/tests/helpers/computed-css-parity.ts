@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page } from "../wtr-compat.ts";
 
 /**
  * Computed-CSS parity harness.

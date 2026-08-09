@@ -8,12 +8,11 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { createRequire } from "node:module";
 import { basename, resolve } from "node:path";
 import process from "node:process";
+import { createWtrSweepContext, launchWtrBrowser } from "./wtr-browser.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
-const frontendRequire = createRequire(new URL("../frontend/package.json", import.meta.url));
 const defaultVersion = process.env.YONA_LEGACY_VERSION ?? "1.16.0";
 const defaultPort = numberValue(process.env.YONA_LEGACY_PORT, 9000);
 const defaultHost = process.env.YONA_LEGACY_HOST ?? "127.0.0.1";
@@ -26,8 +25,7 @@ const defaultAdminLoginId = process.env.YONA_LEGACY_ADMIN_LOGIN_ID ?? "admin";
 const defaultAdminEmail = process.env.YONA_LEGACY_ADMIN_EMAIL ?? "admin@example.com";
 const defaultAdminName = process.env.YONA_LEGACY_ADMIN_NAME ?? "Site Admin";
 const defaultAdminPassword = process.env.YONA_LEGACY_ADMIN_PASSWORD ?? "admin";
-const defaultSecret =
-  "VA2v:_I=h9>?FYOH:@ZhW]01P<mWZAKlQ>kk>Bo`mdCiA>pDw64FcBuZdDh<47Ew";
+const defaultSecret = "VA2v:_I=h9>?FYOH:@ZhW]01P<mWZAKlQ>kk>Bo`mdCiA>pDw64FcBuZdDh<47Ew";
 const parityFoundationUsers = [
   {
     email: "alice@example.com",
@@ -410,16 +408,22 @@ async function prepare(layout, options) {
     "utf8",
   );
 
-  console.log(JSON.stringify({
-    applicationConfPath,
-    host: layout.host,
-    installDir: layout.installDir,
-    javaHome,
-    logFile: layout.logFile,
-    port: layout.port,
-    releaseUrl: layout.releaseUrl,
-    version: layout.version,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        applicationConfPath,
+        host: layout.host,
+        installDir: layout.installDir,
+        javaHome,
+        logFile: layout.logFile,
+        port: layout.port,
+        releaseUrl: layout.releaseUrl,
+        version: layout.version,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 async function start(layout, options) {
@@ -543,25 +547,18 @@ async function status(layout) {
   );
 }
 
-function playwrightLaunchOptions() {
-  // Legacy seeding is also screenshot/parity browser work: use installed
-  // system Chrome by default instead of assuming bundled Chromium exists.
-  const channel = process.env.PW_CHANNEL ?? "chrome";
-  return {
-    ...(channel ? { channel } : {}),
-    headless: true,
-  };
-}
-
 async function seedAdmin(layout, options) {
-  const { chromium } = frontendRequire("@playwright/test");
   const name = stringValue(options.name, defaultAdminName);
   const email = stringValue(options.email, defaultAdminEmail);
   const password = stringValue(options.password, defaultAdminPassword);
   const restartAfterSeed = Boolean(options.restart);
   const secretPageUrl = `http://${layout.host}:${layout.port}/secret`;
-  const browser = await chromium.launch(playwrightLaunchOptions());
-  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const browser = await launchWtrBrowser();
+  const context = await createWtrSweepContext(browser, {
+    height: 900,
+    locale: "ko-KR",
+    width: 1366,
+  });
   const page = await context.newPage();
   await page.goto(secretPageUrl, { waitUntil: "networkidle", timeout: 30_000 });
 
@@ -602,7 +599,6 @@ async function seedAdmin(layout, options) {
 }
 
 async function seedParityFoundation(layout, options) {
-  const { chromium } = frontendRequire("@playwright/test");
   const adminPassword = stringValue(options.adminPassword, defaultAdminPassword);
   const baseUrl = `http://${layout.host}:${layout.port}`;
   await waitForHttp(`${baseUrl}/users/loginform`, 30_000);
@@ -618,7 +614,7 @@ async function seedParityFoundation(layout, options) {
     seededAt: new Date().toISOString(),
     users: [],
   };
-  const browser = await chromium.launch(playwrightLaunchOptions());
+  const browser = await launchWtrBrowser();
   try {
     const adminSession = await createAuthenticatedSession(browser, baseUrl, {
       loginId: defaultAdminLoginId,
@@ -638,13 +634,14 @@ async function seedParityFoundation(layout, options) {
             waitUntil: "networkidle",
           });
           if (!(await listContainsUserId(adminSession.page, ".member-id", member.loginId))) {
-            const memberUser =
-              parityFoundationUsers.find((entry) => entry.loginId === member.loginId) ?? {
-                email: `${member.loginId}@example.com`,
-                loginId: member.loginId,
-                name: member.loginId,
-                password: member.loginId,
-              };
+            const memberUser = parityFoundationUsers.find(
+              (entry) => entry.loginId === member.loginId,
+            ) ?? {
+              email: `${member.loginId}@example.com`,
+              loginId: member.loginId,
+              name: member.loginId,
+              password: member.loginId,
+            };
             report.users.push(await ensureParityFoundationUser(browser, baseUrl, memberUser));
           }
         }
@@ -680,13 +677,14 @@ async function seedParityFoundation(layout, options) {
         const actorPassword =
           project.actorLoginId === defaultAdminLoginId ? adminPassword : project.actorPassword;
         if (project.actorLoginId !== defaultAdminLoginId) {
-          const actorUser =
-            parityFoundationUsers.find((entry) => entry.loginId === project.actorLoginId) ?? {
-              email: `${project.actorLoginId}@example.com`,
-              loginId: project.actorLoginId,
-              name: project.actorLoginId,
-              password: actorPassword,
-            };
+          const actorUser = parityFoundationUsers.find(
+            (entry) => entry.loginId === project.actorLoginId,
+          ) ?? {
+            email: `${project.actorLoginId}@example.com`,
+            loginId: project.actorLoginId,
+            name: project.actorLoginId,
+            password: actorPassword,
+          };
           report.users.push(await ensureParityFoundationUser(browser, baseUrl, actorUser));
         }
         const actorSession = await createAuthenticatedSession(browser, baseUrl, {
@@ -745,7 +743,6 @@ async function seedParityFoundation(layout, options) {
 }
 
 async function seedParityContent(layout, options) {
-  const { chromium } = frontendRequire("@playwright/test");
   const adminPassword = stringValue(options.adminPassword, defaultAdminPassword);
   const baseUrl = `http://${layout.host}:${layout.port}`;
   await waitForHttp(`${baseUrl}/users/loginform`, 30_000);
@@ -764,7 +761,7 @@ async function seedParityContent(layout, options) {
     verificationPages: [],
     watchers: [],
   };
-  const browser = await chromium.launch(playwrightLaunchOptions());
+  const browser = await launchWtrBrowser();
   try {
     const adminSession = await createAuthenticatedSession(browser, baseUrl, {
       loginId: defaultAdminLoginId,
@@ -784,10 +781,12 @@ async function seedParityContent(layout, options) {
       report.post = await ensureParityContentPost(adminSession.page, baseUrl, parityContentPost);
 
       const issuePath = report.issue?.path ?? parityContentIssue.path;
-      if (await legacyPathContainsTexts(adminSession.page, baseUrl, issuePath, [
-        parityContentIssueComment.body,
-        "Bob Park",
-      ])) {
+      if (
+        await legacyPathContainsTexts(adminSession.page, baseUrl, issuePath, [
+          parityContentIssueComment.body,
+          "Bob Park",
+        ])
+      ) {
         report.issueComment = {
           body: parityContentIssueComment.body,
           created: false,
@@ -803,11 +802,13 @@ async function seedParityContent(layout, options) {
           type: "user",
         });
       } else {
-        report.users.push(await ensureParityFoundationUser(browser, baseUrl, {
-          ...parityContentUsers[0],
-          loginId: parityContentIssueComment.loginId,
-          password: parityContentIssueComment.password,
-        }));
+        report.users.push(
+          await ensureParityFoundationUser(browser, baseUrl, {
+            ...parityContentUsers[0],
+            loginId: parityContentIssueComment.loginId,
+            password: parityContentIssueComment.password,
+          }),
+        );
         const bobSession = await createAuthenticatedSession(browser, baseUrl, {
           loginId: parityContentIssueComment.loginId,
           password: parityContentIssueComment.password,
@@ -823,10 +824,12 @@ async function seedParityContent(layout, options) {
       }
 
       const postPath = report.post?.path ?? parityContentPost.path;
-      if (await legacyPathContainsTexts(adminSession.page, baseUrl, postPath, [
-        parityContentPostComment.body,
-        "Alice Kim",
-      ])) {
+      if (
+        await legacyPathContainsTexts(adminSession.page, baseUrl, postPath, [
+          parityContentPostComment.body,
+          "Alice Kim",
+        ])
+      ) {
         report.postComment = {
           body: parityContentPostComment.body,
           created: false,
@@ -851,9 +854,11 @@ async function seedParityContent(layout, options) {
 
       for (const watcher of parityContentProjectWatchers) {
         const watchersPath = `/${watcher.owner}/${watcher.projectName}/watchers`;
-        if (await legacyPathContainsTexts(adminSession.page, baseUrl, watchersPath, [
-          watcher.displayName,
-        ])) {
+        if (
+          await legacyPathContainsTexts(adminSession.page, baseUrl, watchersPath, [
+            watcher.displayName,
+          ])
+        ) {
           report.watchers.push({
             created: false,
             displayName: watcher.displayName,
@@ -964,9 +969,18 @@ Environment:
 }
 
 async function createAuthenticatedSession(browser, baseUrl, credentials) {
-  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const context = await createWtrSweepContext(browser, {
+    height: 900,
+    locale: "ko-KR",
+    width: 1366,
+  });
   const page = await context.newPage();
-  const loggedIn = await loginWithPassword(page, baseUrl, credentials.loginId, credentials.password);
+  const loggedIn = await loginWithPassword(
+    page,
+    baseUrl,
+    credentials.loginId,
+    credentials.password,
+  );
   if (!loggedIn) {
     await context.close();
     throw new Error(
@@ -983,7 +997,11 @@ async function createAuthenticatedSession(browser, baseUrl, credentials) {
 }
 
 async function ensureParityFoundationUser(browser, baseUrl, user) {
-  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const context = await createWtrSweepContext(browser, {
+    height: 900,
+    locale: "ko-KR",
+    width: 1366,
+  });
   const page = await context.newPage();
   try {
     if (await loginWithPassword(page, baseUrl, user.loginId, user.password)) {
@@ -1006,15 +1024,14 @@ async function ensureParityFoundationUser(browser, baseUrl, user) {
       (url) => !url.pathname.endsWith("/users/signupform"),
     );
 
-    const verifyContext = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+    const verifyContext = await createWtrSweepContext(browser, {
+      height: 900,
+      locale: "ko-KR",
+      width: 1366,
+    });
     const verifyPage = await verifyContext.newPage();
     try {
-      const verified = await loginWithPassword(
-        verifyPage,
-        baseUrl,
-        user.loginId,
-        user.password,
-      );
+      const verified = await loginWithPassword(verifyPage, baseUrl, user.loginId, user.password);
       if (!verified) {
         throw new Error(
           `Created ${user.loginId} but could not log in with the seeded password. The instance may require manual cleanup.`,
@@ -1072,11 +1089,7 @@ async function ensureParityFoundationOrganizationMember(page, baseUrl, member) {
   }
 
   await page.fill("form#addNewMember #loginId", member.loginId);
-  await submitFormAndWaitForNavigation(
-    page,
-    "form#addNewMember",
-    (url) => url.pathname === path,
-  );
+  await submitFormAndWaitForNavigation(page, "form#addNewMember", (url) => url.pathname === path);
   if (!(await listContainsUserId(page, ".member-id", member.loginId))) {
     throw new Error(
       `Expected ${member.loginId} to appear in ${member.organizationName} members after creation.`,
@@ -1117,11 +1130,7 @@ async function ensureParityFoundationProject(page, baseUrl, project) {
   await page.selectOption("#vcs", project.vcs);
   const scopeId = `#${project.projectScope.toLowerCase()}`;
   await page.locator(scopeId).check({ force: true });
-  await submitFormAndWaitForNavigation(
-    page,
-    "#newProjectForm",
-    (url) => url.pathname === path,
-  );
+  await submitFormAndWaitForNavigation(page, "#newProjectForm", (url) => url.pathname === path);
   if (!(await legacyRouteExists(page, `${baseUrl}${path}`))) {
     throw new Error(`Expected project ${project.owner}/${project.name} to exist after creation.`);
   }
@@ -1155,11 +1164,7 @@ async function ensureParityFoundationProjectMember(page, baseUrl, member) {
   }
 
   await page.fill("form#addNewMember #loginId", member.loginId);
-  await submitFormAndWaitForNavigation(
-    page,
-    "form#addNewMember",
-    (url) => url.pathname === path,
-  );
+  await submitFormAndWaitForNavigation(page, "form#addNewMember", (url) => url.pathname === path);
   if (!(await listContainsUserId(page, ".member-id", member.loginId))) {
     throw new Error(
       `Expected ${member.loginId} to appear in ${member.owner}/${member.projectName} members after creation.`,
@@ -1228,33 +1233,36 @@ async function ensureParityContentLabel(page, baseUrl, label) {
     };
   }
 
-  const response = await page.evaluate(async (requestData) => {
-    const body = new URLSearchParams();
-    body.set("categoryIsExclusive", String(requestData.categoryIsExclusive));
-    body.set("categoryName", requestData.categoryName);
-    body.set("labelColor", requestData.labelColor);
-    body.set("labelName", requestData.labelName);
-    const result = await fetch(requestData.path, {
-      body,
-      credentials: "same-origin",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-      },
-      method: "POST",
-    });
-    return {
-      ok: result.ok,
-      status: result.status,
-      text: await result.text(),
-    };
-  }, {
-    categoryIsExclusive: Boolean(label.categoryIsExclusive),
-    categoryName: label.category,
-    labelColor: label.color,
-    labelName: label.name,
-    path: actionPath,
-  });
+  const response = await page.evaluate(
+    async (requestData) => {
+      const body = new URLSearchParams();
+      body.set("categoryIsExclusive", String(requestData.categoryIsExclusive));
+      body.set("categoryName", requestData.categoryName);
+      body.set("labelColor", requestData.labelColor);
+      body.set("labelName", requestData.labelName);
+      const result = await fetch(requestData.path, {
+        body,
+        credentials: "same-origin",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        method: "POST",
+      });
+      return {
+        ok: result.ok,
+        status: result.status,
+        text: await result.text(),
+      };
+    },
+    {
+      categoryIsExclusive: Boolean(label.categoryIsExclusive),
+      categoryName: label.category,
+      labelColor: label.color,
+      labelName: label.name,
+      path: actionPath,
+    },
+  );
   if (!(response.ok || response.status === 204 || response.status === 201)) {
     throw new Error(
       `Failed to create label ${label.category}/${label.name}: HTTP ${response.status} ${response.text}`,
@@ -1306,10 +1314,8 @@ async function ensureParityContentMilestone(page, baseUrl, milestone) {
     await page.fill('#milestone-form textarea[name="contents"]', milestone.contents);
     await page.locator("#milestone-open").check({ force: true });
     await page.fill("#dueDate", milestone.dueDate);
-    await submitFormAndWaitForNavigation(
-      page,
-      "#milestone-form",
-      (url) => url.pathname.startsWith(`/${milestone.owner}/${milestone.projectName}/milestone/`),
+    await submitFormAndWaitForNavigation(page, "#milestone-form", (url) =>
+      url.pathname.startsWith(`/${milestone.owner}/${milestone.projectName}/milestone/`),
     );
     detailPath =
       relativePath(page.url()) ??
@@ -1374,10 +1380,8 @@ async function ensureParityContentIssue(page, baseUrl, issue) {
       }
       select.dispatchEvent(new Event("change", { bubbles: true }));
     }, issue.labelKeys.map(resolveParityContentLabelName));
-    await submitFormAndWaitForNavigation(
-      page,
-      "#issue-form",
-      (url) => url.pathname.startsWith(`/${issue.owner}/${issue.projectName}/issue/`),
+    await submitFormAndWaitForNavigation(page, "#issue-form", (url) =>
+      url.pathname.startsWith(`/${issue.owner}/${issue.projectName}/issue/`),
     );
     detailPath =
       relativePath(page.url()) ??
@@ -1474,10 +1478,8 @@ async function ensureParityContentPost(page, baseUrl, post) {
     if (post.notice) {
       await page.locator("#notice").check({ force: true });
     }
-    await submitFormAndWaitForNavigation(
-      page,
-      "form[action$='/posts']",
-      (url) => url.pathname.startsWith(`/${post.owner}/${post.projectName}/post/`),
+    await submitFormAndWaitForNavigation(page, "form[action$='/posts']", (url) =>
+      url.pathname.startsWith(`/${post.owner}/${post.projectName}/post/`),
     );
     detailPath =
       relativePath(page.url()) ??
@@ -1626,26 +1628,29 @@ async function verifyParityContentPages(page, baseUrl, pages) {
 }
 
 async function readLabelDescriptor(page, categoryName, labelName) {
-  return page.locator(".category-wrap").evaluateAll((categories, expected) => {
-    for (const category of categories) {
-      const currentName = category.getAttribute("data-category-name")?.trim() ?? "";
-      if (currentName !== expected.categoryName) {
-        continue;
+  return page.locator(".category-wrap").evaluateAll(
+    (categories, expected) => {
+      for (const category of categories) {
+        const currentName = category.getAttribute("data-category-name")?.trim() ?? "";
+        if (currentName !== expected.categoryName) {
+          continue;
+        }
+        const label = category.querySelector(`[data-label-name="${expected.labelName}"]`);
+        if (!label) {
+          continue;
+        }
+        const row = label.closest("tr");
+        const editButton = row?.querySelector("button[data-label-color]");
+        return {
+          color: editButton?.getAttribute("data-label-color") ?? "",
+          labelId: label.getAttribute("data-label-id") ?? "",
+          name: label.getAttribute("data-label-name") ?? label.textContent ?? "",
+        };
       }
-      const label = category.querySelector(`[data-label-name="${expected.labelName}"]`);
-      if (!label) {
-        continue;
-      }
-      const row = label.closest("tr");
-      const editButton = row?.querySelector("button[data-label-color]");
-      return {
-        color: editButton?.getAttribute("data-label-color") ?? "",
-        labelId: label.getAttribute("data-label-id") ?? "",
-        name: label.getAttribute("data-label-name") ?? label.textContent ?? "",
-      };
-    }
-    return null;
-  }, { categoryName, labelName });
+      return null;
+    },
+    { categoryName, labelName },
+  );
 }
 
 async function findResourcePathByTitle(page, baseUrl, listPath, title, pathPrefix) {
@@ -1653,20 +1658,23 @@ async function findResourcePathByTitle(page, baseUrl, listPath, title, pathPrefi
     timeout: 30_000,
     waitUntil: "networkidle",
   });
-  const path = await page.locator("a[href]").evaluateAll((anchors, expected) => {
-    const normalize = (value) => value.replace(/\s+/g, " ").trim();
-    for (const anchor of anchors) {
-      const href = anchor.getAttribute("href");
-      if (!href || !href.includes(expected.pathPrefix)) {
-        continue;
+  const path = await page.locator("a[href]").evaluateAll(
+    (anchors, expected) => {
+      const normalize = (value) => value.replace(/\s+/g, " ").trim();
+      for (const anchor of anchors) {
+        const href = anchor.getAttribute("href");
+        if (!href || !href.includes(expected.pathPrefix)) {
+          continue;
+        }
+        const text = normalize(anchor.textContent ?? "");
+        if (text.includes(expected.title)) {
+          return href;
+        }
       }
-      const text = normalize(anchor.textContent ?? "");
-      if (text.includes(expected.title)) {
-        return href;
-      }
-    }
-    return null;
-  }, { pathPrefix, title });
+      return null;
+    },
+    { pathPrefix, title },
+  );
   return path ? relativePath(new URL(path, `${baseUrl}${listPath}`).toString()) : null;
 }
 
@@ -1849,12 +1857,7 @@ function resolveAvailableJava8Home(layout, explicitHome) {
 
   const jvmBase = "/Library/Java/JavaVirtualMachines";
   if (existsSync(jvmBase)) {
-    const knownDirs = [
-      "zulu-8.jdk",
-      "temurin-8.jdk",
-      "adoptopenjdk-8.jdk",
-      "openjdk-8.jdk",
-    ];
+    const knownDirs = ["zulu-8.jdk", "temurin-8.jdk", "adoptopenjdk-8.jdk", "openjdk-8.jdk"];
     for (const dir of knownDirs) {
       candidates.push(resolve(jvmBase, dir, "Contents/Home"));
     }
@@ -2175,7 +2178,11 @@ function cleanupStalePidFiles(layout) {
       continue;
     }
     const command = readProcessCommand(pid);
-    if (!isProcessAlive(pid) || !commandMatchesLayout(command, layout) || !commandMatchesPort(command, layout.port)) {
+    if (
+      !isProcessAlive(pid) ||
+      !commandMatchesLayout(command, layout) ||
+      !commandMatchesPort(command, layout.port)
+    ) {
       rmSync(path, { force: true });
     }
   }
@@ -2258,9 +2265,15 @@ export function classifySecretBootstrapResponse({ status, body }) {
 }
 
 export function commandMatchesLayout(command, layout) {
-  const normalizedCommand = String(command ?? "").trim().toLowerCase();
-  const installDir = String(layout.installDir ?? "").trim().toLowerCase();
-  const dataDir = String(layout.dataDir ?? "").trim().toLowerCase();
+  const normalizedCommand = String(command ?? "")
+    .trim()
+    .toLowerCase();
+  const installDir = String(layout.installDir ?? "")
+    .trim()
+    .toLowerCase();
+  const dataDir = String(layout.dataDir ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!normalizedCommand) {
     return false;
@@ -2273,7 +2286,9 @@ export function commandMatchesLayout(command, layout) {
 }
 
 export function commandMatchesPort(command, port) {
-  const normalizedCommand = String(command ?? "").trim().toLowerCase();
+  const normalizedCommand = String(command ?? "")
+    .trim()
+    .toLowerCase();
   return normalizedCommand.includes(`-dhttp.port=${String(port).toLowerCase()}`);
 }
 

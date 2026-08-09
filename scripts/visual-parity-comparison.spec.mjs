@@ -212,7 +212,15 @@ test("approved missing navbar contact does not report its natural search shift",
           isErrorPage: false,
           gnbFeedback: { visible: true, width: 83, height: 40 },
           gnbSearchForm: { visible: true, x: 267, right: 498, width: 231, y: 48, bottom: 78 },
-          gnbUsermenu: { visible: true, x: 1133, right: 1352, y: 83, bottom: 123, width: 220, height: 40 },
+          gnbUsermenu: {
+            visible: true,
+            x: 1133,
+            right: 1352,
+            y: 83,
+            bottom: 123,
+            width: 220,
+            height: 40,
+          },
         },
       },
     ],
@@ -227,7 +235,15 @@ test("approved missing navbar contact does not report its natural search shift",
           isErrorPage: false,
           gnbFeedback: null,
           gnbSearchForm: { visible: true, x: 134, right: 365, width: 231, y: 48, bottom: 78 },
-          gnbUsermenu: { visible: true, x: 1133, right: 1352, y: 43, bottom: 83, width: 220, height: 40 },
+          gnbUsermenu: {
+            visible: true,
+            x: 1133,
+            right: 1352,
+            y: 43,
+            bottom: 83,
+            width: 220,
+            height: 40,
+          },
         },
       },
     ],
@@ -433,10 +449,11 @@ test("visual sweep scans chrome text and attributes for visible raw legacy keys"
 
 test("visual sweep fixes both browser targets to the Korean legacy locale", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+  const browserSource = readFileSync(resolve(repoRoot, "scripts/wtr-browser.mjs"), "utf8");
 
   assert.match(source, /const sweepLocale = "ko-KR";/u);
   assert.match(source, /locale: sweepLocale,/u);
-  assert.match(source, /https:\/\/www\.gravatar\.com\/avatar\/\*\*/u);
+  assert.match(browserSource, /www\.gravatar\.com\/avatar\//u);
   assert.match(source, /src\/assets\/legacy\/default-avatar-128\.png/u);
 });
 
@@ -555,10 +572,8 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /`\$\{outputPrefix\}-\$\{viewportProfile\.name\}\.json`/u);
   assert.match(source, /scope: sweepScope/u);
   assert.match(source, /name: "mobile", width: 390, height: 844/u);
-  assert.match(
-    source,
-    /viewport: \{ width: viewportProfile\.width, height: viewportProfile\.height \}/u,
-  );
+  assert.match(source, /height: viewportProfile\.height,/u);
+  assert.match(source, /width: viewportProfile\.width,/u);
   assert.match(source, /viewportProfile: viewportProfile\.name/u);
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
@@ -586,10 +601,16 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
     source,
     /\.waitForSelector\(`\$\{localSettledSelector\}, \.project-page-wrap > \.error-wrap`/u,
   );
-  assert.match(source, /gnbInner: selectorState\("\.gnb-inner, \[data-stylex-owner='global-gnb-inner'\]"\)/u);
+  assert.match(
+    source,
+    /gnbInner: selectorState\("\.gnb-inner, \[data-stylex-owner='global-gnb-inner'\]"\)/u,
+  );
   assert.match(source, /gnbPin: selectorState\(/u);
   assert.match(source, /global-sidebar-open-pin/u);
-  assert.match(source, /gnbLogoLetter: selectorState\("\.logo-letter, \[data-stylex-owner='global-gnb-brand-link'\]"\)/u);
+  assert.match(
+    source,
+    /gnbLogoLetter: selectorState\("\.logo-letter, \[data-stylex-owner='global-gnb-brand-link'\]"\)/u,
+  );
   assert.match(source, /gnbSearchForm: selectorState\("\.gnb-search-form"\)/u);
   assert.match(source, /gnbPin: metrics\.gnbPin/u);
   assert.match(source, /gnbLogoLetter: metrics\.gnbLogoLetter/u);
@@ -606,7 +627,10 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /siteintroCover: metrics\.siteintroCover/u);
   assert.match(source, /siteHeading: metrics\.siteHeading/u);
   assert.match(source, /signupButton: metrics\.signupButton/u);
-  assert.match(source, /footer: selectorState\("footer\.page-footer-outer, \[data-stylex-owner='site-footer'\]"\)/u);
+  assert.match(
+    source,
+    /footer: selectorState\("footer\.page-footer-outer, \[data-stylex-owner='site-footer'\]"\)/u,
+  );
   assert.match(source, /"\/admin\/sample\/settingform"/u);
   assert.match(source, /"\/admin\/sample\/"/u);
   assert.match(source, /"\/sample\/sample\/"/u);
@@ -642,7 +666,7 @@ test("visual sweep waits for local session resolution before measuring the root"
   assert.match(source, /requestAnimationFrame\(\(\) => requestAnimationFrame\(resolveFrame\)\)/u);
 });
 
-test("visual sweep passes waitForFunction timeouts in the Playwright options position", () => {
+test("visual sweep passes browser wait timeouts in the facade options position", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /return text\.length > 0;[\s\S]*undefined,\s*\{ timeout: 5_000 \}/u);
@@ -770,13 +794,15 @@ test("focused pull request sweep aligns the compared repository refs", () => {
   assert.match(source, /\+refs\/heads\/feature\/ui:refs\/heads\/feature\/ui/u);
 });
 
-test("visual sweep runs independent legacy and local targets concurrently", () => {
+test("visual sweep keeps target sessions independent and serializes real-data discovery", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(
     source,
-    /if \(sweepTarget === "both"\) synchronizePullRequestRepositoryFixture\(\);\s*const \[legacy, local\] = await Promise\.all\(\[/u,
+    /if \(sweepTarget === "both"\) synchronizePullRequestRepositoryFixture\(\);/u,
   );
+  assert.match(source, /if \(realDataMode && sweepTarget === "both"\)/u);
+  assert.match(source, /\[legacy, local\] = await Promise\.all\(\[/u);
   assert.match(source, /runTargetSafely\("legacy", legacyBaseUrl\)/u);
   assert.match(source, /runTargetSafely\("local", localBaseUrl\)/u);
 });
@@ -787,14 +813,24 @@ test("visual sweep bounds and reports each route inspection", () => {
   assert.match(source, /async function inspectPageSafely/u);
   assert.match(source, /Route inspection timed out after 60000ms/u);
   assert.match(source, /errors: \[message\]/u);
-  assert.match(source, /\[visual-sweep\] \$\{label\} \$\{index \+ 1\}\/\$\{paths\.length\} \$\{path\}/u);
-  assert.match(source, /results\.push\(await inspectPageSafely\(routePage, baseUrl, path, label\)\)/u);
+  assert.match(
+    source,
+    /\[visual-sweep\] \$\{label\} \$\{index \+ 1\}\/\$\{paths\.length\} \$\{path\}/u,
+  );
+  assert.match(
+    source,
+    /const result = await inspectPageSafely\(routePage, baseUrl, path, label\)/u,
+  );
+  assert.match(source, /results\.push\(result\)/u);
 });
 
 test("visual sweep does not require project chrome from redirect-only leave actions", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
-  assert.match(source, /const isRedirectOnlyProjectAction = path\.startsWith\("\/info\/leave\/"\)/u);
+  assert.match(
+    source,
+    /const isRedirectOnlyProjectAction = path\.startsWith\("\/info\/leave\/"\)/u,
+  );
   assert.match(source, /!isRedirectOnlyProjectAction/u);
   assert.match(source, /if \(isProjectPage && !metrics\.isErrorPage && !metrics\.projectHeader\)/u);
   assert.match(source, /if \(isProjectPage && !metrics\.isErrorPage && !metrics\.projectMenu\)/u);
@@ -809,10 +845,11 @@ test("visual sweep supports bounded full-corpus batches", () => {
   assert.match(source, /batch: sweepIsBatched/u);
 });
 
-test("visual sweep defaults to system Chrome and reports bounded page teardown", () => {
+test("visual sweep uses the WTR system-Chrome launcher and reports bounded page teardown", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
-  assert.match(source, /process\.env\.PW_CHANNEL \?\? "chrome"/u);
+  assert.match(source, /launchWtrBrowser/u);
+  assert.doesNotMatch(source, /@playwright\/test|PW_CHANNEL/u);
   assert.match(source, /const closeTimeoutMs = 5_000;/u);
   assert.match(source, /page close timed out after \$\{closeTimeoutMs\}ms/u);
   assert.match(source, /closePageSafely\(routePage, `\$\{label\} \$\{path\}`\)/u);

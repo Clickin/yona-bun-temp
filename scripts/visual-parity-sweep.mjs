@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
 import { buildVisualComparison, summarizeVisualComparison } from "./visual-parity-comparison.mjs";
 import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
+import { createWtrSweepPage, installWtrGravatarRoute, launchWtrBrowser } from "./wtr-browser.mjs";
 import {
   captureRouteSqlFromLogs,
   createRouteMarker,
@@ -12,8 +12,6 @@ import {
 } from "./real-data-sql-capture.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
-const require = createRequire(new URL("../frontend/package.json", import.meta.url));
-const { chromium } = require("@playwright/test");
 const outputDir = resolve(
   repoRoot,
   process.env.YORAM_SWEEP_OUTPUT_DIR ?? "output/playwright/visual-sweep",
@@ -30,21 +28,13 @@ const localBaseUrl = (process.env.YORAM_BASE_URL ?? "http://127.0.0.1:18101/yona
 const realDataMode = process.env.YORAM_SWEEP_REAL_DATA === "1";
 const writeParityMode = process.env.YORAM_SWEEP_WRITE_PARITY === "1";
 const loginId =
-  process.env.REAL_LOGIN_ID ??
-  process.env.YONA_LEGACY_LOGIN_ID ??
-  (realDataMode ? "" : "admin");
+  process.env.REAL_LOGIN_ID ?? process.env.YONA_LEGACY_LOGIN_ID ?? (realDataMode ? "" : "admin");
 const password =
-  process.env.REAL_PASSWORD ??
-  process.env.YONA_LEGACY_PASSWORD ??
-  (realDataMode ? "" : "admin");
+  process.env.REAL_PASSWORD ?? process.env.YONA_LEGACY_PASSWORD ?? (realDataMode ? "" : "admin");
 const localLoginId =
-  process.env.REAL_LOGIN_ID ??
-  process.env.YORAM_LOGIN_ID ??
-  (realDataMode ? "" : loginId);
+  process.env.REAL_LOGIN_ID ?? process.env.YORAM_LOGIN_ID ?? (realDataMode ? "" : loginId);
 const localPassword =
-  process.env.REAL_PASSWORD ??
-  process.env.YORAM_PASSWORD ??
-  (realDataMode ? "" : password);
+  process.env.REAL_PASSWORD ?? process.env.YORAM_PASSWORD ?? (realDataMode ? "" : password);
 const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
 const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
@@ -52,9 +42,8 @@ const sweepLocale = "ko-KR";
 const traceTimings = process.env.YORAM_SWEEP_TRACE_TIMINGS === "1";
 const warmPerformanceRepeat = process.env.YORAM_SWEEP_WARM_REPEAT === "1";
 const sqlCaptureEnabled = process.env.YORAM_SWEEP_SQL_CAPTURE === "1";
-const sqlCaptureGraceMs = parseOptionalNonNegativeInteger(
-  process.env.YORAM_SWEEP_SQL_CAPTURE_GRACE_MS,
-) ?? 500;
+const sqlCaptureGraceMs =
+  parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_SQL_CAPTURE_GRACE_MS) ?? 500;
 const sweepBatchSize = parseOptionalPositiveInteger(process.env.YORAM_SWEEP_BATCH_SIZE);
 const sweepBatchIndex = parseOptionalNonNegativeInteger(process.env.YORAM_SWEEP_BATCH_INDEX);
 if ((sweepBatchSize === null) !== (sweepBatchIndex === null)) {
@@ -1004,7 +993,12 @@ async function bootstrapLocalAccount(page, baseUrl) {
     await signOutLocalAccount(page, baseUrl).catch(() => {});
   };
   const ensureParityComments = async () => {
-    const ensureComment = async (account, path, contentsMarkdown, parentContentsMarkdown = null) => {
+    const ensureComment = async (
+      account,
+      path,
+      contentsMarkdown,
+      parentContentsMarkdown = null,
+    ) => {
       await signOutLocalAccount(page, baseUrl).catch(() => {});
       if (!(await ensureLocalAccountSession(page, baseUrl, account))) {
         return;
@@ -1018,7 +1012,10 @@ async function bootstrapLocalAccount(page, baseUrl) {
         return;
       }
       const parentCommentId = parentContentsMarkdown
-        ? Number(comments.find((comment) => comment.contentsMarkdown === parentContentsMarkdown)?.id ?? 0) || null
+        ? Number(
+            comments.find((comment) => comment.contentsMarkdown === parentContentsMarkdown)?.id ??
+              0,
+          ) || null
         : null;
       await postLocalJson(page, baseUrl, `${path}/comments`, {
         attachmentIds: [],
@@ -1091,10 +1088,12 @@ async function discoverRealDataPaths(page, baseUrl) {
     }
     seen.add(path);
     discovered.add(path);
-    await page.goto(urlFor(baseUrl, path), {
-      waitUntil: "domcontentloaded",
-      timeout: 20_000,
-    }).catch(() => {});
+    await page
+      .goto(urlFor(baseUrl, path), {
+        waitUntil: "domcontentloaded",
+        timeout: 20_000,
+      })
+      .catch(() => {});
     const hrefs = await page
       .locator("a[href]")
       .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? ""))
@@ -1460,7 +1459,7 @@ async function inspectPage(page, baseUrl, path, label) {
       },
       undefined,
       { timeout: 5_000 },
-  )
+    )
     .catch(() => {});
   trace("body");
 
@@ -1469,13 +1468,10 @@ async function inspectPage(page, baseUrl, path, label) {
   // before either implementation has reached the comparable DOM state.
   if (path === "/admin") {
     await page
-      .waitForSelector(
-        ".user-box, .user-profile-page, [data-stylex-owner='user-profile-page']",
-        {
+      .waitForSelector(".user-box, .user-profile-page, [data-stylex-owner='user-profile-page']", {
         state: "visible",
         timeout: 10_000,
-        },
-      )
+      })
       .catch(() => {});
     await waitForRenderedPaint(page);
     trace("user-profile");
@@ -2068,29 +2064,23 @@ function failedTargetResult(label, baseUrl, error) {
 }
 
 async function launchBrowser() {
-  const channel = process.env.PW_CHANNEL ?? "chrome";
-  return chromium.launch({
-    ...(channel === "chromium" || channel === "" ? {} : { channel }),
-    headless: true,
-  });
+  return launchWtrBrowser();
 }
 
 async function runTarget(label, baseUrl, pathOverride = null) {
   const browser = await launchBrowser();
   try {
-    const context = await browser.newContext({
+    const page = await createWtrSweepPage(browser, {
+      height: viewportProfile.height,
       locale: sweepLocale,
-      viewport: { width: viewportProfile.width, height: viewportProfile.height },
+      width: viewportProfile.width,
     });
     if (label === "local") {
-      await context.route("https://www.gravatar.com/avatar/**", (route) =>
-        route.fulfill({
-          contentType: "image/png",
-          path: resolve(repoRoot, "frontend/src/assets/legacy/default-avatar-128.png"),
-        }),
+      await installWtrGravatarRoute(
+        page,
+        resolve(repoRoot, "frontend/src/assets/legacy/default-avatar-128.png"),
       );
     }
-    const page = await context.newPage();
     const loggedIn =
       label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
     const useRequestedPaths = requestedSweepPaths.length > 0 || sweepIsBatched;
@@ -2133,7 +2123,17 @@ async function runTarget(label, baseUrl, pathOverride = null) {
       if (primerPath) {
         await primeSessionProjectVisit(page, baseUrl, primerPath, label);
       }
-      const routePage = await context.newPage();
+      const routePage = await createWtrSweepPage(browser, {
+        height: viewportProfile.height,
+        locale: sweepLocale,
+        width: viewportProfile.width,
+      });
+      if (label === "local") {
+        await installWtrGravatarRoute(
+          routePage,
+          resolve(repoRoot, "frontend/src/assets/legacy/default-avatar-128.png"),
+        );
+      }
       try {
         const result = await inspectPageSafely(routePage, baseUrl, path, label);
         if (warmPerformanceRepeat && result.ok) {
@@ -2228,19 +2228,17 @@ function sanitizeResultForArtifact(result) {
     errors: (result.errors ?? []).map(classifyArtifactError),
     consoleErrors: result.consoleErrors?.length ? ["categorized error"] : [],
     requestFailures: result.requestFailures?.length ? ["categorized error"] : [],
-    ignoredRequestFailures: result.ignoredRequestFailures?.length
-      ? ["categorized error"]
-      : [],
+    ignoredRequestFailures: result.ignoredRequestFailures?.length ? ["categorized error"] : [],
     requestMarker: result.requestMarker ?? null,
     requestWindow: result.requestWindow ?? null,
     networkSummary: (result.networkSummary ?? []).map(
       ({ method, path, status, resourceType, startOffsetMs, durationMs }) => ({
-      method,
-      path,
-      status,
-      resourceType: resourceType ?? null,
-      startOffsetMs: Number.isFinite(startOffsetMs) ? startOffsetMs : null,
-      durationMs: Number.isFinite(durationMs) ? durationMs : null,
+        method,
+        path,
+        status,
+        resourceType: resourceType ?? null,
+        startOffsetMs: Number.isFinite(startOffsetMs) ? startOffsetMs : null,
+        durationMs: Number.isFinite(durationMs) ? durationMs : null,
       }),
     ),
     timings: result.timings ?? {},
@@ -2373,7 +2371,7 @@ if (realDataMode && sweepTarget === "both") {
   local = await runTargetSafely(
     "local",
     localBaseUrl,
-    requestedSweepPaths.length === 0 ? legacy?.discoveredRealDataPages ?? [] : null,
+    requestedSweepPaths.length === 0 ? (legacy?.discoveredRealDataPages ?? []) : null,
   );
 } else {
   [legacy, local] = await Promise.all([
@@ -2390,7 +2388,8 @@ if (sqlCaptureEnabled) {
   const route = requestedSweepPaths.length === 1 ? requestedSweepPaths[0] : "unfocused-sweep";
   const legacyResult = legacy?.results?.find((result) => result.path === route) ?? null;
   const localResult = local?.results?.find((result) => result.path === route) ?? null;
-  const isolatedRouteWindow = realDataMode && sweepScope === "focused" && requestedSweepPaths.length === 1;
+  const isolatedRouteWindow =
+    realDataMode && sweepScope === "focused" && requestedSweepPaths.length === 1;
   const legacyRequestWindow = legacyResult?.requestWindow
     ? {
         ...legacyResult.requestWindow,
@@ -2451,7 +2450,10 @@ const summary = {
 };
 writeFileSync(resolve(outputDir, latestOutputName), `${JSON.stringify(summary, null, 2)}\n`);
 if (writeLedger) {
-  writeFileSync(resolve(outputDir, "write-ledger.json"), `${JSON.stringify(writeLedger, null, 2)}\n`);
+  writeFileSync(
+    resolve(outputDir, "write-ledger.json"),
+    `${JSON.stringify(writeLedger, null, 2)}\n`,
+  );
 }
 console.log(JSON.stringify(summary, null, 2));
 const comparisonFailures = comparison.filter((result) => result.diffErrors.length > 0);

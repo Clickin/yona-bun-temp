@@ -81,7 +81,6 @@ test("visible child issue comment and voter pair owns its exact legacy cascade",
   test.setTimeout(60_000);
   expect(process.env.VITE_DISABLE_LEGACY_FALLBACK).toBe("1");
   // YONA_E2E_FALLBACK_MODE is runner-env-specific (PW baseline command does not set it either) — dropped.
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [
     route,

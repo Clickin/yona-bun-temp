@@ -1,6 +1,5 @@
 import { readFileSync } from "../wtr-compat.ts";
-import { expect, test, type Page } from "../wtr-compat.ts";
-import type { Route } from "@playwright/test";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${name}"]`).first();

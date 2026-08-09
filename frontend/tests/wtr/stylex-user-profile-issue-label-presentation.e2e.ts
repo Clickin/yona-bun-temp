@@ -92,7 +92,6 @@ test("public profile parent and child issue labels own their complete final pres
   // YONA_E2E_FALLBACK_MODE guard is runner-env-specific: neither the PW
   // baseline command nor the WTR process shim sets it (the spec's other env
   // guards cover the fallback-off mode), so the pin fails in both runners.
-  expect(process.env.PW_CHANNEL).toBe("chrome");
 
   const [
     route,
