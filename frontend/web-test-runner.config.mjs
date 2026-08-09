@@ -407,23 +407,29 @@ class RealMouseLauncher extends ChromeLauncher {
   async startSession(sessionId, url) {
     await super.startSession(sessionId, url);
     const page = this.activePages.get(sessionId).puppeteerPage;
-    await page.exposeFunction("__wtrRealMouse", async (op, x, y) => {
-      if (op === "move") await page.mouse.move(x, y);
-      if (op === "down") {
-        await page.mouse.move(x, y);
-        await page.mouse.down();
-      }
-      if (op === "up") {
-        await page.mouse.move(x, y);
-        await page.mouse.up();
-      }
-      // Resize the real browser viewport to the requested test viewport so
-      // the iframe (fixed at 0,0 with the same size) fills it exactly and
-      // real-mouse coords map 1:1 (the WTR default 800x600 page clips moves).
-      if (op === "setViewport") {
-        await page.setViewport({ width: x, height: y });
-      }
-    });
+    try {
+      await page.exposeFunction("__wtrRealMouse", async (op, x, y) => {
+        if (op === "move") await page.mouse.move(x, y);
+        if (op === "down") {
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+        }
+        if (op === "up") {
+          await page.mouse.move(x, y);
+          await page.mouse.up();
+        }
+        // Resize the real browser viewport to the requested test viewport so
+        // the iframe (fixed at 0,0 with the same size) fills it exactly and
+        // real-mouse coords map 1:1 (the WTR default 800x600 page clips moves).
+        if (op === "setViewport") {
+          await page.setViewport({ width: x, height: y });
+        }
+      });
+    } catch (error) {
+      // WTR can reuse a Chrome page for another session. In that case the
+      // bridge is already installed and remains valid for the reused page.
+      if (!String(error?.message ?? error).includes("already exists")) throw error;
+    }
   }
 }
 

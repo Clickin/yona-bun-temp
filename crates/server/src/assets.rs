@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use axum::extract::Request;
 use axum::response::{IntoResponse, Response};
-use axum::{extract::Path as AxumPath, routing::get, Router};
+use axum::{extract::Path as AxumPath, response::Redirect, routing::get, Router};
 use http::Method;
 
 use crate::excel_export::{
@@ -216,8 +216,16 @@ pub(crate) fn mount_base_path(
     } else if let AssetMode::Filesystem(asset_root) = assets {
         let browser_runtime_for_mount = browser_runtime;
         let asset_root_for_mount = asset_root;
+        let base_path_for_redirect = base_path.clone();
 
         Router::new()
+            .route(
+                &base_path,
+                get(move || {
+                    let location = format!("{base_path_for_redirect}/");
+                    async move { Redirect::to(&location) }
+                }),
+            )
             .route(
                 &format!("{base_path}/"),
                 get(move || {
@@ -229,8 +237,16 @@ pub(crate) fn mount_base_path(
             .nest(&base_path, base_router)
     } else if matches!(assets, AssetMode::Embedded) {
         let browser_runtime_for_mount = browser_runtime;
+        let base_path_for_redirect = base_path.clone();
 
         Router::new()
+            .route(
+                &base_path,
+                get(move || {
+                    let location = format!("{base_path_for_redirect}/");
+                    async move { Redirect::to(&location) }
+                }),
+            )
             .route(
                 &format!("{base_path}/"),
                 get(move || {

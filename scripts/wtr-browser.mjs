@@ -204,6 +204,10 @@ export class WtrSweepPage {
     await this.nativePage.waitForTimeout(timeout);
   }
 
+  async waitForFunction(pageFunction, arg, options = {}) {
+    return this.nativePage.waitForFunction(pageFunction, options, arg);
+  }
+
   async waitForLoadState(state, options = {}) {
     if (state === "networkidle") {
       await this.nativePage.waitForNetworkIdle({ idleTime: 500, timeout: options.timeout });

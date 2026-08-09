@@ -55,3 +55,19 @@ The adapter launches the same installed Chrome through
 telemetry, form interactions, screenshots, and local Gravatar interception.
 The real-data sweep remains read-only and still serializes legacy-to-local
 route discovery where the local target consumes the legacy path list.
+
+## [2026-08-09] verification | LAN real-data smoke
+
+The existing `yona-legacy-mariadb` container was used in `validate_only` mode
+for a LAN-exposed Yoram instance at `http://192.168.45.20:18101/yona/`.
+`GET /yona` now redirects with `303` to `/yona/`, while `GET /yona/` and
+`GET /yona/api/v1/projects` return `200`. The WTR Chrome real-data focused
+smoke passed `4/4` routes at desktop `1366x900`; it was anonymous and
+read-only, so this is runtime smoke evidence rather than authenticated parity
+completion. See
+`docs/provenance/lan-real-data-visual-smoke-2026-08-09.md`.
+
+The WTR sweep facade also gained the missing `waitForFunction` compatibility
+method, and the real-mouse launcher now tolerates a reused Chrome page's
+existing binding. These fixes remove harness failures from the next final
+fallback-off run; they do not reclassify application parity residuals.

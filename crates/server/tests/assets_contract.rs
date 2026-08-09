@@ -301,6 +301,26 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
         .await
         .unwrap();
     assert_eq!(index.status(), StatusCode::OK);
+
+    let untrailed_index = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(untrailed_index.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        untrailed_index
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
+    );
     let index_body = index.into_body().collect().await.unwrap().to_bytes();
     let html = String::from_utf8(index_body.to_vec()).unwrap();
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
@@ -616,6 +636,26 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         .await
         .unwrap();
     assert_eq!(index.status(), StatusCode::OK);
+
+    let untrailed_index = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(untrailed_index.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        untrailed_index
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
+    );
     let index_body = index.into_body().collect().await.unwrap().to_bytes();
     let html = String::from_utf8(index_body.to_vec()).unwrap();
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
