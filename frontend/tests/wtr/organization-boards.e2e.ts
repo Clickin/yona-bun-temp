@@ -511,12 +511,15 @@ test("organization boards filter and breadcrumb links preserve legacy hrefs with
     /type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &\s+SearchSchemaInput & \{\s+"projectNames\[\]"\?: unknown;\s+\};/u,
   );
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toMatch(
-    /const explicit = nextResult\.meta\?\.explicit \?\? search;/u,
+    /type SearchMiddlewareContext<TSearchSchema> = Parameters<SearchMiddleware<TSearchSchema>>\[0\];/u,
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toMatch(
+    /const explicit = isRecord\(ctx\.meta\?\.explicit\) \? ctx\.meta\.explicit : \{\};/u,
   );
   await mockOrganizationBoards(page);
 
   await page.goto(
-    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc&pageNum=1`,
   );
 
   const breadcrumbLink = page.locator(".project-breadcrumb .project-author a");
@@ -700,13 +703,13 @@ test("organization board route keeps only body navigation while the parent owns 
   // parent-owned menu links use template-literal targets (the parent route at
   // src/routes/organizations/$organizationName.tsx:1060ff keeps the legacy header/menu Links)
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
-    'to={`/organizations/${organizationName}/issues` as string}',
+    "to={`/organizations/${organizationName}/issues` as string}",
   );
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
-    'to={`/organizations/${organizationName}/boards` as string}',
+    "to={`/organizations/${organizationName}/boards` as string}",
   );
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
-    'to={`/organizations/${organizationName}/pullrequests` as string}',
+    "to={`/organizations/${organizationName}/pullrequests` as string}",
   );
   expect(ORGANIZATION_PARENT_ROUTE_SOURCE).toContain(
     'to="/organizations/$organizationName/settingform"',
@@ -1002,10 +1005,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeStyleAttr(value: string) {
-      let normalized = value
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "")
-        .replaceAll('"', "'");
+      let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
       // stylex sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
       // are the app's own paint mechanism for ico glyphs; legacy pins only the
       // ico class (the frozen sprites CSS owns the visual), so drop those
@@ -1015,12 +1015,11 @@ async function canonicalizeScreenRoots(page: Page) {
         /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
         "",
       );
-      normalized = normalized
-        .replace(
-          /--x-([A-Za-z0-9-]+):/gu,
-          (_match, name: string) =>
-            `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-        );
+      normalized = normalized.replace(
+        /--x-([A-Za-z0-9-]+):/gu,
+        (_match, name: string) =>
+          `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+      );
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
         return normalized;
       }
@@ -1151,10 +1150,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeStyleAttr(value: string) {
-      let normalized = value
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "")
-        .replaceAll('"', "'");
+      let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
       // stylex sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
       // are the app's own paint mechanism for ico glyphs; legacy pins only the
       // ico class (the frozen sprites CSS owns the visual), so drop those
@@ -1164,12 +1160,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
         "",
       );
-      normalized = normalized
-        .replace(
-          /--x-([A-Za-z0-9-]+):/gu,
-          (_match, name: string) =>
-            `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-        );
+      normalized = normalized.replace(
+        /--x-([A-Za-z0-9-]+):/gu,
+        (_match, name: string) =>
+          `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+      );
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
         return normalized;
       }

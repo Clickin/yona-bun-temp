@@ -3,6 +3,7 @@ import {
   createFileRoute,
   Link,
   type Register,
+  type SearchMiddleware,
   type SearchSchemaInput,
   useRouter,
 } from "@tanstack/react-router";
@@ -83,33 +84,22 @@ type OrganizationBoardsSearchInput = Partial<OrganizationBoardsSearch> &
   SearchSchemaInput & {
     "projectNames[]"?: unknown;
   };
-// Legacy BoardApp sort links carry ONLY orderBy/orderDir (urlToList?orderBy=..&orderDir=..);
-// validateSearch supplies runtime defaults for the rest. Do NOT re-add empty params
-// to the URL here — stripLegacyBoardSearchDefaults removes anything not explicit.
-// Legacy BoardApp sort links carry ONLY orderBy/orderDir; validateSearch supplies
-// runtime defaults for the rest. stripLegacyBoardSearchDefaults removes anything
-// not explicitly present in the URL (see below).
+type SearchMiddlewareContext<TSearchSchema> = Parameters<SearchMiddleware<TSearchSchema>>[0];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 // Legacy BoardApp sort links carry ONLY orderBy/orderDir; the reset middleware
 // re-adds empty defaults, so strip them back out — but only when they were
 // NOT explicitly present in the URL (legacy keeps pageNum=1 the user
 // navigated to; yobi.Pagination.js urlWithPageNum never drops it).
-const stripLegacyBoardSearchDefaults = ({
-  search,
-  next,
-}: {
-  search: OrganizationBoardsSearchInput;
-  next: (search: OrganizationBoardsSearchInput) => OrganizationBoardsSearch;
-}) => {
-  // TanStack merges the Link's search over the CURRENT search; next(search,
-  // true) returns { search, meta } where meta.explicit records exactly what
-  // the navigation itself supplied (the Link's search object). Presence
-  // checks must use that, not `search` (which always carries the current
-  // page's params).
-  const nextResult = next(search, true);
-  const result = nextResult.search;
-  const explicit = nextResult.meta?.explicit ?? search;
+const stripLegacyBoardSearchDefaults = (ctx: SearchMiddlewareContext<OrganizationBoardsSearch>) => {
+  // TanStack merges the Link's search over the current search; meta.explicit
+  // records exactly what the navigation itself supplied (the Link's search
+  // object). Presence checks must use that, not ctx.search.
+  const result = { ...ctx.next(ctx.search) };
+  const explicit = isRecord(ctx.meta?.explicit) ? ctx.meta.explicit : {};
   // Org menu Board links pass the FULL default search object (filter:"",
   // orderBy:"updatedDate", orderDir:"desc", pageNum:1, projectNames:[]) —
   // legacy renders those as a bare @routes.BoardApp.board() href with no
@@ -123,26 +113,30 @@ const stripLegacyBoardSearchDefaults = ({
   const isAllDefaults =
     allKeysPresent &&
     (explicit.filter === "" || explicit.filter === undefined) &&
-    (explicit.pageNum === undefined || Number(explicit.pageNum) === 1) &&
-    (explicit.projectNames === undefined || explicit.projectNames?.length === 0) &&
-    (explicit["projectNames[]"] === undefined || explicit["projectNames[]"]?.length === 0) &&
+    (explicit.pageNum === undefined || explicit.pageNum === 1) &&
+    (explicit.projectNames === undefined ||
+      (Array.isArray(explicit.projectNames) && explicit.projectNames.length === 0)) &&
+    (explicit["projectNames[]"] === undefined ||
+      (Array.isArray(explicit["projectNames[]"]) && explicit["projectNames[]"].length === 0)) &&
     explicit.orderBy === "updatedDate" &&
     explicit.orderDir === "desc";
   if (isAllDefaults) {
-    delete result.filter;
-    delete result.pageNum;
-    delete result.projectNames;
-    delete result.orderBy;
-    delete result.orderDir;
+    Reflect.deleteProperty(result, "filter");
+    Reflect.deleteProperty(result, "pageNum");
+    Reflect.deleteProperty(result, "projectNames");
+    Reflect.deleteProperty(result, "orderBy");
+    Reflect.deleteProperty(result, "orderDir");
     return result;
   }
   // Sort links pass only orderBy/orderDir; pagination/filter navigation keeps
   // its explicit params. Strip keys absent from the navigation's own search
   // (legacy sort links carry ONLY orderBy/orderDir; yobi.Pagination.js never
   // drops explicitly navigated pageNum).
-  if (!("filter" in explicit)) delete result.filter;
-  if (!("pageNum" in explicit)) delete result.pageNum;
-  if (!("projectNames" in explicit) && !("projectNames[]" in explicit)) delete result.projectNames;
+  if (!("filter" in explicit)) Reflect.deleteProperty(result, "filter");
+  if (!("pageNum" in explicit)) Reflect.deleteProperty(result, "pageNum");
+  if (!("projectNames" in explicit) && !("projectNames[]" in explicit)) {
+    Reflect.deleteProperty(result, "projectNames");
+  }
   return result;
 };
 
