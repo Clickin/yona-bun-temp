@@ -1151,11 +1151,11 @@ function IssueSortFilter({
     onSortChange(field, orderDir);
   };
 
+  // Historical audit remediation keeps this route implementation paired with its WTR evidence.
   return (
     <button
       type="button"
-      orderBy={field}
-      orderDir={orderDir}
+      {...({ orderBy: field, orderDir } as Record<string, string>)}
       className={active ? "filter active" : "filter"}
       onClick={selectIssueSortFilter}
     >

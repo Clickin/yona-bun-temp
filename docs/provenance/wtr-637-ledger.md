@@ -1,11 +1,11 @@
 # WTR e2e 632-failure remediation ledger
 
-> status: in progress — Phase D wave 2 (2026-08-08)
+> status: in progress — Phase D wave 4 (2026-08-08)
 > source: `/tmp/fails.json` regenerated from the Phase-0 full-suite run (`/tmp/suite-1.log`), runner summary **2450 passed / 632 failed / 5 skipped**
 > reconciliation: 632 parsed rows == runner failed count; 210 specs; 0 missing / 0 duplicated rows
 > families: F1 harness-fixed | F2 harness-investigate | F3 C1-candidate | F4 C2-retire | F5 dist-geometry | F6 pin-stale | F7 app-fix | F8 mirror | F9 flaky/timeout
 > dispositions: fixed-Phase0 | harness-investigate | C1-candidate | C2-retire | copy-fix-dist-truth | retained-class-retention | copy-fix-current-dom | app-fix | mirror-skip | flaky-green
-> progress: Phase 0 committed (f6efea020) → Phase B real-mouse bridge (d3e701bd8) → F4 retirements (30c55317b) → Phase C waves 1-2 (e58de0f6a, 9db0d935a) → Phase D wave 1 (547bc0bf3, 2655fb8c5, cf7f6d690, 158d42d4f). Suite-4 (corrected /yona fallback-off dist): **2655 passed / 381 failed / 5 skipped** (2450/632 baseline).
+> progress: Phase 0 (f6efea020) → Phase B real-mouse bridge (d3e701bd8, 65/87 F3 green) → F4 retirements (30c55317b) → Phase C waves 1-2 (e58de0f6a, 9db0d935a; F5/F6 46+162→~10) → Phase D waves 1-4 (547bc0bf3…1e4bcc582, a048292a9): D1 input cascade + input:focus !important, F2 harness fixes (doc-request dedup, cancelable keydown, evaluateHandle args, poll toBeCloseTo, legacy-assets serving+mime, lazy matcher messages), app parity (PR list, posts, issues-empty, milestone, commit-detail, nested-layout, code-view, watchers/statistics/setting wrappers). Suite-4 (corrected /yona fallback-off dist): **2655 passed / 381 failed / 5 skipped** (2450/632 baseline).
 
 ## Family counts (632 triage rows)
 

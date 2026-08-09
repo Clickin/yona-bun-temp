@@ -103,10 +103,7 @@ const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceA
 )
   .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
   .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT)
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${POPULATED_SPAN10_WITH_TOOLBAR}</div></div></div></div>\n<footer`,
@@ -130,10 +127,7 @@ const EXPECTED_PROJECT_ISSUES_LABEL_SORT = EXPECTED_PROJECT_ISSUES_EMPTY.replace
   'value="empty"',
   'value="labels-unsorted"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${LABEL_SORT_SPAN10}</div></div></div></div>\n<footer`,
@@ -150,10 +144,7 @@ const EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU = EXPECTED_PROJECT_ISSUES_EMPTY.
   'value="empty"',
   'value="no-milestone-menu"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     '<li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li>',
     "",
@@ -177,10 +168,7 @@ const EXPECTED_PROJECT_ISSUES_PREFIX = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
   'value="prefix"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${PREFIX_SPAN10}</div></div></div></div>\n<footer`,
@@ -195,10 +183,7 @@ const EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE = EXPECTED_PROJECT_ISSUES_EMPTY.
   'value="empty"',
   'value="upcoming"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${UPCOMING_DUE_DATE_SPAN10}</div></div></div></div>\n<footer`,
@@ -213,10 +198,7 @@ const EXPECTED_PROJECT_ISSUES_SHARER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
   'value="sharer"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${SHARER_SPAN10}</div></div></div></div>\n<footer`,
@@ -235,10 +217,7 @@ const EXPECTED_PROJECT_ISSUES_DRAFT = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
   'value=""',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${DRAFT_SPAN10}</div></div></div></div>\n<footer`,
@@ -266,10 +245,7 @@ const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
   'value="empty"',
   'value="bulk"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">2</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">2</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${BULK_SPAN10}</div></div></div></div>\n<footer`,
@@ -284,10 +260,7 @@ const EXPECTED_PROJECT_ISSUES_SUBTASK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll
   'value="empty"',
   'value="subtask"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${SUBTASK_SPAN10}</div></div></div></div>\n<footer`,
@@ -316,10 +289,7 @@ const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.re
     '<input type="hidden" name="state" value="open">',
     '<input type="hidden" name="state" value="closed">',
   )
-  .replace(
-    '>Open<span class="num-badge">0</span>',
-    '>Closed<span class="num-badge">1</span>',
-  )
+  .replace('>Open<span class="num-badge">0</span>', '>Closed<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${WEIGHTED_SPAN10}</div></div></div></div>\n<footer`,
@@ -335,10 +305,7 @@ const EXPECTED_PROJECT_ISSUES_CHILDREN = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAl
   'value="empty"',
   'value="children"',
 )
-  .replaceAll(
-    '>Open<span class="num-badge">0</span>',
-    '>Open<span class="num-badge">1</span>',
-  )
+  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
   .replace(
     /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
     `${CHILDREN_SPAN10}</div></div></div></div>\n<footer`,
@@ -349,6 +316,7 @@ function withPopulatedSearchUsers(html: string) {
     .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
     .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT);
 }
+// Historical Scala HTML audit remediation: focused route evidence retained during history rewrite.
 
 test("project issue list route source uses Link for navigation and buttons for side effects", async () => {
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("activeProps={{ className: undefined }}");
@@ -1292,7 +1260,8 @@ test("project issue list search form renders selected milestone status like lega
   // StyleX float (milestoneProgressCount), match the owner instead
   await expect(
     status.locator('[data-stylex-owner="project-issues-milestone-progress-count"] strong'),
-  ).toHaveText("1 / 2");  await expect(page.locator("#advanced-search-form .milestone-info + hr")).toHaveCount(1);
+  ).toHaveText("1 / 2");
+  await expect(page.locator("#advanced-search-form .milestone-info + hr")).toHaveCount(1);
 });
 
 test("anonymous project issue list hides current-user quick search links like legacy partial_list_quicksearch.scala.html", async ({
@@ -1731,7 +1700,7 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   expect(desktop!.closedPadding).toEqual(["30px", "30px"]);
   expect(desktop!.open.top).toBeCloseTo(desktop!.childToggle.top, 0);
   expect(desktop!.closed.top).toBeCloseTo(desktop!.childToggle.top, 0);
-    // F5 dist-truth: measured gap between state-tabs bottom and action row is 35
+  // F5 dist-truth: measured gap between state-tabs bottom and action row is 35
   expect(desktop!.row.top - desktop!.tabs.bottom).toBeCloseTo(35, 0);
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1739,7 +1708,7 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   expect(mobile).not.toBeNull();
   expect(mobile!.openPadding).toEqual(["5px", "5px"]);
   expect(mobile!.closedPadding).toEqual(["5px", "5px"]);
-    // F5 dist-truth: measured mobile open/closed widths and row gap
+  // F5 dist-truth: measured mobile open/closed widths and row gap
   expect(mobile!.open.width).toBeCloseTo(52.64, 1);
   expect(mobile!.closed.width).toBeCloseTo(63.02, 1);
   expect(mobile!.open.top).toBeCloseTo(mobile!.childToggle.top, 0);
@@ -3368,10 +3337,7 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
   await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
   // copy-fix-current-dom: reveal is conditional StyleX display (no inline
   // style; stylex-project-issues-child-list pins childIssueListVisible)
-  await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveCSS(
-    "display",
-    "block",
-  );
+  await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveCSS("display", "block");
 });
 
 test("project issue child rows hide foreign drafts like legacy partial_view_child.scala.html", async ({
@@ -5138,10 +5104,7 @@ async function canonicalizeScreenRoots(page: Page) {
           .split(/\s+/u)
           .filter(
             (token) =>
-              token &&
-              token !== "gnb-nav" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
+              token && token !== "gnb-nav" && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"),
           )
           .join(" ");
       }

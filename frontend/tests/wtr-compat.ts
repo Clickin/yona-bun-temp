@@ -1352,7 +1352,11 @@ export class Locator {
         setNativeInputValue(editable, next);
       }
     }
-    const keydownEvent = new KeyboardEvent("keydown", { ...parsed, bubbles: true, cancelable: true });
+    const keydownEvent = new KeyboardEvent("keydown", {
+      ...parsed,
+      bubbles: true,
+      cancelable: true,
+    });
     element.dispatchEvent(keydownEvent);
     element.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
     // Real browsers cancel implicit form submission and button activation when
@@ -1639,7 +1643,11 @@ class PageFacade {
           setNativeInputValue(editable, next);
         }
       }
-      const kbKeydown = new KeyboardEvent("keydown", { ...parsed, bubbles: true, cancelable: true });
+      const kbKeydown = new KeyboardEvent("keydown", {
+        ...parsed,
+        bubbles: true,
+        cancelable: true,
+      });
       target.dispatchEvent(kbKeydown);
       target.dispatchEvent(new KeyboardEvent("keyup", { ...parsed, bubbles: true }));
       // Real browsers cancel implicit submission / button activation when a
@@ -2056,12 +2064,24 @@ class PageFacade {
           headers: () => Record<string, string>;
         }) => boolean)
       | string,
+    options?: { timeout?: number },
   ): Promise<{ url: () => string; method: () => string; headers: () => Record<string, string> }> {
-    const { promise, resolve } = Promise.withResolvers<{
+    const { promise, resolve, reject } = Promise.withResolvers<{
       url: () => string;
       method: () => string;
       headers: () => Record<string, string>;
     }>();
+    // Playwright's waitForRequest resolves on a matching request OR rejects on
+    // timeout — the "assert no request fires" pattern relies on the rejection
+    // (tests call .then(() => true).catch(() => false) with a short timeout).
+    const timeout = options?.timeout ?? 30000;
+    const timeoutHandle = setTimeout(() => {
+      eventListeners.set(
+        "request",
+        (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
+      );
+      reject(new Error(`waitForRequest: no matching request within ${timeout}ms`));
+    }, timeout);
     const matcher =
       typeof predicate === "string"
         ? (request: { url: string | (() => string) }) =>
@@ -2091,6 +2111,7 @@ class PageFacade {
           "request",
           (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
         );
+        clearTimeout(timeoutHandle);
         resolve({
           url: urlValue,
           method: request.method === undefined ? () => "GET" : constOf(request.method),
@@ -3190,14 +3211,11 @@ expect.poll = (fn: () => unknown) => ({
     );
   },
   toBeCloseTo: async (expected: number, precision?: number) => {
-    await expectPoll(
-      async () => {
-        const actual = Number(await fn());
-        const threshold = 10 ** -(precision ?? 2) / 2;
-        return Math.abs(actual - expected) < threshold;
-      },
-      `poll().toBeCloseTo(${expected})`,
-    );
+    await expectPoll(async () => {
+      const actual = Number(await fn());
+      const threshold = 10 ** -(precision ?? 2) / 2;
+      return Math.abs(actual - expected) < threshold;
+    }, `poll().toBeCloseTo(${expected})`);
   },
   toHaveLength: async (length: number) => {
     await expectPoll(async () => {
