@@ -513,6 +513,8 @@ test("project pull request overview route source uses direct Links", async () =>
     "href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.contributor.loginId}`)}",
   );
   expect(routeSource).not.toContain("as never");
+  expect(routeSource).not.toContain("__legacyPullRequestDetailActiveMarker");
+  expect(routeSource).toContain('search={{ branch: "", path: "" }}');
   expect(routeSource).not.toContain("window.location");
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain("globalThis.document");
