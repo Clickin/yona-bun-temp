@@ -71,13 +71,13 @@ export const Route = createFileRoute("/$ownerName/$projectName/posts")({
   validateSearch(search: Record<string, unknown>): ProjectPostsRouteSearch {
     const filter = stringSearch(search.filter);
     const rawLabelIds = search.labelIds;
-    const labelIds =
+    const labelIds: string | number | Array<string | number> | undefined =
       rawLabelIds === undefined ||
       rawLabelIds === null ||
       rawLabelIds === "" ||
       (Array.isArray(rawLabelIds) && rawLabelIds.length === 0)
         ? undefined
-        : rawLabelIds;
+        : (rawLabelIds as string | number | Array<string | number>);
     const orderBy = stringSearch(search.orderBy);
     const orderDir = stringSearch(search.orderDir);
     const pageNum = Number(search.pageNum) || 0;

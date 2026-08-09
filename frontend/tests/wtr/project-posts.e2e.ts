@@ -4203,9 +4203,9 @@ test("project board detail owns parent comment action and reply controls in Styl
   // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
   // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
   // comment-form region rendered before it.
-  expect(
-    routeSource.slice(0, routeSource.indexOf("function TasklistBar")),
-  ).not.toMatch(/style=\{|style:\s*\{/u);
+  expect(routeSource.slice(0, routeSource.indexOf("function TasklistBar"))).not.toMatch(
+    /style=\{|style:\s*\{/u,
+  );
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -4855,10 +4855,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
   // shared src/components/markdown-editor.tsx (route imports it at line 42); the
   // old inline `function MarkdownEditor` slice is empty. Pin the shared file for
   // the editor contract and keep the route-owned style refs on routeSource.
-  const sharedMarkdownEditorSource = readFileSync(
-    "src/components/markdown-editor.tsx",
-    "utf8",
-  );
+  const sharedMarkdownEditorSource = readFileSync("src/components/markdown-editor.tsx", "utf8");
   expect(sharedMarkdownEditorSource).not.toContain('data-toggle="markdown-editor"');
   expect(sharedMarkdownEditorSource).not.toContain("data-mode");
   expect(sharedMarkdownEditorSource).not.toContain('data-toggle="tab"');
@@ -7318,9 +7315,9 @@ test("authenticated populated board post owns the comment-card skeleton in Style
   // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
   // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
   // comment-row region rendered before it.
-  expect(
-    routeSource.slice(0, routeSource.indexOf("function TasklistBar")),
-  ).not.toMatch(/style=\{|style:\s*\{/u);
+  expect(routeSource.slice(0, routeSource.indexOf("function TasklistBar"))).not.toMatch(
+    /style=\{|style:\s*\{/u,
+  );
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -10522,3 +10519,4 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
   }, html);
 }
+// Historical Scala HTML audit remediation: focused route evidence retained during history rewrite.
