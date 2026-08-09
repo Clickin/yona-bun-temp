@@ -298,7 +298,7 @@ export const styles = stylex.create({
     marginBottom: "0px",
     width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },
   },
-  legacyTextareaHeight: { height: "80px !important" },
+  legacyTextareaHeight: { height: "80px" },
   textareaHeight: (height: string) => ({ height }),
   oldPlace: { color: "red" },
   menuCheckboxInput: {

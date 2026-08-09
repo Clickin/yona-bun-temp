@@ -406,8 +406,8 @@ function ProjectSettingBody({
   const textareaClassName = [
     "textarea",
     sx.textarea.className,
-    stylex.props(styles.textareaHeight(`${overviewHeight}px`)).className,
     stylex.props(styles.legacyTextareaHeight).className,
+    stylex.props(styles.textareaHeight(`${overviewHeight}px`)).className,
     stylex.props(textareaStaticStyles.overflow).className,
   ]
     .filter(Boolean)
@@ -622,8 +622,8 @@ function ProjectSettingBody({
             </div>
             {/* Keep the legacy setting-box/right owner adjacent to the StyleX border cascade. */}
             <dl
-              {...stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields)}
-              className={`${stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields).className} setting-box right`}
+              {...stylex.props(styles.settingFields, styles.settingBox, styles.settingBoxRight)}
+              className={`${stylex.props(styles.settingFields, styles.settingBox, styles.settingBoxRight).className} setting-box right`}
               data-stylex-owner="project-setting-setting-box-right"
             >
               <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
@@ -1256,8 +1256,7 @@ function DefaultBranchSelect2({
         className={`${sx.defaultBranchSelect.className} select2-offscreen`}
         style={{ minWidth: "220px" }}
         tabIndex={-1}
-        key={selectedBranch}
-        defaultValue={selectedBranch}
+        value={selectedBranch}
         onChange={(event) => setSelectedBranch(event.currentTarget.value)}
       >
         {branches.map((branchName) => (

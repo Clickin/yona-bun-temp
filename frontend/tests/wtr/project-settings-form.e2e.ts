@@ -76,15 +76,15 @@ test("project settings prefixes empty logo and background fallbacks with the con
 
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
-    expect.stringContaining("/yona/assets/project_default-") // copy-fix-current-dom: Vite hashed asset,
+    expect.stringContaining("/yona/assets/project_default-"), // copy-fix-current-dom: Vite hashed asset,
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    expect.stringContaining("project_default_logo-") // copy-fix-current-dom: Vite hashed asset,
+    expect.stringContaining("project_default_logo-"), // copy-fix-current-dom: Vite hashed asset,
   );
   await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
     "style",
-    expect.stringContaining("project_default_logo-") // copy-fix-current-dom: Vite hashed asset,
+    expect.stringContaining("project_default_logo-"), // copy-fix-current-dom: Vite hashed asset,
   );
   await test.info().attach("project-settings-fallback-desktop", {
     body: await page.screenshot({ fullPage: true }),
@@ -95,15 +95,15 @@ test("project settings prefixes empty logo and background fallbacks with the con
   await page.goto(`${mountPrefix}/admin/sample/settingform`);
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
-    expect.stringContaining("/yona/assets/project_default-") // copy-fix-current-dom: Vite hashed asset,
+    expect.stringContaining("/yona/assets/project_default-"), // copy-fix-current-dom: Vite hashed asset,
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    expect.stringContaining("project_default_logo-") // copy-fix-current-dom: Vite hashed asset,
+    expect.stringContaining("project_default_logo-"), // copy-fix-current-dom: Vite hashed asset,
   );
   await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
     "style",
-    expect.stringContaining("project_default_logo-") // copy-fix-current-dom: Vite hashed asset,
+    expect.stringContaining("project_default_logo-"), // copy-fix-current-dom: Vite hashed asset,
   );
   await test.info().attach("project-settings-fallback-mobile", {
     body: await page.screenshot({ fullPage: true }),
@@ -1920,7 +1920,7 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
     ).toBe(true);
     expect(metrics[5]).toMatchObject({
       owner: "project-setting-middle-menu",
-      borderBottom: "0px none rgb(51, 51, 51)" // F5 dist-truth: border-bottom:none resolves to currentColor #333 (legacy _page.less:2062-2065,2076),
+      borderBottom: "0px none rgb(51, 51, 51)", // F5 dist-truth: border-bottom:none resolves to currentColor #333 (legacy _page.less:2062-2065,2076),
     });
     expect(
       metrics.every(
@@ -2056,7 +2056,7 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
       paddingLeft: mobile ? "0px" : "20px",
     });
     expect(metrics!.bottom).toMatchObject({
-      borderBottom: "0px none rgb(51, 51, 51)" // F5 dist-truth: border-bottom:none resolves to currentColor #333 (legacy _page.less:2062-2065,2076),
+      borderBottom: "0px none rgb(51, 51, 51)", // F5 dist-truth: border-bottom:none resolves to currentColor #333 (legacy _page.less:2062-2065,2076),
       paddingTop: mobile ? "10px" : "20px",
       paddingRight: "0px",
       paddingBottom: mobile ? "10px" : "12px",
@@ -2200,7 +2200,7 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
   expect(route).toContain('data-stylex-owner="project-setting-description-term"');
   expect(route).toContain('data-stylex-owner="project-setting-name-label"');
   expect(route).toContain('data-stylex-owner="project-setting-description-label"');
-  expect(route).toContain("styles.settingBox, styles.settingBoxRight, styles.settingFields");
+  expect(route).toContain("styles.settingFields, styles.settingBox, styles.settingBoxRight");
   expect(style).toContain("settingFields:");
   expect(style).toContain("settingFieldTerm:");
   expect(style).toContain("settingFieldDescription:");

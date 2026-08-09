@@ -41,7 +41,7 @@ test("project settingform restores the legacy page shell and desktop geometry", 
   expect(routeStyles).toContain('padding: "0px !important"');
   expect(routeStyles).toContain('marginTop: "20px !important"');
   expect(routeStyles).toContain('width: "100% !important"');
-  expect(settingStyles).toContain('legacyTextareaHeight: { height: "80px !important" }');
+  expect(settingStyles).toContain('legacyTextareaHeight: { height: "80px" }');
   expect(settingStyles).toContain('boxSizing: { default: "content-box"');
   expect(settingRoute).toContain("stylex.props(styles.settingBoxRight)");
   expect(settingRoute).toContain("stylex.props(styles.legacyTextareaHeight).className");
