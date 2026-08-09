@@ -248,10 +248,12 @@ test("organization issues two-column checkbox renders React popover and localSto
     "Splits list and body into columns respectively",
   );
   expect(await organizationIssuesTwoColumnPopoverMetrics(page)).toEqual({
+    bottom: "100%",
     contentText: "Splits list and body into columns respectively",
     hasArrow: true,
+    position: "absolute",
     placementClass: true,
-    popoverBottomIsAboveToggleBottom: true,
+    popoverBottomIsAboveToggleTop: true,
     role: "tooltip",
     titleText: "Two Column Mode",
   });
@@ -603,6 +605,8 @@ test("organization issue row source uses Link for internal row anchors", () => {
   expect(source).toContain("to={projectRoutePath}");
   expect(source).toContain("to={authorRoutePath}");
   expect(source).toContain("to={assigneeRoutePath}");
+  expect(source).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
+  expect(source).toContain("search={{}}");
 });
 
 test("organization issues two-column source keeps React popover cleanup", () => {
@@ -618,6 +622,7 @@ test("organization issues two-column source keeps React popover cleanup", () => 
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
   expect(twoColumnSource).toContain("popover top");
   expect(twoColumnSource).toContain('role="tooltip"');
+  expect(twoColumnSource).toContain('data-stylex-owner="organization-issues-two-column-popover"');
   expect(twoColumnSource).not.toContain("data-content=");
   expect(twoColumnSource).not.toContain("document.");
   expect(twoColumnSource).not.toContain("addEventListener");
@@ -856,11 +861,14 @@ async function organizationIssuesTwoColumnPopoverMetrics(page: Page) {
     }
     const popoverRect = popover.getBoundingClientRect();
     const toggleRect = toggle.getBoundingClientRect();
+    const popoverStyle = getComputedStyle(popover);
     return {
       contentText: popover.querySelector(".popover-content")?.textContent?.trim() ?? "",
       hasArrow: popover.querySelector(".arrow") !== null,
+      position: popoverStyle.position,
+      bottom: popoverStyle.bottom,
       placementClass: popover.className === "popover top",
-      popoverBottomIsAboveToggleBottom: popoverRect.bottom <= toggleRect.bottom,
+      popoverBottomIsAboveToggleTop: popoverRect.bottom <= toggleRect.top + 1,
       role: popover.getAttribute("role"),
       titleText: popover.querySelector(".popover-title")?.textContent?.trim() ?? "",
     };
@@ -1143,10 +1151,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeStyleAttr(value: string) {
-      let normalized = value
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "")
-        .replaceAll('"', "'");
+      let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
       // stylex sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
       // are the app's own paint mechanism for ico glyphs; legacy pins only the
       // ico class, so drop those vars. legacy-assets images (group_default.png
@@ -1155,12 +1160,11 @@ async function canonicalizeScreenRoots(page: Page) {
         /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
         "",
       );
-      normalized = normalized
-        .replace(
-          /--x-([A-Za-z0-9-]+):/gu,
-          (_match, name: string) =>
-            `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-        );
+      normalized = normalized.replace(
+        /--x-([A-Za-z0-9-]+):/gu,
+        (_match, name: string) =>
+          `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+      );
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
         return normalized;
       }
@@ -1291,10 +1295,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeStyleAttr(value: string) {
-      let normalized = value
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "")
-        .replaceAll('"', "'");
+      let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
       // stylex sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
       // are the app's own paint mechanism for ico glyphs; legacy pins only the
       // ico class, so drop those vars. legacy-assets images (group_default.png
@@ -1303,12 +1304,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
         "",
       );
-      normalized = normalized
-        .replace(
-          /--x-([A-Za-z0-9-]+):/gu,
-          (_match, name: string) =>
-            `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-        );
+      normalized = normalized.replace(
+        /--x-([A-Za-z0-9-]+):/gu,
+        (_match, name: string) =>
+          `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
+      );
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
         return normalized;
       }

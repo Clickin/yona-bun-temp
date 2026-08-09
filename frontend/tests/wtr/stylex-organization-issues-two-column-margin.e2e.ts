@@ -109,6 +109,9 @@ test("organization issues owns legacy mr10 on the two-column mode control", asyn
   expect(twoColumnJs).toContain("$twoColumnMode.on('click'");
 
   expect(styleSource).toContain('twoColumnAnchor: { marginRight: "10px", position: "relative" }');
+  expect(styleSource).toContain(
+    'twoColumnPopover: {\n    bottom: "100%",\n    display: "block",\n    left: "50%",\n    marginBottom: "5px",\n    position: "absolute",\n    transform: "translateX(-50%)",\n  },',
+  );
   expect(routeSource).toContain('data-stylex-owner="organization-issues-two-column-anchor"');
   expect(routeSource).toContain("twoColumnAnchorStyleProps");
   expect(routeSource).toContain("two-column-icon mr10 hide-in-mobile");
@@ -235,6 +238,10 @@ test("organization issues owns legacy mr10 on the two-column mode control", asyn
       await expect(mode).toBeVisible();
       await mode.hover();
       await expect(popover).toBeVisible({ timeout: 1000 });
+      await expect(popover).toHaveCSS("position", "absolute");
+      await expect(popover).toHaveCSS("bottom", "100%");
+      await expect(popover).toHaveCSS("left", "50%");
+      await expect(popover).toHaveCSS("margin-bottom", "5px");
       await expect(popover.locator(".popover-title")).toHaveText("Two Column Mode");
       await expect(popover.locator(".popover-content")).toContainText(
         "Splits list and body into columns respectively",

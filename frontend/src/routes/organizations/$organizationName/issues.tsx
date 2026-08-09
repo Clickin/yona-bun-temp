@@ -814,7 +814,10 @@ function OrganizationIssueItem({
           title={issue.authorLoginId}
         >
           <img
-            src={prefixBasePath(basePath, issue.authorAvatarUrl || "/assets/images/default-avatar-32.png")}
+            src={prefixBasePath(
+              basePath,
+              issue.authorAvatarUrl || "/assets/images/default-avatar-32.png",
+            )}
             alt=""
           />
         </Link>
@@ -860,6 +863,7 @@ function OrganizationIssueItem({
                   projectName: issue.projectName,
                   milestoneId: String(issue.milestoneId),
                 }}
+                search={{}}
                 title={t("milestone")}
               >
                 {issue.milestoneTitle}
@@ -930,7 +934,10 @@ function OrganizationIssueItem({
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
             >
               <img
-                src={prefixBasePath(basePath, issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png")}
+                src={prefixBasePath(
+                  basePath,
+                  issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png",
+                )}
                 width="32"
                 height="32"
                 alt={issue.assigneeLabel}
