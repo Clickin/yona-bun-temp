@@ -16,6 +16,19 @@ import { organizationSettingColors, organizationSettingStyles } from "./-setting
 
 // Legacy output source: yona-original/app/views/organization/setting.scala.html.
 
+const legacyOrganizationSettingMenuActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+};
+
+const legacyOrganizationSettingMenuActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/organizations/$organizationName/settingform")({
   component: OrganizationSettingsRoute,
 });
@@ -342,13 +355,14 @@ function OrganizationSettingMenu({
     <ul className="nav nav-tabs" data-stylex-owner="organization-setting-menu">
       <li className={active === "setting" ? "active" : ""}>
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyOrganizationSettingMenuActiveOptions}
+          activeProps={legacyOrganizationSettingMenuActiveProps}
           search={() => ({ tabId: undefined })}
+          hash="organization-settingform-active-sentinel"
+          mask={{
+            to: "/organizations/$organizationName/settingform",
+            params: { organizationName },
+          }}
           to="/organizations/$organizationName/settingform"
           params={{ organizationName }}
         >
@@ -357,13 +371,14 @@ function OrganizationSettingMenu({
       </li>
       <li className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyOrganizationSettingMenuActiveOptions}
+          activeProps={legacyOrganizationSettingMenuActiveProps}
           search={() => ({ tabId: undefined })}
+          hash="organization-members-active-sentinel"
+          mask={{
+            to: "/organizations/$organizationName/members",
+            params: { organizationName },
+          }}
           to="/organizations/$organizationName/members"
           params={{ organizationName }}
         >
@@ -372,13 +387,14 @@ function OrganizationSettingMenu({
       </li>
       <li className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyOrganizationSettingMenuActiveOptions}
+          activeProps={legacyOrganizationSettingMenuActiveProps}
           search={() => ({ tabId: undefined })}
+          hash="organization-delete-active-sentinel"
+          mask={{
+            to: "/organizations/$organizationName/deleteForm",
+            params: { organizationName },
+          }}
           to="/organizations/$organizationName/deleteForm"
           params={{ organizationName }}
         >

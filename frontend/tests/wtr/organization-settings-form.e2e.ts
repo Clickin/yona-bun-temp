@@ -588,6 +588,16 @@ test("organization settings navigation anchors keep legacy hrefs without route-l
   expect(await readOrganizationSettingsNativeLinkAudit(page)).toEqual([]);
 });
 
+test("organization settings menu masks TanStack active markers from legacy anchors", () => {
+  const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
+
+  expect(source).toContain("legacyOrganizationSettingMenuActiveOptions");
+  expect(source).toContain("includeHash: true");
+  expect(source).toContain('hash="organization-settingform-active-sentinel"');
+  expect(source).toContain('to: "/organizations/$organizationName/settingform"');
+  expect(source).toContain("legacyOrganizationSettingMenuActiveProps");
+});
+
 test("organization settings breadcrumb organization link keeps legacy href with SPA transition", async ({
   page,
 }) => {
