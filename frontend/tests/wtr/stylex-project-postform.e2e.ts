@@ -39,6 +39,8 @@ test("records board post form owners and responsive geometry", async ({ page }) 
     await expect(owner(page, "project-postform-upload-wrap")).toHaveClass(
       /upload-wrap content-footer/u,
     );
+    await expect(owner(page, "project-postform-paste-help")).toBeVisible();
+    await expect(owner(page, "project-postform-paste-help")).toHaveCSS("display", "block");
     await expect(owner(page, "project-postform-upload-attach-save-help")).toHaveClass(/right-txt/u);
     const editorGeometry = await owner(page, "project-postform-editor").evaluate((element) => {
       const textareaBox = element.closest(".textarea-box");

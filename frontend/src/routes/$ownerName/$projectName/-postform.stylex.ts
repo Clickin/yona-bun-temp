@@ -56,6 +56,8 @@ export const styles = stylex.create({
     lineHeight: "20px",
   },
   actions: { margin: "10px 0px", textAlign: "right" },
-  pasteHelpVisible: { display: "block" },
+  // yobi.Attachments.js shows this capability hint after `.upload-wrap .help`
+  // hides generic help nodes; keep the same cascade without changing app.css.
+  pasteHelpVisible: { display: "block !important" },
   uploadAttachSaveHelp: { textAlign: "right" },
 });

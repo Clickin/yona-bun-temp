@@ -26,6 +26,7 @@ const sx = {
   editor: stylex.props(styles.editor),
   actions: stylex.props(styles.actions),
 } as const;
+const pasteHelpStyleProps = stylex.props(styles.pasteHelpVisible);
 
 type BoardPostFormSearch = {
   branch?: string;
@@ -290,7 +291,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                 attachWrapStyleProps={stylex.props(styles.attachWrap)}
                 btnWrapStyleProps={stylex.props(styles.uploadButtonWrap)}
                 plainStyleProps={stylex.props(styles.uploadPlain)}
-                pasteHelpStyleProps={stylex.props(styles.pasteHelpVisible)}
+                pasteHelpStyleProps={pasteHelpStyleProps}
                 attachedFilesStyleProps={stylex.props(styles.attachedFiles)}
                 helpClassName={`right-txt help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
                 helpStyleProps={stylex.props(styles.uploadAttachSaveHelp)}

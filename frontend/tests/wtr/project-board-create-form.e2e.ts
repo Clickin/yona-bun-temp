@@ -467,14 +467,19 @@ test("project board postform right-aligned options and attachment help retain le
       const help = upload.querySelector(
         "[data-stylex-owner=project-postform-upload-attach-save-help]",
       ) as HTMLElement;
+      const pasteHelp = upload.querySelector(
+        "[data-stylex-owner=project-postform-paste-help]",
+      ) as HTMLElement;
       const optionsStyle = window.getComputedStyle(options);
       const helpStyle = window.getComputedStyle(help);
+      const pasteHelpStyle = window.getComputedStyle(pasteHelp);
       const optionsBox = options.getBoundingClientRect();
       const uploadBox = upload.getBoundingClientRect();
       const helpBox = help.getBoundingClientRect();
       return {
         helpDisplay: helpStyle.display,
         helpTextAlign: helpStyle.textAlign,
+        pasteHelpDisplay: pasteHelpStyle.display,
         helpRightWithinUpload: helpBox.right <= uploadBox.right + 1,
         optionsMarginBottom: optionsStyle.marginBottom,
         optionsMarginTop: optionsStyle.marginTop,
@@ -483,12 +488,13 @@ test("project board postform right-aligned options and attachment help retain le
           optionsBox.right <= options.parentElement!.getBoundingClientRect().right + 1,
       };
     });
-    // F5 dist-truth: legacy .upload-wrap .help { display:none }
-    // (yona-original/app/assets/stylesheets/less/_page.less:3609) matches app.css:2726;
-    // rendered dist truth is "none", the pinned "block" was stale.
+    // yobi.Attachments.js:88-89 shows the paste hint when the browser supports
+    // paste; route-local StyleX must beat the generic `.upload-wrap .help`
+    // declaration from frozen _page.less without changing app.css.
     expect(metrics).toEqual({
       helpDisplay: "none",
       helpTextAlign: "right",
+      pasteHelpDisplay: "block",
       helpRightWithinUpload: true,
       optionsMarginBottom: "10px",
       optionsMarginTop: "10px",

@@ -21,6 +21,9 @@ test("moves board post editor layout declarations to route-local StyleX", async 
   );
   expect(theme).toContain('editorWrapper: { position: "relative" }');
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
+  expect(theme).toContain('pasteHelpVisible: { display: "block !important" }');
+  expect(route).toContain("const pasteHelpStyleProps = stylex.props(styles.pasteHelpVisible);");
+  expect(route).toContain("pasteHelpStyleProps={pasteHelpStyleProps}");
 
   await mockPostOptions(page);
   await page.setViewportSize({ width: 1366, height: 900 });
