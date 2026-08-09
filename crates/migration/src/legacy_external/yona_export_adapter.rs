@@ -101,3 +101,32 @@ pub fn read_yona_export_attachment_content_base64(
 
     Ok(attachment_content_base64)
 }
+
+/// Reads one attachment's raw bytes on demand from
+/// `<project-export-dir>/files/<id>/<first-file>`, mirroring
+/// `read_yona_export_attachment_content_base64` without loading the whole
+/// directory. `Ok(None)` when the attachment has no content directory.
+pub fn read_yona_export_attachment_bytes(
+    project_export_directory: impl AsRef<Path>,
+    attachment_id: i64,
+) -> std::io::Result<Option<Vec<u8>>> {
+    let files_directory = project_export_directory.as_ref().join("files");
+    let attachment_directory = files_directory.join(attachment_id.to_string());
+    if !attachment_directory.is_dir() {
+        return Ok(None);
+    }
+    let mut files = std::fs::read_dir(&attachment_directory)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .file_type()
+                .map(|file_type| file_type.is_file())
+                .unwrap_or(false)
+        })
+        .collect::<Vec<_>>();
+    files.sort_by_key(|entry| entry.path());
+    let Some(file) = files.first() else {
+        return Ok(None);
+    };
+    std::fs::read(file.path()).map(Some)
+}

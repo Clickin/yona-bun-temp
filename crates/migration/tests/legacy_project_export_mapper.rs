@@ -480,3 +480,261 @@ fn yona_export_adapter_embeds_downloaded_attachment_tree_content() {
         .unsupported_sections
         .contains(&"markdownFileLinkRewrite".to_string()));
 }
+
+#[test]
+fn streams_yona_export_to_import_records_matching_yobi_data_mapping() {
+    use base64::engine::general_purpose;
+    use base64::Engine;
+    use yoram_migration::legacy_external::project_export_mapper::{
+        stream_yona_export_to_import_records, YonaImportRecord,
+    };
+    use yoram_migration::legacy_external::yona_export_adapter::read_yona_export_attachment_bytes;
+
+    // Raw string preserves the yona-export document order (scalars before
+    // arrays); serde_json::json! would sort keys and break streaming order.
+    let raw_payload = r##"{
+        "owner": "alice",
+        "projectName": "demo",
+        "projectDescription": "Legacy project",
+        "projectCreatedDate": "2026-01-01T00:00:00Z",
+        "projectVcs": "GIT",
+        "projectScope": "PUBLIC",
+        "memberCount": 1,
+        "members": [{
+            "loginId": "alice",
+            "name": "Alice Owner",
+            "role": "manager",
+            "email": "alice@example.com"
+        }],
+        "labels": [{
+            "labelName": "Bug",
+            "labelColor": "#2196f3",
+            "category": "Type",
+            "isExclusive": false
+        }],
+        "milestones": [{
+            "title": "M1",
+            "state": "open",
+            "description": "First milestone",
+            "dueDate": "2026-06-30 PM 11:59:59 +0900"
+        }],
+        "issues": [{
+            "number": 3,
+            "title": "Legacy issue",
+            "author": {
+                "loginId": "author",
+                "name": "Author User",
+                "email": "author@example.com"
+            },
+            "body": "legacy issue body",
+            "assignees": [{
+                "loginId": "assignee",
+                "name": "Assignee User",
+                "email": "assignee@example.com"
+            }],
+            "state": "CLOSED",
+            "labels": [{
+                "labelName": "Bug",
+                "labelColor": "#2196f3",
+                "category": "Type"
+            }],
+            "milestoneTitle": "M1",
+            "attachments": [{
+                "id": 301,
+                "name": "issue.png",
+                "hash": "issue-hash",
+                "mimeType": "image/png",
+                "size": 16,
+                "containerType": "ISSUE_POST",
+                "containerId": "30",
+                "ownerLoginId": "author"
+            }],
+            "comments": [{
+                "author": {
+                    "loginId": "commenter",
+                    "name": "Commenter User",
+                    "email": "commenter@example.com"
+                },
+                "body": "issue comment"
+            }]
+        }],
+        "posts": [{
+            "number": 4,
+            "title": "Legacy post",
+            "author": {
+                "loginId": "author",
+                "name": "Author User",
+                "email": "author@example.com"
+            },
+            "body": "legacy post body",
+            "attachments": [{
+                "id": 501,
+                "name": "post.png",
+                "hash": "post-hash",
+                "mimeType": "image/png",
+                "size": 14,
+                "containerType": "BOARD_POST",
+                "containerId": "50",
+                "ownerLoginId": "author"
+            }]
+        }]
+    }"##;
+    let payload: serde_json::Value = serde_json::from_str(raw_payload).expect("fixture json");
+
+    let files_dir = tempfile::tempdir().expect("files dir");
+    std::fs::create_dir_all(files_dir.path().join("files/301")).expect("issue file dir");
+    std::fs::write(files_dir.path().join("files/301/issue.png"), b"issue-file-bytes").unwrap();
+    std::fs::create_dir_all(files_dir.path().join("files/501")).expect("post file dir");
+    std::fs::write(files_dir.path().join("files/501/post.png"), b"post-file-bytes").unwrap();
+
+    let mut records = Vec::new();
+    stream_yona_export_to_import_records(
+        raw_payload.as_bytes(),
+        |id| read_yona_export_attachment_bytes(files_dir.path(), id),
+        |record| {
+            records.push(record);
+            Ok(())
+        },
+    )
+    .expect("stream records");
+
+    let attachment_content = BTreeMap::from([
+        (301, general_purpose::STANDARD.encode(b"issue-file-bytes")),
+        (501, general_purpose::STANDARD.encode(b"post-file-bytes")),
+    ]);
+    let snapshot = map_project_export_json_to_yobi_data_with_attachment_content_base64(
+        &payload.to_string(),
+        &attachment_content,
+    )
+    .expect("yobi data");
+
+    let mut projects = Vec::new();
+    let mut members = Vec::new();
+    let mut labels = Vec::new();
+    let mut milestones = Vec::new();
+    let mut posts = Vec::new();
+    let mut issues = Vec::new();
+    for record in &records {
+        match record {
+            YonaImportRecord::Project(record) => projects.push(record),
+            YonaImportRecord::Member(record) => members.push(record),
+            YonaImportRecord::Label(record) => labels.push(record),
+            YonaImportRecord::Milestone(record) => milestones.push(record),
+            YonaImportRecord::Post(record) => posts.push(record),
+            YonaImportRecord::Issue(record) => issues.push(record),
+        }
+    }
+
+    assert_eq!(projects.len(), 1);
+    assert_eq!(projects[0].owner, snapshot.projects[0].owner_name);
+    assert_eq!(projects[0].project_name, snapshot.projects[0].project_name);
+    assert_eq!(
+        projects[0].project_description,
+        snapshot.projects[0].overview
+    );
+    assert_eq!(projects[0].project_scope, snapshot.projects[0].project_scope);
+    assert_eq!(projects[0].project_vcs, snapshot.projects[0].vcs);
+    assert_eq!(projects[0].project_created_date, "2026-01-01T00:00:00Z");
+
+    assert_eq!(members.len(), snapshot.project_members.len());
+    assert_eq!(members[0].login_id, snapshot.project_members[0].login_id);
+    assert_eq!(members[0].owner_name, snapshot.project_members[0].owner_name);
+    assert_eq!(members[0].project_name, snapshot.project_members[0].project_name);
+    assert_eq!(members[0].role, snapshot.project_members[0].role);
+
+    assert_eq!(labels.len(), snapshot.labels.len());
+    assert_eq!(labels[0].name, snapshot.labels[0].name);
+    assert_eq!(labels[0].category_name, snapshot.labels[0].category_name);
+    assert_eq!(labels[0].color, snapshot.labels[0].color);
+
+    assert_eq!(milestones.len(), snapshot.milestones.len());
+    assert_eq!(milestones[0].title, snapshot.milestones[0].title);
+    assert_eq!(milestones[0].state, snapshot.milestones[0].state);
+    assert_eq!(
+        milestones[0].contents_markdown,
+        snapshot.milestones[0].description
+    );
+    assert_eq!(milestones[0].due_date, snapshot.milestones[0].due_date);
+    assert_eq!(milestones[0].owner_name, snapshot.projects[0].owner_name);
+
+    assert_eq!(issues.len(), snapshot.issues.len());
+    assert_eq!(issues[0].issue_number, snapshot.issues[0].issue_number);
+    assert_eq!(issues[0].title, snapshot.issues[0].title);
+    assert_eq!(issues[0].body_markdown, snapshot.issues[0].body_markdown);
+    assert_eq!(issues[0].state, snapshot.issues[0].state);
+    assert_eq!(issues[0].assignee_login_id, snapshot.issues[0].assignee_login_id);
+    assert_eq!(issues[0].author_login_id, snapshot.issues[0].author_login_id);
+    assert_eq!(issues[0].milestone_title, snapshot.issues[0].milestone_title);
+    assert_eq!(issues[0].labels[0].name, snapshot.issues[0].labels[0].name);
+    assert_eq!(
+        issues[0].comments[0].contents_markdown,
+        snapshot.issues[0].comments[0].contents_markdown
+    );
+    assert_eq!(
+        issues[0].comments[0].author_login_id,
+        snapshot.issues[0].comments[0].author_login_id
+    );
+    assert_eq!(issues[0].attachments[0].name, snapshot.issues[0].attachments[0].name);
+    assert_eq!(
+        issues[0].attachments[0].content_base64,
+        snapshot.issues[0].attachments[0].content_base64
+    );
+    assert_eq!(
+        issues[0].attachments[0].content_sha256,
+        snapshot.issues[0].attachments[0].content_sha256
+    );
+
+    assert_eq!(posts.len(), snapshot.posts.len());
+    assert_eq!(posts[0].post_number, snapshot.posts[0].post_number);
+    assert_eq!(posts[0].title, snapshot.posts[0].title);
+    assert_eq!(posts[0].body_markdown, snapshot.posts[0].body_markdown);
+    assert_eq!(posts[0].attachments[0].name, snapshot.posts[0].attachments[0].name);
+    assert_eq!(
+        posts[0].attachments[0].content_base64,
+        snapshot.posts[0].attachments[0].content_base64
+    );
+}
+
+#[test]
+fn streams_large_issue_arrays_without_accumulating_records() {
+    use yoram_migration::legacy_external::project_export_mapper::{
+        stream_yona_export_to_import_records, YonaImportRecord,
+    };
+
+    let mut payload = json!({
+        "owner": "alice",
+        "projectName": "demo",
+        "projectVcs": "GIT",
+        "projectScope": "PUBLIC"
+    });
+    let issues: Vec<serde_json::Value> = (0..2000)
+        .map(|number| {
+            json!({
+                "number": number,
+                "title": format!("Issue {number}"),
+                "author": {
+                    "loginId": "author",
+                    "name": "Author User",
+                    "email": "author@example.com"
+                },
+                "body": "large export body"
+            })
+        })
+        .collect();
+    payload["issues"] = serde_json::Value::Array(issues);
+
+    let mut issue_count = 0u32;
+    stream_yona_export_to_import_records(
+        payload.to_string().as_bytes(),
+        |_id| Ok(None),
+        |record| {
+            if matches!(record, YonaImportRecord::Issue(_)) {
+                issue_count += 1;
+            }
+            Ok(())
+        },
+    )
+    .expect("stream large export");
+
+    assert_eq!(issue_count, 2000);
+}

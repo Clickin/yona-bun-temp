@@ -184,6 +184,10 @@ name = "project_delete_contract"
 path = "tests/project_delete_contract.rs"
 
 [[test]]
+name = "project_export_contract"
+path = "tests/project_export_contract.rs"
+
+[[test]]
 name = "project_fork_contract"
 path = "tests/project_fork_contract.rs"
 

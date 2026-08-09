@@ -345,7 +345,7 @@ struct RestSiteImportPayload {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteImportUserItem {
+pub(crate) struct RestSiteImportUserItem {
     #[serde(alias = "createdDate")]
     created_at: String,
     display_name: String,
@@ -359,96 +359,96 @@ struct RestSiteImportUserItem {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteImportProjectItem {
+pub(crate) struct RestSiteImportProjectItem {
     #[serde(alias = "projectCreatedDate")]
-    created_at: String,
-    owner_name: String,
-    overview: String,
-    project_name: String,
-    project_scope: String,
+    pub(crate) created_at: String,
+    pub(crate) owner_name: String,
+    pub(crate) overview: String,
+    pub(crate) project_name: String,
+    pub(crate) project_scope: String,
     #[serde(alias = "projectVcs")]
-    vcs: String,
+    pub(crate) vcs: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportProjectMemberItem {
-    login_id: String,
-    owner_name: String,
-    project_name: String,
-    role: String,
+pub(crate) struct RestSiteExportProjectMemberItem {
+    pub(crate) login_id: String,
+    pub(crate) owner_name: String,
+    pub(crate) project_name: String,
+    pub(crate) role: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportProjectLabelItem {
-    category_is_exclusive: bool,
-    category_name: String,
-    color: String,
+pub(crate) struct RestSiteExportProjectLabelItem {
+    pub(crate) category_is_exclusive: bool,
+    pub(crate) category_name: String,
+    pub(crate) color: String,
     #[serde(alias = "labelName")]
-    name: String,
-    owner_name: String,
-    project_name: String,
+    pub(crate) name: String,
+    pub(crate) owner_name: String,
+    pub(crate) project_name: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportMilestoneItem {
-    attachments: Vec<RestSiteExportAttachmentItem>,
-    contents_markdown: String,
-    due_date: String,
-    owner_name: String,
-    project_name: String,
-    state: String,
-    title: String,
+pub(crate) struct RestSiteExportMilestoneItem {
+    pub(crate) attachments: Vec<RestSiteExportAttachmentItem>,
+    pub(crate) contents_markdown: String,
+    pub(crate) due_date: String,
+    pub(crate) owner_name: String,
+    pub(crate) project_name: String,
+    pub(crate) state: String,
+    pub(crate) title: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportPostItem {
-    author_login_id: String,
-    attachments: Vec<RestSiteExportAttachmentItem>,
-    body_markdown: String,
-    comments: Vec<RestSiteExportCommentItem>,
+pub(crate) struct RestSiteExportPostItem {
+    pub(crate) author_login_id: String,
+    pub(crate) attachments: Vec<RestSiteExportAttachmentItem>,
+    pub(crate) body_markdown: String,
+    pub(crate) comments: Vec<RestSiteExportCommentItem>,
     #[serde(skip_serializing_if = "String::is_empty")]
-    created_at: String,
-    history_markdown: String,
-    labels: Vec<RestSiteExportLabelItem>,
-    notice: bool,
-    owner_name: String,
-    post_number: String,
-    project_name: String,
-    readme: bool,
-    title: String,
+    pub(crate) created_at: String,
+    pub(crate) history_markdown: String,
+    pub(crate) labels: Vec<RestSiteExportLabelItem>,
+    pub(crate) notice: bool,
+    pub(crate) owner_name: String,
+    pub(crate) post_number: String,
+    pub(crate) project_name: String,
+    pub(crate) readme: bool,
+    pub(crate) title: String,
     #[serde(skip_serializing_if = "String::is_empty")]
-    updated_at: String,
+    pub(crate) updated_at: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportIssueItem {
-    assignee_login_id: String,
-    author_login_id: String,
-    attachments: Vec<RestSiteExportAttachmentItem>,
-    body_markdown: String,
-    comments: Vec<RestSiteExportCommentItem>,
+pub(crate) struct RestSiteExportIssueItem {
+    pub(crate) assignee_login_id: String,
+    pub(crate) author_login_id: String,
+    pub(crate) attachments: Vec<RestSiteExportAttachmentItem>,
+    pub(crate) body_markdown: String,
+    pub(crate) comments: Vec<RestSiteExportCommentItem>,
     #[serde(skip_serializing_if = "String::is_empty")]
-    created_at: String,
-    history_markdown: String,
-    issue_number: String,
-    labels: Vec<RestSiteExportLabelItem>,
-    milestone_title: String,
-    owner_name: String,
-    project_name: String,
-    state: String,
-    title: String,
+    pub(crate) created_at: String,
+    pub(crate) history_markdown: String,
+    pub(crate) issue_number: String,
+    pub(crate) labels: Vec<RestSiteExportLabelItem>,
+    pub(crate) milestone_title: String,
+    pub(crate) owner_name: String,
+    pub(crate) project_name: String,
+    pub(crate) state: String,
+    pub(crate) title: String,
     #[serde(skip_serializing_if = "String::is_empty")]
-    updated_at: String,
+    pub(crate) updated_at: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportCommentItem {
+pub(crate) struct RestSiteExportCommentItem {
     author_login_id: String,
     attachments: Vec<RestSiteExportAttachmentItem>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -460,7 +460,7 @@ struct RestSiteExportCommentItem {
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportAttachmentItem {
+pub(crate) struct RestSiteExportAttachmentItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     content_base64: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -476,7 +476,7 @@ struct RestSiteExportAttachmentItem {
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
-struct RestSiteExportLabelItem {
+pub(crate) struct RestSiteExportLabelItem {
     category_is_exclusive: bool,
     category_name: String,
     color: String,
@@ -486,9 +486,10 @@ struct RestSiteExportLabelItem {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSiteImportResponse {
+pub(crate) struct RestSiteImportResponse {
     checkpoint: RestSiteImportCheckpoint,
     dry_run: bool,
+    pub(crate) streaming: bool,
     imported_projects: u32,
     imported_project_members: u32,
     imported_issues: u32,
@@ -525,7 +526,7 @@ struct RestSiteImportResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSiteImportValidationError {
+pub(crate) struct RestSiteImportValidationError {
     field: String,
     index: u32,
     message: String,
@@ -534,7 +535,7 @@ struct RestSiteImportValidationError {
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSiteImportCheckpoint {
+pub(crate) struct RestSiteImportCheckpoint {
     failure: Option<RestSiteImportCheckpointFailure>,
     sections: Vec<RestSiteImportCheckpointSection>,
     version: u32,
@@ -542,7 +543,7 @@ struct RestSiteImportCheckpoint {
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RestSiteImportCheckpointSection {
+pub(crate) struct RestSiteImportCheckpointSection {
     completed: u32,
     next_index: u32,
     resource_keys: Vec<String>,
@@ -639,6 +640,36 @@ impl RestSiteImportCheckpoint {
             "attachments",
             rest_site_import_attachment_keys(payload).into_iter(),
         );
+        checkpoint
+    }
+
+    pub(crate) fn streaming() -> Self {
+        let mut checkpoint = Self {
+            failure: None,
+            sections: Vec::new(),
+            version: 1,
+        };
+        for section in [
+            "users",
+            "projects",
+            "projectMembers",
+            "labels",
+            "milestones",
+            "posts",
+            "issues",
+            "attachments",
+        ] {
+            checkpoint.sections.push(RestSiteImportCheckpointSection {
+                completed: 0,
+                next_index: 0,
+                resource_keys: Vec::new(),
+                resource_keys_truncated: false,
+                section: section.to_string(),
+                skipped: 0,
+                total: 0,
+                validated: 0,
+            });
+        }
         checkpoint
     }
 
@@ -892,15 +923,15 @@ fn rest_site_import_key_part(value: &str) -> String {
 }
 
 #[derive(Default)]
-struct RestSiteImportCountSet {
-    attachments: u32,
-    projects: u32,
-    project_members: u32,
-    issues: u32,
-    labels: u32,
-    milestones: u32,
-    posts: u32,
-    users: u32,
+pub(crate) struct RestSiteImportCountSet {
+    pub(crate) attachments: u32,
+    pub(crate) projects: u32,
+    pub(crate) project_members: u32,
+    pub(crate) issues: u32,
+    pub(crate) labels: u32,
+    pub(crate) milestones: u32,
+    pub(crate) posts: u32,
+    pub(crate) users: u32,
 }
 
 impl RestSiteImportResponse {
@@ -913,6 +944,7 @@ impl RestSiteImportResponse {
         Self {
             checkpoint,
             dry_run: false,
+            streaming: false,
             imported_projects: imported.projects,
             imported_project_members: imported.project_members,
             imported_issues: imported.issues,
@@ -948,7 +980,7 @@ impl RestSiteImportResponse {
         }
     }
 
-    fn dry_run(
+    pub(crate) fn dry_run(
         would_import: RestSiteImportCountSet,
         would_skip: RestSiteImportCountSet,
         validation_errors: Vec<RestSiteImportValidationError>,
@@ -958,6 +990,7 @@ impl RestSiteImportResponse {
         Self {
             checkpoint,
             dry_run: true,
+            streaming: false,
             imported_projects: 0,
             imported_project_members: 0,
             imported_issues: 0,
@@ -997,6 +1030,7 @@ impl RestSiteImportResponse {
         Self {
             checkpoint,
             dry_run: false,
+            streaming: false,
             imported_projects: 0,
             imported_project_members: 0,
             imported_issues: 0,
@@ -2293,11 +2327,27 @@ async fn rest_import_site_data_payload(
     if let Some(error) = preflight.validation_errors.first() {
         return Err(RestRouteError::bad_request(error.message.clone()));
     }
-    let _site_import_guard = site_import_staging_lock().lock().await;
-    reconcile_site_import_staging_uploads(&service, repository).await?;
-    cleanup_site_import_staging_uploads(&service)?;
     let mut checkpoint = RestSiteImportCheckpoint::from_payload(&payload);
     checkpoint.mark_all_validated();
+    let mut source = VecImportRecordSource::new(payload);
+    let (status, response) =
+        rest_import_site_data_from_source(&service, repository, &mut source, checkpoint, false)
+            .await?;
+    Ok((status, Json(response)))
+}
+
+/// Orchestrates a streamed site-data import: staging lock/reconcile, serialized
+/// write transaction, rollback ledger, commit/promote or rollback.
+pub(crate) async fn rest_import_site_data_from_source(
+    service: &PilotServiceImpl,
+    repository: &persistence::AppRepositoryImpl<'_>,
+    source: &mut dyn ImportRecordSource,
+    mut checkpoint: RestSiteImportCheckpoint,
+    streaming: bool,
+) -> Result<(StatusCode, RestSiteImportResponse), RestRouteError> {
+    let _site_import_guard = site_import_staging_lock().lock().await;
+    reconcile_site_import_staging_uploads(service, repository).await?;
+    cleanup_site_import_staging_uploads(service)?;
 
     let (_write_guard, transaction, txn_started_at) = repository
         .begin_serialized_write()
@@ -2305,16 +2355,16 @@ async fn rest_import_site_data_payload(
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
     let transaction_repository = repository.with_transaction(&transaction);
     let mut rollback = RestSiteImportRollbackLedger::default();
-    let result = rest_import_site_data_live(
-        &service,
+    let result = rest_import_site_data_streamed(
+        service,
         &transaction_repository,
-        payload,
+        source,
         &mut rollback,
         &mut checkpoint,
     )
     .await;
     match result {
-        Ok(response) => {
+        Ok(mut response) => {
             if let Err(error) =
                 repository
                     .commit_serialized_write(transaction, _write_guard, txn_started_at)
@@ -2326,24 +2376,24 @@ async fn rest_import_site_data_payload(
             rollback
                 .promote_staged_uploads()
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
-            Ok((StatusCode::OK, Json(response)))
+            response.streaming = streaming;
+            Ok((StatusCode::OK, response))
         }
         Err(_error) => {
             let _ = transaction.rollback().await;
-            rollback.rollback(&service, repository).await;
+            rollback.rollback(service, repository).await;
             if checkpoint.failure.is_none() {
                 checkpoint.set_failure("import", 0, "import:<unknown>", "site.import.failed");
             }
-            Ok((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(RestSiteImportResponse::failed(checkpoint)),
-            ))
+            let mut response = RestSiteImportResponse::failed(checkpoint);
+            response.streaming = streaming;
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, response))
         }
     }
 }
 
 #[derive(Default)]
-struct RestSiteImportRollbackLedger {
+pub(crate) struct RestSiteImportRollbackLedger {
     attachments: Vec<persistence::AttachmentRecord>,
     existing_attachments: Vec<persistence::AttachmentRecord>,
     issues: Vec<(String, String, i64)>,
@@ -2653,16 +2703,145 @@ fn cleanup_empty_parent_dirs(mut current: Option<&StdPath>, stop_before: Option<
     }
 }
 
-async fn rest_import_site_data_live(
+/// Pull-based import record source. `rest_import_site_data_streamed` consumes
+/// sections in fixed order (users -> projects -> members -> labels ->
+/// milestones -> posts -> issues), so sources may lazily produce records.
+pub(crate) trait ImportRecordSource: Send {
+    fn next_user(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportUserItem>, RestRouteError>>;
+    fn next_project(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportProjectItem>, RestRouteError>>;
+    fn next_member(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteExportProjectMemberItem>, RestRouteError>,
+    >;
+    fn next_label(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteExportProjectLabelItem>, RestRouteError>,
+    >;
+    fn next_milestone(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteExportMilestoneItem>, RestRouteError>,
+    >;
+    fn next_post(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportPostItem>, RestRouteError>>;
+    fn next_issue(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportIssueItem>, RestRouteError>>;
+}
+
+/// Drains an in-memory `RestSiteImportPayload` (site admin JSON import path).
+struct VecImportRecordSource {
+    users: std::vec::IntoIter<RestSiteImportUserItem>,
+    projects: std::vec::IntoIter<RestSiteImportProjectItem>,
+    project_members: std::vec::IntoIter<RestSiteExportProjectMemberItem>,
+    labels: std::vec::IntoIter<RestSiteExportProjectLabelItem>,
+    milestones: std::vec::IntoIter<RestSiteExportMilestoneItem>,
+    posts: std::vec::IntoIter<RestSiteExportPostItem>,
+    issues: std::vec::IntoIter<RestSiteExportIssueItem>,
+}
+
+impl VecImportRecordSource {
+    fn new(payload: RestSiteImportPayload) -> Self {
+        let RestSiteImportPayload {
+            format: _,
+            users,
+            projects,
+            project_members,
+            labels,
+            milestones,
+            posts,
+            issues,
+        } = payload;
+        Self {
+            users: users.into_iter(),
+            projects: projects.into_iter(),
+            project_members: project_members.into_iter(),
+            labels: labels.into_iter(),
+            milestones: milestones.into_iter(),
+            posts: posts.into_iter(),
+            issues: issues.into_iter(),
+        }
+    }
+}
+
+impl ImportRecordSource for VecImportRecordSource {
+    fn next_user(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportUserItem>, RestRouteError>>
+    {
+        Box::pin(async move { Ok(self.users.next()) })
+    }
+
+    fn next_project(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportProjectItem>, RestRouteError>>
+    {
+        Box::pin(async move { Ok(self.projects.next()) })
+    }
+
+    fn next_member(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteExportProjectMemberItem>, RestRouteError>,
+    > {
+        Box::pin(async move { Ok(self.project_members.next()) })
+    }
+
+    fn next_label(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteExportProjectLabelItem>, RestRouteError>,
+    > {
+        Box::pin(async move { Ok(self.labels.next()) })
+    }
+
+    fn next_milestone(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteExportMilestoneItem>, RestRouteError>,
+    > {
+        Box::pin(async move { Ok(self.milestones.next()) })
+    }
+
+    fn next_post(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportPostItem>, RestRouteError>>
+    {
+        Box::pin(async move { Ok(self.posts.next()) })
+    }
+
+    fn next_issue(
+        &mut self,
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportIssueItem>, RestRouteError>>
+    {
+        Box::pin(async move { Ok(self.issues.next()) })
+    }
+}
+
+async fn rest_import_site_data_streamed(
     service: &PilotServiceImpl,
     repository: &persistence::AppRepositoryImpl<'_>,
-    payload: RestSiteImportPayload,
+    source: &mut dyn ImportRecordSource,
     rollback: &mut RestSiteImportRollbackLedger,
     checkpoint: &mut RestSiteImportCheckpoint,
 ) -> Result<RestSiteImportResponse, RestRouteError> {
     let mut imported_users = 0;
     let mut skipped_users = 0;
-    for (index, user) in payload.users.into_iter().enumerate() {
+    let mut index = 0;
+    while let Some(user) = source.next_user().await? {
         let login_id = user.login_id.trim();
         let email_address = user.email_address.trim();
         if login_id.is_empty()
@@ -2710,11 +2889,13 @@ async fn rest_import_site_data_live(
         rollback.record_user(&created_user);
         imported_users += 1;
         checkpoint.mark_completed("users", index);
+        index += 1;
     }
 
     let mut imported_projects = 0;
     let mut skipped_projects = 0;
-    for (index, project) in payload.projects.into_iter().enumerate() {
+    let mut index = 0;
+    while let Some(project) = source.next_project().await? {
         let owner_name = project.owner_name.trim();
         let project_name = project.project_name.trim();
         if owner_name.is_empty()
@@ -2766,11 +2947,13 @@ async fn rest_import_site_data_live(
         rollback.record_project(&created_project);
         imported_projects += 1;
         checkpoint.mark_completed("projects", index);
+        index += 1;
     }
 
     let mut imported_project_members = 0;
     let mut skipped_project_members = 0;
-    for (index, member) in payload.project_members.into_iter().enumerate() {
+    let mut index = 0;
+    while let Some(member) = source.next_member().await? {
         let owner_name = member.owner_name.trim();
         let project_name = member.project_name.trim();
         let login_id = member.login_id.trim();
@@ -2808,11 +2991,13 @@ async fn rest_import_site_data_live(
         rollback.record_project_member(project.id, user.id, previous_role);
         imported_project_members += 1;
         checkpoint.mark_completed("projectMembers", index);
+        index += 1;
     }
 
     let mut imported_labels = 0;
     let mut skipped_labels = 0;
-    for (index, label) in payload.labels.into_iter().enumerate() {
+    let mut index = 0;
+    while let Some(label) = source.next_label().await? {
         let owner_name = label.owner_name.trim();
         let project_name = label.project_name.trim();
         let label_name = label.name.trim();
@@ -2866,11 +3051,13 @@ async fn rest_import_site_data_live(
                 checkpoint.mark_skipped("labels", index);
             }
         }
+        index += 1;
     }
 
     let mut imported_milestones = 0;
     let mut skipped_milestones = 0;
-    for (index, milestone) in payload.milestones.into_iter().enumerate() {
+    let mut index = 0;
+    while let Some(milestone) = source.next_milestone().await? {
         let owner_name = milestone.owner_name.trim();
         let project_name = milestone.project_name.trim();
         let title = milestone.title.trim();
@@ -2978,140 +3165,15 @@ async fn rest_import_site_data_live(
             )
             .await;
             skipped_milestones += 1;
-            checkpoint.mark_skipped("milestones", index);
+            checkpoint.mark_completed("milestones", index);
         }
-    }
-
-    let mut imported_posts = 0;
-    let mut skipped_posts = 0;
-    for (index, post) in payload.posts.into_iter().enumerate() {
-        let Some(actor) =
-            rest_site_import_actor(repository, &post.author_login_id, &post.owner_name).await?
-        else {
-            skipped_posts += 1;
-            checkpoint.mark_skipped("posts", index);
-            continue;
-        };
-        if repository
-            .read_project_by_owner_and_name(&post.owner_name, &post.project_name)
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?
-            .is_none()
-        {
-            skipped_posts += 1;
-            checkpoint.mark_skipped("posts", index);
-            continue;
-        }
-        rollback
-            .record_project_counter_snapshot(repository, &post.owner_name, &post.project_name)
-            .await?;
-        let label_ids = rest_site_import_label_ids(
-            repository,
-            &post.owner_name,
-            &post.project_name,
-            &post.labels,
-            rollback,
-        )
-        .await?;
-        let imported_attachments =
-            rest_site_import_attachments(&service, repository, &actor, &post.attachments, rollback)
-                .await?;
-        rollback.record_attachments(&imported_attachments.created_attachments);
-        let body_markdown = rewrite_site_import_file_links(
-            &post.body_markdown,
-            &imported_attachments.link_rewrites,
-        );
-        let imported_created_at = rest_site_import_parse_legacy_datetime(&post.created_at);
-        let imported_updated_at = rest_site_import_parse_legacy_datetime(&post.updated_at);
-        let created = repository
-            .create_legacy_external_posting(persistence::CreateLegacyExternalPostingInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                attachment_actor_id: Some(actor.id),
-                created_at: imported_created_at,
-                owner_name: post.owner_name.trim().to_string(),
-                post_number: None,
-                project_name: post.project_name.trim().to_string(),
-                updated_at: imported_updated_at,
-                values: persistence::PostingMutationInput {
-                    attachment_ids: imported_attachments.ids.clone(),
-                    body_markdown,
-                    label_ids,
-                    notice: post.notice,
-                    readme: post.readme,
-                    title: post.title,
-                },
-            })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()));
-        let created = match created {
-            Ok(created) => created,
-            Err(error) => {
-                rest_site_import_cleanup_attachments(
-                    &service,
-                    repository,
-                    &actor,
-                    &imported_attachments.created_attachments,
-                )
-                .await;
-                return Err(error);
-            }
-        };
-        let Some(created) = created else {
-            rest_site_import_cleanup_attachments(
-                &service,
-                repository,
-                &actor,
-                &imported_attachments.created_attachments,
-            )
-            .await;
-            skipped_posts += 1;
-            checkpoint.mark_skipped("posts", index);
-            continue;
-        };
-        rollback.record_post(&post.owner_name, &post.project_name, created.post_number);
-        if !post.history_markdown.trim().is_empty() {
-            repository
-                .restore_posting_history(
-                    &post.owner_name,
-                    &post.project_name,
-                    created.post_number,
-                    &post.history_markdown,
-                )
-                .await
-                .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        }
-        rest_site_import_post_comments(
-            &service,
-            repository,
-            &post.owner_name,
-            &post.project_name,
-            created.post_number,
-            &post.comments,
-            &actor,
-            None,
-            rollback,
-            checkpoint,
-        )
-        .await?;
-        repository
-            .restore_site_import_posting_timestamps(
-                &post.owner_name,
-                &post.project_name,
-                created.post_number,
-                imported_created_at,
-                imported_updated_at,
-            )
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        imported_posts += 1;
-        checkpoint.mark_completed("posts", index);
+        index += 1;
     }
 
     let mut imported_issues = 0;
     let mut skipped_issues = 0;
-    for (index, issue) in payload.issues.into_iter().enumerate() {
+    let mut index = 0;
+    while let Some(issue) = source.next_issue().await? {
         let Some(actor) =
             rest_site_import_actor(repository, &issue.author_login_id, &issue.owner_name).await?
         else {
@@ -3261,6 +3323,136 @@ async fn rest_import_site_data_live(
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         imported_issues += 1;
         checkpoint.mark_completed("issues", index);
+        index += 1;
+    }
+
+    let mut imported_posts = 0;
+    let mut skipped_posts = 0;
+    let mut index = 0;
+    while let Some(post) = source.next_post().await? {
+        let Some(actor) =
+            rest_site_import_actor(repository, &post.author_login_id, &post.owner_name).await?
+        else {
+            skipped_posts += 1;
+            checkpoint.mark_skipped("posts", index);
+            continue;
+        };
+        if repository
+            .read_project_by_owner_and_name(&post.owner_name, &post.project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_none()
+        {
+            skipped_posts += 1;
+            checkpoint.mark_skipped("posts", index);
+            continue;
+        }
+        rollback
+            .record_project_counter_snapshot(repository, &post.owner_name, &post.project_name)
+            .await?;
+        let label_ids = rest_site_import_label_ids(
+            repository,
+            &post.owner_name,
+            &post.project_name,
+            &post.labels,
+            rollback,
+        )
+        .await?;
+        let imported_attachments =
+            rest_site_import_attachments(&service, repository, &actor, &post.attachments, rollback)
+                .await?;
+        rollback.record_attachments(&imported_attachments.created_attachments);
+        let body_markdown = rewrite_site_import_file_links(
+            &post.body_markdown,
+            &imported_attachments.link_rewrites,
+        );
+        let imported_created_at = rest_site_import_parse_legacy_datetime(&post.created_at);
+        let imported_updated_at = rest_site_import_parse_legacy_datetime(&post.updated_at);
+        let created = repository
+            .create_legacy_external_posting(persistence::CreateLegacyExternalPostingInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                attachment_actor_id: Some(actor.id),
+                created_at: imported_created_at,
+                owner_name: post.owner_name.trim().to_string(),
+                post_number: None,
+                project_name: post.project_name.trim().to_string(),
+                updated_at: imported_updated_at,
+                values: persistence::PostingMutationInput {
+                    attachment_ids: imported_attachments.ids.clone(),
+                    body_markdown,
+                    label_ids,
+                    notice: post.notice,
+                    readme: post.readme,
+                    title: post.title,
+                },
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+        let created = match created {
+            Ok(created) => created,
+            Err(error) => {
+                rest_site_import_cleanup_attachments(
+                    &service,
+                    repository,
+                    &actor,
+                    &imported_attachments.created_attachments,
+                )
+                .await;
+                return Err(error);
+            }
+        };
+        let Some(created) = created else {
+            rest_site_import_cleanup_attachments(
+                &service,
+                repository,
+                &actor,
+                &imported_attachments.created_attachments,
+            )
+            .await;
+            skipped_posts += 1;
+            checkpoint.mark_skipped("posts", index);
+            continue;
+        };
+        rollback.record_post(&post.owner_name, &post.project_name, created.post_number);
+        if !post.history_markdown.trim().is_empty() {
+            repository
+                .restore_posting_history(
+                    &post.owner_name,
+                    &post.project_name,
+                    created.post_number,
+                    &post.history_markdown,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+        rest_site_import_post_comments(
+            &service,
+            repository,
+            &post.owner_name,
+            &post.project_name,
+            created.post_number,
+            &post.comments,
+            &actor,
+            None,
+            rollback,
+            checkpoint,
+        )
+        .await?;
+        repository
+            .restore_site_import_posting_timestamps(
+                &post.owner_name,
+                &post.project_name,
+                created.post_number,
+                imported_created_at,
+                imported_updated_at,
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_posts += 1;
+        checkpoint.mark_completed("posts", index);
+        index += 1;
     }
 
     Ok(RestSiteImportResponse::imported(
@@ -4798,7 +4990,7 @@ fn normalize_site_import_project_vcs(value: &str) -> String {
     }
 }
 
-fn normalize_site_import_project_member_role(value: &str) -> String {
+pub(crate) fn normalize_site_import_project_member_role(value: &str) -> String {
     if value.trim().eq_ignore_ascii_case("manager") {
         "manager".to_string()
     } else {
@@ -4925,7 +5117,7 @@ async fn rest_export_site_project_members(
     Ok(project_members)
 }
 
-fn rest_site_export_project_label_from_record(
+pub(crate) fn rest_site_export_project_label_from_record(
     owner_name: &str,
     project_name: &str,
     label: &persistence::IssueLabelRecord,
@@ -4940,7 +5132,7 @@ fn rest_site_export_project_label_from_record(
     }
 }
 
-fn rest_site_export_milestone_from_record(
+pub(crate) fn rest_site_export_milestone_from_record(
     data_root: &StdPath,
     owner_name: &str,
     project_name: &str,
@@ -5330,7 +5522,7 @@ async fn rest_site_project_from_record(
     })
 }
 
-fn rest_site_export_post_from_record(
+pub(crate) fn rest_site_export_post_from_record(
     data_root: &StdPath,
     record: &persistence::PostingRecord,
 ) -> RestSiteExportPostItem {
@@ -5360,7 +5552,7 @@ fn rest_site_export_post_from_record(
     }
 }
 
-fn rest_site_export_issue_from_record(
+pub(crate) fn rest_site_export_issue_from_record(
     data_root: &StdPath,
     record: &persistence::IssueRecord,
 ) -> RestSiteExportIssueItem {
