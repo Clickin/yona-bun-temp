@@ -1623,11 +1623,24 @@ fn svn_temp_work_dir(label: &str) -> Result<PathBuf, VcsError> {
 
 fn svn_file_url(path: &Path) -> String {
     // Relative data roots (e.g. `.yona-data`) must be absolute for svn —
-    // `file:///.yona-data/...` points at the filesystem root.
-    let canonical = path
-        .canonicalize()
-        .unwrap_or_else(|_| path.to_path_buf());
-    format!("file:///{}", canonical.display().to_string().replace('\\', "/"))
+    // `file:///.yona-data/...` points at the filesystem root. Canonicalize
+    // the parent so non-existent paths (e.g. a repo not yet provisioned)
+    // still yield an absolute URL.
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map(|cwd| cwd.join(path))
+            .unwrap_or_else(|_| path.to_path_buf())
+    };
+    let canonical = absolute
+        .parent()
+        .and_then(|parent| parent.canonicalize().ok())
+        .map(|parent| parent.join(absolute.file_name().unwrap_or_default()))
+        .unwrap_or(absolute);
+    let display = canonical.display().to_string().replace('\\', "/");
+    let display = display.trim_start_matches('/');
+    format!("file:///{display}")
 }
 
 fn run_svn_command(command: &mut Command) -> Result<(), VcsError> {
@@ -4511,6 +4524,33 @@ fn find_delimiter(buffer: &[u8], delimiter: &[u8]) -> Option<(usize, usize)> {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn svn_file_url_canonicalizes_relative_repo_roots() {
+        // Regression: a relative data root (`.yona-data`) produced
+        // `file:///.yona-data/repo/1.svn`, which svn resolves against the
+        // filesystem root — every DAV write failed with E170013 and the
+        // client saw 409/out-of-date. The URL must be absolute.
+        let relative = Path::new("target/svn-file-url-test/repo.svn");
+        std::fs::create_dir_all(relative.parent().expect("parent"))
+            .expect("create relative parent");
+        let url = svn_file_url(relative);
+        assert!(url.starts_with("file:///"), "unexpected url: {url}");
+        assert!(
+            !url.starts_with("file:///."),
+            "url is relative under the filesystem root: {url}"
+        );
+        let expected = std::fs::canonicalize(relative.parent().expect("parent"))
+            .expect("canonicalize parent")
+            .join(relative.file_name().expect("file name"));
+        let expected = expected.display().to_string().replace('\\', "/");
+        assert_eq!(
+            url,
+            format!("file:///{}", expected.trim_start_matches('/')),
+            "url must resolve to the absolute repo path"
+        );
+        let _ = std::fs::remove_dir_all("target/svn-file-url-test");
+    }
 
     #[test]
     fn empty_svn_browser_distinguishes_the_root_from_an_explicit_revision() {
