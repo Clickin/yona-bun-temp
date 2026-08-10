@@ -139,7 +139,7 @@ function serveIndex(context) {
   const indexPath = join(distDir, "index.html");
   if (!existsSync(indexPath)) {
     context.status = 500;
-    return "frontend/dist missing — run scripts/run-web-runner.mjs (it builds first)";
+    return "frontend/dist missing — run scripts/run-wtr-e2e.mjs (it builds first)";
   }
   let html = readFileSync(indexPath, "utf8");
   if (!html.includes("__YONA_RUNTIME_CONFIG__")) {

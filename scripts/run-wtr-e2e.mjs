@@ -7,7 +7,7 @@
 // Usage: node scripts/run-wtr-e2e.mjs [-- <web-test-runner args>]
 //   Pass explicit file args to run a focused subset on ONE instance instead.
 import { spawn } from "node:child_process";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,17 +29,19 @@ async function run(command, args, options = {}) {
 
 const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--");
 
-if (!existsSync(resolve(repoRoot, "frontend", "dist", "index.html"))) {
-  console.log("[wtr] building production frontend (dist missing)");
-  const buildCode = await run("pnpm", [
-    "--config.store-dir=/Users/senghyunjo/.pnpm-store",
-    "--dir",
-    "frontend",
-    "build",
-  ]);
-  if (buildCode !== 0) {
-    process.exit(buildCode);
-  }
+// Always rebuild: the WTR config serves the production bundle (frontend/dist)
+// statically — no vite dev server / HMR in the e2e loop — so one explicit
+// build absorbs all dev-server runtime costs and guarantees the suite never
+// runs against a stale dist (source edits are picked up every run).
+console.log("[wtr] building production frontend");
+const buildCode = await run("pnpm", [
+  "--config.store-dir=/Users/senghyunjo/.pnpm-store",
+  "--dir",
+  "frontend",
+  "build",
+]);
+if (buildCode !== 0) {
+  process.exit(buildCode);
 }
 
 const hasExplicitFiles = forwardedArgs.some((arg) => arg.endsWith(".e2e.ts"));
