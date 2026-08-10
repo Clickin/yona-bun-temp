@@ -131,13 +131,10 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   await expect(page).toHaveTitle("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/update`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
-    "Y",
-    "List All",
-  ]);
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText(["Y", "List All"]);
   expect(
     await page
-      .locator('[data-stylex-owner="global-gnb-nav"] a[href]')
+      .locator('[data-owner="global-gnb-nav"] a[href]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([`${basePath}/`, `${basePath}/projects`]);
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -148,11 +145,11 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(
     page
-      .locator('[data-stylex-owner="site-update-sidebar-item"]')
+      .locator('[data-owner="site-update-sidebar-item"]')
       .nth(6)
-      .locator('[data-stylex-owner="site-update-sidebar-link"]'),
+      .locator('[data-owner="site-update-sidebar-link"]'),
   ).toHaveText("Software Update");
-  await expect(page.locator('[data-stylex-owner="site-update-sidebar-link"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-update-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -164,7 +161,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="site-update-sidebar-link"]')
+      .locator('[data-owner="site-update-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/sites/userList`,
@@ -176,16 +173,16 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator('[data-stylex-owner="site-update-sidebar-item"]').nth(6)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-update-sidebar-item"]').nth(6)).toHaveCSS(
     "font-weight",
     "700",
   );
   const shellBoxes = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     const listAllLink = document.querySelector(
-      '[data-stylex-owner="global-gnb-nav"] a[href$="/projects"]',
+      '[data-owner="global-gnb-nav"] a[href$="/projects"]',
     );
     if (
       !(navbar instanceof HTMLElement) ||
@@ -246,7 +243,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
       { ariaCurrent: null, className: null, dataStatus: null },
       { ariaCurrent: null, className: null, dataStatus: null },
     ]);
-  const diagnosticsLink = page.locator('[data-stylex-owner="site-update-sidebar-link"]', {
+  const diagnosticsLink = page.locator('[data-owner="site-update-sidebar-link"]', {
     hasText: "Diagnostics",
   });
   await expect(diagnosticsLink).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
@@ -300,21 +297,20 @@ test("site admin update renders the legacy available-version branch", async ({ p
 
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator("strong")).toHaveText("Yoram 1.1.0 is available");
-  const updateSidebarLink = page.locator('[data-stylex-owner="site-update-sidebar-link"]').nth(6);
+  const updateSidebarLink = page.locator('[data-owner="site-update-sidebar-link"]').nth(6);
   await expect(updateSidebarLink).toHaveText("Software Update1");
-  await expect(
-    updateSidebarLink.locator('[data-stylex-owner="site-update-sidebar-badge"]'),
-  ).toHaveText("1");
-  await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveText(
-    "Download",
+  await expect(updateSidebarLink.locator('[data-owner="site-update-sidebar-badge"]')).toHaveText(
+    "1",
   );
-  await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-update-download-action"]')).toHaveText("Download");
+  await expect(page.locator('[data-owner="site-update-download-action"]')).toHaveAttribute(
     "href",
     "https://example.test/yona-1.1.0",
   );
-  await expect(
-    page.locator('[data-stylex-owner="site-update-download-action"]'),
-  ).not.toHaveAttribute("target", /.*/);
+  await expect(page.locator('[data-owner="site-update-download-action"]')).not.toHaveAttribute(
+    "target",
+    /.*/,
+  );
   await expect
     .poll(async () => downloadLinkDom(page))
     .toEqual({
@@ -366,7 +362,7 @@ test("site admin update omits the download link when no Yoram release URL exists
 
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator("strong")).toHaveText("Yoram 1.1.0 is available");
-  await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-update-download-action"]')).toHaveCount(0);
   await expect(page.getByText("Download", { exact: true })).toHaveCount(0);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).toContain("const releaseUrl = response.releaseUrl?.trim()");
@@ -420,11 +416,11 @@ async function updateAvailableMetrics(page: Page) {
     const row = requireElement(".site-setting-wrap .row-fluid");
     const sidebar = requireElement(".site-setting-wrap .span2");
     const content = requireElement(".site-setting-wrap .span10");
-    const titleArea = requireElement('[data-stylex-owner="site-update-title-strip"]');
-    const title = requireElement('[data-stylex-owner="site-update-title-heading"]');
+    const titleArea = requireElement('[data-owner="site-update-title-strip"]');
+    const title = requireElement('[data-owner="site-update-title-heading"]');
     const firstParagraph = requireElement(".site-setting-wrap .span10 > p");
     const strong = requireElement(".site-setting-wrap .span10 > p strong");
-    const downloadButton = requireElement('[data-stylex-owner="site-update-download-action"]');
+    const downloadButton = requireElement('[data-owner="site-update-download-action"]');
 
     const rowRect = row.getBoundingClientRect();
     const sidebarRect = sidebar.getBoundingClientRect();
@@ -457,7 +453,7 @@ async function updateAvailableMetrics(page: Page) {
 }
 
 async function downloadLinkDom(page: Page) {
-  return page.locator('[data-stylex-owner="site-update-download-action"]').evaluate((link) => ({
+  return page.locator('[data-owner="site-update-download-action"]').evaluate((link) => ({
     className: link.getAttribute("class"),
     href: link.getAttribute("href"),
     tagName: link.tagName,
@@ -554,7 +550,7 @@ async function mockDiagnostics(
 }
 
 async function siteSettingSidebarAnchorMarkers(page: Page) {
-  return page.locator('[data-stylex-owner="site-update-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-update-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className: null,
@@ -567,22 +563,19 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      if (
-        name === "class" &&
-        current.closest('[data-stylex-owner="site-update-title-strip"]') !== null
-      ) {
+      if (name === "class" && current.closest('[data-owner="site-update-title-strip"]') !== null) {
         return "";
       }
       if (
         name === "class" &&
         ["site-update-breadcrumb-outer", "site-update-breadcrumb-inner"].includes(
-          current.getAttribute("data-stylex-owner") ?? "",
+          current.getAttribute("data-owner") ?? "",
         )
       ) {
         return (current.getAttribute(name) ?? "")
@@ -592,11 +585,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -604,7 +597,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)
@@ -661,7 +654,7 @@ async function canonicalizeScreenRoots(page: Page) {
                 "site-update-sidebar-link",
                 "site-update-sidebar-badge",
                 "site-update-breadcrumb-heading",
-              ].includes(current.getAttribute("data-stylex-owner") ?? "")
+              ].includes(current.getAttribute("data-owner") ?? "")
             ) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
         )
@@ -694,15 +687,15 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
       (element) =>
-        element.getAttribute("data-stylex-owner") === "site-footer" &&
+        element.getAttribute("data-owner") === "site-footer" &&
         !element.classList.contains("page-footer-outer")
           ? "site-footer"
-          : element.getAttribute("data-stylex-owner") === "global-gnb-outer"
+          : element.getAttribute("data-owner") === "global-gnb-outer"
             ? "gnb-outer"
-            : element.getAttribute("data-stylex-owner") === "site-update-breadcrumb-outer"
+            : element.getAttribute("data-owner") === "site-update-breadcrumb-outer"
               ? "site-breadcrumb-outer"
               : element.getAttribute("class"),
     ),

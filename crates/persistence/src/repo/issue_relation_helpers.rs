@@ -730,7 +730,10 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(String::new());
         };
-        Ok(issue_state_from_raw(row.state))
+        Ok(issue_state_from_raw(
+            self.db.get_database_backend(),
+            row.state,
+        ))
     }
 
     pub(super) async fn list_issue_labels(

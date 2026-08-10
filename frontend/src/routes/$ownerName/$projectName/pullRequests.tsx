@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import type { CSSProperties } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -18,39 +18,11 @@ import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { ReviewProgressFill } from "../../../components/review-progress-fill";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { legacyPullRequestTabsClassName, styles } from "./-pull-requests.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  searchColumn: stylex.props(styles.searchColumn),
-  searchBar: stylex.props(styles.searchBar),
-  searchInput: stylex.props(styles.searchInput),
-  contributorsSelect: stylex.props(styles.contributorsSelect),
-  searchButton: stylex.props(styles.searchButton),
-  advancedSearch: stylex.props(styles.advancedSearch),
-  tabs: stylex.props(styles.tabs),
-  searchColumnHidden: stylex.props(styles.searchColumnHidden),
-  contentColumn: stylex.props(styles.contentColumn),
-  newPullRequestAction: stylex.props(styles.newPullRequestAction),
-  receiverRail: stylex.props(styles.receiverRail),
-  stateBadge: stylex.props(styles.stateBadge),
-  recentlyPushedBranch: stylex.props(styles.recentlyPushedBranch),
-  reviewProgressItem: stylex.props(styles.reviewProgressItem),
-  reviewProgressBar: (width: string) => stylex.props(styles.reviewProgressBar(width)),
-  reviewerCount: stylex.props(styles.reviewerCount),
-  badge: stylex.props(styles.badge),
-  content: stylex.props(styles.content),
-  twoColumnAnchor: stylex.props(styles.twoColumnAnchor),
-  twoColumnPopover: stylex.props(styles.twoColumnPopover),
-  rowPointer: stylex.props(styles.rowPointer),
-  grayTextSeparator: stylex.props(styles.grayTextSeparator),
-  errorWrap: stylex.props(styles.errorWrap),
-  errorIcon: (backgroundImage: string) => stylex.props(styles.errorIcon(backgroundImage)),
-  errorMessage: stylex.props(styles.errorMessage),
-} as const;
+import { legacyPullRequestTabsClassName } from "./reviews";
 
 const LEGACY_LIST_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -316,20 +288,15 @@ function ProjectPullRequestsBody({
 
   return (
     <div
-      {...sx.page}
-      className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
-      data-stylex-owner="project-pullrequests-page"
-      data-stylex-content-ready="true"
+      className="page-wrap-outer"
+      data-owner="project-pullrequests-page"
+      data-content-ready="true"
     >
-      <div className="project-page-wrap" data-stylex-owner="project-pullrequests-shell">
+      <div className="project-page-wrap" data-owner="project-pullrequests-shell">
         <div className="row-fluid cb">
           <div
-            {...sx.searchColumn}
-            {...(leftMenuHiddenByTwoColumnMode ? sx.searchColumnHidden : {})}
-            className={`${sx.searchColumn.className ?? ""} ${
-              leftMenuHiddenByTwoColumnMode ? sx.searchColumnHidden.className ?? "" : ""
-            } left-menu search-wrap hide-in-mobile`.trim()}
-            data-stylex-owner="project-pullrequests-search-column"
+            className={`left-menu search-wrap hide-in-mobile${leftMenuHiddenByTwoColumnMode ? " is-menu-hidden" : ""}`.trim()}
+            data-owner="project-pullrequests-search-column"
           >
             <form
               id="search"
@@ -342,24 +309,18 @@ function ProjectPullRequestsBody({
               }}
             >
               <div className="search">
-                <div
-                {...sx.searchBar}
-                className={`${sx.searchBar.className ?? ""} search-bar`.trim()}
-                data-stylex-owner="project-pullrequests-search-bar"
-              >
+                <div className="search-bar" data-owner="project-pullrequests-search-bar">
                   <input
                     key={`filter:${search.filter}`}
                     name="filter"
-                    {...sx.searchInput}
-                    data-stylex-owner="project-pullrequests-search-input"
+                    data-owner="project-pullrequests-search-input"
                     type="text"
                     defaultValue={search.filter}
                     onChange={(event) => setFilterValue(event.currentTarget.value)}
                   />
                   <button
-                    {...sx.searchButton}
-                    className={`${sx.searchButton.className ?? ""} search-btn`.trim()}
-                    data-stylex-owner="project-pullrequests-search-button"
+                    className="search-btn"
+                    data-owner="project-pullrequests-search-button"
                     type="submit"
                   >
                     <i className="yobicon-search"></i>
@@ -367,21 +328,16 @@ function ProjectPullRequestsBody({
                 </div>
               </div>
               {requestType === "sent" ? null : (
-                <div
-                  {...sx.advancedSearch}
-                  id="advanced-search-form"
-                  className={`${sx.advancedSearch.className ?? ""} srch-advanced`.trim()}
-                >
+                <div className="srch-advanced" id="advanced-search-form">
                   <dl className="issue-option">
                     <dt>{t("pullRequest.sender")}</dt>
                     <dd>
                       <select
-                        {...sx.contributorsSelect}
                         key={`contributor:${search.contributorId || ""}`}
                         id="contributors"
                         name="contributorId"
                         data-format="user"
-                        data-stylex-owner="project-pullrequests-contributors-select"
+                        data-owner="project-pullrequests-contributors-select"
                         defaultValue={search.contributorId ? String(search.contributorId) : ""}
                         onChange={(event) => {
                           const nextContributorId = event.currentTarget.value;
@@ -414,10 +370,9 @@ function ProjectPullRequestsBody({
             </form>
           </div>
           <div
-            {...sx.contentColumn}
-            className={`${sx.contentColumn.className} span10 span-hard-wrap`}
+            className="span10 span-hard-wrap"
             id="span10"
-            data-stylex-owner="project-pullrequests-content-column"
+            data-owner="project-pullrequests-content-column"
           >
             <ProjectRecentlyPushedBranches
               runtimeConfig={runtimeConfig}
@@ -429,11 +384,7 @@ function ProjectPullRequestsBody({
               })}
               pushedBranches={pullRequests.recentlyPushedBranches}
             />
-            <div
-              {...sx.newPullRequestAction}
-              className={`${sx.newPullRequestAction.className ?? ""} pull-right`.trim()}
-              data-stylex-owner="project-pullrequests-new-action"
-            >
+            <div className="pull-right" data-owner="project-pullrequests-new-action">
               <Link
                 to="/$ownerName/$projectName/newPullRequestForm"
                 params={{ ownerName, projectName }}
@@ -444,9 +395,8 @@ function ProjectPullRequestsBody({
               </Link>
             </div>
             <ul
-              {...sx.tabs}
-              className={`nav nav-tabs nm ${legacyPullRequestTabsClassName} ${sx.tabs.className ?? ""}`.trim()}
-              data-stylex-owner="project-pullrequests-tabs"
+              className={`nav nav-tabs nm ${legacyPullRequestTabsClassName}`.trim()}
+              data-owner="project-pullrequests-tabs"
             >
               <li className={requestType === "open" ? "active" : ""}>
                 <Link
@@ -456,7 +406,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.open")}
-                  <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>{pullRequests.openCount}</span>
+                  <span className="num-badge pr-list-badge">{pullRequests.openCount}</span>
                 </Link>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
@@ -467,7 +417,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.closed")}
-                  <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>{pullRequests.closedCount}</span>
+                  <span className="num-badge pr-list-badge">{pullRequests.closedCount}</span>
                 </Link>
               </li>
               {isForked ? (
@@ -479,7 +429,7 @@ function ProjectPullRequestsBody({
                     {...LEGACY_LIST_LINK_PROPS}
                   >
                     {t("pullRequest.sent")}
-                    <span {...sx.badge} className={`${sx.badge.className ?? ""} num-badge`.trim()}>
+                    <span className="num-badge pr-list-badge">
                       {`${pullRequests.acceptedCount} / ${pullRequests.sentCount}`}
                     </span>
                   </Link>
@@ -499,11 +449,11 @@ function ProjectPullRequestsBody({
                 />
               </li>
             </ul>
-            <div {...sx.content} data-stylex-owner="project-pullrequests-content">
+            <div data-owner="project-pullrequests-content">
               <div
                 id="list"
                 className="row-fluid tab-pane active"
-                data-stylex-owner="project-pullrequests-list"
+                data-owner="project-pullrequests-list"
               >
                 <ProjectPullRequestRows
                   basePath={runtimeConfig.basePath}
@@ -542,8 +492,8 @@ function ProjectPullRequestsLoadingShell() {
   return (
     <div
       className="page-wrap-outer"
-      data-stylex-owner="project-pullrequests-loading-shell"
-      data-stylex-content-ready="false"
+      data-owner="project-pullrequests-loading-shell"
+      data-content-ready="false"
     >
       <div className="project-page-wrap">
         <div className="row-fluid cb">
@@ -607,10 +557,7 @@ function ProjectRecentlyPushedBranches({
           return (
             <div key={branch.id || branch.branchName}>
               <i className="yobicon-split"></i>
-              <span
-                {...sx.recentlyPushedBranch}
-                data-stylex-owner="project-pullrequests-pushed-branch"
-              >
+              <span data-owner="project-pullrequests-pushed-branch">
                 {`${branch.ownerName}/${branch.projectName}:${branch.shortName} ( ${branch.pushedLabel} )`}
               </span>
               &nbsp;-&nbsp;
@@ -677,23 +624,17 @@ function ProjectPullRequestRows({
 
   if (pullRequests.items.length === 0) {
     return (
-      <ul className="post-list-wrap" data-stylex-owner="project-pullrequests-empty">
-        <div
-          {...sx.errorWrap}
-          className={`${sx.errorWrap.className} error-wrap`}
-          data-stylex-owner="project-pullrequests-empty-error-wrap"
-        >
-          <i className="ico ico-err1" data-stylex-owner="project-pullrequests-empty-icon"></i>
-          <p data-stylex-owner="project-pullrequests-empty-message">
-            {t("pullRequest.is.empty")}
-          </p>
+      <ul className="post-list-wrap" data-owner="project-pullrequests-empty">
+        <div className="error-wrap" data-owner="project-pullrequests-empty-error-wrap">
+          <i className="ico ico-err1" data-owner="project-pullrequests-empty-icon"></i>
+          <p data-owner="project-pullrequests-empty-message">{t("pullRequest.is.empty")}</p>
         </div>
       </ul>
     );
   }
 
   return (
-    <ul className="post-list-wrap" data-stylex-owner="project-pullrequests-rows">
+    <ul className="post-list-wrap" data-owner="project-pullrequests-rows">
       {pullRequests.items.map((pullRequest) => (
         <ProjectPullRequestRow
           basePath={basePath}
@@ -788,7 +729,6 @@ function ProjectPullRequestRow({
     pullRequestNumber: String(pullRequest.pullRequestNumber),
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
-  const reviewProgressBar = sx.reviewProgressBar(`${percent}%`);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const toBranchClass = pullRequest.toBranch === defaultBranch ? "to-default-branch" : "to-branch";
   const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
@@ -797,7 +737,7 @@ function ProjectPullRequestRow({
     ? "infos-item over"
     : "infos-item";
   const pullRequestId = stringField(pullRequest.id, String(pullRequest.pullRequestNumber));
-  const rowStyle = useTwoColumnMode ? sx.rowPointer : undefined;
+  const rowStyle = useTwoColumnMode ? "is-row-pointer" : undefined;
   const titleHistoryLabel = `${pullRequest.pullRequestNumber} ${titleParts.title}`;
   const handleRowClickCapture = (event: ReactMouseEvent<HTMLLIElement>) => {
     if (!useTwoColumnMode) {
@@ -819,10 +759,9 @@ function ProjectPullRequestRow({
 
   return (
     <li
-      {...rowStyle}
-      className={`post-item title${highlighted ? " highlightBg" : ""} ${rowStyle?.className ?? ""}`.trim()}
+      className={`post-item title${highlighted ? " highlightBg" : ""} ${rowStyle ?? ""}`.trim()}
       onClickCapture={handleRowClickCapture}
-      data-stylex-owner="project-pullrequests-row"
+      data-owner="project-pullrequests-row"
     >
       <div className="span10 span-hard-wrap">
         <Link
@@ -875,18 +814,10 @@ function ProjectPullRequestRow({
             {pullRequest.createdLabel}
           </span>
           {pullRequest.commentThreadCount > 0 ? (
-            <div
-              {...sx.reviewProgressItem}
-              className={`${sx.reviewProgressItem.className ?? ""} infos-item`.trim()}
-              data-stylex-owner="project-pullrequests-review-progress"
-            >
+            <div className="infos-item" data-owner="project-pullrequests-review-progress">
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">
-                <div
-                  {...reviewProgressBar}
-                  className={`${reviewProgressBar.className} bar orange`}
-                  data-stylex-owner="project-pullrequests-review-progress-fill"
-                ></div>
+                <ReviewProgressFill percent={percent} />
               </div>
               <Link
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
@@ -895,22 +826,13 @@ function ProjectPullRequestRow({
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
-                <span
-                  {...sx.grayTextSeparator}
-                  data-stylex-owner="project-pullrequests-review-separator"
-                >
-                  /
-                </span>
+                <span data-owner="project-pullrequests-review-separator">/</span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
               </Link>
             </div>
           ) : null}
           {showReviewerCount ? (
-            <div
-              {...sx.reviewerCount}
-              className={`${sx.reviewerCount.className ?? ""} ${reviewerClass}`.trim()}
-              data-stylex-owner="project-pullrequests-reviewer-count"
-            >
+            <div className={reviewerClass} data-owner="project-pullrequests-reviewer-count">
               <i className="infos-icon yobicon-preview vmiddle"></i>
               <Link
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
@@ -928,9 +850,8 @@ function ProjectPullRequestRow({
       </div>
       <div className="span2 hide-in-mobile">
         <div
-          {...sx.receiverRail}
-          className={`${sx.receiverRail.className} mt5 pull-right hide-in-mobile`}
-          data-stylex-owner="project-pullrequests-row-receiver-rail"
+          className="mt5 pull-right hide-in-mobile"
+          data-owner="project-pullrequests-row-receiver-rail"
         >
           {pullRequest.receiverLoginId ? (
             <Link
@@ -951,11 +872,7 @@ function ProjectPullRequestRow({
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
         </div>
-        <div
-          {...sx.stateBadge}
-          className={`${sx.stateBadge.className} state ${stateKey} pull-right`}
-          data-stylex-owner="project-pullrequests-row-state"
-        >
+        <div className={`state ${stateKey} pull-right`} data-owner="project-pullrequests-row-state">
           {t(`pullRequest.state.${stateKey}`)}
         </div>
       </div>
@@ -1017,14 +934,12 @@ function TwoColumnModeCheckbox({
   };
 
   useEffect(() => clearPopoverTimers, []);
-  const twoColumnAnchorStyleProps = sx.twoColumnAnchor;
-  const popoverStyle = sx.twoColumnPopover;
+  const twoColumnAnchorClassName = "two-column-icon mr10 hide-in-mobile";
 
   return (
     <div
-      {...twoColumnAnchorStyleProps}
-      className={`${twoColumnAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
-      data-stylex-owner="project-pullrequests-two-column-anchor"
+      className={twoColumnAnchorClassName}
+      data-owner="project-pullrequests-two-column-anchor"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
       onBlur={hidePopover}
@@ -1049,9 +964,8 @@ function TwoColumnModeCheckbox({
       {isPopoverVisible ? (
         <div
           role="tooltip"
-          {...popoverStyle}
-          className={`popover top ${popoverStyle.className}`}
-          data-stylex-owner="project-pullrequests-two-column-popover"
+          className="popover top"
+          data-owner="project-pullrequests-two-column-popover"
         >
           <div className="arrow"></div>
           <h3 className="popover-title">{t("common.two.column.mode")}</h3>

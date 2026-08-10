@@ -27,7 +27,6 @@ export type Page = PageFacade;
 (globalThis as { process?: unknown }).process = {
   env: {
     YONA_DEV_BASE_PATH: "/yona",
-    VITE_DISABLE_LEGACY_FALLBACK: "1",
   },
   cwd: () => "/",
 };
@@ -3330,6 +3329,15 @@ expect.poll = (fn: () => unknown) => ({
     await expectPoll(
       async () => expected.test(String(await fn())),
       `poll().toMatch(${String(expected)})`,
+    );
+  },
+  toContainEqual: async (expected: unknown) => {
+    await expectPoll(
+      async () => {
+        const actual = await fn();
+        return Array.isArray(actual) && actual.some((item) => asymmetricEquals(item, expected));
+      },
+      `poll().toContainEqual(${JSON.stringify(expected)})`,
     );
   },
   toBeGreaterThanOrEqual: async (expected: number) => {

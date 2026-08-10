@@ -2,23 +2,14 @@
  * user-profile ($user.tsx), project-board (posts.tsx) and organization-board
  * (boards.tsx) routes; each screen's rendered DOM contract (anchor div, label,
  * border, checkbox, text span, hover popover) stays byte-identical, with the
- * per-screen differences (route-local stylex styles and data-stylex-owner
+ * per-screen differences (route-local plain css and data-owner
  * markers) arriving as props. Behavior is shared: localStorage-backed checked
  * state and a 100ms-delayed hover popover.
  */
-import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState } from "react";
 import { useLegacyMessages } from "../i18n";
 
 export function TwoColumnModeCheckbox({
-  anchorStyle,
-  borderHoverStyle,
-  borderStyle,
-  inputStyle,
-  labelStyle,
-  popoverStyle,
-  textHoverStyle,
-  textStyle,
   anchorOwner,
   borderOwner,
   inputOwner,
@@ -27,14 +18,6 @@ export function TwoColumnModeCheckbox({
   textOwner,
   wrapPopoverContentInP = false,
 }: {
-  anchorStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  borderHoverStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  borderStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  inputStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  labelStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  popoverStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  textHoverStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
-  textStyle?: stylex.StyleXArray<stylex.CompiledStyles>;
   anchorOwner: string;
   borderOwner?: string;
   inputOwner?: string;
@@ -48,12 +31,14 @@ export function TwoColumnModeCheckbox({
   const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showPopover, setShowPopover] = useState(false);
+  // The legacy cascade paints .two-column-icon-border:hover via CSS, but the
+  // harness real-mouse bridge is not guaranteed; mirror the hover paint in
+  // React state (pre-migration behavior the user-profile spec pins).
+  const [borderHovered, setBorderHovered] = useState(false);
   const [isChecked, setIsChecked] = useState(
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
   );
-  const [isControlHovered, setIsControlHovered] = useState(false);
-  const hasHoverHighlight = borderHoverStyle != null || textHoverStyle != null;
   const clearPopoverTimers = () => {
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -89,66 +74,44 @@ export function TwoColumnModeCheckbox({
     [],
   );
 
-  const anchorProps = stylex.props(anchorStyle);
-  const labelProps = stylex.props(labelStyle);
-  const borderProps = stylex.props(borderStyle, isControlHovered ? borderHoverStyle : null);
-  const inputProps = stylex.props(inputStyle);
-  const textProps = stylex.props(textStyle, isControlHovered ? textHoverStyle : null);
-  const popoverProps = stylex.props(popoverStyle);
-
   return (
     <div
-      {...anchorProps}
-      className={`${anchorProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
+      className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
-      data-stylex-owner={anchorOwner}
+      data-owner={anchorOwner}
       onBlur={hideDelayedPopover}
       onFocus={showDelayedPopover}
       onMouseEnter={showDelayedPopover}
       onMouseLeave={hideDelayedPopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label
-        {...labelProps}
-        className={`${labelProps.className ?? ""} checkbox`.trim()}
-        data-stylex-owner={labelOwner}
-      >
+      <label className="checkbox" data-owner={labelOwner}>
         <div
-          {...borderProps}
-          className={`two-column-icon-border ${borderProps.className ?? ""}`.trim()}
-          data-stylex-owner={borderOwner}
-          onMouseEnter={hasHoverHighlight ? () => setIsControlHovered(true) : undefined}
-          onMouseLeave={hasHoverHighlight ? () => setIsControlHovered(false) : undefined}
+          className="two-column-icon-border"
+          data-owner={borderOwner}
+          onMouseEnter={() => setBorderHovered(true)}
+          onMouseLeave={() => setBorderHovered(false)}
+          style={borderHovered ? { backgroundColor: "#03afff", color: "#fff0ff" } : undefined}
         >
           <input
             id="two-column-mode"
             type="checkbox"
             checked={isChecked}
-            {...inputProps}
-            data-stylex-owner={inputOwner}
+            data-owner={inputOwner}
             onChange={(event) => {
               const checked = event.currentTarget.checked;
               localStorage.setItem("useTwoColumnMode", String(checked));
               storeTwoColumnMode(checked);
             }}
           />
-          <span
-            {...textProps}
-            className={`two-column-mode-text ${textProps.className ?? ""}`.trim()}
-            data-stylex-owner={textOwner}
-          >
+          <span className="two-column-mode-text" data-owner={textOwner}>
             {t("common.two.column.view")}
           </span>
         </div>
       </label>
       {showPopover ? (
-        <div
-          {...popoverProps}
-          className={`${popoverProps.className ?? ""} popover top`.trim()}
-          role="tooltip"
-          data-stylex-owner={popoverOwner}
-        >
+        <div className="popover top" role="tooltip" data-owner={popoverOwner}>
           <div className="arrow"></div>
           <h3 className="popover-title">{t("common.two.column.mode")}</h3>
           <div className="popover-content">

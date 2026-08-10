@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
@@ -20,10 +19,8 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { OrganizationHeader, OrganizationMenu } from "../$organizationName";
-import { styles } from "./-organization-search.stylex";
 import {
   DefaultSearchErrorBody,
   emptySearchResult,
@@ -59,20 +56,6 @@ const legacySearchLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
   "data-status": undefined,
-} as const;
-const organizationSearchPaginationStyles = {
-  paginationWrap: stylex.props(styles.paginationWrap),
-  paginationPageNums: stylex.props(styles.paginationPageNums),
-  paginationPageNum: stylex.props(styles.paginationPageNum),
-  paginationIconPageNum: stylex.props(styles.paginationIconPageNum),
-  paginationDelimiter: stylex.props(styles.paginationDelimiter),
-  paginationInput: stylex.props(styles.paginationInput),
-  paginationNoSpinner: stylex.props(styles.paginationNoSpinner),
-  paginationIcon: stylex.props(styles.paginationIcon(legacySpriteUrl)),
-  paginationPrev: stylex.props(styles.paginationPrev),
-  paginationPrevOff: stylex.props(styles.paginationPrevOff),
-  paginationNext: stylex.props(styles.paginationNext),
-  paginationNextOff: stylex.props(styles.paginationNextOff),
 } as const;
 
 type OrganizationSearchRouteSearch = {
@@ -268,77 +251,41 @@ function OrganizationSearchBody({
           <h3>{t("title.search")}</h3>
         </div>
       </div>
-      <div
-        className={`${stylex.props(styles.page).className} page-wrap-outer`}
-        data-stylex-owner="organization-search-page"
-      >
+      <div className="page-wrap-outer" data-owner="organization-search-page">
         <div className="project-page-wrap">
           <div className="project-page-wrap">
-            <div
-              {...stylex.props(styles.gridRow)}
-              className="row-fluid"
-              data-stylex-owner="organization-search-grid-row"
-            >
-              <div
-                {...stylex.props(styles.category)}
-                className={`span2 ${stylex.props(styles.category).className ?? ""}`}
-                data-stylex-owner="organization-search-categories"
-              >
+            <div className="row-fluid" data-owner="organization-search-grid-row">
+              <div className="span2" data-owner="organization-search-categories">
                 <ul
-                  {...stylex.props(styles.categoryList)}
                   className="lst-stacked unstyled search-category-wrap"
-                  data-stylex-owner="organization-search-category-list"
+                  data-owner="organization-search-category-list"
                 >
                   {ORGANIZATION_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
                     return (
                       <li
-                        className={`${
-                          stylex.props(
-                            styles.categoryItem,
-                            category.type === activeType && styles.categoryItemActive,
-                          ).className
-                        } ${category.type === activeType ? "active" : ""} ${
+                        className={`${category.type === activeType ? "active" : ""} ${
                           count === 0 ? "empty" : ""
                         }`}
-                        data-stylex-owner="organization-search-category-item"
+                        data-owner="organization-search-category-item"
                         key={category.type}
                       >
                         <button
-                          {...stylex.props(
-                            styles.categoryAction,
-                            count === 0 && styles.categoryActionEmpty,
-                          )}
                           type="button"
                           onClick={() => {
                             submitSearch(category.type, keywordValue);
                           }}
                         >
                           {t(category.labelKey)}{" "}
-                          <span
-                            className={`${
-                              stylex.props(
-                                category.type === activeType && styles.categoryBadgeActive,
-                              ).className ?? ""
-                            } num-badge pull-right`}
-                          >
-                            {count}
-                          </span>
+                          <span className="num-badge pull-right">{count}</span>
                         </button>
                       </li>
                     );
                   })}
                 </ul>
               </div>
-              <div
-                {...stylex.props(styles.contentColumn)}
-                className={`span10 ${stylex.props(styles.contentColumn).className ?? ""}`}
-                data-stylex-owner="organization-search-content-column"
-              >
-                <div
-                  className={`${stylex.props(styles.searchBox).className} search-box-wrap`}
-                  data-stylex-owner="organization-search-box"
-                >
+              <div className="span10" data-owner="organization-search-content-column">
+                <div className="search-box-wrap" data-owner="organization-search-box">
                   <form
                     id="searchInnerForm"
                     method="get"
@@ -364,17 +311,11 @@ function OrganizationSearchBody({
                     </button>
                   </form>
 
-                  <h3
-                    className={`${stylex.props(styles.resultTitle).className} search-result-title`}
-                    data-stylex-owner="organization-search-result-title"
-                  >
+                  <h3 className="search-result-title" data-owner="organization-search-result-title">
                     {resultTitle}
                   </h3>
                 </div>
-                <div
-                  className={`${stylex.props(styles.result).className} search-result-wrap`}
-                  data-stylex-owner="organization-search-results"
-                >
+                <div className="search-result-wrap" data-owner="organization-search-results">
                   <OrganizationSearchResultList
                     organizationName={organizationName}
                     result={result}
@@ -401,28 +342,26 @@ function OrganizationSearchResultList({
 }) {
   const { t } = useLegacyMessages();
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
-  const emptyResultStyle = stylex.props(
-    styles.empty(
-      `url('${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/no_contents.jpg")}')`,
-    ),
-  );
+  const emptyResultStyle = {
+    backgroundImage: `url('${prefixBasePath(
+      runtimeConfig.basePath,
+      "/legacy-assets/images/no_contents.jpg",
+    )}')`,
+  } as const;
 
   if (result.items.length === 0) {
     return (
       <div
-        {...emptyResultStyle}
-        className={`${emptyResultStyle.className} empty-result`}
-        data-stylex-owner="organization-search-empty"
+        style={emptyResultStyle}
+        className="empty-result"
+        data-owner="organization-search-empty"
       ></div>
     );
   }
 
   if (searchType === "project") {
     return (
-      <ul
-        className={`${stylex.props(styles.list).className} search-list-wrap`}
-        data-stylex-owner="organization-search-list"
-      >
+      <ul className="search-list-wrap" data-owner="organization-search-list">
         {result.items.map((item) => {
           const projectLink = internalLinkTarget(item.href, runtimeConfig);
           const originProjectLink =
@@ -438,27 +377,24 @@ function OrganizationSearchResultList({
 
           return (
             <li
-              className={`${stylex.props(styles.resultItem, styles.resultItemProject).className} search-list-item project`}
-              data-stylex-owner="organization-search-result-item"
+              className="search-list-item project"
+              data-owner="organization-search-result-item"
               key={item.id}
             >
               <Link
                 to={projectLink.to}
                 hash={projectLink.hash || undefined}
-                className={`${stylex.props(styles.avatar).className} avatar-wrap`}
+                className="avatar-wrap"
               >
                 <LegacyProjectLogoImage
                   src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
                 />
               </Link>
-              <div
-                className={`${stylex.props(styles.titleWrap).className} title-wrap`}
-                data-stylex-owner="organization-search-title-wrap"
-              >
+              <div className="title-wrap" data-owner="organization-search-title-wrap">
                 <Link
                   to={projectLink.to}
                   hash={projectLink.hash || undefined}
-                  className={`${stylex.props(styles.title, styles.projectLink).className} title project-link`}
+                  className="title project-link"
                 >
                   <HighlightedText
                     text={`${item.ownerName}/${item.projectName}`}
@@ -468,8 +404,8 @@ function OrganizationSearchResultList({
               </div>
               {originProjectLink ? (
                 <div
-                  className={`${stylex.props(styles.meta, styles.metaNoPadding).className} search-meta-info nm np`}
-                  data-stylex-owner="organization-search-content-meta"
+                  className="search-meta-info nm np"
+                  data-owner="organization-search-content-meta"
                 >
                   <span>
                     <i className="yobicon-split yobicon-white vmiddle"></i>
@@ -479,25 +415,19 @@ function OrganizationSearchResultList({
                     <Link
                       to={originProjectLink.to}
                       hash={originProjectLink.hash || undefined}
-                      className={`${stylex.props(styles.projectLink).className} project-link`}
+                      className="project-link"
                     >
                       {item.originOwnerName}/{item.originProjectName}
                     </Link>
                   </span>
                 </div>
               ) : null}
-              <div
-                className={`${stylex.props(styles.content, styles.contentNoPadding).className} search-content np`}
-                data-stylex-owner="organization-search-content-meta"
-              >
-                <p className={`${stylex.props(styles.contentBody).className} search-content-body`}>
+              <div className="search-content np" data-owner="organization-search-content-meta">
+                <p className="search-content-body">
                   <HighlightedText text={item.snippets[0]?.text ?? ""} keyword={result.keyword} />
                 </p>
               </div>
-              <div
-                className={`${stylex.props(styles.meta, styles.metaNoPadding).className} search-meta-info np`}
-                data-stylex-owner="organization-search-content-meta"
-              >
+              <div className="search-meta-info np" data-owner="organization-search-content-meta">
                 <span className="meta-info">
                   {t("project.create")}{" "}
                   <strong title={item.createdLabel}>{item.createdLabel}</strong>
@@ -519,46 +449,34 @@ function OrganizationSearchResultList({
   if (searchType === "user") {
     return (
       <>
-        <ul
-          className={`${stylex.props(styles.list).className} search-list-wrap`}
-          data-stylex-owner="organization-search-list"
-        >
+        <ul className="search-list-wrap" data-owner="organization-search-list">
           {result.items.map((item) => {
             const userLink = internalLinkTarget(item.href, runtimeConfig);
 
             return (
               <li
-                className={`${stylex.props(styles.resultItem, styles.resultItemProject).className} search-list-item project`}
-                data-stylex-owner="organization-search-result-item"
+                className="search-list-item project"
+                data-owner="organization-search-result-item"
                 key={item.id}
               >
                 <Link
                   to={userLink.to}
                   hash={userLink.hash || undefined}
-                  className={`${stylex.props(styles.avatar).className} avatar-wrap`}
+                  className="avatar-wrap"
                   title={item.authorLoginId}
                 >
                   {isDefaultUserSearchAvatar(item.avatarUrl) ? (
                     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-                    <img {...stylex.props(styles.avatarImage)} src={item.avatarUrl} />
+                    <img src={item.avatarUrl} />
                   ) : (
-                    <img
-                      {...stylex.props(styles.avatarImage)}
-                      src={item.avatarUrl || ""}
-                      alt={item.authorLabel}
-                      width="32"
-                      height="32"
-                    />
+                    <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
                   )}
                 </Link>
-                <div
-                  className={`${stylex.props(styles.titleWrap).className} title-wrap`}
-                  data-stylex-owner="organization-search-title-wrap"
-                >
+                <div className="title-wrap" data-owner="organization-search-title-wrap">
                   <Link
                     to={userLink.to}
                     hash={userLink.hash || undefined}
-                    className={`${stylex.props(styles.title, styles.userLink).className} title user-link`}
+                    className="title user-link"
                   >
                     <HighlightedText
                       text={`${item.authorLabel} (@${item.authorLoginId})`}
@@ -566,7 +484,7 @@ function OrganizationSearchResultList({
                     />
                   </Link>
                 </div>
-                <div className="infos nm" data-stylex-owner="organization-search-content-meta">
+                <div className="infos nm" data-owner="organization-search-content-meta">
                   <span className="infos-item">{`${t("userinfo.since")} ${item.createdLabel}`}</span>
                 </div>
               </li>
@@ -592,10 +510,7 @@ function OrganizationSearchResultList({
 
     return (
       <>
-        <ul
-          className={`${stylex.props(styles.list).className} search-list-wrap`}
-          data-stylex-owner="organization-search-list"
-        >
+        <ul className="search-list-wrap" data-owner="organization-search-list">
           {result.items.map((item) => {
             const itemLink = internalLinkTarget(item.href, runtimeConfig);
             const projectLink = internalLinkTarget(
@@ -610,7 +525,7 @@ function OrganizationSearchResultList({
               searchType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
               <p
-                className={`${stylex.props(styles.contentBody).className} search-content-body`}
+                className="search-content-body"
                 key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
               >
                 <HighlightedText text={snippet.text} keyword={result.keyword} />
@@ -620,27 +535,18 @@ function OrganizationSearchResultList({
 
             return (
               <li
-                className={`${stylex.props(styles.resultItem).className} search-list-item`}
-                data-stylex-owner="organization-search-result-item"
+                className="search-list-item"
+                data-owner="organization-search-result-item"
                 key={item.id}
               >
                 {reviewThreadOnPullRequest ? (
-                  <div
-                    className={`${stylex.props(styles.titleWrap).className} title-wrap`}
-                    data-stylex-owner="organization-search-title-wrap"
-                  >
-                    <span className={`${stylex.props(styles.postId).className} post-id`}>
-                      #{item.number}
-                    </span>
+                  <div className="title-wrap" data-owner="organization-search-title-wrap">
+                    <span className="post-id">#{item.number}</span>
                     <Link
                       to={itemLink.to}
                       hash={itemLink.hash || undefined}
-                      className={
-                        titleClassName
-                          ? `${stylex.props(styles.title).className} ${titleClassName}`
-                          : undefined
-                      }
-                      data-stylex-owner="organization-search-result-item-title"
+                      className={titleClassName ?? undefined}
+                      data-owner="organization-search-result-item-title"
                     >
                       {titleClassName ? (
                         <HighlightedText text={item.title} keyword={result.keyword} />
@@ -651,8 +557,8 @@ function OrganizationSearchResultList({
                   </div>
                 ) : null}
                 <div
-                  className={`${stylex.props(styles.content).className} search-content`}
-                  data-stylex-owner="organization-search-result-item-content"
+                  className="search-content"
+                  data-owner="organization-search-result-item-content"
                 >
                   {reviewThreadOnPullRequest ? (
                     snippets
@@ -662,14 +568,11 @@ function OrganizationSearchResultList({
                     </Link>
                   )}
                 </div>
-                <div
-                  className={`${stylex.props(styles.meta).className} search-meta-info`}
-                  data-stylex-owner="organization-search-result-item-meta"
-                >
+                <div className="search-meta-info" data-owner="organization-search-result-item-meta">
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className={`${stylex.props(styles.projectLink, styles.metaItem).className} project-link meta-item`}
+                    className="project-link meta-item"
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
@@ -677,20 +580,15 @@ function OrganizationSearchResultList({
                     <Link
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
-                      className={`${stylex.props(styles.metaItem).className} meta-item`}
+                      className="meta-item"
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
                     </Link>
                   ) : (
-                    <span className={`${stylex.props(styles.metaItem).className} meta-item`}>
-                      {t(noAuthorMessageKey(searchType))}
-                    </span>
+                    <span className="meta-item">{t(noAuthorMessageKey(searchType))}</span>
                   )}
-                  <span
-                    className={`${stylex.props(styles.metaItem).className} meta-item`}
-                    title={item.createdLabel}
-                  >
+                  <span className="meta-item" title={item.createdLabel}>
                     {item.createdLabel}
                   </span>
                 </div>
@@ -706,10 +604,7 @@ function OrganizationSearchResultList({
   if (searchType === "milestone") {
     return (
       <>
-        <ul
-          className={`${stylex.props(styles.list).className} search-list-wrap`}
-          data-stylex-owner="organization-search-list"
-        >
+        <ul className="search-list-wrap" data-owner="organization-search-list">
           {result.items.map((item) => {
             const itemLink = internalLinkTarget(item.href, runtimeConfig);
             const projectLink = internalLinkTarget(
@@ -719,29 +614,19 @@ function OrganizationSearchResultList({
 
             return (
               <li
-                className={`${stylex.props(styles.resultItem).className} search-list-item`}
-                data-stylex-owner="organization-search-result-item"
+                className="search-list-item"
+                data-owner="organization-search-result-item"
                 key={item.id}
               >
-                <div
-                  className={`${stylex.props(styles.titleWrap).className} title-wrap`}
-                  data-stylex-owner="organization-search-title-wrap"
-                >
-                  <Link
-                    to={itemLink.to}
-                    hash={itemLink.hash || undefined}
-                    className={`${stylex.props(styles.title).className} title`}
-                  >
+                <div className="title-wrap" data-owner="organization-search-title-wrap">
+                  <Link to={itemLink.to} hash={itemLink.hash || undefined} className="title">
                     <HighlightedText text={item.title} keyword={result.keyword} />
                   </Link>
                 </div>
-                <div
-                  className={`${stylex.props(styles.content).className} search-content`}
-                  data-stylex-owner="organization-search-content-meta"
-                >
+                <div className="search-content" data-owner="organization-search-content-meta">
                   {item.snippets.map((snippet) => (
                     <p
-                      className={`${stylex.props(styles.contentBody).className} search-content-body`}
+                      className="search-content-body"
                       key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                     >
                       <HighlightedText text={snippet.text} keyword={result.keyword} />
@@ -749,21 +634,16 @@ function OrganizationSearchResultList({
                     </p>
                   ))}
                 </div>
-                <div
-                  className={`${stylex.props(styles.meta).className} search-meta-info`}
-                  data-stylex-owner="organization-search-content-meta"
-                >
+                <div className="search-meta-info" data-owner="organization-search-content-meta">
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className={`${stylex.props(styles.projectLink, styles.metaItem).className} project-link meta-item`}
+                    className="project-link meta-item"
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
                   {item.updatedLabel ? (
-                    <span
-                      className={`${stylex.props(styles.metaItem).className} due-date meta-item`}
-                    >
+                    <span className="due-date meta-item">
                       {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
                       {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
                     </span>
@@ -780,9 +660,9 @@ function OrganizationSearchResultList({
 
   return (
     <div
-      {...emptyResultStyle}
-      className={`${emptyResultStyle.className} empty-result`}
-      data-stylex-owner="organization-search-empty"
+      style={emptyResultStyle}
+      className="empty-result"
+      data-owner="organization-search-empty"
     ></div>
   );
 }
@@ -833,21 +713,12 @@ function OrganizationSearchPagination({
 
   return (
     <div
-      {...organizationSearchPaginationStyles.paginationWrap}
       id="pagination"
-      className={`${organizationSearchPaginationStyles.paginationWrap.className} page-navigation-wrap`}
-      data-stylex-owner="organization-search-pagination"
+      className="page-navigation-wrap"
+      data-owner="organization-search-pagination"
     >
-      <ul
-        {...organizationSearchPaginationStyles.paginationPageNums}
-        className={`${organizationSearchPaginationStyles.paginationPageNums.className} page-nums`}
-        data-stylex-owner="organization-search-pagination-page-nums"
-      >
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
-          className={`${organizationSearchPaginationStyles.paginationPageNum.className} ${organizationSearchPaginationStyles.paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="organization-search-pagination-prev-page"
-        >
+      <ul className="page-nums" data-owner="organization-search-pagination-page-nums">
+        <li className="page-num ikon" data-owner="organization-search-pagination-prev-page">
           {hasPrev ? (
             <Link
               activeOptions={legacySearchLinkActiveOptions}
@@ -857,14 +728,12 @@ function OrganizationSearchPagination({
               to={ORGANIZATION_SEARCH_ROUTE}
             >
               <i
-                {...stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev)}
-                className={`${organizationSearchPaginationStyles.paginationIcon.className} ${organizationSearchPaginationStyles.paginationPrev.className} ico btn-pg-prev`}
-                data-stylex-owner="organization-search-pagination-prev-icon"
+                className="ico btn-pg-prev"
+                data-owner="organization-search-pagination-prev-icon"
               ></i>
               <span
-                {...stylex.props(styles.paginationIconLabel)}
-                className={`${stylex.props(styles.paginationIconLabel).className} pagination-icon-label`}
-                data-stylex-owner="organization-search-pagination-prev-label"
+                className="pagination-icon-label"
+                data-owner="organization-search-pagination-prev-label"
               >
                 {t("button.prevPage")}
               </span>
@@ -872,33 +741,22 @@ function OrganizationSearchPagination({
           ) : (
             <>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(legacySpriteUrl),
-                  styles.paginationPrev,
-                  styles.paginationPrevOff,
-                )}
-                className={`${organizationSearchPaginationStyles.paginationIcon.className} ${organizationSearchPaginationStyles.paginationPrev.className} ${organizationSearchPaginationStyles.paginationPrevOff.className} ico btn-pg-prev off`}
-                data-stylex-owner="organization-search-pagination-prev-icon"
+                className="ico btn-pg-prev off"
+                data-owner="organization-search-pagination-prev-icon"
               ></i>
               <span
-                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
-                className={`${stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff).className} pagination-icon-label off`}
-                data-stylex-owner="organization-search-pagination-prev-label"
+                className="pagination-icon-label off"
+                data-owner="organization-search-pagination-prev-label"
               >
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...organizationSearchPaginationStyles.paginationPageNum}
-          className={`${organizationSearchPaginationStyles.paginationPageNum.className} page-num`}
-          data-stylex-owner="organization-search-pagination-input-page"
-        >
+        <li className="page-num" data-owner="organization-search-pagination-input-page">
           <input
-            {...stylex.props(styles.paginationInput, styles.paginationNoSpinner)}
-            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
-            data-stylex-owner="organization-search-pagination-input"
+            className="input-mini nospinner"
+            data-owner="organization-search-pagination-input"
             defaultValue={currentPage}
             key={currentPage}
             max={totalPages}
@@ -912,25 +770,13 @@ function OrganizationSearchPagination({
             onKeyDown={handleInputKeyDown}
           />
         </li>
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationDelimiter)}
-          className={`${organizationSearchPaginationStyles.paginationPageNum.className} ${organizationSearchPaginationStyles.paginationDelimiter.className} page-num delimiter`}
-          data-stylex-owner="organization-search-pagination-delimiter"
-        >
+        <li className="page-num delimiter" data-owner="organization-search-pagination-delimiter">
           /
         </li>
-        <li
-          {...organizationSearchPaginationStyles.paginationPageNum}
-          className={`${organizationSearchPaginationStyles.paginationPageNum.className} page-num`}
-          data-stylex-owner="organization-search-pagination-total"
-        >
+        <li className="page-num" data-owner="organization-search-pagination-total">
           {totalPages}
         </li>
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
-          className={`${organizationSearchPaginationStyles.paginationPageNum.className} ${organizationSearchPaginationStyles.paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="organization-search-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="organization-search-pagination-next-page">
           {hasNext ? (
             <Link
               activeOptions={legacySearchLinkActiveOptions}
@@ -940,35 +786,27 @@ function OrganizationSearchPagination({
               to={ORGANIZATION_SEARCH_ROUTE}
             >
               <span
-                {...stylex.props(styles.paginationIconLabel)}
-                className={`${stylex.props(styles.paginationIconLabel).className} pagination-icon-label`}
-                data-stylex-owner="organization-search-pagination-next-label"
+                className="pagination-icon-label"
+                data-owner="organization-search-pagination-next-label"
               >
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext)}
-                className={`${organizationSearchPaginationStyles.paginationIcon.className} ${organizationSearchPaginationStyles.paginationNext.className} ico btn-pg-next`}
-                data-stylex-owner="organization-search-pagination-next-icon"
+                className="ico btn-pg-next"
+                data-owner="organization-search-pagination-next-icon"
               ></i>
             </Link>
           ) : (
             <>
               <span
-                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
-                className={`${stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff).className} pagination-icon-label off`}
-                data-stylex-owner="organization-search-pagination-next-label"
+                className="pagination-icon-label off"
+                data-owner="organization-search-pagination-next-label"
               >
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(legacySpriteUrl),
-                  styles.paginationNext,
-                  styles.paginationNextOff,
-                )}
-                className={`${organizationSearchPaginationStyles.paginationIcon.className} ${organizationSearchPaginationStyles.paginationNext.className} ${organizationSearchPaginationStyles.paginationNextOff.className} ico btn-pg-next off`}
-                data-stylex-owner="organization-search-pagination-next-icon"
+                className="ico btn-pg-next off"
+                data-owner="organization-search-pagination-next-icon"
               ></i>
             </>
           )}
@@ -980,27 +818,13 @@ function OrganizationSearchPagination({
 
 function OrganizationSearchErrorBody({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
-  const iconProps = stylex.props(styles.errorIcon(`url(${legacySpriteUrl})`));
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="organization-search-error-page">
+    <div className="page-wrap-outer" data-owner="organization-search-error-page">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(styles.errorWrap)}
-          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-          data-stylex-owner="organization-search-error-wrap"
-        >
-          <i
-            {...iconProps}
-            className={`${iconProps.className ?? ""} ico ico-err2`}
-            data-stylex-owner="organization-search-error-icon"
-          ></i>
-          <p
-            {...stylex.props(styles.errorMessage)}
-            data-stylex-owner="organization-search-error-message"
-          >
-            {t(messageKey)}
-          </p>
+        <div className="error-wrap" data-owner="organization-search-error-wrap">
+          <i className="ico ico-err2" data-owner="organization-search-error-icon"></i>
+          <p data-owner="organization-search-error-message">{t(messageKey)}</p>
         </div>
       </div>
     </div>
@@ -1043,7 +867,7 @@ function renderLegacySearchResultTitle(message: string): ReactNode {
   return (
     <>
       {match[1]}
-      <strong {...stylex.props(styles.resultTitleStrong)}>{match[2]}</strong>
+      <strong>{match[2]}</strong>
       {match[3]}
     </>
   );
@@ -1070,11 +894,7 @@ function HighlightedText({ keyword, text }: { keyword: string; text: string }) {
       nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor, start)}</Fragment>);
     }
     nodes.push(
-      <strong
-        className={`${stylex.props(styles.keyword).className} keyword`}
-        data-stylex-owner="organization-search-keyword"
-        key={`keyword-${start}`}
-      >
+      <strong className="keyword" data-owner="organization-search-keyword" key={`keyword-${start}`}>
         {matchText}
       </strong>,
     );
@@ -1120,7 +940,7 @@ function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {
 
 function LegacyProjectLogoImage({ src }: { src: string }) {
   /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
-  return <img {...stylex.props(styles.avatarImage)} src={src} />;
+  return <img src={src} />;
 }
 
 function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {

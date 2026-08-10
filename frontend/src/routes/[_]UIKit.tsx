@@ -1,9 +1,6 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute } from "@tanstack/react-router";
 import { prefixBasePath } from "../runtime-config";
-import * as sx from "./-UIKit.stylex";
-
 export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
 });
@@ -317,8 +314,7 @@ function OriginalMessageDemo() {
         <blockquote>
           <button
             type="button"
-            {...stylex.props(sx.styles.originalMessageToggle)}
-            data-stylex-owner="uikit-original-message-toggle"
+            data-owner="uikit-original-message-toggle"
             onClick={() => {
               setShowsOriginalMessage((current) => !current);
             }}
@@ -375,7 +371,6 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
             >
               <button
                 type="button"
-                {...stylex.props(sx.styles.dropdownMenuButton)}
                 onClick={(event) => {
                   event.stopPropagation();
                   setSelectedValue("");
@@ -389,7 +384,6 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
             <li data-value="0" className={selectedValue === "0" ? "active" : undefined}>
               <button
                 type="button"
-                {...stylex.props(sx.styles.dropdownMenuButton)}
                 onClick={(event) => {
                   event.stopPropagation();
                   setSelectedValue("0");
@@ -419,15 +413,11 @@ function IssueLabel({
   color: string;
   editable?: boolean;
 }) {
-  const labelBackgroundProps = stylex.props(sx.styles.issueLabelBackground(color));
-  const labelTextProps = stylex.props(sx.styles.issueLabelText);
-
   return (
     <button
-      {...labelBackgroundProps}
-      {...labelTextProps}
-      className={`issue-label active${editable ? " editable" : ""} ${labelBackgroundProps.className ?? ""} ${labelTextProps.className ?? ""}`.trim()}
-      data-stylex-owner="uikit-issue-label"
+      style={{ backgroundColor: color, color: "#fff" }}
+      className={`issue-label active${editable ? " editable" : ""}`}
+      data-owner="uikit-issue-label"
     >
       {children}
       <span className="delete">&times;</span>

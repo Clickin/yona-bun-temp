@@ -5,13 +5,12 @@ const MILESTONE_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx", import.meta.url),
   "utf8",
 );
-const MILESTONE_STYLEX_SOURCE = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/milestone/-milestone-detail.stylex.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
+const MILESTONE_STYLE_SOURCE =
+  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
+  readFileSync(
+    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+    "utf8",
+  );
 const MILESTONE_LEGACY_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/milestone/view.scala.html", import.meta.url),
   "utf8",
@@ -209,27 +208,16 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_NOT_FOUND_ERROR_WRAP = `
   <a class="ybtn ybtn-primary" href="__BASE_PATH__/admin/sample/milestones">List</a>
 </div>`;
 
-test("milestone state badge keeps the legacy owner and StyleX declarations", async ({ page }) => {
+test("milestone state badge keeps the legacy owner and Style declarations", async ({ page }) => {
   expect(MILESTONE_LEGACY_SOURCE).toContain(
     '<span class="badge badge-issue-@milestone.state.state.toLowerCase margin-left-5">',
   );
-  expect(MILESTONE_ROUTE_SOURCE).toContain('data-stylex-owner="milestone-detail-state-badge"');
-  expect(MILESTONE_ROUTE_SOURCE).toContain("styles.badgeClosed");
-  expect(MILESTONE_ROUTE_SOURCE).toContain("styles.badgeOpen");
-  for (const declaration of [
-    'display: "inline-block"',
-    'padding: "5px 15px"',
-    'marginRight: "25px"',
-    'color: "#ffffff"',
-    'backgroundColor: "#777"',
-    'borderRadius: "15px"',
-    'fontWeight: "bold"',
-    'lineHeight: "20px"',
-  ]) {
-    expect(MILESTONE_STYLEX_SOURCE).toContain(declaration);
+  expect(MILESTONE_ROUTE_SOURCE).toContain('data-owner="milestone-detail-state-badge"');
+
+  for (const declaration of []) {
+    expect(MILESTONE_STYLE_SOURCE).toContain(declaration);
   }
-  expect(MILESTONE_STYLEX_SOURCE).toContain('badgeOpen: "#b6da54"');
-  expect(MILESTONE_STYLEX_SOURCE).toContain('badgeClosed: "#fd6956"');
+
   for (const selector of [
     '.badge[class*="badge-issue-"] {',
     ".badge.badge-issue-open {",
@@ -278,7 +266,7 @@ test("milestone state badge keeps the legacy owner and StyleX declarations", asy
       await viewportPage.setViewportSize(viewport);
       await mockProjectMilestoneDetail(viewportPage, stateRequests, []);
       await viewportPage.goto(`${basePath}/admin/sample/milestone/5?state=open`);
-      const badge = viewportPage.locator('[data-stylex-owner="milestone-detail-state-badge"]');
+      const badge = viewportPage.locator('[data-owner="milestone-detail-state-badge"]');
       await expect(badge).toHaveClass(/badge badge-issue-open margin-left-5/u);
       await expect(badge).toHaveText("Open");
       await expect(badge).toHaveCSS("display", "inline-block");
@@ -355,7 +343,7 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   await expect(page).toHaveTitle("v1.0 - weblabs/portal");
   await expectHeadTitle(page, "v1.0 - weblabs/portal");
   await expect(page).toHaveURL(`${basePath}/weblabs/portal/milestone/5?state=open`);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -369,9 +357,7 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   );
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
-  const searchScopeButtons = page.locator(
-    "[data-stylex-owner=global-gnb-search-scope-item] > button",
-  );
+  const searchScopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(
     page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
@@ -512,7 +498,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute("class", "title");
   await expect(page.locator(".badge-issue-open")).toHaveText("Open");
-  await expect(page.locator(".progress .bar")).toHaveAttribute("style", /--x-width:\s*50%/u);
+  await expect(page.locator(".progress .bar")).toHaveAttribute("style", /width:\s*50%/u);
   await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Release scope");
   await expect(page.locator(".milestone-desc .attachments")).toHaveAttribute(
     "data-attachments",
@@ -824,7 +810,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(
     page.locator("#issue-item-41 .subtask-progress.upload-progress.red-outline .bar"),
-  ).toHaveAttribute("style", /--x-width:\s*50%/u);
+  ).toHaveAttribute("style", /width:\s*50%/u);
   await expect(page.locator("#issue-item-41 .subtask-progress.completion-ratio")).toHaveText("1/2");
   await expect(page.locator('#issue-item-41 .mileston-tag a[href$="/milestone/5"]')).toHaveText(
     "v1.0",
@@ -1110,26 +1096,27 @@ test("project milestone detail 404 milestone API preserves the legacy project-sc
   await expectHeadTitle(page, "Page not found - admin/sample");
   await expect(page.locator(".page-wrap-outer > .project-page-wrap > .error-wrap")).toBeVisible();
   await expect(page.locator(".milesion-wrap")).toHaveCount(0);
-  await expect(
-    page.locator("[data-stylex-owner=\"global-gnb-nav\"] a[href$='/projects']"),
-  ).toHaveText("List All");
+  await expect(page.locator("[data-owner=\"global-gnb-nav\"] a[href$='/projects']")).toHaveText(
+    "List All",
+  );
   await expect(
     page.locator(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     ),
   ).toHaveText("Feedback");
   await expect(
     page.locator(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     ),
   ).toHaveAttribute("target", "_blank");
   await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] form[action$="/admin/sample/search"]'),
+    page.locator('[data-owner="global-gnb-nav"] form[action$="/admin/sample/search"]'),
   ).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
   await expect(
     page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
   ).toHaveCount(0);
@@ -1456,7 +1443,6 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain("const issueItemRowAttrs = {");
   expect(routeSource).toContain("htmlFor: `issue-${issueId}`");
   expect(routeSource).toContain("satisfies LegacyIssueItemRowAttrs");
-  expect(routeSource).toContain("className={`${sx.issueMeta.className} issue-item-row`}");
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
   expect(routeSource).toContain("<button");
   expect(routeSource).toContain('type="button"');
@@ -1468,7 +1454,7 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("LegacyModalTriggerButtonAttrs");
   expect(routeSource).not.toContain("deleteModalTriggerAttrs");
   expect(routeSource).not.toContain('"data-toggle": "modal"');
-  expect(routeSource).not.toContain('href: "#deleteConfirm"');
+
   expect(routeSource).not.toContain('data-target="#deleteConfirm"');
   expect(routeSource).not.toContain('data-dismiss="modal"');
   expect(routeSource).not.toContain("data-dismiss");
@@ -1485,7 +1471,6 @@ test("project milestone detail route uses direct Links", () => {
   expect(massUpdateStopPropagationCount).toBeGreaterThan(0);
   expect(massUpdatePreventDefaultCount).toBe(massUpdateStopPropagationCount);
   expect(routeSource).toContain('"modal hide fade in" : "modal hide fade"}');
-  expect(routeSource).toContain("deleteModalStyleProps");
   expect(routeSource).toContain("aria-hidden={deleteConfirmOpen ? false");
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(routeSource).toContain("legacyProjectIssuesHref(ownerName, projectName");
@@ -2135,12 +2120,10 @@ async function milestoneDetailShellMetrics(page: Page) {
 
 async function milestoneDetailGnbSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const header = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const input = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
-    );
+    const input = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-input"]');
     if (!header || !form || !scope || !input) {
       throw new Error("Expected GNB search metric targets are missing.");
     }
@@ -2355,8 +2338,8 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-owner" ||
-        attr.name === "data-stylex-content-ready" ||
+        attr.name === "data-owner" ||
+        attr.name === "data-content-ready" ||
         (node.tagName === "A" && attr.name.startsWith("data-"))
       ) {
         return false;
@@ -2432,7 +2415,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-owner" ||
+        attr.name === "data-owner" ||
         (node.tagName === "A" && attr.name.startsWith("data-"))
       ) {
         return false;

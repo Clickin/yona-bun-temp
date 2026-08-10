@@ -10158,3 +10158,14 @@ desktop/mobile metrics pass 2/2. The old `1176px` fixture was stale for the
 current viewport and is now checked with the legacy `content width * 0.98`
 formula. Full fallback-off, global fallback audit, and final pixel lock remain
 open.
+
+---
+
+## SUPERSEDED — 2026-08-10
+
+This plan drove the frozen-CSS→StyleX migration, which is now fully retired.
+A user-approved follow-up plan (`tailwind-stylex-migration-plan`) replaced the
+StyleX runtime with a Tailwind v4 single CSS stack: legacy classnames +
+`--x-*` CSS variables + unlayered `[data-owner]` rules, keeping
+`legacy-fallback.css` as a committed frozen asset. Gate: 2240/494/1 vs baseline
+2090/529/1. Kept for history per AGENTS.md; not a live execution spec.

@@ -129,13 +129,14 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.goto(`${basePath}/`);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".siteintro-bg")).toBeVisible();
-  await expect(page.locator("[data-stylex-owner=site-footer]")).toBeVisible();
+  await expect(page.locator("[data-owner=site-footer]")).toBeVisible();
   await expect(page.locator("body#html-body > #root > #main.main")).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
-  ).toHaveAttribute("href", `${basePath}/users/signupform`);
+  await expect(page.locator('[data-owner="anonymous-home-intro-signup-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/users/signupform`,
+  );
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -145,7 +146,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
 
   expect(actual).toEqual(expected);
   const viteConfigSource = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
-  expect(viteConfigSource).toContain("stylex.vite(");
+
   expect(viteConfigSource).toContain("legacyFallbackEnabled");
   expect(viteConfigSource).toContain("transformLegacyFallbackLink");
   expect(await readLegacyLayoutShell(page)).toEqual({
@@ -155,7 +156,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     ogTitle: "Yoram",
     ogType: "website",
     ogUrl: "/",
-    stylesheetHrefs: [`${basePath}/virtual:stylex.css`],
+    stylesheetHrefs: [`${basePath}/virtual:style.css`],
     twitterCard: "summary",
     twitterDescription: "Yoram",
     twitterTitle: "Yoram",
@@ -257,34 +258,30 @@ async function readLegacyLayoutShell(page: Page) {
 async function readDesktopLandingMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-cover"]',
+      '[data-owner="anonymous-home-intro-cover"]',
     );
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const heading = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-heading"]',
+      '[data-owner="anonymous-home-intro-heading"]',
     );
     const signup = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-signup"]',
+      '[data-owner="anonymous-home-intro-signup"]',
     );
-    const feature = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature"]',
-    );
+    const feature = document.querySelector<HTMLElement>('[data-owner="anonymous-home-feature"]');
     const featureItem = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-item"]',
+      '[data-owner="anonymous-home-feature-item"]',
     );
     const featureIcon = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-icon"]',
+      '[data-owner="anonymous-home-feature-icon"]',
     );
     const featureInfo = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-info"]',
+      '[data-owner="anonymous-home-feature-info"]',
     );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !siteIntroCover ||
       !gnbOuter ||
@@ -352,23 +349,21 @@ async function readDesktopLandingMetrics(page: Page) {
 async function readMobileLandingMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-cover"]',
+      '[data-owner="anonymous-home-intro-cover"]',
     );
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const heading = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-heading"]',
+      '[data-owner="anonymous-home-intro-heading"]',
     );
     const featureWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-list"]',
+      '[data-owner="anonymous-home-feature-list"]',
     );
     const featureItem = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-item"]',
+      '[data-owner="anonymous-home-feature-item"]',
     );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !siteIntroCover ||
       !gnbOuter ||
@@ -412,7 +407,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .siteintro-bg, [data-owner=site-footer]",
       ),
     );
     const tabTargets: Record<string, string> = {
@@ -424,8 +419,8 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function isKnownReactOwner(current: Element, value = "") {
-      const owner = current.getAttribute("data-stylex-owner") ?? "";
-      const parentOwner = current.parentElement?.getAttribute("data-stylex-owner") ?? "";
+      const owner = current.getAttribute("data-owner") ?? "";
+      const parentOwner = current.parentElement?.getAttribute("data-owner") ?? "";
       return (
         owner.startsWith("global-") ||
         owner.startsWith("anonymous-home-") ||
@@ -439,7 +434,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeKnownReactClass(current: Element, value: string) {
-      const owner = current.getAttribute("data-stylex-owner") ?? "";
+      const owner = current.getAttribute("data-owner") ?? "";
       if (
         owner === "anonymous-site-signup" ||
         owner.startsWith("anonymous-home-feature") ||
@@ -456,8 +451,7 @@ async function canonicalizeScreenRoots(page: Page) {
           (token) =>
             token &&
             !(
-              current.getAttribute("data-stylex-owner") === "global-gnb-brand-link" &&
-              token === "active"
+              current.getAttribute("data-owner") === "global-gnb-brand-link" && token === "active"
             ) &&
             !token.startsWith("-home-route-screen__") &&
             !/^x[a-z0-9]+$/u.test(token),
@@ -466,7 +460,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function translatedTabTarget(current: Element) {
-      return tabTargets[current.getAttribute("data-stylex-owner") ?? ""];
+      return tabTargets[current.getAttribute("data-owner") ?? ""];
     }
 
     function isTranslatedPluginAttribute(current: Element, name: string) {
@@ -474,10 +468,10 @@ async function canonicalizeScreenRoots(page: Page) {
         (name === "data-toggle" &&
           (current.matches("div.pin") ||
             current.matches("ul.nav-tabs li > a") ||
-            current.matches('[data-stylex-owner="global-sidebar-open-pin"]'))) ||
+            current.matches('[data-owner="global-sidebar-open-pin"]'))) ||
         (name === "data-placement" &&
           (current.matches("div.pin") ||
-            current.matches('[data-stylex-owner="global-sidebar-open-pin"]'))) ||
+            current.matches('[data-owner="global-sidebar-open-pin"]'))) ||
         (name === "data-login" && current.matches("a.user-item-btn"))
       );
     }
@@ -498,7 +492,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      if (name === "class" && current.matches('[data-stylex-owner="anonymous-home-intro-outer"]')) {
+      if (name === "class" && current.matches('[data-owner="anonymous-home-intro-outer"]')) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
           .filter((token) => token === "siteintro-bg")
@@ -506,11 +500,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -521,7 +515,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)
@@ -539,7 +533,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function visit(current: Element): string {
       const tabTarget = translatedTabTarget(current);
-      const isPin = current.matches('[data-stylex-owner="global-sidebar-open-pin"]');
+      const isPin = current.matches('[data-owner="global-sidebar-open-pin"]');
       const tagName = isPin || tabTarget ? (isPin ? "div" : "a") : current.tagName.toLowerCase();
       const stableAttributes = [
         "id",

@@ -47,10 +47,13 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(None);
         };
-        let old_state = issue_state_from_raw(model.state);
+        let old_state = issue_state_from_raw(self.db.get_database_backend(), model.state);
         let new_state = normalize_identity(state);
         let mut active = issue::ActiveModel::from(model);
-        active.state = Set(Some(issue_state_to_raw(&new_state)));
+        active.state = Set(Some(issue_state_to_raw(
+            self.db.get_database_backend(),
+            &new_state,
+        )));
         active.updated_date = Set(Some(current_datetime()));
         let updated = active.update(&self.db).await?;
         if old_state != new_state && !actor_login_id.trim().is_empty() {
@@ -124,11 +127,10 @@ impl AppRepositoryImpl<'_> {
                 project_id: Set(Some(project_record.id)),
                 number: Set(Some(issue_number)),
                 num_of_comments: Set(Some(0)),
-                state: Set(Some(issue_state_to_raw(if is_draft {
-                    "draft"
-                } else {
-                    "open"
-                }))),
+                state: Set(Some(issue_state_to_raw(
+                    self.db.get_database_backend(),
+                    if is_draft { "draft" } else { "open" },
+                ))),
                 due_date: Set(input.values.due_date),
                 milestone_id: Set(input.values.milestone_id.filter(|value| *value > 0)),
                 assignee_id: Set(assignee_id),
@@ -250,7 +252,7 @@ impl AppRepositoryImpl<'_> {
                 Some(model.id),
             )
             .await?;
-        let old_state = issue_state_from_raw(model.state);
+        let old_state = issue_state_from_raw(self.db.get_database_backend(), model.state);
         let was_draft = model.is_draft.unwrap_or_default() != 0;
         let old_assignee = model.assignee_id;
         let old_milestone = model.milestone_id;
@@ -274,14 +276,20 @@ impl AppRepositoryImpl<'_> {
         if input.values.is_publish {
             active.created_date = Set(Some(current_datetime()));
             active.is_draft = Set(Some(0));
-            active.state = Set(Some(issue_state_to_raw("open")));
+            active.state = Set(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "open",
+            )));
             if was_draft {
                 let next_issue_number = self.next_issue_number(project_record.id).await?;
                 active.number = Set(Some(next_issue_number));
             }
         } else if input.values.is_draft {
             active.is_draft = Set(Some(1));
-            active.state = Set(Some(issue_state_to_raw("draft")));
+            active.state = Set(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "draft",
+            )));
         }
         active.updated_date = Set(Some(current_datetime()));
         let mut updated = active.update(&self.db).await?;

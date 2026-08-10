@@ -167,7 +167,7 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -312,7 +312,7 @@ test("project delete form localhost legacy portal shell is restored", async ({ p
   await expect(page).toHaveTitle("Delete project - weblabs/portal");
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -362,7 +362,7 @@ test("project delete form restores watcher util and full project menu on desktop
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
     // F6 copy-fix-current-dom: Vite content-hashed dist asset (project_default-DvNH5PGr.jpg)
-    // via the stylex --x-backgroundImage var — same legacy bg-default-project.jpg image
+    // via the style --x-backgroundImage var — same legacy bg-default-project.jpg image
     new RegExp(`${basePath}/assets/project_default(?:-[A-Za-z0-9_-]+)?\\.jpg`),
   );
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
@@ -425,7 +425,7 @@ test("project delete confirmation modal source stays route-owned", async () => {
   expect(modalSource).toContain("aria-hidden=");
   expect(modalSource).toContain("onClick={openDeletionModal}");
   expect(modalSource).toContain("onClick={dismissDeletionModal}");
-  expect(modalSource).toContain('data-stylex-owner="project-delete-modal-backdrop"');
+  expect(modalSource).toContain('data-owner="project-delete-modal-backdrop"');
   expect(modalSource).toContain("onClick={closeDeletionModal}");
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");
@@ -447,13 +447,14 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await rememberSpaMarker(page, "kept");
   await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
-  await expect(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-header] button")).not.toHaveAttribute("data-dismiss", "modal");
-  await expect(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-footer] button").last()).not.toHaveAttribute(
-    "data-dismiss",
-    "modal",
-  );
+  await expect(
+    page.locator("#alertDeletion [data-owner=project-delete-modal-header] button"),
+  ).not.toHaveAttribute("data-dismiss", "modal");
+  await expect(
+    page.locator("#alertDeletion [data-owner=project-delete-modal-footer] button").last(),
+  ).not.toHaveAttribute("data-dismiss", "modal");
   await expect(page.locator('#alertDeletion [data-dismiss="modal"]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: null,
     className: "modal hide",
@@ -473,7 +474,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(rejectedAlertPromise).resolves.toBe("You should agree to delete this project.");
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: null,
     className: "modal hide",
@@ -487,12 +488,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await page.locator("#accept").check();
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
-  // F6 copy-fix-current-dom: no bootstrap `in` — visibility is stylex-owned
+  // F6 copy-fix-current-dom: no bootstrap `in` — visibility is style-owned
   // (modalOpen/modalClosed); pin the open state via display.
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "block");
   await expect(alertDeletion).toHaveCSS("display", "block");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "false",
     className: "modal hide",
@@ -505,11 +506,13 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
 
   await armRootDeleteModalBridgeTrap(page);
   expect(
-    await dispatchCancelableClick(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-footer] button").last()),
+    await dispatchCancelableClick(
+      page.locator("#alertDeletion [data-owner=project-delete-modal-footer] button").last(),
+    ),
   ).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "true",
     className: "modal hide",
@@ -522,7 +525,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
 
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
-  // F6 copy-fix-current-dom: no bootstrap `in` — visibility is stylex-owned
+  // F6 copy-fix-current-dom: no bootstrap `in` — visibility is style-owned
   // (modalOpen/modalClosed); pin the open state via display.
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "block");
@@ -537,9 +540,13 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect.poll(() => spaMarker(page)).toBe("kept");
 
   await armRootDeleteModalBridgeTrap(page);
-  expect(await dispatchCancelableClick(page.locator("#alertDeletion [data-stylex-owner=project-delete-modal-header] button"))).toBe(false);
+  expect(
+    await dispatchCancelableClick(
+      page.locator("#alertDeletion [data-owner=project-delete-modal-header] button"),
+    ),
+  ).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "true",
     className: "modal hide",
@@ -552,7 +559,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
 
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
-  // F6 copy-fix-current-dom: no bootstrap `in` — visibility is stylex-owned
+  // F6 copy-fix-current-dom: no bootstrap `in` — visibility is style-owned
   // (modalOpen/modalClosed); pin the open state via display.
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "block");
@@ -562,13 +569,15 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
     display: "block",
     style: null,
   });
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
 
-  expect(await dispatchCancelableClick(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]'))).toBe(true);
+  expect(
+    await dispatchCancelableClick(page.locator('[data-owner="project-delete-modal-backdrop"]')),
+  ).toBe(true);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "true",
     className: "modal hide",
@@ -619,8 +628,8 @@ test("project delete request failure hides modal and shows legacy error alert", 
   await page.locator("#accept").check();
   await page.locator("#btnDelete").click();
   // F6 copy-fix-current-dom: the app never adds bootstrap `in` (visibility is
-  // stylex-owned via modalOpen/modalClosed, deleteform.tsx:409-416); the open
-  // state is display:block with the class staying `modal hide` + stylex tokens.
+  // style-owned via modalOpen/modalClosed, deleteform.tsx:409-416); the open
+  // state is display:block with the class staying `modal hide` + style tokens.
   await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "block");
 
@@ -639,7 +648,7 @@ test("project delete request failure hides modal and shows legacy error alert", 
   expect(deleteRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
   await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(page.locator("#alertDeletion"))).toEqual({
     ariaHidden: "true",
     className: "modal hide",
@@ -1032,7 +1041,7 @@ async function readDeletionModalRuntimeState(locator: Locator) {
         .split(/\s+/u)
         .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
         .join(" "),
-      // F6 copy-fix-current-dom: visibility is stylex-owned (modalOpen/modalClosed,
+      // F6 copy-fix-current-dom: visibility is style-owned (modalOpen/modalClosed,
       // deleteform.tsx:119-120) — no bootstrap `in` class and no inline style;
       // report the computed display so the open/closed state stays pinned.
       display: getComputedStyle(htmlElement).display,
@@ -1062,12 +1071,10 @@ async function readLegacyAnchorSnapshots(page: Page, selector: string) {
       className: (() => {
         const raw = anchor.getAttribute("class");
         if (raw === null) return null;
-        // F6 copy-fix-current-dom: stylex tokens are the accepted styling mechanism;
+        // F6 copy-fix-current-dom: style tokens are the accepted styling mechanism;
         // drop x-token-only classes so the snapshot matches the legacy class-less anchors
         // (menu.scala.html / delete.scala.html) while real classes like project-origin-name stay.
-        const kept = raw
-          .split(/\s+/u)
-          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token));
+        const kept = raw.split(/\s+/u).filter((token) => token && !/^x[0-9a-z]+$/u.test(token));
         return kept.length > 0 ? kept.join(" ") : null;
       })(),
       dataStatus: anchor.getAttribute("data-status"),
@@ -1080,7 +1087,7 @@ async function readLegacyAnchorSnapshots(page: Page, selector: string) {
 async function readLegacyGnbTexts(page: Page) {
   return page
     .locator(
-      '[data-stylex-owner="global-gnb-nav"] a, [data-stylex-owner=global-gnb-search-scope-item] > button, #gnb-search-scope-title',
+      '[data-owner="global-gnb-nav"] a, [data-owner=global-gnb-search-scope-item] > button, #gnb-search-scope-title',
     )
     .evaluateAll((elements) =>
       elements.map((element) => (element.textContent ?? "").replace(/\s+/g, " ").trim()),
@@ -1444,7 +1451,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1462,7 +1469,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1485,11 +1492,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1497,7 +1504,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -1558,7 +1565,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))

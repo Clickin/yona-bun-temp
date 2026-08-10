@@ -4,7 +4,6 @@ import { MilestoneFileUploader } from "../../../../../components/file-uploader";
 import { MilestoneMarkdownEditor } from "../../../../../components/markdown-editor";
 import { MilestoneDatePicker } from "../../../../../components/milestone-date-picker";
 import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-input";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
@@ -17,7 +16,6 @@ import {
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { ProjectMilestoneNotFoundBody, ProjectMilestoneNotFoundTitle } from "../$milestoneId";
-import { milestoneEditFormStyles, milestoneEditFormTheme } from "./-milestone-editform.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId/editform")({
   component: ProjectMilestoneEditFormRoute,
@@ -125,12 +123,9 @@ function ProjectMilestoneEditFormBody({
   });
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="milestone-edit-form-page">
+    <div className="page-wrap-outer" data-owner="milestone-edit-form-page">
       <div className="project-page-wrap">
-        <div
-          className={`${stylex.props(styles.form).className} content-wrap frm-wrap`}
-          data-stylex-owner="milestone-edit-form"
-        >
+        <div className="content-wrap frm-wrap" data-owner="milestone-edit-form">
           <form
             action={prefixBasePath(
               runtimeConfig.basePath,
@@ -163,7 +158,7 @@ function ProjectMilestoneEditFormBody({
             <div className="row-fluid">
               <div className="span12">
                 <dl>
-                  <dd data-stylex-owner="milestone-edit-form-title-row">
+                  <dd data-owner="milestone-edit-form-title-row">
                     <LegacyTabIndexInput
                       focusRequest={titleFocusRequest}
                       type="text"
@@ -171,7 +166,7 @@ function ProjectMilestoneEditFormBody({
                       name="title"
                       defaultValue={stringField(milestone.title, "")}
                       className="zen-mode text title "
-                      data-stylex-owner="milestone-edit-form-title"
+                      data-owner="milestone-edit-form-title"
                       maxLength={250}
                       tabIndex={1}
                       placeholder={t("title")}
@@ -187,21 +182,14 @@ function ProjectMilestoneEditFormBody({
               </div>
 
               <div className="row-fluid">
-                <div
-                  className={`${stylex.props(styles.leftPane).className} span9 span-left-pane`}
-                  data-stylex-owner="milestone-edit-form-editor-pane"
-                >
+                <div className="span9 span-left-pane" data-owner="milestone-edit-form-editor-pane">
                   <dl>
-                    <dd
-                      {...stylex.props(milestoneEditFormStyles.editorWrapper)}
-                      data-stylex-owner="milestone-edit-form-editor-wrapper"
-                    >
+                    <dd data-owner="milestone-edit-form-editor-wrapper">
                       <MilestoneMarkdownEditor
                         focusRequest={contentFocusRequest}
                         contents={stringField(milestone.contentsMarkdown, "")}
-                        wrapperClassName={`mt10 ${stylex.props(milestoneEditFormStyles.markdownEditorWrapper).className ?? ""}`.trim()}
-                        tabListStyle={stylex.props(styles.editorTabs)}
-                        tabContentClassName={`${stylex.props(milestoneEditFormStyles.editorContent).className} tab-content`}
+                        wrapperClassName="mt10"
+                        tabContentClassName="tab-content"
                         owners={{
                           wrapper: "milestone-edit-form-markdown-editor-wrapper",
                           tabs: "milestone-edit-form-editor-tabs",
@@ -213,10 +201,8 @@ function ProjectMilestoneEditFormBody({
 
                   <MilestoneFileUploader
                     resourceId={stringField(milestone.id, "")}
-                    wrapperStyleProps={stylex.props(styles.upload)}
-                    attachWrapStyleProps={stylex.props(styles.uploadControls)}
-                    pasteHelpStyleProps={stylex.props(milestoneEditFormStyles.pasteHelpVisible)}
-                    helpClassName={`${stylex.props(milestoneEditFormStyles.uploadSaveHelp).className} help`}
+                    pasteHelpStyleProps={{ style: { display: "block" } }}
+                    helpClassName="help"
                     owners={{
                       wrapper: "milestone-edit-form-uploader",
                       attachWrap: "milestone-edit-form-upload-controls",
@@ -225,10 +211,7 @@ function ProjectMilestoneEditFormBody({
                     }}
                   />
 
-                  <div
-                    className={`${stylex.props(styles.actions).className} actrow`}
-                    data-stylex-owner="milestone-edit-form-actions"
-                  >
+                  <div className="actrow" data-owner="milestone-edit-form-actions">
                     <button type="submit" className="ybtn ybtn-info">
                       {t("button.save")}
                     </button>
@@ -246,14 +229,8 @@ function ProjectMilestoneEditFormBody({
                     </Link>
                   </div>
                 </div>
-                <div
-                  className={`${stylex.props(styles.rightPane).className} span3 span-hard-wrap`}
-                  data-stylex-owner="milestone-edit-form-options"
-                >
-                  <dl
-                    className={`${stylex.props(styles.stateOptions).className} issue-option`}
-                    data-stylex-owner="milestone-edit-form-state-options"
-                  >
+                <div className="span3 span-hard-wrap" data-owner="milestone-edit-form-options">
+                  <dl className="issue-option" data-owner="milestone-edit-form-state-options">
                     <dt>{t("milestone.form.state")}</dt>
                     <dd>
                       <div>
@@ -283,10 +260,7 @@ function ProjectMilestoneEditFormBody({
                       </div>
                     </dd>
                   </dl>
-                  <dl
-                    className={`${stylex.props(styles.dueDateOptions).className} issue-option`}
-                    data-stylex-owner="milestone-edit-form-due-date-options"
-                  >
+                  <dl className="issue-option" data-owner="milestone-edit-form-due-date-options">
                     <dt>{t("milestone.form.dueDate")}</dt>
                     <dd>
                       <div>
@@ -304,7 +278,6 @@ function ProjectMilestoneEditFormBody({
                         <MilestoneDatePicker
                           dueDate={dueDate}
                           onSelect={setDueDate}
-                          containerStyleX={styles.datePicker}
                           containerOwner="milestone-edit-form-datepicker"
                         />
                       </div>
@@ -319,19 +292,6 @@ function ProjectMilestoneEditFormBody({
     </div>
   );
 }
-
-const styles = stylex.create({
-  form: { position: "relative" },
-  leftPane: { display: "block" },
-  actions: { textAlign: "right" },
-  rightPane: { display: "block" },
-  editorTabs: { borderBottomColor: milestoneEditFormTheme.inputBorder },
-  uploadControls: { color: milestoneEditFormTheme.mutedText },
-  stateOptions: { color: milestoneEditFormTheme.optionText },
-  dueDateOptions: { color: milestoneEditFormTheme.optionText },
-  datePicker: { borderColor: milestoneEditFormTheme.inputBorder },
-  upload: { backgroundColor: milestoneEditFormTheme.uploadSurface },
-});
 
 function stringFormValue(formData: FormData, name: string) {
   const value = formData.get(name);

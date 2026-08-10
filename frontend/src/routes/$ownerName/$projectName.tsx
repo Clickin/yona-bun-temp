@@ -1,7 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import type { MouseEvent, ReactNode, SyntheticEvent } from "react";
+import type { CSSProperties, MouseEvent, ReactNode, SyntheticEvent } from "react";
 import { createContext, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -11,203 +10,7 @@ import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png"
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../components/issue-label";
 import { CountBadge } from "../../components/count-badge";
-import { styles as projectHomeStyles } from "./$projectName/-project-home.stylex";
 
-const projectHistoryStyles = stylex.create({
-  stream: { marginBottom: "15px", width: "100%" },
-  avatarWrap: {
-    float: "left",
-    marginRight: "10px",
-  },
-  activityStreams: { margin: "0" },
-  activityItem: {
-    borderBottom: "1px solid #f1f1f1",
-    marginBottom: "6px",
-    padding: "1px 0 6px",
-  },
-  header: {
-    marginTop: "0",
-    marginBottom: "5px",
-    overflow: "hidden",
-    color: "#666",
-    fontSize: "12px",
-    lineHeight: "100%",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    wordBreak: "break-all",
-  },
-  actor: { fontWeight: "bold" },
-  others: { paddingLeft: "0" },
-  date: { marginLeft: "0" },
-  pullRequestDate: { color: "#999", textAlign: "right" },
-  pullRequestLink: { marginRight: "17px", textAlign: "right" },
-  whereis: { color: "#333", fontSize: "11px" },
-  where: {
-    backgroundColor: "#f7f7f7",
-    borderRadius: "2px",
-    boxShadow: "inset 0 0 5px #fff",
-    color: "#51aacc",
-    display: "inline-block",
-    fontWeight: "bold",
-    padding: "3px 5px",
-  },
-  title: { fontWeight: "bold" },
-  historyDate: { color: "#bbb", marginLeft: "5px" },
-});
-
-const projectHomeMemberAvatarStyles = stylex.create({
-  avatar: {
-    backgroundColor: "#ddd",
-    border: "1px solid #ccc",
-    borderRadius: "3px",
-    display: "inline-block",
-    float: "left",
-    height: "24px",
-    overflow: "hidden",
-    verticalAlign: "top",
-    width: "24px",
-  },
-  image: { verticalAlign: "top", width: "100%" },
-});
-
-const projectMenuNavStyles = stylex.create({
-  item: {
-    float: "left",
-    fontSize: "14px",
-    fontWeight: "bold",
-    position: "relative",
-  },
-  link: {
-    display: "inline-block",
-    lineHeight: "30px",
-    padding: "5px 20px 4px",
-    ":hover": {
-      backgroundColor: "#dadada",
-      color: "#fc491e",
-      textDecoration: "none",
-    },
-  },
-  mobileLink: {
-    "@media all and (max-width: 720px)": { padding: "5px 12px 4px 12px !important" },
-  },
-  mobileName: {
-    "@media all and (max-width: 720px)": { display: "none" },
-  },
-  mobileShort: {
-    "@media all and (max-width: 720px)": { display: "block" },
-  },
-  mobileCount: {
-    "@media all and (max-width: 720px)": {
-      marginTop: "-36px !important",
-      position: "absolute !important",
-    },
-  },
-  activeItem: {
-    color: "#fc491e",
-    "::before": {
-      border: "8px solid transparent",
-      borderBottomColor: "#ddd",
-      borderStyle: "outset outset solid outset",
-      bottom: "0",
-      content: '" "',
-      height: "0",
-      left: "50%",
-      marginLeft: "-8px",
-      overflow: "hidden",
-      position: "absolute",
-      width: "0",
-    },
-    "::after": {
-      border: "8px solid transparent",
-      borderBottomColor: "#fff",
-      borderStyle: "outset outset solid outset",
-      bottom: "-1px",
-      content: '" "',
-      height: "0",
-      left: "50%",
-      marginLeft: "-8px",
-      overflow: "hidden",
-      position: "absolute",
-      width: "0",
-    },
-  },
-});
-
-const projectHeaderStyles = stylex.create({
-  background: (backgroundImage: string) => ({ backgroundImage }),
-  outer: {
-    backgroundColor: "#565656",
-    backgroundPosition: "center bottom",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover",
-    height: "120px",
-    "@media all and (max-width: 720px)": {
-      minWidth: "10px",
-    },
-  },
-  wrap: { height: "inherit", margin: "0 auto", position: "relative", width: "97%" },
-  avatar: {
-    background: "#fff",
-    border: "5px solid #f9f9f9",
-    borderRadius: "3px",
-    bottom: "-30px",
-    height: "80px",
-    left: "0px",
-    position: "absolute",
-    width: "80px",
-    "@media all and (max-width: 720px)": {
-      border: "1px solid #f9f9f9",
-      bottom: "-6px",
-      height: "50px",
-      left: "0px",
-      width: "50px",
-    },
-  },
-  avatarImage: { height: "100%", verticalAlign: "top", width: "100%" },
-  breadcrumbWrap: {
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: "0 3px 3px 0",
-    bottom: "18px",
-    display: "inline-block",
-    fontWeight: "bold",
-    left: "90px",
-    padding: "2px 10px",
-    position: "absolute",
-    "@media all and (max-width: 720px)": {
-      bottom: "5px",
-      left: "52px",
-    },
-  },
-  breadcrumb: { fontSize: "1.5em", lineHeight: "30px" },
-  breadcrumbAuthor: {
-    "@media all and (max-width: 720px)": { fontSize: "0.7em" },
-  },
-  breadcrumbAuthorLink: {
-    color: "#fff",
-    ":hover": { color: "#fff", textDecoration: "underline" },
-  },
-  breadcrumbSeparator: { color: "#fff", padding: "0 5px" },
-  breadcrumbName: {
-    color: "#fc491e",
-    "@media all and (max-width: 720px)": { fontSize: "0.7em" },
-  },
-  breadcrumbNameLink: {
-    ":hover": { color: "#fc491e", textDecoration: "underline" },
-  },
-  breadcrumbFavoriteStar: {
-    // legacy .material-icons base (yona-original/.../_usermenu.less:28-43):
-    // inline-block + line-height 1 keeps the star from inflating the 30px
-    // breadcrumb line box (star 24px box -> wrap height 34, not 37).
-    color: "rgba(255, 255, 255, 0.22)",
-    display: "inline-block",
-    fontSize: "24px",
-    lineHeight: "1",
-    ":hover": { color: "#e91e63", cursor: "pointer" },
-  },
-  breadcrumbFavoriteStarred: { color: "#e91e63" },
-  leaveModalOpen: { display: "block" },
-  leaveModalClosed: { display: "none" },
-});
 import {
   cancelEnrollProjectRest,
   deleteProjectMemberRest,
@@ -239,7 +42,6 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
-import { styles } from "./$projectName/-project-home.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
 import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
@@ -894,38 +696,20 @@ function ProjectContainerErrorRouteShell({
   const { t } = useLegacyMessages();
   const isNotFound = errorStatus === 404;
   const messageKey = isNotFound ? "error.notfound" : "error.forbidden";
-  const errorWrapProps = stylex.props(styles.errorWrap);
-  const errorIconProps = stylex.props(styles.errorIcon(legacySpriteUrl));
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{t(messageKey)}</title>
-      <div
-        className={`${stylex.props(styles.page).className} page-wrap-outer`}
-        data-stylex-owner="project-container-error-page"
-      >
+      <div className="page-wrap-outer" data-owner="project-container-error-page">
         <div className="project-page-wrap">
-          <div
-            {...errorWrapProps}
-            className={`${errorWrapProps.className} error-wrap`}
-            data-stylex-owner="project-container-error-wrap"
-          >
-            <i
-              {...errorIconProps}
-              className={`${errorIconProps.className} ico ico-err2`}
-              data-stylex-owner="project-container-error-icon"
-            />
-            <p
-              {...stylex.props(styles.errorMessage)}
-              data-stylex-owner="project-container-error-message"
-            >
-              {t(messageKey)}
-            </p>
+          <div className="error-wrap" data-owner="project-container-error-wrap">
+            <i className="ico ico-err2" data-owner="project-container-error-icon" />
+            <p data-owner="project-container-error-message">{t(messageKey)}</p>
             <Link
               activeOptions={legacyProjectShellLinkActiveOptions}
               activeProps={legacyProjectShellLinkActiveProps}
               className={`ybtn ${isNotFound ? "ybtn-info" : "ybtn-primary"}`}
-              data-stylex-owner="project-container-error-home"
+              data-owner="project-container-error-home"
               to="/"
             >
               {t("menu.home")}
@@ -964,25 +748,17 @@ function ProjectMembersErrorRouteShell({
         basePath={runtimeConfig.basePath}
         project={project}
       />
-      <div
-        className={`${stylex.props(styles.page).className} page-wrap-outer`}
-        data-stylex-owner="project-home-page"
-      >
+      <div className="page-wrap-outer" data-owner="project-home-page">
         <div className="project-page-wrap">
-          <div
-            {...stylex.props(styles.errorWrap)}
-            className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-            data-stylex-owner="project-members-error-wrap"
-          >
+          <div className="error-wrap" data-owner="project-members-error-wrap">
             <i
-              {...stylex.props(styles.errorIcon(legacySpriteUrl))}
-              className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-              data-stylex-owner="project-members-error-icon"
+              style={
+                { "--project-members-error-sprite": `url(${legacySpriteUrl})` } as CSSProperties
+              }
+              className="ico ico-err2"
+              data-owner="project-members-error-icon"
             ></i>
-            <p
-              {...stylex.props(styles.errorMessage)}
-              data-stylex-owner="project-members-error-message"
-            >
+            <p data-owner="project-members-error-message">
               {t(isForbidden ? "error.forbidden" : "error.badrequest")}
             </p>
             {errorStatus === 401 ? (
@@ -990,13 +766,9 @@ function ProjectMembersErrorRouteShell({
                 activeOptions={legacyProjectShellLinkActiveOptions}
                 activeProps={legacyProjectShellLinkActiveProps}
                 className="ybtn ybtn-primary"
-                // Legacy error/forbidden.scala.html:31 login link carries
-                // data-login="required"; members.tsx's standalone error body
-                // mirrors it — keep the shell error link identical.
-                data-login="required"
                 search={{ redirectUrl: `/${ownerName}/${projectName}/members` }}
                 to="/users/loginform"
-                data-stylex-owner="project-members-error-login"
+                data-owner="project-members-error-login"
               >
                 {t("title.login")}
               </Link>
@@ -1010,34 +782,29 @@ function ProjectMembersErrorRouteShell({
 
 function ProjectPostEditNotFoundRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const errorWrapProps = stylex.props(projectHomeStyles.errorWrap);
-  const errorIconProps = stylex.props(projectHomeStyles.errorIcon(legacySpriteUrl));
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{t("error.internalServerError")}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div
-            {...errorWrapProps}
-            className={`${errorWrapProps.className} error-wrap`}
-            data-stylex-owner="project-post-edit-internal-error-wrap"
-          >
+          <div className="error-wrap" data-owner="project-post-edit-internal-error-wrap">
             <i
-              {...errorIconProps}
-              className={`${errorIconProps.className} ico-404`}
-              data-stylex-owner="project-post-edit-internal-error-icon"
+              className="ico-404"
+              data-owner="project-post-edit-internal-error-icon"
+              style={
+                {
+                  "--project-post-edit-internal-error-sprite": `url(${legacySpriteUrl})`,
+                } as CSSProperties
+              }
             ></i>
-            <p
-              {...stylex.props(projectHomeStyles.errorMessage)}
-              data-stylex-owner="project-post-edit-internal-error-message"
-            >
+            <p data-owner="project-post-edit-internal-error-message">
               {t("error.internalServerError")}
             </p>
             <Link
               to="/"
               className="ybtn ybtn-primary"
-              data-stylex-owner="project-post-edit-internal-error-home"
+              data-owner="project-post-edit-internal-error-home"
             >
               {t("menu.home")}
             </Link>
@@ -1244,7 +1011,7 @@ function ProjectLayoutScreen({
         <ProjectLayoutContext value={project}>
           <ProjectHomeTabContext value={homeTabId ?? null}>
             {active === "home" ? (
-              <div data-stylex-owner="project-home-page">
+              <div data-owner="project-home-page">
                 <LastOutletTransition routeId={Route.id} />
               </div>
             ) : (
@@ -1494,9 +1261,9 @@ export function ProjectHomeBody({
     leaveModalPhase === "initial" ? undefined : leaveModalOpen ? "false" : "true";
   const leaveModalStyleClass =
     leaveModalPhase === "open"
-      ? stylex.props(projectHeaderStyles.leaveModalOpen).className
+      ? "project-home-leave-modal-open"
       : leaveModalPhase === "closed"
-        ? stylex.props(projectHeaderStyles.leaveModalClosed).className
+        ? "project-home-leave-modal-closed"
         : undefined;
   const leaveModalClassName =
     `${leaveModalOpen ? "modal hide in" : "modal hide"}${leaveModalStyleClass ? ` ${leaveModalStyleClass}` : ""}`.trim();
@@ -1533,38 +1300,29 @@ export function ProjectHomeBody({
             </span>
             {booleanField(projectRecord.isPrivate) ||
             stringField(projectRecord.projectScope, "").toUpperCase() === "PRIVATE" ? (
-              <span
-                className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-private`}
-                data-stylex-owner="project-home-private-badge"
-              >
+              <span className="project-private" data-owner="project-home-private-badge">
                 <i className="yobicon-lock"></i>
               </span>
             ) : null}
           </div>
-          <div
-            className={`${stylex.props(projectHomeStyles.header).className} project-home-header row-fluid`}
-            data-stylex-owner="project-home-header"
-          >
+          <div className="project-home-header row-fluid" data-owner="project-home-header">
             <div
-              className={`${stylex.props(projectHomeStyles.overview).className} project-overview span9 span-hard-wrap`}
-              data-stylex-owner="project-home-overview"
+              className="project-overview span9 span-hard-wrap"
+              data-owner="project-home-overview"
             >
               <div
                 className={
                   descriptionEditing ? "project-description hidden" : "project-description"
                 }
               >
-                <h3
-                  {...stylex.props(projectHomeStyles.overviewHeading)}
-                  data-stylex-owner="project-home-overview-heading"
-                >
+                <h3 data-owner="project-home-overview-heading">
                   <span id="project-description" className="markdown-wrap">
                     {overviewText ? (
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           p: ({ children }) => (
-                            <p {...stylex.props(projectHomeStyles.markdownParagraph)}>{children}</p>
+                            <p className="project-home-markdown-paragraph">{children}</p>
                           ),
                         }}
                         urlTransform={(url) =>
@@ -1606,8 +1364,8 @@ export function ProjectHomeBody({
                     type="text"
                     id="project-description-input"
                     ref={descriptionInputRef}
-                    className={`${stylex.props(projectHomeStyles.descriptionEditInput).className} span6`}
-                    data-stylex-owner="project-home-description-edit-input"
+                    className="span6"
+                    data-owner="project-home-description-edit-input"
                     placeholder={t("project.description.placeholder")}
                     value={descriptionDraft}
                     onChange={(event) => setDescriptionDraft(event.currentTarget.value)}
@@ -1628,21 +1386,21 @@ export function ProjectHomeBody({
             </div>
             {booleanField(menuSetting.code) ? (
               <div
-                className={`${stylex.props(projectHomeStyles.cloneWrap).className} project-clone-wrap span3 hide-in-mobile`}
-                data-stylex-owner="project-home-clone-wrap"
+                className="project-clone-wrap span3 hide-in-mobile"
+                data-owner="project-home-clone-wrap"
               >
                 <input
                   type="text"
-                  className={`${stylex.props(projectHomeStyles.cloneUrl).className} project-clone-url`}
-                  data-stylex-owner="project-home-clone-url"
+                  className="project-clone-url"
+                  data-owner="project-home-clone-url"
                   id="cloneURL"
                   readOnly
                   value={cloneUrl}
                   onClick={(event) => event.currentTarget.select()}
                 />
                 <button
-                  className={`${stylex.props(projectHomeStyles.cloneButton).className} ybtn project-clone-button`}
-                  data-stylex-owner="project-home-clone-button"
+                  className="ybtn project-clone-button"
+                  data-owner="project-home-clone-button"
                   id="cloneURLBtn"
                   onClick={async () => {
                     await navigator.clipboard?.writeText(cloneUrl);
@@ -1726,18 +1484,12 @@ export function ProjectHomeBody({
             </div>
 
             <div className="span3 span-right-pane">
-              <div
-                className={`${stylex.props(projectHomeStyles.projectHome).className} bubble-wrap gray project-home`}
-                data-stylex-owner="project-home-side-panel"
-              >
-                <div
-                  className={`${stylex.props(projectHomeStyles.projectButtonWrap).className} project-btn-wrap`}
-                  data-stylex-owner="project-home-project-button-wrap"
-                >
+              <div className="bubble-wrap gray project-home" data-owner="project-home-side-panel">
+                <div className="project-btn-wrap" data-owner="project-home-project-button-wrap">
                   {booleanField(menuSetting.issue) ? (
                     <span
-                      className={`${stylex.props(projectHomeStyles.projectButtonItem, projectHomeStyles.projectButtonItemFirst).className} project-btn-item`}
-                      data-stylex-owner="project-home-project-button-item"
+                      className="project-btn-item"
+                      data-owner="project-home-project-button-item"
                     >
                       <Link
                         activeProps={{}}
@@ -1748,7 +1500,7 @@ export function ProjectHomeBody({
                             `/${ownerName}/${projectName}/issueform`,
                           ),
                         )}
-                        className={`${stylex.props(projectHomeStyles.projectButtonLink).className} ybtn ybtn-success`}
+                        className="ybtn ybtn-success"
                       >
                         {t("button.newIssue")}
                       </Link>
@@ -1756,8 +1508,8 @@ export function ProjectHomeBody({
                   ) : null}
                   {booleanField(menuSetting.code) && stringField(project.vcs, "GIT") === "GIT" ? (
                     <span
-                      className={`${stylex.props(projectHomeStyles.projectButtonItem).className} project-btn-item`}
-                      data-stylex-owner="project-home-project-button-item"
+                      className="project-btn-item"
+                      data-owner="project-home-project-button-item"
                     >
                       <Link
                         activeProps={{}}
@@ -1768,7 +1520,7 @@ export function ProjectHomeBody({
                             `/${ownerName}/${projectName}/newFork`,
                           ),
                         )}
-                        className={`${stylex.props(projectHomeStyles.projectButtonLink).className} ybtn ybtn-inverse`}
+                        className="ybtn ybtn-inverse"
                       >
                         {t("fork")}
                       </Link>
@@ -1783,20 +1535,9 @@ export function ProjectHomeBody({
                     projectName={projectName}
                   />
                 ) : null}
-                <div
-                  className={`${stylex.props(projectHomeStyles.memberInner, projectHomeStyles.memberInnerInfo).className} inner member-info`}
-                  data-stylex-owner="project-home-member-inner"
-                >
-                  <header
-                    className={`${stylex.props(projectHomeStyles.memberHeader).className}`}
-                    data-stylex-owner="project-home-member-header"
-                  >
-                    <h3
-                      {...stylex.props(projectHomeStyles.memberHeaderHeading)}
-                      data-stylex-owner="project-home-member-header-heading"
-                    >
-                      {t("project.members")}
-                    </h3>
+                <div className="inner member-info" data-owner="project-home-member-inner">
+                  <header data-owner="project-home-member-header">
+                    <h3 data-owner="project-home-member-header-heading">{t("project.members")}</h3>
                     {booleanField(project.viewerCanUpdate) ? (
                       <Link
                         activeProps={{}}
@@ -1815,10 +1556,7 @@ export function ProjectHomeBody({
                     ) : null}
                   </header>
                   <div className="member-wrap">
-                    <ul
-                      className={`${stylex.props(projectHomeStyles.members).className} project-members`}
-                      data-stylex-owner="project-home-members"
-                    >
+                    <ul className="project-members" data-owner="project-home-members">
                       {members.map((member, index) => (
                         <ProjectMember
                           basePath={runtimeConfig.basePath}
@@ -1835,10 +1573,10 @@ export function ProjectHomeBody({
                 booleanField(project.viewerCanLeave) ? (
                   <button
                     type="button"
-                    className={`${stylex.props(projectHomeStyles.projectLeaveButton).className} ybtn ybtn-minimum ybtn-danger`}
+                    className="ybtn ybtn-minimum ybtn-danger"
                     id="projectLeaveBtn"
                     onClick={openLeaveModal}
-                    data-stylex-owner="project-home-leave-button"
+                    data-owner="project-home-leave-button"
                   >
                     {t("project.member.leave")}
                   </button>
@@ -1850,7 +1588,7 @@ export function ProjectHomeBody({
             id="alertLeave"
             className={leaveModalClassName}
             aria-hidden={leaveModalAriaHidden}
-            data-stylex-owner="project-home-leave-modal"
+            data-owner="project-home-leave-modal"
           >
             <div className="modal-header">
               <button type="button" className="close" onClick={closeLeaveModal}>
@@ -1940,9 +1678,10 @@ function ProjectHomeMilestoneStatus({
   const closedCount = milestoneIssueCount(milestoneRecord, "closed");
   const completionPercent =
     numberField(milestoneRecord.completionPercent) || numberField(milestoneRecord.completionRate);
-  const progressStyle = stylex.props(
-    projectHomeStyles.milestoneProgressBar(`${completionPercent}%`),
-  );
+  const progressStyle = {
+    height: "100%",
+    width: `${completionPercent}%`,
+  };
 
   return (
     <div className="milestone-info">
@@ -1974,26 +1713,16 @@ function ProjectHomeMilestoneStatus({
         ) : null}
       </div>
 
-      <div
-        {...stylex.props(projectHomeStyles.milestoneProgressWrap)}
-        className={`${stylex.props(projectHomeStyles.milestoneProgressWrap).className} progress-wrap`}
-        data-stylex-owner="project-home-milestone-progress-wrap"
-      >
-        <div
-          className={`${stylex.props(projectHomeStyles.milestoneProgress, projectHomeStyles.dashboardProgress).className} progress progress-success nm`}
-          data-stylex-owner="project-home-milestone-progress"
-        >
+      <div className="progress-wrap" data-owner="project-home-milestone-progress-wrap">
+        <div className="progress progress-success nm" data-owner="project-home-milestone-progress">
           <div
-            {...progressStyle}
-            className={`${progressStyle.className} bar`}
-            data-stylex-owner="project-home-milestone-progress-bar"
+            style={progressStyle}
+            className="bar"
+            data-owner="project-home-milestone-progress-bar"
           ></div>
         </div>
         <div className="progress-info">
-          <span
-            className={stylex.props(projectHomeStyles.milestoneProgressCount).className}
-            data-stylex-owner="project-home-milestone-progress-count"
-          >
+          <span data-owner="project-home-milestone-progress-count">
             <strong>{`${closedCount} / ${openCount + closedCount}`}</strong>
           </span>
         </div>
@@ -2038,8 +1767,8 @@ function ReadmePane({
                   basePath,
                   prefixBasePath(basePath, `/${ownerName}/${projectName}/postform?readme=true`),
                 )}
-                className={`${stylex.props(projectHomeStyles.readmeEditLink).className} ybtn vmiddle ml5`}
-                data-stylex-owner="project-home-readme-edit-link"
+                className="ybtn vmiddle ml5"
+                data-owner="project-home-readme-edit-link"
               >
                 {t("button.edit")}
               </Link>
@@ -2090,14 +1819,8 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
 
   return (
     <div className="content-container nm">
-      <div
-        className={`${stylex.props(projectHistoryStyles.stream).className} main-stream`}
-        data-stylex-owner="project-history-stream"
-      >
-        <ul
-          className={`activity-streams unstyled ${stylex.props(projectHistoryStyles.activityStreams).className}`}
-          data-stylex-owner="project-history-activity-streams"
-        >
+      <div className="main-stream" data-owner="project-history-stream">
+        <ul className="activity-streams unstyled" data-owner="project-history-activity-streams">
           {items.map((item) => {
             const itemRecord = recordField(item);
             const actorUrl = normalizeHistoryHref(basePath, stringField(itemRecord.actorUrl, "#"));
@@ -2108,15 +1831,15 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
             const createdLabel = stringField(itemRecord.createdLabel, "");
             return (
               <li
-                className={`activity-stream ${stylex.props(projectHistoryStyles.activityItem).className}`}
-                data-stylex-owner="project-history-activity-item"
+                className="activity-stream"
+                data-owner="project-history-activity-item"
                 key={`${itemUrl}-${shortTitle}-${createdLabel}`}
               >
                 <HistoryLink
                   basePath={basePath}
                   href={actorUrl}
-                  className={`${stylex.props(projectHistoryStyles.avatarWrap).className} avatar-wrap`}
-                  stylexOwner="project-history-avatar-wrap"
+                  className="avatar-wrap"
+                  owner="project-history-avatar-wrap"
                 >
                   <img
                     src={
@@ -2129,48 +1852,39 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                   />
                 </HistoryLink>
                 <div className="activity-desc">
-                  <p
-                    className={`${stylex.props(projectHistoryStyles.header).className} header-text`}
-                    data-stylex-owner="project-history-header"
-                  >
+                  <p className="header-text" data-owner="project-history-header">
                     <HistoryLink
                       basePath={basePath}
                       href={actorUrl}
-                      className={`actor ${stylex.props(projectHistoryStyles.actor).className}`}
-                      stylexOwner="project-history-actor"
+                      className="actor"
+                      owner="project-history-actor"
                     >
                       {stringField(itemRecord.actorName, "")}
                     </HistoryLink>{" "}
                     {t(`project.history.type.${itemType}`)}{" "}
-                    <span
-                      className={`whereis ${stylex.props(projectHistoryStyles.whereis).className}`}
-                      data-stylex-owner="project-history-whereis"
-                    >
+                    <span className="whereis" data-owner="project-history-whereis">
                       <HistoryLink
                         basePath={basePath}
                         href={itemUrl}
-                        className={`where ${stylex.props(projectHistoryStyles.where).className}`}
-                        data-stylex-owner="project-history-where"
+                        className="where"
+                        data-owner="project-history-where"
                       >
                         {shortTitle}
                       </HistoryLink>{" "}
                       <HistoryLink
                         basePath={basePath}
                         href={itemUrl}
-                        className={`title ${stylex.props(projectHistoryStyles.title).className}`}
-                        data-stylex-owner="project-history-title"
+                        className="title"
+                        data-owner="project-history-title"
                       >
                         {title}
                       </HistoryLink>
                     </span>
                   </p>
-                  <p
-                    className={`${stylex.props(projectHistoryStyles.others).className} others`}
-                    data-stylex-owner="project-history-others"
-                  >
+                  <p className="others" data-owner="project-history-others">
                     <span
-                      className={`${stylex.props(projectHistoryStyles.date, projectHistoryStyles.historyDate).className} date`}
-                      data-stylex-owner="project-history-date"
+                      className="date"
+                      data-owner="project-history-date"
                       title={stringField(
                         itemRecord.createdTitle,
                         stringField(itemRecord.createdLabel, ""),
@@ -2194,17 +1908,17 @@ function HistoryLink({
   children,
   className,
   href,
-  stylexOwner,
+  owner,
 }: {
   basePath: string;
   children: ReactNode;
   className: string;
   href: string;
-  stylexOwner?: string;
+  owner?: string;
 }) {
   if (href === "#") {
     return (
-      <Link to="." className={className} data-stylex-owner={stylexOwner}>
+      <Link to="." className={className} data-owner={owner}>
         {children}
       </Link>
     );
@@ -2212,7 +1926,7 @@ function HistoryLink({
 
   if (href.startsWith("http://") || href.startsWith("https://")) {
     return (
-      <Link to={href} className={className} data-stylex-owner={stylexOwner}>
+      <Link to={href} className={className} data-owner={owner}>
         {children}
       </Link>
     );
@@ -2223,7 +1937,7 @@ function HistoryLink({
       activeProps={{}}
       to={toRoutePath(basePath, href)}
       className={className}
-      data-stylex-owner={stylexOwner}
+      data-owner={owner}
     >
       {children}
     </Link>
@@ -2273,10 +1987,7 @@ function DashboardPane({
         <div className="span6">
           {booleanField(menuSetting.issue) ? (
             <>
-              <h5
-                {...stylex.props(projectHomeStyles.sectionHeading)}
-                data-stylex-owner="project-home-overview-heading"
-              >
+              <h5 data-owner="project-home-overview-heading">
                 {t("project.dashboard.openIssuesByAssignee")}
               </h5>
               <div className="overview-assignee">
@@ -2305,8 +2016,8 @@ function DashboardPane({
                                 basePath,
                                 issueHref(basePath, ownerName, projectName, `assigneeId=${userId}`),
                               )}
-                              className={`${stylex.props(projectHomeStyles.assigneeLink).className} usf-group`}
-                              data-stylex-owner="project-home-assignee-link"
+                              className="usf-group"
+                              data-owner="project-home-assignee-link"
                               title={`${userLabel} (@${loginId})`}
                             >
                               <span className="avatar-wrap smaller">
@@ -2328,10 +2039,7 @@ function DashboardPane({
                               </span>
                             </Link>
                           </div>
-                          <div
-                            className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
-                            data-stylex-owner="project-home-overview-number"
-                          >
+                          <div className="span3 num" data-owner="project-home-overview-number">
                             <strong>{count}</strong>
                           </div>
                           <div className="span3 nm">
@@ -2348,8 +2056,8 @@ function DashboardPane({
                             basePath,
                             issueHref(basePath, ownerName, projectName, "assigneeId=-1"),
                           )}
-                          className={`${stylex.props(projectHomeStyles.assigneeLink).className} usf-group`}
-                          data-stylex-owner="project-home-assignee-link"
+                          className="usf-group"
+                          data-owner="project-home-assignee-link"
                         >
                           <span className="avatar-wrap smaller">
                             <i className="yobicon-blankstare"></i>
@@ -2357,9 +2065,7 @@ function DashboardPane({
                           <span className="name">{t("issue.noAssignee")}</span>
                         </Link>
                       </div>
-                      <div
-                        className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
-                      >
+                      <div className="project-home-overview-number span3 num">
                         <strong>{unassignedCount}</strong>
                       </div>
                       <div className="span3 nm">
@@ -2375,10 +2081,7 @@ function DashboardPane({
 
               <hr />
 
-              <h5
-                {...stylex.props(projectHomeStyles.sectionHeading)}
-                data-stylex-owner="project-home-overview-heading"
-              >
+              <h5 data-owner="project-home-overview-heading">
                 {t("project.dashboard.openIssuesByMilestone")}
               </h5>
               <div className="overview-milestone">
@@ -2417,9 +2120,7 @@ function DashboardPane({
                               {stringField(record.title, "")}
                             </Link>
                           </div>
-                          <div
-                            className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
-                          >
+                          <div className="project-home-overview-number span3 num">
                             <strong>{count}</strong>
                           </div>
                           <div className="span3 nm">
@@ -2440,9 +2141,7 @@ function DashboardPane({
                           {t("issue.noMilestone")}
                         </Link>
                       </div>
-                      <div
-                        className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
-                      >
+                      <div className="project-home-overview-number span3 num">
                         <strong>{noMilestoneCount}</strong>
                       </div>
                       <div className="span3 nm"></div>
@@ -2456,10 +2155,7 @@ function DashboardPane({
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <>
               {booleanField(menuSetting.issue) ? <hr /> : null}
-              <h5
-                {...stylex.props(projectHomeStyles.sectionHeading)}
-                data-stylex-owner="project-home-overview-heading"
-              >
+              <h5 data-owner="project-home-overview-heading">
                 {t("project.dashboard.pullRequests")}
               </h5>
               <div className="overview-pullrequest">
@@ -2480,8 +2176,8 @@ function DashboardPane({
                                   `/${ownerName}/${projectName}/pullRequests?contributorId=${numberField(record.contributorUserId)}`,
                                 ),
                               )}
-                              className={`${stylex.props(projectHomeStyles.assigneeLink).className} usf-group`}
-                              data-stylex-owner="project-home-assignee-link"
+                              className="usf-group"
+                              data-owner="project-home-assignee-link"
                             >
                               <span
                                 className="avatar-wrap smaller"
@@ -2511,19 +2207,13 @@ function DashboardPane({
                               {stringField(record.title, "")}
                             </Link>
                           </div>
-                          <div
-                            className={`${stylex.props(projectHistoryStyles.pullRequestDate).className} span3 num`}
-                            data-stylex-owner="project-history-pull-request-date"
-                          >
+                          <div className="span3 num" data-owner="project-history-pull-request-date">
                             {stringField(record.createdLabel, "")}
                           </div>
                         </div>
                       );
                     })}
-                    <div
-                      className={`${stylex.props(projectHistoryStyles.pullRequestLink).className} mt5`}
-                      data-stylex-owner="project-history-pull-request-link"
-                    >
+                    <div className="mt5" data-owner="project-history-pull-request-link">
                       <Link
                         activeProps={{}}
                         to={toRoutePath(
@@ -2555,10 +2245,7 @@ function DashboardPane({
 
         {booleanField(menuSetting.issue) ? (
           <div className="span6">
-            <h5
-              {...stylex.props(projectHomeStyles.sectionHeading)}
-              data-stylex-owner="project-home-overview-heading"
-            >
+            <h5 data-owner="project-home-overview-heading">
               {t("project.dashboard.openIssuesByLabel")}
             </h5>
             <DashboardLabels
@@ -2601,31 +2288,12 @@ function DashboardLabels({
       />
       {Array.from(groups.entries()).map(([categoryName, categoryLabels], index, entries) => (
         <dl
-          {...stylex.props(
-            projectHomeStyles.overviewLabel,
-            index === 0 && projectHomeStyles.overviewLabelFirst,
-            index === entries.length - 1 && projectHomeStyles.overviewLabelLast,
-          )}
-          className={`dl-horizontal overview-label ${
-            stylex.props(
-              projectHomeStyles.overviewLabel,
-              index === 0 && projectHomeStyles.overviewLabelFirst,
-              index === entries.length - 1 && projectHomeStyles.overviewLabelLast,
-            ).className ?? ""
-          }`.trim()}
-          data-stylex-owner="project-home-overview-label"
+          className={`dl-horizontal overview-label${index === 0 ? " project-home-overview-label-first" : ""}${index === entries.length - 1 ? " project-home-overview-label-last" : ""}`.trim()}
+          data-owner="project-home-overview-label"
           key={categoryName}
         >
-          <dt
-            {...stylex.props(projectHomeStyles.overviewLabelDt)}
-            data-stylex-owner="project-home-overview-label-term"
-          >
-            {categoryName}
-          </dt>
-          <dd
-            {...stylex.props(projectHomeStyles.overviewLabelDd)}
-            data-stylex-owner="project-home-overview-label-definition"
-          >
+          <dt data-owner="project-home-overview-label-term">{categoryName}</dt>
+          <dd data-owner="project-home-overview-label-definition">
             {categoryLabels.map((label) => {
               const labelId = numberField(label.id);
               return (
@@ -2647,9 +2315,7 @@ function DashboardLabels({
                       </IssueLabel>
                     </Link>
                   </div>
-                  <div
-                    className={`${stylex.props(projectHomeStyles.overviewNumber).className} span2 num`}
-                  >
+                  <div className="project-home-overview-number span2 num">
                     <strong>{numberField(label.openIssueCount)}</strong>
                   </div>
                 </div>
@@ -2674,16 +2340,8 @@ function DashboardEmpty({
   message: string;
 }) {
   return (
-    <div
-      className={`${stylex.props(projectHomeStyles.empty).className} empty`}
-      data-stylex-owner="project-home-overview-empty"
-    >
-      <p
-        className={stylex.props(projectHomeStyles.emptyMessage).className}
-        data-stylex-owner="project-home-overview-empty-message"
-      >
-        {message}
-      </p>
+    <div className="empty" data-owner="project-home-overview-empty">
+      <p data-owner="project-home-overview-empty-message">{message}</p>
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, actionHref)}
@@ -2705,17 +2363,16 @@ function ProgressBar({
   percent: number;
   success?: boolean;
 }) {
-  const progressStyle = stylex.props(styles.progressBar(`${percent}%`));
   return (
     <div
-      className={`${stylex.props(projectHomeStyles.dashboardProgress).className} progress ${className} ${percent === 0 ? "empty" : ""}`}
-      data-stylex-owner="project-home-dashboard-progress"
+      className={`progress ${className} ${percent === 0 ? "empty" : ""}`}
+      data-owner="project-home-dashboard-progress"
       title={`${percent}%`}
     >
       <div
-        {...progressStyle}
-        className={`${progressStyle.className} bar${success ? " bar-success" : ""}`}
-        data-stylex-owner="project-home-progress-bar"
+        style={{ width: `${percent}%` }}
+        className={`bar${success ? " bar-success" : ""}`}
+        data-owner="project-home-progress-bar"
       ></div>
     </div>
   );
@@ -2736,30 +2393,20 @@ function ProjectMember({
   const userLabel = stringField(member.userLabel, loginId);
 
   return (
-    <li
-      className={`${
-        stylex.props(
-          projectHomeStyles.member,
-          first && projectHomeStyles.memberFirst,
-          last && projectHomeStyles.memberLast,
-        ).className
-      } member`}
-      data-stylex-owner="project-home-member"
-    >
+    <li className="member" data-owner="project-home-member">
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, prefixBasePath(basePath, `/${loginId}`))}
-        className={`${stylex.props(projectHomeMemberAvatarStyles.avatar).className} avatar-wrap img-rounded pull-left small`}
-        data-stylex-owner="project-home-member-avatar"
+        className="avatar-wrap img-rounded pull-left small"
+        data-owner="project-home-member-avatar"
       >
         <img
-          {...stylex.props(projectHomeMemberAvatarStyles.image)}
           src={
             stringField(member.avatarUrl, "") ||
             prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
           }
           alt={loginId}
-          data-stylex-owner="project-home-member-avatar-image"
+          data-owner="project-home-member-avatar-image"
           width="24"
           height="24"
         />
@@ -2767,15 +2414,10 @@ function ProjectMember({
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, prefixBasePath(basePath, `/${loginId}`))}
-        className={`${stylex.props(projectHomeStyles.memberName).className} name`}
-        data-stylex-owner="project-home-member-name"
+        className="name"
+        data-owner="project-home-member-name"
       >
-        <strong
-          {...stylex.props(projectHomeStyles.memberNameText)}
-          data-stylex-owner="project-home-member-name-text"
-        >
-          {`${userLabel} (${loginId})`}
-        </strong>
+        <strong data-owner="project-home-member-name-text">{`${userLabel} (${loginId})`}</strong>
       </Link>
     </li>
   );
@@ -2908,81 +2550,45 @@ function ProjectHeaderContent({
 
   return (
     <div
-      {...stylex.props(
-        projectHeaderStyles.outer,
-        projectHeaderStyles.background(`url('${backgroundImageUrl}')`),
-      )}
-      className={`${
-        stylex.props(
-          projectHeaderStyles.outer,
-          projectHeaderStyles.background(`url('${backgroundImageUrl}')`),
-        ).className
-      } project-header-outer`}
-      data-stylex-owner="project-home-header-background"
+      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
+      className="project-header-outer"
+      data-owner="project-home-header-background"
       data-project-header-owner="outer"
     >
       <div className="project-header-inner">
-        <div
-          {...stylex.props(projectHeaderStyles.wrap)}
-          className={`${stylex.props(projectHeaderStyles.wrap).className} project-header-wrap`}
-          data-stylex-owner="project-header-wrap"
-        >
-          <div
-            {...stylex.props(projectHeaderStyles.avatar)}
-            className={`${stylex.props(projectHeaderStyles.avatar).className} project-header-avatar`}
-            data-stylex-owner="project-header-avatar"
-          >
-            <img
-              {...stylex.props(projectHeaderStyles.avatarImage)}
-              src={logoUrl}
-              alt=""
-              data-stylex-owner="project-header-avatar-image"
-            />
+        <div className="project-header-wrap" data-owner="project-header-wrap">
+          <div className="project-header-avatar" data-owner="project-header-avatar">
+            <img src={logoUrl} alt="" data-owner="project-header-avatar-image" />
           </div>
           <div
-            {...stylex.props(projectHeaderStyles.breadcrumbWrap)}
-            className={`${stylex.props(projectHeaderStyles.breadcrumbWrap).className} project-breadcrumb-wrap${isForked ? " fork" : ""}`}
-            data-stylex-owner="project-header-breadcrumb-wrap"
+            className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}
+            data-owner="project-header-breadcrumb-wrap"
           >
-            <div
-              {...stylex.props(projectHeaderStyles.breadcrumb)}
-              className={`${stylex.props(projectHeaderStyles.breadcrumb).className} project-breadcrumb`}
-              data-stylex-owner="project-header-breadcrumb"
-            >
+            <div className="project-breadcrumb" data-owner="project-header-breadcrumb">
               <span
-                {...stylex.props(projectHeaderStyles.breadcrumbAuthor)}
-                className={`${stylex.props(projectHeaderStyles.breadcrumbAuthor).className} project-author hide-in-mobile`}
-                data-stylex-owner="project-header-breadcrumb-author"
+                className="project-author hide-in-mobile"
+                data-owner="project-header-breadcrumb-author"
               >
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
-                  {...stylex.props(projectHeaderStyles.breadcrumbAuthorLink)}
-                  className={stylex.props(projectHeaderStyles.breadcrumbAuthorLink).className}
-                  data-stylex-owner="project-header-breadcrumb-author-link"
+                  data-owner="project-header-breadcrumb-author-link"
                   to={toRoutePath(basePath, prefixBasePath(basePath, `/${ownerName}`))}
                 >
                   {ownerName}
                 </Link>
               </span>{" "}
               <span
-                {...stylex.props(projectHeaderStyles.breadcrumbSeparator)}
-                className={`${stylex.props(projectHeaderStyles.breadcrumbSeparator).className} project-separator hide-in-mobile`}
-                data-stylex-owner="project-header-breadcrumb-separator"
+                className="project-separator hide-in-mobile"
+                data-owner="project-header-breadcrumb-separator"
               >
                 /
               </span>{" "}
-              <span
-                {...stylex.props(projectHeaderStyles.breadcrumbName)}
-                className={`${stylex.props(projectHeaderStyles.breadcrumbName).className} project-name`}
-                data-stylex-owner="project-header-breadcrumb-name"
-              >
+              <span className="project-name" data-owner="project-header-breadcrumb-name">
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
-                  {...stylex.props(projectHeaderStyles.breadcrumbNameLink)}
-                  className={stylex.props(projectHeaderStyles.breadcrumbNameLink).className}
-                  data-stylex-owner="project-header-breadcrumb-name-link"
+                  data-owner="project-header-breadcrumb-name-link"
                   to={toRoutePath(basePath, projectHref(basePath, ownerName, projectName))}
                 >
                   {projectName}
@@ -3008,36 +2614,22 @@ function ProjectHeaderContent({
                 }}
               >
                 <i
-                  {...stylex.props(
-                    projectHeaderStyles.breadcrumbFavoriteStar,
-                    isFavoritedProject ? projectHeaderStyles.breadcrumbFavoriteStarred : undefined,
-                  )}
-                  className={`${
-                    stylex.props(
-                      projectHeaderStyles.breadcrumbFavoriteStar,
-                      isFavoritedProject
-                        ? projectHeaderStyles.breadcrumbFavoriteStarred
-                        : undefined,
-                    ).className
-                  } ${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                  data-stylex-owner="project-header-breadcrumb-favorite-star"
+                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
+                  data-owner="project-header-breadcrumb-favorite-star"
                 >
                   star
                 </i>
               </span>
               {booleanField(recordField(project).isPrivate) ||
               stringField(recordField(project).projectScope, "").toUpperCase() === "PRIVATE" ? (
-                <span
-                  className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-private`}
-                  data-stylex-owner="project-header-private-badge"
-                >
+                <span className="project-private" data-owner="project-header-private-badge">
                   <i className="yobicon-lock"></i>
                 </span>
               ) : null}
               {projectIsProtected(project) ? (
                 <span
-                  className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-protected`}
-                  data-stylex-owner="project-header-protected-badge"
+                  className="project-protected"
+                  data-owner="project-header-protected-badge"
                   title="Group Project"
                 >
                   G
@@ -3045,14 +2637,8 @@ function ProjectHeaderContent({
               ) : null}
             </div>
             {isForked ? (
-              <div
-                className={`${stylex.props(projectHomeStyles.projectOrigin).className} project-origin`}
-                data-stylex-owner="project-header-origin"
-              >
-                <span
-                  className={`${stylex.props(projectHomeStyles.projectOriginTitle).className} project-origin-title`}
-                  data-stylex-owner="project-header-origin-title"
-                >
+              <div className="project-origin" data-owner="project-header-origin">
+                <span className="project-origin-title" data-owner="project-header-origin-title">
                   {t("fork.original")}
                 </span>
                 <Link
@@ -3062,26 +2648,20 @@ function ProjectHeaderContent({
                     basePath,
                     projectHref(basePath, originalOwnerName, originalProjectName),
                   )}
-                  className={`${stylex.props(projectHomeStyles.projectOriginName).className} project-origin-name`}
-                  data-stylex-owner="project-header-origin-name"
+                  className="project-origin-name"
+                  data-owner="project-header-origin-name"
                 >
                   {originalOwnerName} / {originalProjectName}
                 </Link>
               </div>
             ) : null}
           </div>
-          <div
-            className={`${stylex.props(projectHomeStyles.projectUtilWrap).className} project-util-wrap`}
-            data-stylex-owner="project-header-util-wrap"
-          >
-            <ul
-              className={`${stylex.props(projectHomeStyles.projectUtil).className} project-util`}
-              data-stylex-owner="project-header-util"
-            >
+          <div className="project-util-wrap" data-owner="project-header-util-wrap">
+            <ul className="project-util" data-owner="project-header-util">
               {canEnrollProject ? (
                 <li
-                  className={`${stylex.props(projectHomeStyles.projectUtilItem).className}${projectUtilDropdown === "enrollment" ? " open" : ""}`}
-                  data-stylex-owner="project-header-util-item"
+                  className={`${projectUtilDropdown === "enrollment" ? "open" : ""}`}
+                  data-owner="project-header-util-item"
                 >
                   {enrollmentRequested ? (
                     <>
@@ -3161,16 +2741,16 @@ function ProjectHeaderContent({
               ) : null}
               {canWatchProject ? (
                 <li
-                  className={`${stylex.props(projectHomeStyles.projectUtilItem).className}${projectUtilDropdown === "watch" ? " open" : ""}`}
-                  data-stylex-owner="project-header-watcher-item"
+                  className={`${projectUtilDropdown === "watch" ? "open" : ""}`}
+                  data-owner="project-header-watcher-item"
                 >
                   <div
-                    className={`${stylex.props(projectHomeStyles.watchButtonGroup).className} btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
-                    data-stylex-owner="project-header-watch-button-group"
+                    className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
+                    data-owner="project-header-watch-button-group"
                   >
                     <Link
-                      className={`${stylex.props(projectHomeStyles.watcherCount, watchState.isWatching ? projectHomeStyles.watcherOn : undefined).className} btn watcher-count no-border${watchState.isWatching ? " watch-on" : ""}`}
-                      data-stylex-owner="project-header-watcher-count"
+                      className={`btn watcher-count no-border${watchState.isWatching ? " watch-on" : ""}`}
+                      data-owner="project-header-watcher-count"
                       title={t("project.watcher.number")}
                       to={toRoutePath(
                         basePath,
@@ -3190,10 +2770,7 @@ function ProjectHeaderContent({
                       </div>
                       <div className="pop-content">
                         <p>{t("notification.help")}</p>
-                        <ul
-                          className={`${stylex.props(projectHomeStyles.projectUtilIcons).className} icons-ul`}
-                          data-stylex-owner="project-header-util-icons"
-                        >
+                        <ul className="icons-ul" data-owner="project-header-util-icons">
                           <li>
                             <i className="yobicon-li yobicon-ok"></i>
                             {t("notification.help.new")}
@@ -3243,8 +2820,8 @@ function ProjectHeaderContent({
                       </div>
                     </div>
                     <button
-                      className={`${stylex.props(projectHomeStyles.watchButton).className} btn nofocus no-border down-arrow`}
-                      data-stylex-owner="project-header-watch-button"
+                      className="btn nofocus no-border down-arrow"
+                      data-owner="project-header-watch-button"
                       type="button"
                       onClick={(event) => {
                         event.preventDefault();
@@ -3293,18 +2870,9 @@ export function ProjectMenu({
   };
 
   return (
-    <div
-      className={`${stylex.props(projectHomeStyles.projectMenuOuter).className} project-menu-outer`}
-      data-stylex-owner="project-menu-outer"
-    >
-      <div
-        className={`${stylex.props(projectHomeStyles.projectMenuInner).className} project-menu-inner`}
-        data-stylex-owner="project-menu-inner"
-      >
-        <ul
-          className={`${stylex.props(projectHomeStyles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
-          data-stylex-owner="project-menu-group"
-        >
+    <div className="project-menu-outer" data-owner="project-menu-outer">
+      <div className="project-menu-inner" data-owner="project-menu-inner">
+        <ul className="project-menu-nav project-menu-gruop" data-owner="project-menu-group">
           <ProjectMenuItem
             active={active === "home"}
             label={t("title.projectHome")}
@@ -3384,45 +2952,29 @@ export function ProjectMenu({
           ) : null}
         </ul>
         {booleanField(project.viewerCanUpdate) ? (
-          <div
-            className={`${stylex.props(projectHomeStyles.projectSetting).className} project-setting`}
-            data-stylex-owner="project-menu-setting"
-          >
+          <div className="project-setting" data-owner="project-menu-setting">
             <ul className="project-menu-nav">
               <li
-                className={`${
-                  stylex.props(
-                    projectMenuNavStyles.item,
-                    active === "setting" && projectMenuNavStyles.activeItem,
-                  ).className
-                } ${active === "setting" ? "active" : ""}`.trim()}
-                data-stylex-owner="project-menu-item-setting"
+                className={active === "setting" ? "active" : ""}
+                data-owner="project-menu-item-setting"
               >
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
-                  className={
-                    stylex.props(projectMenuNavStyles.link, projectMenuNavStyles.mobileLink)
-                      .className
-                  }
                   to={toRoutePath(
                     basePath,
                     prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`),
                   )}
-                  data-stylex-owner="project-menu-link-setting"
+                  data-owner="project-menu-link-setting"
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">
-                    <span
-                      className={`${stylex.props(projectMenuNavStyles.mobileName).className} menu-name`}
-                      data-stylex-owner="project-menu-name-setting"
-                    >
+                    <span className="menu-name" data-owner="project-menu-name-setting">
                       {t("menu.admin")}
                     </span>
                   </span>
                   <CountBadge
                     count={arrayField(project.enrolledUsers).length}
-                    styleX={[projectHomeStyles.menuCount, projectMenuNavStyles.mobileCount]}
                     owner="project-menu-count"
                   />
                 </Link>
@@ -3462,41 +3014,23 @@ function ProjectMenuItem({
       : "";
   const menuKey = short.toLowerCase();
   return (
-    <li
-      className={`${
-        stylex.props(projectMenuNavStyles.item, active && projectMenuNavStyles.activeItem).className
-      } ${itemClassName}`.trim()}
-      data-stylex-owner={`project-menu-item-${menuKey}`}
-    >
+    <li className={itemClassName} data-owner={`project-menu-item-${menuKey}`}>
       <Link
         activeOptions={legacyProjectShellLinkActiveOptions}
         activeProps={legacyProjectShellLinkActiveProps}
-        className={
-          stylex.props(projectMenuNavStyles.link, projectMenuNavStyles.mobileLink).className
-        }
         to={to}
-        data-stylex-owner={`project-menu-link-${menuKey}`}
+        data-owner={`project-menu-link-${menuKey}`}
       >
-        <span
-          className={`${stylex.props(projectMenuNavStyles.mobileName).className} menu-name`}
-          data-stylex-owner={`project-menu-name-${menuKey}`}
-        >
+        <span className="menu-name" data-owner={`project-menu-name-${menuKey}`}>
           {label}
         </span>
-        <span
-          className={`${stylex.props(projectMenuNavStyles.mobileShort).className} short-menu`}
-          data-stylex-owner={`project-menu-short-${menuKey}`}
-        >
+        <span className="short-menu" data-owner={`project-menu-short-${menuKey}`}>
           {short}
         </span>
         {count > 0 ? (
           <>
             {" "}
-            <CountBadge
-              count={count}
-              styleX={[projectHomeStyles.menuCount, projectMenuNavStyles.mobileCount]}
-              owner="project-menu-count"
-            />
+            <CountBadge count={count} owner="project-menu-count" />
           </>
         ) : null}
       </Link>

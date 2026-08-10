@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
@@ -7,196 +6,12 @@ import { readSessionBootstrap, requestPasswordReset } from "../auth-workspace-cl
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { lostPasswordTheme } from "./-lostPassword.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type LostPasswordSearch = {
   error?: string;
   requested?: number;
 };
-
-const styles = stylex.create({
-  anonymousBaseline: {
-    "--yoram-stylex-lost-password": "stylex",
-  },
-  authenticatedPrefill: {
-    "--yoram-stylex-lost-password-authenticated-prefill": "stylex",
-  },
-  taglineWrap: {
-    textAlign: "center",
-    marginTop: "0px",
-    marginBottom: "26px",
-    paddingTop: "80px",
-  },
-  title: {
-    display: "inline-block",
-    margin: "0px",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-    fontSize: "3.3em",
-    lineHeight: "42px",
-    fontWeight: "400",
-  },
-  titleHighlight: {
-    color: lostPasswordTheme.titleHighlight,
-  },
-  tagline: {
-    margin: "10px 0px 0px",
-    fontSize: "1.2em",
-    lineHeight: "20px",
-    color: lostPasswordTheme.taglineText,
-  },
-  formWrap: {
-    position: "relative",
-    width: {
-      default: "400px",
-      "@media (max-width: 767px)": "95%",
-    },
-    margin: "54px auto 0px",
-  },
-  textInput: {
-    boxSizing: "content-box",
-    width: {
-      default: "386px",
-      "@media (max-width: 767px)": "95%",
-    },
-    height: "27px",
-    minHeight: "0px",
-    marginBottom: "10px",
-    fontSize: "12px",
-    fontWeight: "700",
-    borderStyle: "none",
-    borderBottomColor: lostPasswordTheme.inputBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderRadius: "0px",
-    ":focus": {
-      borderBottomColor: lostPasswordTheme.inputFocusBorder,
-      outline: "none",
-      boxShadow: "none",
-    },
-  },
-  buttonRow: {
-    display: "block",
-    textAlign: "center",
-    margin: "0px auto 20px",
-  },
-  submit: {
-    display: "block",
-    boxSizing: "border-box",
-    width: "100%",
-  },
-  successAlert: {
-    padding: "8px 35px 8px 14px",
-    marginBottom: "20px",
-    textShadow: lostPasswordTheme.alertTextShadow,
-    backgroundColor: lostPasswordTheme.successSurface,
-    borderColor: lostPasswordTheme.successBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    borderRadius: "4px",
-    color: lostPasswordTheme.successText,
-  },
-  successAlertHeading: {
-    margin: "0px",
-    fontSize: "15px",
-    color: lostPasswordTheme.successText,
-  },
-  successAlertDismiss: {
-    float: "right",
-    position: "relative",
-    top: "-2px",
-    right: "-21px",
-    padding: "0px",
-    fontSize: "20px",
-    fontWeight: "700",
-    lineHeight: "20px",
-    color: lostPasswordTheme.dismissText,
-    textShadow: lostPasswordTheme.dismissTextShadow,
-    opacity: "0.2",
-    cursor: "pointer",
-    backgroundColor: lostPasswordTheme.dismissSurface,
-    borderStyle: "none",
-    borderWidth: "0px",
-    appearance: "none",
-    ":hover": {
-      color: lostPasswordTheme.dismissText,
-      textDecoration: "none",
-      cursor: "pointer",
-      opacity: "0.4",
-    },
-    ":focus": {
-      color: lostPasswordTheme.dismissText,
-      textDecoration: "none",
-      cursor: "pointer",
-      opacity: "0.4",
-    },
-  },
-  errorAlert: {
-    padding: "8px 35px 8px 14px",
-    marginBottom: "20px",
-    textShadow: lostPasswordTheme.alertTextShadow,
-    backgroundColor: lostPasswordTheme.errorSurface,
-    borderColor: lostPasswordTheme.errorBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    borderRadius: "4px",
-    color: lostPasswordTheme.errorText,
-  },
-  errorAlertHeading: {
-    margin: "0px",
-    fontSize: "15px",
-    color: lostPasswordTheme.errorText,
-  },
-  errorAlertDismiss: {
-    float: "right",
-    position: "relative",
-    top: "-2px",
-    right: "-21px",
-    padding: "0px",
-    fontSize: "20px",
-    fontWeight: "700",
-    lineHeight: "20px",
-    color: lostPasswordTheme.dismissText,
-    textShadow: lostPasswordTheme.dismissTextShadow,
-    opacity: "0.2",
-    cursor: "pointer",
-    backgroundColor: lostPasswordTheme.dismissSurface,
-    borderStyle: "none",
-    borderWidth: "0px",
-    appearance: "none",
-    ":hover": {
-      color: lostPasswordTheme.dismissText,
-      textDecoration: "none",
-      cursor: "pointer",
-      opacity: "0.4",
-    },
-    ":focus": {
-      color: lostPasswordTheme.dismissText,
-      textDecoration: "none",
-      cursor: "pointer",
-      opacity: "0.4",
-    },
-  },
-});
-
-const anonymousBaselineClassName = stylex.props(styles.anonymousBaseline).className;
-const authenticatedPrefillClassName = stylex.props(styles.authenticatedPrefill).className;
-const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
-const titleClassName = stylex.props(styles.title).className;
-const titleHighlightClassName = stylex.props(styles.titleHighlight).className;
-const taglineClassName = stylex.props(styles.tagline).className;
-const formWrapClassName = stylex.props(styles.formWrap).className;
-const textInputClassName = stylex.props(styles.textInput).className;
-const buttonRowClassName = stylex.props(styles.buttonRow).className;
-const submitClassName = stylex.props(styles.submit).className;
-const successAlertClassName = stylex.props(styles.successAlert).className;
-const successAlertHeadingClassName = stylex.props(styles.successAlertHeading).className;
-const successAlertDismissClassName = stylex.props(styles.successAlertDismiss).className;
-const errorAlertClassName = stylex.props(styles.errorAlert).className;
-const errorAlertHeadingClassName = stylex.props(styles.errorAlertHeading).className;
-const errorAlertDismissClassName = stylex.props(styles.errorAlertDismiss).className;
-
 export const Route = createFileRoute("/lostPassword")({
   component: LostPasswordRoute,
   validateSearch: (search: Record<string, unknown>): LostPasswordSearch => {
@@ -283,13 +98,9 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       <title>{browserTitle}</title>
       <div
         className={
-          anonymousBaseline
-            ? `page full ${anonymousBaselineClassName}`
-            : authenticatedNoAlert
-              ? `page full ${authenticatedPrefillClassName}`
-              : "page full"
+          anonymousBaseline ? `page full ` : authenticatedNoAlert ? `page full ` : "page full"
         }
-        data-stylex-owner={
+        data-owner={
           anonymousBaseline
             ? "lost-password-form"
             : authenticatedNoAlert
@@ -298,8 +109,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         }
       >
         <div
-          className={`center-wrap tag-line-wrap reset-password ${taglineWrapClassName}`}
-          data-stylex-part={
+          className={"center-wrap tag-line-wrap reset-password"}
+          data-part={
             anonymousBaseline
               ? "lost-password-tagline"
               : authenticatedNoAlert
@@ -308,8 +119,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           }
         >
           <h1
-            className={`title ${titleClassName}`}
-            data-stylex-part={
+            className={"title"}
+            data-part={
               anonymousBaseline
                 ? "lost-password-title"
                 : authenticatedNoAlert
@@ -320,8 +131,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             <HighlightedLegacyMessage message={title} />
           </h1>
           <p
-            className={`tag-line ${taglineClassName}`}
-            data-stylex-part={
+            className={"tag-line"}
+            data-part={
               anonymousBaseline
                 ? "lost-password-copy"
                 : authenticatedNoAlert
@@ -334,8 +145,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         </div>
 
         <div
-          className={`login-form-wrap frm-wrap ${formWrapClassName}`}
-          data-stylex-part={
+          className={"login-form-wrap frm-wrap"}
+          data-part={
             anonymousBaseline
               ? "lost-password-form-wrap"
               : authenticatedNoAlert
@@ -345,8 +156,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         >
           {isSent && !isSuccessAlertDismissed ? (
             <div
-              className={successAlertClassName}
-              data-stylex-owner={
+              data-owner={
                 anonymousRequestedSuccess
                   ? "lost-password-success-alert"
                   : authenticatedRequestedSuccess
@@ -356,8 +166,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             >
               <button
                 type="button"
-                className={successAlertDismissClassName}
-                data-stylex-part={
+                data-part={
                   anonymousRequestedSuccess
                     ? "lost-password-success-alert-dismiss"
                     : authenticatedRequestedSuccess
@@ -369,8 +178,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 &times;
               </button>
               <h4
-                className={successAlertHeadingClassName}
-                data-stylex-part={
+                data-part={
                   anonymousRequestedSuccess
                     ? "lost-password-success-alert-heading"
                     : authenticatedRequestedSuccess
@@ -385,8 +193,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 
           {errorMessage && !isErrorAlertDismissed ? (
             <div
-              className={errorAlertClassName}
-              data-stylex-owner={
+              data-owner={
                 anonymousVisibleError
                   ? "lost-password-error-alert"
                   : authenticatedVisibleError
@@ -396,8 +203,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             >
               <button
                 type="button"
-                className={errorAlertDismissClassName}
-                data-stylex-part={
+                data-part={
                   anonymousVisibleError
                     ? "lost-password-error-alert-dismiss"
                     : authenticatedVisibleError
@@ -409,8 +215,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 &times;
               </button>
               <h4
-                className={errorAlertHeadingClassName}
-                data-stylex-part={
+                data-part={
                   anonymousVisibleError
                     ? "lost-password-error-alert-heading"
                     : authenticatedVisibleError
@@ -438,8 +243,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="loginId"
                   required
                   placeholder={t("user.loginId")}
-                  className={textInputClassName}
-                  data-stylex-part={
+                  data-owner="lost-password-login-id"
+                  data-part={
                     anonymousBaseline
                       ? "lost-password-login-id"
                       : authenticatedNoAlert
@@ -456,8 +261,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="emailAddress"
                   required
                   placeholder={t("user.email")}
-                  className={textInputClassName}
-                  data-stylex-part={
+                  data-owner="lost-password-email"
+                  data-part={
                     anonymousBaseline
                       ? "lost-password-email"
                       : authenticatedNoAlert
@@ -470,8 +275,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             </dl>
 
             <div
-              className={`btns-row ${buttonRowClassName}`}
-              data-stylex-part={
+              className={"btns-row"}
+              data-part={
                 anonymousBaseline
                   ? "lost-password-submit-row"
                   : authenticatedNoAlert
@@ -481,8 +286,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             >
               <button
                 type="submit"
-                className={`ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`}
-                data-stylex-part={
+                className={"ybtn ybtn-primary ybtn-large ybtn-fullsize"}
+                data-part={
                   anonymousBaseline
                     ? "lost-password-submit"
                     : authenticatedNoAlert
@@ -526,7 +331,7 @@ function HighlightedLegacyMessage({ message }: { message: string }) {
   return (
     <>
       {match[1]}
-      <span className={`highlight ${titleHighlightClassName}`}>{match[2]}</span>
+      <span className={"highlight"}>{match[2]}</span>
       {match[3]}
     </>
   );

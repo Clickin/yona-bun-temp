@@ -26,7 +26,7 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     "project-watchers-member-name",
     "project-watchers-member-id",
   ]) {
-    await expect(page.locator(`[data-stylex-owner="${owner}"]`).first()).not.toHaveClass(
+    await expect(page.locator(`[data-owner="${owner}"]`).first()).not.toHaveClass(
       /(?:^|\s)(?:members|project|row-fluid|member|span6|span-hard-wrap|avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
     );
   }
@@ -84,7 +84,7 @@ test("project watchers internal links render legacy hrefs and navigate through t
     "href",
     `${basePath}/admin/sample/code`,
   );
-  const firstWatcherAvatar = page.locator('[data-stylex-owner="project-watchers-avatar"]').first();
+  const firstWatcherAvatar = page.locator('[data-owner="project-watchers-avatar"]').first();
   await expect(firstWatcherAvatar).toHaveAttribute("href", `${basePath}/alice`);
   await expect(firstWatcherAvatar).not.toHaveClass(
     /(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10)(?:\s|$)/u,
@@ -119,7 +119,7 @@ test("project watchers empty avatar URL loads the Vite-managed legacy fallback u
   });
 
   await page.goto(`${basePath}/admin/sample/watchers`);
-  const avatar = page.locator('[data-stylex-owner="project-watchers-avatar-image"]').first();
+  const avatar = page.locator('[data-owner="project-watchers-avatar-image"]').first();
   await expect(avatar).toBeVisible();
 
   expect(
@@ -169,8 +169,8 @@ test("project watchers preserves the legacy empty member-list state", async ({ p
   await page.goto(`${basePath}/admin/sample/watchers`);
 
   await expect(page.locator(".project-page-wrap h4")).toHaveText("This projects watcher list.");
-  await expect(page.locator('[data-stylex-owner="project-watchers-list"]')).toBeAttached();
-  await expect(page.locator('[data-stylex-owner="project-watchers-member"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-watchers-list"]')).toBeAttached();
+  await expect(page.locator('[data-owner="project-watchers-member"]')).toHaveCount(0);
 });
 
 test("project watchers mobile member list stays inside the legacy page wrapper", async ({
@@ -227,7 +227,7 @@ test("protected org-owned project watchers expose legacy project-header search s
   await expect(page.getByText("This projects watcher list.")).toBeVisible();
   await expect(page).toHaveTitle("Watcher list - weblabs/portal");
 
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -235,14 +235,12 @@ test("protected org-owned project watchers expose legacy project-header search s
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105
   // <div class="search-box @if(project != null || org != null) {select}">
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
-  const searchScopeButtons = page.locator(
-    "[data-stylex-owner=global-gnb-search-scope-item] > button",
-  );
+  const searchScopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopeButtons).toHaveCount(3);
   expect(
     await searchScopeButtons.evaluateAll((buttons) =>
@@ -355,7 +353,7 @@ test("project watchers route source uses Link for internal app navigation", () =
     "project-watchers-member-name",
     "project-watchers-member-id",
   ]) {
-    expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).toContain(`data-owner="${owner}"`);
   }
   expect(source).not.toContain('className="members project row-fluid"');
   expect(source).not.toContain('className="member span6 span-hard-wrap"');
@@ -532,12 +530,12 @@ async function readDesktopWatchersMetrics(page: Page) {
     const projectPageWrap = requireElement(".project-page-wrap");
     const title = requireElement(".project-page-wrap h4");
     const description = requireElement(".project-page-wrap > p");
-    const memberList = requireElement('[data-stylex-owner="project-watchers-list"]');
-    const firstMember = requireElement('[data-stylex-owner="project-watchers-member"]');
-    const firstAvatar = requireElement('[data-stylex-owner="project-watchers-avatar"]');
-    const firstImage = requireElement('[data-stylex-owner="project-watchers-avatar-image"]');
-    const firstName = requireElement('[data-stylex-owner="project-watchers-member-name"]');
-    const firstId = requireElement('[data-stylex-owner="project-watchers-member-id"]');
+    const memberList = requireElement('[data-owner="project-watchers-list"]');
+    const firstMember = requireElement('[data-owner="project-watchers-member"]');
+    const firstAvatar = requireElement('[data-owner="project-watchers-avatar"]');
+    const firstImage = requireElement('[data-owner="project-watchers-avatar-image"]');
+    const firstName = requireElement('[data-owner="project-watchers-member-name"]');
+    const firstId = requireElement('[data-owner="project-watchers-member-id"]');
     const projectMenu = requireElement(".project-menu-gruop");
     const watcherCount = requireElement(".project-util .watcher-count");
     const watchAction = requireElement(".project-util .down-arrow");
@@ -601,8 +599,8 @@ async function readDesktopWatchersMetrics(page: Page) {
 
 async function readProtectedPortalWatchersShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
-    const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const navbar = requireElement('[data-owner="global-gnb-inner"]');
+    const search = requireElement('[data-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
     const projectMenu = requireElement(".project-menu-outer");
     const pageWrap = requireElement(".page-wrap-outer");
@@ -635,7 +633,7 @@ async function readMobileWatchersMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrap = requireElement(".project-page-wrap");
     const members = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-stylex-owner="project-watchers-member"]'),
+      document.querySelectorAll<HTMLElement>('[data-owner="project-watchers-member"]'),
     );
     const first = members[0];
     const second = members[1];
@@ -983,14 +981,14 @@ async function canonicalizeWatchersBody(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const owner = node.getAttribute("data-stylex-owner");
+      const owner = node.getAttribute("data-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
             attr.name !== "alt" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(owner && attr.name === "class" && !legacyClassesByOwner[owner]),
         )
         .sort((left, right) => left.name.localeCompare(right.name))

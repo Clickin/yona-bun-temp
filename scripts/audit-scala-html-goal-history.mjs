@@ -12,6 +12,8 @@ const ADDED_MANUAL_MULTI_SCREEN_EXCEPTION_PATTERN =
   /^\+Manual multi-screen exception note\b/mu;
 const ADDED_MANUAL_EVIDENCE_ONLY_EXCEPTION_PATTERN =
   /(?:^\+Manual evidence-only exception note\b|manual evidence-only exception)/imu;
+const ADDED_MANUAL_RETIREMENT_BATCH_EXCEPTION_PATTERN =
+  /^\+Manual retirement batch exception note\b/mu;
 // Batch 532 introduced the fallback-off runtime mode before reports became mandatory.
 // Keep this one immutable historical commit auditable without weakening current precommit policy.
 const PRE_REPORT_FALLBACK_DISCOVERY_COMMIT = "5209c1352";
@@ -89,6 +91,10 @@ function hasManualEvidenceOnlyException(auditPatch) {
   return ADDED_MANUAL_EVIDENCE_ONLY_EXCEPTION_PATTERN.test(auditPatch);
 }
 
+function hasRetirementBatchException(auditPatch) {
+  return ADDED_MANUAL_RETIREMENT_BATCH_EXCEPTION_PATTERN.test(auditPatch);
+}
+
 export function evaluateCommit({
   changedFiles,
   changedFileStatuses = new Map(),
@@ -106,6 +112,9 @@ export function evaluateCommit({
         : {}),
       ...(hasManualEvidenceOnlyException(auditPatch)
         ? { YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY: "1" }
+        : {}),
+      ...(hasRetirementBatchException(auditPatch)
+        ? { YONA_HISTORY_ALLOW_PRE_REPORT_FALLBACK_BATCH: "1" }
         : {}),
       ...(historicalCommitSha.startsWith(PRE_REPORT_FALLBACK_DISCOVERY_COMMIT)
         ? { YONA_HISTORY_ALLOW_PRE_REPORT_FALLBACK_BATCH: "1" }

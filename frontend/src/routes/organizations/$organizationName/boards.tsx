@@ -7,7 +7,6 @@ import {
   type SearchSchemaInput,
   useRouter,
 } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   listOrganizationBoardsQueryOptions,
@@ -17,61 +16,9 @@ import {
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationContainer } from "../../../api/types";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { TwoColumnModeCheckbox } from "../../../components/two-column-mode-checkbox";
 import { useLegacyMessages } from "../../../i18n";
 import { type RuntimeConfig } from "../../../runtime-config";
-import {
-  organizationBoardsColors,
-  organizationBoardsEmptyStyles,
-  organizationBoardsPaginationStyles,
-} from "./-organization-boards.stylex";
-
-const errorIconSpriteStyles = stylex.create({
-  sprite: (backgroundImage: string) => ({ backgroundImage }),
-});
-
-const styles = stylex.create({
-  searchForm: { float: "left" },
-  search: {
-    borderBottomColor: organizationBoardsColors.border,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-  },
-  filterInput: { color: organizationBoardsColors.mutedText, padding: "4px 6px" },
-  filters: { color: organizationBoardsColors.mutedText },
-  list: { listStyle: "none", margin: "0px", padding: "0px" },
-  row: {
-    borderBottomColor: organizationBoardsColors.border,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-  },
-  rowAvatar: { float: "left", marginRight: "10px" },
-  rowTitleWrap: {
-    display: "block",
-    lineHeight: "20px",
-    overflow: "hidden",
-    position: "relative",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  rowPostId: {
-    color: organizationBoardsColors.postIdText,
-    fontSize: "13px",
-    fontWeight: "bold",
-    marginRight: "5px",
-  },
-  twoColumnAnchor: { marginRight: "10px", position: "relative" },
-  twoColumnPopover: {
-    bottom: "100%",
-    display: "block",
-    left: "50%",
-    marginBottom: "5px",
-    position: "absolute",
-    transform: "translateX(-50%)",
-  },
-  title: { color: organizationBoardsColors.titleText, textDecoration: "none" },
-});
 
 type OrganizationBoardsSearch = {
   filter: string;
@@ -208,28 +155,14 @@ function OrganizationBoardsBody({
   const organizationName = stringField(organization.organizationName, boards.organizationName);
   const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
   const hasPosts = hasNotices || boards.items.length > 0;
-  const searchStyleProps = stylex.props(styles.search);
-  const searchFormStyleProps = stylex.props(styles.searchForm);
-  const filterInputStyleProps = stylex.props(styles.filterInput);
-  const listStyleProps = stylex.props(styles.list);
 
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer" data-stylex-owner="organization-boards-page">
-        <div className="project-page-wrap" data-stylex-owner="organization-boards-shell">
-          <div
-            {...searchStyleProps}
-            className={`search-wrap underline ${searchStyleProps.className ?? ""}`.trim()}
-            data-stylex-owner="organization-boards-search"
-          >
-            <form
-              {...searchFormStyleProps}
-              id="option_form"
-              method="get"
-              className={searchFormStyleProps.className}
-              data-stylex-owner="organization-boards-search-form"
-            >
+      <div className="page-wrap-outer" data-owner="organization-boards-page">
+        <div className="project-page-wrap" data-owner="organization-boards-shell">
+          <div className="search-wrap underline" data-owner="organization-boards-search">
+            <form id="option_form" method="get" data-owner="organization-boards-search-form">
               <input type="hidden" name="orderBy" value={search.orderBy} />
               <input type="hidden" name="orderDir" value={search.orderDir} />
               <div className="project-selects span7">
@@ -258,9 +191,8 @@ function OrganizationBoardsBody({
               <div className="search-bar span4">
                 <input
                   name="filter"
-                  {...filterInputStyleProps}
-                  className={`textbox group-board ${filterInputStyleProps.className ?? ""}`.trim()}
-                  data-stylex-owner="organization-boards-search-input"
+                  className="textbox group-board"
+                  data-owner="organization-boards-search-input"
                   type="text"
                   placeholder={t("title.searchByKeyword")}
                   defaultValue={search.filter}
@@ -270,8 +202,6 @@ function OrganizationBoardsBody({
                 </button>
               </div>
               <TwoColumnModeCheckbox
-                anchorStyle={styles.twoColumnAnchor}
-                popoverStyle={styles.twoColumnPopover}
                 anchorOwner="organization-boards-two-column-anchor"
                 popoverOwner="organization-boards-two-column-popover"
                 wrapPopoverContentInP
@@ -280,24 +210,9 @@ function OrganizationBoardsBody({
           </div>
 
           {!hasPosts ? (
-            <div
-              {...stylex.props(organizationBoardsEmptyStyles.errorWrap)}
-              className={`${stylex.props(organizationBoardsEmptyStyles.errorWrap).className} error-wrap`.trim()}
-              data-stylex-owner="organization-boards-empty"
-            >
-              <i
-                {...stylex.props(organizationBoardsEmptyStyles.errorIcon)}
-                {...stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`))}
-                className={`${stylex.props(organizationBoardsEmptyStyles.errorIcon).className} ${stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`)).className ?? ""} ico ico-err1`.trim()}
-                data-stylex-owner="organization-boards-empty-icon"
-              ></i>
-              <p
-                {...stylex.props(organizationBoardsEmptyStyles.errorMessage)}
-                className={stylex.props(organizationBoardsEmptyStyles.errorMessage).className}
-                data-stylex-owner="organization-boards-empty-message"
-              >
-                {t("post.is.empty")}
-              </p>
+            <div className="error-wrap" data-owner="organization-boards-empty">
+              <i className="ico ico-err1" data-owner="organization-boards-empty-icon"></i>
+              <p data-owner="organization-boards-empty-message">{t("post.is.empty")}</p>
             </div>
           ) : (
             <>
@@ -306,9 +221,8 @@ function OrganizationBoardsBody({
               ) : null}
               {hasNotices ? (
                 <ul
-                  {...listStyleProps}
-                  className={`post-list-wrap notice-wrap ${listStyleProps.className ?? ""}`.trim()}
-                  data-stylex-owner="organization-boards-notice-list"
+                  className="post-list-wrap notice-wrap"
+                  data-owner="organization-boards-notice-list"
                 >
                   {boards.notices.map((post) => (
                     <OrganizationBoardPost
@@ -318,11 +232,7 @@ function OrganizationBoardsBody({
                   ))}
                 </ul>
               ) : null}
-              <ul
-                {...listStyleProps}
-                className={`post-list-wrap ${listStyleProps.className ?? ""}`.trim()}
-                data-stylex-owner="organization-boards-list"
-              >
+              <ul className="post-list-wrap" data-owner="organization-boards-list">
                 {boards.items.map((post) => (
                   <OrganizationBoardPost
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
@@ -333,7 +243,7 @@ function OrganizationBoardsBody({
             </>
           )}
 
-          <div className="write-btn-wrap" data-stylex-owner="organization-boards-actions"></div>
+          <div className="write-btn-wrap" data-owner="organization-boards-actions"></div>
           <BoardPagination boards={boards} organizationName={organizationName} search={search} />
         </div>
       </div>
@@ -349,7 +259,6 @@ function BoardFilters({
   search: OrganizationBoardsSearch;
 }) {
   const { t } = useLegacyMessages();
-  const filtersStyleProps = stylex.props(styles.filters);
   const filters = [
     { field: "updatedDate", label: t("common.order.updatedDate") },
     { field: "createdDate", label: t("common.order.date") },
@@ -358,11 +267,7 @@ function BoardFilters({
 
   return (
     <div className="filter-wrap board">
-      <div
-        {...filtersStyleProps}
-        className={`filters ${filtersStyleProps.className ?? ""}`.trim()}
-        data-stylex-owner="organization-boards-filters"
-      >
+      <div className="filters" data-owner="organization-boards-filters">
         {filters.map((filter) => {
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
@@ -444,24 +349,12 @@ function BoardPagination({
 
   return (
     <div
-      {...stylex.props(organizationBoardsPaginationStyles.paginationWrap)}
       id="pagination"
-      className={`${stylex.props(organizationBoardsPaginationStyles.paginationWrap).className} page-navigation-wrap`}
-      data-stylex-owner="organization-boards-pagination"
+      className="page-navigation-wrap"
+      data-owner="organization-boards-pagination"
     >
-      <ul
-        {...stylex.props(organizationBoardsPaginationStyles.paginationPageNums)}
-        className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNums).className} page-nums`}
-        data-stylex-owner="organization-boards-pagination-page-nums"
-      >
-        <li
-          {...stylex.props(
-            organizationBoardsPaginationStyles.paginationPageNum,
-            organizationBoardsPaginationStyles.paginationIconPageNum,
-          )}
-          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum, organizationBoardsPaginationStyles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="organization-boards-pagination-prev-page"
-        >
+      <ul className="page-nums" data-owner="organization-boards-pagination-page-nums">
+        <li className="page-num ikon" data-owner="organization-boards-pagination-prev-page">
           {hasPrev ? (
             <Link
               activeOptions={{ exact: true }}
@@ -475,53 +368,29 @@ function BoardPagination({
               to="/organizations/$organizationName/boards"
             >
               <i
-                {...stylex.props(
-                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
-                  organizationBoardsPaginationStyles.paginationPrev,
-                )}
-                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="organization-boards-pagination-prev-icon"
+                className="ico btn-pg-prev"
+                data-owner="organization-boards-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabel)}
-                data-stylex-owner="organization-boards-pagination-prev-label"
-              >
+              <span data-owner="organization-boards-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </Link>
           ) : (
             <>
               <i
-                {...stylex.props(
-                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
-                  organizationBoardsPaginationStyles.paginationPrev,
-                  organizationBoardsPaginationStyles.paginationPrevOff,
-                )}
-                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationPrev, organizationBoardsPaginationStyles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="organization-boards-pagination-prev-icon"
+                className="ico btn-pg-prev off"
+                data-owner="organization-boards-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff)}
-                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="organization-boards-pagination-prev-label"
-              >
+              <span className="off" data-owner="organization-boards-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...stylex.props(organizationBoardsPaginationStyles.paginationPageNum)}
-          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum).className} page-num`}
-          data-stylex-owner="organization-boards-pagination-input-page"
-        >
+        <li className="page-num" data-owner="organization-boards-pagination-input-page">
           <input
-            {...stylex.props(
-              organizationBoardsPaginationStyles.paginationInput,
-              organizationBoardsPaginationStyles.paginationNoSpinner,
-            )}
-            className={`${stylex.props(organizationBoardsPaginationStyles.paginationInput, organizationBoardsPaginationStyles.paginationNoSpinner).className} input-mini nospinner`}
-            data-stylex-owner="organization-boards-pagination-input"
+            className="input-mini nospinner"
+            data-owner="organization-boards-pagination-input"
             defaultValue={currentPage}
             key={currentPage}
             max={pages}
@@ -535,31 +404,13 @@ function BoardPagination({
             onKeyDown={handleInputKeyDown}
           />
         </li>
-        <li
-          {...stylex.props(
-            organizationBoardsPaginationStyles.paginationPageNum,
-            organizationBoardsPaginationStyles.paginationDelimiter,
-          )}
-          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum, organizationBoardsPaginationStyles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="organization-boards-pagination-delimiter"
-        >
+        <li className="page-num delimiter" data-owner="organization-boards-pagination-delimiter">
           /
         </li>
-        <li
-          {...stylex.props(organizationBoardsPaginationStyles.paginationPageNum)}
-          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum).className} page-num`}
-          data-stylex-owner="organization-boards-pagination-total"
-        >
+        <li className="page-num" data-owner="organization-boards-pagination-total">
           {pages}
         </li>
-        <li
-          {...stylex.props(
-            organizationBoardsPaginationStyles.paginationPageNum,
-            organizationBoardsPaginationStyles.paginationIconPageNum,
-          )}
-          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum, organizationBoardsPaginationStyles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="organization-boards-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="organization-boards-pagination-next-page">
           {hasNext ? (
             <Link
               activeOptions={{ exact: true }}
@@ -572,38 +423,22 @@ function BoardPagination({
               search={pageSearch(currentPage + 1)}
               to="/organizations/$organizationName/boards"
             >
-              <span
-                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabel)}
-                data-stylex-owner="organization-boards-pagination-next-label"
-              >
+              <span data-owner="organization-boards-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
-                  organizationBoardsPaginationStyles.paginationNext,
-                )}
-                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="organization-boards-pagination-next-icon"
+                className="ico btn-pg-next"
+                data-owner="organization-boards-pagination-next-icon"
               ></i>
             </Link>
           ) : (
             <>
-              <span
-                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff)}
-                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="organization-boards-pagination-next-label"
-              >
+              <span className="off" data-owner="organization-boards-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
-                  organizationBoardsPaginationStyles.paginationNext,
-                  organizationBoardsPaginationStyles.paginationNextOff,
-                )}
-                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationNext, organizationBoardsPaginationStyles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="organization-boards-pagination-next-icon"
+                className="ico btn-pg-next off"
+                data-owner="organization-boards-pagination-next-icon"
               ></i>
             </>
           )}
@@ -615,32 +450,18 @@ function BoardPagination({
 
 function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
   const { t } = useLegacyMessages();
-  const rowStyleProps = stylex.props(styles.row);
-  const avatarStyleProps = stylex.props(styles.rowAvatar);
-  const titleWrapStyleProps = stylex.props(styles.rowTitleWrap);
-  const postIdStyleProps = stylex.props(styles.rowPostId);
-  const titleStyleProps = stylex.props(styles.title);
   return (
-    <li
-      {...rowStyleProps}
-      className={`${rowStyleProps.className ?? ""} post-item title`.trim()}
-      data-stylex-owner="organization-boards-row"
-    >
+    <li className="post-item title" data-owner="organization-boards-row">
       <Link
         to="/$user"
         params={{ user: post.authorLoginId }}
-        {...avatarStyleProps}
-        className={`${avatarStyleProps.className ?? ""} avatar-wrap mlarge hide-in-mobile`.trim()}
-        data-stylex-owner="organization-boards-row-avatar"
+        className="avatar-wrap mlarge hide-in-mobile"
+        data-owner="organization-boards-row-avatar"
         title={post.authorLoginId}
       >
         <img src={post.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
       </Link>
-      <div
-        {...titleWrapStyleProps}
-        className={`${titleWrapStyleProps.className ?? ""} title-wrap`.trim()}
-        data-stylex-owner="organization-boards-row-title-wrap"
-      >
+      <div className="title-wrap" data-owner="organization-boards-row-title-wrap">
         <Link
           to="/$ownerName/$projectName/post/$postNumber"
           params={{
@@ -648,9 +469,8 @@ function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
             projectName: post.projectName,
             postNumber: String(post.postNumber),
           }}
-          {...titleStyleProps}
-          className={`title ${titleStyleProps.className ?? ""}`.trim()}
-          data-stylex-owner="organization-boards-title"
+          className="title"
+          data-owner="organization-boards-title"
         >
           {post.title}
         </Link>
@@ -675,11 +495,7 @@ function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
         >
           {post.projectName}
         </Link>
-        <span
-          {...postIdStyleProps}
-          className={`${postIdStyleProps.className ?? ""} post-id`.trim()}
-          data-stylex-owner="organization-boards-row-post-id"
-        >
+        <span className="post-id" data-owner="organization-boards-row-post-id">
           #{post.postNumber}
         </span>
         <span className="infos-item" title={post.createdLabel}>

@@ -107,8 +107,7 @@ impl RedisCacheStore {
                     "YONA_STABLE_LIST_CACHE url is invalid; stable list cache disabled"
                 );
                 // Unreachable dummy: every op fails and degrades to a miss.
-                redis::Client::open("redis://127.0.0.1:1")
-                    .expect("statically valid redis url")
+                redis::Client::open("redis://127.0.0.1:1").expect("statically valid redis url")
             }
         };
         Self {
@@ -155,7 +154,9 @@ impl StableListStore for RedisCacheStore {
             return;
         };
         use redis::AsyncCommands;
-        let _ = connection.set_ex::<_, _, ()>(key, value, ttl.as_secs()).await;
+        let _ = connection
+            .set_ex::<_, _, ()>(key, value, ttl.as_secs())
+            .await;
     }
 
     async fn invalidate(&self, prefix: &str) {
@@ -216,7 +217,11 @@ impl StableLists {
         key
     }
 
-    pub async fn labels(&self, owner_name: &str, project_name: &str) -> Option<Vec<IssueLabelRecord>> {
+    pub async fn labels(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Option<Vec<IssueLabelRecord>> {
         let key = Self::key(&["labels", owner_name, project_name]);
         self.store
             .get(&key)
@@ -224,7 +229,12 @@ impl StableLists {
             .and_then(|bytes| serde_json::from_slice(&bytes).ok())
     }
 
-    pub async fn insert_labels(&self, owner_name: &str, project_name: &str, records: &[IssueLabelRecord]) {
+    pub async fn insert_labels(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        records: &[IssueLabelRecord],
+    ) {
         let key = Self::key(&["labels", owner_name, project_name]);
         if let Ok(bytes) = serde_json::to_vec(records) {
             self.store.put(&key, bytes, LABELS_TTL).await;
@@ -391,8 +401,17 @@ mod tests {
     #[tokio::test]
     async fn moka_store_round_trips_and_invalidates_by_prefix() {
         let store = MokaCacheStore::new();
-        store.put("stable:labels:owner:proj", b"value".to_vec(), Duration::from_secs(60)).await;
-        assert_eq!(store.get("stable:labels:owner:proj").await, Some(b"value".to_vec()));
+        store
+            .put(
+                "stable:labels:owner:proj",
+                b"value".to_vec(),
+                Duration::from_secs(60),
+            )
+            .await;
+        assert_eq!(
+            store.get("stable:labels:owner:proj").await,
+            Some(b"value".to_vec())
+        );
         store.invalidate("stable:labels:owner:proj").await;
         assert_eq!(store.get("stable:labels:owner:proj").await, None);
     }

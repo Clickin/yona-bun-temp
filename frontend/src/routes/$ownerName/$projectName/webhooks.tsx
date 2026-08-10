@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CountBadge } from "../../../components/count-badge";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { Fragment, useState, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
 import {
   createProjectWebhookRest,
@@ -23,54 +22,6 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { webhooksColors, webhooksStyles } from "./-webhooks.stylex";
-
-const styles = stylex.create({
-  form: { margin: "30px auto" },
-  legend: { display: "block", marginBottom: "10px" },
-  formWrap: { display: "inline-block", position: "relative", verticalAlign: "top" },
-  payload: {
-    borderColor: webhooksColors.fieldBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: webhooksColors.mutedText,
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 6px",
-    width: "355px",
-  },
-  secret: {
-    borderColor: webhooksColors.fieldBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: webhooksColors.mutedText,
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 6px",
-    width: "214px",
-  },
-  submit: {
-    backgroundColor: webhooksColors.actionPrimary,
-    borderColor: webhooksColors.actionBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: webhooksColors.white,
-    cursor: "pointer",
-    minWidth: "100px",
-    padding: "4px 12px",
-    textAlign: "center",
-    verticalAlign: "top",
-  },
-  list: { margin: "0 auto" },
-  listHead: {
-    backgroundColor: webhooksColors.listSurface,
-    borderBottomColor: webhooksColors.border,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "2px",
-  },
-  listHeadCell: { paddingLeft: "8px", lineHeight: "30px" },
-  listItem: { borderBottom: "1px solid #ddd" },
-});
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -259,40 +210,27 @@ function ProjectWebhooksBody({
 
   return (
     <div className="page-wrap-outer">
-      <div
-        className="project-page-wrap webhook-editor-wrap"
-        data-stylex-owner="project-webhooks-page"
-      >
+      <div className="project-page-wrap webhook-editor-wrap" data-owner="project-webhooks-page">
         <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
         {webhookCreationAllowed(webhooks) ? (
           <form
             id="formNewWebhook"
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/webhooks`)}
             method="post"
-            {...stylex.props(styles.form)}
-            className={`${stylex.props(styles.form).className} new-webhook-wrap`}
-            data-stylex-owner="project-webhooks-new-form"
+            className="new-webhook-wrap"
+            data-owner="project-webhooks-new-form"
             onSubmit={onSubmit}
           >
-            <strong
-              {...stylex.props(styles.legend)}
-              className={`${stylex.props(styles.legend).className} form-legend`}
-              data-stylex-owner="project-webhooks-form-legend"
-            >
+            <strong className="form-legend" data-owner="project-webhooks-form-legend">
               {t("project.webhook.new")}
             </strong>
-            <div
-              {...stylex.props(styles.formWrap)}
-              className={`${stylex.props(styles.formWrap).className} form-actions`}
-              data-stylex-owner="project-webhooks-form-fields"
-            >
+            <div className="form-actions" data-owner="project-webhooks-form-fields">
               <div>
                 <input
                   type="text"
                   name="payloadUrl"
-                  {...stylex.props(styles.payload)}
-                  className={`${stylex.props(styles.payload).className} input-webhook-payload`}
-                  data-stylex-owner="project-webhooks-payload"
+                  className="input-webhook-payload"
+                  data-owner="project-webhooks-payload"
                   maxLength={2000}
                   autoComplete="off"
                   placeholder={t("project.webhook.payloadUrl")}
@@ -300,18 +238,16 @@ function ProjectWebhooksBody({
                 <input
                   type="text"
                   name="secret"
-                  {...stylex.props(styles.secret)}
-                  className={`${stylex.props(styles.secret).className} input-webhook-secret`}
-                  data-stylex-owner="project-webhooks-secret"
+                  className="input-webhook-secret"
+                  data-owner="project-webhooks-secret"
                   maxLength={250}
                   autoComplete="off"
                   placeholder={t("project.webhook.secret")}
                 />{" "}
                 <button
-                  {...stylex.props(styles.submit)}
                   type="submit"
-                  className={`${stylex.props(styles.submit).className} ybtn ybtn-primary btn-submit`}
-                  data-stylex-owner="project-webhooks-submit"
+                  className="ybtn ybtn-primary btn-submit"
+                  data-owner="project-webhooks-submit"
                 >
                   {t("project.webhook.add")}
                 </button>
@@ -386,12 +322,7 @@ function ProjectWebhooksBody({
             <LegacyWebhookHelp help={t("project.webhook.help")} />
           </form>
         ) : null}
-        <div
-          {...stylex.props(styles.list)}
-          id="webhooksList"
-          className={stylex.props(styles.list).className}
-          data-stylex-owner="project-webhooks-list"
-        >
+        <div id="webhooksList" className="" data-owner="project-webhooks-list">
           <ProjectWebhooksList
             ownerName={ownerName}
             projectName={projectName}
@@ -455,21 +386,21 @@ function ProjectWebhooksList({
 
   if (webhooks.length === 0) {
     return (
-      <div
-        {...stylex.props(webhooksStyles.errorWrap)}
-        className={`${stylex.props(webhooksStyles.errorWrap).className} error-wrap`}
-        data-stylex-owner="project-webhooks-empty"
-      >
+      <div className="error-wrap" data-owner="project-webhooks-empty">
         <i
-          {...stylex.props(webhooksStyles.errorIcon(legacySpriteUrl))}
-          className={`${stylex.props(webhooksStyles.errorIcon(legacySpriteUrl)).className} ico ico-err1`}
-          data-stylex-owner="project-webhooks-empty-icon"
+          className="ico ico-err1"
+          style={{
+            backgroundImage: `url(${legacySpriteUrl})`,
+            backgroundPosition: "-5px -160px",
+            backgroundRepeat: "no-repeat",
+            display: "inline-block",
+            height: "82px",
+            verticalAlign: "middle",
+            width: "62px",
+          }}
+          data-owner="project-webhooks-empty-icon"
         ></i>
-        <p
-          {...stylex.props(webhooksStyles.errorMessage)}
-          className={`${stylex.props(webhooksStyles.errorMessage).className}`}
-          data-stylex-owner="project-webhooks-empty-message"
-        >
+        <p className="" data-owner="project-webhooks-empty-message">
           {t("project.webhook.list.empty")}
         </p>
       </div>
@@ -478,53 +409,42 @@ function ProjectWebhooksList({
 
   return (
     <>
-      <div
-        className={`${stylex.props(styles.listHead).className} row-fluid list-head`}
-        data-stylex-owner="project-webhooks-list-head"
-      >
-        <div className={`${stylex.props(styles.listHeadCell).className} span5 payload-url`}>
+      <div className="row-fluid list-head" data-owner="project-webhooks-list-head">
+        <div className="s2e-webhooks-list-head-cell span5 payload-url">
           <strong>{t("project.webhook.payloadUrl")}</strong>
         </div>
-        <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
+        <div className="s2e-webhooks-list-head-cell span2 secret text-center">
           <strong>{t("project.webhook.secret")}</strong>
         </div>
-        <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
+        <div className="s2e-webhooks-list-head-cell span2 secret text-center">
           <strong>Type of message</strong>
         </div>
-        <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
+        <div className="s2e-webhooks-list-head-cell span2 secret text-center">
           <strong>Include git push events</strong>
         </div>
-        <div
-          className={`${stylex.props(styles.listHeadCell).className} span1 secret text-center`}
-        ></div>
+        <div className="s2e-webhooks-list-head-cell span1 secret text-center"></div>
       </div>
       {webhooks.map((webhook) => (
         <div
-          className={`${stylex.props(styles.listItem).className} row-fluid list-item vertical-align`}
+          className="s2e-webhooks-list-item row-fluid list-item vertical-align"
           data-webhook-id={webhook.id}
           key={webhook.id}
         >
           <div className="span5">
             <h6
-              className={`${stylex.props(webhooksStyles.listItemHeading, webhooksStyles.payloadHeading, webhooksStyles.truncate).className} mr20 truncate`}
-              data-stylex-owner="project-webhooks-list-item-heading"
+              className="s2e-webhooks-payload-heading mr20 truncate"
+              data-owner="project-webhooks-list-item-heading"
             >
               {stringField(webhook.payloadUrl, "")}
             </h6>
           </div>
           <div className="span2 text-center">
-            <h6
-              className={stylex.props(webhooksStyles.listItemHeading).className}
-              data-stylex-owner="project-webhooks-list-item-heading"
-            >
+            <h6 className="" data-owner="project-webhooks-list-item-heading">
               {stringField(webhook.secret, "") || "NONE"}
             </h6>
           </div>
           <div className="span2 text-center">
-            <h6
-              className={stylex.props(webhooksStyles.listItemHeading).className}
-              data-stylex-owner="project-webhooks-list-item-heading"
-            >
+            <h6 className="" data-owner="project-webhooks-list-item-heading">
               {stringField(webhook.webhookType, "")}
             </h6>
           </div>
@@ -639,11 +559,8 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className=""
-        {...(projectMenuEnabled(project, "code", "showCode")
-          ? {}
-          : stylex.props(webhooksStyles.codeMenuHidden))}
-        data-stylex-owner="project-webhooks-code-menu"
+        className={`${projectMenuEnabled(project, "code", "showCode") ? "" : "is-hidden"}`.trim()}
+        data-owner="project-webhooks-code-menu"
       >
         <Link
           {...LEGACY_LINK_PROPS}

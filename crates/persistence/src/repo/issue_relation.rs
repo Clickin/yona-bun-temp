@@ -152,7 +152,7 @@ impl AppRepositoryImpl<'_> {
         let mut label_changes = Vec::new();
         let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         for (project_record, model, next_assignee_id) in &targets {
-            let previous_state = issue_state_from_raw(model.state);
+            let previous_state = issue_state_from_raw(self.db.get_database_backend(), model.state);
             let was_draft = model.is_draft.unwrap_or_default() != 0;
             if was_draft {
                 continue;
@@ -161,7 +161,10 @@ impl AppRepositoryImpl<'_> {
             let old_milestone_id = model.milestone_id;
             let mut active = issue::ActiveModel::from(model.clone());
             if let Some(state) = requested_state.as_deref() {
-                active.state = Set(Some(issue_state_to_raw(state)));
+                active.state = Set(Some(issue_state_to_raw(
+                    self.db.get_database_backend(),
+                    state,
+                )));
             }
             if input.assignee_update {
                 active.assignee_id = Set(*next_assignee_id);

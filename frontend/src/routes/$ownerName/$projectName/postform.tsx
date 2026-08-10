@@ -4,7 +4,6 @@ import { BoardPostFileUploader } from "../../../components/file-uploader";
 import { LegacyTabIndexInput } from "../../../components/legacy-tab-index-input";
 import { BoardPostMarkdownEditor } from "../../../components/markdown-editor";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { useState, type ReactNode } from "react";
 import {
   createProjectPostRest,
@@ -16,17 +15,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { styles } from "./-postform.stylex";
-
-const sx = {
-  editorWrapper: stylex.props(styles.editorWrapper),
-  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
-  editorTabContent: stylex.props(styles.editorTabContent),
-  form: stylex.props(styles.form),
-  editor: stylex.props(styles.editor),
-  actions: stylex.props(styles.actions),
-} as const;
-const pasteHelpStyleProps = stylex.props(styles.pasteHelpVisible);
 
 type BoardPostFormSearch = {
   branch?: string;
@@ -175,8 +163,8 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
     return (
       <div
         className="page-wrap-outer"
-        data-stylex-owner="project-postform-loading-shell"
-        data-stylex-content-ready="false"
+        data-owner="project-postform-loading-shell"
+        data-content-ready="false"
       >
         <div className="project-page-wrap">
           <form className="nm">
@@ -188,19 +176,14 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   }
 
   return (
-    <div
-      className="page-wrap-outer"
-      data-stylex-owner="project-postform-page"
-      data-stylex-content-ready="true"
-    >
-      <div className="project-page-wrap" data-stylex-owner="project-postform-shell">
+    <div className="page-wrap-outer" data-owner="project-postform-page" data-content-ready="true">
+      <div className="project-page-wrap" data-owner="project-postform-shell">
         <form
           action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/posts`)}
           method="post"
           encType="multipart/form-data"
-          {...sx.form}
-          className={`nm ${sx.form.className ?? ""}`.trim()}
-          data-stylex-owner="project-postform-form"
+          className="nm"
+          data-owner="project-postform-form"
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
@@ -212,7 +195,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             mutation.mutate(event.currentTarget);
           }}
         >
-          <div className="content-wrap frm-wrap" data-stylex-owner="project-postform-content">
+          <div className="content-wrap frm-wrap" data-owner="project-postform-content">
             <dl>
               <dd>
                 <LegacyTabIndexInput
@@ -222,7 +205,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   id="title"
                   autoComplete="off"
                   name="title"
-                  data-stylex-owner="project-postform-title"
+                  data-owner="project-postform-title"
                   maxLength={250}
                   defaultValue={title}
                   onKeyDown={(event) => {
@@ -261,21 +244,15 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   </div>
                 ) : null}
               </dd>
-              <dd
-                {...sx.editorWrapper}
-                style={{ position: "relative" }}
-                data-stylex-owner="project-postform-editor-wrapper"
-              >
+              <dd style={{ position: "relative" }} data-owner="project-postform-editor-wrapper">
                 <BoardPostMarkdownEditor
                   focusRequest={bodyFocusRequest}
                   search={compactBoardPostFormSearch(search)}
                   linkActiveProps={{}}
                   tabIndex={3}
                   value={body}
-                  wrapperClassName={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
-                  wrapperStyle={sx.markdownEditorWrapper}
-                  editorStyle={sx.editor}
-                  tabContentClassName={`${sx.editorTabContent.className} tab-content`}
+                  wrapperClassName="mt10"
+                  tabContentClassName="tab-content"
                   owners={{
                     wrapper: "project-postform-markdown-editor-wrapper",
                     tabContent: "project-postform-editor-tab-content",
@@ -287,14 +264,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
 
             {canShowUploader ? (
               <BoardPostFileUploader
-                wrapperStyleProps={stylex.props(styles.uploadWrap)}
-                attachWrapStyleProps={stylex.props(styles.attachWrap)}
-                btnWrapStyleProps={stylex.props(styles.uploadButtonWrap)}
-                plainStyleProps={stylex.props(styles.uploadPlain)}
-                pasteHelpStyleProps={pasteHelpStyleProps}
-                attachedFilesStyleProps={stylex.props(styles.attachedFiles)}
-                helpClassName={`right-txt help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
-                helpStyleProps={stylex.props(styles.uploadAttachSaveHelp)}
+                helpClassName="right-txt help"
                 owners={{
                   wrapper: "project-postform-upload-wrap",
                   attachWrap: "project-postform-attach-wrap",
@@ -307,11 +277,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               />
             ) : null}
 
-            <div
-              {...stylex.props(styles.options)}
-              className={`mt10 mb10 ${stylex.props(styles.options).className ?? ""}`.trim()}
-              data-stylex-owner="project-postform-options"
-            >
+            <div className="mt10 mb10" data-owner="project-postform-options">
               {canShowNotice ? (
                 <label className="checkbox">
                   <input type="checkbox" id="notice" name="notice" />
@@ -335,16 +301,8 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               ) : null}
             </div>
 
-            <div
-              {...sx.actions}
-              className={`actions ${sx.actions.className ?? ""}`.trim()}
-              data-stylex-owner="project-postform-actions"
-            >
-              <button
-                className="ybtn ybtn-success"
-                data-stylex-owner="project-postform-save"
-                tabIndex={3}
-              >
+            <div className="actions" data-owner="project-postform-actions">
+              <button className="ybtn ybtn-success" data-owner="project-postform-save" tabIndex={3}>
                 {t("button.save")}
               </button>
               <HistoryBackLink onCancel={() => router.history.back()}>
@@ -362,7 +320,7 @@ function HistoryBackLink({ children, onCancel }: { children: string; onCancel: (
   return (
     <button
       className="ybtn"
-      data-stylex-owner="project-postform-cancel"
+      data-owner="project-postform-cancel"
       type="button"
       tabIndex={4}
       onClick={onCancel}

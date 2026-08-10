@@ -160,14 +160,14 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   ).toContain("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="global-gnb-nav"] a[href]')
+      .locator('[data-owner="global-gnb-nav"] a[href]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/`,
@@ -179,11 +179,11 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="site-post-list-setting-wrap"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
+  await expect(page.locator('[data-owner="site-post-list-setting-wrap"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
     "Posts",
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-post-list-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -207,11 +207,11 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
     "font-weight",
     "700",
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
     "border-left-color",
     "rgb(243, 108, 34)",
   );
@@ -226,13 +226,13 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
   ]);
   const shellBoxes = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
     const listAllLink = document.querySelector(
-      '[data-stylex-owner="global-gnb-nav"] a[href$="/projects"]',
+      '[data-owner="global-gnb-nav"] a[href$="/projects"]',
     );
     const feedbackLink = document.querySelector(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     );
     if (
       !(navbar instanceof HTMLElement) ||
@@ -286,27 +286,25 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   expect(shellBoxes!.searchForm.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
   expect(shellBoxes!.searchForm.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
   expect(shellBoxes!.searchForm.right).toBeLessThanOrEqual(shellBoxes!.navbar.right);
-  const authorAvatarImage = page.locator(
-    '[data-stylex-owner="site-post-list-author-avatar-image"]',
-  );
+  const authorAvatarImage = page.locator('[data-owner="site-post-list-author-avatar-image"]');
   await expect(authorAvatarImage).not.toHaveAttribute("alt", /.*/);
   await expect(authorAvatarImage).not.toHaveAttribute("width", /.*/);
   await expect(authorAvatarImage).not.toHaveAttribute("height", /.*/);
-  await expect(page.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-post-list-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-post-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/post/7`,
   );
   await expect(
-    page.locator('[data-stylex-owner="site-post-list-metadata-item"] > a[href$="#comments"]'),
+    page.locator('[data-owner="site-post-list-metadata-item"] > a[href$="#comments"]'),
   ).toHaveAttribute("href", `${basePath}/acme/roadmap/post/7#comments`);
   await expect(
-    page.locator('[data-stylex-owner="site-post-list-sidebar-link"]', {
+    page.locator('[data-owner="site-post-list-sidebar-link"]', {
       hasText: "Send mass emails",
     }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  await expect(page.locator('[data-stylex-owner="site-post-list-pagination"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-post-list-pagination-item"]')).toHaveCount(5);
+  await expect(page.locator('[data-owner="site-post-list-pagination"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-post-list-pagination-item"]')).toHaveCount(5);
   await expect(page.locator("#pagination")).not.toHaveClass(/\bpage-navigation-wrap\b/u);
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
@@ -366,7 +364,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   });
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
+  await expect(page.locator('[data-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
     "Posts",
   );
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
@@ -408,7 +406,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   ).toBe("site-posts-pagination-input");
 
   await mockSiteUsers(page);
-  const usersLink = page.locator('[data-stylex-owner="site-post-list-sidebar-link"]', {
+  const usersLink = page.locator('[data-owner="site-post-list-sidebar-link"]', {
     hasText: "Users",
   });
   await expect(usersLink).toHaveAttribute("href", `${basePath}/sites/userList`);
@@ -438,14 +436,12 @@ test("site admin post list renders legacy update notification badge", async ({ p
 
   await page.goto(`${basePath}/sites/postList`);
 
-  const updateLink = page.locator('[data-stylex-owner="site-post-list-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-post-list-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator('[data-stylex-owner="site-post-list-sidebar-badge"]')).toHaveText(
-    "1",
-  );
+  await expect(updateLink.locator('[data-owner="site-post-list-sidebar-badge"]')).toHaveText("1");
 });
 
 test("site admin post list sidebar active state stays on legacy li at pageNum=1", async ({
@@ -464,11 +460,11 @@ test("site admin post list sidebar active state stays on legacy li at pageNum=1"
 
   await page.goto(`${basePath}/sites/postList?pageNum=1`);
 
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
     "font-weight",
     "700",
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
     "border-left-color",
     "rgb(243, 108, 34)",
   );
@@ -498,50 +494,50 @@ test("site admin post list row links keep legacy hrefs and SPA navigation", asyn
 
   await page.goto(`${basePath}/sites/postList`);
 
-  await expect(page.locator('[data-stylex-owner="site-post-list-project-avatar"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-post-list-project-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap`,
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-project-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-post-list-project-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap`,
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-post-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/post/7`,
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-author-avatar"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-post-list-author-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/alice`,
   );
   await expect(
-    page.locator('[data-stylex-owner="site-post-list-metadata-item"]', { hasText: "Alice" }),
+    page.locator('[data-owner="site-post-list-metadata-item"]', { hasText: "Alice" }),
   ).toHaveAttribute("href", `${basePath}/alice`);
   await expect(
-    page.locator('[data-stylex-owner="site-post-list-metadata-item"] > a[href$="#comments"]'),
+    page.locator('[data-owner="site-post-list-metadata-item"] > a[href$="#comments"]'),
   ).toHaveAttribute("href", `${basePath}/acme/roadmap/post/7#comments`);
 
   await expectSpaClick(
     page,
-    '[data-stylex-owner="site-post-list-project-link"]',
+    '[data-owner="site-post-list-project-link"]',
     `${basePath}/acme/roadmap`,
     "site-post-project",
   );
   await expectSpaClick(
     page,
-    '[data-stylex-owner="site-post-list-title-link"]',
+    '[data-owner="site-post-list-title-link"]',
     `${basePath}/acme/roadmap/post/7`,
     "site-post-title",
   );
   await expectSpaClick(
     page,
-    '[data-stylex-owner="site-post-list-metadata-item"] > a[href$="#comments"]',
+    '[data-owner="site-post-list-metadata-item"] > a[href$="#comments"]',
     `${basePath}/acme/roadmap/post/7#comments`,
     "site-post-comments",
   );
   await expectSpaClick(
     page,
-    '[data-stylex-owner="site-post-list-metadata-item"][href]',
+    '[data-owner="site-post-list-metadata-item"][href]',
     `${basePath}/alice`,
     "site-post-author",
   );
@@ -591,7 +587,7 @@ test("site admin post list preserves mixed legacy row branches and pagination co
   await page.goto(`${basePath}/sites/postList`);
 
   const rows = page.locator(
-    '[data-stylex-owner="site-post-list-container"] > [data-stylex-owner="site-post-list-row"]',
+    '[data-owner="site-post-list-container"] > [data-owner="site-post-list-row"]',
   );
   await expect(rows).toHaveCount(2);
   expect(await sitePostRowDom(page)).toEqual([
@@ -687,7 +683,7 @@ test("site admin post list custom gravatar author avatar keeps legacy custom att
 
   await page.goto(`${basePath}/sites/postList`);
 
-  const authorAvatar = page.locator('[data-stylex-owner="site-post-list-author-avatar-image"]');
+  const authorAvatar = page.locator('[data-owner="site-post-list-author-avatar-image"]');
   await expect(authorAvatar).toHaveAttribute(
     "src",
     "https://www.gravatar.com/avatar/alice-custom?s=16&d=retro",
@@ -719,7 +715,7 @@ test("site admin post list falls back to the legacy default project logo when th
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/sites/postList`);
 
-  const projectLogo = page.locator('[data-stylex-owner="site-post-list-project-avatar-image"]');
+  const projectLogo = page.locator('[data-owner="site-post-list-project-avatar-image"]');
   await expect(projectLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
   expect(consoleMessages).not.toEqual(
     expect.arrayContaining([
@@ -790,7 +786,7 @@ async function expectSpaClick(page: Page, selector: string, expectedUrl: string,
 }
 
 async function siteSidebarAnchorActiveAttrs(page: Page) {
-  return page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-post-list-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className: null,
@@ -812,9 +808,7 @@ async function paginationAnchorAttrs(anchor: ReturnType<Page["locator"]>) {
 
 async function sitePostRowDom(page: Page) {
   return page
-    .locator(
-      '[data-stylex-owner="site-post-list-container"] > [data-stylex-owner="site-post-list-row"]',
-    )
+    .locator('[data-owner="site-post-list-container"] > [data-owner="site-post-list-row"]')
     .evaluateAll((rows) =>
       rows.map((row) => {
         function requireElement<TElement extends Element = Element>(
@@ -831,40 +825,40 @@ async function sitePostRowDom(page: Page) {
         const directElementChildren = Array.from(row.children);
         const projectLink = requireElement<HTMLAnchorElement>(
           row,
-          ':scope > [data-stylex-owner="site-post-list-project-avatar"]',
+          ':scope > [data-owner="site-post-list-project-avatar"]',
         );
         const projectImage = requireElement<HTMLImageElement>(
           row,
-          '[data-stylex-owner="site-post-list-project-avatar-image"]',
+          '[data-owner="site-post-list-project-avatar-image"]',
         );
         const projectNameLink = requireElement<HTMLAnchorElement>(
           row,
-          '[data-stylex-owner="site-post-list-project-link"]',
+          '[data-owner="site-post-list-project-link"]',
         );
-        const separator = requireElement(row, '[data-stylex-owner="site-post-list-separator"]');
+        const separator = requireElement(row, '[data-owner="site-post-list-separator"]');
         const titleLink = requireElement<HTMLAnchorElement>(
           row,
-          '[data-stylex-owner="site-post-list-title-link"]',
+          '[data-owner="site-post-list-title-link"]',
         );
         const authorAvatarLink = requireElement<HTMLAnchorElement>(
           row,
-          '[data-stylex-owner="site-post-list-author-avatar"]',
+          '[data-owner="site-post-list-author-avatar"]',
         );
         const authorImage = requireElement<HTMLImageElement>(
           row,
-          '[data-stylex-owner="site-post-list-author-avatar-image"]',
+          '[data-owner="site-post-list-author-avatar-image"]',
         );
         const authorLink = requireElement<HTMLAnchorElement>(
           row,
-          '[data-stylex-owner="site-post-list-metadata"] > [data-stylex-owner="site-post-list-metadata-item"][href]',
+          '[data-owner="site-post-list-metadata"] > [data-owner="site-post-list-metadata-item"][href]',
         );
         const date = requireElement(
           row,
-          '[data-stylex-owner="site-post-list-metadata"] > span[data-stylex-owner="site-post-list-metadata-item"][title]',
+          '[data-owner="site-post-list-metadata"] > span[data-owner="site-post-list-metadata-item"][title]',
         );
         const comments = requireElement<HTMLAnchorElement>(
           row,
-          '[data-stylex-owner="site-post-list-metadata"] > span[data-stylex-owner="site-post-list-metadata-item"]:not([title]) > a',
+          '[data-owner="site-post-list-metadata"] > span[data-owner="site-post-list-metadata-item"]:not([title]) > a',
         );
 
         return {
@@ -875,7 +869,7 @@ async function sitePostRowDom(page: Page) {
           authorImgAlt: authorImage.getAttribute("alt"),
           authorText: authorLink.textContent?.trim() ?? "",
           childClasses: directElementChildren.map((child) => {
-            const owner = child.getAttribute("data-stylex-owner");
+            const owner = child.getAttribute("data-owner");
             return owner ? `owner:${owner}` : child.getAttribute("class");
           }),
           commentHref: comments.getAttribute("href"),
@@ -897,15 +891,13 @@ async function sitePostRowDom(page: Page) {
 async function postListContainmentMetrics(page: Page) {
   return page.evaluate(() => {
     const content = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="site-post-list-setting-content-column"]',
+      '[data-owner="site-post-list-setting-content-column"]',
     );
-    const list = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="site-post-list-container"]',
-    );
+    const list = document.querySelector<HTMLElement>('[data-owner="site-post-list-container"]');
     const pagination = document.querySelector<HTMLElement>("#pagination");
     const rows = Array.from(
       document.querySelectorAll<HTMLElement>(
-        '[data-stylex-owner="site-post-list-container"] > [data-stylex-owner="site-post-list-row"]',
+        '[data-owner="site-post-list-container"] > [data-owner="site-post-list-row"]',
       ),
     );
     if (!content || !list || !pagination || rows.length === 0) {
@@ -917,25 +909,22 @@ async function postListContainmentMetrics(page: Page) {
       list: rect(list),
       pagination: rect(pagination),
       rows: rows.map((row) => {
-        const avatar = requireElement(
-          row,
-          ':scope > [data-stylex-owner="site-post-list-project-avatar"]',
-        );
-        const info = requireElement(row, ':scope > [data-stylex-owner="site-post-list-info"]');
-        const meta = requireElement(row, ':scope > [data-stylex-owner="site-post-list-metadata"]');
-        const project = requireElement(row, '[data-stylex-owner="site-post-list-project-link"]');
-        const title = requireElement(row, '[data-stylex-owner="site-post-list-title-link"]');
+        const avatar = requireElement(row, ':scope > [data-owner="site-post-list-project-avatar"]');
+        const info = requireElement(row, ':scope > [data-owner="site-post-list-info"]');
+        const meta = requireElement(row, ':scope > [data-owner="site-post-list-metadata"]');
+        const project = requireElement(row, '[data-owner="site-post-list-project-link"]');
+        const title = requireElement(row, '[data-owner="site-post-list-title-link"]');
         const author = requireElement(
           row,
-          '[data-stylex-owner="site-post-list-metadata"] > [data-stylex-owner="site-post-list-metadata-item"][href]',
+          '[data-owner="site-post-list-metadata"] > [data-owner="site-post-list-metadata-item"][href]',
         );
         const date = requireElement(
           row,
-          '[data-stylex-owner="site-post-list-metadata"] > span[data-stylex-owner="site-post-list-metadata-item"][title]',
+          '[data-owner="site-post-list-metadata"] > span[data-owner="site-post-list-metadata-item"][title]',
         );
         const comments = requireElement(
           row,
-          '[data-stylex-owner="site-post-list-metadata"] > span[data-stylex-owner="site-post-list-metadata-item"]:not([title])',
+          '[data-owner="site-post-list-metadata"] > span[data-owner="site-post-list-metadata-item"]:not([title])',
         );
 
         return {
@@ -1132,20 +1121,20 @@ async function mockUpdate(
 
 async function postListMetrics(page: Page) {
   return page.evaluate(() => {
-    const row = requireElement('[data-stylex-owner="site-post-list-setting-grid"]');
-    const sidebar = requireElement('[data-stylex-owner="site-post-list-setting-sidebar-column"]');
-    const content = requireElement('[data-stylex-owner="site-post-list-setting-content-column"]');
-    const titleArea = requireElement('[data-stylex-owner="site-post-list-title-strip"]');
-    const firstRow = requireElement('[data-stylex-owner="site-post-list-row"]');
-    const avatarWrap = requireElement('[data-stylex-owner="site-post-list-project-avatar"]');
-    const avatarImage = requireElement('[data-stylex-owner="site-post-list-project-avatar-image"]');
-    const postInfo = requireElement('[data-stylex-owner="site-post-list-info"]');
-    const postProject = requireElement('[data-stylex-owner="site-post-list-project-link"]');
-    const separator = requireElement('[data-stylex-owner="site-post-list-separator"]');
-    const postTitle = requireElement('[data-stylex-owner="site-post-list-title-link"]');
-    const meta = requireElement('[data-stylex-owner="site-post-list-metadata"]');
-    const metaAvatar = requireElement('[data-stylex-owner="site-post-list-author-avatar"]');
-    const metaItem = requireElement('[data-stylex-owner="site-post-list-metadata-item"]');
+    const row = requireElement('[data-owner="site-post-list-setting-grid"]');
+    const sidebar = requireElement('[data-owner="site-post-list-setting-sidebar-column"]');
+    const content = requireElement('[data-owner="site-post-list-setting-content-column"]');
+    const titleArea = requireElement('[data-owner="site-post-list-title-strip"]');
+    const firstRow = requireElement('[data-owner="site-post-list-row"]');
+    const avatarWrap = requireElement('[data-owner="site-post-list-project-avatar"]');
+    const avatarImage = requireElement('[data-owner="site-post-list-project-avatar-image"]');
+    const postInfo = requireElement('[data-owner="site-post-list-info"]');
+    const postProject = requireElement('[data-owner="site-post-list-project-link"]');
+    const separator = requireElement('[data-owner="site-post-list-separator"]');
+    const postTitle = requireElement('[data-owner="site-post-list-title-link"]');
+    const meta = requireElement('[data-owner="site-post-list-metadata"]');
+    const metaAvatar = requireElement('[data-owner="site-post-list-author-avatar"]');
+    const metaItem = requireElement('[data-owner="site-post-list-metadata-item"]');
     const rowRect = row.getBoundingClientRect();
     const firstRowStyle = getComputedStyle(firstRow);
     const avatarWrapStyle = getComputedStyle(avatarWrap);
@@ -1206,7 +1195,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-post-list-breadcrumb-outer], [data-stylex-owner=site-post-list-page-wrap-outer], [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], [data-owner=site-post-list-breadcrumb-outer], [data-owner=site-post-list-page-wrap-outer], [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1214,11 +1203,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1259,7 +1248,7 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-post-list-pagination-input",
           "site-post-list-pagination-label",
           "site-post-list-pagination-icon",
-        ]).has(current.getAttribute("data-stylex-owner") ?? "")
+        ]).has(current.getAttribute("data-owner") ?? "")
       ) {
         return value
           .split(/\s+/u)
@@ -1269,7 +1258,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)

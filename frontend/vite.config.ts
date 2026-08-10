@@ -1,11 +1,10 @@
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import stylex from "@stylexjs/unplugin";
+import tailwindcss from "@tailwindcss/vite";
 import babel from "@rolldown/plugin-babel";
 import type { IncomingMessage } from "node:http";
 import { fileURLToPath, URL } from "node:url";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
-import { legacyFallbackEnabled, transformLegacyFallbackLink } from "./src/legacy-fallback-mode";
 
 function normalizeBasePath(input: string | undefined): string {
   const trimmed = (input ?? "").trim();
@@ -79,21 +78,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const basePath = normalizeBasePath(env.VITE_YONA_BASE_PATH);
   const backendTarget = env.YONA_DEV_BACKEND_TARGET || "http://127.0.0.1:8089";
-  const includeLegacyFallback = legacyFallbackEnabled(
-    env.VITE_DISABLE_LEGACY_FALLBACK ?? process.env.VITE_DISABLE_LEGACY_FALLBACK,
-  );
   const disableRouteGenerationForE2e = process.env.YONA_E2E_DISABLE_ROUTE_GENERATION === "1";
 
   return {
     base:
       mode === "production" && basePath === "/" ? "./" : basePath === "/" ? "/" : `${basePath}/`,
     plugins: [
-      stylex.vite({
-        useCSSLayers: {
-          before: ["legacy"],
-          prefix: "stylex",
-        },
-      }),
+      tailwindcss(),
       tanstackRouter({
         generatedRouteTree: "src/routeTree.gen.ts",
         routesDirectory: "src/routes",
@@ -103,15 +94,6 @@ export default defineConfig(({ mode }) => {
       }),
       react(),
       babel({ presets: [reactCompilerPreset()] }),
-      {
-        name: "yoram-legacy-fallback-mode",
-        transformIndexHtml: {
-          order: "pre",
-          handler(html) {
-            return transformLegacyFallbackLink(html, includeLegacyFallback);
-          },
-        },
-      },
     ],
     server: {
       host: "127.0.0.1",

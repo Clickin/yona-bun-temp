@@ -174,7 +174,7 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).not.toContain('"/assets/images/provider-logo/btn_google_light_normal_ios.svg"');
   expect(source).not.toContain('data-toggle="tooltip"');
   expect(source).not.toContain("data-placement");
-  expect(source).toContain("const userProfileStaticStyles = stylex.create({");
+
   expect(sharedTwoColumnSource).toContain("two-column-icon mr10 hide-in-mobile");
   expect(source).toContain("show-subtasks mr10");
   expect(source).toContain("post-list-wrap my-issues row-fluid");
@@ -203,9 +203,7 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   await expect(page).toHaveTitle("door");
   await expect(page.locator("#openIssues .post-item")).toHaveCount(1);
   await expect(page.locator('.user-stream-box > .nav-tabs a[href^="#"]')).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="user-profile-issue-tabs"] a[href^="#"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="user-profile-issue-tabs"] a[href^="#"]')).toHaveCount(0);
   await expect(page.locator("#issue-item-11 .title-cell > a.title")).toHaveAttribute(
     "href",
     `${basePath}/door/sample/issue/7`,
@@ -254,20 +252,20 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     "title",
     "Alice",
   );
-  await expect(page.locator('[data-stylex-owner="user-profile-provider-logo"]')).toBeEmpty();
+  await expect(page.locator('[data-owner="user-profile-provider-logo"]')).toBeEmpty();
   await expect(page.locator('.user-stream-box > .nav-tabs button[type="button"]')).toHaveText([
     "Issue 2",
     "Pull request 1",
     "projects 1",
   ]);
   await expect(
-    page.locator('[data-stylex-owner="user-profile-issue-tabs"] button[type="button"]'),
+    page.locator('[data-owner="user-profile-issue-tabs"] button[type="button"]'),
   ).toHaveText(["Open1", "Closed1"]);
   await expect(page.locator('.user-stream-box > .nav-tabs button[data-toggle="tab"]')).toHaveCount(
     0,
   );
   await expect(
-    page.locator('[data-stylex-owner="user-profile-issue-tabs"] button[data-toggle="tab"]'),
+    page.locator('[data-owner="user-profile-issue-tabs"] button[data-toggle="tab"]'),
   ).toHaveCount(0);
   const showSubtasks = page.locator(".show-subtasks");
   await expect(showSubtasks).toHaveAttribute("title", "Show subtask");
@@ -386,23 +384,21 @@ test("public user profile renders legacy connected social provider logos", async
   await expect(page.locator(".user-box")).toBeVisible();
 
   const providerLogo = page.locator(
-    '[data-stylex-owner="user-profile-user-since"] [data-stylex-owner="user-profile-provider-logo"]',
+    '[data-owner="user-profile-user-since"] [data-owner="user-profile-provider-logo"]',
   );
   await expect(
-    providerLogo.locator(':scope > [data-stylex-owner="user-profile-provider-github"]'),
+    providerLogo.locator(':scope > [data-owner="user-profile-provider-github"]'),
   ).toHaveCount(1);
   await expect(
-    providerLogo.locator(':scope > [data-stylex-owner="user-profile-provider-google"]'),
+    providerLogo.locator(':scope > [data-owner="user-profile-provider-google"]'),
   ).toHaveCount(1);
   await expect(providerLogo.locator(":scope > *")).toHaveCount(2);
-  const githubSvg = providerLogo.locator('[data-stylex-owner="user-profile-provider-github"] svg');
+  const githubSvg = providerLogo.locator('[data-owner="user-profile-provider-github"] svg');
   await expect(githubSvg).toHaveAttribute("viewBox", "0 0 16 16");
   await expect(githubSvg).toHaveAttribute("height", "24");
   await expect(githubSvg).toHaveAttribute("width", "19");
   await expect(githubSvg.locator("path")).toHaveCount(1);
-  const googleImage = providerLogo.locator(
-    '[data-stylex-owner="user-profile-provider-google-image"]',
-  );
+  const googleImage = providerLogo.locator('[data-owner="user-profile-provider-google-image"]');
   await expect(googleImage).toHaveAttribute(
     "src",
     /btn_google_light_normal_ios(-[A-Za-z0-9_-]+)?\.svg/u,
@@ -427,7 +423,7 @@ test("anonymous public user profile hides legacy activity stream controls", asyn
 
   await page.goto(`${basePath}/door`);
   await expect(page.locator(".user-box")).toBeVisible();
-  const guestStream = page.locator('[data-stylex-owner="user-profile-guest-stream-shell"]');
+  const guestStream = page.locator('[data-owner="user-profile-guest-stream-shell"]');
   await expect(guestStream).toHaveCount(1);
   await expect(guestStream).toBeEmpty();
   await expect(page.locator("#daysAgoBtn")).toHaveCount(0);
@@ -477,21 +473,19 @@ test("public user profile matches legacy selected projects tab and click switchi
   expect(page.url()).toBe(beforeTabClickUrl);
 
   await page
-    .locator('[data-stylex-owner="user-profile-issue-tabs"] button', { hasText: "Closed" })
+    .locator('[data-owner="user-profile-issue-tabs"] button', { hasText: "Closed" })
     .click();
-  await expect(
-    page.locator('[data-stylex-owner="user-profile-issue-tabs"] > li').nth(1),
-  ).toHaveClass("active");
+  await expect(page.locator('[data-owner="user-profile-issue-tabs"] > li').nth(1)).toHaveClass(
+    "active",
+  );
   await expect(page.locator("#closedIssues")).toHaveClass(/active/u);
   await expect(page.locator("#openIssues")).not.toHaveClass(/active/u);
   expect(page.url()).toBe(beforeTabClickUrl);
 
-  await page
-    .locator('[data-stylex-owner="user-profile-issue-tabs"] button', { hasText: "Open" })
-    .click();
-  await expect(
-    page.locator('[data-stylex-owner="user-profile-issue-tabs"] > li').first(),
-  ).toHaveClass("active");
+  await page.locator('[data-owner="user-profile-issue-tabs"] button', { hasText: "Open" }).click();
+  await expect(page.locator('[data-owner="user-profile-issue-tabs"] > li').first()).toHaveClass(
+    "active",
+  );
   await expect(page.locator("#openIssues")).toHaveClass(/active/u);
   await expect(page.locator("#closedIssues")).not.toHaveClass(/active/u);
   expect(page.url()).toBe(beforeTabClickUrl);
@@ -887,7 +881,7 @@ async function readProfileMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const userBox = document.querySelector<HTMLElement>(".user-box");
-    const userInfo = document.querySelector<HTMLElement>('[data-stylex-owner="user-profile-info"]');
+    const userInfo = document.querySelector<HTMLElement>('[data-owner="user-profile-info"]');
     const userStream = document.querySelector<HTMLElement>(".user-stream-box");
     const issueList = document.querySelector<HTMLElement>(".post-list-wrap.my-issues");
     if (!pageWrapOuter || !userBox || !userInfo || !userStream || !issueList) {
@@ -906,10 +900,10 @@ async function readProfileMetrics(page: Page) {
 async function readConnectedSocialProviderMetrics(page: Page) {
   return page.evaluate(() => {
     const providerLogo = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-profile-user-since"] [data-stylex-owner="user-profile-provider-logo"]',
+      '[data-owner="user-profile-user-since"] [data-owner="user-profile-provider-logo"]',
     );
     const github = providerLogo?.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-profile-provider-github"]',
+      '[data-owner="user-profile-provider-github"]',
     );
     const svg = github?.querySelector<SVGElement>("svg");
     if (!providerLogo || !github || !svg) {
@@ -1010,7 +1004,7 @@ async function canonicalizeProfileRoots(page: Page) {
           (attr) =>
             attr.name !== "alt" &&
             attr.name !== "style" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-style-src" &&
             (attr.name !== "class" || normalizeAttr(attr) !== ""),
         )
@@ -1068,7 +1062,7 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             attr.name !== "alt" &&
             attr.name !== "style" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-style-src" &&
             (attr.name !== "class" || normalizeAttr(attr) !== ""),
         )
@@ -1127,7 +1121,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             attr.name !== "alt" &&
             attr.name !== "style" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-style-src" &&
             (attr.name !== "class" || normalizeAttr(attr) !== ""),
         )

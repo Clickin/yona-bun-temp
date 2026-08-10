@@ -2,7 +2,7 @@
  * pull-request-changes and code-compare routes; the rendered DOM contract
  * (tr classes/data attributes, linenum cells, comment icon, code cell with
  * `diff-partial-codeline` pre) stays byte-identical, with the per-screen
- * differences (route-local stylex styles, data-stylex-owner markers, the
+ * differences (route-local style styles, data-owner markers, the
  * optional `data-line-key` attribute) arriving as props.
  */
 import type { MarkdownEditorStyleProps } from "./markdown-editor";
@@ -61,17 +61,17 @@ export function DiffLineView({
     >
       <td
         {...styles.lineNumber}
-        data-stylex-owner={owners.lineNumberCell}
+        data-owner={owners.lineNumberCell}
         className={`${styles.lineNumber?.className ?? ""} linenum`.trim()}
       >
         <i
           {...styles.commentIcon}
-          data-stylex-owner={owners.commentIcon}
+          data-owner={owners.commentIcon}
           className={`${styles.commentIcon?.className ?? ""} yobicon-comments`.trim()}
         ></i>
         <div
           {...styles.numberMarker}
-          data-stylex-owner={owners.lineNumber}
+          data-owner={owners.lineNumber}
           className={`${styles.numberMarker?.className ?? ""} line-number`.trim()}
           data-line-num={oldLine}
         ></div>
@@ -79,12 +79,12 @@ export function DiffLineView({
       </td>
       <td
         {...styles.lineNumber}
-        data-stylex-owner={owners.lineNumberCell}
+        data-owner={owners.lineNumberCell}
         className={`${styles.lineNumber?.className ?? ""} linenum`.trim()}
       >
         <div
           {...styles.numberMarker}
-          data-stylex-owner={owners.lineNumber}
+          data-owner={owners.lineNumber}
           className={`${styles.numberMarker?.className ?? ""} line-number`.trim()}
           data-line-num={newLine}
         ></div>
@@ -92,12 +92,12 @@ export function DiffLineView({
       </td>
       <td
         {...styles.codeCell}
-        data-stylex-owner={owners.codeCell}
+        data-owner={owners.codeCell}
         className={`${styles.codeCell?.className ?? ""} code`.trim()}
       >
         <pre
           {...styles.codeLine}
-          data-stylex-owner={owners.codeLine}
+          data-owner={owners.codeLine}
           className={`${styles.codeLine?.className ?? ""} diff-partial-codeline`.trim()}
         >
           {`${line.prefix}${line.text}`}

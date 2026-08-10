@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CountBadge } from "../../../components/count-badge";
 import { EnrollmentRequest } from "../../../components/enrollment-request";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
@@ -31,12 +30,10 @@ import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-wor
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { globalBreakpoints } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { projectMembersStyles, projectMembersTheme } from "./-members.stylex";
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -292,18 +289,21 @@ function ProjectMembersErrorBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div
-          className={`${stylex.props(projectMembersStyles.errorWrap).className} error-wrap`}
-          data-stylex-owner="project-members-error-wrap"
-        >
+        <div className="error-wrap" data-owner="project-members-error-wrap">
           <i
-            className={`${stylex.props(projectMembersStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-            data-stylex-owner="project-members-error-icon"
+            className="ico ico-err2"
+            style={{
+              backgroundImage: `url(${legacySpriteUrl})`,
+              backgroundPosition: "-80px -160px",
+              backgroundRepeat: "no-repeat",
+              display: "inline-block",
+              height: "80px",
+              verticalAlign: "middle",
+              width: "50px",
+            }}
+            data-owner="project-members-error-icon"
           ></i>
-          <p
-            className={stylex.props(projectMembersStyles.errorMessage).className}
-            data-stylex-owner="project-members-error-message"
-          >
+          <p className="" data-owner="project-members-error-message">
             {t(messageKey)}
           </p>
           {loginRedirectPath ? (
@@ -489,8 +489,8 @@ function ProjectMembersBody({
 
           {booleanField(members.viewerCanUpdate) ? (
             <div
-              className={`${stylex.props(projectMembersStyles.addMemberBubble).className} inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
-              data-stylex-owner="project-members-add-member-bubble"
+              className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
+              data-owner="project-members-add-member-bubble"
             >
               <form
                 className="nm"
@@ -501,12 +501,12 @@ function ProjectMembersBody({
                 method="post"
                 id="addNewMember"
                 onSubmit={onAddMember}
-                data-stylex-owner="project-members-add-member-form"
+                data-owner="project-members-add-member-form"
               >
                 <input
                   type="text"
-                  className={`${stylex.props(projectMembersStyles.addMemberInput).className} text uname`}
-                  data-stylex-owner="project-members-add-member-input"
+                  className="text uname"
+                  data-owner="project-members-add-member-input"
                   id="loginId"
                   name="loginId"
                   required
@@ -533,7 +533,7 @@ function ProjectMembersBody({
                 <button
                   type="submit"
                   className="ybtn ybtn-success"
-                  data-stylex-owner="project-members-add-member-submit"
+                  data-owner="project-members-add-member-submit"
                 >
                   <i className="yobicon-addfriend"></i>
                   {t("button.add")}
@@ -549,8 +549,7 @@ function ProjectMembersBody({
                     >
                       <button
                         type="button"
-                        data-stylex-owner="project-members-suggestion-action"
-                        {...stylex.props(styles.suggestionAction)}
+                        data-owner="project-members-suggestion-action"
                         onMouseDown={(event) => {
                           event.preventDefault();
                           selectSuggestion(suggestion);
@@ -568,10 +567,7 @@ function ProjectMembersBody({
             </div>
           ) : null}
 
-          <ul
-            className={`${stylex.props(styles.memberList).className} members project row-fluid`}
-            data-stylex-owner="project-members-list-shell"
-          >
+          <ul className="members project row-fluid" data-owner="project-members-list-shell">
             {members.members.map((member) => (
               <ProjectMemberListItem
                 key={stringField(member.userId, member.loginId)}
@@ -630,10 +626,7 @@ function ProjectMembersBody({
                     <p className="msg">{t("project.member.deleteConfirm")}</p>
                     <p className="desc"></p>
                   </div>
-                  <div
-                    className={`${stylex.props(styles.deleteConfirmActions).className} buttons`}
-                    data-stylex-owner="project-members-delete-confirm-actions"
-                  >
+                  <div className="buttons" data-owner="project-members-delete-confirm-actions">
                     <button
                       type="button"
                       className="ybtn ybtn-default"
@@ -713,45 +706,32 @@ function ProjectMemberListItem({
   }
 
   return (
-    <li
-      className={`${stylex.props(styles.memberRow).className} member span6 span-hard-wrap`}
-      data-stylex-owner="project-members-row-shell"
-    >
+    <li className="member span6 span-hard-wrap" data-owner="project-members-row-shell">
       <Link
         activeOptions={legacyLinkActiveOptions}
         activeProps={legacyLinkActiveProps}
         to="/$user"
         params={{ user: loginId }}
-        data-stylex-owner="project-members-avatar"
-        {...stylex.props(styles.memberAvatar)}
+        data-owner="project-members-avatar"
       >
         <img
-          data-stylex-owner="project-members-avatar-image"
+          data-owner="project-members-avatar-image"
           src={stringField(member.avatarUrl, "") || defaultAvatarUrl}
           width="64"
           height="64"
           alt=""
-          {...stylex.props(styles.memberAvatarImage)}
         />
       </Link>
-      <div data-stylex-owner="project-members-member-name" {...stylex.props(styles.memberName)}>
-        {stringField(member.userLabel, loginId)}
-      </div>
-      <div data-stylex-owner="project-members-member-id" {...stylex.props(styles.memberId)}>
+      <div data-owner="project-members-member-name">{stringField(member.userLabel, loginId)}</div>
+      <div data-owner="project-members-member-id">
         @{loginId}
         {booleanField(memberRecord.isGuest) ? (
-          <span
-            className={`${stylex.props(styles.guestBadge).className} guest`}
-            data-stylex-owner="project-members-guest-badge"
-          >
+          <span className="guest" data-owner="project-members-guest-badge">
             GUEST
           </span>
         ) : null}
       </div>
-      <div
-        className={`${stylex.props(styles.memberSetting).className} member-setting`}
-        data-stylex-owner="project-members-setting-shell"
-      >
+      <div className="member-setting" data-owner="project-members-setting-shell">
         {!booleanField(member.isOwner) ? (
           <>
             <div className={`btn-group${isRoleMenuOpen ? " open" : ""}`}>
@@ -775,7 +755,7 @@ function ProjectMemberListItem({
                     >
                       <button
                         type="button"
-                        className={`${stylex.props(styles.roleMenuItem).className} role-menu-item`}
+                        className="s2e-members-role-menu-item role-menu-item"
                         data-loginid={loginId}
                         onClick={(event) => onRoleItemClick(event, roleName)}
                       >
@@ -795,10 +775,7 @@ function ProjectMemberListItem({
             </button>
           </>
         ) : (
-          <span
-            className={`${stylex.props(styles.ownerLabel).className} label owner`}
-            data-stylex-owner="project-members-owner-label"
-          >
+          <span className="label owner" data-owner="project-members-owner-label">
             {t("user.role.owner")}
           </span>
         )}
@@ -806,124 +783,6 @@ function ProjectMemberListItem({
     </li>
   );
 }
-
-const styles = stylex.create({
-  codeMenuHidden: { display: "none" },
-  // Bootstrap 2.3.1 `.row-fluid` plus _page.less `.members.project`.
-  memberList: {
-    listStyle: "none",
-    margin: "0px",
-    width: "100%",
-    "::before": { content: '""', display: "table", lineHeight: "0px" },
-    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
-  },
-  // Bootstrap `.row-fluid [class*="span"]` / `.span6`, then _page.less `.member`.
-  // The losing mobile `width: 100vw` is omitted; only the winning 95% minimum applies.
-  memberRow: {
-    borderBottomColor: projectMembersTheme.rowBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    boxSizing: "border-box",
-    display: "block",
-    float: "left",
-    marginLeft: "5px",
-    minHeight: "30px",
-    minWidth: {
-      default: null,
-      [globalBreakpoints.mobile]: "95%",
-    },
-    padding: "10px 5px",
-    position: "relative",
-    width: "48.93617021276595%",
-  },
-  // _page.less `.members.project .member .member-setting`.
-  memberSetting: {
-    position: "absolute",
-    right: "0px",
-    top: "15px",
-  },
-  roleMenuItem: {
-    backgroundColor: "transparent",
-    border: "0",
-    clear: "both",
-    color: "#333",
-    display: "block",
-    fontWeight: "normal",
-    lineHeight: "20px",
-    padding: "3px 20px",
-    textAlign: "left",
-    whiteSpace: "nowrap",
-    width: "100%",
-    ":hover": {
-      backgroundColor: "#0081c2",
-      backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)",
-      color: "#fff",
-      outline: "0",
-      textDecoration: "none",
-    },
-    ":focus": {
-      backgroundColor: "#0081c2",
-      backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)",
-      color: "#fff",
-      outline: "0",
-      textDecoration: "none",
-    },
-  },
-  guestBadge: {
-    backgroundColor: "rgba(255, 165, 0, 0.8)",
-    color: "#fff",
-    padding: "0 4px",
-  },
-  // _page.less `.members.project .member .member-setting .owner`.
-  ownerLabel: {
-    marginTop: "5px",
-    padding: "5px",
-  },
-  // _yobiUI.less `.avatar-wrap.mlarge`, Bootstrap `.pull-left`, and _common.less `.mr10`.
-  memberAvatar: {
-    backgroundColor: projectMembersTheme.avatarSurface,
-    borderRadius: "3px",
-    display: "inline-block",
-    float: "left",
-    height: "40px",
-    marginRight: "10px",
-    overflow: "hidden",
-    verticalAlign: "middle",
-    width: "40px",
-  },
-  // _yobiUI.less `.avatar-wrap img`.
-  memberAvatarImage: {
-    verticalAlign: "top",
-    width: "100%",
-  },
-  // _page.less `.members.project .member .member-name`.
-  memberName: {
-    fontWeight: "bold",
-    lineHeight: "20px",
-    marginTop: "2px",
-  },
-  // _page.less `.members.project .member .member-id`.
-  memberId: {
-    color: projectMembersTheme.memberIdText,
-    lineHeight: "20px",
-  },
-  // Legacy project/members.scala.html typeahead action button declarations.
-  suggestionAction: {
-    // Legacy typeahead button declaration; parent shell may add an 8px mobile scrollbar.
-    backgroundColor: "transparent",
-    borderStyle: "none",
-    borderColor: "transparent",
-    borderWidth: 0,
-    display: "block",
-    padding: "3px 20px",
-    textAlign: "left",
-    width: "100%",
-  },
-  // Frozen _common.less `.center-txt` rule for the member delete confirmation actions.
-  deleteConfirmActions: {
-    textAlign: "center",
-  },
-});
 
 function roleLabel(members: ProjectMembersResponse, role: string) {
   return members.roleOptions.find((option) => stringField(option.role, "") === role)?.label ?? role;
@@ -1085,9 +944,8 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className=""
-        {...(booleanField(menuSetting.code) ? {} : stylex.props(styles.codeMenuHidden))}
-        data-stylex-owner="project-members-code-menu"
+        className={`${booleanField(menuSetting.code) ? "" : "is-hidden"}`.trim()}
+        data-owner="project-members-code-menu"
       >
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}

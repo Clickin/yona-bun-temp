@@ -12,7 +12,7 @@ test("direct issue create route renders the legacy New issue title for the selec
   await page.goto(`${basePath}/user/issues/new`);
 
   await expect(page).toHaveTitle("New issue - admin/sample");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("admin");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("sample");
   await expect(page.locator("#issue-form")).toHaveAttribute(
@@ -30,7 +30,7 @@ test("direct mine issue create route renders the legacy New issue title for the 
   await page.goto(`${basePath}/user/issues/new/mine`);
 
   await expect(page).toHaveTitle("New issue - admin/inbox");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("admin");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("inbox");
   await expect(page.locator("#issue-form")).toHaveAttribute(
@@ -52,21 +52,21 @@ test("direct issue create migrates the fallback-off project header geometry from
   await expect(page.locator(".project-breadcrumb")).toHaveText("weblabs / portal starG");
   for (const selector of [
     '[data-project-header-owner="outer"]',
-    '[data-stylex-owner="project-header-wrap"]',
-    '[data-stylex-owner="project-header-avatar"]',
-    '[data-stylex-owner="project-header-avatar-image"]',
-    '[data-stylex-owner="project-header-breadcrumb-wrap"]',
-    '[data-stylex-owner="project-header-breadcrumb"]',
-    '[data-stylex-owner="project-header-breadcrumb-author"]',
-    '[data-stylex-owner="project-header-breadcrumb-author-link"]',
-    '[data-stylex-owner="project-header-breadcrumb-separator"]',
-    '[data-stylex-owner="project-header-breadcrumb-name"]',
-    '[data-stylex-owner="project-header-breadcrumb-name-link"]',
-    '[data-stylex-owner="project-header-breadcrumb-favorite-star"]',
-    '[data-stylex-owner="project-header-util-wrap"]',
-    '[data-stylex-owner="project-header-watcher-item"]',
-    '[data-stylex-owner="project-header-watch-button-group"]',
-    '[data-stylex-owner="project-header-watch-button"]',
+    '[data-owner="project-header-wrap"]',
+    '[data-owner="project-header-avatar"]',
+    '[data-owner="project-header-avatar-image"]',
+    '[data-owner="project-header-breadcrumb-wrap"]',
+    '[data-owner="project-header-breadcrumb"]',
+    '[data-owner="project-header-breadcrumb-author"]',
+    '[data-owner="project-header-breadcrumb-author-link"]',
+    '[data-owner="project-header-breadcrumb-separator"]',
+    '[data-owner="project-header-breadcrumb-name"]',
+    '[data-owner="project-header-breadcrumb-name-link"]',
+    '[data-owner="project-header-breadcrumb-favorite-star"]',
+    '[data-owner="project-header-util-wrap"]',
+    '[data-owner="project-header-watcher-item"]',
+    '[data-owner="project-header-watch-button-group"]',
+    '[data-owner="project-header-watch-button"]',
   ]) {
     await expect(page.locator(selector)).toHaveCount(1);
   }
@@ -82,42 +82,42 @@ test("direct issue create migrates the fallback-off project header geometry from
       return getComputedStyle(element);
     };
     const header = required('[data-project-header-owner="outer"]');
-    const wrap = required('[data-stylex-owner="project-header-wrap"]');
-    const avatar = required('[data-stylex-owner="project-header-avatar"]');
-    const avatarImage = required('[data-stylex-owner="project-header-avatar-image"]');
-    const breadcrumb = required('[data-stylex-owner="project-header-breadcrumb-wrap"]');
-    const util = required('[data-stylex-owner="project-header-util-wrap"]');
-    const watcherItem = required('[data-stylex-owner="project-header-watcher-item"]');
+    const wrap = required('[data-owner="project-header-wrap"]');
+    const avatar = required('[data-owner="project-header-avatar"]');
+    const avatarImage = required('[data-owner="project-header-avatar-image"]');
+    const breadcrumb = required('[data-owner="project-header-breadcrumb-wrap"]');
+    const util = required('[data-owner="project-header-util-wrap"]');
+    const watcherItem = required('[data-owner="project-header-watcher-item"]');
     const watcher = required(".watcher-count");
     const watchAction = required(".down-arrow");
     return {
       avatar,
       avatarImage,
       avatarStyle: {
-        height: style('[data-stylex-owner="project-header-avatar"]').height,
-        position: style('[data-stylex-owner="project-header-avatar"]').position,
-        width: style('[data-stylex-owner="project-header-avatar"]').width,
+        height: style('[data-owner="project-header-avatar"]').height,
+        position: style('[data-owner="project-header-avatar"]').position,
+        width: style('[data-owner="project-header-avatar"]').width,
       },
       breadcrumb,
       breadcrumbAuthorLinkStyle: {
-        color: style('[data-stylex-owner="project-header-breadcrumb-author-link"]').color,
+        color: style('[data-owner="project-header-breadcrumb-author-link"]').color,
       },
       breadcrumbNameStyle: {
-        color: style('[data-stylex-owner="project-header-breadcrumb-name"]').color,
+        color: style('[data-owner="project-header-breadcrumb-name"]').color,
       },
       breadcrumbSeparatorStyle: {
-        color: style('[data-stylex-owner="project-header-breadcrumb-separator"]').color,
-        padding: style('[data-stylex-owner="project-header-breadcrumb-separator"]').padding,
+        color: style('[data-owner="project-header-breadcrumb-separator"]').color,
+        padding: style('[data-owner="project-header-breadcrumb-separator"]').padding,
       },
       breadcrumbStarStyle: {
-        color: style('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').color,
-        fontSize: style('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').fontSize,
+        color: style('[data-owner="project-header-breadcrumb-favorite-star"]').color,
+        fontSize: style('[data-owner="project-header-breadcrumb-favorite-star"]').fontSize,
       },
       breadcrumbStyle: {
-        fontSize: style('[data-stylex-owner="project-header-breadcrumb"]').fontSize,
-        lineHeight: style('[data-stylex-owner="project-header-breadcrumb"]').lineHeight,
-        padding: style('[data-stylex-owner="project-header-breadcrumb-wrap"]').padding,
-        position: style('[data-stylex-owner="project-header-breadcrumb-wrap"]').position,
+        fontSize: style('[data-owner="project-header-breadcrumb"]').fontSize,
+        lineHeight: style('[data-owner="project-header-breadcrumb"]').lineHeight,
+        padding: style('[data-owner="project-header-breadcrumb-wrap"]').padding,
+        position: style('[data-owner="project-header-breadcrumb-wrap"]').position,
       },
       header,
       headerStyle: {
@@ -127,19 +127,19 @@ test("direct issue create migrates the fallback-off project header geometry from
       },
       util,
       utilStyle: {
-        bottom: style('[data-stylex-owner="project-header-util-wrap"]').bottom,
-        position: style('[data-stylex-owner="project-header-util-wrap"]').position,
+        bottom: style('[data-owner="project-header-util-wrap"]').bottom,
+        position: style('[data-owner="project-header-util-wrap"]').position,
       },
       watchAction,
       watcherItem,
       watcherItemStyle: {
-        float: style('[data-stylex-owner="project-header-watcher-item"]').float,
-        marginLeft: style('[data-stylex-owner="project-header-watcher-item"]').marginLeft,
-        position: style('[data-stylex-owner="project-header-watcher-item"]').position,
+        float: style('[data-owner="project-header-watcher-item"]').float,
+        marginLeft: style('[data-owner="project-header-watcher-item"]').marginLeft,
+        position: style('[data-owner="project-header-watcher-item"]').position,
       },
       watcher,
       wrap,
-      wrapStyle: { position: style('[data-stylex-owner="project-header-wrap"]').position },
+      wrapStyle: { position: style('[data-owner="project-header-wrap"]').position },
     };
   });
   expect(desktop.header.height).toBeCloseTo(120, 0);
@@ -203,15 +203,15 @@ test("direct issue create migrates the fallback-off project header geometry from
       };
     };
     return {
-      avatar: required('[data-stylex-owner="project-header-avatar"]'),
-      breadcrumbAuthor: required('[data-stylex-owner="project-header-breadcrumb-author"]'),
-      breadcrumbName: required('[data-stylex-owner="project-header-breadcrumb-name"]'),
-      breadcrumb: required('[data-stylex-owner="project-header-breadcrumb-wrap"]'),
+      avatar: required('[data-owner="project-header-avatar"]'),
+      breadcrumbAuthor: required('[data-owner="project-header-breadcrumb-author"]'),
+      breadcrumbName: required('[data-owner="project-header-breadcrumb-name"]'),
+      breadcrumb: required('[data-owner="project-header-breadcrumb-wrap"]'),
       documentWidth: document.documentElement.scrollWidth,
       header: required('[data-project-header-owner="outer"]'),
-      wrap: required('[data-stylex-owner="project-header-wrap"]'),
+      wrap: required('[data-owner="project-header-wrap"]'),
       watchVisible: getComputedStyle(
-        document.querySelector('[data-stylex-owner="project-header-watch-button-group"]')!,
+        document.querySelector('[data-owner="project-header-watch-button-group"]')!,
       ).display,
     };
   });
@@ -246,13 +246,14 @@ test("direct issue create migrates the fallback-off project header geometry from
       body: JSON.stringify({ favorited: true, ownerName: "weblabs", projectName: "portal" }),
     });
   });
-  await page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').click();
-  await expect(
-    page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]'),
-  ).toHaveClass(/starred/u);
-  await expect(
-    page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]'),
-  ).toHaveCSS("color", "rgb(233, 30, 99)");
+  await page.locator('[data-owner="project-header-breadcrumb-favorite-star"]').click();
+  await expect(page.locator('[data-owner="project-header-breadcrumb-favorite-star"]')).toHaveClass(
+    /starred/u,
+  );
+  await expect(page.locator('[data-owner="project-header-breadcrumb-favorite-star"]')).toHaveCSS(
+    "color",
+    "rgb(233, 30, 99)",
+  );
 });
 
 test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {

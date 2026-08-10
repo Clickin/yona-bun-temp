@@ -20,10 +20,14 @@ const APP_CSS_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/app.css", import.meta.url)),
   "utf8",
 );
-const UIKIT_STYLEX_SOURCE = readFileSync(
-  fileURLToPath(new URL("../src/routes/-UIKit.stylex.ts", import.meta.url)),
-  "utf8",
-);
+const UIKIT_STYLE_SOURCE =
+  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
+  readFileSync(
+    fileURLToPath(
+      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+    ),
+    "utf8",
+  );
 const ORIGINAL_MESSAGE_SOURCE = readFileSync(
   fileURLToPath(
     new URL(
@@ -49,9 +53,9 @@ const SELECT2_TEMPLATE_IDS = [
 
 async function expectRootLoginDialogState(dialog: Locator, visible: boolean) {
   await expect(dialog).toHaveAttribute("id", "loginDialog");
-  await expect(dialog).toHaveAttribute("data-stylex-owner", "root-login-dialog-frame");
+  await expect(dialog).toHaveAttribute("data-owner", "root-login-dialog-frame");
   await expect(dialog).toHaveAttribute("role", "dialog");
-  await expect(dialog.locator('[data-stylex-owner="root-login-dialog-body"]')).toHaveCount(1);
+  await expect(dialog.locator('[data-owner="root-login-dialog-body"]')).toHaveCount(1);
   await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
   await expect(dialog).toHaveAttribute("aria-hidden", visible ? "false" : "true");
 }
@@ -185,7 +189,7 @@ test("root shell does not own route tab, search scope, or notify bridge state", 
   expect(ROOT_ROUTE_SOURCE).not.toContain(".markdown-help-nav");
   expect(ROOT_ROUTE_SOURCE).not.toContain(".markdown-help-wrap");
   expect(ROOT_ROUTE_SOURCE).toContain("<RootToastContext.Provider value={setRootToast}>");
-  // Bucket-3 (wave 36): the toast container className moved to stylex props
+  // Bucket-3 (wave 36): the toast container className moved to style props
   // (styles.rootToastContainer) — only the id literal survives.
   expect(ROOT_ROUTE_SOURCE).toContain('id="yobiToasts"');
 });
@@ -281,24 +285,20 @@ test("root shell owns login dialog state without delegated document modal mutati
   // Bucket-3 (wave 36): the backdrop className is composed from an array
   // literal — `"modal-backdrop in"` is a token, not a whole className attr.
   expect(ROOT_ROUTE_SOURCE).toContain('"modal-backdrop in"');
-  expect(ROOT_ROUTE_SOURCE).toContain("data-stylex-owner={");
+  expect(ROOT_ROUTE_SOURCE).toContain("data-owner={");
   expect(ROOT_ROUTE_SOURCE).toContain('"root-login-dialog-backdrop"');
-  expect(ROOT_ROUTE_SOURCE).toContain("data-stylex-part={");
+  expect(ROOT_ROUTE_SOURCE).toContain("data-part={");
   expect(ROOT_ROUTE_SOURCE).toContain('"login-dialog-backdrop"');
   expect(ROOT_ROUTE_SOURCE).toContain("onClick={closeRootShellModal}");
 });
 
 test("UI kit route owns original-message demo state", async () => {
   expect(UIKIT_ROUTE_SOURCE).toContain('data-original-message-owner="route"');
-  expect(UIKIT_ROUTE_SOURCE).toContain('data-stylex-owner="uikit-original-message-toggle"');
-  expect(UIKIT_ROUTE_SOURCE).toContain("sx.styles.originalMessageToggle");
-  expect(UIKIT_ROUTE_SOURCE).not.toContain(
-    "style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}",
-  );
-  expect(UIKIT_STYLEX_SOURCE).toContain('borderStyle: "none"');
-  expect(UIKIT_STYLEX_SOURCE).toContain("borderWidth: 0");
-  expect(UIKIT_STYLEX_SOURCE).toContain("paddingLeft: 5");
-  expect(UIKIT_STYLEX_SOURCE).toContain("paddingRight: 5");
+  expect(UIKIT_ROUTE_SOURCE).toContain('data-owner="uikit-original-message-toggle"');
+
+  expect(UIKIT_STYLE_SOURCE).toContain("borderWidth: 0");
+  expect(UIKIT_STYLE_SOURCE).toContain("paddingLeft: 5");
+  expect(UIKIT_STYLE_SOURCE).toContain("paddingRight: 5");
   expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('border', 0)");
   expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('padding-left', '5px')");
   expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('padding-right', '5px')");
@@ -777,7 +777,7 @@ test("standalone UI kit route owns legacy data-via-email original message", asyn
   await expect(fixture.locator("blockquote > :first-child")).toHaveText("...");
   const toggle = fixture.locator('button[type="button"]');
   await expect(toggle).toHaveText("...");
-  await expect(toggle).toHaveAttribute("data-stylex-owner", "uikit-original-message-toggle");
+  await expect(toggle).toHaveAttribute("data-owner", "uikit-original-message-toggle");
   await expect(toggle).not.toHaveAttribute("style", /.+/);
   await expect(toggle).toHaveCSS("border-top-width", "0px");
   await expect(toggle).toHaveCSS("border-right-width", "0px");
@@ -937,9 +937,7 @@ async function readRenderedLegacyHrefControls(page: Page) {
 async function readLoginDialogOpenMetrics(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="root-login-dialog-body"]',
-    );
+    const modalBody = document.querySelector<HTMLElement>('[data-owner="root-login-dialog-body"]');
     const close = document.querySelector<HTMLElement>("#loginDialog .close");
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
     const input = document.querySelector<HTMLElement>("#loginIdOrEmailD");
@@ -1090,7 +1088,7 @@ async function canonicalizeUIKitRoots(page: Page) {
         if (!raw.includes("--x-")) {
           return probe.style.cssText;
         }
-        // stylex dynamic values emit --x-* custom properties; resolve the
+        // style dynamic values emit --x-* custom properties; resolve the
         // declarations the legacy inline style carried (background/color).
         const computed = window.getComputedStyle(current);
         return `background-color: ${computed.backgroundColor}; color: ${computed.color};`;

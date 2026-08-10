@@ -34,7 +34,7 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   await expect(page.locator(".commit .date").nth(1)).toHaveAttribute("title", "Jul 2, 2026");
   await expect(page.locator(".pullrequest-state")).toHaveAttribute("title", "Open");
   await expect(page.locator(".pullrequest-state")).toHaveText("pullRequest-3");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -42,12 +42,13 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button'),
-  ).toHaveText(["This Project", "All Projects"]);
+  await expect(page.locator('[data-owner="global-gnb-search-scope-item"] > button')).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
@@ -196,7 +197,7 @@ test("project code branches restores protected project shell parity for weblabs/
   await page.goto(`${basePath}/weblabs/portal/branches`);
 
   await expect(page).toHaveTitle("Branches - weblabs/portal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -204,11 +205,11 @@ test("project code branches restores protected project shell parity for weblabs/
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
+  const scopeButtons = page.locator('[data-owner="global-gnb-search-scope-item"] > button');
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
@@ -298,18 +299,16 @@ test("svn project branches route matches legacy badrequest_default site shell", 
   await page.goto(`${basePath}/admin/svnplayground/branches`);
 
   await expect(page).toHaveTitle("This request is only supported in a git project.");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
-    "List All",
-  );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveText("List All");
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveAttribute(
     "href",
     `${basePath}/projects`,
   );
   await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] a[href*="github.com/yona-projects/yona"]'),
+    page.locator('[data-owner="global-gnb-nav"] a[href*="github.com/yona-projects/yona"]'),
   ).toHaveCount(0);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
@@ -640,9 +639,9 @@ async function readBranchListMetrics(page: Page) {
 
 async function readProjectBranchesShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnb = requireElement("[data-stylex-owner=global-gnb-outer]");
-    const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
-    const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const gnb = requireElement("[data-owner=global-gnb-outer]");
+    const navbar = requireElement('[data-owner="global-gnb-inner"]');
+    const search = requireElement('[data-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
     const projectMenu = requireElement(".project-menu-outer");
     const pageWrap = requireElement(".page-wrap-outer");
@@ -674,7 +673,7 @@ async function readProjectBranchesShellMetrics(page: Page) {
 
 async function readBranchesBadRequestMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const header = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const message = errorWrap?.querySelector<HTMLElement>("p");
@@ -708,7 +707,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -727,7 +726,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => ({ name: attr.name, value: normalizeAttr(attr) }))
@@ -749,11 +748,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -761,7 +760,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -793,9 +792,7 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
-      return attr.name === "style"
-        ? normalizeStyleAttr(attr.value)
-        : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
 
     // F6 copy-fix: the app's legacy sprite icon renders the built asset
@@ -871,7 +868,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => ({ name: attr.name, value: normalizeAttr(attr) }))
@@ -926,7 +923,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => ({ name: attr.name, value: normalizeAttr(attr) }))
@@ -1014,9 +1011,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style"
-        ? normalizeStyleAttr(attr.value)
-        : attr.value;
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
 
     // F6 copy-fix: canonicalize the built sprite asset URL to the source

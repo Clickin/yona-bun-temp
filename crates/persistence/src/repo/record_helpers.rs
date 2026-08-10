@@ -20,7 +20,10 @@ impl Iden for IssueLabelConcatFunc {
 }
 
 fn issue_label_ids_concat_expr(backend: DatabaseBackend) -> SimpleExpr {
-    let column = Expr::col((issue_issue_label::Entity, issue_issue_label::Column::IssueLabelId));
+    let column = Expr::col((
+        issue_issue_label::Entity,
+        issue_issue_label::Column::IssueLabelId,
+    ));
     match backend {
         DatabaseBackend::Postgres => Func::cust(IssueLabelConcatFunc::Postgres)
             .arg(column.cast_as(Alias::new("text")))
@@ -317,7 +320,7 @@ impl AppRepositoryImpl<'_> {
             state: if model.is_draft.unwrap_or_default() != 0 {
                 "draft".to_string()
             } else {
-                issue_state_from_raw(model.state)
+                issue_state_from_raw(self.db.get_database_backend(), model.state)
             },
             timeline,
             title: model.title.unwrap_or_default(),
@@ -398,7 +401,7 @@ impl AppRepositoryImpl<'_> {
                 state: if is_draft {
                     "draft".to_string()
                 } else {
-                    issue_state_from_raw(row.state)
+                    issue_state_from_raw(self.db.get_database_backend(), row.state)
                 },
                 title: row.title.unwrap_or_default(),
                 voter_count,
@@ -921,7 +924,7 @@ impl AppRepositoryImpl<'_> {
             state: if model.is_draft.unwrap_or_default() != 0 {
                 "draft".to_string()
             } else {
-                issue_state_from_raw(model.state)
+                issue_state_from_raw(self.db.get_database_backend(), model.state)
             },
             title: model.title.unwrap_or_default(),
             updated_label: format_workspace_date_label(model.updated_date.or(model.created_date)),
@@ -964,9 +967,7 @@ impl AppRepositoryImpl<'_> {
 
         // Labels: one aggregate link query + the project label list (an
         // issue's labels are always a subset of its project's labels).
-        let label_ids_per_issue = self
-            .issue_label_ids_by_issue(&all_ids, backend)
-            .await?;
+        let label_ids_per_issue = self.issue_label_ids_by_issue(&all_ids, backend).await?;
         let project_labels = self
             .list_project_labels(&project.owner_name, &project.project_name)
             .await?
@@ -1073,7 +1074,12 @@ impl AppRepositoryImpl<'_> {
             .await?;
         let mut watcher_counts = HashMap::<i64, u32>::new();
         for row in watcher_rows {
-            if let Ok(issue_id) = row.resource_id.as_deref().unwrap_or_default().parse::<i64>() {
+            if let Ok(issue_id) = row
+                .resource_id
+                .as_deref()
+                .unwrap_or_default()
+                .parse::<i64>()
+            {
                 *watcher_counts.entry(issue_id).or_insert(0) += 1;
             }
         }
@@ -1084,12 +1090,8 @@ impl AppRepositoryImpl<'_> {
             let is_draft = row.is_draft.unwrap_or_default() != 0;
             let author_id = row.author_id;
             let author_login_id = row.author_login_id.clone().unwrap_or_default();
-            let author_email_address = user_email_from_maps(
-                author_id,
-                &author_login_id,
-                &users_by_id,
-                &user_id_by_login,
-            );
+            let author_email_address =
+                user_email_from_maps(author_id, &author_login_id, &users_by_id, &user_id_by_login);
             let labels = issue_labels_from_maps(row.id, &label_ids_per_issue, &project_labels);
             let (assignee_login_id, assignee_label) =
                 assignee_summary_from_maps(row.assignee_id, &assignees, &users_by_id);
@@ -1111,7 +1113,10 @@ impl AppRepositoryImpl<'_> {
             };
             let due_date = row.due_date;
             let mut child_issues = Vec::new();
-            for child in child_rows.iter().filter(|child| child.parent_id == Some(row.id)) {
+            for child in child_rows
+                .iter()
+                .filter(|child| child.parent_id == Some(row.id))
+            {
                 let child_is_draft = child.is_draft.unwrap_or_default() != 0;
                 if child_is_draft
                     && child
@@ -1139,7 +1144,7 @@ impl AppRepositoryImpl<'_> {
                     state: if child_is_draft {
                         "draft".to_string()
                     } else {
-                        issue_state_from_raw(child.state)
+                        issue_state_from_raw(self.db.get_database_backend(), child.state)
                     },
                     title: child.title.clone().unwrap_or_default(),
                     voter_count: voter_counts.get(&child.id).copied().unwrap_or_default(),
@@ -1188,7 +1193,7 @@ impl AppRepositoryImpl<'_> {
                 state: if is_draft {
                     "draft".to_string()
                 } else {
-                    issue_state_from_raw(row.state)
+                    issue_state_from_raw(self.db.get_database_backend(), row.state)
                 },
                 title: row.title.clone().unwrap_or_default(),
                 updated_label: format_workspace_date_label(row.updated_date.or(row.created_date)),
@@ -1209,14 +1214,23 @@ impl AppRepositoryImpl<'_> {
         backend: DatabaseBackend,
     ) -> Result<HashMap<i64, Vec<i64>>, DbErr> {
         let mut stmt = Query::select();
-        stmt.column((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
-            .expr_as(issue_label_ids_concat_expr(backend), "label_ids")
-            .from(issue_issue_label::Entity)
-            .and_where(
-                Expr::col((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
-                    .is_in(issue_ids.iter().copied()),
-            )
-            .group_by_col((issue_issue_label::Entity, issue_issue_label::Column::IssueId));
+        stmt.column((
+            issue_issue_label::Entity,
+            issue_issue_label::Column::IssueId,
+        ))
+        .expr_as(issue_label_ids_concat_expr(backend), "label_ids")
+        .from(issue_issue_label::Entity)
+        .and_where(
+            Expr::col((
+                issue_issue_label::Entity,
+                issue_issue_label::Column::IssueId,
+            ))
+            .is_in(issue_ids.iter().copied()),
+        )
+        .group_by_col((
+            issue_issue_label::Entity,
+            issue_issue_label::Column::IssueId,
+        ));
         let (sql, values) = stmt.build_any(backend.get_query_builder().as_ref());
         let rows = self
             .db

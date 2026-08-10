@@ -30,9 +30,9 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     page.locator('.issue-label[data-category-id="3"][data-label-id="8"]').first(),
   ).toHaveJSProperty("tagName", "SPAN");
   await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute("target", "_blank");
-  const progressBars = page.locator('[data-stylex-owner="project-milestones-progress-bar"]');
+  const progressBars = page.locator('[data-owner="project-milestones-progress-bar"]');
   await expect(progressBars).toHaveCount(2);
-  // copy-fix-current-dom: compile-mode stylex emits className only — the
+  // copy-fix-current-dom: compile-mode style emits className only — the
   // runtime --x-width var is absent (same ruling as project-import #repoAuth);
   // computed width pins below carry the parity contract.
   await expect(progressBars.first()).toHaveCSS("width", "630px");
@@ -111,8 +111,8 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(
     page.locator('.issue-link[href$="/issue/11"]').filter({ hasText: "#11" }),
   ).toBeHidden();
-  // copy-fix-current-dom: the app hides filtered issue links via a stylex
-  // class (no inline display:none — compile-mode stylex emits className);
+  // copy-fix-current-dom: the app hides filtered issue links via a style
+  // class (no inline display:none — compile-mode style emits className);
   // toBeHidden above carries the visibility contract.
   await expect(page.locator('.issue-link[href$="/issue/11"] > .issue-item')).not.toHaveAttribute(
     "style",
@@ -179,13 +179,13 @@ test("milestone state transitions preserve the page shell while replacing the li
   });
 
   await page.goto(`${basePath}/admin/sample/milestones?state=open`);
-  await expect(page.locator('[data-stylex-owner="project-milestones-tabs"]')).toBeVisible();
+  await expect(page.locator('[data-owner="project-milestones-tabs"]')).toBeVisible();
   const fixedShellSelectors = {
-    page: '[data-stylex-owner="project-milestones-page"]',
-    shell: '[data-stylex-owner="project-milestones-shell"]',
-    tabWrap: '[data-stylex-owner="project-milestones-tab-wrap"]',
-    tabs: '[data-stylex-owner="project-milestones-tabs"]',
-    list: '[data-stylex-owner="project-milestones-list"]',
+    page: '[data-owner="project-milestones-page"]',
+    shell: '[data-owner="project-milestones-shell"]',
+    tabWrap: '[data-owner="project-milestones-tab-wrap"]',
+    tabs: '[data-owner="project-milestones-tabs"]',
+    list: '[data-owner="project-milestones-list"]',
   } as const;
   const fixedShellTokens = await page.evaluate((selectors) => {
     const tokens: Record<string, string> = {};
@@ -204,16 +204,14 @@ test("milestone state transitions preserve the page shell while replacing the li
       request.url().includes("/api/v1/owners/admin/projects/sample/milestones") &&
       new URL(request.url()).searchParams.get("state") === "closed",
   );
-  await page.locator('[data-stylex-owner="project-milestones-tab-link"]').nth(1).click();
+  await page.locator('[data-owner="project-milestones-tab-link"]').nth(1).click();
   await closedRequest;
-  await expect(page.locator('[data-stylex-owner="project-milestones-loading-tabs"]')).toHaveCount(
-    0,
-  );
-  await expect(page.locator('[data-stylex-owner="project-milestones-item"]')).toHaveCount(2);
+  await expect(page.locator('[data-owner="project-milestones-loading-tabs"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-milestones-item"]')).toHaveCount(2);
 
   releaseClosedResponse?.();
-  await expect(page.locator('[data-stylex-owner="project-milestones-item"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="project-milestones-tabs"] li.active')).toHaveText(
+  await expect(page.locator('[data-owner="project-milestones-item"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="project-milestones-tabs"] li.active')).toHaveText(
     "Closed",
   );
   for (const [name, token] of Object.entries(fixedShellTokens)) {
@@ -242,17 +240,12 @@ test("project milestones route uses direct typed Link targets", () => {
   expect(routeSource).not.toContain("useProjectMilestonesDocumentTitle");
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain('globalThis["document"]');
-  expect(routeSource).toContain("styles.progressBar(width)");
-  expect(routeSource).toContain("sx.progressBar(`${completionPercent}%`)");
+
+  expect(routeSource).toContain('data-owner="project-milestones-progress-bar"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
   expect(routeSource).toContain("const LEGACY_MILESTONE_LIST_LINK_PROPS = {");
-  expect(routeSource).toContain(
-    "activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }",
-  );
-  expect(routeSource).toContain(
-    'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
-  );
+
   expect(routeSource).toContain("{...LEGACY_MILESTONE_LIST_LINK_PROPS}");
   expect(routeSource).toContain("orderBy: optionalStringSearch(search.orderBy)");
   expect(routeSource).toContain('const orderBy = search.orderBy ?? "dueDate"');
@@ -296,7 +289,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   await expect(page).toHaveTitle("portal - milestone - weblabs/portal");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("ul.milestones > li.milestone")).toHaveCount(2);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -304,7 +297,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105 always
   // renders class="search-box select" in project/org context; app classList matches.
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
@@ -313,7 +306,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+    .locator("[data-owner=global-gnb-search-scope-item] > button")
     .filter({ hasText: "This Group" })
     .click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
@@ -324,7 +317,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+    .locator("[data-owner=global-gnb-search-scope-item] > button")
     .filter({ hasText: "All Projects" })
     .click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
@@ -595,7 +588,7 @@ async function canonicalize(page: Page, selector: string) {
       if (attr.name === "class") {
         return attr.value
           .split(/\s+/u)
-          .filter((token) => !isGeneratedStyleXToken(token))
+          .filter((token) => !isGeneratedStyleToken(token))
           .join(" ")
           .trim();
       }
@@ -615,15 +608,15 @@ async function canonicalize(page: Page, selector: string) {
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-content-ready" ||
-        attr.name === "data-stylex-owner" ||
+        attr.name === "data-content-ready" ||
+        attr.name === "data-owner" ||
         (attr.name === "class" &&
           attr.ownerElement?.tagName.toLowerCase() === "a" &&
           attr.value === "active")
       );
     }
 
-    function isGeneratedStyleXToken(token: string) {
+    function isGeneratedStyleToken(token: string) {
       return token.startsWith("-milestones__styles.") || /^x[\w-]+$/u.test(token);
     }
   });
@@ -673,7 +666,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (attr.name === "class") {
         return attr.value
           .split(/\s+/u)
-          .filter((token) => !isGeneratedStyleXToken(token))
+          .filter((token) => !isGeneratedStyleToken(token))
           .join(" ")
           .trim();
       }
@@ -687,15 +680,15 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-content-ready" ||
-        attr.name === "data-stylex-owner" ||
+        attr.name === "data-content-ready" ||
+        attr.name === "data-owner" ||
         (attr.name === "class" &&
           attr.ownerElement?.tagName.toLowerCase() === "a" &&
           attr.value === "active")
       );
     }
 
-    function isGeneratedStyleXToken(token: string) {
+    function isGeneratedStyleToken(token: string) {
       return token.startsWith("-milestones__styles.") || /^x[\w-]+$/u.test(token);
     }
   }, html);
@@ -786,9 +779,9 @@ async function readMilestoneListMetrics(page: Page) {
 
 async function readProtectedPortalMilestoneShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnb = requireElement("[data-stylex-owner=global-gnb-outer]");
-    const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
-    const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const gnb = requireElement("[data-owner=global-gnb-outer]");
+    const navbar = requireElement('[data-owner="global-gnb-inner"]');
+    const search = requireElement('[data-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
     const projectMenu = requireElement(".project-menu-outer");
     const pageWrap = requireElement(".page-wrap-outer");

@@ -1,54 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
+import * as React from "react";
 import type { HTMLAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   organizationPullRequestListQueryOptions,
   type PullRequestListItem,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import {
-  legacyOrganizationPullRequestTabsClassName,
-  styles,
-} from "./-organization-pullrequests.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  searchColumn: stylex.props(styles.searchColumn),
-  searchBar: stylex.props(styles.searchBar),
-  searchInput: stylex.props(styles.searchInput),
-  searchButton: stylex.props(styles.searchButton),
-  tabs: stylex.props(styles.tabs),
-  tabButton: stylex.props(styles.tabButton),
-  activeTabButton: stylex.props(styles.tabButton, styles.activeTabButton),
-  badge: stylex.props(styles.badge),
-  content: stylex.props(styles.content),
-  list: stylex.props(styles.list),
-  empty: stylex.props(styles.empty),
-  emptyIcon: (backgroundImage: string) => stylex.props(styles.emptyIcon(backgroundImage)),
-  emptyMessage: stylex.props(styles.emptyMessage),
-  row: stylex.props(styles.row),
-  meta: stylex.props(styles.meta),
-  receiverRail: stylex.props(styles.receiverRail),
-  state: stylex.props(styles.state),
-  paginationRoot: stylex.props(styles.paginationRoot),
-  paginationPageNums: stylex.props(styles.paginationPageNums),
-  paginationPageNum: stylex.props(styles.paginationPageNum),
-  paginationIconPageNum: stylex.props(styles.paginationIconPageNum),
-  paginationIconLabel: stylex.props(styles.paginationIconLabel),
-  paginationIconLabelOff: stylex.props(styles.paginationIconLabelOff),
-  paginationDelimiter: stylex.props(styles.paginationDelimiter),
-  paginationInput: stylex.props(styles.paginationInput, styles.paginationNoSpinner),
-  paginationIcon: (backgroundImage: string) => stylex.props(styles.paginationIcon(backgroundImage)),
-  progress: stylex.props(styles.progress),
-  progressMeta: stylex.props(styles.progress, styles.progressMeta),
-  progressFill: (width: string) => stylex.props(styles.progressFill(width)),
-  headerLogo: (backgroundImage: string) => stylex.props(styles.headerLogo(backgroundImage)),
-  grayTextSeparator: stylex.props(styles.grayTextSeparator),
-} as const;
+import { legacyOrganizationPullRequestTabsClassName } from "./-pullrequest-tabs";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
@@ -143,47 +105,34 @@ function OrganizationPullRequestsBody({
   );
   const searchAction = selectedCategory === "closed" ? closedAction : openAction;
   const navigateTab = (to: string) => {
-    router.history.push(to);
+    const base = prefixBasePath(runtimeConfig.basePath, "");
+    void router.navigate({ to: to.startsWith(base) ? to.slice(base.length) : to });
   };
 
   return (
     <>
       <title>{organizationName}</title>
-      <div
-        {...sx.page}
-        className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
-        data-stylex-owner="organization-pullrequests-page"
-      >
-        <div
-          className="project-page-wrap"
-          data-stylex-owner="organization-pullrequests-shell"
-        >
+      <div className="page-wrap-outer" data-owner="organization-pullrequests-page">
+        <div className="project-page-wrap" data-owner="organization-pullrequests-shell">
           <div className="row-fluid cb">
             <div
-              {...sx.searchColumn}
-              className={`left-menu span2 search-wrap hide-in-mobile ${sx.searchColumn.className ?? ""}`.trim()}
-              data-stylex-owner="organization-pullrequests-search-column"
+              className="left-menu span2 search-wrap hide-in-mobile"
+              data-owner="organization-pullrequests-search-column"
               style={{ paddingTop: 0 }}
             >
               <form id="search" name="search" action={searchAction} method="get">
                 <div className="search">
-                  <div
-                    {...sx.searchBar}
-                    className={`search-bar ${sx.searchBar.className ?? ""}`.trim()}
-                    data-stylex-owner="organization-pullrequests-search-bar"
-                  >
+                  <div className="search-bar" data-owner="organization-pullrequests-search-bar">
                     <input
                       name="filter"
-                      {...sx.searchInput}
-                      className={`textbox full ${sx.searchInput.className ?? ""}`.trim()}
-                      data-stylex-owner="organization-pullrequests-search-input"
+                      className="textbox full"
+                      data-owner="organization-pullrequests-search-input"
                       type="text"
                       defaultValue={search.filter}
                     />
                     <button
-                      {...sx.searchButton}
-                      className={`search-btn ${sx.searchButton.className ?? ""}`.trim()}
-                      data-stylex-owner="organization-pullrequests-search-button"
+                      className="search-btn"
+                      data-owner="organization-pullrequests-search-button"
                       type="submit"
                     >
                       <i className="yobicon-search"></i>
@@ -194,47 +143,33 @@ function OrganizationPullRequestsBody({
             </div>
             <div className="span10 span-hard-wrap" id="span10">
               <ul
-                {...sx.tabs}
-                className={`nav nav-tabs nm ${legacyOrganizationPullRequestTabsClassName} ${sx.tabs.className ?? ""}`.trim()}
-                data-stylex-owner="organization-pullrequests-tabs"
+                className={`nav nav-tabs nm ${legacyOrganizationPullRequestTabsClassName}`}
+                data-owner="organization-pullrequests-tabs"
               >
                 <li className={selectedCategory === "open" ? "active" : ""}>
                   <button
-                    {...(selectedCategory === "open" ? sx.activeTabButton : sx.tabButton)}
-                    data-stylex-owner="organization-pullrequests-tab"
+                    data-owner="organization-pullrequests-tab"
                     type="button"
                     onClick={() => navigateTab(openAction)}
                   >
                     {t("pullRequest.state.open")}
-                    <span
-                      {...sx.badge}
-                      className={`num-badge ${sx.badge.className ?? ""}`.trim()}
-                    >
-                      {pullRequests.openCount}
-                    </span>
+                    <span className="num-badge">{pullRequests.openCount}</span>
                   </button>
                 </li>
                 <li className={selectedCategory === "closed" ? "active" : ""}>
                   <button
-                    {...(selectedCategory === "closed" ? sx.activeTabButton : sx.tabButton)}
-                    data-stylex-owner="organization-pullrequests-tab"
+                    data-owner="organization-pullrequests-tab"
                     type="button"
                     onClick={() => navigateTab(closedAction)}
                   >
                     {t("pullRequest.state.closed")}
-                    <span
-                      {...sx.badge}
-                      className={`num-badge ${sx.badge.className ?? ""}`.trim()}
-                    >
-                      {pullRequests.closedCount}
-                    </span>
+                    <span className="num-badge">{pullRequests.closedCount}</span>
                   </button>
                 </li>
               </ul>
               <div
-                {...sx.content}
-                className={`tab-content ${sx.content.className ?? ""}`.trim()}
-                data-stylex-owner="organization-pullrequests-content"
+                className="tab-content"
+                data-owner="organization-pullrequests-content"
                 style={{ clear: "both", paddingTop: 15 }}
               >
                 <div id="list" className="row-fluid tab-pane active">
@@ -272,11 +207,7 @@ function OrganizationPullRequestList({
   const totalPages = Math.ceil(pullRequests.totalCount / pullRequests.pageSize);
 
   return (
-    <ul
-      {...sx.list}
-      className={`${sx.list.className} post-list-wrap`}
-      data-stylex-owner="organization-pullrequests-list"
-    >
+    <ul className="post-list-wrap" data-owner="organization-pullrequests-list">
       {pullRequests.items.length > 0 ? (
         <>
           {pullRequests.items.map((pullRequest) => (
@@ -298,23 +229,17 @@ function OrganizationPullRequestList({
           />
         </>
       ) : (
-        <div
-          {...sx.empty}
-          className={`${sx.empty.className} error-wrap`}
-          data-stylex-owner="organization-pullrequests-empty"
-        >
+        <div className="error-wrap" data-owner="organization-pullrequests-empty">
           <i
-            {...sx.emptyIcon(`url(${legacySpriteUrl})`)}
-            className={`${sx.emptyIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err1`.trim()}
-            data-stylex-owner="organization-pullrequests-empty-icon"
+            className="ico ico-err1"
+            style={
+              {
+                "--organization-pullrequests-empty-sprite": `url(${legacySpriteUrl})`,
+              } as React.CSSProperties
+            }
+            data-owner="organization-pullrequests-empty-icon"
           ></i>
-          <p
-            {...sx.emptyMessage}
-            className={sx.emptyMessage.className}
-            data-stylex-owner="organization-pullrequests-empty-message"
-          >
-            {t("pullRequest.is.empty")}
-          </p>
+          <p data-owner="organization-pullrequests-empty-message">{t("pullRequest.is.empty")}</p>
         </div>
       )}
     </ul>
@@ -373,21 +298,12 @@ function OrganizationPullRequestPagination({
 
   return (
     <div
-      {...sx.paginationRoot}
       id="pagination"
-      className={`${sx.paginationRoot.className} page-navigation-wrap`}
-      data-stylex-owner="organization-pullrequests-pagination"
+      className="page-navigation-wrap"
+      data-owner="organization-pullrequests-pagination"
     >
-      <ul
-        {...sx.paginationPageNums}
-        className={`${sx.paginationPageNums.className} page-nums`}
-        data-stylex-owner="organization-pullrequests-pagination-page-nums"
-      >
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
-          className={`${sx.paginationPageNum.className} ${sx.paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="organization-pullrequests-pagination-prev-page"
-        >
+      <ul className="page-nums" data-owner="organization-pullrequests-pagination-page-nums">
+        <li className="page-num ikon" data-owner="organization-pullrequests-pagination-prev-page">
           {safeCurrentPage > 1 ? (
             <Link
               activeProps={{
@@ -400,49 +316,28 @@ function OrganizationPullRequestPagination({
               to={route}
             >
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationPrev,
-                )}
-                className={`${sx.paginationIcon(`url(${legacySpriteUrl})`).className} ${stylex.props(styles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="organization-pullrequests-pagination-prev-icon"
+                className="ico btn-pg-prev"
+                data-owner="organization-pullrequests-pagination-prev-icon"
               ></i>
-              <span
-                {...sx.paginationIconLabel}
-                data-stylex-owner="organization-pullrequests-pagination-prev-label"
-              >
+              <span data-owner="organization-pullrequests-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </Link>
           ) : (
             <>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationPrev,
-                  styles.paginationPrevOff,
-                )}
-                className={`${sx.paginationIcon(`url(${legacySpriteUrl})`).className} ${stylex.props(styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="organization-pullrequests-pagination-prev-icon"
+                className="ico btn-pg-prev off"
+                data-owner="organization-pullrequests-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
-                className="off"
-                data-stylex-owner="organization-pullrequests-pagination-prev-label"
-              >
+              <span className="off" data-owner="organization-pullrequests-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...sx.paginationPageNum}
-          className={`${sx.paginationPageNum.className} page-num`}
-          data-stylex-owner="organization-pullrequests-pagination-input-page"
-        >
+        <li className="page-num" data-owner="organization-pullrequests-pagination-input-page">
           <input
-            {...sx.paginationInput}
-            className={`${sx.paginationInput.className} input-mini nospinner`}
+            className="input-mini nospinner"
             defaultValue={safeCurrentPage}
             max={totalPages}
             min={1}
@@ -454,28 +349,19 @@ function OrganizationPullRequestPagination({
             pattern="[0-9]*"
             type="number"
             key={safeCurrentPage}
-            data-stylex-owner="organization-pullrequests-pagination-input"
+            data-owner="organization-pullrequests-pagination-input"
           />
         </li>
         <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationDelimiter)}
-          className={`${sx.paginationPageNum.className} ${stylex.props(styles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="organization-pullrequests-pagination-delimiter"
+          className="page-num delimiter"
+          data-owner="organization-pullrequests-pagination-delimiter"
         >
           /
         </li>
-        <li
-          {...sx.paginationPageNum}
-          className={`${sx.paginationPageNum.className} page-num`}
-          data-stylex-owner="organization-pullrequests-pagination-total"
-        >
+        <li className="page-num" data-owner="organization-pullrequests-pagination-total">
           {totalPages}
         </li>
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
-          className={`${sx.paginationPageNum.className} ${sx.paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="organization-pullrequests-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="organization-pullrequests-pagination-next-page">
           {safeCurrentPage < totalPages ? (
             <Link
               activeProps={{
@@ -487,38 +373,22 @@ function OrganizationPullRequestPagination({
               search={{ filter: search.filter, pageNum: safeCurrentPage + 1 }}
               to={route}
             >
-              <span
-                {...sx.paginationIconLabel}
-                data-stylex-owner="organization-pullrequests-pagination-next-label"
-              >
+              <span data-owner="organization-pullrequests-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationNext,
-                )}
-                className={`${sx.paginationIcon(`url(${legacySpriteUrl})`).className} ${stylex.props(styles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="organization-pullrequests-pagination-next-icon"
+                className="ico btn-pg-next"
+                data-owner="organization-pullrequests-pagination-next-icon"
               ></i>
             </Link>
           ) : (
             <>
-              <span
-                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
-                className="off"
-                data-stylex-owner="organization-pullrequests-pagination-next-label"
-              >
+              <span className="off" data-owner="organization-pullrequests-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationNext,
-                  styles.paginationNextOff,
-                )}
-                className={`${sx.paginationIcon(`url(${legacySpriteUrl})`).className} ${stylex.props(styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="organization-pullrequests-pagination-next-icon"
+                className="ico btn-pg-next off"
+                data-owner="organization-pullrequests-pagination-next-icon"
               ></i>
             </>
           )}
@@ -550,7 +420,6 @@ function OrganizationPullRequestItem({
     pullRequestNumber: String(pullRequest.pullRequestNumber),
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
-  const progressFill = sx.progressFill(`${percent}%`);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const pullRequestRowHref = prefixBasePath(
     basePath,
@@ -573,9 +442,8 @@ function OrganizationPullRequestItem({
 
   return (
     <li
-      {...sx.row}
-      className={`${sx.row.className} post-item title`}
-      data-stylex-owner="organization-pullrequests-row"
+      className="post-item title"
+      data-owner="organization-pullrequests-row"
       {...pullRequestRowAttrs}
     >
       <div className="span10 span-hard-wrap">
@@ -607,11 +475,7 @@ function OrganizationPullRequestItem({
             {titleParts.title}
           </Link>
         </div>
-        <div
-          {...sx.meta}
-          className={`${sx.meta.className} infos`}
-          data-stylex-owner="organization-pullrequests-row-meta"
-        >
+        <div className="infos" data-owner="organization-pullrequests-row-meta">
           {pullRequest.contributorLabel ? (
             <Link
               params={{ user: pullRequest.contributorLoginId }}
@@ -635,21 +499,16 @@ function OrganizationPullRequestItem({
             {pullRequest.projectName}
           </Link>
           {pullRequest.commentThreadCount > 0 ? (
-            <div
-              {...sx.progressMeta}
-              className={`${sx.progressMeta.className} infos-item`}
-              data-stylex-owner="organization-pullrequests-row-progress"
-            >
+            <div className="infos-item" data-owner="organization-pullrequests-row-progress">
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div
-                {...sx.progress}
-                className={`${sx.progress.className} upload-progress`}
-                data-stylex-owner="organization-pullrequests-row-progress-track"
+                className="upload-progress"
+                data-owner="organization-pullrequests-row-progress-track"
               >
                 <div
-                  {...progressFill}
-                  className={`${progressFill.className} bar orange`}
-                  data-stylex-owner="organization-pullrequests-row-progress-fill"
+                  className="bar orange"
+                  style={{ "--x-review-progress-width": `${percent}%` } as React.CSSProperties}
+                  data-owner="organization-pullrequests-row-progress-fill"
                 ></div>
               </div>
               <Link
@@ -658,12 +517,7 @@ function OrganizationPullRequestItem({
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
-                <span
-                  {...sx.grayTextSeparator}
-                  data-stylex-owner="organization-pullrequests-review-separator"
-                >
-                  /
-                </span>
+                <span data-owner="organization-pullrequests-review-separator">/</span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
               </Link>
             </div>
@@ -672,9 +526,8 @@ function OrganizationPullRequestItem({
       </div>
       <div className="span2 hide-in-mobile">
         <div
-          {...sx.receiverRail}
-          className={`${sx.receiverRail.className} mt5 hide-in-mobile`}
-          data-stylex-owner="organization-pullrequests-row-receiver-rail"
+          className="mt5 hide-in-mobile"
+          data-owner="organization-pullrequests-row-receiver-rail"
         >
           {pullRequest.receiverLoginId ? (
             <Link
@@ -694,159 +547,11 @@ function OrganizationPullRequestItem({
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
         </div>
-        <div
-          {...sx.state}
-          className={`${sx.state.className} state ${stateKey}`}
-          data-stylex-owner="organization-pullrequests-row-state"
-        >
+        <div className={`state ${stateKey}`} data-owner="organization-pullrequests-row-state">
           {t(`pullRequest.state.${stateKey}`)}
         </div>
       </div>
     </li>
-  );
-}
-
-function OrganizationHeader({
-  logoUrl,
-  organizationName,
-}: {
-  logoUrl: string;
-  organizationName: string;
-}) {
-  const logoStyleProps = sx.headerLogo(`url('${logoUrl}')`);
-
-  return (
-    <div
-      {...logoStyleProps}
-      className={`project-header-outer ${logoStyleProps.className ?? ""}`.trim()}
-      data-stylex-owner="organization-pullrequests-header-logo"
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className="project-breadcrumb-wrap">
-            <div className="project-breadcrumb">
-              <span className="project-author">
-                <span className="group-title-head">group</span>
-                <Link
-                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  search={{}}
-                  to="/organizations/$organizationName"
-                  params={{ organizationName }}
-                >
-                  {organizationName}
-                </Link>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function OrganizationMenu({
-  active,
-  organizationName,
-  viewerCanUpdate,
-}: {
-  active: "pullrequests";
-  organizationName: string;
-  viewerCanUpdate: boolean;
-}) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={{}}
-              to="/organizations/$organizationName"
-              params={{ organizationName }}
-            >
-              {t("title.organizationHome")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={{
-                assigneeId: "",
-                authorId: "",
-                filter: "",
-                mentionId: "",
-                orderBy: "createdDate",
-                orderDir: "desc",
-                pageNum: 1,
-                projectNames: [],
-                state: "open",
-              }}
-              to="/organizations/$organizationName/issues"
-              params={{ organizationName }}
-            >
-              {t("menu.issue")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={{
-                filter: "",
-                orderBy: "updatedDate",
-                orderDir: "desc",
-                pageNum: 1,
-                projectNames: [],
-              }}
-              to="/organizations/$organizationName/boards"
-              params={{ organizationName }}
-            >
-              {t("menu.board")}
-            </Link>
-          </li>
-          <li className={active === "pullrequests" ? "active" : ""}>
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={{ filter: "", pageNum: 1 }}
-              to="/organizations/$organizationName/pullrequests"
-              params={{ organizationName }}
-            >
-              {t("menu.pullRequest")}
-            </Link>
-          </li>
-        </ul>
-        <div className="project-setting">
-          <ul className="project-menu-nav">
-            {viewerCanUpdate ? (
-              <li className="">
-                <Link
-                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  to="/organizations/$organizationName/settingform"
-                  params={{ organizationName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">{t("menu.admin")}</span>
-                </Link>
-              </li>
-            ) : null}
-          </ul>
-        </div>
-      </div>
-    </div>
   );
 }
 

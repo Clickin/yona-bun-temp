@@ -135,14 +135,12 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue", "sample");
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(
-    7,
+  await expect(page.locator('[data-owner="project-search-category-list"] li')).toHaveCount(7);
+  await expect(page.locator('[data-owner="project-search-category-list"]')).not.toContainText(
+    "Projects",
   );
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-list"]'),
-  ).not.toContainText("Projects");
-  await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Issues 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Issues");
   await expect(page.locator(".search-result-title strong")).toHaveText("1");
@@ -185,7 +183,7 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
 
   const layout = await page.evaluate(() => {
     const row = document.querySelector(".row-fluid");
-    const category = document.querySelector('[data-stylex-owner="project-search-category-list"]');
+    const category = document.querySelector('[data-owner="project-search-category-list"]');
     const searchBox = document.querySelector(".search-box-wrap");
     const keyword = document.querySelector("#searchKeyword");
     const button = document.querySelector("#searchInnerForm .ybtn");
@@ -230,7 +228,7 @@ test("project issue search category Links keep legacy active state on list items
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Issues 1");
   await expectProjectSearchCategoryAttributes(page, basePath, "sample");
   await expectProjectSearchCategoryActiveMarkers(page);
@@ -246,14 +244,12 @@ test("project issue comment search renders legacy partial_issue_comments.scala.h
 
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue_comment", "sample");
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(
-    7,
+  await expect(page.locator('[data-owner="project-search-category-list"] li')).toHaveCount(7);
+  await expect(page.locator('[data-owner="project-search-category-list"]')).not.toContainText(
+    "Projects",
   );
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-list"]'),
-  ).not.toContainText("Projects");
-  await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Issue Comments 1");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 1 result(s) in Issue Comments",
@@ -307,7 +303,7 @@ test("project user search preserves legacy tooltip metadata without Bootstrap in
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "user", "sample");
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Users 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Users");
 
@@ -356,16 +352,17 @@ test("project search pins the live localhost issue-comment zero-result project s
 
   await expect(page).toHaveTitle("Search - admin/sample");
   await expectProjectSearchShell(page);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
-  ).toHaveAttribute("action", `${basePath}/admin/sample/search`);
+  await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("List All");
+  await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("Feedback");
+  await expect(page.locator('[data-owner="global-gnb-nav"] form.gnb-search-form')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons.locator("[data-toggle], [data-action]")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
@@ -377,11 +374,9 @@ test("project search pins the live localhost issue-comment zero-result project s
     "1",
   ]);
   await expect(page.locator(".project-setting")).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(
-    7,
-  );
+  await expect(page.locator('[data-owner="project-search-category-list"] li')).toHaveCount(7);
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Issue Comments 0");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 0 result(s) in Issue Comments",
@@ -390,12 +385,12 @@ test("project search pins the live localhost issue-comment zero-result project s
   await expect(page.locator(".search-result-wrap > .empty-result")).toHaveCount(1);
 
   const layout = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const form = document.querySelector(".gnb-search-form");
     const scope = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
-    const searchInput = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
-    const category = document.querySelector('[data-stylex-owner="project-search-category-list"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
+    const searchInput = document.querySelector('[data-owner="global-gnb-search-input"]');
+    const category = document.querySelector('[data-owner="project-search-category-list"]');
     const searchTitle = document.querySelector(".search-result-title");
     const emptyResult = document.querySelector(".search-result-wrap > .empty-result");
     if (
@@ -505,7 +500,7 @@ test("project search renders legacy error/forbidden.scala.html shell for anonymo
     ],
   });
   await expect(page.locator(".project-menu-outer .project-menu-gruop > li.active")).toHaveCount(1);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(
@@ -581,7 +576,7 @@ test("project search preserves whitespace-only keyword and calls scoped search A
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator("#searchKeyword")).toHaveValue("  ");
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Code Reviews 0");
   await expectProjectSearchCategoryAttributes(page, basePath, "  ");
   expect(searchApi.count).toBe(1);
@@ -598,7 +593,7 @@ test("project search category and form navigation stay inside the React SPA", as
   await page.locator("#searchKeyword").fill("fresh");
   await expectProjectSearchCategoryAttributes(page, basePath, "fresh");
   await expectProjectSearchCategoryActiveMarkers(page);
-  const issueCategory = page.locator('[data-stylex-owner="project-search-category-list"] a', {
+  const issueCategory = page.locator('[data-owner="project-search-category-list"] a', {
     hasText: "Issues",
   });
   await expect(issueCategory).toHaveAttribute(
@@ -608,7 +603,7 @@ test("project search category and form navigation stay inside the React SPA", as
   await issueCategory.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=fresh&searchType=issue`);
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]'),
+    page.locator('[data-owner="project-search-category-item"][data-active="true"]'),
   ).toHaveText("Issues 0");
   await expectProjectSearchCategoryActiveMarkers(page);
   await expectSearchSpaSession(page);
@@ -644,7 +639,7 @@ test("org-owned project search exposes legacy project group search scope", async
   await expect(page).toHaveURL(
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
@@ -661,11 +656,12 @@ test("org-owned project search exposes legacy project group search scope", async
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("portal");
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
   await expect(page.locator(".project-menu-outer .project-menu-nav li.active")).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
-  ).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
+  await expect(page.locator('[data-owner="global-gnb-nav"] form.gnb-search-form')).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons.locator("[data-toggle], [data-action]")).toHaveCount(0);
 
@@ -675,9 +671,10 @@ test("org-owned project search exposes legacy project group search scope", async
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
-  ).toHaveAttribute("action", `${basePath}/organizations/weblabs/search`);
+  await expect(page.locator('[data-owner="global-gnb-nav"] form.gnb-search-form')).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
 
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.filter({ hasText: "All Projects" }).click();
@@ -685,16 +682,17 @@ test("org-owned project search exposes legacy project group search scope", async
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
-  ).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator('[data-owner="global-gnb-nav"] form.gnb-search-form')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
 
   const layout = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const form = document.querySelector(".gnb-search-form");
     const scope = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
-    const searchInput = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
+    const searchInput = document.querySelector('[data-owner="global-gnb-search-input"]');
     const projectHeader = document.querySelector(".project-header-outer");
     const projectMenu = document.querySelector(".project-menu-outer");
     if (
@@ -730,15 +728,15 @@ test("org-owned project search exposes legacy project group search scope", async
 });
 
 async function expectProjectSearchShell(page: Page) {
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
+  await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("List All");
+  await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("Feedback");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   expect(await screenRootClassNames(page)).toEqual([
     "unsupported hidden",
@@ -772,7 +770,7 @@ async function expectProjectSearchCategoryAttributes(
   keyword: string,
 ) {
   const categories = await page
-    .locator('[data-stylex-owner="project-search-category-list"] li > a')
+    .locator('[data-owner="project-search-category-list"] li > a')
     .evaluateAll((anchors) =>
       anchors.map((anchor) => {
         const badge = anchor.querySelector(".num-badge");
@@ -822,25 +820,21 @@ async function expectProjectSearchCategoryAttributes(
 
 async function expectProjectSearchCategoryActiveMarkers(page: Page) {
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-list"] a[aria-current]'),
+    page.locator('[data-owner="project-search-category-list"] a[aria-current]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-stylex-owner="project-search-category-list"] a[data-status]'),
+    page.locator('[data-owner="project-search-category-list"] a[data-status]'),
   ).toHaveCount(0);
   await expect(
-    page.locator(
-      '[data-stylex-owner="project-search-category-list"] li[data-stylex-active="true"]',
-    ),
+    page.locator('[data-owner="project-search-category-list"] li[data-active="true"]'),
   ).toHaveCount(1);
 
   expect(
     await page
-      .locator(
-        '[data-stylex-owner="project-search-category-list"] li:not([data-stylex-active="true"]) > a',
-      )
+      .locator('[data-owner="project-search-category-list"] li:not([data-active="true"]) > a')
       .evaluateAll((anchors) =>
         anchors.map((anchor) => ({
-          hasStyleXClass: (anchor.getAttribute("class") ?? "").includes("x"),
+          hasStyleClass: (anchor.getAttribute("class") ?? "").includes("x"),
           hasLegacyActiveClass: (anchor.getAttribute("class") ?? "")
             .split(/\s+/u)
             .includes("active"),
@@ -848,7 +842,7 @@ async function expectProjectSearchCategoryActiveMarkers(page: Page) {
       ),
   ).toEqual(
     Array(EXPECTED_PROJECT_SEARCH_CATEGORIES.length - 1).fill({
-      hasStyleXClass: true,
+      hasStyleClass: false,
       hasLegacyActiveClass: false,
     }),
   );
@@ -1102,7 +1096,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1137,9 +1131,9 @@ async function canonicalizeScreenRoots(page: Page) {
             !(attr.name === "rel" && attr.value === "noreferrer") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
-            attr.name !== "data-stylex-active" &&
-            attr.name !== "data-stylex-part" &&
+            attr.name !== "data-owner" &&
+            attr.name !== "data-active" &&
+            attr.name !== "data-part" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
@@ -1178,11 +1172,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1190,7 +1184,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -1285,7 +1279,7 @@ async function canonicalizeScreenRoots(page: Page) {
       return (
         attr.name === "href" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
+        attr.ownerElement.closest('[data-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1293,7 +1287,7 @@ async function canonicalizeScreenRoots(page: Page) {
       return (
         attr.name === "class" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
+        attr.ownerElement.closest('[data-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1328,7 +1322,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedLegacySearchCategoryButton(node: Element | null) {
       return (
         node instanceof HTMLButtonElement &&
-        node.closest('[data-stylex-owner="project-search-category-list"]') !== null
+        node.closest('[data-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1425,9 +1419,9 @@ async function canonicalizeHtml(page: Page, html: string) {
             !(attr.name === "rel" && attr.value === "noreferrer") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
-            attr.name !== "data-stylex-active" &&
-            attr.name !== "data-stylex-part" &&
+            attr.name !== "data-owner" &&
+            attr.name !== "data-active" &&
+            attr.name !== "data-part" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
@@ -1605,7 +1599,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       return (
         attr.name === "href" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
+        attr.ownerElement.closest('[data-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1613,7 +1607,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       return (
         attr.name === "class" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
+        attr.ownerElement.closest('[data-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1648,7 +1642,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedLegacySearchCategoryButton(node: Element | null) {
       return (
         node instanceof HTMLButtonElement &&
-        node.closest('[data-stylex-owner="project-search-category-list"]') !== null
+        node.closest('[data-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1746,18 +1740,18 @@ async function expectProjectSearchErrorShell(
 async function screenRootClassNames(page: Page) {
   return page
     .locator(
-      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+      ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
     )
     .evaluateAll((roots) =>
       roots.map((root) => {
-        if (root.getAttribute("data-stylex-owner") === "global-gnb-outer") {
+        if (root.getAttribute("data-owner") === "global-gnb-outer") {
           const hasProjectVariant =
             Array.from(root.classList).some((token) =>
               token.endsWith("globalGnbOuterStyles.project"),
             ) || getComputedStyle(root).position === "absolute";
           return hasProjectVariant ? "gnb-outer project-header" : "gnb-outer";
         }
-        return root.getAttribute("data-stylex-owner") === "site-footer" &&
+        return root.getAttribute("data-owner") === "site-footer" &&
           !root.classList.contains("page-footer-outer")
           ? "site-footer"
           : Array.from(root.classList)

@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
@@ -64,7 +63,7 @@ SyntaxHighlighter.registerLanguage("tsx", tsx);
 SyntaxHighlighter.registerLanguage("typescript", typescript);
 SyntaxHighlighter.registerLanguage("yaml", yaml);
 
-// The legacy code viewer renders the pre with route-scoped stylex geometry
+// The legacy code viewer renders the pre with route-scoped style geometry
 // (no inline style); the prism theme is applied only to token spans.
 const codeFileTheme = {
   ...ghcolors,
@@ -188,7 +187,6 @@ import {
 } from "../../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
-import { styles } from "./-code-file.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$filePath")({
   component: ProjectCodeFileRoute,
@@ -310,28 +308,29 @@ function ProjectCodeNotFound({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-code-file-error-page">
+    <div className="page-wrap-outer" data-owner="project-code-file-error-page">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(styles.errorWrap)}
-          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-          data-stylex-owner="project-code-file-error-wrap"
-        >
+        <div className="error-wrap" data-owner="project-code-file-error-wrap">
           <i
-            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
-            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-            data-stylex-owner="project-code-file-error-icon"
+            style={{
+              backgroundImage: `url(${legacySpriteUrl})`,
+              backgroundPosition: "-80px -160px",
+              backgroundRepeat: "no-repeat",
+              display: "inline-block",
+              height: "80px",
+              verticalAlign: "middle",
+              width: "50px",
+            }}
+            className="ico ico-err2"
+            data-owner="project-code-file-error-icon"
           ></i>
-          <p
-            {...stylex.props(styles.errorMessage)}
-            data-stylex-owner="project-code-file-error-message"
-          >
+          <p data-owner="project-code-file-error-message">
             {t("error.notfound.code", { args: [branch] })}
           </p>
           <Link
             to={projectPath(ownerName, projectName, "settingform")}
             className="ybtn ybtn-primary"
-            data-stylex-owner="project-code-file-error-list"
+            data-owner="project-code-file-error-list"
           >
             {t("button.list")}
           </Link>
@@ -368,15 +367,11 @@ function ProjectCodeFileBody({
   const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
   const archiveZipPath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
-  const breadcrumbsStyleProps = stylex.props(styles.breadcrumbs);
   const newFilePathWithSearch = `${projectPath(
     ownerName,
     projectName,
     "postform",
   )}?path=${newFilePath}&branch=${encodedBranchItemName}`;
-  const branchPickerStyleProps = stylex.props(styles.branchPicker);
-  const downloadActionStyleProps = stylex.props(styles.downloadAction);
-  const newFileActionStyleProps = stylex.props(styles.newFileAction);
 
   return (
     <div className="page-wrap-outer">
@@ -450,12 +445,11 @@ function ProjectCodeFileBody({
           ) : null}
           <div className="code-browse-header">
             <select
-              {...branchPickerStyleProps}
               id="branches"
               data-format="branch"
               data-dropdown-css-class="branches"
-              className={`pull-left ${branchPickerStyleProps.className}${isFolder ? "" : " mb10"}`}
-              data-stylex-owner="project-code-file-branch-picker"
+              className={`pull-left${isFolder ? "" : " mb10"}`}
+              data-owner="project-code-file-branch-picker"
               defaultValue={projectHref(
                 runtimeConfig.basePath,
                 ownerName,
@@ -488,10 +482,9 @@ function ProjectCodeFileBody({
               })}
             </select>
             <div
-              {...breadcrumbsStyleProps}
               id="breadcrumbs"
-              className={`${breadcrumbsStyleProps.className} code-breadcrumb-wrap ml10 pull-left`}
-              data-stylex-owner="project-code-file-breadcrumbs"
+              className="code-breadcrumb-wrap ml10 pull-left"
+              data-owner="project-code-file-breadcrumbs"
             >
               <Link
                 onClick={lockedLinkClick}
@@ -534,21 +527,13 @@ function ProjectCodeFileBody({
             </div>
             {isGit ? (
               <>
-                <div
-                  {...downloadActionStyleProps}
-                  className={`pull-right ${downloadActionStyleProps.className}`}
-                  data-stylex-owner="project-code-file-download-action"
-                >
+                <div className="pull-right" data-owner="project-code-file-download-action">
                   <Link to={archiveZipPath} reloadDocument className="ybtn">
                     {t("code.download")}
                   </Link>
                 </div>
                 {!currentUserIsAnonymous ? (
-                  <div
-                    {...newFileActionStyleProps}
-                    className={`pull-right ${newFileActionStyleProps.className}`}
-                    data-stylex-owner="project-code-file-new-file-action"
-                  >
+                  <div className="pull-right" data-owner="project-code-file-new-file-action">
                     <Link
                       id="new-file-link"
                       to={newFilePathWithSearch}
@@ -577,7 +562,7 @@ function ProjectCodeFileBody({
             <div
               id="spin"
               style={{ position: "fixed", top: "50%", left: "50%" }}
-              data-stylex-owner="project-code-file-spinner"
+              data-owner="project-code-file-spinner"
             ></div>
             {isFolder ? (
               <FolderList
@@ -625,16 +610,8 @@ function FolderList({
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div
-      {...stylex.props(styles.folderListWrap)}
-      className={`${stylex.props(styles.folderListWrap).className} list-wrap`}
-      data-stylex-owner="project-code-folder-list-wrap"
-    >
-      <div
-        {...stylex.props(styles.folderRowFluid, styles.folderListHead)}
-        className={`${stylex.props(styles.folderRowFluid, styles.folderListHead).className} row-fluid listhead`}
-        data-stylex-owner="project-code-folder-list-head"
-      >
+    <div className="list-wrap" data-owner="project-code-folder-list-wrap">
+      <div className="row-fluid listhead" data-owner="project-code-folder-list-head">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
         </div>
@@ -647,10 +624,7 @@ function FolderList({
       </div>
 
       {code.entries.length === 0 ? (
-        <div
-          className={`${stylex.props(styles.noFiles).className} alert alert-warning nm`}
-          data-stylex-owner="project-code-file-no-files"
-        >
+        <div className="alert alert-warning nm" data-owner="project-code-file-no-files">
           {t("code.nofiles")}
         </div>
       ) : null}
@@ -687,17 +661,8 @@ function FolderListEntry({
   const encodedBranch = encodeURIComponent(selectedBranch);
 
   return (
-    <div
-      {...stylex.props(styles.folderRow, styles.folderRowFluid)}
-      id={rowId}
-      className={`${stylex.props(styles.folderRow, styles.folderRowFluid).className} row-fluid listitem`}
-      data-stylex-owner="project-code-folder-row"
-    >
-      <div
-        {...stylex.props(styles.folderText, styles.folderFilename)}
-        className={`${stylex.props(styles.folderText, styles.folderFilename).className} span6 filename`}
-        data-stylex-owner="project-code-folder-filename"
-      >
+    <div id={rowId} className="row-fluid listitem" data-owner="project-code-folder-row">
+      <div className="span6 filename" data-owner="project-code-folder-filename">
         <Link
           activeOptions={{
             exact: true,
@@ -720,16 +685,8 @@ function FolderListEntry({
           {entry.name}
         </Link>
       </div>
-      <div
-        {...stylex.props(styles.folderText, styles.folderCommitMessage)}
-        className={`${stylex.props(styles.folderText, styles.folderCommitMessage).className} span5 commitMsg`}
-        data-stylex-owner="project-code-folder-commit-message"
-      >
-        <span
-          {...stylex.props(styles.folderCommitMessageWrapper)}
-          className={`${stylex.props(styles.folderCommitMessageWrapper).className} ml5`}
-          data-stylex-owner="project-code-folder-commit-message-wrapper"
-        >
+      <div className="span5 commitMsg" data-owner="project-code-folder-commit-message">
+        <span className="ml5" data-owner="project-code-folder-commit-message-wrapper">
           <Link
             activeOptions={{
               exact: true,
@@ -749,11 +706,7 @@ function FolderListEntry({
           </Link>
         </span>
       </div>
-      <div
-        {...stylex.props(styles.folderCommitDate)}
-        className={`${stylex.props(styles.folderCommitDate).className} span1 commitDate`}
-        data-stylex-owner="project-code-folder-commit-date"
-      >
+      <div className="span1 commitDate" data-owner="project-code-folder-commit-date">
         {entry.commitDate}
       </div>
     </div>
@@ -783,8 +736,6 @@ function FileView({
 }) {
   const { t } = useLegacyMessages();
   const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
-  const openBrowserWrapStyleProps = stylex.props(styles.openBrowserWrap);
-  const commentCountStyleProps = stylex.props(styles.commentCount);
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
@@ -813,20 +764,10 @@ function FileView({
   );
 
   return (
-    <div
-      className={`${stylex.props(styles.fileWrap).className} file-wrap`}
-      data-stylex-owner="project-code-file-wrap"
-    >
-      <div
-        className={`${stylex.props(styles.fileHeader).className} file-header nm`}
-        data-stylex-owner="project-code-file-header"
-      >
-        <div
-          id="fileInfo"
-          className={`${stylex.props(styles.fileInfo).className} file-info`}
-          data-stylex-owner="project-code-file-info"
-        >
-          <span id="commiter" className="commiter" data-stylex-owner="project-code-file-author">
+    <div className="file-wrap" data-owner="project-code-file-wrap">
+      <div className="file-header nm" data-owner="project-code-file-header">
+        <div id="fileInfo" className="file-info" data-owner="project-code-file-info">
+          <span id="commiter" className="commiter" data-owner="project-code-file-author">
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
@@ -847,7 +788,6 @@ function FileView({
               <img src={stringField(file.avatarUrl, "")} alt="" width="32" height="32" />
             </Link>
             <Link
-              {...stylex.props(styles.authorLink)}
               to="/$user"
               params={{ user: authorLoginId }}
               activeOptions={{
@@ -861,16 +801,16 @@ function FileView({
                 className: undefined,
                 "data-status": undefined,
               }}
-              className={`${stylex.props(styles.authorLink).className} ml5`}
-              data-stylex-owner="project-code-file-author-link"
+              className="ml5"
+              data-owner="project-code-file-author-link"
             >
               {stringField(file.author, "")}
             </Link>
           </span>
-          <span id="commitDate" className="commitDate" data-stylex-owner="project-code-file-date">
+          <span id="commitDate" className="commitDate" data-owner="project-code-file-date">
             {stringField(file.createdDate, "")}
           </span>
-          <span id="revisionNo" className="revision" data-stylex-owner="project-code-file-revision">
+          <span id="revisionNo" className="revision" data-owner="project-code-file-revision">
             <Link
               to={projectPath(ownerName, projectName, "commit", commitId)}
               search={{ branch: selectedBranch }}
@@ -890,36 +830,27 @@ function FileView({
               {isGit ? shortCommitId : `Revision ${commitId}`}
               {numberField(file.commentCount) > 0 ? (
                 <span
-                  {...commentCountStyleProps}
-                  className={`${commentCountStyleProps.className} number-of-comments ml5`}
-                  data-stylex-owner="project-code-file-comment-count"
+                  className="number-of-comments ml5"
+                  data-owner="project-code-file-comment-count"
                 >
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}
                 </span>
               ) : null}
             </Link>
           </span>
-          <span
-            id="commitMessage"
-            className="commitMsg"
-            data-stylex-owner="project-code-file-message"
-          >
+          <span id="commitMessage" className="commitMsg" data-owner="project-code-file-message">
             {stringField(file.commitMessage, "")}
           </span>
           <span>{stringField(file.lineEnding, "")}</span>
         </div>
-        <div
-          className={`${stylex.props(styles.fileActions).className} pull-right`}
-          data-stylex-owner="project-code-file-actions"
-        >
+        <div className="pull-right" data-owner="project-code-file-actions">
           {!isBinary ? (
             <>
               <Link
-                {...stylex.props(styles.action)}
                 to={rawPath}
                 reloadDocument
-                className={`${stylex.props(styles.action).className} ybtn`}
-                data-stylex-owner="project-code-file-raw-action"
+                className="ybtn"
+                data-owner="project-code-file-raw-action"
                 target="_blank"
               >
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
@@ -938,9 +869,8 @@ function FileView({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  {...stylex.props(styles.action)}
-                  className={`${stylex.props(styles.action).className} ybtn`}
-                  data-stylex-owner="project-code-file-edit-action"
+                  className="ybtn"
+                  data-owner="project-code-file-edit-action"
                 >
                   Edit
                 </Link>
@@ -948,9 +878,8 @@ function FileView({
             </>
           ) : null}
           <span
-            {...openBrowserWrapStyleProps}
-            className={`open-in-browser-popover ${openBrowserWrapStyleProps.className ?? ""}`.trim()}
-            data-stylex-owner="project-code-file-open-wrap"
+            className="open-in-browser-popover"
+            data-owner="project-code-file-open-wrap"
             onBlur={() => setIsOpenInBrowserPopoverVisible(false)}
             onFocus={() => setIsOpenInBrowserPopoverVisible(true)}
             onMouseEnter={() => setIsOpenInBrowserPopoverVisible(true)}
@@ -960,18 +889,16 @@ function FileView({
               id="open-in-browser"
               to={openPath}
               reloadDocument
-              {...stylex.props(styles.action)}
-              className={`${stylex.props(styles.action).className} ybtn`}
-              data-stylex-owner="project-code-file-open-action"
+              className="ybtn"
+              data-owner="project-code-file-open-action"
               target="_blank"
             >
               <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
             </Link>
             {isOpenInBrowserPopoverVisible ? (
               <div
-                {...stylex.props(styles.popover)}
-                className={`popover top in ${stylex.props(styles.popover).className ?? ""}`.trim()}
-                data-stylex-owner="project-code-file-open-popover"
+                className="popover top in"
+                data-owner="project-code-file-open-popover"
                 role="tooltip"
               >
                 <div className="arrow"></div>
@@ -992,9 +919,8 @@ function FileView({
               className: undefined,
               "data-status": undefined,
             }}
-            {...stylex.props(styles.action)}
-            className={`${stylex.props(styles.action).className} ybtn`}
-            data-stylex-owner="project-code-file-history-action"
+            className="ybtn"
+            data-owner="project-code-file-history-action"
           >
             {t("code.history")}
           </Link>
@@ -1002,26 +928,15 @@ function FileView({
       </div>
       {isBinary ? (
         mimeType.startsWith("image/") ? (
-          <div
-            id="showImage"
-            className={`${stylex.props(styles.imageWrap).className} image-wrap`}
-            data-stylex-owner="project-code-file-image"
-          >
-            <img {...stylex.props(styles.image)} src={rawHref} alt="" />
+          <div id="showImage" className="image-wrap" data-owner="project-code-file-image">
+            <img className="code-file-image" src={rawHref} alt="" />
           </div>
         ) : (
-          <div
-            id="showFile"
-            className={`${stylex.props(styles.binaryFile).className} file-wrap`}
-            data-stylex-owner="project-code-file-binary"
-          >
+          <div id="showFile" className="file-wrap" data-owner="project-code-file-binary">
             <p>
               <strong className="filename">{filePath.split("/").pop() ?? filePath}</strong>
               <br />
-              <span
-                className={`${stylex.props(styles.binarySize).className} filesize`}
-                data-stylex-owner="project-code-file-size"
-              >
+              <span className="filesize" data-owner="project-code-file-size">
                 {stringField(file.size, "")}
               </span>
               <br />
@@ -1049,8 +964,8 @@ function FileView({
       ) : isMarkdownPath(filePath) ? (
         <div
           id="codeVal"
-          className={`${stylex.props(styles.markdown).className} markdown-wrap codebrowser-markdown`}
-          data-stylex-owner="project-code-file-markdown"
+          className="markdown-wrap codebrowser-markdown"
+          data-owner="project-code-file-markdown"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{fileText}</ReactMarkdown>
         </div>
@@ -1064,9 +979,9 @@ function FileView({
             style={codeFileTheme}
             PreTag="pre"
             id="showCode"
-            className={`${stylex.props(styles.code).className} code-wrap`}
+            className="code-wrap"
             data-mimetype={mimeType}
-            data-stylex-owner="project-code-file-source"
+            data-owner="project-code-file-source"
             codeTagProps={{ className: "code-content" }}
           >
             {fileText}

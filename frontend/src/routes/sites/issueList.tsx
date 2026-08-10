@@ -2,8 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
-import { type KeyboardEvent } from "react";
+import { type CSSProperties, type KeyboardEvent } from "react";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   siteIssuesQueryOptions,
@@ -14,9 +13,7 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { type RuntimeConfig } from "../../runtime-config";
-import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { siteIssueListColors } from "./-issueList.stylex";
 
 type IssueListSearch = {
   pageNum: number;
@@ -28,473 +25,18 @@ type IssueListRouteSearch = {
   state?: string;
 } & Record<string, unknown>;
 
-const paginationStyles = stylex.create({
-  paginationSprite: (spriteUrl: string) => ({
-    "--site-issue-list-pagination-sprite": `url(${spriteUrl})`,
-  }),
-});
-
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
 const legacyIssueListLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 const legacySiteIssueListSidebarSearch = {
   __legacySiteIssueListSidebarActiveMarker: "inactive",
 };
-const styles = stylex.create({
-  pageWrapOuter: {
-    boxSizing: "border-box",
-    marginTop: "10px",
-    minHeight: "450px",
-    minWidth: {
-      "@media (max-width: 720px)": "10px",
-    },
-    padding: {
-      default: "0px 10px",
-      "@media (max-width: 720px)": "0px",
-    },
-    width: "100%",
-  },
-  breadcrumbOuter: {
-    boxSizing: "border-box",
-    minWidth: {
-      "@media (max-width: 720px)": "10px",
-    },
-    padding: "0px 10px",
-    width: "100%",
-  },
-  breadcrumbInner: {
-    margin: "0px auto",
-  },
-  breadcrumbHeading: {
-    color: "inherit",
-    fontFamily: "inherit",
-    fontSize: "24.5px",
-    fontWeight: "700",
-    lineHeight: "30px",
-    margin: "10px 0px",
-    padding: "10px 10px 5px",
-    textRendering: "optimizeLegibility",
-  },
-  settingWrap: {
-    margin: "0px auto",
-  },
-  settingGrid: {
-    width: "100%",
-    "::before": {
-      content: '""',
-      display: "table",
-      lineHeight: "0px",
-    },
-    "::after": {
-      clear: "both",
-      content: '""',
-      display: "table",
-      lineHeight: "0px",
-    },
-  },
-  settingColumn: {
-    boxSizing: "border-box",
-    display: "block",
-    float: "left",
-    minHeight: "30px",
-  },
-  settingSidebarColumn: {
-    marginLeft: "0px",
-    width: "14.893617021276595%",
-  },
-  settingContentColumn: {
-    marginLeft: "2.127659574468085%",
-    width: "82.97872340425532%",
-  },
-  sidebar: {
-    margin: "0px",
-    padding: "0px",
-    listStyle: "none",
-  },
-  sidebarItem: {
-    borderLeftColor: siteIssueListColors.neutralBorder,
-    borderLeftStyle: "solid",
-    borderLeftWidth: "4px",
-    fontSize: "14px",
-    lineHeight: "30px",
-    marginTop: "3px",
-  },
-  sidebarFirstItem: { marginTop: "0px" },
-  sidebarActiveItem: {
-    borderLeftColor: siteIssueListColors.accent,
-    fontWeight: "bold",
-  },
-  sidebarLink: {
-    backgroundColor: {
-      ":hover": siteIssueListColors.neutralBorder,
-      ":focus": siteIssueListColors.neutralBorder,
-    },
-    color: "inherit",
-    display: "block",
-    outline: {
-      default: "none",
-      ":hover": "none",
-      ":focus": "none",
-    },
-    padding: "5px 10px",
-    textDecoration: {
-      default: "none",
-      ":hover": "none",
-      ":focus": "none",
-    },
-  },
-  sidebarActiveLink: {
-    backgroundColor: {
-      ":hover": "transparent",
-      ":focus": "transparent",
-    },
-  },
-  sidebarBadge: {
-    backgroundColor: siteIssueListColors.badgeSurface,
-    borderColor: siteIssueListColors.whiteSurface,
-    borderRadius: "10px",
-    borderStyle: "solid",
-    borderWidth: "2px",
-    boxShadow: "0px 1px 1px rgba(0,0,0,0.2), inset 0px 1px 1px rgba(0,0,0,0.1)",
-    color: siteIssueListColors.badgeText,
-    fontSize: "12px",
-    lineHeight: "20px",
-    padding: "0px 5px",
-  },
-  titleArea: {
-    overflow: "hidden",
-    marginBottom: "29px",
-    paddingBottom: "8px",
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderBottomColor: siteIssueListColors.titleBorder,
-  },
-  title: {
-    margin: "0px",
-    fontSize: "1.5em",
-    color: siteIssueListColors.titleText,
-    lineHeight: "30px",
-    float: "left",
-  },
-  issueListStateTabs: {
-    marginBottom: "20px",
-    marginLeft: "0px",
-    listStyle: "none",
-    borderBottomWidth: "1px",
-    borderBottomStyle: "solid",
-    borderBottomColor: siteIssueListColors.titleBorder,
-    "::before": {
-      content: '""',
-      display: "table",
-      lineHeight: "0px",
-    },
-    "::after": {
-      content: '""',
-      display: "table",
-      lineHeight: "0px",
-      clear: "both",
-    },
-  },
-  issueListStateTabItem: {
-    float: "left",
-    marginBottom: "-1px",
-  },
-  issueListStateTabItemSelected: {
-    marginBottom: "-1px",
-  },
-  issueListStateTabLink: {
-    display: "block",
-    paddingInline: {
-      default: "30px",
-      [globalBreakpoints.mobile]: "5px",
-    },
-    paddingBlock: "8px",
-    marginRight: "2px",
-    lineHeight: "20px",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: {
-      default: "transparent",
-      ":hover": siteIssueListColors.neutralBorder,
-      ":focus": siteIssueListColors.neutralBorder,
-    },
-    borderRadius: "4px 4px 0px 0px",
-    color: siteIssueListColors.linkInteractiveText,
-    fontWeight: "bold",
-    backgroundColor: {
-      ":hover": siteIssueListColors.interactiveSurface,
-      ":focus": siteIssueListColors.interactiveSurface,
-    },
-    textDecoration: {
-      ":hover": "none",
-      ":focus": "none",
-    },
-  },
-  issueListStateTabLinkSelected: {
-    color: {
-      default: siteIssueListColors.selectedText,
-      ":hover": siteIssueListColors.selectedText,
-      ":focus": siteIssueListColors.selectedText,
-    },
-    cursor: "default",
-    backgroundColor: {
-      default: siteIssueListColors.whiteSurface,
-      ":hover": siteIssueListColors.whiteSurface,
-      ":focus": siteIssueListColors.whiteSurface,
-    },
-    borderColor: {
-      default: siteIssueListColors.titleBorder,
-      ":hover": siteIssueListColors.titleBorder,
-      ":focus": siteIssueListColors.titleBorder,
-    },
-    borderBottomColor: {
-      default: "transparent",
-      ":hover": "transparent",
-      ":focus": "transparent",
-    },
-    fontWeight: "bold",
-  },
-  issueListContainer: {
-    listStyle: "none",
-    marginLeft: {
-      default: "0px",
-      [globalBreakpoints.mobile]: "10px",
-    },
-  },
-  issueListRow: {
-    width: "100%",
-    "::before": {
-      content: '""',
-      display: "table",
-      lineHeight: "0px",
-    },
-    "::after": {
-      clear: "both",
-      content: '""',
-      display: "table",
-      lineHeight: "0px",
-    },
-    paddingBlock: "10px",
-    paddingInline: "0px",
-    borderBottomColor: siteIssueListColors.rowBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    lineHeight: "70px",
-  },
-  issueListRowEven: {
-    backgroundColor: siteIssueListColors.evenRowSurface,
-  },
-  issueListProjectAvatar: {
-    width: "45px",
-    height: "45px",
-    marginRight: "10px",
-    marginTop: "3px",
-    float: "left",
-    display: "inline-block",
-    verticalAlign: "middle",
-    overflow: "hidden",
-    backgroundColor: siteIssueListColors.titleBorder,
-    borderRadius: "3px",
-  },
-  issueListProjectAvatarImage: {
-    width: "100%",
-    verticalAlign: "top",
-  },
-  issueInfo: {
-    lineHeight: "20px",
-    marginTop: "5px",
-  },
-  issueProjectLink: {
-    fontSize: "15px",
-    fontWeight: "bold",
-    display: "inline-block",
-    lineHeight: "20px",
-    color: siteIssueListColors.linkText,
-  },
-  issueInfoSeparator: {
-    fontSize: "15px",
-    fontWeight: "bold",
-    paddingInline: "5px",
-  },
-  issueTitleLink: {
-    fontSize: "15px",
-    fontWeight: "bold",
-  },
-  issueListMetadata: {
-    fontSize: "11px",
-    lineHeight: "20px",
-  },
-  issueListAuthorAvatar: {
-    width: "14px",
-    height: "14px",
-    display: "inline-block",
-    verticalAlign: "middle",
-    overflow: "hidden",
-    backgroundColor: siteIssueListColors.titleBorder,
-    borderRadius: "3px",
-  },
-  issueListAuthorAvatarImage: {
-    width: "100%",
-    verticalAlign: "top",
-  },
-  issueListMetadataItem: {
-    marginBlock: "0px",
-    marginInline: "5px",
-  },
-  issueListCommentsIcon: {
-    backgroundImage: "none",
-    display: "inline-block",
-    fontFamily: "yobicon",
-    fontStyle: "normal",
-    fontVariant: "normal",
-    fontWeight: "normal",
-    lineHeight: 1,
-    textDecoration: "none",
-    verticalAlign: "middle",
-    WebkitFontSmoothing: "antialiased",
-    MozOsxFontSmoothing: "grayscale",
-    "::before": { content: '"\\e4b7"' },
-  },
-  issueListPaginationWrapper: {
-    width: "100%",
-    textAlign: "center",
-    margin: "20px 0px",
-    clear: "both",
-  },
-  issueListPaginationList: {
-    margin: "0px",
-    marginLeft: {
-      default: "-120px",
-      [globalBreakpoints.mobile]: "0px",
-    },
-    padding: "0px",
-    listStyle: "none",
-    fontSize: "0px",
-    display: "inline-block",
-  },
-  issueListPaginationItem: {
-    display: "inline-block",
-    padding: "0px 10px",
-    fontSize: "12px",
-    color: siteIssueListColors.mutedText,
-  },
-  issueListPaginationIconItem: {
-    padding: "0px 5px",
-  },
-  issueListPaginationDelimiter: {
-    color: siteIssueListColors.titleBorder,
-    padding: "0px 5px",
-  },
-  issueListPaginationInput: {
-    MozAppearance: "textfield",
-    margin: "0px",
-    width: "30px",
-    textAlign: "center",
-    fontWeight: "bold",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: {
-      default: siteIssueListColors.neutralBorder,
-      ":hover": siteIssueListColors.accent,
-      ":focus": siteIssueListColors.accent,
-    },
-    color: {
-      ":hover": siteIssueListColors.accent,
-      ":focus": siteIssueListColors.accent,
-    },
-    boxShadow: {
-      ":hover": "inset -1px -1px 2px rgba(0, 0, 0, 0.1)",
-      ":focus": "inset -1px -1px 2px rgba(0, 0, 0, 0.1)",
-    },
-  },
-  issueListPaginationLabel: {
-    fontSize: "11px",
-    color: siteIssueListColors.accent,
-  },
-  issueListPaginationOffLabel: {
-    color: siteIssueListColors.mutedText,
-  },
-  issueListPaginationIcon: {
-    backgroundImage: "var(--site-issue-list-pagination-sprite)",
-    backgroundRepeat: "no-repeat",
-    display: "inline-block",
-    verticalAlign: "middle",
-    width: "6px",
-    height: "9px",
-  },
-  issueListPaginationPrevIcon: {
-    backgroundPosition: "-136px -139px",
-    marginRight: "10px",
-  },
-  issueListPaginationPrevDisabledIcon: {
-    backgroundPosition: "-164px -2px",
-  },
-  issueListPaginationNextIcon: {
-    backgroundPosition: "-146px -139px",
-    marginLeft: "10px",
-  },
-  issueListPaginationNextDisabledIcon: {
-    backgroundPosition: "-23px -13px",
-  },
-});
-const titleAreaStyleProps = stylex.props(styles.titleArea);
-const titleStyleProps = stylex.props(styles.title);
-const issueListStateTabsStyleProps = stylex.props(styles.issueListStateTabs);
-const issueListContainerStyleProps = stylex.props(styles.issueListContainer);
-const issueListRowStyleProps = stylex.props(styles.issueListRow);
-const issueListRowEvenStyleProps = stylex.props(styles.issueListRow, styles.issueListRowEven);
-const issueListProjectAvatarStyleProps = stylex.props(styles.issueListProjectAvatar);
-const issueListProjectAvatarImageStyleProps = stylex.props(styles.issueListProjectAvatarImage);
-const issueInfoStyleProps = stylex.props(styles.issueInfo);
-const issueProjectLinkStyleProps = stylex.props(styles.issueProjectLink);
-const issueInfoSeparatorStyleProps = stylex.props(styles.issueInfoSeparator);
-const issueTitleLinkStyleProps = stylex.props(styles.issueTitleLink);
-const issueListMetadataStyleProps = stylex.props(styles.issueListMetadata);
-const issueListAuthorAvatarStyleProps = stylex.props(styles.issueListAuthorAvatar);
-const issueListAuthorAvatarImageStyleProps = stylex.props(styles.issueListAuthorAvatarImage);
-const issueListMetadataItemStyleProps = stylex.props(styles.issueListMetadataItem);
-const issueListCommentsIconStyleProps = stylex.props(styles.issueListCommentsIcon);
-const issueListPaginationWrapperStyleProps = stylex.props(styles.issueListPaginationWrapper);
-const issueListPaginationListStyleProps = stylex.props(styles.issueListPaginationList);
-const issueListPaginationItemStyleProps = stylex.props(styles.issueListPaginationItem);
-const issueListPaginationIconItemStyleProps = stylex.props(
-  styles.issueListPaginationItem,
-  styles.issueListPaginationIconItem,
-);
-const issueListPaginationDelimiterStyleProps = stylex.props(
-  styles.issueListPaginationItem,
-  styles.issueListPaginationDelimiter,
-);
-const issueListPaginationInputStyleProps = stylex.props(styles.issueListPaginationInput);
-const issueListPaginationLabelStyleProps = stylex.props(styles.issueListPaginationLabel);
-const issueListPaginationOffLabelStyleProps = stylex.props(
-  styles.issueListPaginationLabel,
-  styles.issueListPaginationOffLabel,
-);
-const issueListPaginationPrevIconStyleProps = stylex.props(
-  styles.issueListPaginationIcon,
-  styles.issueListPaginationPrevIcon,
-);
-const issueListPaginationPrevDisabledIconStyleProps = stylex.props(
-  styles.issueListPaginationIcon,
-  styles.issueListPaginationPrevIcon,
-  styles.issueListPaginationPrevDisabledIcon,
-);
-const issueListPaginationNextIconStyleProps = stylex.props(
-  styles.issueListPaginationIcon,
-  styles.issueListPaginationNextIcon,
-);
-const issueListPaginationNextDisabledIconStyleProps = stylex.props(
-  styles.issueListPaginationIcon,
-  styles.issueListPaginationNextIcon,
-  styles.issueListPaginationNextDisabledIcon,
-);
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
@@ -532,35 +74,17 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   return (
     <>
       <title>{t("title.siteSetting")}</title>
-      <div
-        {...stylex.props(styles.breadcrumbOuter)}
-        data-stylex-owner="site-issue-list-breadcrumb-outer"
-      >
-        <div
-          {...stylex.props(styles.breadcrumbInner)}
-          data-stylex-owner="site-issue-list-breadcrumb-inner"
-        >
-          <h3
-            {...stylex.props(styles.breadcrumbHeading)}
-            data-stylex-owner="site-issue-list-breadcrumb-heading"
-          >
+      <div data-owner="site-issue-list-breadcrumb-outer">
+        <div data-owner="site-issue-list-breadcrumb-inner">
+          <h3 data-owner="site-issue-list-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>
       </div>
-      <div
-        {...stylex.props(styles.pageWrapOuter)}
-        data-stylex-owner="site-issue-list-page-wrap-outer"
-      >
-        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-issue-list-setting-wrap">
-          <div
-            {...stylex.props(styles.settingGrid)}
-            data-stylex-owner="site-issue-list-setting-grid"
-          >
-            <div
-              {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
-              data-stylex-owner="site-issue-list-setting-sidebar-column"
-            >
+      <div data-owner="site-issue-list-page-wrap-outer">
+        <div data-owner="site-issue-list-setting-wrap">
+          <div data-owner="site-issue-list-setting-grid">
+            <div data-owner="site-issue-list-setting-sidebar-column">
               <SiteAdminSidebar
                 activeTo="/sites/issueList"
                 badgeOwner="site-issue-list-sidebar-badge"
@@ -576,30 +100,27 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 ownerPrefix="site-issue-list-sidebar"
                 showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
                 styleSlots={{
-                  activeItem: [styles.sidebarItem, styles.sidebarActiveItem],
-                  activeLink: [styles.sidebarLink, styles.sidebarActiveLink],
-                  badge: [styles.sidebarBadge],
-                  firstItem: [styles.sidebarItem, styles.sidebarFirstItem],
-                  item: [styles.sidebarItem],
-                  link: [styles.sidebarLink],
-                  nav: [styles.sidebar],
+                  activeItem: [],
+                  activeLink: [],
+                  badge: [],
+                  firstItem: [],
+                  item: [],
+                  link: [],
+                  nav: [],
                 }}
               />
             </div>
-            <div
-              {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
-              data-stylex-owner="site-issue-list-setting-content-column"
-            >
-              <div {...titleAreaStyleProps} data-stylex-owner="site-issue-list-title-strip">
-                <h2 {...titleStyleProps} data-stylex-owner="site-issue-list-title-heading">
+            <div data-owner="site-issue-list-setting-content-column">
+              <div data-owner="site-issue-list-title-strip">
+                <h2 data-owner="site-issue-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.issueList" />
                 </h2>
               </div>
-              <ul {...issueListStateTabsStyleProps} data-stylex-owner="site-issue-list-state-tabs">
+              <ul data-owner="site-issue-list-state-tabs">
                 <IssueStateTab state="open" selected={state} />
                 <IssueStateTab state="closed" selected={state} />
               </ul>
-              <ul {...issueListContainerStyleProps} data-stylex-owner="site-issue-list-container">
+              <ul data-owner="site-issue-list-container">
                 {(query.data?.issues ?? []).map((issue, index) => (
                   <IssueListItem
                     issue={issue}
@@ -678,23 +199,9 @@ function IssueListPagination({
   };
 
   return (
-    <div
-      {...issueListPaginationWrapperStyleProps}
-      id="pagination"
-      className={issueListPaginationWrapperStyleProps.className}
-      data-stylex-owner="site-issue-list-pagination"
-    >
-      <ul
-        {...issueListPaginationListStyleProps}
-        className={issueListPaginationListStyleProps.className}
-        data-stylex-owner="site-issue-list-pagination-list"
-      >
-        <li
-          {...issueListPaginationIconItemStyleProps}
-          className={issueListPaginationIconItemStyleProps.className}
-          data-pagination-variant="icon"
-          data-stylex-owner="site-issue-list-pagination-item"
-        >
+    <div id="pagination" data-owner="site-issue-list-pagination">
+      <ul data-owner="site-issue-list-pagination-list">
+        <li data-pagination-variant="icon" data-owner="site-issue-list-pagination-item">
           {hasPrev ? (
             <Link
               {...legacyIssueListLinkProps}
@@ -702,46 +209,35 @@ function IssueListPagination({
               to="/sites/issueList"
             >
               <i
-                {...issueListPaginationPrevIconStyleProps}
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
-                data-stylex-owner="site-issue-list-pagination-first"
+                style={
+                  {
+                    "--site-issue-list-pagination-sprite": `url(${legacySpriteUrl})`,
+                  } as CSSProperties
+                }
+                data-owner="site-issue-list-pagination-first"
               ></i>
-              <span
-                {...issueListPaginationLabelStyleProps}
-                className={issueListPaginationLabelStyleProps.className}
-                data-stylex-owner="site-issue-list-pagination-label"
-              >
-                {t("button.prevPage")}
-              </span>
+              <span data-owner="site-issue-list-pagination-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
-                {...issueListPaginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
-                data-stylex-owner="site-issue-list-pagination-prev"
+                style={
+                  {
+                    "--site-issue-list-pagination-sprite": `url(${legacySpriteUrl})`,
+                  } as CSSProperties
+                }
+                data-owner="site-issue-list-pagination-prev"
               ></i>
-              <span
-                {...issueListPaginationOffLabelStyleProps}
-                className={issueListPaginationOffLabelStyleProps.className}
-                data-pagination-state="off"
-                data-stylex-owner="site-issue-list-pagination-label"
-              >
+              <span data-pagination-state="off" data-owner="site-issue-list-pagination-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...issueListPaginationItemStyleProps}
-          className={issueListPaginationItemStyleProps.className}
-          data-stylex-owner="site-issue-list-pagination-item"
-        >
+        <li data-owner="site-issue-list-pagination-item">
           <input
-            {...issueListPaginationInputStyleProps}
-            className={issueListPaginationInputStyleProps.className}
-            data-stylex-owner="site-issue-list-pagination-input"
+            data-owner="site-issue-list-pagination-input"
             defaultValue={currentPage}
             max={totalPages}
             min={1}
@@ -754,61 +250,40 @@ function IssueListPagination({
             onKeyDown={handleInputKeyDown}
           />
         </li>
-        <li
-          {...issueListPaginationDelimiterStyleProps}
-          className={issueListPaginationDelimiterStyleProps.className}
-          data-pagination-variant="delimiter"
-          data-stylex-owner="site-issue-list-pagination-item"
-        >
+        <li data-pagination-variant="delimiter" data-owner="site-issue-list-pagination-item">
           /
         </li>
-        <li
-          {...issueListPaginationItemStyleProps}
-          className={issueListPaginationItemStyleProps.className}
-          data-stylex-owner="site-issue-list-pagination-item"
-        >
-          {totalPages}
-        </li>
-        <li
-          {...issueListPaginationIconItemStyleProps}
-          className={issueListPaginationIconItemStyleProps.className}
-          data-pagination-variant="icon"
-          data-stylex-owner="site-issue-list-pagination-item"
-        >
+        <li data-owner="site-issue-list-pagination-item">{totalPages}</li>
+        <li data-pagination-variant="icon" data-owner="site-issue-list-pagination-item">
           {hasNext ? (
             <Link
               {...legacyIssueListLinkProps}
               search={pageSearch(currentPage + 1)}
               to="/sites/issueList"
             >
-              <span
-                {...issueListPaginationLabelStyleProps}
-                className={issueListPaginationLabelStyleProps.className}
-                data-stylex-owner="site-issue-list-pagination-label"
-              >
-                {t("button.nextPage")}
-              </span>
+              <span data-owner="site-issue-list-pagination-label">{t("button.nextPage")}</span>
               <i
-                {...issueListPaginationNextIconStyleProps}
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
-                data-stylex-owner="site-issue-list-pagination-next"
+                style={
+                  {
+                    "--site-issue-list-pagination-sprite": `url(${legacySpriteUrl})`,
+                  } as CSSProperties
+                }
+                data-owner="site-issue-list-pagination-next"
               ></i>
             </Link>
           ) : (
             <>
-              <span
-                {...issueListPaginationOffLabelStyleProps}
-                className={issueListPaginationOffLabelStyleProps.className}
-                data-pagination-state="off"
-                data-stylex-owner="site-issue-list-pagination-label"
-              >
+              <span data-pagination-state="off" data-owner="site-issue-list-pagination-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...issueListPaginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
-                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
-                data-stylex-owner="site-issue-list-pagination-last"
+                style={
+                  {
+                    "--site-issue-list-pagination-sprite": `url(${legacySpriteUrl})`,
+                  } as CSSProperties
+                }
+                data-owner="site-issue-list-pagination-last"
               ></i>
             </>
           )}
@@ -828,25 +303,12 @@ function clampPageNum(pageNum: number, totalPages: number) {
 function IssueStateTab({ selected, state }: { selected: string; state: SiteIssueState }) {
   const { t } = useLegacyMessages();
   const isSelected = selected === state;
-  const itemStyleProps = stylex.props(
-    styles.issueListStateTabItem,
-    isSelected && styles.issueListStateTabItemSelected,
-  );
-  const linkStyleProps = stylex.props(
-    styles.issueListStateTabLink,
-    isSelected && styles.issueListStateTabLinkSelected,
-  );
 
   return (
-    <li
-      {...itemStyleProps}
-      data-selected={String(isSelected)}
-      data-stylex-owner="site-issue-list-state-tab-item"
-    >
+    <li data-selected={String(isSelected)} data-owner="site-issue-list-state-tab-item">
       <Link
         {...legacyIssueListLinkProps}
-        {...linkStyleProps}
-        data-stylex-owner="site-issue-list-state-tab-link"
+        data-owner="site-issue-list-state-tab-link"
         search={{ state }}
         to="/sites/issueList"
       >
@@ -858,38 +320,31 @@ function IssueStateTab({ selected, state }: { selected: string; state: SiteIssue
 
 function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
   const projectLogoUrl = issue.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
-  const rowStyleProps = index % 2 === 1 ? issueListRowEvenStyleProps : issueListRowStyleProps;
 
   return (
-    <li {...rowStyleProps} data-stylex-owner="site-issue-list-row">
+    <li data-owner="site-issue-list-row">
       <Link
-        {...issueListProjectAvatarStyleProps}
-        data-stylex-owner="site-issue-list-project-avatar"
+        data-owner="site-issue-list-project-avatar"
         to="/$ownerName/$projectName"
         params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
       >
         <img
-          {...issueListProjectAvatarImageStyleProps}
-          data-stylex-owner="site-issue-list-project-avatar-image"
+          data-owner="site-issue-list-project-avatar-image"
           src={projectLogoUrl}
           alt={issue.projectName}
         />
       </Link>
-      <div {...issueInfoStyleProps} data-stylex-owner="site-issue-list-info">
+      <div data-owner="site-issue-list-info">
         <Link
-          {...issueProjectLinkStyleProps}
-          data-stylex-owner="site-issue-list-project-link"
+          data-owner="site-issue-list-project-link"
           to="/$ownerName/$projectName"
           params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
         >
           {issue.ownerName}/{issue.projectName}
         </Link>
-        <span {...issueInfoSeparatorStyleProps} data-stylex-owner="site-issue-list-separator">
-          ·
-        </span>
+        <span data-owner="site-issue-list-separator">·</span>
         <Link
-          {...issueTitleLinkStyleProps}
-          data-stylex-owner="site-issue-list-title-link"
+          data-owner="site-issue-list-title-link"
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={{
             ownerName: issue.ownerName,
@@ -900,10 +355,9 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
           {issue.title}
         </Link>
       </div>
-      <div {...issueListMetadataStyleProps} data-stylex-owner="site-issue-list-metadata">
+      <div data-owner="site-issue-list-metadata">
         <Link
-          {...issueListAuthorAvatarStyleProps}
-          data-stylex-owner="site-issue-list-author-avatar"
+          data-owner="site-issue-list-author-avatar"
           to="/$user"
           params={{ user: issue.authorLoginId }}
           search={legacyPublicProfileSearch}
@@ -911,15 +365,10 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
         >
           {isDefaultAuthorAvatar(issue.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
-            <img
-              {...issueListAuthorAvatarImageStyleProps}
-              data-stylex-owner="site-issue-list-author-avatar-image"
-              src={issue.authorAvatarUrl}
-            />
+            <img data-owner="site-issue-list-author-avatar-image" src={issue.authorAvatarUrl} />
           ) : (
             <img
-              {...issueListAuthorAvatarImageStyleProps}
-              data-stylex-owner="site-issue-list-author-avatar-image"
+              data-owner="site-issue-list-author-avatar-image"
               src={issue.authorAvatarUrl}
               alt={authorAvatarAlt(issue)}
               width="16"
@@ -928,8 +377,7 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
           )}
         </Link>
         <Link
-          {...issueListMetadataItemStyleProps}
-          data-stylex-owner="site-issue-list-metadata-item"
+          data-owner="site-issue-list-metadata-item"
           to="/$user"
           params={{ user: issue.authorLoginId }}
           search={legacyPublicProfileSearch}
@@ -937,17 +385,10 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
         >
           {issue.authorLabel}
         </Link>
-        <span
-          {...issueListMetadataItemStyleProps}
-          data-stylex-owner="site-issue-list-metadata-item"
-          title={issue.createdTitle}
-        >
+        <span data-owner="site-issue-list-metadata-item" title={issue.createdTitle}>
           {issue.createdLabel}
         </span>
-        <span
-          {...issueListMetadataItemStyleProps}
-          data-stylex-owner="site-issue-list-metadata-item"
-        >
+        <span data-owner="site-issue-list-metadata-item">
           <Link
             to="/$ownerName/$projectName/issue/$issueNumber"
             params={{
@@ -957,10 +398,7 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
             }}
             hash="comments"
           >
-            <i
-              {...issueListCommentsIconStyleProps}
-              data-stylex-owner="site-issue-list-comments-icon"
-            ></i>
+            <i data-owner="site-issue-list-comments-icon"></i>
             {issue.commentCount}
           </Link>
         </span>

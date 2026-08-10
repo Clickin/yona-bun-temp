@@ -114,7 +114,7 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   expect(desktop.viewport).toEqual({ height: 900, scrollWidth: 1366, width: 1366 });
   // F5 dist-truth: app-wide :root line-height 18px (src/app.css:9) vs legacy
   // bootstrap body line-height 20px (bootstrap.css:180) shrinks every line box by
-  // 2px (tagline, dt/dd rows, act-row) — the signup stylex mirrors the legacy
+  // 2px (tagline, dt/dd rows, act-row) — the signup style mirrors the legacy
   // rules (signupform.tsx:29-91, _page.less:1580-1595) so this is the canonical
   // fallback-off rendering, not an app deviation.
   expectBox(desktop.page, { height: 578, width: 1366, x: 0, y: 40 });
@@ -178,13 +178,11 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
 
   const routeRoot = page.locator(".page.full");
   // F6 copy-fix-current-dom: the confirmation notice dropped the legacy
-  // `center-txt` class when it moved to StyleX (signupform.tsx:308,
-  // styles.confirmationNotice; retired per stylex-standalone-signup-confirmation-notice).
+  // `center-txt` class when it moved to Style (signupform.tsx:308,
+  // styles.confirmationNotice; retired per style-standalone-signup-confirmation-notice).
   // Legacy: yona-original/app/views/user/signup.scala.html:30-34.
   await expect(
-    routeRoot.locator(
-      '[data-stylex-owner="standalone-signup-confirmation-notice"] p',
-    ),
+    routeRoot.locator('[data-owner="standalone-signup-confirmation-notice"] p'),
   ).toHaveText([
     "Administrator admission is required for activation.",
     "If needed, please contact moc.elpmaxe@nimda",
@@ -205,7 +203,7 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
     "standalone-signup-confirmation-notice",
     "standalone-signup-form-wrap",
   ]) {
-    await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toBeVisible();
+    await expect(page.locator(`[data-owner="${owner}"]`)).toBeVisible();
   }
   expect(
     await routeRoot
@@ -218,7 +216,7 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
   ).toBe(true);
   await routeRoot.locator("button[type='submit']").click();
   await expect(
-    routeRoot.locator('[data-stylex-owner="standalone-signup-validation-popover"]'),
+    routeRoot.locator('[data-owner="standalone-signup-validation-popover"]'),
   ).toHaveCount(4);
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -232,19 +230,15 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
   await page.unroute("**/api/v1/auth/capabilities");
   await mockCapabilities(page, { socialLoginOnly: true });
   await page.reload();
-  const socialOnlyNotice = page.locator(
-    '[data-stylex-owner="standalone-signup-social-only-notice"]',
-  );
+  const socialOnlyNotice = page.locator('[data-owner="standalone-signup-social-only-notice"]');
   await expect(socialOnlyNotice).toHaveText("Only allow sign-in via social login");
   await expect(socialOnlyNotice).toHaveCSS("display", "block");
   await expect(socialOnlyNotice).toHaveCSS("margin", "0px");
   await expect(socialOnlyNotice).toHaveCSS("text-align", "center");
   const socialBoxes = await page.evaluate(() => {
-    const form = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="standalone-signup-form-wrap"]',
-    );
+    const form = document.querySelector<HTMLElement>('[data-owner="standalone-signup-form-wrap"]');
     const notice = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="standalone-signup-social-only-notice"]',
+      '[data-owner="standalone-signup-social-only-notice"]',
     );
     if (!form || !notice) throw new Error("Missing social-only signup owners");
     const formBox = form.getBoundingClientRect();
@@ -288,13 +282,13 @@ test("signup form translates legacy client validation without plugin hooks", asy
   await page.locator("#email").focus();
   await expect(page.locator("#loginId")).toHaveValue("door.user");
   // F6 copy-fix-current-dom: FieldPopover renders the legacy bootstrap
-  // `popover left in`/`popover-content` DOM as stylex owner/part nodes
+  // `popover left in`/`popover-content` DOM as style owner/part nodes
   // (signupform.tsx:700-731); the retired `.popover` classes are pinned by
-  // stylex-standalone-signup-validation-popover instead. Legacy DOM:
+  // style-standalone-signup-validation-popover instead. Legacy DOM:
   // yona-original/app/views/common/scripts.scala.html validate.js popover.
   await expect(
     page.locator(
-      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="loginId"] [data-stylex-part="validation-popover-content"]',
+      '[data-owner="standalone-signup-validation-popover"][data-validation-for="loginId"] [data-part="validation-popover-content"]',
     ),
   ).toHaveText("Already exists!");
   expect(checkedLoginIds).toEqual(["door.user"]);
@@ -303,7 +297,7 @@ test("signup form translates legacy client validation without plugin hooks", asy
   await page.locator("#email").focus();
   await expect(
     page.locator(
-      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="loginId"] [data-stylex-part="validation-popover-content"]',
+      '[data-owner="standalone-signup-validation-popover"][data-validation-for="loginId"] [data-part="validation-popover-content"]',
     ),
   ).toHaveText(
     "Login ID may contain alphanumeric characters as well as dashes, underscores or dots, but cannot begin or end with underscores or dots.",
@@ -312,28 +306,26 @@ test("signup form translates legacy client validation without plugin hooks", asy
   await page.locator("#password").focus();
   await expect(
     page.locator(
-      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="email"]',
+      '[data-owner="standalone-signup-validation-popover"][data-validation-for="email"]',
     ),
   ).toHaveCount(0);
   await page.locator("#password").pressSequentially("abc");
   await expect(
     page.locator(
-      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="password"] [data-stylex-part="validation-popover-content"]',
+      '[data-owner="standalone-signup-validation-popover"][data-validation-for="password"] [data-part="validation-popover-content"]',
     ),
-  ).toHaveText(
-    "Password must be at least 4 characters in length.",
-  );
+  ).toHaveText("Password must be at least 4 characters in length.");
   await page.locator("#retypedPassword").pressSequentially("abcd");
   await expect(
     page.locator(
-      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="retypedPassword"] [data-stylex-part="validation-popover-content"]',
+      '[data-owner="standalone-signup-validation-popover"][data-validation-for="retypedPassword"] [data-part="validation-popover-content"]',
     ),
   ).toHaveText("Retyped password doesn't match");
 
   await page.locator('form[name="signup"] button[type="submit"]').click();
   await expect(
     page.locator(
-      '[data-stylex-owner="standalone-signup-validation-popover"][data-stylex-validation-for="email"] [data-stylex-part="validation-popover-content"]',
+      '[data-owner="standalone-signup-validation-popover"][data-validation-for="email"] [data-part="validation-popover-content"]',
     ),
   ).toHaveText("Enter valid email address!");
   expect(registerCalls).toBe(0);
@@ -420,14 +412,12 @@ for (const flashCase of [
       .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
       .toBe(`${appPath("/")}${flashCase.search}`);
     // F6 copy-fix-current-dom: RootYoramToast renders the legacy
-    // `#yobiToasts .toast .msg` DOM as stylex owner/part nodes (__root.tsx:530-558)
-    // without the retired `toast`/`msg` classes (stylex-root-toast pins
+    // `#yobiToasts .toast .msg` DOM as style owner/part nodes (__root.tsx:530-558)
+    // without the retired `toast`/`msg` classes (style-root-toast pins
     // `not.toHaveClass(/\btoast\b/)`). Legacy template:
     // yona-original/app/views/common/scripts.scala.html:28-33.
     await expect(
-      page.locator(
-        '[data-stylex-owner="root-yoram-toast"] [data-stylex-part="toast-message"]',
-      ),
+      page.locator('[data-owner="root-yoram-toast"] [data-part="toast-message"]'),
     ).toHaveText(flashCase.message);
     await expect
       .poll(() =>

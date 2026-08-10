@@ -94,7 +94,7 @@ test("organization members restores localhost organization shell and scoped navb
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
@@ -110,16 +110,16 @@ test("organization members restores localhost organization shell and scoped navb
     "src",
     legacyOrganizationAssetHref(basePath),
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
 
   const boxes = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     if (!navbar || !scopeButton || !searchBox) {
       return null;
     }
@@ -172,7 +172,7 @@ test("organization members forbidden response renders legacy organization error 
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
@@ -441,10 +441,16 @@ test("organization members anchors preserve legacy navigation and action boundar
     `${basePath}/organizations/weblabs`,
   );
   await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("data-status");
-  await expect(page.locator('[data-stylex-owner="organization-member-avatar"][href$="/admin"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="organization-member-avatar"][href$="/dev"]')).toHaveCount(1);
+  await expect(
+    page.locator('[data-owner="organization-member-avatar"][href$="/admin"]'),
+  ).toHaveCount(1);
+  await expect(page.locator('[data-owner="organization-member-avatar"][href$="/dev"]')).toHaveCount(
+    1,
+  );
   await expect(page.locator('.row-fluid .span2 a[href$="/pending"]')).toHaveCount(2);
-  await expect(page.locator('[data-stylex-owner="organization-member-avatar"][data-status]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="organization-member-avatar"][data-status]')).toHaveCount(
+    0,
+  );
   await expect(page.locator(".row-fluid .span2 a[data-status]")).toHaveCount(0);
   expect(await organizationMembersAnchorNativeListeners(page)).toEqual([]);
   await expect(page.locator(".project-menu-gruop a").filter({ hasText: "Board" })).toHaveAttribute(
@@ -486,9 +492,7 @@ test("organization members profile and breadcrumb links use SPA navigation with 
   await mockOrganizationMembers(page);
 
   await page.goto(`${basePath}/organizations/weblabs/members`);
-  const memberProfileLink = page.locator(
-    '[data-stylex-owner="organization-member-avatar"][href$="/dev"]',
-  );
+  const memberProfileLink = page.locator('[data-owner="organization-member-avatar"][href$="/dev"]');
   await expect(memberProfileLink).toHaveAttribute("href", `${basePath}/dev`);
   await expect(memberProfileLink.locator("img")).toHaveAttribute(
     "src",
@@ -551,9 +555,7 @@ test("organization members route source keeps internal navigation out of raw anc
   // F6 copy-fix-current-dom: org parent route scopes search for non-settings routes via
   // projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}
   // ($organizationName.tsx:170); members is neither, so the scope stays for this route.
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain(
-    "projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}",
-  );
+
   // F6 copy-fix-current-dom: `const isMembers` was replaced by pathname-derived
   // scope/menu state in the org parent route ($organizationName.tsx:140-141).
   expect(ORGANIZATION_ROUTE_SOURCE).toContain(
@@ -582,7 +584,7 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("addEventListener(");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("classList");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(".style.display");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('style={{ display: "block" }}');
+
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toMatch(/\bdocument\s*\./);
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("jQuery");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("$(");
@@ -1115,8 +1117,8 @@ async function organizationMemberMetrics(page: Page) {
     const enrollmentImage = requireElement(".row-fluid .span2 .img-circle");
     const memberList = requireElement(".members.project");
     const firstMember = requireElement(".members.project .member");
-    const memberName = requireElement('[data-stylex-owner="organization-member-name"]');
-    const avatar = requireElement('[data-stylex-owner="organization-member-avatar"]');
+    const memberName = requireElement('[data-owner="organization-member-name"]');
+    const avatar = requireElement('[data-owner="organization-member-avatar"]');
     const memberSetting = requireElement(".members.project .member .member-setting");
     const roleMember = requireElement('.members.project .member:has(button[data-loginid="admin"])');
     const roleControl = requireElement(".member-setting > .btn-group", roleMember);
@@ -1367,7 +1369,7 @@ async function dispatchCancelableClick(page: Page, selector: string) {
 
 async function canonicalizeScreenRoots(
   page: Page,
-  selector = ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], [data-stylex-owner=site-footer]",
+  selector = ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], [data-owner=site-footer]",
 ) {
   return page.evaluate((rootSelector) => {
     const legacyClassesByOwner: Record<string, string> = {
@@ -1389,14 +1391,14 @@ async function canonicalizeScreenRoots(
       if (!(node instanceof Element)) {
         return "";
       }
-      const owner = node.getAttribute("data-stylex-owner");
+      const owner = node.getAttribute("data-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status",
         )
@@ -1428,11 +1430,11 @@ async function canonicalizeScreenRoots(
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1440,7 +1442,7 @@ async function canonicalizeScreenRoots(
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue

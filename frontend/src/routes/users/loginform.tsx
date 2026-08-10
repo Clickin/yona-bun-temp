@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../../api/auth";
@@ -12,7 +11,6 @@ import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { useRootToast } from "../__root";
-import { loginFormStyles, loginProviderStyles } from "./-loginform.stylex";
 
 type LoginFormSearch = {
   password?: string;
@@ -27,20 +25,6 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   socialLoginOnly?: boolean;
 };
 
-const taglineWrapClassName = stylex.props(loginFormStyles.taglineWrap).className;
-const titleClassName = stylex.props(loginFormStyles.title).className;
-const taglineClassName = stylex.props(loginFormStyles.tagline).className;
-const formWrapClassName = stylex.props(loginFormStyles.formWrap).className;
-const formListClassName = stylex.props(loginFormStyles.formList).className;
-const textInputClassName = stylex.props(loginFormStyles.textInput).className;
-const passwordInputClassName = stylex.props(loginFormStyles.passwordInput).className;
-const buttonRowClassName = stylex.props(loginFormStyles.buttonRow).className;
-const submitClassName = stylex.props(loginFormStyles.submit).className;
-const rememberMeClassName = stylex.props(loginFormStyles.rememberMe).className;
-const linksWrapClassName = stylex.props(loginFormStyles.linksWrap).className;
-const checkboxClassName = stylex.props(loginFormStyles.checkbox).className;
-const actionRowClassName = stylex.props(loginFormStyles.actionRow).className;
-const verificationHelpClassName = stylex.props(loginFormStyles.verificationHelp).className;
 const LEGACY_LOGIN_ACTION_PATH: "/users/login" = "/users/login";
 
 export const Route = createFileRoute("/users/loginform")({
@@ -139,27 +123,20 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <title>{t("title.login")}</title>
-        <div className="page full" data-stylex-owner="standalone-login-form">
-          <div
-            className={`center-wrap tag-line-wrap login ${taglineWrapClassName}`}
-            data-stylex-part="standalone-login-tagline"
-          >
-            <h1 className={`title ${titleClassName}`} data-stylex-part="standalone-login-title">
+        <div className="page full" data-owner="standalone-login-form">
+          <div className="center-wrap tag-line-wrap login" data-part="standalone-login-tagline">
+            <h1 className="title" data-part="standalone-login-title">
               <HighlightedLegacyMessage message={title} />
             </h1>
-            <p className={`tag-line ${taglineClassName}`} data-stylex-part="standalone-login-copy">
+            <p className="tag-line" data-part="standalone-login-copy">
               {t("app.description")}
             </p>
           </div>
-          <div
-            className={`login-form-wrap frm-wrap ${formWrapClassName}`}
-            data-stylex-part="standalone-login-form-wrap"
-          >
+          <div className="login-form-wrap frm-wrap" data-part="standalone-login-form-wrap">
             {capabilities?.emailVerificationEnabled === true ? (
               <div
-                className={verificationHelpClassName}
-                data-stylex-owner="standalone-login-verification-help"
-                data-stylex-part="standalone-login-verification-help-message"
+                data-owner="standalone-login-verification-help"
+                data-part="standalone-login-verification-help-message"
               >
                 {t("notification.confirm.mail.will.be.sent")}
               </div>
@@ -174,14 +151,14 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
               ) : (
                 <>
-                  <dl className={formListClassName}>
+                  <dl>
                     <dd>
                       <input
                         id="loginIdOrEmailD"
                         name="loginIdOrEmail"
                         type="text"
-                        className={`text email ${textInputClassName}`}
-                        data-stylex-part="standalone-login-identifier"
+                        className="text email"
+                        data-part="standalone-login-identifier"
                         autoComplete="off"
                         placeholder={loginIdPlaceholder}
                       />
@@ -191,26 +168,23 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         id="password"
                         name="password"
                         type="password"
-                        className={`text password ${textInputClassName} ${passwordInputClassName}`}
-                        data-stylex-part="standalone-login-password"
+                        className="text password"
+                        data-part="standalone-login-password"
                         autoComplete="off"
                         placeholder={passwordPlaceholder}
                       />
                     </dd>
                   </dl>
                   {submitError ? (
-                    <div className="error-message" data-stylex-part="standalone-login-error">
+                    <div className="error-message" data-part="standalone-login-error">
                       {submitError}
                     </div>
                   ) : null}
-                  <div
-                    className={`btns-row ${buttonRowClassName}`}
-                    data-stylex-part="standalone-login-submit-row"
-                  >
+                  <div className="btns-row" data-part="standalone-login-submit-row">
                     <button
                       type="submit"
-                      className={`ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`}
-                      data-stylex-part="standalone-login-submit"
+                      className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                      data-part="standalone-login-submit"
                       disabled={signInMutation.isPending}
                     >
                       {t("button.login")}
@@ -219,14 +193,11 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 </>
               )}
 
-              <div
-                className={`${stylex.props(loginProviderStyles.row).className} btns-row nm`}
-                data-stylex-owner="standalone-login-provider-row"
-              >
+              <div className="btns-row nm" data-owner="standalone-login-provider-row">
                 {socialProviders.length > 0 && !socialLoginOnly ? (
                   <div
-                    className={`${stylex.props(loginProviderStyles.titleLine).className} social-login-title-line`}
-                    data-stylex-owner="standalone-login-provider-title"
+                    className="social-login-title-line"
+                    data-owner="standalone-login-provider-title"
                   >
                     {t("title.or")}
                   </div>
@@ -240,17 +211,14 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 ))}
               </div>
               {!socialLoginOnly ? (
-                <div
-                  className={`act-row mt5 ${actionRowClassName}`}
-                  data-stylex-part="standalone-login-actions"
-                >
-                  <div className={`remember-me-wrap ${rememberMeClassName}`}>
+                <div className="act-row mt5" data-part="standalone-login-actions">
+                  <div className="remember-me-wrap">
                     <input
                       id="remember-me"
                       type="checkbox"
                       name="rememberMe"
-                      className={`checkbox ${checkboxClassName}`}
-                      data-stylex-part="standalone-login-remember-checkbox"
+                      className="checkbox"
+                      data-part="standalone-login-remember-checkbox"
                       defaultChecked
                     />
                     <label htmlFor="remember-me" className="bg-checkbox">
@@ -258,7 +226,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     </label>
                   </div>
 
-                  <div className={`links-wrap ${linksWrapClassName}`}>
+                  <div className="links-wrap">
                     <Link to="/lostPassword">{t("title.forgotpassword")}</Link>
                   </div>
                 </div>
@@ -312,37 +280,21 @@ function OAuthProviderLink({ basePath, provider }: { basePath: string; provider:
     <Link
       to={providerLoginPath}
       href={prefixBasePath(basePath, providerLoginPath)}
-      className={`${stylex.props(loginProviderStyles.button).className} ybtn oauth-login-btn`}
-      data-stylex-owner="standalone-login-provider-button"
+      className="ybtn oauth-login-btn"
+      data-owner="standalone-login-provider-button"
       reloadDocument
     >
       {normalized === "github" ? (
-        <span
-          className={`${stylex.props(loginProviderStyles.logo).className} auth-provider-logo`}
-          data-stylex-owner="standalone-login-provider-logo"
-        >
-          <span
-            className={`${stylex.props(loginProviderStyles.github).className} github`}
-            data-stylex-owner="standalone-login-provider-github"
-          >
-            <svg
-              {...stylex.props(loginProviderStyles.logoSvg)}
-              aria-hidden="true"
-              height="24"
-              version="1.1"
-              viewBox="0 0 16 16"
-              width="19"
-            >
+        <span className="auth-provider-logo" data-owner="standalone-login-provider-logo">
+          <span className="github" data-owner="standalone-login-provider-github">
+            <svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19">
               <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38C13.71 14.53 16 11.53 16 8 16 3.58 12.42 0 8 0z" />
             </svg>
           </span>{" "}
           <span className="provider-name">Sign in with github</span>
         </span>
       ) : (
-        <span
-          className={`${stylex.props(loginProviderStyles.logo).className} auth-provider-logo`}
-          data-stylex-owner="standalone-login-provider-logo"
-        >
+        <span className="auth-provider-logo" data-owner="standalone-login-provider-logo">
           <img
             src={prefixBasePath(
               basePath,
@@ -366,10 +318,7 @@ function HighlightedLegacyMessage({ message }: { message: string }) {
   return (
     <>
       {match[1]}
-      <span
-        className={`${stylex.props(loginProviderStyles.titleHighlight).className} highlight`}
-        data-stylex-owner="standalone-login-title-highlight"
-      >
+      <span className="highlight" data-owner="standalone-login-title-highlight">
         {match[2]}
       </span>
       {match[3]}

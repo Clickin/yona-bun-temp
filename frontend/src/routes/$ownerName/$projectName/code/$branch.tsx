@@ -1,5 +1,4 @@
 import { useState } from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router";
 import "./legacy-dynatree.css";
@@ -9,7 +8,6 @@ import type { ProjectContainer } from "../../../../api/types";
 import { useLegacyMessages } from "../../../../i18n";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { styles } from "../-code-branch.stylex";
 import { ProjectCodeSearchPanel } from "../code";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
@@ -89,16 +87,12 @@ function ProjectCodeFolderBody({
   const encodedBranch = encodeBranch(selectedBranch);
   const isGit = project.vcs === "GIT";
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
-  const breadcrumbsStyleProps = stylex.props(styles.breadcrumbs);
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-code-branch-page">
+    <div className="page-wrap-outer" data-owner="project-code-branch-page">
       <div className="project-page-wrap">
-        <div className="code-browse-wrap" data-stylex-owner="project-code-branch-browser">
-          <ul
-            className={`${stylex.props(styles.tabs).className} nav nav-tabs`}
-            data-stylex-owner="project-code-branch-tabs"
-          >
+        <div className="code-browse-wrap" data-owner="project-code-branch-browser">
+          <ul className="nav nav-tabs" data-owner="project-code-branch-tabs">
             <li className="active">
               <Link
                 activeOptions={{
@@ -161,17 +155,14 @@ function ProjectCodeFolderBody({
             ) : null}
           </ul>
 
-          <div
-            className={`${stylex.props(styles.header).className} code-browse-header`}
-            data-stylex-owner="project-code-branch-header"
-          >
+          <div className="code-browse-header" data-owner="project-code-branch-header">
             <div
-              className={`${stylex.props(styles.picker).className} select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
-              data-stylex-owner="project-code-branch-picker"
+              className={`select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              data-owner="project-code-branch-picker"
             >
               <button
                 type="button"
-                className={`${stylex.props(styles.pickerChoice).className} select2-choice`}
+                className="project-code-branch-picker-choice select2-choice"
                 aria-expanded={branchMenuOpen}
                 onClick={() => setBranchMenuOpen((open) => !open)}
               >
@@ -191,9 +182,8 @@ function ProjectCodeFolderBody({
                 aria-label={t("title.branches")}
               />
               <div
-                className={`select2-drop select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : " select2-display-none"}`}
-                {...(branchMenuOpen ? stylex.props(styles.pickerDropOpen) : {})}
-                data-stylex-owner="project-code-branch-picker-drop"
+                className={`select2-drop select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active is-open" : " select2-display-none"}`}
+                data-owner="project-code-branch-picker-drop"
               >
                 <div className="select2-search">
                   <input
@@ -210,7 +200,7 @@ function ProjectCodeFolderBody({
                     >
                       <button
                         type="button"
-                        className={`${stylex.props(styles.pickerChoice).className} select2-result-label`}
+                        className="project-code-branch-picker-choice select2-result-label"
                         onClick={() => {
                           setBranchMenuOpen(false);
                           router.history.push(
@@ -266,10 +256,9 @@ function ProjectCodeFolderBody({
               ))}
             </select>
             <div
-              {...breadcrumbsStyleProps}
               id="breadcrumbs"
-              className={`${breadcrumbsStyleProps.className} code-breadcrumb-wrap ml10 pull-left`}
-              data-stylex-owner="project-code-branch-breadcrumbs"
+              className="code-breadcrumb-wrap ml10 pull-left"
+              data-owner="project-code-branch-breadcrumbs"
             >
               <Link
                 activeOptions={{
@@ -310,10 +299,7 @@ function ProjectCodeFolderBody({
             </div>
             {isGit ? (
               <>
-                <div
-                  className={`pull-right ${stylex.props(styles.downloadAction).className}`}
-                  data-stylex-owner="project-code-branch-download-action"
-                >
+                <div className="pull-right" data-owner="project-code-branch-download-action">
                   <Link
                     activeOptions={{
                       exact: true,
@@ -334,10 +320,7 @@ function ProjectCodeFolderBody({
                   </Link>
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
-                  <div
-                    className={`pull-right ${stylex.props(styles.newFileAction).className}`}
-                    data-stylex-owner="project-code-branch-new-file-action"
-                  >
+                  <div className="pull-right" data-owner="project-code-branch-new-file-action">
                     <Link
                       activeOptions={{
                         exact: true,
@@ -370,16 +353,8 @@ function ProjectCodeFolderBody({
             runtimeConfig={runtimeConfig}
           />
 
-          <div
-            className={`${stylex.props(styles.list).className} code-viewer-wrap`}
-            data-stylex-owner="project-code-branch-viewer"
-          >
-            <div
-              {...stylex.props(styles.spinner)}
-              style={{ left: "50%", position: "fixed", top: "50%" }}
-              data-stylex-owner="project-code-branch-spinner"
-              id="spin"
-            ></div>
+          <div className="code-viewer-wrap" data-owner="project-code-branch-viewer">
+            <div data-owner="project-code-branch-spinner" id="spin"></div>
             <FolderList code={code} />
           </div>
         </div>
@@ -396,30 +371,21 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div
-      className={`${stylex.props(styles.list).className} list-wrap`}
-      data-stylex-owner="project-code-branch-list"
-    >
-      <div
-        className={`${stylex.props(styles.listHeader).className} row-fluid listhead`}
-        data-stylex-owner="project-code-branch-list-header"
-      >
-        <div className={`${stylex.props(styles.listHeaderFilename).className} span6 filename`}>
+    <div className="list-wrap" data-owner="project-code-branch-list">
+      <div className="row-fluid listhead" data-owner="project-code-branch-list-header">
+        <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
         </div>
         <div className="span4 commitMsg">
           <strong>{t("code.commitMsg")}</strong>
         </div>
-        <div className={`${stylex.props(styles.listHeaderDate).className} span2 commitDate`}>
+        <div className="span2 commitDate">
           <strong>{t("code.commitDate")}</strong>
         </div>
       </div>
 
       {code.entries.length === 0 ? (
-        <div
-          className={`${stylex.props(styles.empty).className} alert alert-warning nm`}
-          data-stylex-owner="project-code-branch-empty"
-        >
+        <div className="alert alert-warning nm" data-owner="project-code-branch-empty">
           {t("code.nofiles")}
         </div>
       ) : null}
@@ -427,11 +393,11 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
       {[...folders, ...files].map((entry) => (
         <div
           id={`cb-${entry.path}`}
-          className={`${stylex.props(styles.listRow).className} row-fluid listitem`}
-          data-stylex-owner="project-code-branch-list-row"
+          className="row-fluid listitem"
+          data-owner="project-code-branch-list-row"
           key={entry.path}
         >
-          <div className={`${stylex.props(styles.listFilename).className} span6 filename`}>
+          <div className="span6 filename">
             <Link
               activeOptions={{
                 exact: true,
@@ -459,12 +425,8 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
               {entry.name}
             </Link>
           </div>
-          <div className={`${stylex.props(styles.listMessage).className} span5 commitMsg`}>
-            <span
-              {...stylex.props(styles.commitMessageWrapper)}
-              className={`${stylex.props(styles.commitMessageWrapper).className} ml5`}
-              data-stylex-owner={`project-code-branch-${entry.kind}-commit-message`}
-            >
+          <div className="span5 commitMsg">
+            <span className="ml5" data-owner={`project-code-branch-${entry.kind}-commit-message`}>
               <Link
                 activeOptions={{
                   exact: true,
@@ -484,9 +446,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
               </Link>
             </span>
           </div>
-          <div className={`${stylex.props(styles.listDate).className} span1 commitDate`}>
-            {formatCodeCommitDate(entry.commitDate, t)}
-          </div>
+          <div className="span1 commitDate">{formatCodeCommitDate(entry.commitDate, t)}</div>
         </div>
       ))}
     </div>

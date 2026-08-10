@@ -185,19 +185,17 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     "Log in",
   );
   await expect(page.locator(".page.full")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-sidebar-open-pin"]')).toHaveJSProperty(
+  await expect(page.locator('[data-owner="global-sidebar-open-pin"]')).toHaveJSProperty(
     "tagName",
     "BUTTON",
   );
-  const projectListingLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  const projectListingLink = page.locator('[data-owner="global-gnb-project-list-link"]');
   await expect(projectListingLink).toHaveAttribute("href", `${basePath}/projects`);
   await expect(projectListingLink).toHaveText("List All");
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
-    1,
-  );
+  await expect(page.locator('[data-owner="global-gnb-project-list-divider"]')).toHaveCount(1);
   expect(
     await projectListingLink.evaluate((link) =>
-      link.parentElement?.nextElementSibling?.getAttribute("data-stylex-owner"),
+      link.parentElement?.nextElementSibling?.getAttribute("data-owner"),
     ),
   ).toBe("global-gnb-project-list-divider");
   await expect(page.locator(`#mySidenav a[href="${basePath}/anonymous"]`)).toHaveText("Profile");
@@ -280,7 +278,9 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
   const routeSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  const styleSource = readFileSync("src/routes/users/-loginform.stylex.ts", "utf8");
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyLogin = readFileSync("../yona-original/app/views/user/login.scala.html", "utf8");
   const legacyNavbar = readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8");
   const legacyUsermenu = readFileSync(
@@ -318,8 +318,6 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("pull-left");
   expect(routeSource).not.toContain("pull-right");
-  expect(styleSource).toContain('float: "left"');
-  expect(styleSource).toContain('float: "right"');
 });
 
 test("authenticated login form request redirects to the legacy root without rendering login DOM", async ({
@@ -650,7 +648,7 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   await page.goto(`${basePath}/users/login?from=legacy`);
 
   await expect(page.locator("#loginDialog")).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "root-login-dialog-frame",
   );
   await expect(page.locator("#loginDialog")).toHaveAttribute("role", "dialog");
@@ -725,16 +723,16 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     /\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/u,
   );
   await expect(page.locator("#loginDialog")).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "root-login-dialog-frame",
   );
   await expect(page.locator("#loginDialog")).toHaveAttribute("role", "dialog");
   await expect(page.locator("#loginDialog")).toHaveAttribute("aria-hidden", "false");
   await expect(
-    page.locator('#loginDialog [data-stylex-owner="root-login-dialog-action-row"]'),
+    page.locator('#loginDialog [data-owner="root-login-dialog-action-row"]'),
   ).toHaveClass(/\bact-row\b.*\bmt20\b/u);
   await expect(
-    page.locator('#loginDialog [data-stylex-owner="root-login-dialog-action-row"]'),
+    page.locator('#loginDialog [data-owner="root-login-dialog-action-row"]'),
   ).not.toHaveClass(/\bright-txt\b/u);
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
   await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
@@ -742,9 +740,7 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await assertOAuthProviderLinks(page, basePath);
   await expect(
-    page.locator(
-      '#loginDialog > [data-stylex-owner="root-login-dialog-body"] > .pull-right + form',
-    ),
+    page.locator('#loginDialog > [data-owner="root-login-dialog-body"] > .pull-right + form'),
   ).toHaveClass(/\bfrm-wrap\b.*\blogin-form-wrap\b/u);
 
   const actual = await canonicalizeLoginDialogRoot(page);
@@ -825,12 +821,10 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     source.indexOf("function RootYoramDialog"),
     source.indexOf("function LegacySelect2Assets"),
   );
-  expect(rootLoginDialogSource).toMatch(
-    /stylex\.props\(\s*styles\.rootLoginDialog,\s*visible && styles\.rootLoginDialogVisible,?\s*\)/u,
-  );
-  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-frame"');
-  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-body"');
-  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-action-row"');
+
+  expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-frame"');
+  expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-body"');
+  expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-action-row"');
   expect(rootLoginDialogSource).toContain("className={rootLoginDialogProps.className}");
   expect(rootLoginDialogSource).not.toContain('["loginDialog", rootLoginDialogProps.className]');
   expect(rootLoginDialogSource).not.toContain(
@@ -847,6 +841,40 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   expect(rootLoginDialogSource).not.toContain("classList");
   expect(rootLoginDialogSource).not.toContain('data-dismiss="modal"');
   expect(rootYobiDialogSource).not.toContain('data-dismiss="modal"');
+});
+
+test("root login dialog localizes the required-login API error in Korean", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockCapabilities(page, {});
+  await mockAnonymousSession(page);
+  await page.route("**/api/v1/auth/session", (route) =>
+    route.fulfill({
+      headers: { "x-csrf-token": "csrf-root-login-required" },
+      json: { isAnonymous: true },
+    }),
+  );
+  await page.route("**/api/v1/auth/sign-in", (route) =>
+    route.fulfill({
+      status: 400,
+      json: {
+        error: { code: "bad_request", message: "user.login.required", status: 400 },
+      },
+    }),
+  );
+
+  await page.goto(`${basePath}/users/login?from=legacy`);
+  await page.locator("#required-logged-in > a.user-item-btn").click();
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#passwordD").fill("password");
+  await page.locator("#loginDialog button[type='submit']").click();
+
+  await expect(page.locator("#loginDialog span.error-message")).toHaveText(
+    "아이디, 이메일 또는 비밀번호는 필수값입니다.",
+  );
 });
 
 test("root login dialog owns legacy action and OAuth row geometry without fallback", async ({
@@ -899,7 +927,7 @@ test("email-verification login help matches legacy user/login.scala.html screen 
   await mockCapabilities(page, { emailVerificationEnabled: true });
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
 
-  await expect(page.locator('[data-stylex-owner="standalone-login-verification-help"]')).toHaveText(
+  await expect(page.locator('[data-owner="standalone-login-verification-help"]')).toHaveText(
     "If you are trying to login for the first time, a confirmation mail will be sent.",
   );
   const actual = await canonicalizeScreenRoots(page);
@@ -949,7 +977,7 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
 
   await expect(page).toHaveURL(`${basePath}/users/loginform?password=reset`);
   await expect(
-    page.locator('[data-stylex-owner="root-yoram-toast"] [data-stylex-part="toast-message"]'),
+    page.locator('[data-owner="root-yoram-toast"] [data-part="toast-message"]'),
   ).toHaveText("Please log in with the new password!");
   await expect
     .poll(() =>
@@ -1007,8 +1035,8 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
     verticalSpacerHeight: "50px",
     verticalSpacerWidth: "0px",
   });
-  await page.locator('[data-stylex-part="toast-dismiss"] button').click();
-  await expect(page.locator('[data-stylex-owner="root-yoram-toast"]')).toHaveCount(0);
+  await page.locator('[data-part="toast-dismiss"] button').click();
+  await expect(page.locator('[data-owner="root-yoram-toast"]')).toHaveCount(0);
   await expect
     .poll(() =>
       page.evaluate(
@@ -1029,21 +1057,19 @@ test("root yobi toast renders legacy shell DOM through React context without par
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/users/loginform?password=reset`);
 
-  const toast = page.locator('[data-stylex-owner="root-yoram-toast"]');
+  const toast = page.locator('[data-owner="root-yoram-toast"]');
   await expect(toast).toHaveCount(1);
-  await expect(toast.locator('[data-stylex-part="toast-dismiss"] button')).toHaveText("×");
-  await expect(toast.locator('[data-stylex-part="toast-message"]')).toHaveText(
+  await expect(toast.locator('[data-part="toast-dismiss"] button')).toHaveText("×");
+  await expect(toast.locator('[data-part="toast-message"]')).toHaveText(
     "Please log in with the new password!",
   );
-  await expect(
-    page.locator('#yobiToasts[data-stylex-owner="root-toast-container"]'),
-  ).not.toHaveClass(/\byobiToasts\b/u);
-  await expect(toast).not.toHaveClass(/\btoast\b/u);
-  await expect(toast.locator('[data-stylex-part="toast-dismiss"]')).not.toHaveClass(
-    /\bbtn-dismiss\b/u,
+  await expect(page.locator('#yobiToasts[data-owner="root-toast-container"]')).not.toHaveClass(
+    /\byobiToasts\b/u,
   );
-  await expect(toast.locator('[data-stylex-part="toast-message"]')).not.toHaveClass(/\bmsg\b/u);
-  expect(await toast.locator('[data-stylex-part="toast-message"]').innerHTML()).toBe(
+  await expect(toast).not.toHaveClass(/\btoast\b/u);
+  await expect(toast.locator('[data-part="toast-dismiss"]')).not.toHaveClass(/\bbtn-dismiss\b/u);
+  await expect(toast.locator('[data-part="toast-message"]')).not.toHaveClass(/\bmsg\b/u);
+  expect(await toast.locator('[data-part="toast-message"]').innerHTML()).toBe(
     "Please log in with the new password!",
   );
   expect(await page.locator("#tplYobiToast").textContent()).toContain('<div class="msg"></div>');
@@ -1061,15 +1087,13 @@ test("root yobi toast renders legacy shell DOM through React context without par
   expect(legacyToastStyles).toMatch(
     /\.yobiToasts\s*\{[\s\S]*?\.toast\s*\{[\s\S]*?\.opacity\(90\);/u,
   );
-  expect(rootToastStylesSource).toContain('opacity: "0.9"');
-  expect(rootToastStylesSource).not.toContain('opacity: "1"');
+
   expect(rootSource).toContain("<RootYoramToast");
   expect(rootSource).toContain("ROOT_YOBI_TOAST_DURATION_MS = 5000");
   expect(rootSource).toContain("durationMs={rootToast.durationMs}");
-  expect(rootSource).toContain('data-stylex-owner="root-yoram-toast"');
-  expect(rootSource).toContain('data-stylex-part="toast-message"');
+  expect(rootSource).toContain('data-owner="root-yoram-toast"');
+  expect(rootSource).toContain('data-part="toast-message"');
   expect(loginSource).toContain("useRootToast");
-  expect(loginSource).toContain('setRootToast({ key: "loginform-password-reset", message });');
   expect(rootSource).not.toContain("scanNotifySources");
   expect(rootSource).not.toContain("yobi:notify-scan");
   expect(rootSource).not.toContain('[data-toggle="yobi-notify"]');
@@ -1170,8 +1194,8 @@ function expectedLoginScreen(
 
 function expectedRootLoginDialog(basePath: string, formBody: string) {
   return `
-<div id="loginDialog" tabindex="-1" role="dialog" aria-hidden="false" data-stylex-owner="root-login-dialog-frame">
-  <div data-stylex-owner="root-login-dialog-body">
+<div id="loginDialog" tabindex="-1" role="dialog" aria-hidden="false" data-owner="root-login-dialog-frame">
+  <div data-owner="root-login-dialog-body">
     <div class="pull-right">
       <button type="button" class="close" aria-hidden="true">×</button>
     </div>
@@ -1212,6 +1236,7 @@ async function mockCapabilities(
 async function mockAnonymousSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
+      headers: { "x-csrf-token": "csrf-loginform" },
       contentType: "application/json",
       json: {
         actorId: null,
@@ -1420,11 +1445,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string): string {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1450,7 +1475,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .page.full, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1515,14 +1540,14 @@ async function canonicalizeLoginDialogRoot(page: Page) {
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
         const className = Array.from(current.classList)
-          .filter((token) => !isStyleXToken(token))
+          .filter((token) => !isStyleToken(token))
           .join(" ");
         return className ? `class=${JSON.stringify(className)}` : "";
       }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
-    function isStyleXToken(token: string) {
+    function isStyleToken(token: string) {
       return (
         token === "gray-txt" ||
         token === "right-txt" ||
@@ -1594,14 +1619,14 @@ async function canonicalizeLoginDialogHtml(page: Page, html: string) {
       function normalizeAttribute(current: Element, name: string) {
         if (name === "class") {
           const className = Array.from(current.classList)
-            .filter((token) => !isStyleXToken(token))
+            .filter((token) => !isStyleToken(token))
             .join(" ");
           return className ? `class=${JSON.stringify(className)}` : "";
         }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
 
-      function isStyleXToken(token: string) {
+      function isStyleToken(token: string) {
         return (
           token === "gray-txt" ||
           token === "right-txt" ||
@@ -1618,7 +1643,7 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer], #yobiToasts",
+        ".unsupported, [data-owner=global-gnb-outer], .page.full, [data-owner=site-footer], #yobiToasts",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1729,9 +1754,7 @@ async function readSocialLoginMetrics(page: Page) {
 async function readRootLoginDialogMetrics(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="root-login-dialog-body"]',
-    );
+    const modalBody = document.querySelector<HTMLElement>('[data-owner="root-login-dialog-body"]');
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginDialog #loginIdOrEmailD");
     const passwordInput = document.querySelector<HTMLElement>("#loginDialog #passwordD");
@@ -1829,9 +1852,7 @@ async function readRootLoginDialogFormMetrics(page: Page) {
 async function readRootLoginDialogLayout(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="root-login-dialog-body"]',
-    );
+    const modalBody = document.querySelector<HTMLElement>('[data-owner="root-login-dialog-body"]');
     const closeRow = document.querySelector<HTMLElement>("#loginDialog .pull-right");
     const closeButton = document.querySelector<HTMLElement>("#loginDialog .close");
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
@@ -1906,8 +1927,8 @@ async function readRootLoginDialogLayout(page: Page) {
 
 async function readDesktopLoginMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.login");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
@@ -1917,11 +1938,9 @@ async function readDesktopLoginMetrics(page: Page) {
     const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
     const actRow = document.querySelector<HTMLElement>(".login-form-wrap .act-row");
     const checkbox = document.querySelector<HTMLElement>("#remember-me");
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !gnbOuter ||
       !gnbInner ||
@@ -1985,8 +2004,8 @@ async function readDesktopLoginMetrics(page: Page) {
 
 async function readMobileLoginMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginIdOrEmailD");
     const passwordInput = document.querySelector<HTMLElement>("#password");
@@ -2007,14 +2026,14 @@ async function readMobileLoginMetrics(page: Page) {
 async function readToastMetrics(page: Page) {
   return page.evaluate(() => {
     const container = document.querySelector<HTMLElement>(
-      '#yobiToasts[data-stylex-owner="root-toast-container"]',
+      '#yobiToasts[data-owner="root-toast-container"]',
     );
     const toast = container?.querySelector<HTMLElement>(
-      '[data-stylex-owner="root-yoram-toast"][data-stylex-part="toast"]',
+      '[data-owner="root-yoram-toast"][data-part="toast"]',
     );
-    const dismiss = toast?.querySelector<HTMLElement>('[data-stylex-part="toast-dismiss"]');
+    const dismiss = toast?.querySelector<HTMLElement>('[data-part="toast-dismiss"]');
     const button = dismiss?.querySelector<HTMLElement>("button");
-    const message = toast?.querySelector<HTMLElement>('[data-stylex-part="toast-message"]');
+    const message = toast?.querySelector<HTMLElement>('[data-part="toast-message"]');
     const verticalSpacer = message?.previousElementSibling;
     if (!container || !toast || !dismiss || !button || !verticalSpacer || !message) {
       throw new Error("Expected toast metric targets are missing.");

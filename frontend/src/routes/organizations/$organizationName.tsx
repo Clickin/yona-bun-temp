@@ -1,5 +1,4 @@
 import { type MouseEvent, useState } from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -22,106 +21,6 @@ import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
-import { styles } from "./-organization-home.stylex";
-
-const organizationMenuMigrationStyles = stylex.create({
-  item: {
-    float: "left",
-    fontSize: "14px",
-    fontWeight: "bold",
-    position: "relative",
-  },
-  link: {
-    display: "inline-block",
-    lineHeight: "30px",
-    padding: { default: "5px 20px 4px", "@media (max-width: 767px)": "5px 12px 4px" },
-    ":hover": {
-      textDecoration: "none",
-      color: "#fc491e",
-      backgroundColor: "#dadada",
-    },
-  },
-  activeItem: {
-    color: "#fc491e",
-    "::before": {
-      border: "8px solid transparent",
-      borderBottomColor: "#ddd",
-      borderStyle: "outset outset solid outset",
-      bottom: "0",
-      content: '" "',
-      height: "0",
-      left: "50%",
-      marginLeft: "-8px",
-      overflow: "hidden",
-      position: "absolute",
-      width: "0",
-    },
-    "::after": {
-      border: "8px solid transparent",
-      borderBottomColor: "#fff",
-      borderStyle: "outset outset solid outset",
-      bottom: "-1px",
-      content: '" "',
-      height: "0",
-      left: "50%",
-      marginLeft: "-8px",
-      overflow: "hidden",
-      position: "absolute",
-      width: "0",
-    },
-  },
-});
-
-const organizationProjectCardMigrationStyles = stylex.create({
-  // yona-original/app/assets/stylesheets/less/_page.less .all-projects .project.
-  card: {
-    borderBottomColor: "#DCDCDC",
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    overflow: "hidden",
-    padding: "15px 0 10px 0",
-  },
-  iconMiddle: {
-    verticalAlign: "bottom",
-    marginBottom: "3px",
-  },
-});
-
-const organizationProjectCardOwnerAvatarImageStyles = stylex.create({
-  image: {
-    height: "100%",
-    verticalAlign: "top",
-    width: "100%",
-  },
-});
-
-const organizationProjectCardChildPaintStyles = stylex.create({
-  lock: { color: "#7F8C8D" },
-  ownerName: { color: "#999", fontSize: "19px" },
-});
-
-const organizationProjectCardStatsIconStyles = stylex.create({
-  icon: { fontSize: "16px", marginLeft: "5px", marginRight: "5px" },
-  rampOn: { color: "#B6DA54" },
-  rampOff: { color: "#DADADA" },
-});
-
-const organizationMemberPanelMigrationStyles = stylex.create({
-  memberInfo: { height: "auto !important", marginRight: "0" },
-});
-
-const organizationMemberAvatarMigrationStyles = stylex.create({
-  image: { verticalAlign: "top", width: "100%" },
-  wrapper: {
-    backgroundColor: "#ddd",
-    borderRadius: "3px !important",
-    display: "inline-block",
-    height: "32px",
-    overflow: "hidden",
-    verticalAlign: "middle",
-    width: "32px",
-  },
-});
 
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
@@ -290,50 +189,30 @@ function OrganizationHomeScreen({
       );
     },
   });
-  const leaveModalStyleProps = leaveModalOpen ? stylex.props(styles.leaveModalVisible) : undefined;
 
   return (
     <>
       <title>{organizationName}</title>
-      <div
-        {...stylex.props(styles.home)}
-        className={`${stylex.props(styles.home).className} page-wrap-outer`}
-        data-stylex-owner="organization-home-page"
-      >
+      <div className="page-wrap-outer" data-owner="organization-home-page">
         <div className="project-page-wrap">
-          <div
-            className={`${stylex.props(styles.projectHomeHeader).className} project-home-header row-fluid`}
-            data-stylex-owner="organization-home-header"
-          >
-            <div
-              className={`${stylex.props(styles.organizationHomeFluidColumn, styles.organizationHomeMainColumn).className} span9 span-hard-wrap`}
-              data-stylex-owner="organization-home-main-column"
-            >
-              <div
-                className={`${stylex.props(styles.overview).className} project-overview`}
-                data-stylex-owner="organization-home-overview"
-              >
-                <h3 className={stylex.props(styles.overviewTitle).className}>
+          <div className="project-home-header row-fluid" data-owner="organization-home-header">
+            <div className="span9 span-hard-wrap" data-owner="organization-home-main-column">
+              <div className="project-overview" data-owner="organization-home-overview">
+                <h3>
                   <span id="project-description">{stringField(organization.description, "")}</span>
                 </h3>
               </div>
               <div
-                className={`${stylex.props(styles.searchWrap).className} project-search-wrap row-fluid mt10`}
-                data-stylex-owner="organization-home-search"
+                className="project-search-wrap row-fluid mt10"
+                data-owner="organization-home-search"
               >
-                <div
-                  className={`${stylex.props(styles.organizationHomeSearchColumn).className} span7`}
-                  data-stylex-owner="organization-home-search-column"
-                >
-                  <div
-                    className={`${stylex.props(styles.searchBar).className} search-bar`}
-                    data-stylex-owner="organization-home-search-bar"
-                  >
+                <div className="span7" data-owner="organization-home-search-column">
+                  <div className="search-bar" data-owner="organization-home-search-bar">
                     <input
                       name="mylist-filter"
                       id="mylist-filter"
-                      className={`${stylex.props(styles.searchTextbox, styles.searchTextboxFull).className} textbox full`}
-                      data-stylex-owner="organization-home-search-input"
+                      className="textbox full"
+                      data-owner="organization-home-search-input"
                       type="text"
                       defaultValue=""
                       placeholder={t("title.type.name")}
@@ -341,18 +220,15 @@ function OrganizationHomeScreen({
                     />
                     <button
                       type="button"
-                      className={`${stylex.props(styles.searchButton).className} search-btn`}
-                      data-stylex-owner="organization-home-search-button"
+                      className="search-btn"
+                      data-owner="organization-home-search-button"
                     >
                       <i className="yobicon-search"></i>
                     </button>
                   </div>
                 </div>
                 {booleanField(organization.viewerCanCreateProject) ? (
-                  <div
-                    className={stylex.props(styles.createProjectWrapper).className}
-                    data-stylex-owner="organization-home-create-project-wrapper"
-                  >
+                  <div data-owner="organization-home-create-project-wrapper">
                     <Link
                       activeOptions={{
                         exact: true,
@@ -374,11 +250,7 @@ function OrganizationHomeScreen({
                   </div>
                 ) : null}
               </div>
-              <ul
-                {...stylex.props(styles.projects)}
-                className={`${stylex.props(styles.projects).className} all-projects`}
-                data-stylex-owner="organization-home-projects"
-              >
+              <ul className="all-projects" data-owner="organization-home-projects">
                 {organization.visibleProjects.map((project) => (
                   <OrganizationProject
                     filter={projectFilter}
@@ -388,10 +260,7 @@ function OrganizationHomeScreen({
                 ))}
               </ul>
             </div>
-            <div
-              className={`${stylex.props(styles.organizationHomeFluidColumn, styles.organizationHomeMembersColumn).className} span3 span-hard-wrap`}
-              data-stylex-owner="organization-home-members"
-            >
+            <div className="span3 span-hard-wrap" data-owner="organization-home-members">
               {shouldShowMemberPanels ? (
                 <>
                   <MemberPanel
@@ -415,9 +284,8 @@ function OrganizationHomeScreen({
       </div>
       <div
         id="alertLeave"
-        {...leaveModalStyleProps}
-        className={`${leaveModalOpen ? "modal hide in" : "modal hide"} ${leaveModalStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="organization-home-leave-modal"
+        className={`${leaveModalOpen ? "modal hide in" : "modal hide"}`}
+        data-owner="organization-home-leave-modal"
         aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}
       >
         <div className="modal-header">
@@ -470,25 +338,21 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
   const projectLogoUrl = stringField(project.logoUrl, "").trim();
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
   const normalizedFilter = filter.trim().toLowerCase();
-  const hidden = normalizedFilter ? !dataValue.toLowerCase().includes(normalizedFilter) : false;
-  const projectCardStyleProps = stylex.props(
-    styles.project,
-    organizationProjectCardMigrationStyles.card,
-    hidden && styles.projectHidden,
-  );
+  const projectHidden = normalizedFilter
+    ? !dataValue.toLowerCase().includes(normalizedFilter)
+    : false;
 
   return (
     <li
       data-item="project-item"
       data-value={dataValue}
-      {...projectCardStyleProps}
-      className={`project ${projectCardStyleProps.className}`}
-      data-stylex-owner="organization-home-project-filter-item"
+      className={`project ${projectHidden ? "is-hidden" : ""}`.trim()}
+      data-owner="organization-home-project-filter-item"
     >
       <div className="info-wrap">
         <div
-          className={`${stylex.props(styles.projectCardOwnerAvatar).className} owner-avatar-wrap hide-in-mobile`}
-          data-stylex-owner="organization-home-project-card-owner-avatar"
+          className="owner-avatar-wrap hide-in-mobile"
+          data-owner="organization-home-project-card-owner-avatar"
         >
           <Link
             activeOptions={{
@@ -508,22 +372,15 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
           >
             {projectLogoUrl ? (
               <img
-                {...stylex.props(organizationProjectCardOwnerAvatarImageStyles.image)}
                 src={projectLogoUrl}
                 alt={`${projectName}.name`}
-                data-stylex-owner="organization-home-project-card-owner-avatar-image"
+                data-owner="organization-home-project-card-owner-avatar-image"
               />
             ) : null}
           </Link>
         </div>
-        <div
-          className={stylex.props(styles.projectInfo).className}
-          data-stylex-owner="organization-home-project-info"
-        >
-          <div
-            className={`${stylex.props(styles.projectCardHeader).className} header`}
-            data-stylex-owner="organization-home-project-card-header"
-          >
+        <div data-owner="organization-home-project-info">
+          <div className="header" data-owner="organization-home-project-card-header">
             <Link
               activeOptions={{
                 exact: true,
@@ -544,10 +401,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
               {projectName}
             </Link>
             {originOwnerName && originProjectName ? (
-              <span
-                className={`blue-txt ${stylex.props(styles.smallFont, styles.projectOrigin).className}`}
-                data-stylex-owner="organization-home-project-origin"
-              >
+              <span className="blue-txt" data-owner="organization-home-project-origin">
                 <Link
                   activeOptions={{
                     exact: true,
@@ -572,30 +426,24 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             ) : null}
             {isPrivate ? (
               <i
-                className={`${stylex.props(organizationProjectCardChildPaintStyles.lock).className} yobicon-lock yobicon-small`}
-                data-stylex-owner="organization-home-project-card-private-lock"
+                className="yobicon-lock yobicon-small"
+                data-owner="organization-home-project-card-private-lock"
               ></i>
             ) : null}
             {isProtected ? (
               <span
-                className={`${stylex.props(styles.projectVisibilityBadge).className} project-protected`}
-                data-stylex-owner="organization-project-protected-badge"
+                className="project-protected"
+                data-owner="organization-project-protected-badge"
                 title="Group Project"
               >
                 G
               </span>
             ) : null}
           </div>
-          <div
-            className={`${stylex.props(styles.projectCardDescription).className} desc`}
-            data-stylex-owner="organization-home-project-card-description"
-          >
+          <div className="desc" data-owner="organization-home-project-card-description">
             {stringField(project.overview, "")}
           </div>
-          <p
-            className={`${stylex.props(styles.projectCardNameTag).className} name-tag`}
-            data-stylex-owner="organization-home-project-card-name-tag"
-          >
+          <p className="name-tag" data-owner="organization-home-project-card-name-tag">
             by{" "}
             <Link
               activeOptions={{
@@ -609,8 +457,8 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
                 className: undefined,
                 "data-status": undefined,
               }}
-              className={`${stylex.props(organizationProjectCardChildPaintStyles.ownerName).className} owner-name-small`}
-              data-stylex-owner="organization-home-project-card-owner-name"
+              className="owner-name-small"
+              data-owner="organization-home-project-card-owner-name"
               params={{ user: ownerName }}
               search={{}}
               to="/$user"
@@ -620,11 +468,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             at{" "}
             <strong title={stringField(project.createdTitle, createdLabel)}>{createdLabel}</strong>{" "}
             {lastPushedLabel ? (
-              <span
-                {...stylex.props(styles.smallFont)}
-                className={stylex.props(styles.smallFont).className}
-                data-stylex-owner="organization-home-project-code-update"
-              >
+              <span data-owner="organization-home-project-code-update">
                 , {t("project.codeUpdate")}{" "}
                 <strong title={stringField(project.lastPushedTitle, lastPushedLabel)}>
                   {lastPushedLabel}
@@ -634,44 +478,27 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
           </p>
         </div>
       </div>
-      <div
-        className={`${stylex.props(styles.projectCardStatsWrapper, styles.projectCardStats).className} stats-wrap pull-right`}
-        data-stylex-owner="organization-home-project-card-stats"
-      >
-        <div
-          {...stylex.props(styles.projectCardMembers)}
-          className={`members ${stylex.props(styles.projectCardMembers).className ?? ""}`.trim()}
-          data-stylex-owner="organization-home-project-card-members"
-        >
-          <ul
-            {...stylex.props(styles.projectCardMembersList)}
-            className={`unstyled ${stylex.props(styles.projectCardMembersList).className ?? ""}`.trim()}
-            data-stylex-owner="organization-home-project-card-members-list"
-          ></ul>
+      <div className="stats-wrap pull-right" data-owner="organization-home-project-card-stats">
+        <div className="members" data-owner="organization-home-project-card-members">
+          <ul className="unstyled" data-owner="organization-home-project-card-members-list"></ul>
           <p>
             <i
-              className={`${stylex.props(organizationProjectCardMigrationStyles.iconMiddle, organizationProjectCardStatsIconStyles.icon).className} yobicon-friends`}
-              data-stylex-owner="organization-home-project-card-stats-friends-icon"
+              className="yobicon-friends"
+              data-owner="organization-home-project-card-stats-friends-icon"
             ></i>
-            <strong
-              {...stylex.props(styles.projectCardStatsCount)}
-              data-stylex-owner="organization-home-project-card-count"
-            >
+            <strong data-owner="organization-home-project-card-count">
               {numberField(project.memberCount)}
             </strong>
             <i
-              className={`${stylex.props(organizationProjectCardStatsIconStyles.icon).className} yobicon-eye`}
-              data-stylex-owner="organization-home-project-card-stats-eye-icon"
+              className="yobicon-eye"
+              data-owner="organization-home-project-card-stats-eye-icon"
             ></i>{" "}
-            <strong
-              {...stylex.props(styles.projectCardStatsCount)}
-              data-stylex-owner="organization-home-project-card-count"
-            >
+            <strong data-owner="organization-home-project-card-count">
               {numberField(project.watchCount)}
             </strong>
             <i
-              className={`${stylex.props(organizationProjectCardStatsIconStyles.icon, isWatching ? organizationProjectCardStatsIconStyles.rampOn : organizationProjectCardStatsIconStyles.rampOff).className} yobicon-lightbulb ${isWatching ? "ramp-on" : "ramp-off"}`}
-              data-stylex-owner="organization-home-project-card-stats-lightbulb-icon"
+              className={`yobicon-lightbulb ${isWatching ? "ramp-on" : "ramp-off"}`}
+              data-owner="organization-home-project-card-stats-lightbulb-icon"
               title={
                 isWatching
                   ? t("project.default.group.watching")
@@ -700,39 +527,18 @@ function MemberPanel({
 }) {
   const { t } = useLegacyMessages();
   const panelKey = className.includes("mt10") ? "member" : "manager";
-  const leaveButtonStyleProps = stylex.props(styles.groupLeaveButton);
 
   return (
-    <div
-      {...stylex.props(styles.memberPanel, panelKey === "member" ? styles.memberPanelMember : null)}
-      className={`${className} ${stylex.props(styles.memberPanel, panelKey === "member" ? styles.memberPanelMember : null).className ?? ""}`.trim()}
-      data-stylex-owner="organization-home-members-panel"
-    >
-      <div
-        {...stylex.props(
-          styles.memberPanelInner,
-          organizationMemberPanelMigrationStyles.memberInfo,
-        )}
-        className={`inner member-info ${stylex.props(styles.memberPanelInner, organizationMemberPanelMigrationStyles.memberInfo).className ?? ""}`.trim()}
-        data-stylex-owner="organization-home-members-panel-inner"
-      >
-        <header
-          className={stylex.props(styles.memberPanelHeader).className}
-          data-stylex-owner="organization-home-members-panel-header"
-        >
-          <h3
-            className={stylex.props(styles.memberPanelTitle).className}
-            data-stylex-owner="organization-home-members-panel-title"
-          >
-            {title}
-          </h3>
+    <div className={className} data-owner="organization-home-members-panel">
+      <div className="inner member-info" data-owner="organization-home-members-panel-inner">
+        <header data-owner="organization-home-members-panel-header">
+          <h3 data-owner="organization-home-members-panel-title">{title}</h3>
           {showLeave ? (
             <button
-              {...leaveButtonStyleProps}
               type="button"
-              className={`ybtn ybtn-minimum ybtn-danger ${leaveButtonStyleProps.className ?? ""}`.trim()}
+              className="ybtn ybtn-minimum ybtn-danger"
               id="groupLeaveBtn"
-              data-stylex-owner="organization-home-group-leave-button"
+              data-owner="organization-home-group-leave-button"
               onClick={onLeaveClick}
             >
               {t("organization.member.leave")}
@@ -741,25 +547,13 @@ function MemberPanel({
         </header>
         <div className={className.includes("mt10") ? "member-wrap" : "member-wrap "}>
           <ul
-            {...stylex.props(styles.memberList)}
-            className={`${className.includes("mt10") ? "unstyled project-members" : "project-members"} ${stylex.props(styles.memberList).className ?? ""}`.trim()}
-            data-stylex-owner="organization-home-members-list"
+            className={`${className.includes("mt10") ? "unstyled project-members" : "project-members"}`}
+            data-owner="organization-home-members-list"
           >
             {members.map((member, index) => (
               <li
-                {...stylex.props(
-                  styles.member,
-                  index === 0 ? styles.memberFirst : undefined,
-                  index === members.length - 1 ? styles.memberLast : undefined,
-                )}
-                className={`member ${
-                  stylex.props(
-                    styles.member,
-                    index === 0 ? styles.memberFirst : undefined,
-                    index === members.length - 1 ? styles.memberLast : undefined,
-                  ).className ?? ""
-                }`.trim()}
-                data-stylex-owner="organization-home-member"
+                className="member"
+                data-owner="organization-home-member"
                 key={stringField(member.loginId, "")}
               >
                 <Link
@@ -774,20 +568,19 @@ function MemberPanel({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  className={`${stylex.props(organizationMemberAvatarMigrationStyles.wrapper).className} avatar-wrap`}
+                  className="avatar-wrap"
                   params={{ user: stringField(member.loginId, "") }}
                   search={{}}
                   title={stringField(member.loginId, "")}
                   to="/$user"
-                  data-stylex-owner="organization-home-member-avatar"
+                  data-owner="organization-home-member-avatar"
                 >
                   <img
-                    {...stylex.props(organizationMemberAvatarMigrationStyles.image)}
                     src={stringField(member.avatarUrl, "/assets/images/default-avatar-45.png")}
                     height="45"
                     width="45"
                     alt=""
-                    data-stylex-owner="organization-home-member-avatar-image"
+                    data-owner="organization-home-member-avatar-image"
                   />
                 </Link>
                 <Link
@@ -834,10 +627,6 @@ export function OrganizationHeader({
   const queryClient = useQueryClient();
   const [enrollmentRequested, setEnrollmentRequested] = useState(initialEnrollmentRequested);
   const [enrollmentDropdownOpen, setEnrollmentDropdownOpen] = useState(false);
-  const headerStyleProps = stylex.props(
-    styles.headerShell,
-    styles.headerBackground(`url('${logoUrl}')`),
-  );
   const enrollmentMutation = useMutation({
     mutationFn: async (nextRequested: boolean) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -857,28 +646,16 @@ export function OrganizationHeader({
 
   return (
     <div
-      {...headerStyleProps}
-      className={`project-header-outer ${headerStyleProps.className ?? ""}`.trim()}
-      data-stylex-owner="organization-profile-header-background"
+      className="project-header-outer"
+      style={{ backgroundImage: `url('${logoUrl}')` }}
+      data-owner="organization-profile-header-background"
     >
-      <div
-        className={`${stylex.props(styles.headerInner).className} project-header-inner`}
-        data-stylex-owner="organization-header-inner"
-      >
-        <div
-          className={`${stylex.props(styles.headerWrap).className} project-header-wrap`}
-          data-stylex-owner="organization-header-wrap"
-        >
-          <div
-            className={`${stylex.props(styles.headerAvatar).className} project-header-avatar`}
-            data-stylex-owner="organization-header-avatar"
-          >
+      <div className="project-header-inner" data-owner="organization-header-inner">
+        <div className="project-header-wrap" data-owner="organization-header-wrap">
+          <div className="project-header-avatar" data-owner="organization-header-avatar">
             <img src={logoUrl} alt="" />
           </div>
-          <div
-            className={`${stylex.props(styles.headerBreadcrumb).className} project-breadcrumb-wrap`}
-            data-stylex-owner="organization-header-breadcrumb"
-          >
+          <div className="project-breadcrumb-wrap" data-owner="organization-header-breadcrumb">
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
@@ -908,17 +685,11 @@ export function OrganizationHeader({
             </div>
           </div>
           {viewerCanEnroll ? (
-            <div
-              className={`${stylex.props(styles.projectUtilWrap).className} project-util-wrap`}
-              data-stylex-owner="organization-header-util-wrap"
-            >
-              <ul
-                className={`${stylex.props(styles.projectUtil).className} project-util`}
-                data-stylex-owner="organization-header-util"
-              >
+            <div className="project-util-wrap" data-owner="organization-header-util-wrap">
+              <ul className="project-util" data-owner="organization-header-util">
                 <li
-                  className={`${stylex.props(styles.projectUtilItem).className}${enrollmentDropdownOpen ? " open" : ""}`}
-                  data-stylex-owner="organization-header-util-item"
+                  className={`${enrollmentDropdownOpen ? "open" : ""}`}
+                  data-owner="organization-header-util-item"
                 >
                   <button
                     className={`ybtn ybtn-small ${enrollmentRequested ? "ybtn-info " : ""}dropdown-toggle`}
@@ -989,26 +760,12 @@ export function OrganizationMenu({
   const { t } = useLegacyMessages();
 
   return (
-    <div
-      className={`${stylex.props(styles.menuShell).className} project-menu-outer`}
-      data-stylex-owner="organization-menu-shell"
-    >
-      <div
-        className={`${stylex.props(styles.organizationMenuInner).className} project-menu-inner`}
-        data-stylex-owner="organization-menu-inner"
-      >
-        <ul
-          className={`${stylex.props(styles.organizationMenuNav, styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
-          data-stylex-owner="organization-menu-group"
-        >
+    <div className="project-menu-outer" data-owner="organization-menu-shell">
+      <div className="project-menu-inner" data-owner="organization-menu-inner">
+        <ul className="project-menu-nav project-menu-gruop" data-owner="organization-menu-group">
           <li
-            className={`${
-              stylex.props(
-                organizationMenuMigrationStyles.item,
-                active === "home" && organizationMenuMigrationStyles.activeItem,
-              ).className
-            } ${active === "home" ? "active" : ""}`.trim()}
-            data-stylex-owner="organization-menu-item-home"
+            className={`${active === "home" ? "active" : ""}`}
+            data-owner="organization-menu-item-home"
           >
             <Link
               activeOptions={{
@@ -1022,8 +779,7 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              {...stylex.props(organizationMenuMigrationStyles.link)}
-              data-stylex-owner="organization-menu-link-home"
+              data-owner="organization-menu-link-home"
               params={{ organizationName }}
               hash="organization-home-active-sentinel"
               mask={{
@@ -1036,13 +792,8 @@ export function OrganizationMenu({
             </Link>
           </li>
           <li
-            className={`${
-              stylex.props(
-                organizationMenuMigrationStyles.item,
-                active === "issues" && organizationMenuMigrationStyles.activeItem,
-              ).className
-            } ${active === "issues" ? "active" : ""}`.trim()}
-            data-stylex-owner="organization-menu-item-issues"
+            className={`${active === "issues" ? "active" : ""}`}
+            data-owner="organization-menu-item-issues"
           >
             <Link
               activeOptions={{
@@ -1056,21 +807,15 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              {...stylex.props(organizationMenuMigrationStyles.link)}
-              data-stylex-owner="organization-menu-link-issues"
+              data-owner="organization-menu-link-issues"
               to={`/organizations/${organizationName}/issues` as string}
             >
               {t("menu.issue")}
             </Link>
           </li>
           <li
-            className={`${
-              stylex.props(
-                organizationMenuMigrationStyles.item,
-                active === "boards" && organizationMenuMigrationStyles.activeItem,
-              ).className
-            } ${active === "boards" ? "active" : ""}`.trim()}
-            data-stylex-owner="organization-menu-item-boards"
+            className={`${active === "boards" ? "active" : ""}`}
+            data-owner="organization-menu-item-boards"
           >
             <Link
               activeOptions={{
@@ -1084,21 +829,15 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              {...stylex.props(organizationMenuMigrationStyles.link)}
-              data-stylex-owner="organization-menu-link-boards"
+              data-owner="organization-menu-link-boards"
               to={`/organizations/${organizationName}/boards` as string}
             >
               {t("menu.board")}
             </Link>
           </li>
           <li
-            className={`${
-              stylex.props(
-                organizationMenuMigrationStyles.item,
-                active === "pullrequests" && organizationMenuMigrationStyles.activeItem,
-              ).className
-            } ${active === "pullrequests" ? "active" : ""}`.trim()}
-            data-stylex-owner="organization-menu-item-pullrequests"
+            className={`${active === "pullrequests" ? "active" : ""}`}
+            data-owner="organization-menu-item-pullrequests"
           >
             <Link
               activeOptions={{
@@ -1112,22 +851,15 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              {...stylex.props(organizationMenuMigrationStyles.link)}
-              data-stylex-owner="organization-menu-link-pullrequests"
+              data-owner="organization-menu-link-pullrequests"
               to={`/organizations/${organizationName}/pullrequests` as string}
             >
               {t("menu.pullRequest")}
             </Link>
           </li>
         </ul>
-        <div
-          className={`${stylex.props(styles.projectSetting).className} project-setting`}
-          data-stylex-owner="organization-menu-setting"
-        >
-          <ul
-            className={`${stylex.props(styles.organizationMenuNav).className} project-menu-nav`}
-            data-stylex-owner="organization-menu-settings"
-          >
+        <div className="project-setting" data-owner="organization-menu-setting">
+          <ul className="project-menu-nav" data-owner="organization-menu-settings">
             {viewerCanUpdate ? (
               <li className="">
                 <Link
@@ -1166,27 +898,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function isOrganizationSearchLayoutState(search: string) {
-  const params = new URLSearchParams(search);
-  const keyword = params.get("keyword");
-  const searchType = params.get("searchType");
-  return (
-    keyword !== null &&
-    keyword.length > 0 &&
-    [
-      "auto",
-      "issue",
-      "user",
-      "project",
-      "post",
-      "milestone",
-      "issue_comment",
-      "post_comment",
-      "review",
-    ].includes(searchType ?? "")
-  );
 }
 
 function numberField(value: unknown) {

@@ -31,7 +31,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   // is `<div class="board-actrow right-txt">`; the app retains the class
   expect(route).toContain("right-txt");
   expect(route).toContain('className="act-row right-menu-icons"');
-  expect(route).toContain('data-stylex-owner="post-detail-sidebar-actions"');
+  expect(route).toContain('data-owner="post-detail-sidebar-actions"');
 
   // The legacy template keys this link to the enabled board menu, rather than
   // post.permissions.canCreate. The destination performs its own authorization.
@@ -43,7 +43,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   const body = page.locator(".board-body.row-fluid");
   const leftPane = page.locator(".board-body > .span-left-pane");
   const rightPane = page.locator(".board-body > .span-right-pane");
-  const sidebar = page.locator('[data-stylex-owner="post-detail-sidebar"]');
+  const sidebar = page.locator('[data-owner="post-detail-sidebar"]');
   const comment = page.locator("#comment-1");
 
   await expect(pageWrap).toBeVisible();
@@ -53,7 +53,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   await expect(sidebar.locator("dt")).toHaveText("Label [Edit]");
   await expect(sidebar.locator(".right-menu-icons button[title=Edit]")).toHaveCount(1);
   await expect(sidebar.locator(".right-menu-icons button[title=Delete]")).toHaveCount(1);
-  await expect(sidebar.locator('[data-stylex-owner="post-detail-sidebar-actions"]')).toHaveClass(
+  await expect(sidebar.locator('[data-owner="post-detail-sidebar-actions"]')).toHaveClass(
     /act-row/,
   );
   await expect(comment).toBeVisible();
@@ -71,9 +71,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
         width: rect.width,
       };
     };
-    const sidebar = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-sidebar"]',
-    );
+    const sidebar = document.querySelector<HTMLElement>('[data-owner="post-detail-sidebar"]');
     if (!sidebar) throw new Error("missing post sidebar");
     return {
       body: get(".board-body.row-fluid"),

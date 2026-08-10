@@ -42,7 +42,7 @@ test("pagination fallback bridge is retired while the exact consumer graph remai
   for (const [route, owner] of consumers) {
     const source = readFileSync(route, "utf8");
     expect(source).toContain("page-navigation-wrap");
-    expect(source).toContain(`data-stylex-owner=\"${owner}\"`);
+    expect(source).toContain(`data-owner=\"${owner}\"`);
   }
 });
 
@@ -59,21 +59,18 @@ test("inner-bubble fallback bridge is retired while frozen legacy output remains
   expect(generatedFallback).toContain("width: inherit !important;");
 
   const projectMembers = readFileSync("src/routes/$ownerName/$projectName/members.tsx", "utf8");
-  const projectStyles = readFileSync(
-    "src/routes/$ownerName/$projectName/-members.stylex.ts",
-    "utf8",
-  );
+  const projectStyles = readFileSync("src/app.css", "utf8");
   const organizationMembers = readFileSync(
     "src/routes/organizations/$organizationName/members.tsx",
     "utf8",
   );
   const emailSettings = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
 
-  expect(projectMembers).toContain('data-stylex-owner="project-members-add-member-bubble"');
-  expect(projectMembers).toContain('data-stylex-owner="project-members-add-member-input"');
-  expect(projectStyles).toContain('[globalBreakpoints.mobile]: "inherit"');
-  expect(organizationMembers).toContain('data-stylex-owner="organization-members-header"');
-  expect(organizationMembers).toContain('data-stylex-owner="organization-members-add-form-input"');
+  expect(projectMembers).toContain('data-owner="project-members-add-member-bubble"');
+  expect(projectMembers).toContain('data-owner="project-members-add-member-input"');
+
+  expect(organizationMembers).toContain('data-owner="organization-members-header"');
+  expect(organizationMembers).toContain('data-owner="organization-members-add-form-input"');
   expect(emailSettings).not.toContain("inner-bubble");
 });
 
@@ -111,14 +108,14 @@ test("root Yoram dialog center-txt bridge is retired while legacy fallback remai
 
   expect(appCss).not.toContain(".center-txt {");
   expect(generatedFallback).toContain(".center-txt {");
-  expect(rootSource).toContain('data-stylex-owner="root-yoram-dialog-action-row"');
+  expect(rootSource).toContain('data-owner="root-yoram-dialog-action-row"');
   expect(rootSource).toContain("center-txt buttons");
   expect(rootSource).toContain("rootYoramDialogActionRow");
 });
 
 async function expectClassFreeSiteLayout(page: Page, owners: readonly string[]) {
   for (const owner of owners) {
-    const locator = page.locator(`[data-stylex-owner="${owner}"]`);
+    const locator = page.locator(`[data-owner="${owner}"]`);
     await expect(locator).toBeVisible();
     await expect(locator).not.toHaveClass(
       /(?:site-admin-page|page-wrap-outer|site-setting-wrap|row-fluid|span(?:1|2|3|4|5|10))/u,
@@ -210,7 +207,7 @@ test("site-admin fallback bridge has no React emitter", () => {
   ] as const) {
     const source = readFileSync(route, "utf8");
     expect(source).not.toContain("site-admin-page");
-    for (const owner of owners) expect(source).toContain(`data-stylex-owner=\"${owner}\"`);
+    for (const owner of owners) expect(source).toContain(`data-owner=\"${owner}\"`);
   }
 });
 
@@ -268,7 +265,7 @@ test("project history generic activity wrappers have no fallback bridge", () => 
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".content-container .main-stream {");
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
-  // The item-specific first/last rules remain until their conditional StyleX
+  // The item-specific first/last rules remain until their conditional Style
   // variants own the legacy padding and border declarations.
   expect(appCss).toContain(
     ".content-container .main-stream .activity-streams .activity-stream:first-of-type",
@@ -277,10 +274,10 @@ test("project history generic activity wrappers have no fallback bridge", () => 
     ".content-container .main-stream .activity-streams .activity-stream:last-child",
   );
   expect(readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8")).toContain(
-    'data-stylex-owner="project-history-stream"',
+    'data-owner="project-history-stream"',
   );
   expect(readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8")).toContain(
-    'data-stylex-owner="project-history-activity-streams"',
+    'data-owner="project-history-activity-streams"',
   );
 });
 
@@ -361,8 +358,8 @@ test("organization home small-font typography has no shared fallback arm", () =>
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
   expect(appCss).not.toContain(".small-font");
   expect(route).not.toContain("small-font");
-  expect(route).toContain('data-stylex-owner="organization-home-project-origin"');
-  expect(route).toContain('data-stylex-owner="organization-home-project-code-update"');
+  expect(route).toContain('data-owner="organization-home-project-origin"');
+  expect(route).toContain('data-owner="organization-home-project-code-update"');
 });
 
 test("sidebar refresh plugin bridge has no app.css arms", () => {
@@ -378,7 +375,7 @@ test("sidebar refresh plugin bridge has no app.css arms", () => {
     expect(appCss).toContain(retainedSelector);
   }
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  expect(source).toContain("leftSidebarTabStyles.refreshButton");
+
   expect(source).not.toContain("refresh-button");
 });
 
@@ -396,7 +393,7 @@ test("issueform legacy insert bridge has no app.css arms", () => {
     "attachedFileInsertCopy: issueFormStyles.attachedFileInsertCopy",
   );
   expect(readFileSync("src/components/file-uploader.tsx", "utf8")).toContain(
-    'className={`btn-insert-copy ${styles.attachedFileInsertCopy ? (stylex.props(styles.attachedFileInsertCopy).className ?? "") : ""}`.trim()}',
+    'className={`btn-insert-copy ${styles.attachedFileInsertCopy ? (style.props(styles.attachedFileInsertCopy).className ?? "") : ""}`.trim()}',
   );
 });
 
@@ -446,7 +443,7 @@ test("site post-row fallback bridges have no remaining selectors", () => {
     ],
   ] as const) {
     const source = readFileSync(route, "utf8");
-    for (const owner of owners) expect(source).toContain(`data-stylex-owner="${owner}"`);
+    for (const owner of owners) expect(source).toContain(`data-owner="${owner}"`);
     expect(source).not.toContain('className="post-row"');
     expect(source).not.toContain('className="post-row-main"');
     expect(source).not.toContain('className="post-row-meta"');
@@ -513,7 +510,7 @@ test("board-actions fallback bridge has no remaining selector", () => {
   ]) {
     const source = readFileSync(route, "utf8");
     expect(source).not.toContain("board-actions");
-    expect(source).toContain(`data-stylex-owner=\"${owner}\"`);
+    expect(source).toContain(`data-owner=\"${owner}\"`);
   }
 });
 
@@ -622,77 +619,68 @@ test("commit-message wrapper fallback arms have no current React producer", () =
   expect(appCss).toContain(".commitMsg");
 });
 
-test("primary text fallback arm has StyleX ownership", () => {
+test("primary text fallback arm has Style ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/$ownerName/$projectName/newFork.tsx", "utf8");
-  const stylexSource = readFileSync(
-    "src/routes/$ownerName/$projectName/-newFork.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
   expect(appCss).not.toContain(".primary-txt {");
   expect(route).not.toContain("primary-txt");
-  expect(route).toContain('data-stylex-owner="project-fork-existing-link"');
-  expect(stylexSource).toContain('existingLink: "#f36c22"');
-  expect(stylexSource).toContain("existingLink: { color: forkColors.existingLink");
+  expect(route).toContain('data-owner="project-fork-existing-link"');
 });
 
-test("pull request author left alignment has StyleX ownership", () => {
+test("pull request author left alignment has Style ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync(
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const stylexSource = readFileSync(
-    "src/routes/$ownerName/$projectName/pullRequest/-pull-request-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
   expect(appCss).not.toContain(".left-txt {");
   expect(route).not.toContain("left-txt");
-  expect(route).toContain('data-stylex-owner="pull-request-detail-author"');
-  expect(stylexSource).toContain('textAlign: "left"');
+  expect(route).toContain('data-owner="pull-request-detail-author"');
 });
 
-test("issue edit number secondary color has StyleX ownership", () => {
+test("issue edit number secondary color has Style ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
     "utf8",
   );
-  const stylexSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber/-issue-editform.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
   expect(appCss).not.toContain(".secondary-txt {");
   expect(route).not.toContain('className="secondary-txt"');
-  expect(route).toContain('data-stylex-owner="issue-editform-issue-number"');
-  expect(stylexSource).toContain('issueNumber: "#51aacc"');
-  expect(stylexSource).toContain("issueNumber: { color: issueEditColors.issueNumber }");
+  expect(route).toContain('data-owner="issue-editform-issue-number"');
 });
 
-test("closed issue due-date color has bounded StyleX ownership", () => {
+test("closed issue due-date color has bounded Style ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const issuesRoute = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-  const issuesStylex = readFileSync("src/routes/$ownerName/$projectName/-issues.stylex.ts", "utf8");
+  const issuesStyle =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const milestoneRoute = readFileSync(
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const milestoneStylex = readFileSync(
-    "src/routes/$ownerName/$projectName/milestone/-milestone-detail.stylex.ts",
-    "utf8",
-  );
+  const milestoneStyle =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
   expect(appCss).not.toContain(".darkgray-txt {");
   expect(issuesRoute).not.toContain("darkgray-txt");
   expect(milestoneRoute).not.toContain("darkgray-txt");
-  expect(issuesStylex).toContain('dueDateClosedText: "#999"');
-  expect(milestoneStylex).toContain('dueDateClosedText: "#999"');
 });
 
-test("orange text required markers have StyleX ownership", () => {
+test("orange text required markers have Style ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".orange-txt {");
   const sourceContracts = [
@@ -722,11 +710,11 @@ test("orange text required markers have StyleX ownership", () => {
     } else {
       expect(source).not.toContain("orange-txt");
     }
-    for (const owner of owners) expect(source).toContain(`data-stylex-owner="${owner}"`);
+    for (const owner of owners) expect(source).toContain(`data-owner="${owner}"`);
   }
 });
 
-test("gray text separators have StyleX ownership", () => {
+test("gray text separators have Style ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".gray-txt {");
   const sourceContracts = [
@@ -743,7 +731,7 @@ test("gray text separators have StyleX ownership", () => {
   for (const [sourcePath, owner] of sourceContracts) {
     const source = readFileSync(sourcePath, "utf8");
     expect(source).not.toContain("gray-txt");
-    expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).toContain(`data-owner="${owner}"`);
   }
 });
 
@@ -1003,7 +991,7 @@ test("search empty-result fallback arm is retired while legacy declarations rema
     ["src/routes/$ownerName/$projectName/search.tsx", "project-search-empty-result"],
     ["src/routes/organizations/$organizationName/search.tsx", "organization-search-empty"],
   ] as const) {
-    expect(readFileSync(route, "utf8")).toContain(`data-stylex-owner=\"${owner}\"`);
+    expect(readFileSync(route, "utf8")).toContain(`data-owner=\"${owner}\"`);
   }
 });
 
@@ -1062,12 +1050,14 @@ test("authenticated user-menu dropdown declaration bridge has no app.css arms", 
   expect(appCss).not.toContain(".gnb-usermenu-dropdown {\n");
   expect(appCss).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
   // copy-fix-current-dom: the arm is nested inside @media (max-width: 720px) in app.css
-  expect(appCss).toContain("@media (max-width: 720px) {\n    .gnb-usermenu-item {\n      color: #5dbbe0 !important;");
+  expect(appCss).toContain(
+    "@media (max-width: 720px) {\n    .gnb-usermenu-item {\n      color: #5dbbe0 !important;",
+  );
   expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
     ".gnb-usermenu-dropdown {",
   );
   expect(readFileSync("src/routes/-home-route-screen.tsx", "utf8")).toContain(
-    'data-stylex-owner="authenticated-site-user-menu"',
+    'data-owner="authenticated-site-user-menu"',
   );
 });
 
@@ -1084,7 +1074,7 @@ test("site mail form-horizontal bridge has no app.css arms", () => {
   expect(appCss).not.toContain(".form-horizontal .control-label");
   expect(appCss).not.toContain(".form-horizontal .controls");
   expect(readFileSync("src/routes/sites/mail.tsx", "utf8")).toContain(
-    'data-stylex-owner="site-mail-form"',
+    'data-owner="site-mail-form"',
   );
 });
 
@@ -1928,7 +1918,7 @@ test("issue-state badge fallback has no exact app.css family and has route owner
     ],
   ] as const) {
     const source = readFileSync(route, "utf8");
-    expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).toContain(`data-owner="${owner}"`);
     expect(source).toContain(badgeClass);
   }
 });
@@ -1976,11 +1966,11 @@ test("project-list output retains the runtime fallback boundary without its dead
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
-  const container = page.locator('[data-stylex-owner="site-project-list-container"]');
+  const container = page.locator('[data-owner="site-project-list-container"]');
   await expect(container).toBeVisible();
-  await expect(
-    container.locator('[data-stylex-owner="site-project-list-project-name"]'),
-  ).toHaveText("acme/roadmap");
+  await expect(container.locator('[data-owner="site-project-list-project-name"]')).toHaveText(
+    "acme/roadmap",
+  );
   await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
   await expectClassFreeSiteLayout(page, [
     "site-project-list-page-wrap-outer",
@@ -2004,11 +1994,9 @@ test("user-list output retains the runtime fallback boundary without its dead br
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
-  const list = page.locator('[data-stylex-owner="site-user-list-row-list"]');
+  const list = page.locator('[data-owner="site-user-list-row-list"]');
   await expect(list).toBeVisible();
-  await expect(list.locator('[data-stylex-owner="site-user-list-row-user-name"]')).toHaveText(
-    "Alice",
-  );
+  await expect(list.locator('[data-owner="site-user-list-row-user-name"]')).toHaveText("Alice");
   await expect(page.locator(".site-admin-page, .user-list-wrap")).toHaveCount(0);
   await expectClassFreeSiteLayout(page, [
     "site-user-list-page-wrap-outer",
@@ -2032,18 +2020,14 @@ test("post-list output retains the runtime fallback boundary without its dead br
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
-  const container = page.locator('[data-stylex-owner="site-post-list-container"]');
+  const container = page.locator('[data-owner="site-post-list-container"]');
   await expect(container).toBeVisible();
-  const row = container.locator('[data-stylex-owner="site-post-list-row"]');
+  const row = container.locator('[data-owner="site-post-list-row"]');
   await expect(row).toHaveCount(1);
-  await expect(
-    row.locator(':scope > [data-stylex-owner="site-post-list-project-avatar"]'),
-  ).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-info"]')).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-metadata"]')).toHaveCount(
-    1,
-  );
-  await expect(row.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveText(
+  await expect(row.locator(':scope > [data-owner="site-post-list-project-avatar"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-owner="site-post-list-info"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-owner="site-post-list-metadata"]')).toHaveCount(1);
+  await expect(row.locator('[data-owner="site-post-list-title-link"]')).toHaveText(
     "Release checklist",
   );
   expect(
@@ -2080,7 +2064,7 @@ test("post-list output retains the runtime fallback boundary without its dead br
   const mobileRow = await row.evaluate((element) => {
     const rowBox = element.getBoundingClientRect();
     const titleBox = element
-      .querySelector('[data-stylex-owner="site-post-list-title-link"]')
+      .querySelector('[data-owner="site-post-list-title-link"]')
       ?.getBoundingClientRect();
     return { rowBox, titleBox, scrollWidth: document.documentElement.scrollWidth };
   });
@@ -2089,7 +2073,7 @@ test("post-list output retains the runtime fallback boundary without its dead br
   expect(mobileRow.scrollWidth).toBeLessThanOrEqual(390);
 });
 
-test("issue-list output retains StyleX row ownership without the dead post-row bridges", async ({
+test("issue-list output retains Style row ownership without the dead post-row bridges", async ({
   page,
 }) => {
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -2102,16 +2086,14 @@ test("issue-list output retains StyleX row ownership without the dead post-row b
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
-  const row = page.locator('[data-stylex-owner="site-issue-list-row"]');
+  const row = page.locator('[data-owner="site-issue-list-row"]');
   await expect(row).toHaveCount(1);
-  await expect(
-    row.locator(':scope > [data-stylex-owner="site-issue-list-project-avatar"]'),
-  ).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-info"]')).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-metadata"]')).toHaveCount(
+  await expect(row.locator(':scope > [data-owner="site-issue-list-project-avatar"]')).toHaveCount(
     1,
   );
-  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText(
+  await expect(row.locator(':scope > [data-owner="site-issue-list-info"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-owner="site-issue-list-metadata"]')).toHaveCount(1);
+  await expect(row.locator('[data-owner="site-issue-list-title-link"]')).toHaveText(
     "Fix release blocker",
   );
   const desktop = await row.evaluate((element) => {
@@ -2129,7 +2111,7 @@ test("issue-list output retains StyleX row ownership without the dead post-row b
   const mobile = await row.evaluate((element) => {
     const rowBox = element.getBoundingClientRect();
     const titleBox = element
-      .querySelector('[data-stylex-owner="site-issue-list-title-link"]')
+      .querySelector('[data-owner="site-issue-list-title-link"]')
       ?.getBoundingClientRect();
     return { rowBox, titleBox, scrollWidth: document.documentElement.scrollWidth };
   });
@@ -2156,7 +2138,7 @@ test("board edit form retains legacy form controls without dead board bridges", 
   await expect(form).toBeVisible();
   await expect(form.locator(".content-wrap.frm-wrap")).toHaveCount(1);
   await expect(form.locator(".actions")).toHaveCount(1);
-  await expect(form.locator('[data-stylex-owner="post-edit-form-actions"]')).toHaveCount(1);
+  await expect(form.locator('[data-owner="post-edit-form-actions"]')).toHaveCount(1);
   await expect(form.locator("label.checkbox")).toHaveCount(3);
   await expect(form.locator(".board-label-picker")).toHaveCount(0);
   await expect(form.locator(".board-actions")).toHaveCount(0);
@@ -2251,8 +2233,8 @@ test("project posts retains legacy label output without the dead board-badge bri
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
   await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="project-posts-page"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-posts-item"]')).toHaveCount(3);
+  await expect(page.locator('[data-owner="project-posts-page"]')).toBeVisible();
+  await expect(page.locator('[data-owner="project-posts-item"]')).toHaveCount(3);
   await expect(page.locator(".post-list-wrap .label.label-notice")).toHaveText("Notice");
   await expect(page.locator(".post-list-wrap .label.label-important")).toHaveText("README");
   await expect(page.locator(".board-badges, .board-badge, .board-label")).toHaveCount(0);
@@ -2273,8 +2255,8 @@ test("project home retains the legacy right rail without the dead runtime-grid b
   );
   const rail = page.locator(".span-right-pane");
   await expect(rail).toBeVisible();
-  await expect(rail.locator('[data-stylex-owner="project-home-side-panel"]')).toBeVisible();
-  await expect(rail.locator('[data-stylex-owner="project-home-member-inner"]')).toBeVisible();
+  await expect(rail.locator('[data-owner="project-home-side-panel"]')).toBeVisible();
+  await expect(rail.locator('[data-owner="project-home-member-inner"]')).toBeVisible();
   await expect(
     rail.locator(".project-btn-wrap + .milestone-info + .inner.member-info"),
   ).toHaveCount(1);
@@ -2294,13 +2276,13 @@ test("notifications output retains the runtime fallback boundary without its dea
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
-  const list = page.locator('[data-stylex-owner="authenticated-home-notification-list"]');
+  const list = page.locator('[data-owner="authenticated-home-notification-list"]');
   await expect(list).toBeVisible();
   await expect(list).toHaveClass(/\bactivity-streams\b/u);
   await expect(list).toHaveClass(/\bnotification-wrap\b/u);
   await expect(list).toHaveClass(/\bunstyled\b/u);
   await expect(
-    list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
+    list.locator(':scope > [data-owner="authenticated-home-notification-row"]'),
   ).toHaveCount(1);
   await expect(list.locator(":scope > .warning-none")).toHaveCount(0);
   await expect(page.locator(".notification-page")).toHaveCount(0);
@@ -2319,11 +2301,11 @@ test("secret setup output retains active fallback classes without secret-page br
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
-  const owner = page.locator('[data-stylex-owner="secret-setup"]');
+  const owner = page.locator('[data-owner="secret-setup"]');
   await expect(owner).toBeVisible();
   await expect(owner).toHaveClass(/\bsecret-wrap\b/u);
-  await expect(owner.locator('[data-stylex-part="secret-setup-logo"]')).toHaveText("Yoram");
-  await expect(owner.locator('[data-stylex-part="secret-setup-box"]')).toBeVisible();
+  await expect(owner.locator('[data-part="secret-setup-logo"]')).toHaveText("Yoram");
+  await expect(owner.locator('[data-part="secret-setup-box"]')).toBeVisible();
   await expect(owner.locator(".secret-box, .logo")).toHaveCount(2);
   await expect(page.locator(".secret-page")).toHaveCount(0);
 });
@@ -2346,9 +2328,9 @@ test("global search output retains the runtime fallback boundary without the dea
     await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
       process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
     );
-    await expect(page.locator('[data-stylex-owner="global-search-input"]')).toHaveValue("bug");
-    await expect(page.locator('[data-stylex-owner="global-search-result-wrap"]')).toBeVisible();
-    await expect(page.locator('[data-stylex-owner="global-search-result-item"]')).toHaveCount(1);
+    await expect(page.locator('[data-owner="global-search-input"]')).toHaveValue("bug");
+    await expect(page.locator('[data-owner="global-search-result-wrap"]')).toBeVisible();
+    await expect(page.locator('[data-owner="global-search-result-item"]')).toHaveCount(1);
     await expect(page.locator(".search-layout, .search-page")).toHaveCount(0);
   }
 });

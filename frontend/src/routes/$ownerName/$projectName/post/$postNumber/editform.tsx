@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BoardPostFileUploader } from "../../../../../components/file-uploader";
 import { BoardPostMarkdownEditor } from "../../../../../components/markdown-editor";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -11,12 +10,20 @@ import {
   updateProjectPostRest,
   type BoardPostDetail,
 } from "../../../../../api/boards";
+import { ProjectPostEditNotFoundBody, ProjectPostEditNotFoundTitle } from "../$postNumber";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
+
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { postEditFormTheme, styles } from "./-post-editform.stylex";
 
-const formStyleProps = stylex.props(styles.form);
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) {
+    return undefined;
+  }
+
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+}
 
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber/editform")({
   component: ProjectBoardEditFormRoute,
@@ -30,9 +37,21 @@ function ProjectBoardEditFormRoute() {
 
 function ProjectBoardEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, postNumber, projectName } = Route.useParams();
-  const postQuery = useQuery(
-    readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
-  );
+  const postQuery = useQuery({
+    ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
+  });
+
+  if (restApiErrorStatus(postQuery.error) === 404) {
+    return (
+      <>
+        <ProjectPostEditNotFoundTitle />
+        <ProjectPostEditNotFoundBody />
+      </>
+    );
+  }
 
   if (!postQuery.data) {
     return null;
@@ -93,18 +112,17 @@ function ProjectBoardEditFormBody({
   return (
     <>
       <title>{`${t("post.modify")} - ${ownerName}/${projectName}`}</title>
-      <div className="page-wrap-outer" data-stylex-owner="post-edit-form-page">
+      <div className="page-wrap-outer" data-owner="post-edit-form-page">
         <div className="project-page-wrap">
           <form
-            {...formStyleProps}
-            data-stylex-owner="post-edit-form"
+            data-owner="post-edit-form"
             action={prefixBasePath(
               runtimeConfig.basePath,
               `/${ownerName}/${projectName}/post/${postNumber}`,
             )}
             method="post"
             encType="multipart/form-data"
-            className={`${formStyleProps.className} nm`}
+            className="nm"
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
@@ -121,7 +139,7 @@ function ProjectBoardEditFormBody({
                 <dt>
                   <label htmlFor="title">{t("title")}</label>
                 </dt>
-                <dd data-stylex-owner="post-edit-form-title">
+                <dd data-owner="post-edit-form-title">
                   <input
                     ref={titleRef}
                     tabIndex={1}
@@ -140,18 +158,13 @@ function ProjectBoardEditFormBody({
                     }}
                   />
                 </dd>
-                <dd
-                  {...stylex.props(styles.editorWrapper)}
-                  data-stylex-owner="post-edit-form-editor"
-                >
+                <dd data-owner="post-edit-form-editor">
                   <BoardPostMarkdownEditor
                     focusRequest={bodyFocusRequest}
                     value={post.bodyMarkdown}
                     help={<LegacyMarkdownHelp />}
-                    wrapperClassName={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
-                    tabListStyle={stylex.props(styles.editorTabs)}
-                    tabContentClassName={`${stylex.props(styles.editorContent).className} tab-content`}
-                    notificationStyle={stylex.props(styles.notificationReceiver)}
+                    wrapperClassName="mt10"
+                    tabContentClassName="tab-content"
                     owners={{
                       wrapper: "post-edit-form-markdown-editor-wrapper",
                       tabs: "post-edit-form-editor-tabs",
@@ -164,9 +177,8 @@ function ProjectBoardEditFormBody({
 
               <BoardPostFileUploader
                 resourceId={String(post.id)}
-                wrapperStyleProps={stylex.props(styles.upload)}
                 pasteHelpFixedStyleProps={{ style: { display: "block" } }}
-                helpClassName={`right-txt help ${stylex.props(styles.uploadSaveHelp).className}`.trim()}
+                helpClassName="right-txt help"
                 owners={{
                   wrapper: "post-edit-form-uploader",
                   pasteHelp: "post-edit-form-paste-help",
@@ -174,10 +186,7 @@ function ProjectBoardEditFormBody({
                 }}
               />
 
-              <div
-                className={`${stylex.props(styles.options).className} mt10 mb10`}
-                data-stylex-owner="post-edit-form-options"
-              >
+              <div className="mt10 mb10" data-owner="post-edit-form-options">
                 {canSetNotice ? (
                   <label className="checkbox">
                     <input type="checkbox" id="notice" name="notice" defaultChecked={post.notice} />
@@ -192,10 +201,7 @@ function ProjectBoardEditFormBody({
                 ) : null}
               </div>
 
-              <div
-                className={`${stylex.props(styles.actions).className} actions`}
-                data-stylex-owner="post-edit-form-actions"
-              >
+              <div className="actions" data-owner="post-edit-form-actions">
                 {canSendNotification ? (
                   <span className="send-notification-check">
                     <label className="checkbox inline">

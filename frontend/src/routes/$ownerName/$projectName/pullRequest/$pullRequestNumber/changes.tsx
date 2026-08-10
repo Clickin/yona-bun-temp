@@ -3,7 +3,6 @@ import { DiffLineView, type ParsedDiffLine } from "../../../../../components/dif
 import { UploadForm } from "../../../../../components/file-uploader";
 import { FileDiffErrorRow } from "../../../../../components/file-diff-error-row";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -33,34 +32,6 @@ import {
   PullRequestHeader,
   PullRequestStateInfo,
 } from "../$pullRequestNumber";
-import { styles } from "./-pull-request-changes.stylex";
-import { styles as detailStyles } from "../-pull-request-detail.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  codediffWrap: stylex.props(styles.codediffWrap),
-  errorWrap: stylex.props(styles.errorWrap),
-  errorIcon: (backgroundImage: string) => stylex.props(styles.errorIcon(backgroundImage)),
-  errorMessage: stylex.props(styles.errorMessage),
-  browse: stylex.props(styles.browse),
-  author: stylex.props(styles.author),
-  diffs: stylex.props(styles.diffs),
-  threadActions: stylex.props(styles.threadActions),
-  commentActions: stylex.props(styles.commentActions),
-  reviewActions: stylex.props(styles.reviewActions),
-  uploadHelp: stylex.props(styles.uploadHelp),
-  commentDeleteModalVisible: stylex.props(styles.commentDeleteModalVisible),
-  reviewCard: stylex.props(styles.reviewCard),
-  reviewCardOpen: stylex.props(styles.reviewCardOpen),
-  reviewCardClosed: stylex.props(styles.reviewCardClosed),
-  reviewCardOutdatedLabel: stylex.props(styles.reviewCardOutdatedLabel),
-  reviewCardOutdatedLabelHidden: stylex.props(styles.reviewCardOutdatedLabelHidden),
-  reviewCardContent: stylex.props(styles.reviewCardContent),
-  reviewCardInfo: stylex.props(styles.reviewCardInfo),
-  reviewCardDate: stylex.props(styles.reviewCardDate),
-  reviewCardAvatar: stylex.props(styles.reviewCardAvatar),
-  reviewCardComments: stylex.props(styles.reviewCardComments),
-} as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 const legacyLinkActiveOptions = { exact: true, explicitUndefined: true };
@@ -219,24 +190,25 @@ function ProjectPullRequestChangesScreen({
 
 function ProjectPullRequestChangesErrorBody({ status }: { status: 403 | 404 }) {
   const { t } = useLegacyMessages();
+  const errorIconStyle = {
+    backgroundImage: `url(${legacySpriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  };
   return (
-    <div className="page-wrap-outer" data-stylex-owner="pull-request-changes-error-page">
+    <div className="page-wrap-outer" data-owner="pull-request-changes-error-page">
       <div className="project-page-wrap">
-        <div
-          {...sx.errorWrap}
-          className={`${sx.errorWrap.className ?? ""} error-wrap`.trim()}
-          data-stylex-owner="pull-request-changes-error-wrap"
-        >
+        <div className="error-wrap" data-owner="pull-request-changes-error-wrap">
           <i
-            {...sx.errorIcon(`url(${legacySpriteUrl})`)}
-            className={`${sx.errorIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err2`.trim()}
-            data-stylex-owner="pull-request-changes-error-icon"
+            style={errorIconStyle}
+            className="ico ico-err2"
+            data-owner="pull-request-changes-error-icon"
           ></i>
-          <p
-            {...sx.errorMessage}
-            className={sx.errorMessage.className}
-            data-stylex-owner="pull-request-changes-error-message"
-          >
+          <p data-owner="pull-request-changes-error-message">
             {t(status === 404 ? "error.notfound" : "error.forbidden")}
           </p>
         </div>
@@ -329,17 +301,9 @@ function ProjectPullRequestChangesBody({
 
   return (
     <>
-      <div
-        {...sx.page}
-        className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
-        data-stylex-owner="pull-request-changes-page"
-      >
-        <div className="project-page-wrap" data-stylex-owner="pull-request-changes-shell">
-          <div
-            {...sx.browse}
-            className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
-            data-stylex-owner="pull-request-changes-browse"
-          >
+      <div className="page-wrap-outer" data-owner="pull-request-changes-page">
+        <div className="project-page-wrap" data-owner="pull-request-changes-shell">
+          <div className="code-browse-wrap" data-owner="pull-request-changes-browse">
             <PullRequestHeader
               activeTab="changes"
               project={project}
@@ -347,12 +311,11 @@ function ProjectPullRequestChangesBody({
               runtimeConfig={runtimeConfig}
             />
 
-            <div className="board-body mb20" data-stylex-owner="pull-request-changes-body">
+            <div className="board-body mb20" data-owner="pull-request-changes-body">
               <div
-                {...sx.author}
-                className={`author-info right-txt ${sx.author.className ?? ""}`.trim()}
+                className="author-info right-txt"
                 style={{ marginTop: "20px" }}
-                data-stylex-owner="pull-request-changes-author"
+                data-owner="pull-request-changes-author"
               >
                 <Link
                   to="/$user"
@@ -375,22 +338,13 @@ function ProjectPullRequestChangesBody({
               </div>
             </div>
 
-            <div
-              {...sx.codediffWrap}
-              className={`${codediffClassName} ${sx.codediffWrap.className ?? ""}`.trim()}
-              data-stylex-owner="pull-request-changes-codediff-wrap"
-            >
+            <div className={codediffClassName} data-owner="pull-request-changes-codediff-wrap">
               {hasReviewCards ? (
                 <button type="button" className="ybtn ybtn-default btn-show-reviewcards">
                   <i className="yobicon-restore"></i>
                 </button>
               ) : null}
-              <div
-                {...sx.diffs}
-                className={`diffs-wrap ${sx.diffs.className ?? ""}`.trim()}
-                data-stylex-owner="pull-request-changes-diffs"
-                id="changes"
-              >
+              <div className="diffs-wrap" data-owner="pull-request-changes-diffs" id="changes">
                 <CommitDropdown
                   commitId={commitId}
                   commits={changes.commits}
@@ -401,8 +355,8 @@ function ProjectPullRequestChangesBody({
                 <div className="diff-body diffs-wrap-scroll">
                   <div
                     id="state"
-                    className={`${stylex.props(detailStyles.state).className} pullRequest-stateInfo`}
-                    data-stylex-owner="pull-request-changes-state"
+                    className="pullRequest-stateInfo"
+                    data-owner="pull-request-changes-state"
                   >
                     <PullRequestStateInfo
                       currentUserLoginId={currentUser.loginId}
@@ -513,8 +467,8 @@ function NonRangedThread({
           action={action}
           method="post"
           encType="multipart/form-data"
-          className={`review-form ${stylex.props(styles.threadReviewForm).className ?? ""}`}
-          data-stylex-owner="pull-request-changes-non-ranged-review-form"
+          className="review-form"
+          data-owner="pull-request-changes-non-ranged-review-form"
         >
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
@@ -566,14 +520,10 @@ function ThreadReplyFormBody({
           <Editor editorMode="code-review-body" wrapId={wrapId} />
           <UploadForm
             resourceType="REVIEW_COMMENT"
-            helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+            helpClassName="help"
             helpOwner="pull-request-changes-upload-help"
           />
-          <div
-            {...sx.threadActions}
-            className={`right-txt ${sx.threadActions.className ?? ""}`.trim()}
-            data-stylex-owner="pull-request-changes-thread-actions"
-          >
+          <div className="right-txt" data-owner="pull-request-changes-thread-actions">
             <button
               type="button"
               className="ybtn ybtn-default ybtn-small"
@@ -710,8 +660,7 @@ function OriginalMessageMarkdown({
       ) : null}
       <button
         type="button"
-        {...stylex.props(styles.originalMessageToggle)}
-        data-stylex-owner="pull-request-changes-original-message-toggle"
+        data-owner="pull-request-changes-original-message-toggle"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -761,12 +710,11 @@ function CommentDeleteModal({
   return (
     <>
       <div
-        {...(isOpen ? sx.commentDeleteModalVisible : undefined)}
         id="comment-delete-modal"
         className={`${
           isOpen ? "modal hide fade in" : "modal hide fade"
-        } ${(isOpen ? sx.commentDeleteModalVisible.className : undefined) ?? ""}`.trim()}
-        data-stylex-owner="pull-request-changes-comment-delete-modal"
+        }${isOpen ? " is-open" : ""}`.trim()}
+        data-owner="pull-request-changes-comment-delete-modal"
       >
         <div className="modal-header">
           <button type="button" className="close" onClick={closeModal}>
@@ -810,10 +758,7 @@ function ReviewWrap({
           <i className="yobicon-maximize"></i>
         </button>
 
-        <ul
-          className={`${stylex.props(styles.reviewTabs).className} nav nav-tabs`}
-          data-stylex-owner="pull-request-changes-review-tabs"
-        >
+        <ul className="nav nav-tabs" data-owner="pull-request-changes-review-tabs">
           <li className={reviewCardTab === "open" ? "active" : undefined}>
             <button type="button" onClick={() => setReviewCardTab("open")}>
               {t("issue.state.open")} {openThreads.length}
@@ -875,14 +820,10 @@ function ReviewCard({
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
-  const reviewCardState =
-    thread.state.toLowerCase() === "open" ? sx.reviewCardOpen : sx.reviewCardClosed;
   const reviewCardClassName = [
     "review-card",
     thread.state.toLowerCase(),
     thread.isOutdated ? "outdated" : "",
-    sx.reviewCard.className,
-    reviewCardState.className,
   ]
     .filter(Boolean)
     .join(" ");
@@ -894,47 +835,36 @@ function ReviewCard({
       activeOptions={legacyHashLinkActiveOptions}
       activeProps={legacyLinkActiveProps}
       className={reviewCardClassName}
-      data-stylex-owner="pull-request-changes-review-card"
+      data-owner="pull-request-changes-review-card"
     >
-      <p
-        className={`content ${sx.reviewCardContent.className}`}
-        data-stylex-owner="pull-request-changes-review-card-content"
-      >
+      <p className="content" data-owner="pull-request-changes-review-card-content">
         {thread.comments[0]?.contentsMarkdown ?? ""}
       </p>
-      <p
-        className={`info ${sx.reviewCardInfo.className}`}
-        data-stylex-owner="pull-request-changes-review-card-info"
-      >
+      <p className="info" data-owner="pull-request-changes-review-card-info">
         {remainingCommentCount > 0 ? (
           <span
-            className={`comments pull-left ${sx.reviewCardComments.className}`}
-            data-stylex-owner="pull-request-changes-review-card-comments"
+            className="comments pull-left"
+            data-owner="pull-request-changes-review-card-comments"
           >
             <i className="yobicon-comments"></i> {remainingCommentCount}
           </span>
         ) : null}
         <span
-          className={`outdated-label ${
-            thread.isOutdated
-              ? sx.reviewCardOutdatedLabel.className
-              : `${sx.reviewCardOutdatedLabel.className} ${sx.reviewCardOutdatedLabelHidden.className}`
-          }`}
-          data-stylex-owner="pull-request-changes-review-card-outdated-label"
+          className={`outdated-label ${thread.isOutdated ? "" : "hidden"}`}
+          data-owner="pull-request-changes-review-card-outdated-label"
         >
           {t("review.outdated")}
         </span>
         <span
-          className={`date ${sx.reviewCardDate.className}`}
-          data-stylex-owner="pull-request-changes-review-card-date"
+          className="date"
+          data-owner="pull-request-changes-review-card-date"
           title={thread.createdLabel}
         >
           {thread.createdLabel}
         </span>
         <span
-          {...sx.reviewCardAvatar}
-          className={`avatar-wrap smaller ml5 ${sx.reviewCardAvatar.className}`}
-          data-stylex-owner="pull-request-changes-review-card-avatar"
+          className="avatar-wrap smaller ml5"
+          data-owner="pull-request-changes-review-card-avatar"
         >
           <img
             src={
@@ -993,8 +923,8 @@ function PullRequestFileDiff({
         {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
         {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
         <div
-          className={`${stylex.props(styles.diffMeta).className ?? ""} diff-partial-meta`}
-          data-stylex-owner="pull-request-changes-diff-meta"
+          className="diff-partial-meta"
+          data-owner="pull-request-changes-diff-meta"
           onClick={toggleExpanded}
         >
           <div className="diff-partial-commit">
@@ -1007,9 +937,7 @@ function PullRequestFileDiff({
         </div>
         {/* oxlint-disable jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock uses mouse selection on the plain diff container. */}
         <div
-          className={`diff-partial-code ${
-            isExpanded ? "" : (stylex.props(styles.diffCodeHidden).className ?? "")
-          }`.trim()}
+          className={`diff-partial-code ${isExpanded ? "" : "hidden"}`.trim()}
           data-hashcode={file.path}
           onMouseDown={(event) => {
             const start = diffSelectionLine(event.target);
@@ -1095,15 +1023,14 @@ function PullRequestFileDiff({
             /* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy btnPop is a plain positioned div around the post button. */
             <div
               className="btnPop"
+              style={{ top: pendingBlock.top, left: pendingBlock.left }}
               onMouseDown={(event) => {
                 event.stopPropagation();
               }}
               onMouseUp={(event) => {
                 event.stopPropagation();
               }}
-              {...stylex.props(styles.pendingBlockPosition(pendingBlock.top, pendingBlock.left))}
-              {...stylex.props(styles.pendingBlockVisible)}
-              data-stylex-owner="pull-request-changes-pending-block"
+              data-owner="pull-request-changes-pending-block"
             >
               <button
                 type="button"
@@ -1230,33 +1157,14 @@ function InlineThread({
   const state = thread.state.toLowerCase();
   const isClosed = state === "closed";
   const [isFolded, setIsFolded] = useState(() => isClosed);
-  const threadShellProps = stylex.props(
-    styles.rangedThreadWrap,
-    state === "closed" ? styles.rangedThreadClosed : styles.rangedThreadOpen,
-    isFolded && styles.rangedThreadClosedFold,
-  );
-  const threadFoldHereProps = stylex.props(isFolded && styles.rangedThreadFoldHere);
-  const threadFoldButtonProps = stylex.props(
-    isFolded
-      ? state === "closed"
-        ? styles.rangedThreadFoldHereClosed
-        : styles.rangedThreadFoldHereOpen
-      : null,
-  );
-  const threadFoldHiddenHeaderProps = stylex.props(isFolded && styles.rangedThreadFoldHiddenHeader);
-  const threadFoldHiddenCommentsProps = stylex.props(
-    isFolded && styles.rangedThreadFoldHiddenComments,
-  );
-  const threadFoldHiddenFormProps = stylex.props(isFolded && styles.rangedThreadFoldHiddenForm);
   const toggleFold = () => setIsFolded((current) => !current);
 
   return (
     <div
       id={`thread-${thread.id}`}
       data-state={state}
-      {...threadShellProps}
-      className={`${threadShellProps.className ?? ""} comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
-      data-stylex-owner="pull-request-changes-ranged-thread-shell"
+      className={`comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
+      data-owner="pull-request-changes-ranged-thread-shell"
       data-thread-folded={isFolded ? "true" : "false"}
       data-range-path={thread.path}
       data-range-startside={thread.startSide}
@@ -1267,47 +1175,30 @@ function InlineThread({
       data-range-endcolumn="0"
     >
       <div
-        {...threadFoldHereProps}
-        className={`${threadFoldHereProps.className ?? ""} btn-thread-here btn-thread-minimize`}
-        data-stylex-owner="pull-request-changes-ranged-thread-fold-here"
+        className="btn-thread-here btn-thread-minimize"
+        data-owner="pull-request-changes-ranged-thread-fold-here"
       >
-        <button
-          type="button"
-          {...threadFoldButtonProps}
-          className={`${threadFoldButtonProps.className ?? ""} ybtn ybtn-default ybtn-small`}
-          onClick={toggleFold}
-        >
+        <button type="button" className="ybtn ybtn-default ybtn-small" onClick={toggleFold}>
           <i className="yobicon-post2"></i>
         </button>
       </div>
-      <div
-        {...threadFoldHiddenHeaderProps}
-        className={`${threadFoldHiddenHeaderProps.className ?? ""} thread-header`}
-        data-stylex-owner="pull-request-changes-ranged-thread-header"
-      >
+      <div className="thread-header" data-owner="pull-request-changes-ranged-thread-header">
         <span
-          {...stylex.props(styles.rangedThreadBadge)}
-          className={`${stylex.props(styles.rangedThreadBadge).className ?? ""} badge state ${state}`}
-          data-stylex-owner="pull-request-changes-ranged-thread-badge"
+          className={`badge state ${state}`}
+          data-owner="pull-request-changes-ranged-thread-badge"
         >
           {t(`issue.state.${state}`)}
         </span>
         <button
-          {...stylex.props(styles.rangedThreadMinimize)}
-          {...threadFoldHiddenHeaderProps}
           type="button"
-          className={`${stylex.props(styles.rangedThreadMinimize).className ?? ""} ${threadFoldHiddenHeaderProps.className ?? ""} ybtn ybtn-default ybtn-small btn-thread-minimize`}
+          className="ybtn ybtn-default ybtn-small btn-thread-minimize"
           onClick={toggleFold}
-          data-stylex-owner="pull-request-changes-ranged-thread-minimize"
+          data-owner="pull-request-changes-ranged-thread-minimize"
         >
           <i className="yobicon-maximize"></i>
         </button>
       </div>
-      <ul
-        {...threadFoldHiddenCommentsProps}
-        className={`${threadFoldHiddenCommentsProps.className ?? ""} comments`}
-        data-stylex-owner="pull-request-changes-ranged-thread-comments"
-      >
+      <ul className="comments" data-owner="pull-request-changes-ranged-thread-comments">
         {thread.comments.map((comment) => (
           <NonRangedThreadComment
             comment={comment}
@@ -1317,17 +1208,13 @@ function InlineThread({
           />
         ))}
       </ul>
-      <div
-        {...threadFoldHiddenFormProps}
-        className={`${threadFoldHiddenFormProps.className ?? ""} write-comment-form`}
-        data-stylex-owner="pull-request-changes-ranged-thread-form"
-      >
+      <div className="write-comment-form" data-owner="pull-request-changes-ranged-thread-form">
         <form
           action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId)}
           method="post"
           encType="multipart/form-data"
-          className={`review-form ${stylex.props(styles.threadReviewForm).className ?? ""}`}
-          data-stylex-owner="pull-request-changes-ranged-review-form"
+          className="review-form"
+          data-owner="pull-request-changes-ranged-review-form"
         >
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
@@ -1659,10 +1546,7 @@ function CommitDropdown({
         <span className="d-label">
           {selectedCommit ? (
             <>
-              <strong
-                className={`${stylex.props(styles.commitHash).className} mr10 commit-hash`}
-                data-stylex-owner="pull-request-changes-commit-hash"
-              >
+              <strong className="mr10 commit-hash" data-owner="pull-request-changes-commit-hash">
                 {selectedCommit.commitShortId}
               </strong>
               <span>{selectedCommitLabel(selectedCommit, t("review.outdated"))}</span>
@@ -1670,10 +1554,7 @@ function CommitDropdown({
           ) : commitId ? (
             <>
               {`${t("pullRequest.changes.all")} (${t("review.outdated")} - `}
-              <strong
-                className={`${stylex.props(styles.commitHash).className} mr10`}
-                data-stylex-owner="pull-request-changes-commit-hash"
-              >
+              <strong className="mr10" data-owner="pull-request-changes-commit-hash">
                 {shortId(commitId)}
               </strong>
               )
@@ -1715,10 +1596,7 @@ function CommitDropdown({
                 activeProps={legacyLinkActiveProps}
                 onClick={closeDropdown}
               >
-                <strong
-                  className={`${stylex.props(styles.commitHash).className} mr10 commit-hash`}
-                  data-stylex-owner="pull-request-changes-commit-hash"
-                >
+                <strong className="mr10 commit-hash" data-owner="pull-request-changes-commit-hash">
                   {commit.commitShortId}
                 </strong>
                 <span>{commitSummary(commit)}</span>
@@ -1765,11 +1643,11 @@ function CommentForm({ action }: { action: string }) {
         <UploadForm
           resourceType="REVIEW_COMMENT"
           wrapperId="upload"
-          helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+          helpClassName="help"
           helpOwner="pull-request-changes-upload-help"
         />
         <div className="write-comment-wrap">
-          <div {...sx.commentActions} data-stylex-owner="pull-request-changes-comment-actions">
+          <div data-owner="pull-request-changes-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
               {t("button.comment.new")}
@@ -1798,8 +1676,8 @@ function ReviewForm({
   return (
     <div
       id="review-form"
-      className={`${(visible ? stylex.props(styles.visibleForm).className : "") ?? ""} review-form`}
-      data-stylex-owner={visible ? "pull-request-changes-visible-form" : undefined}
+      className="review-form"
+      data-owner={visible ? "pull-request-changes-visible-form" : undefined}
     >
       <form action={action} method="post" encType="multipart/form-data">
         {hiddenFields.map(([name, value]) => (
@@ -1837,10 +1715,10 @@ function ReviewForm({
             <Editor editorMode="code-review-body" wrapId="review" />
             <UploadForm
               resourceType="REVIEW_COMMENT"
-              helpClassName={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+              helpClassName="help"
               helpOwner="pull-request-changes-upload-help"
             />
-            <div {...sx.reviewActions} data-stylex-owner="pull-request-changes-review-actions">
+            <div data-owner="pull-request-changes-review-actions">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
               </button>
@@ -1859,16 +1737,11 @@ function stringField(value: unknown, fallback: string) {
 function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
   const { t } = useLegacyMessages();
   const [mode, setMode] = useState<"edit" | "preview">("edit");
-  const editorStyleProps = stylex.props(
-    editorMode === "code-review-body" && styles.reviewEditorWrapper,
-  );
+  const isCodeReviewBody = editorMode === "code-review-body";
   return (
     <div
-      {...editorStyleProps}
-      className={`mt10 ${editorStyleProps.className ?? ""}`.trim()}
-      data-stylex-owner={
-        editorMode === "code-review-body" ? "pull-request-changes-review-editor-wrapper" : undefined
-      }
+      className="mt10"
+      data-owner={isCodeReviewBody ? "pull-request-changes-review-editor-wrapper" : undefined}
     >
       <ul className="nav nav-tabs nm small">
         <li className={mode === "edit" ? "active" : undefined}>
@@ -1908,23 +1781,16 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div
-        className={`${stylex.props(styles.editorTabContent).className} tab-content`}
-        data-stylex-owner="pull-request-changes-editor-tab-content"
-      >
+      <div className="tab-content" data-owner="pull-request-changes-editor-tab-content">
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${mode === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               name="contents"
-              className={`editorSeries content comment nm ${editorMode === "code-review-body" ? (stylex.props(styles.reviewTextarea).className ?? "") : ""}`.trim()}
+              className="editorSeries content comment nm"
               data-editor-mode={editorMode}
               id={`editor-contents-${wrapId}`}
-              data-stylex-owner={
-                editorMode === "code-review-body"
-                  ? "pull-request-changes-review-textarea"
-                  : undefined
-              }
+              data-owner={isCodeReviewBody ? "pull-request-changes-review-textarea" : undefined}
               {...legacyMarkdownTextareaAttr}
             ></textarea>
           </div>

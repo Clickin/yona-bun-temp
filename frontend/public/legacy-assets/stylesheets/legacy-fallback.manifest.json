@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "artifact": "legacy-assets/stylesheets/legacy-fallback.css",
-  "artifactSha256": "8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6",
+  "artifactSha256": "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
   "layer": "legacy",
   "activeFrozen": [
     "bootstrap",
@@ -25,7 +25,7 @@
       "sourceFiles": [
         {
           "path": "frontend/src/app.css",
-          "sha256": "56787c51dd9bafa9435ca443318f772ac57708e0912f492b709bc3f0250de1c3"
+          "sha256": "1af240e302764eebae66431f023ddd602a526995abfbabcd317d1c057631515d"
         }
       ]
     },
@@ -54,7 +54,6 @@
       "sha256": "a0baa7fb81cfe06b3bfe4489cb15c998ad3afc7cf7eb77e36f356278d247f440"
     }
   ],
-  "precedenceProbe": "#main [data-stylex-root-boundary]",
   "sources": [
     {
       "cascadeIndex": 0,

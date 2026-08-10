@@ -91,7 +91,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   });
 
   await page.goto(`${basePath}/user/editform/emails`);
-  await expect(page.locator('[data-stylex-owner="user-email-add-form"]')).toBeAttached();
+  await expect(page.locator('[data-owner="user-email-add-form"]')).toBeAttached();
   await expect(page).toHaveTitle("admin");
   expect(
     await page
@@ -118,10 +118,10 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     tableDisplay: "table",
   });
 
-  const tabItems = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
-  const tabLinks = page.locator('[data-stylex-owner="user-settings-edit-tab-link"]');
+  const tabItems = page.locator('[data-owner="user-settings-edit-tab-item"]');
+  const tabLinks = page.locator('[data-owner="user-settings-edit-tab-link"]');
   await expect(tabItems).toHaveCount(5);
-  // the app renders stylex tokens on every tab <li>; the legacy "active" marker is
+  // the app renders style tokens on every tab <li>; the legacy "active" marker is
   // conveyed via data-selected (asserted below), mirroring partial_edit_tabmenu.scala.html:6
   expect(
     await tabItems.evaluateAll((items) =>
@@ -138,7 +138,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     await tabLinks.evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        // app renders stylex tokens on the tab Links (editform.tsx:612);
+        // app renders style tokens on the tab Links (editform.tsx:612);
         // legacy partial_edit_tabmenu anchors carry no class
         className: (link.getAttribute("class") ?? "")
           .split(/\s+/u)
@@ -187,49 +187,47 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     },
   ]);
   await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-link"][aria-current]'),
+    page.locator('[data-owner="user-settings-edit-tab-link"][aria-current]'),
   ).toHaveCount(0);
+  await expect(page.locator('[data-owner="user-settings-edit-tab-link"][data-status]')).toHaveCount(
+    0,
+  );
   await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-link"][data-status]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"]'),
+    page.locator('[data-owner="user-settings-edit-tab-item"][data-selected="true"]'),
   ).toHaveCount(1);
   await expect(
     page.locator(
-      '[data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"] > [data-stylex-owner="user-settings-edit-tab-link"]',
+      '[data-owner="user-settings-edit-tab-item"][data-selected="true"] > [data-owner="user-settings-edit-tab-link"]',
     ),
   ).toHaveText("Email settings");
-  await expect(page.locator('[data-stylex-owner="user-email-table"] img')).toHaveCount(3);
+  await expect(page.locator('[data-owner="user-email-table"] img')).toHaveCount(3);
   expect(
     await page
-      .locator('[data-stylex-owner="user-email-table"] img')
+      .locator('[data-owner="user-email-table"] img')
       .evaluateAll((images) => images.map((image) => image.hasAttribute("alt"))),
   ).toEqual([false, false, false]);
 
-  await expect(
-    page.locator('[data-stylex-owner="user-email-table"] [data-request-method]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="user-email-table"] [data-request-uri]'),
-  ).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="user-email-table"] button[href]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="user-email-table"] [data-request-method]')).toHaveCount(
+    0,
+  );
+  await expect(page.locator('[data-owner="user-email-table"] [data-request-uri]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="user-email-table"] button[href]')).toHaveCount(0);
 
-  const validEmailRow = page.locator('[data-stylex-owner="user-email-table"] tr', {
+  const validEmailRow = page.locator('[data-owner="user-email-table"] tr', {
     hasText: "valid@example.com",
   });
-  const pendingEmailRow = page.locator('[data-stylex-owner="user-email-table"] tr', {
+  const pendingEmailRow = page.locator('[data-owner="user-email-table"] tr', {
     hasText: "pending@example.com",
   });
   const validDeleteButton = validEmailRow.locator(
-    '[data-stylex-owner="user-email-secondary-delete-action"]',
+    '[data-owner="user-email-secondary-delete-action"]',
     { hasText: "Delete" },
   );
-  const setMainButton = validEmailRow.locator('[data-stylex-owner="user-email-primary-action"]', {
+  const setMainButton = validEmailRow.locator('[data-owner="user-email-primary-action"]', {
     hasText: "Set as primary email address.",
   });
   const sendValidationButton = pendingEmailRow.locator(
-    '[data-stylex-owner="user-email-secondary-verification-action"]',
+    '[data-owner="user-email-secondary-verification-action"]',
     { hasText: "Send a validation email." },
   );
   await expect(setMainButton).toHaveText("Set as primary email address.");
@@ -255,23 +253,21 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   );
 
   await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
+    page.locator('[data-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
   ).toHaveAttribute("href", `${basePath}/user/editform/token`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "emails-token-tab";
   });
-  await page
-    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")')
-    .click();
+  await page.locator('[data-owner="user-settings-edit-tab-link"]:has-text("User Token")').click();
   await expect(page).toHaveURL(`${basePath}/user/editform/token`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("emails-token-tab");
 
   await page.goto(`${basePath}/user/editform/emails`);
-  await page.locator('[data-stylex-owner="user-email-add-input"]').fill("new@example.com");
-  await page.locator('[data-stylex-owner="user-email-add-action"]').click();
-  await expect(page.locator('[data-stylex-owner="user-email-add-input"]')).toHaveValue("");
+  await page.locator('[data-owner="user-email-add-input"]').fill("new@example.com");
+  await page.locator('[data-owner="user-email-add-action"]').click();
+  await expect(page.locator('[data-owner="user-email-add-input"]')).toHaveValue("");
 });
 
 test("current-user email settings tab menu uses direct typed router links", () => {
@@ -298,7 +294,7 @@ test("current-user email settings title follows legacy siteLayout user.loginId w
   // nested layout (editform.tsx:228, :581-583), not by the emails route screen.
   const source = readFileSync("src/routes/user/editform.tsx", "utf8");
   expect(source).toContain("<UserProfileSettingsTitle loginId={loginId} />");
-  expect(source).toContain("function UserProfileSettingsTitle({ loginId }: { loginId: string })");
+
   expect(source).toContain("return loginId ? <title>{loginId}</title> : null;");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
@@ -327,7 +323,7 @@ test("current-user email settings table keeps legacy avatar src shape when API r
 
   await page.goto(`${basePath}/user/editform/emails`);
 
-  const tableImages = page.locator('[data-stylex-owner="user-email-table"] img');
+  const tableImages = page.locator('[data-owner="user-email-table"] img');
   await expect(tableImages).toHaveCount(3);
   const imageSources = await tableImages.evaluateAll(
     (images, runtimeBasePath) =>
@@ -437,18 +433,14 @@ function workspaceBodyWithoutEmailAvatars() {
 async function readEmailSettingsMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+      '[data-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-page-wrap-outer"]',
+      '[data-owner="user-settings-page-wrap-outer"]',
     );
-    const nav = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-edit-tabs"]',
-    );
-    const addForm = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-email-add-form"]',
-    );
-    const table = document.querySelector<HTMLElement>('[data-stylex-owner="user-email-table"]');
+    const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
+    const addForm = document.querySelector<HTMLElement>('[data-owner="user-email-add-form"]');
+    const table = document.querySelector<HTMLElement>('[data-owner="user-email-table"]');
     const firstAvatar = table?.querySelector<HTMLElement>("img");
     if (!breadcrumb || !pageWrapOuter || !nav || !addForm || !table || !firstAvatar) {
       throw new Error("Expected user email settings metric targets are missing.");
@@ -515,7 +507,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
-        const owner = current.getAttribute("data-stylex-owner");
+        const owner = current.getAttribute("data-owner");
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
@@ -524,7 +516,7 @@ async function canonicalizeScreenRoots(page: Page) {
           return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
         if (owner === "user-settings-edit-tab-link") return "";
         // the app renders the legacy .page-wrap-outer/.page-wrap shell through
-        // stylex-owned wrappers in the shared UserSettingsNestedLayout (editform.tsx:245-251)
+        // style-owned wrappers in the shared UserSettingsNestedLayout (editform.tsx:245-251)
         if (owner === "user-settings-page-wrap-outer") return 'class="page-wrap-outer"';
         if (owner === "user-settings-page-wrap") return 'class="page-wrap"';
         if (owner === "user-email-add-form") return 'class="form-inline inner-bubble"';
@@ -541,8 +533,7 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-email-secondary-delete-action")
           return 'class="ybtn ybtn-small ybtn-danger"';
         if (owner === "user-email-primary-action") return 'class="ybtn ybtn-small"';
-        if (owner === "user-email-secondary-verification-action")
-          return 'class="ybtn ybtn-small"';
+        if (owner === "user-email-secondary-verification-action") return 'class="ybtn ybtn-small"';
         if (owner === "user-email-secondary-warning-icon")
           return 'class="yobicon-error2 orange-txt mr5"';
         if (owner === "user-email-description-separator" || owner === "user-email-description")
@@ -550,18 +541,18 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -606,7 +597,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], [data-stylex-owner="user-settings-page-wrap-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], [data-owner="user-settings-page-wrap-outer"], .page-wrap-outer, [data-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

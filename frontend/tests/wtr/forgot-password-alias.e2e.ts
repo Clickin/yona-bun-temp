@@ -12,10 +12,8 @@ test("forgot-password alias redirects to the legacy lostPassword route with sear
   const redirectedUrl = new URL(page.url());
   expect(redirectedUrl.pathname).toBe(`${basePath}/lostPassword`);
   expect(redirectedUrl.searchParams.get("requested")).toBe("1");
-  const successAlert = page.locator('[data-stylex-owner="lost-password-success-alert"]');
-  const successHeading = successAlert.locator(
-    '[data-stylex-part="lost-password-success-alert-heading"]',
-  );
+  const successAlert = page.locator('[data-owner="lost-password-success-alert"]');
+  const successHeading = successAlert.locator('[data-part="lost-password-success-alert-heading"]');
   await expect(successAlert).toBeVisible();
   await expect(successHeading).toBeVisible();
   await expect(successHeading).toHaveText("Mail has been sent.");

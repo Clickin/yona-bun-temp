@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createOrganizationRest } from "../../api/org-project";
@@ -10,175 +9,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { organizationNewColors } from "./-new.stylex";
-
-const styles = stylex.create({
-  frame: {
-    margin: "30px auto",
-    position: "relative",
-    width: "700px",
-  },
-  form: {
-    margin: "0 0 2px",
-  },
-  listReset: {
-    margin: "0",
-    padding: "1px 0 0 0",
-  },
-  term: {
-    margin: "0 0 1px",
-    padding: "0",
-  },
-  definition: {
-    margin: "0",
-    padding: "0",
-  },
-  legend: {
-    borderBottomColor: organizationNewColors.divider,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderLeftWidth: "0",
-    borderRightWidth: "0",
-    borderTopWidth: "0",
-    color: organizationNewColors.actionText,
-    display: "block",
-    fontSize: "21px",
-    fontWeight: "400",
-    lineHeight: "40px",
-    margin: "0 0 20px",
-    padding: "0",
-    width: "100%",
-  },
-  label: {
-    color: organizationNewColors.actionText,
-    display: "inline-block",
-    fontSize: "12px",
-    fontWeight: "700",
-    lineHeight: "20px",
-    margin: "0 5px 5px 0",
-  },
-  field: {
-    backgroundColor: organizationNewColors.fieldSurface,
-    borderColor: {
-      default: organizationNewColors.fieldBorder,
-      ":focus": organizationNewColors.fieldFocusBorder,
-    },
-    borderRadius: "2px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxShadow: "none",
-    color: organizationNewColors.fieldText,
-    display: "inline-block",
-    fontSize: {
-      default: "12px",
-      "@media (max-width: 720px)": "16px",
-    },
-    fontWeight: "400",
-    lineHeight: "20px",
-    margin: "0 0 10px",
-    outline: "0",
-    padding: "4px 6px",
-    verticalAlign: "middle",
-    width: "98%",
-  },
-  nameField: {
-    height: "20px",
-    margin: "0 0 14px",
-  },
-  descriptionField: {
-    height: "40px",
-    resize: "vertical",
-  },
-  actions: {
-    position: "relative",
-    textAlign: "center",
-  },
-  action: {
-    backgroundColor: {
-      default: organizationNewColors.actionSurface,
-      ":hover": organizationNewColors.actionHoverSurface,
-      ":focus": organizationNewColors.actionHoverSurface,
-      ":active": organizationNewColors.actionHoverSurface,
-    },
-    borderColor: {
-      default: organizationNewColors.actionBorder,
-      ":hover": organizationNewColors.actionHoverBorder,
-      ":focus": organizationNewColors.actionHoverBorder,
-      ":active": organizationNewColors.actionHoverBorder,
-    },
-    borderRadius: "3px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxShadow: organizationNewColors.actionShadow,
-    color: {
-      default: organizationNewColors.actionText,
-      ":hover": organizationNewColors.actionHoverText,
-      ":focus": organizationNewColors.actionHoverText,
-      ":active": organizationNewColors.actionHoverText,
-    },
-    cursor: "pointer",
-    display: "inline-block",
-    fontSize: "14px",
-    fontWeight: "400",
-    lineHeight: "20px",
-    marginBottom: "0",
-    marginLeft: ".3em",
-    outline: "0 none",
-    padding: "4px 12px",
-    position: "relative",
-    textAlign: "center",
-    textDecoration: {
-      default: "none",
-      ":hover": "none",
-      ":focus": "none",
-      ":active": "none",
-    },
-    transition: "all 0.3s ease",
-    verticalAlign: "middle",
-    whiteSpace: "nowrap",
-    zIndex: "2",
-  },
-  firstAction: {
-    marginLeft: "0",
-  },
-  primaryAction: {
-    backgroundColor: {
-      default: organizationNewColors.primarySurface,
-      ":hover": organizationNewColors.primaryBorder,
-      ":focus": organizationNewColors.primaryBorder,
-      ":active": organizationNewColors.primaryBorder,
-    },
-    borderColor: {
-      default: organizationNewColors.primaryBorder,
-      ":hover": organizationNewColors.primaryBorder,
-      ":focus": organizationNewColors.primaryBorder,
-      ":active": organizationNewColors.primaryBorder,
-    },
-    color: {
-      default: organizationNewColors.primaryText,
-      ":hover": organizationNewColors.primaryText,
-      ":focus": organizationNewColors.primaryText,
-      ":active": organizationNewColors.primaryText,
-    },
-  },
-});
-
-const frameStyleProps = stylex.props(styles.frame);
-const formStyleProps = stylex.props(styles.form);
-const listStyleProps = stylex.props(styles.listReset);
-const termStyleProps = stylex.props(styles.term);
-const definitionStyleProps = stylex.props(styles.definition);
-const legendStyleProps = stylex.props(styles.legend);
-const labelStyleProps = stylex.props(styles.label);
-const nameFieldStyleProps = stylex.props(styles.field, styles.nameField);
-const descriptionFieldStyleProps = stylex.props(styles.field, styles.descriptionField);
-const actionsStyleProps = stylex.props(styles.actions);
-const createActionStyleProps = stylex.props(
-  styles.action,
-  styles.firstAction,
-  styles.primaryAction,
-);
-const cancelActionStyleProps = stylex.props(styles.action);
 
 type OrganizationCreateSearch = {
   warning?: string;
@@ -276,37 +106,17 @@ function OrganizationNewScreen({
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div className="page-wrap-outer">
           <div className="project-page-wrap">
-            <div
-              {...frameStyleProps}
-              className={`form-wrap new-project ${frameStyleProps.className}`}
-              data-stylex-owner="organization-new-form"
-            >
+            <div data-owner="organization-new-form">
               <form
-                {...formStyleProps}
                 action={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}
                 method="post"
                 name="new-org"
-                className={`frm-wrap ${formStyleProps.className}`}
-                data-stylex-owner="organization-new-form"
+                data-owner="organization-new-form"
                 onSubmit={handleSubmit}
               >
-                <legend
-                  {...legendStyleProps}
-                  className={legendStyleProps.className}
-                  data-stylex-owner="organization-new-label"
-                >
-                  {t("title.newOrganization")}
-                </legend>
-                <dl
-                  {...listStyleProps}
-                  className={listStyleProps.className}
-                  data-stylex-owner="organization-new-form"
-                >
-                  <dt
-                    {...termStyleProps}
-                    className={termStyleProps.className}
-                    data-stylex-owner="organization-new-form"
-                  >
+                <legend data-owner="organization-new-label">{t("title.newOrganization")}</legend>
+                <dl data-owner="organization-new-form">
+                  <dt data-owner="organization-new-form">
                     <div className="n-alert" data-errtype="name">
                       <div className="orange-txt">
                         {!nameError && (serverNameError || warning) ? (
@@ -322,82 +132,45 @@ function OrganizationNewScreen({
                         </span>
                       </div>
                     </div>
-                    <label
-                      {...labelStyleProps}
-                      className={labelStyleProps.className}
-                      data-stylex-owner="organization-new-label"
-                      htmlFor="name"
-                    >
+                    <label data-owner="organization-new-label" htmlFor="name">
                       {t("organization.name.placeholder")}
                     </label>
                   </dt>
-                  <dd
-                    {...definitionStyleProps}
-                    className={definitionStyleProps.className}
-                    data-stylex-owner="organization-new-form"
-                  >
+                  <dd data-owner="organization-new-form">
                     <input
-                      {...nameFieldStyleProps}
                       ref={nameInputRef}
                       id="name"
                       type="text"
                       name="name"
-                      className={`text ${nameFieldStyleProps.className}`}
-                      data-stylex-owner="organization-new-field"
+                      data-owner="organization-new-field"
                       placeholder=""
                       maxLength={250}
                       defaultValue=""
                     />
                   </dd>
 
-                  <dt
-                    {...termStyleProps}
-                    className={termStyleProps.className}
-                    data-stylex-owner="organization-new-form"
-                  >
-                    <label
-                      {...labelStyleProps}
-                      className={labelStyleProps.className}
-                      data-stylex-owner="organization-new-label"
-                      htmlFor="descr"
-                    >
+                  <dt data-owner="organization-new-form">
+                    <label data-owner="organization-new-label" htmlFor="descr">
                       {t("organization.description.placeholder")}
                     </label>
                   </dt>
-                  <dd
-                    {...definitionStyleProps}
-                    className={definitionStyleProps.className}
-                    data-stylex-owner="organization-new-form"
-                  >
+                  <dd data-owner="organization-new-form">
                     <textarea
-                      {...descriptionFieldStyleProps}
                       id="descr"
                       name="descr"
-                      className={`text textarea.span4 ${descriptionFieldStyleProps.className}`}
-                      data-stylex-owner="organization-new-field"
+                      data-owner="organization-new-field"
                       defaultValue=""
                       style={{ resize: "vertical" }}
                     />
                   </dd>
                 </dl>
-                <div
-                  {...actionsStyleProps}
-                  className={`actions ${actionsStyleProps.className}`}
-                  data-stylex-owner="organization-new-actions"
-                >
-                  <button
-                    {...createActionStyleProps}
-                    className={`ybtn ybtn-success ${createActionStyleProps.className}`}
-                    data-stylex-owner="organization-new-actions"
-                    disabled={createMutation.isPending}
-                  >
+                <div data-owner="organization-new-actions">
+                  <button data-owner="organization-new-actions" disabled={createMutation.isPending}>
                     <i className="yobicon-friends" /> {t("organization.create")}
                   </button>
                   <Link
-                    {...cancelActionStyleProps}
                     to="/"
-                    className={`ybtn ${cancelActionStyleProps.className}`}
-                    data-stylex-owner="organization-new-actions"
+                    data-owner="organization-new-actions"
                     activeOptions={{ exact: true }}
                     activeProps={legacyAnchorActiveProps}
                   >

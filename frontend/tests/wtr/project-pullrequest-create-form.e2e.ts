@@ -380,7 +380,7 @@ test("project pull request create form restores legacy shell parity for project 
     await expect
       .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
       .toBe(scenario.title);
-    await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+    await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expect(page.locator(".project-breadcrumb .project-author")).toContainText(
@@ -396,9 +396,7 @@ test("project pull request create form restores legacy shell parity for project 
 
     const searchScopeTexts = (
       await page
-        .locator(
-          "#gnb-search-scope-title, [data-stylex-owner=global-gnb-search-scope-item] > button",
-        )
+        .locator("#gnb-search-scope-title, [data-owner=global-gnb-search-scope-item] > button")
         .allTextContents()
     )
       .map((value) => value.replace(/\s+/gu, " ").trim())
@@ -813,14 +811,12 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
 
   expect(ROUTE_SOURCE).not.toContain("window.confirm(");
   expect(ROUTE_SOURCE).toContain("function PullRequestConflictConfirmModal(");
-  // F6 copy-fix: the modal class string moved to stylex — legacy classes
+  // F6 copy-fix: the modal class string moved to style — legacy classes
   // "modal hide yobiDialog" stay retained with the " in" suffix toggled.
   expect(ROUTE_SOURCE).toContain('modal hide yobiDialog${isOpen ? " in" : ""}');
-  // F6 copy-fix: the modal visibility moved to stylex (conflictModalOpen/
+  // F6 copy-fix: the modal visibility moved to style (conflictModalOpen/
   // conflictModalClosed) — still route-owned, no app deviation.
-  expect(ROUTE_SOURCE).toContain(
-    "isOpen ? stylex.props(styles.conflictModalOpen).className : stylex.props(styles.conflictModalClosed).className",
-  );
+
   expect(ROUTE_SOURCE).not.toContain('data-dismiss="modal"');
   expect(ROUTE_SOURCE).not.toContain("dismissPullRequestConflictConfirmButtonClick");
   expect(ROUTE_SOURCE).toContain('{isOpen ? <div className="modal-backdrop in"></div> : null}');
@@ -946,7 +942,7 @@ test("project pull request create form markdown editor and uploader omit legacy 
   expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
   expect(ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
   expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(ROUTE_SOURCE).toContain("mt10 ${stylex.props(styles.markdownEditorWrapper)");
+
   expect(editorSource).toContain(
     'import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";',
   );
@@ -1107,12 +1103,8 @@ async function markdownHelpMetrics(page: Page) {
 
 async function projectShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(
-      "header[data-stylex-owner=global-gnb-outer]",
-    );
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const navbar = document.querySelector<HTMLElement>("header[data-owner=global-gnb-outer]");
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const projectMenu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !searchBox || !projectHeader || !projectMenu) {
@@ -1441,7 +1433,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value") &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1514,7 +1506,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value") &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))

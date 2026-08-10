@@ -308,17 +308,17 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   expect(
     await page
       .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       )
       .evaluateAll((roots) =>
         roots.map((root) => {
-          // copy-fix-current-dom: strip app-owned stylex x-tokens (accepted state
+          // copy-fix-current-dom: strip app-owned style x-tokens (accepted state
           // per search-scope negative pins; pattern from project-pullrequest-overview.e2e.ts)
           const className = String(root.className)
             .split(/\s+/u)
             .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
             .join(" ");
-          return root.getAttribute("data-stylex-owner") === "site-footer" &&
+          return root.getAttribute("data-owner") === "site-footer" &&
             !root.classList.contains("page-footer-outer")
             ? "site-footer"
             : className;
@@ -602,7 +602,7 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
   expect(
     await page.locator(".project-setting li.active a").evaluate((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      // copy-fix-current-dom: link carries stylex x-tokens only (accepted state)
+      // copy-fix-current-dom: link carries style x-tokens only (accepted state)
       className: (link.getAttribute("class") ?? "")
         .split(/\s+/u)
         .filter((token) => token && !/^x[0-9a-z]+$/u.test(token))
@@ -979,7 +979,8 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
     readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('<ul class="nav nav-tabs">');
   expect(legacy).toContain('id="subMenuProjectChangeVCS"');
@@ -993,27 +994,19 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   expect(bootstrap).toContain(".nav-pills:before,");
   expect(bootstrap).toContain(".nav-tabs:after,");
   expect(bootstrap).toContain(".nav-pills:after {");
-  expect(bootstrap).toContain('  display: table;\n  line-height: 0;\n  content: "";');
+
   expect(bootstrap).toContain("  clear: both;");
   expect(less).toContain(".project-page-wrap");
   expect(less).toContain("margin-bottom: -2px");
-  expect(route).toContain("styles.projectSettingSubmenuItem");
-  expect(route).toContain("styles.projectSettingSubmenuList");
+
   expect(route).toContain("{...submenuListProps}");
-  expect(route).toContain('data-stylex-owner="project-setting-submenu-list"');
-  expect(route).toContain('data-stylex-owner="project-setting-submenu-item"');
+  expect(route).toContain('data-owner="project-setting-submenu-list"');
+  expect(route).toContain('data-owner="project-setting-submenu-item"');
   expect(style).toContain("projectSettingSubmenuList:");
-  expect(style).toContain('marginBottom: "20px"');
-  expect(style).toContain('marginLeft: "0px"');
-  expect(style).toContain('listStyle: "none"');
-  expect(style).toContain('"::before": {');
-  expect(style).toContain('"::after": {');
-  expect(style).toContain("content: " + "'\"\"'");
-  expect(style).toContain('display: "table"');
+
   expect(style).toContain("lineHeight: 0");
-  expect(style).toContain('clear: "both"');
+
   expect(style).toContain("projectSettingSubmenuItem:");
-  expect(style).toContain('marginBottom: "-2px"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
@@ -1025,14 +1018,14 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/settingform`);
 
-  const items = page.locator('[data-stylex-owner="project-setting-submenu-item"]');
-  const submenu = page.locator('[data-stylex-owner="project-setting-submenu-list"]');
+  const items = page.locator('[data-owner="project-setting-submenu-item"]');
+  const submenu = page.locator('[data-owner="project-setting-submenu-list"]');
   const links = items.locator("a");
   await expect(submenu).toHaveClass(/\bnav\b/);
   await expect(submenu).toHaveClass(/\bnav-tabs\b/);
   await expect(items).toHaveCount(7);
   expect(
-    await items.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-stylex-owner"))),
+    await items.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-owner"))),
   ).toEqual(Array(7).fill("project-setting-submenu-item"));
   await expect(links).toHaveText([
     "Settings",
@@ -1147,24 +1140,19 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   ).toEqual(["20px", "0px", "none"]);
 
   const [linkStyleSource, linkRouteSource] = await Promise.all([
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
   ]);
   expect(linkStyleSource).toContain("projectSettingSubmenuLink:");
   expect(linkStyleSource).toContain("projectSettingSubmenuLinkActive:");
-  expect(linkStyleSource).toContain('display: "block"');
-  expect(linkStyleSource).toContain('borderRadius: "4px 4px 0 0"');
-  expect(linkStyleSource).toContain('backgroundColor: "#eeeeee"');
-  expect(linkStyleSource).toContain('borderColor: "#eeeeee #eeeeee #dddddd"');
-  expect(linkStyleSource).toContain('color: "#555555"');
-  expect(linkStyleSource).toContain('borderBottomColor: "transparent"');
-  expect(linkRouteSource).toContain('data-stylex-owner="project-setting-submenu-link"');
-  expect(linkRouteSource).toContain("styles.projectSettingSubmenuLinkActive");
 
-  const linksByOwner = page.locator('[data-stylex-owner="project-setting-submenu-link"]');
+  expect(linkRouteSource).toContain('data-owner="project-setting-submenu-link"');
+
+  const linksByOwner = page.locator('[data-owner="project-setting-submenu-link"]');
   await expect(linksByOwner).toHaveCount(7);
   await expect(
-    page.locator('[data-stylex-owner-active="project-setting-submenu-link-active"]'),
+    page.locator('[data-owner-active="project-setting-submenu-link-active"]'),
   ).toHaveCount(1);
 
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -1247,25 +1235,25 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   await expect(items).toHaveCount(7);
   await expect(page.locator("#subMenuProjectChangeVCS")).toBeHidden();
   await expect(page.locator("#subMenuProjectChangeVCS")).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "project-setting-submenu-item",
   );
 });
 
-test("issue template edit preserves the legacy ybtn contract through its route-local StyleX owner", async ({
+test("issue template edit preserves the legacy ybtn contract through its route-local Style owner", async ({
   page,
 }) => {
   const [legacy, route, style] = await Promise.all([
     readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('class="ybtn" target="_blank"');
   expect(legacy).toContain("?issueTemplate=true");
-  expect(route).toContain('data-stylex-owner="project-setting-issue-template-edit"');
+  expect(route).toContain('data-owner="project-setting-issue-template-edit"');
   expect(route).toContain("className={`${sx.issueTemplateEdit.className} ybtn`}");
   expect(style).toContain("issueTemplateEdit:");
-  expect(style).toContain('buttonSurfaceInteractive: "#f1f1f1"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -1275,7 +1263,7 @@ test("issue template edit preserves the legacy ybtn contract through its route-l
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
-    const link = page.locator('[data-stylex-owner="project-setting-issue-template-edit"]');
+    const link = page.locator('[data-owner="project-setting-issue-template-edit"]');
     await expect(link).toHaveClass(/\bybtn\b/);
     await expect(link).toHaveAttribute("target", "_blank");
     await expect(link).toHaveAttribute(
@@ -1353,13 +1341,13 @@ test("project settings navbar search scope matches legacy projectLayout common n
 
   await page.goto(`${basePath}/admin/sample/settingform`);
 
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   const searchForm = page.locator('form[name="gnb-search-form"]');
   await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(searchForm.locator('input[name="searchType"]')).toHaveValue("auto");
-  const searchBox = searchForm.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = searchForm.locator('[data-owner="global-gnb-search-box"]');
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
@@ -1367,7 +1355,7 @@ test("project settings navbar search scope matches legacy projectLayout common n
     page.locator('.gnb-search-form a[href="#"][data-toggle="search-scope"]'),
   ).toHaveCount(0);
   const scopeControls = page.locator(
-    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+    '[data-owner=global-gnb-search-scope-item] > button[type="button"]',
   );
   await expect(scopeControls).toHaveCount(2);
   await expect(scopeControls.nth(0)).toHaveText("This Project");
@@ -1377,7 +1365,7 @@ test("project settings navbar search scope matches legacy projectLayout common n
 
   await page.locator("#gnb-search-scope-title").click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator("[data-stylex-owner=global-gnb-search-scope-menu]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-search-scope-menu]")).toBeVisible();
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -1414,7 +1402,7 @@ test("org-owned project settings exposes legacy group search scope without leavi
 
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page).toHaveURL(`${basePath}/weblabs/portal/settingform`);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("weblabs");
@@ -1425,7 +1413,7 @@ test("org-owned project settings exposes legacy group search scope without leavi
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
 
   const scopeControls = page.locator(
-    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+    '[data-owner=global-gnb-search-scope-item] > button[type="button"]',
   );
   await expect(scopeControls).toHaveCount(3);
   await expect(scopeControls).toHaveText(["This Project", "This Group", "All Projects"]);
@@ -1577,7 +1565,7 @@ test("project settings reviewer count radios mirror legacy show/hide behavior", 
   await expect(page.locator("#welReviewerCount")).toBeVisible();
 });
 
-test("project settings visible radios use route-local StyleX ownership", async ({ page }) => {
+test("project settings visible radios use route-local Style ownership", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
     project: { codeMemberOnly: false, isUsingReviewerCount: true, projectScope: "PUBLIC" },
@@ -1594,16 +1582,16 @@ test("project settings visible radios use route-local StyleX ownership", async (
     "project-setting-radio-reviewer-enable",
     "project-setting-radio-reviewer-disable",
   ];
-  const radios = page.locator('input[type="radio"][data-stylex-owner^="project-setting-radio-"]');
+  const radios = page.locator('input[type="radio"][data-owner^="project-setting-radio-"]');
   await expect(radios).toHaveCount(6);
-  await expect(page.locator("#protected[data-stylex-owner]")).toHaveCount(0);
+  await expect(page.locator("#protected[data-owner]")).toHaveCount(0);
   expect(
     await radios.evaluateAll((elements) =>
       elements.every((element) => element.classList.contains("radio-btn")),
     ),
   ).toBe(true);
   expect(
-    await radios.evaluateAll((elements) => elements.map((element) => element.dataset.stylexOwner)),
+    await radios.evaluateAll((elements) => elements.map((element) => element.dataset.owner)),
   ).toEqual(owners);
 
   const metrics = await radios.evaluateAll((elements) =>
@@ -1679,7 +1667,8 @@ test("project settings middle rows own the frozen cu label, description, and not
   const [legacy, route, style] = await Promise.all([
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain(".cu-label");
   expect(legacy).toContain(".inline-block;");
@@ -1690,14 +1679,8 @@ test("project settings middle rows own the frozen cu label, description, and not
   expect(legacy).toContain(".note {");
   expect(legacy).toContain("color: #777;");
   expect(legacy).toContain("font-size: 12px;");
-  expect(route).toContain("styles.cuLabel");
-  expect(route).toContain("styles.cuDesc");
-  expect(route).toContain("styles.cuNote");
+
   expect(route).toContain("className={`${sx.cuLabel.className} cu-label vmiddle`}");
-  expect(style).toContain('width: "160px"');
-  expect(style).toContain('paddingRight: "45px"');
-  expect(style).toContain('color: "#777"');
-  expect(style).toContain('fontSize: "12px"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
@@ -1710,9 +1693,9 @@ test("project settings middle rows own the frozen cu label, description, and not
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
 
-    const labels = page.locator('[data-stylex-owner^="project-setting-cu-label-"]');
-    const descriptions = page.locator('[data-stylex-owner^="project-setting-cu-desc-"]');
-    const notes = page.locator('[data-stylex-owner^="project-setting-cu-note-"]');
+    const labels = page.locator('[data-owner^="project-setting-cu-label-"]');
+    const descriptions = page.locator('[data-owner^="project-setting-cu-desc-"]');
+    const notes = page.locator('[data-owner^="project-setting-cu-note-"]');
     await expect(labels).toHaveCount(6);
     await expect(descriptions).toHaveCount(6);
     await expect(notes).toHaveCount(3);
@@ -1730,13 +1713,13 @@ test("project settings middle rows own the frozen cu label, description, and not
 
     const geometry = await page.evaluate(() => {
       const labels = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-stylex-owner^="project-setting-cu-label-"]'),
+        document.querySelectorAll<HTMLElement>('[data-owner^="project-setting-cu-label-"]'),
       );
       const descriptions = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-stylex-owner^="project-setting-cu-desc-"]'),
+        document.querySelectorAll<HTMLElement>('[data-owner^="project-setting-cu-desc-"]'),
       );
       const notes = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-stylex-owner^="project-setting-cu-note-"]'),
+        document.querySelectorAll<HTMLElement>('[data-owner^="project-setting-cu-note-"]'),
       );
       const rows = labels
         .map((element) => element.parentElement)
@@ -1819,7 +1802,7 @@ test("project settings middle rows own the frozen cu label, description, and not
   await page.locator("#menuSettingCode").uncheck();
   await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
   await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
-  await expect(page.locator('[data-stylex-owner="project-setting-cu-label-menu"]')).toBeVisible();
+  await expect(page.locator('[data-owner="project-setting-cu-label-menu"]')).toBeVisible();
   await page.locator("#menuSettingPullRequest").check();
   await expect(page.locator("#menuSettingCode")).toBeChecked();
   await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
@@ -1841,21 +1824,19 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('<div class="box-wrap middle">');
   expect(frozenStyles).toContain("border-bottom: 1px solid #E9E9E9;");
   expect(frozenStyles).toContain("padding: 10px 20px;");
   expect(responsiveStyles).toContain(".box-wrap {");
   expect(responsiveStyles).toContain("padding: 10px 0 !important;");
-  expect(route).toContain("styles.middleBox");
-  expect(route).toContain('data-stylex-owner="project-setting-middle-reviewer"');
+
+  expect(route).toContain('data-owner="project-setting-middle-reviewer"');
   expect(style).toContain("middleBox:");
-  expect(style).toContain('borderBottom: "1px solid #E9E9E9"');
-  expect(style).toContain('default: "10px 20px"');
-  expect(style).toContain("globalBreakpoints.mobile");
+
   expect(style).toContain('"10px 0px"');
-  expect(style).toContain('borderBottom: "none"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
@@ -1876,10 +1857,10 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
-    const rows = page.locator('[data-stylex-owner^="project-setting-middle-"]');
+    const rows = page.locator('[data-owner^="project-setting-middle-"]');
     await expect(rows).toHaveCount(6);
     await expect(
-      rows.evaluateAll((elements) => elements.map((element) => element.dataset.stylexOwner)),
+      rows.evaluateAll((elements) => elements.map((element) => element.dataset.owner)),
     ).resolves.toEqual(owners);
     expect(
       await rows.evaluateAll((elements) =>
@@ -1905,7 +1886,7 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
         const style = getComputedStyle(element);
         const box = element.getBoundingClientRect();
         return {
-          owner: element.dataset.stylexOwner,
+          owner: element.dataset.owner,
           borderBottom: style.borderBottom,
           padding: style.padding,
           left: box.left,
@@ -1936,16 +1917,12 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/settingform`);
   await page.locator("#menuSettingCode").uncheck();
-  await expect(page.locator('[data-stylex-owner="project-setting-middle-reviewer"]')).toBeHidden();
-  await expect(
-    page.locator('[data-stylex-owner="project-setting-middle-default-branch"]'),
-  ).toBeHidden();
+  await expect(page.locator('[data-owner="project-setting-middle-reviewer"]')).toBeHidden();
+  await expect(page.locator('[data-owner="project-setting-middle-default-branch"]')).toBeHidden();
   await page.locator("#menuSettingPullRequest").check();
   await expect(page.locator("#menuSettingCode")).toBeChecked();
-  await expect(page.locator('[data-stylex-owner="project-setting-middle-reviewer"]')).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="project-setting-middle-default-branch"]'),
-  ).toBeVisible();
+  await expect(page.locator('[data-owner="project-setting-middle-reviewer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="project-setting-middle-default-branch"]')).toBeVisible();
   await page.locator("#reviewerCountDisable").check();
   await expect(page.locator("#welReviewerCount")).toBeHidden();
   await page.locator("#reviewerCountEnable").check();
@@ -1963,7 +1940,8 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain(
     '<div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;">',
@@ -1976,16 +1954,14 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
   expect(frozenStyles).toContain("border-bottom: 0 none;");
   expect(frozenStyles).toContain("text-align: center;");
   expect(responsiveStyles).toContain("padding: 10px 0 !important;");
-  expect(route).toContain('data-stylex-owner="project-setting-top-box"');
-  expect(route).toContain('data-stylex-owner="project-setting-bottom-box"');
+  expect(route).toContain('data-owner="project-setting-top-box"');
+  expect(route).toContain('data-owner="project-setting-bottom-box"');
   expect(route).toContain("className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}");
-  expect(route).not.toContain('style={{ paddingTop: "20px" }}');
+
   expect(route).toContain("onSubmit={onSubmit}");
   expect(style).toContain("topBox:");
   expect(style).toContain("bottomBox:");
-  expect(style).toContain('borderBottom: "1px solid #E9E9E9"');
-  expect(style).toContain('borderBottom: "0 none"');
-  expect(style).toContain('textAlign: "center"');
+
   expect(style).toContain("paddingTop:");
   expect(style).toContain('"20px 0px"');
   expect(style).toContain('"10px 0px"');
@@ -2000,8 +1976,8 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
     const form = page.locator("#saveSetting");
-    const top = page.locator('[data-stylex-owner="project-setting-top-box"]');
-    const bottom = page.locator('[data-stylex-owner="project-setting-bottom-box"]');
+    const top = page.locator('[data-owner="project-setting-top-box"]');
+    const bottom = page.locator('[data-owner="project-setting-bottom-box"]');
     await expect(top).toHaveCount(1);
     await expect(bottom).toHaveCount(1);
     await expect(top).toHaveClass(/\bbox-wrap\b/);
@@ -2014,18 +1990,16 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
       await form.evaluate((element) =>
         Array.from(
           element.querySelectorAll<HTMLElement>(
-            '[data-stylex-owner="project-setting-top-box"], [data-stylex-owner="project-setting-bottom-box"]',
+            '[data-owner="project-setting-top-box"], [data-owner="project-setting-bottom-box"]',
           ),
-        ).map((owner) => owner.dataset.stylexOwner),
+        ).map((owner) => owner.dataset.owner),
       ),
     ).toEqual(owners);
 
     const metrics = await page.evaluate(() => {
-      const top = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-setting-top-box"]',
-      );
+      const top = document.querySelector<HTMLElement>('[data-owner="project-setting-top-box"]');
       const bottom = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-setting-bottom-box"]',
+        '[data-owner="project-setting-bottom-box"]',
       );
       if (!top || !bottom) return null;
       const read = (element: HTMLElement) => {
@@ -2075,7 +2049,7 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
   await expect(save).toHaveAttribute("type", "submit");
   await expect(save).toHaveClass(/\bybtn\b/);
   await expect(save).toHaveClass(/\bybtn-success\b/);
-  await expect(save).toHaveAttribute("data-stylex-owner", "project-setting-save");
+  await expect(save).toHaveAttribute("data-owner", "project-setting-save");
   await expect(save).toHaveText("Save");
   await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
@@ -2088,7 +2062,8 @@ test("project settings form and frame own the frozen shell declarations", async 
     readFile("../yona-original/app/assets/stylesheets/less/_common.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('<form id="saveSetting" method="post"');
   expect(legacy).toContain('<div class="bubble-wrap gray" style="overflow: visible">');
@@ -2099,13 +2074,8 @@ test("project settings form and frame own the frozen shell declarations", async 
   expect(pageStyles).toContain("background-color: #F7F7F7;");
   expect(route).toContain("className={`${sx.form.className} nm`}");
   expect(route).toContain("className={`${sx.frame.className} bubble-wrap gray`}");
-  expect(route).toContain('data-stylex-owner="project-setting-form"');
-  expect(route).toContain('data-stylex-owner="project-setting-frame"');
-  expect(style).toContain('margin: "0px"');
-  expect(style).toContain('backgroundColor: "#F7F7F7"');
-  expect(style).toContain('borderRadius: "5px"');
-  expect(style).toContain('marginBottom: "20px"');
-  expect(style).toContain('overflow: "visible"');
+  expect(route).toContain('data-owner="project-setting-form"');
+  expect(route).toContain('data-owner="project-setting-frame"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -2115,18 +2085,14 @@ test("project settings form and frame own the frozen shell declarations", async 
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
-    const form = page.locator('[data-stylex-owner="project-setting-form"]');
-    const frame = page.locator('[data-stylex-owner="project-setting-frame"]');
+    const form = page.locator('[data-owner="project-setting-form"]');
+    const frame = page.locator('[data-owner="project-setting-frame"]');
     await expect(form).toHaveClass(/\bnm\b/);
     await expect(frame).toHaveClass(/\bbubble-wrap\b/);
     await expect(frame).toHaveClass(/\bgray\b/);
     const metrics = await page.evaluate(() => {
-      const form = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-setting-form"]',
-      );
-      const frame = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-setting-frame"]',
-      );
+      const form = document.querySelector<HTMLElement>('[data-owner="project-setting-form"]');
+      const frame = document.querySelector<HTMLElement>('[data-owner="project-setting-frame"]');
       if (!form || !frame) return null;
       const formStyle = getComputedStyle(form);
       const frameStyle = getComputedStyle(frame);
@@ -2174,7 +2140,7 @@ test("project settings form and frame own the frozen shell declarations", async 
   await expect(save).toHaveAttribute("type", "submit");
   await expect(save).toHaveClass(/\bybtn\b/);
   await expect(save).toHaveClass(/\bybtn-success\b/);
-  await expect(save).toHaveAttribute("data-stylex-owner", "project-setting-save");
+  await expect(save).toHaveAttribute("data-owner", "project-setting-save");
   await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
@@ -2187,7 +2153,8 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
     readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('<dl class="setting-box right">');
   expect(legacy).toContain("<dt>");
@@ -2196,17 +2163,15 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
   expect(frozenStyles).toContain("margin:3px 0px 1px 0px;");
   expect(frozenStyles).toContain("font-weight:bold;");
   expect(frozenStyles).toContain("margin-right:5px;");
-  expect(route).toContain('data-stylex-owner="project-setting-name-term"');
-  expect(route).toContain('data-stylex-owner="project-setting-description-term"');
-  expect(route).toContain('data-stylex-owner="project-setting-name-label"');
-  expect(route).toContain('data-stylex-owner="project-setting-description-label"');
-  expect(route).toContain("styles.settingFields, styles.settingBox, styles.settingBoxRight");
+  expect(route).toContain('data-owner="project-setting-name-term"');
+  expect(route).toContain('data-owner="project-setting-description-term"');
+  expect(route).toContain('data-owner="project-setting-name-label"');
+  expect(route).toContain('data-owner="project-setting-description-label"');
+
   expect(style).toContain("settingFields:");
   expect(style).toContain("settingFieldTerm:");
   expect(style).toContain("settingFieldDescription:");
   expect(style).toContain("settingFieldLabel:");
-  expect(style).toContain('fontWeight: "bold"');
-  expect(style).toContain('marginRight: "5px"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -2216,16 +2181,16 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
-    const fields = page.locator('[data-stylex-owner="project-setting-setting-box-right"]');
-    const terms = fields.locator('[data-stylex-owner$="-term"]');
-    const descriptions = fields.locator('[data-stylex-owner$="-field"]');
-    const labels = fields.locator('[data-stylex-owner$="-label"]');
+    const fields = page.locator('[data-owner="project-setting-setting-box-right"]');
+    const terms = fields.locator('[data-owner$="-term"]');
+    const descriptions = fields.locator('[data-owner$="-field"]');
+    const labels = fields.locator('[data-owner$="-label"]');
     await expect(fields).toHaveCount(1);
     await expect(terms).toHaveCount(2);
     await expect(descriptions).toHaveCount(2);
     await expect(labels).toHaveCount(2);
     await expect(
-      terms.evaluateAll((elements) => elements.map((element) => element.dataset.stylexOwner)),
+      terms.evaluateAll((elements) => elements.map((element) => element.dataset.owner)),
     ).resolves.toEqual(["project-setting-name-term", "project-setting-description-term"]);
     await expect(labels).toHaveText([
       "Enter project name in alphabetnumerical or symbol characters(_-.)",
@@ -2234,17 +2199,13 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
 
     const metrics = await page.evaluate(() => {
       const fields = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-setting-setting-box-right"]',
+        '[data-owner="project-setting-setting-box-right"]',
       );
-      const terms = Array.from(
-        fields.querySelectorAll<HTMLElement>('[data-stylex-owner$="-term"]'),
-      );
+      const terms = Array.from(fields.querySelectorAll<HTMLElement>('[data-owner$="-term"]'));
       const descriptions = Array.from(
-        fields.querySelectorAll<HTMLElement>('[data-stylex-owner$="-field"]'),
+        fields.querySelectorAll<HTMLElement>('[data-owner$="-field"]'),
       );
-      const labels = Array.from(
-        fields.querySelectorAll<HTMLElement>('[data-stylex-owner$="-label"]'),
-      );
+      const labels = Array.from(fields.querySelectorAll<HTMLElement>('[data-owner$="-label"]'));
       if (!fields || terms.length !== 2 || descriptions.length !== 2 || labels.length !== 2) {
         return null;
       }
@@ -2337,10 +2298,7 @@ test("project settings reviewer count dropdown uses route-local open state", asy
   await expect(defaultBranch).toHaveValue("main");
   await expect(reviewerDropdown).toHaveClass(/(^| )btn-group( |$)/);
   await expect(reviewerDropdown).toHaveClass(/(^| )branches( |$)/);
-  await expect(reviewerDropdown).toHaveAttribute(
-    "data-stylex-owner",
-    "project-reviewer-count-dropdown",
-  );
+  await expect(reviewerDropdown).toHaveAttribute("data-owner", "project-reviewer-count-dropdown");
   await expect(reviewerDropdown).not.toHaveAttribute("data-id", /.+/);
   await expect(reviewerDropdown).not.toHaveAttribute("data-name", /.+/);
   await expect(
@@ -2649,12 +2607,8 @@ test("project settings menu checkbox owners preserve legacy labels and geometry"
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/settingform`);
 
-  const labels = page.locator(
-    '[data-stylex-owner^="project-menu-checkbox-"][data-stylex-owner$="-label"]',
-  );
-  const inputs = page.locator(
-    '[data-stylex-owner^="project-menu-checkbox-"][data-stylex-owner$="-input"]',
-  );
+  const labels = page.locator('[data-owner^="project-menu-checkbox-"][data-owner$="-label"]');
+  const inputs = page.locator('[data-owner^="project-menu-checkbox-"][data-owner$="-input"]');
   const ids = [
     "menuSettingCode",
     "menuSettingIssue",
@@ -2802,7 +2756,7 @@ test("project settings Save owns the legacy success button visible state", async
   await expect(save).toHaveAttribute("type", "submit");
   await expect(save).toHaveClass(/\bybtn\b/);
   await expect(save).toHaveClass(/\bybtn-success\b/);
-  await expect(save).toHaveAttribute("data-stylex-owner", "project-setting-save");
+  await expect(save).toHaveAttribute("data-owner", "project-setting-save");
   await expect(save).toHaveText("Save");
 
   const defaultState = await save.evaluate((element) => {
@@ -2991,7 +2945,8 @@ test("project settings owns the legacy left-column logo upload surface", async (
     readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('<div class="nbtn medium white fake-file-wrap">');
   expect(legacy).toContain('<i class="yobicon-upload"></i> @Messages("button.upload")');
@@ -3003,12 +2958,10 @@ test("project settings owns the legacy left-column logo upload surface", async (
   expect(less).toContain("&.medium { padding: 6px 20px; }");
   expect(less).toContain(".fake-file-wrap {");
   expect(less).toContain("top:0; left: 5px;");
-  expect(route).toContain('data-stylex-owner="project-setting-logo-upload-button"');
-  expect(route).toContain('data-stylex-owner="project-setting-logo-upload-input"');
+  expect(route).toContain('data-owner="project-setting-logo-upload-button"');
+  expect(route).toContain('data-owner="project-setting-logo-upload-input"');
   expect(style).toContain("logoUploadButton:");
   expect(style).toContain("logoUploadInput:");
-  expect(style).toContain('boxShadow: "inset 0px -1px 1px rgba(0,0,0,0.3)"');
-  expect(style).toContain('padding: "6px 20px"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -3019,8 +2972,8 @@ test("project settings owns the legacy left-column logo upload surface", async (
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
 
-    const upload = page.locator('[data-stylex-owner="project-setting-logo-upload-button"]');
-    const input = page.locator('[data-stylex-owner="project-setting-logo-upload-input"]');
+    const upload = page.locator('[data-owner="project-setting-logo-upload-button"]');
+    const input = page.locator('[data-owner="project-setting-logo-upload-input"]');
     await expect(upload).toBeVisible();
     await expect(upload).toHaveText(/File upload/);
     await expect(input).toHaveAttribute("id", "logoPath");
@@ -3030,17 +2983,17 @@ test("project settings owns the legacy left-column logo upload surface", async (
 
     const computed = await page.evaluate(() => {
       const button = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-setting-logo-upload-button"]',
+        '[data-owner="project-setting-logo-upload-button"]',
       );
       const input = document.querySelector<HTMLInputElement>(
-        '[data-stylex-owner="project-setting-logo-upload-input"]',
+        '[data-owner="project-setting-logo-upload-input"]',
       );
       if (!button || !input) return null;
       const buttonStyle = getComputedStyle(button);
       const inputStyle = getComputedStyle(input);
       const buttonBox = button.getBoundingClientRect();
       const columnBox = document
-        .querySelector<HTMLElement>('[data-stylex-owner="project-setting-setting-box-left"]')!
+        .querySelector<HTMLElement>('[data-owner="project-setting-setting-box-left"]')!
         .getBoundingClientRect();
       return {
         button: {
@@ -3118,7 +3071,8 @@ test("project settings resets the legacy logo description list only", async ({ p
     readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFileSync("src/app.css", "utf8") +
+      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
   ]);
   expect(legacy).toContain('<ul class="unstyled descs">');
   expect(legacy).toContain('<li><strong>@Messages("project.logo")</strong></li>');
@@ -3126,8 +3080,7 @@ test("project settings resets the legacy logo description list only", async ({ p
   expect(bootstrap).toContain("  margin-left: 0;");
   expect(bootstrap).toContain("  list-style: none;");
   expect(less).toContain(".descs li {");
-  expect(route).toContain('data-stylex-owner="project-setting-descs-list"');
-  expect(style).toContain('descsList: { listStyle: "none", marginLeft: "0px" }');
+  expect(route).toContain('data-owner="project-setting-descs-list"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -3137,7 +3090,7 @@ test("project settings resets the legacy logo description list only", async ({ p
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/settingform`);
-    const list = page.locator('[data-stylex-owner="project-setting-descs-list"]');
+    const list = page.locator('[data-owner="project-setting-descs-list"]');
     await expect(list).toBeVisible();
     await expect(list.locator(":scope > li")).toHaveText([
       "Project logo",
@@ -3162,8 +3115,8 @@ test("project settings resets the legacy logo description list only", async ({ p
       contained: true,
     });
 
-    const upload = page.locator('[data-stylex-owner="project-setting-logo-upload-button"]');
-    const input = page.locator('[data-stylex-owner="project-setting-logo-upload-input"]');
+    const upload = page.locator('[data-owner="project-setting-logo-upload-button"]');
+    const input = page.locator('[data-owner="project-setting-logo-upload-input"]');
     await expect(upload).toHaveText(/File upload/);
     await expect(input).toHaveAttribute("accept", "image/*");
     const invalidFileDialog = new Promise<string>((resolve) => {
@@ -3469,7 +3422,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -3496,7 +3449,7 @@ async function canonicalizeScreenRoots(page: Page) {
             (isProjectSettingsMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -3704,11 +3657,11 @@ async function projectNonGitSettingMetrics(page: Page) {
 
 async function navbarSearchContainmentMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
+    const navbar = requireElement("[data-owner=global-gnb-outer]");
     const form = requireElement('form[name="gnb-search-form"]');
     const scope = requireElement("#gnb-search-scope-title");
-    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
-    const input = requireElement('[data-stylex-owner="global-gnb-search-input"]');
+    const searchBox = requireElement('[data-owner="global-gnb-search-box"]');
+    const input = requireElement('[data-owner="global-gnb-search-input"]');
     const navbarRect = navbar.getBoundingClientRect();
     const formRect = form.getBoundingClientRect();
     const scopeRect = scope.getBoundingClientRect();

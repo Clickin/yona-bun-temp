@@ -2,8 +2,8 @@
  * issue-detail, post-detail, issue-form, post-form, milestone-form and
  * pull-request-form routes; each screen's rendered DOM contract (legacy
  * `mt10`/`nav nav-tabs nm small` shell, toolbar, textarea, preview pane,
- * notification receiver, data-stylex-owner markers) stays byte-identical,
- * with the per-screen differences (route-local stylex styles, owners,
+ * notification receiver, data-owner markers) stays byte-identical,
+ * with the per-screen differences (route-local style styles, owners,
  * tab renderer, toolbar wiring) arriving as props. Screens whose editors
  * carried extra composition logic (issue-form mention machinery, post-detail
  * mode-derived styles) pass that logic in through the same props.
@@ -24,7 +24,7 @@ import {
 import { useLegacyMessages } from "../i18n";
 import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";
 
-/** Result of `stylex.props(...)` spread onto an element (className + inline style). */
+/** Result of `style.props(...)` spread onto an element (className + inline style). */
 // ponytail: stable empty-object default so destructuring never allocates per render.
 const NO_OWNERS = {};
 
@@ -36,9 +36,9 @@ export type MarkdownEditorStyleProps = Readonly<{
 type EditorTab = "edit" | "preview";
 
 export type MarkdownEditorProps = {
-  /** Complete literal className of the wrapper div (incl. any stylex class). */
+  /** Complete literal className of the wrapper div (incl. any style class). */
   wrapperClassName: string;
-  /** stylex.props() result spread onto the wrapper div. */
+  /** style.props() result spread onto the wrapper div. */
   wrapperStyleProps?: MarkdownEditorStyleProps;
   wrapperOwner?: string;
   wrapperInstance?: string;
@@ -129,7 +129,7 @@ export type MarkdownEditorProps = {
   previewChildren?: (active: boolean, value: string) => ReactNode;
   notificationClassName?: string;
   notificationStyleProps?: MarkdownEditorStyleProps;
-  /** stylex spread applied to the notification receiver only while revealed (issue detail). */
+  /** style spread applied to the notification receiver only while revealed (issue detail). */
   notificationRevealStyle?: MarkdownEditorStyleProps;
   notificationOwner?: string;
   notificationInstance?: string;
@@ -171,7 +171,7 @@ function EditorTab({
         to="."
         {...ctx.tabLinkProps?.[tab]}
         {...contentStyleProps}
-        data-stylex-owner={owner}
+        data-owner={owner}
         onClick={ctx.onTabClick(tab)}
       >
         {label}
@@ -179,12 +179,7 @@ function EditorTab({
     );
   }
   return (
-    <button
-      type="button"
-      {...contentStyleProps}
-      data-stylex-owner={owner}
-      onClick={ctx.onTabClick(tab)}
-    >
+    <button type="button" {...contentStyleProps} data-owner={owner} onClick={ctx.onTabClick(tab)}>
       {label}
     </button>
   );
@@ -210,7 +205,7 @@ function EditorTabItem({
             ? "active"
             : undefined
       }
-      data-stylex-owner={ctx.tabLiOwner}
+      data-owner={ctx.tabLiOwner}
     >
       <EditorTab ctx={ctx} tab={tab} active={active} label={label} />
     </li>
@@ -328,7 +323,7 @@ export function MarkdownEditor({
       <span
         {...notificationTitleStyleProps}
         className={`${notificationTitleStyleProps?.className ?? ""} ${notificationTitleClassName}`.trim()}
-        data-stylex-owner={notificationTitleOwner}
+        data-owner={notificationTitleOwner}
       >
         {t("notification.receiver.list.title")}
         {notificationTitleTrailingSpace ? " " : null}
@@ -341,11 +336,11 @@ export function MarkdownEditor({
     <div
       {...wrapperStyleProps}
       className={wrapperClassName}
-      data-stylex-owner={wrapperOwner}
-      data-stylex-owner-instance={wrapperInstance}
+      data-owner={wrapperOwner}
+      data-owner-instance={wrapperInstance}
       data-toggle={wrapperDataToggle}
     >
-      <ul {...tabListStyleProps} className={tabListClassName} data-stylex-owner={tabListOwner}>
+      <ul {...tabListStyleProps} className={tabListClassName} data-owner={tabListOwner}>
         <EditorTabItem
           ctx={{
             tabAs,
@@ -375,23 +370,19 @@ export function MarkdownEditor({
           label={t("common.editor.preview")}
         />
         <li>
-          <div
-            {...checklistStyleProps}
-            className={checklistClassName}
-            data-stylex-owner={checklistOwner}
-          >
+          <div {...checklistStyleProps} className={checklistClassName} data-owner={checklistOwner}>
             <button
               type="button"
               {...checklistButtonStyleProps}
               className={checklistButtonClassName}
-              data-stylex-owner={checklistButtonOwner}
+              data-owner={checklistButtonOwner}
               aria-label={checklistButtonAriaLabel}
               onClick={onChecklistClick}
             >
               <i
                 {...checklistIconStyleProps}
                 className={checklistIconClassName}
-                data-stylex-owner={checklistIconOwner}
+                data-owner={checklistIconOwner}
               ></i>{" "}
               {t("button.add.checklist")}
             </button>
@@ -401,7 +392,7 @@ export function MarkdownEditor({
           <div
             {...clearTemporaryStyleProps}
             className={clearTemporaryClassName}
-            data-stylex-owner={clearTemporaryOwner}
+            data-owner={clearTemporaryOwner}
             aria-hidden={clearTemporaryAriaHidden}
           >
             <div className="editor-clear-temporary-button">
@@ -420,7 +411,7 @@ export function MarkdownEditor({
           <div
             {...noticeLabelStyleProps}
             className={noticeLabelClassName}
-            data-stylex-owner={noticeLabelOwner}
+            data-owner={noticeLabelOwner}
           >
             {noticeContent}
           </div>
@@ -429,21 +420,21 @@ export function MarkdownEditor({
       <div
         {...tabContentPaneStyleProps}
         className={tabContentClassName}
-        data-stylex-owner={tabContentPaneOwner}
-        data-stylex-owner-instance={tabContentPaneInstance}
+        data-owner={tabContentPaneOwner}
+        data-owner-instance={tabContentPaneInstance}
       >
         {help}
         <div
           {...editPaneStyleProps?.("edit", activeTab === "edit")}
           id={editPaneId}
           className={`${editPaneStyleProps?.("edit", activeTab === "edit")?.className ?? ""} tab-pane${activeTab === "edit" ? " active" : ""}`.trim()}
-          data-stylex-owner={editPaneOwner}
+          data-owner={editPaneOwner}
         >
           <div
             {...textareaBoxStyleProps}
             ref={textareaBoxRef}
             className={`${textareaBoxStyleProps?.className ?? ""} ${textareaBoxClassName}`.trim()}
-            data-stylex-owner={textareaBoxOwner}
+            data-owner={textareaBoxOwner}
             onBlurCapture={onTextareaBoxBlurCapture}
           >
             <textarea
@@ -451,7 +442,7 @@ export function MarkdownEditor({
               ref={textareaRef}
               name={textareaName}
               className={`${textareaStyleProps?.className ?? ""} ${textareaClassName}`.trim()}
-              data-stylex-owner={textareaOwner}
+              data-owner={textareaOwner}
               data-editor-mode={textareaMode}
               id={textareaId}
               key={textareaKey}
@@ -482,12 +473,12 @@ export function MarkdownEditor({
           {...previewPaneStyleProps?.("preview", activeTab === "preview")}
           id={previewPaneId}
           className={`${previewPaneStyleProps?.("preview", activeTab === "preview")?.className ?? ""} tab-pane${activeTab === "preview" ? " active" : ""}`.trim()}
-          data-stylex-owner={previewPaneOwner}
+          data-owner={previewPaneOwner}
         >
           <div
             {...previewStyleProps}
             className={`${previewStyleProps?.className ?? ""} ${previewClassName ?? `markdown-preview markdown-wrap ${textareaMode ?? ""}`}`.trim()}
-            data-stylex-owner={previewOwner}
+            data-owner={previewOwner}
             data-via-email="false"
           >
             {previewChildren?.(activeTab === "preview", editorValue)}
@@ -497,8 +488,8 @@ export function MarkdownEditor({
           <div
             className={notificationClassName}
             {...(notificationVisible ? notificationRevealStyle : {})}
-            data-stylex-owner={notificationOwner}
-            data-stylex-owner-instance={notificationInstance}
+            data-owner={notificationOwner}
+            data-owner-instance={notificationInstance}
           >
             {notificationTitle}
           </div>
@@ -506,8 +497,8 @@ export function MarkdownEditor({
           <div
             {...notificationStyleProps}
             className={`${notificationStyleProps?.className ?? ""} ${notificationClassName}`.trim()}
-            data-stylex-owner={notificationOwner}
-            data-stylex-owner-instance={notificationInstance}
+            data-owner={notificationOwner}
+            data-owner-instance={notificationInstance}
           >
             {notificationTitle}
           </div>

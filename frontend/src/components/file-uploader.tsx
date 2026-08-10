@@ -2,12 +2,11 @@
  * commit-detail, pull-request-changes, issue-detail, issue-form, post-form,
  * milestone-form and pull-request-form routes; each screen's rendered DOM
  * contract (upload-wrap shell, attach-wrap, file button, paste hint,
- * attached-files list, save help line, data-stylex-owner markers) stays
- * byte-identical, with the per-screen differences (route-local stylex styles,
+ * attached-files list, save help line, data-owner markers) stays
+ * byte-identical, with the per-screen differences (route-local plain css,
  * owners, resource type/id, file control, upload rows) arriving as props.
  */
-import * as stylex from "@stylexjs/stylex";
-import type { DragEvent, HTMLAttributes, ReactNode } from "react";
+import type { CSSProperties, DragEvent, HTMLAttributes, ReactNode } from "react";
 import { useLegacyMessages } from "../i18n";
 import type { UploadedAttachment } from "../api/attachments";
 import type { MarkdownEditorStyleProps } from "./markdown-editor";
@@ -134,18 +133,18 @@ function UploaderShell({
       className={wrapperClassName}
       data-resource-type={resourceType}
       data-resource-id={resourceId}
-      data-stylex-owner={owner}
+      data-owner={owner}
       {...wrapperExtraProps}
       {...(wrapperStyleFirst ? undefined : wrapperStyleProps)}
     >
       <div
         {...attachWrapStyleProps}
         className={`${attachWrapStyleProps?.className ?? ""} ${attachWrapClassName}`.trim()}
-        data-stylex-owner={attachWrapOwner}
+        data-owner={attachWrapOwner}
       >
         <span className="help help-droppable">{t("common.attach.drophere")}</span>
         {attachSpacing ? " " : null}
-        <div {...btnWrapStyleProps} className={btnWrapClassName} data-stylex-owner={btnWrapOwner}>
+        <div {...btnWrapStyleProps} className={btnWrapClassName} data-owner={btnWrapOwner}>
           {fileControl ?? (
             <div className="nbtn medium white fake-file-wrap">
               <i className="yobicon-upload"></i> {t("button.upload")}
@@ -154,7 +153,7 @@ function UploaderShell({
           )}
         </div>
         {attachSpacing ? " " : null}
-        <span {...plainStyleProps} className={plainClassName} data-stylex-owner={plainOwner}>
+        <span {...plainStyleProps} className={plainClassName} data-owner={plainOwner}>
           {t("common.attach.clickbutton")}
         </span>
         {attachSpacing ? " " : null}
@@ -165,12 +164,12 @@ function UploaderShell({
             pasteHelpStyleFirst
               ? ""
               : (pasteSupported && pasteHelpStyleProps
-                  ? (pasteHelpStyleProps as { className?: string }).className ?? ""
+                  ? ((pasteHelpStyleProps as { className?: string }).className ?? "")
                   : "") +
                 " " +
                 ((pasteHelpFixedStyleProps as { className?: string } | undefined)?.className ?? "")
           }`.trim()}
-          data-stylex-owner={pasteHelpOwner}
+          data-owner={pasteHelpOwner}
         >
           {t("common.attach.pastehere")}
         </span>
@@ -178,14 +177,14 @@ function UploaderShell({
       <ul
         {...attachedFilesStyleProps}
         className={attachedFilesClassName}
-        data-stylex-owner={attachedFilesOwner}
+        data-owner={attachedFilesOwner}
       >
         {attachedFilesChildren}
       </ul>
       {showHelp ? (
         <p
           {...(helpStyleFirst ? helpStyleProps : undefined)}
-          data-stylex-owner={helpOwner}
+          data-owner={helpOwner}
           {...(helpStyleFirst ? undefined : helpStyleProps)}
           className={helpClassName}
         >
@@ -351,26 +350,6 @@ export function BoardPostFileUploader({
   );
 }
 
-export type IssuePostFileUploaderStyles = {
-  shell?: stylex.CompiledStyles;
-  fakeFile?: stylex.CompiledStyles;
-  fileInput?: stylex.CompiledStyles;
-  pasteHelp?: stylex.CompiledStyles;
-  attachedFilesVisible?: stylex.CompiledStyles;
-  attachedFile?: stylex.CompiledStyles;
-  attachedFileMain?: stylex.CompiledStyles;
-  attachedFileMainDisabled?: stylex.CompiledStyles;
-  attachedFileMainIcon?: stylex.CompiledStyles;
-  attachedFileName?: stylex.CompiledStyles;
-  attachedFileInsertCopy?: stylex.CompiledStyles;
-  uploadProgressWrapper?: stylex.CompiledStyles;
-  uploadProgress?: stylex.CompiledStyles;
-  uploadProgressBar?: (width: string) => readonly [stylex.CompiledStyles, stylex.InlineStyles];
-  uploadError?: stylex.CompiledStyles;
-  attachedFileDelete?: stylex.CompiledStyles;
-  uploadAttachSaveHelp?: stylex.CompiledStyles;
-};
-
 export type IssuePostFileUploaderProps = {
   isDragging: boolean;
   onDragEnter: (event: DragEvent<HTMLDivElement>) => void;
@@ -381,7 +360,6 @@ export type IssuePostFileUploaderProps = {
   onInsert: (attachment: UploadedAttachment) => void;
   onRemove: (row: UploadRow) => void;
   rows: UploadRow[];
-  styles: IssuePostFileUploaderStyles;
 };
 
 export function IssuePostFileUploader({
@@ -394,18 +372,11 @@ export function IssuePostFileUploader({
   onInsert,
   onRemove,
   rows,
-  styles,
 }: IssuePostFileUploaderProps) {
   const { t } = useLegacyMessages();
-  const shellStyleProps = styles.shell ? stylex.props(styles.shell) : undefined;
-  const attachedFilesVisibleStyleProps =
-    rows.length > 0 && styles.attachedFilesVisible
-      ? stylex.props(styles.attachedFilesVisible)
-      : undefined;
   return (
     <UploaderShell
-      wrapperClassName={`upload-wrap content-footer ${shellStyleProps?.className ?? ""}${isDragging ? " dragover" : ""}`.trim()}
-      wrapperStyleProps={shellStyleProps}
+      wrapperClassName={`upload-wrap content-footer${isDragging ? " dragover" : ""}`.trim()}
       wrapperId="upload"
       resourceType="ISSUE_POST"
       owner="project-issue-form-upload-shell"
@@ -413,16 +384,14 @@ export function IssuePostFileUploader({
       attachSpacing
       fileControl={
         <label
-          {...(styles.fakeFile ? stylex.props(styles.fakeFile) : undefined)}
-          className={`nbtn medium white fake-file-wrap ${styles.fakeFile ? (stylex.props(styles.fakeFile).className ?? "") : ""}`.trim()}
-          data-stylex-owner="project-issue-form-upload-fake-file"
+          className="nbtn medium white fake-file-wrap"
+          data-owner="project-issue-form-upload-fake-file"
         >
           <i className="yobicon-upload" /> {t("button.upload")}
           <input
             type="file"
-            {...(styles.fileInput ? stylex.props(styles.fileInput) : undefined)}
-            className={`file ${styles.fileInput ? (stylex.props(styles.fileInput).className ?? "") : ""}`.trim()}
-            data-stylex-owner="project-issue-form-upload-file-input"
+            className="file"
+            data-owner="project-issue-form-upload-file-input"
             name="filePath"
             multiple
             onChange={(event) => {
@@ -432,97 +401,66 @@ export function IssuePostFileUploader({
           />
         </label>
       }
-      pasteHelpFixedStyleProps={styles.pasteHelp ? stylex.props(styles.pasteHelp) : undefined}
-      pasteHelpClassName={`help help-pastable ${styles.pasteHelp ? (stylex.props(styles.pasteHelp).className ?? "") : ""}`.trim()}
+      pasteHelpClassName="help help-pastable"
       pasteHelpStyleFirst
       pasteHelpOwner="project-issue-form-upload-help-pastable"
-      attachedFilesClassName={`attached-files unstyled${rows.length > 0 ? " has-files" : ""} ${attachedFilesVisibleStyleProps?.className ?? ""}`.trim()}
-      attachedFilesStyleProps={attachedFilesVisibleStyleProps}
+      attachedFilesClassName={`attached-files unstyled${rows.length > 0 ? " has-files" : ""}`.trim()}
       attachedFilesOwner={rows.length > 0 ? "project-issue-form-attached-files" : undefined}
       attachedFilesChildren={rows.map((row) => {
-        const progressStyle = styles.uploadProgressBar
-          ? stylex.props(styles.uploadProgressBar(`${row.progress}%`))
-          : undefined;
         return (
           <li
             key={row.key}
-            {...(styles.attachedFile ? stylex.props(styles.attachedFile) : undefined)}
-            className={`attached-file temporary${row.status === "ready" ? " complete" : ""} ${styles.attachedFile ? (stylex.props(styles.attachedFile).className ?? "") : ""}`.trim()}
-            data-stylex-owner="project-issue-form-attached-file"
+            className={`attached-file temporary${row.status === "ready" ? " complete" : ""}`.trim()}
+            data-owner="project-issue-form-attached-file"
           >
             <button
               type="button"
-              {...(styles.attachedFileMain ? stylex.props(styles.attachedFileMain) : undefined)}
-              {...(row.status !== "ready" && styles.attachedFileMainDisabled
-                ? stylex.props(styles.attachedFileMainDisabled)
-                : undefined)}
-              className={`attached-file-main ${styles.attachedFileMain ? (stylex.props(styles.attachedFileMain).className ?? "") : ""} ${row.status !== "ready" && styles.attachedFileMainDisabled ? (stylex.props(styles.attachedFileMainDisabled).className ?? "") : ""}`.trim()}
-              data-stylex-owner="project-issue-form-attached-file-main"
+              className="attached-file-main"
+              data-owner="project-issue-form-attached-file-main"
               aria-label={`${t("common.attach.clickToPost")} ${row.name}`}
               disabled={!row.attachment || row.status !== "ready"}
               onClick={() => row.attachment && onInsert(row.attachment)}
             >
               <i
-                {...(styles.attachedFileMainIcon
-                  ? stylex.props(styles.attachedFileMainIcon)
-                  : undefined)}
-                className={`yobicon-supportrequest ${styles.attachedFileMainIcon ? (stylex.props(styles.attachedFileMainIcon).className ?? "") : ""}`.trim()}
-                data-stylex-owner="project-issue-form-attached-file-main-icon"
+                className="yobicon-supportrequest"
+                data-owner="project-issue-form-attached-file-main-icon"
               />
-              <strong
-                {...(styles.attachedFileName ? stylex.props(styles.attachedFileName) : undefined)}
-                className={`name ${styles.attachedFileName ? (stylex.props(styles.attachedFileName).className ?? "") : ""}`.trim()}
-                data-stylex-owner="project-issue-form-attached-file-name"
-              >
+              <strong className="name" data-owner="project-issue-form-attached-file-name">
                 {row.name}
               </strong>{" "}
               <span className="size">{humanFileSize(row.size)}</span>
               {row.attachment && row.status === "ready" ? (
                 <span
-                  {...(styles.attachedFileInsertCopy
-                    ? stylex.props(styles.attachedFileInsertCopy)
-                    : undefined)}
-                  className={`btn-insert-copy ${styles.attachedFileInsertCopy ? (stylex.props(styles.attachedFileInsertCopy).className ?? "") : ""}`.trim()}
-                  data-stylex-owner="project-issue-form-attached-file-insert-copy"
+                  className="btn-insert-copy"
+                  data-owner="project-issue-form-attached-file-insert-copy"
                 >
                   {t("common.attach.clickToPost")}
                 </span>
               ) : null}
             </button>
             {row.status === "uploading" ? (
-              <div
-                {...(styles.uploadProgressWrapper
-                  ? stylex.props(styles.uploadProgressWrapper)
-                  : undefined)}
-                data-stylex-owner="project-issue-form-upload-progress-wrapper"
-              >
+              <div className="pull-right" data-owner="project-issue-form-upload-progress-wrapper">
                 <div
-                  {...(styles.uploadProgress ? stylex.props(styles.uploadProgress) : undefined)}
-                  className={`progress upload-progress ${styles.uploadProgress ? (stylex.props(styles.uploadProgress).className ?? "") : ""}`.trim()}
-                  data-stylex-owner="project-issue-form-upload-progress-shell"
+                  className="progress upload-progress"
+                  data-owner="project-issue-form-upload-progress-shell"
                 >
                   <div
-                    {...progressStyle}
-                    className={`${progressStyle?.className ?? ""} bar orange`.trim()}
-                    data-stylex-owner="project-issue-form-upload-progress"
+                    style={uploadProgressBar(`${row.progress}%`)}
+                    className="bar orange"
+                    data-owner="project-issue-form-upload-progress"
                   />
                 </div>
               </div>
             ) : null}
             {row.error ? (
-              <span
-                {...(styles.uploadError ? stylex.props(styles.uploadError) : undefined)}
-                className={`upload-error ${styles.uploadError ? (stylex.props(styles.uploadError).className ?? "") : ""}`.trim()}
-                data-stylex-owner="project-issue-form-upload-error"
-              >
+              <span className="upload-error" data-owner="project-issue-form-upload-error">
                 {row.error}
               </span>
             ) : null}
             <button
               type="button"
-              {...(styles.attachedFileDelete ? stylex.props(styles.attachedFileDelete) : undefined)}
-              className={`btn-transparent btn-delete ${styles.attachedFileDelete ? (stylex.props(styles.attachedFileDelete).className ?? "") : ""}`.trim()}
-              data-stylex-owner="project-issue-form-attached-file-delete"
+              className="btn-transparent btn-delete"
+              data-owner="project-issue-form-attached-file-delete"
               aria-label={`${t("button.delete")} ${row.name}`}
               disabled={row.status === "deleting" || row.status === "uploading"}
               onClick={() => onRemove(row)}
@@ -533,14 +471,17 @@ export function IssuePostFileUploader({
         );
       })}
       showHelp={rows.length > 0}
-      helpClassName={`help attach-save-help ${styles.uploadAttachSaveHelp ? (stylex.props(styles.uploadAttachSaveHelp).className ?? "") : ""}`.trim()}
-      helpStyleProps={
-        styles.uploadAttachSaveHelp ? stylex.props(styles.uploadAttachSaveHelp) : undefined
-      }
+      helpClassName="help attach-save-help"
       helpOwner="project-issue-form-upload-attach-save-help"
       dragOverlay={isDragging}
     />
   );
+}
+
+// Dynamic upload width: carried as a CSS var so the shell keeps its 100px track
+// while the fill width stays server-driven (no inline width).
+function uploadProgressBar(width: string): CSSProperties {
+  return { backgroundColor: "#f36c22", display: "block", height: "100%", width };
 }
 
 export type PullRequestFileUploaderProps = {

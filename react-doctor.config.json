@@ -13,7 +13,7 @@
       "react/no-danger"
     ],
     "files": [
-      "public/legacy-assets/**/*.js",
+      "public/legacy-assets/**",
       "src/api/admin.ts",
       "src/gen/**",
       "tests/live-legacy-html-parity.ts",
@@ -27,6 +27,14 @@
       {
         "files": ["src/route-parity.spec.tsx"],
         "rules": ["react-doctor/js-set-map-lookups"]
+      },
+      {
+        "files": ["src/routes/$ownerName/$projectName/issues.tsx"],
+        "rules": ["react-doctor/no-effect-event-handler"]
+      },
+      {
+        "files": ["src/components/issue-due-date-input.tsx"],
+        "rules": ["react-doctor/no-uncontrolled-input"]
       },
       {
         "files": ["src/routes/-restricted-view.tsx"],

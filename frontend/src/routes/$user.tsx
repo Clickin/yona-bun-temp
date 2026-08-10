@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
@@ -25,8 +24,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { styles, userProfileNotFoundStyles } from "./-user-profile.stylex";
-
 type PublicProfileSearch = {
   daysAgo?: number;
   selected?: "issues" | "projects" | "pullRequests";
@@ -40,44 +37,6 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-
-const userProfileStaticStyles = stylex.create({
-  iconMiddle: {
-    verticalAlign: "bottom",
-    marginBottom: "3px",
-  },
-  providerLogo: { fontFamily: "Roboto, sans-serif" },
-  providerLogoSvg: { verticalAlign: "middle" },
-  providerGithub: {
-    display: "inline-block",
-    marginBottom: "3px",
-    marginLeft: "-4px",
-    marginTop: "3px",
-    width: "30px",
-  },
-  avatarWrap: {
-    backgroundColor: "#ccc",
-    backgroundPosition: "center",
-    backgroundSize: "cover",
-    borderRadius: "4px",
-    height: "200px",
-    overflow: "hidden",
-    position: "relative",
-    width: "200px",
-  },
-  profileName: { fontSize: "18px", fontWeight: "bold", marginRight: "2px" },
-  profileEdit: { marginTop: "5px", textAlign: "right" },
-  faqPopover: {
-    bottom: "100%",
-    display: "block",
-    left: "50%",
-    marginBottom: "10px",
-    minWidth: "150px",
-    pointerEvents: "none",
-    position: "absolute",
-    transform: "translateX(-50%)",
-  },
-});
 
 export const Route = createFileRoute("/$user")({
   component: PublicProfileRoute,
@@ -245,30 +204,16 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </ul>
         </div>
       </header>
-      <div className="page-wrap-outer" data-stylex-owner="user-profile-notfound-page">
+      <div className="page-wrap-outer" data-owner="user-profile-notfound-page">
         <div className="project-page-wrap">
-          <div
-            {...stylex.props(userProfileNotFoundStyles.errorWrap)}
-            className={`${stylex.props(userProfileNotFoundStyles.errorWrap).className} error-wrap`}
-            data-stylex-owner="user-profile-notfound-error-wrap"
-          >
-            <i
-              {...stylex.props(userProfileNotFoundStyles.errorIcon(legacySpriteUrl))}
-              className={`${stylex.props(userProfileNotFoundStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-              data-stylex-owner="user-profile-notfound-error-icon"
-            />
-            <p
-              {...stylex.props(userProfileNotFoundStyles.errorMessage)}
-              data-stylex-owner="user-profile-notfound-error-message"
-            >
-              {t("user.notExists.name")}
-            </p>
+          <div className={"error-wrap"} data-owner="user-profile-notfound-error-wrap">
+            <i className={"ico ico-err2"} data-owner="user-profile-notfound-error-icon" />
+            <p data-owner="user-profile-notfound-error-message">{t("user.notExists.name")}</p>
             <Link
-              {...stylex.props(userProfileNotFoundStyles.homeButton)}
               {...LEGACY_LINK_PROPS}
-              className={`${stylex.props(userProfileNotFoundStyles.homeButton).className} ybtn ybtn-info`}
+              className={"ybtn ybtn-info"}
               to="/"
-              data-stylex-owner="user-profile-notfound-home"
+              data-owner="user-profile-notfound-home"
             >
               {t("menu.home")}
             </Link>
@@ -377,174 +322,84 @@ function PublicProfileBody({
   const issues = profileResponse.issueItems;
   const openIssues = issues.filter((issue) => stringField(issue, "state") === "open");
   const closedIssues = issues.filter((issue) => stringField(issue, "state") === "closed");
-  const avatarBackgroundStyle = stylex.props(
-    styles.avatarBackground(`url('${profile.avatarUrl}')`),
-  );
-
   return (
     <>
       <title>{profile.loginId}</title>
-      <div
-        {...stylex.props(styles.breadcrumbOuter)}
-        className={`${stylex.props(styles.breadcrumbOuter).className ?? ""} site-breadcrumb-outer`.trim()}
-        data-stylex-owner="user-profile-breadcrumb-outer"
-      >
-        <div
-          {...stylex.props(styles.breadcrumbInner)}
-          className={`${stylex.props(styles.breadcrumbInner).className ?? ""} site-breadcrumb-inner`.trim()}
-          data-stylex-owner="user-profile-breadcrumb-inner"
-        >
-          <h3
-            {...stylex.props(styles.breadcrumbHeading)}
-            data-stylex-owner="user-profile-breadcrumb-heading"
-          >
-            {profile.displayName}
-          </h3>
+      <div className={"site-breadcrumb-outer"} data-owner="user-profile-breadcrumb-outer">
+        <div className={"site-breadcrumb-inner"} data-owner="user-profile-breadcrumb-inner">
+          <h3 data-owner="user-profile-breadcrumb-heading">{profile.displayName}</h3>
         </div>
       </div>
-      <div
-        {...stylex.props(styles.pageOuter)}
-        className={`${stylex.props(styles.pageOuter).className} page-wrap-outer`}
-        data-stylex-owner="user-profile-page-outer"
-      >
-        <div
-          {...stylex.props(styles.page)}
-          className={`${stylex.props(styles.page).className} page-wrap`}
-          data-stylex-owner="user-profile-page"
-        >
-          <section
-            className={`${stylex.props(styles.profile).className} user-box`}
-            data-stylex-owner="user-profile-box"
-          >
-            <div
-              {...stylex.props(styles.info)}
-              className={`${stylex.props(styles.info).className} user-info-box`}
-              data-stylex-owner="user-profile-info"
-            >
+      <div className={"page-wrap-outer"} data-owner="user-profile-page-outer">
+        <div className={"page-wrap"} data-owner="user-profile-page">
+          <section className={"user-box"} data-owner="user-profile-box">
+            <div className={"user-info-box"} data-owner="user-profile-info">
               <div
-                {...avatarBackgroundStyle}
-                className={`${stylex.props(userProfileStaticStyles.avatarWrap).className} ${avatarBackgroundStyle.className ?? ""} whoami-wrap`.trim()}
-                data-stylex-owner="user-profile-avatar-background"
+                style={{ backgroundImage: `url('${profile.avatarUrl}')` }}
+                className={"whoami-wrap"}
+                data-owner="user-profile-avatar-background"
               >
                 {profile.isGuest ? (
-                  <div
-                    {...stylex.props(styles.guestUser)}
-                    data-stylex-owner="user-profile-guest-badge"
-                  >
-                    <span
-                      {...stylex.props(styles.guestLeftMark)}
-                      data-stylex-owner="user-profile-guest-badge-mark"
-                    >
-                      OUR GUEST
-                    </span>
+                  <div data-owner="user-profile-guest-badge">
+                    <span data-owner="user-profile-guest-badge-mark">OUR GUEST</span>
                   </div>
                 ) : null}
               </div>
-              <div
-                {...stylex.props(styles.whoami)}
-                className={`${stylex.props(styles.whoami).className} whoami usf-group`}
-                data-stylex-owner="user-profile-whoami"
-              >
-                <span
-                  {...stylex.props(userProfileStaticStyles.profileName)}
-                  className={`${stylex.props(userProfileStaticStyles.profileName).className} name`}
-                  data-stylex-owner="user-profile-identity-name"
-                >
+              <div className={"whoami usf-group"} data-owner="user-profile-whoami">
+                <span className={"name"} data-owner="user-profile-identity-name">
                   {profile.englishName}
                 </span>{" "}
-                <span
-                  {...stylex.props(styles.loginId)}
-                  className={`${stylex.props(styles.loginId).className} loginid`}
-                  data-stylex-owner="user-profile-identity-loginid"
-                >
+                <span className={"loginid"} data-owner="user-profile-identity-loginid">
                   @{profile.loginId}
                 </span>{" "}
                 {runtimeConfig.showUserEmail && profile.primaryEmailAddress ? (
-                  <span className="email" data-stylex-owner="user-profile-identity-email">
+                  <span className="email" data-owner="user-profile-identity-email">
                     {profile.primaryEmailAddress}
                   </span>
                 ) : null}
                 {profileResponse.viewerCanEditProfile ? (
-                  <div
-                    {...stylex.props(userProfileStaticStyles.profileEdit)}
-                    className={`${stylex.props(userProfileStaticStyles.profileEdit).className} edit`}
-                    data-stylex-owner="user-profile-identity-edit"
-                  >
+                  <div className={"edit"} data-owner="user-profile-identity-edit">
                     <Link
                       to="/user/editform"
                       reloadDocument
-                      {...stylex.props(styles.profileEditButton)}
-                      className={`${stylex.props(styles.profileEditButton).className} ybtn ybtn-default ybtn-mini`}
-                      data-stylex-owner="user-profile-edit-control"
+                      className={"ybtn ybtn-default ybtn-mini"}
+                      data-owner="user-profile-edit-control"
                     >
-                      <i
-                        {...stylex.props(styles.profileEditIcon)}
-                        className={`${stylex.props(styles.profileEditIcon).className} yobicon-edit`}
-                        data-stylex-owner="user-profile-edit-control-icon"
-                      ></i>{" "}
+                      <i className={"yobicon-edit"} data-owner="user-profile-edit-control-icon"></i>{" "}
                       {t("userinfo.editProfile")}
                     </Link>
                   </div>
                 ) : null}
               </div>
 
-              <div
-                {...stylex.props(styles.userStatus)}
-                className={`${stylex.props(styles.userStatus).className} user-status`}
-                data-stylex-owner="user-profile-user-status"
-              >
+              <div className={"user-status"} data-owner="user-profile-user-status">
                 {profile.isSiteAdmin ? (
                   <span
-                    {...stylex.props(styles.statusBadge, styles.siteAdminBadge)}
-                    className={`${stylex.props(styles.statusBadge, styles.siteAdminBadge).className} badge label-success`}
-                    data-stylex-owner="user-profile-site-admin-badge"
+                    className={"badge label-success"}
+                    data-owner="user-profile-site-admin-badge"
                   >
                     SITE ADMIN
                   </span>
                 ) : null}
               </div>
-              <div
-                {...stylex.props(styles.userStatus)}
-                className={`${stylex.props(styles.userStatus).className} user-status`}
-                data-stylex-owner="user-profile-user-status"
-              >
+              <div className={"user-status"} data-owner="user-profile-user-status">
                 {profile.isBlocked ? (
-                  <span
-                    {...stylex.props(styles.statusBadge, styles.blockedBadge)}
-                    className={`${stylex.props(styles.statusBadge, styles.blockedBadge).className} badge label-important`}
-                    data-stylex-owner="user-profile-blocked-badge"
-                  >
+                  <span className={"badge label-important"} data-owner="user-profile-blocked-badge">
                     BLOCKED
                   </span>
                 ) : null}
               </div>
-              <div
-                {...stylex.props(styles.userSince)}
-                className={`${stylex.props(styles.userSince).className} user-since`}
-                data-stylex-owner="user-profile-user-since"
-              >
+              <div className={"user-since"} data-owner="user-profile-user-since">
                 <strong>{t("userinfo.since")}</strong>
-                <span
-                  {...stylex.props(styles.since)}
-                  className={`${stylex.props(styles.since).className} since`}
-                  data-stylex-owner="user-profile-since"
-                >
+                <span className={"since"} data-owner="user-profile-since">
                   {profile.sinceLabel}
                 </span>
               </div>
-              <div
-                {...stylex.props(styles.userSince)}
-                className={`${stylex.props(styles.userSince).className} user-since`}
-                data-stylex-owner="user-profile-user-since"
-              >
+              <div className={"user-since"} data-owner="user-profile-user-since">
                 <div>
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>
-                <div
-                  {...stylex.props(userProfileStaticStyles.providerLogo)}
-                  className={`${stylex.props(userProfileStaticStyles.providerLogo).className} auth-provider-logo`}
-                  data-stylex-owner="user-profile-provider-logo"
-                >
+                <div className={"auth-provider-logo"} data-owner="user-profile-provider-logo">
                   {profile.connectedSocialProviders.map((provider) => (
                     <ConnectedSocialProviderLogo key={provider} provider={provider} />
                   ))}
@@ -553,14 +408,8 @@ function PublicProfileBody({
             </div>
 
             {!viewerIsGuest ? (
-              <div
-                className={`${stylex.props(styles.stream).className} user-stream-box`}
-                data-stylex-owner="user-profile-stream"
-              >
-                <div
-                  className={`${stylex.props(styles.daysAgoControls).className} pull-right`}
-                  data-stylex-owner="user-profile-days-ago-controls"
-                >
+              <div className={"user-stream-box"} data-owner="user-profile-stream">
+                <div className={"pull-right"} data-owner="user-profile-days-ago-controls">
                   {t("userinfo.daysAgo.prefix")}
                   <input
                     id="daysAgoBtn"
@@ -568,17 +417,14 @@ function PublicProfileBody({
                     type="number"
                     min="1"
                     max="99"
-                    className={`${stylex.props(styles.daysAgoInput).className} input-mini-min`}
+                    className={"input-mini-min"}
                     defaultValue={daysAgo}
-                    data-stylex-owner="user-profile-days-ago-input"
+                    data-owner="user-profile-days-ago-input"
                   />
                   {t("userinfo.daysAgo.suffix")}
                 </div>
 
-                <ul
-                  className={`${stylex.props(styles.tabs).className} nav nav-tabs`}
-                  data-stylex-owner="user-profile-tabs"
-                >
+                <ul className={"nav nav-tabs"} data-owner="user-profile-tabs">
                   <ProfileTab
                     active={activeTab === "issues"}
                     badge={issues.length}
@@ -599,18 +445,6 @@ function PublicProfileBody({
                   />
                   <li>
                     <TwoColumnModeCheckbox
-                      anchorStyle={[
-                        styles.popoverAnchor,
-                        styles.checkboxControl,
-                        styles.twoColumnModeControl,
-                      ]}
-                      labelStyle={styles.checkboxControlLabel}
-                      borderStyle={styles.checkboxControlBorder}
-                      borderHoverStyle={styles.checkboxControlBorderHover}
-                      textStyle={styles.checkboxControlText}
-                      textHoverStyle={styles.checkboxControlTextHover}
-                      inputStyle={styles.checkboxControlInput}
-                      popoverStyle={userProfileStaticStyles.faqPopover}
                       anchorOwner="user-profile-two-column-popover-anchor"
                       labelOwner="user-profile-two-column-label"
                       borderOwner="user-profile-two-column-border"
@@ -621,31 +455,23 @@ function PublicProfileBody({
                   </li>
                 </ul>
 
-                <div
-                  className={`${stylex.props(styles.tabContent).className} tab-content`}
-                  data-stylex-owner="user-profile-tab-content"
-                >
+                <div className={"tab-content"} data-owner="user-profile-tab-content">
                   <div
                     id="issues"
-                    className={`${stylex.props(styles.tabPane, activeTab === "issues" && styles.tabPaneActive).className} tab-pane${activeTab === "issues" ? " active" : ""}`}
-                    data-stylex-owner="user-profile-pane-issues"
+                    className={`tab-pane${activeTab === "issues" ? " active" : ""}`}
+                    data-owner="user-profile-pane-issues"
                   >
-                    <ul
-                      className={`${stylex.props(styles.issueTabs).className} nav nav-tabs`}
-                      data-stylex-owner="user-profile-issue-tabs"
-                    >
+                    <ul className={"nav nav-tabs"} data-owner="user-profile-issue-tabs">
                       <li className={activeIssueTab === "openIssues" ? "active" : ""}>
                         <button
-                          className={stylex.props(styles.issueTabButton).className}
-                          data-stylex-owner="user-profile-issue-tab-button-open"
+                          data-owner="user-profile-issue-tab-button-open"
                           type="button"
                           onClick={() => setActiveIssueTab("openIssues")}
                         >
                           {t("issue.state.open")}
                           <span
-                            {...stylex.props(styles.tabCountBadge)}
-                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
-                            data-stylex-owner="user-profile-nested-issue-count-badge"
+                            className={"num-badge"}
+                            data-owner="user-profile-nested-issue-count-badge"
                           >
                             {openIssues.length}
                           </span>
@@ -653,16 +479,14 @@ function PublicProfileBody({
                       </li>
                       <li className={activeIssueTab === "closedIssues" ? "active" : ""}>
                         <button
-                          className={stylex.props(styles.issueTabButton).className}
-                          data-stylex-owner="user-profile-issue-tab-button-closed"
+                          data-owner="user-profile-issue-tab-button-closed"
                           type="button"
                           onClick={() => setActiveIssueTab("closedIssues")}
                         >
                           {t("issue.state.closed")}
                           <span
-                            {...stylex.props(styles.tabCountBadge)}
-                            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
-                            data-stylex-owner="user-profile-nested-issue-count-badge"
+                            className={"num-badge"}
+                            data-owner="user-profile-nested-issue-count-badge"
                           >
                             {closedIssues.length}
                           </span>
@@ -675,36 +499,25 @@ function PublicProfileBody({
                         />
                       </li>
                     </ul>
-                    <div
-                      className={`${stylex.props(styles.tabContent).className} tab-content`}
-                      data-stylex-owner="user-profile-issue-tab-content"
-                    >
+                    <div className={"tab-content"} data-owner="user-profile-issue-tab-content">
                       <div
                         id="openIssues"
-                        className={`${
-                          stylex.props(
-                            styles.tabPane,
-                            activeIssueTab === "openIssues" && styles.tabPaneActive,
-                          ).className
-                        } tab-pane${activeIssueTab === "openIssues" ? " active" : ""}`}
-                        data-stylex-owner="user-profile-pane-open-issues"
+                        className={`tab-pane${activeIssueTab === "openIssues" ? " active" : ""}`}
+                        data-owner="user-profile-pane-open-issues"
                       >
                         {issues.length === 0 ? (
                           <div
-                            className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
-                            data-stylex-owner="user-profile-open-issues-empty-wrap"
+                            className={"error-wrap"}
+                            data-owner="user-profile-open-issues-empty-wrap"
                           >
-                            <p
-                              className={stylex.props(styles.emptyErrorMessage).className}
-                              data-stylex-owner="user-profile-open-issues-empty-message"
-                            >
+                            <p data-owner="user-profile-open-issues-empty-message">
                               {`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}
                             </p>
                           </div>
                         ) : null}
                         <ul
-                          className={`${stylex.props(styles.issueList).className} post-list-wrap my-issues row-fluid`}
-                          data-stylex-owner="user-profile-open-issue-list"
+                          className={"post-list-wrap my-issues row-fluid"}
+                          data-owner="user-profile-open-issue-list"
                         >
                           {openIssues.map((issue) => (
                             <ProfileIssueRow
@@ -718,30 +531,22 @@ function PublicProfileBody({
                       </div>
                       <div
                         id="closedIssues"
-                        className={`${
-                          stylex.props(
-                            styles.tabPane,
-                            activeIssueTab === "closedIssues" && styles.tabPaneActive,
-                          ).className
-                        } tab-pane${activeIssueTab === "closedIssues" ? " active" : ""}`}
-                        data-stylex-owner="user-profile-pane-closed-issues"
+                        className={`tab-pane${activeIssueTab === "closedIssues" ? " active" : ""}`}
+                        data-owner="user-profile-pane-closed-issues"
                       >
                         {issues.length === 0 ? (
                           <div
-                            className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
-                            data-stylex-owner="user-profile-closed-issues-empty-wrap"
+                            className={"error-wrap"}
+                            data-owner="user-profile-closed-issues-empty-wrap"
                           >
-                            <p
-                              className={stylex.props(styles.emptyErrorMessage).className}
-                              data-stylex-owner="user-profile-closed-issues-empty-message"
-                            >
+                            <p data-owner="user-profile-closed-issues-empty-message">
                               {`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}
                             </p>
                           </div>
                         ) : null}
                         <ul
-                          className={`${stylex.props(styles.issueList).className} post-list-wrap my-issues row-fluid`}
-                          data-stylex-owner="user-profile-closed-issue-list"
+                          className={"post-list-wrap my-issues row-fluid"}
+                          data-owner="user-profile-closed-issue-list"
                         >
                           {closedIssues.map((issue) => (
                             <ProfileIssueRow
@@ -757,31 +562,22 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="pullRequests"
-                    className={`${
-                      stylex.props(
-                        styles.tabPane,
-                        activeTab === "pullRequests" && styles.tabPaneActive,
-                      ).className
-                    } tab-pane${activeTab === "pullRequests" ? " active" : ""}`}
-                    data-stylex-owner="user-profile-pane-pull-requests"
+                    className={`tab-pane${activeTab === "pullRequests" ? " active" : ""}`}
+                    data-owner="user-profile-pane-pull-requests"
                   >
                     {profileResponse.pullRequestItems.length === 0 ? (
                       <div
-                        className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
-                        data-stylex-owner="user-profile-pull-requests-empty-wrap"
+                        className={"error-wrap"}
+                        data-owner="user-profile-pull-requests-empty-wrap"
                       >
-                        <p
-                          className={stylex.props(styles.emptyErrorMessage).className}
-                          data-stylex-owner="user-profile-pull-requests-empty-message"
-                        >
+                        <p data-owner="user-profile-pull-requests-empty-message">
                           {`${t("userinfo.daysAgo.prefix")} ${t("pullRequest.is.empty")}`}
                         </p>
                       </div>
                     ) : null}
                     <ul
-                      {...stylex.props(styles.pullRequestList)}
-                      className={`${stylex.props(styles.pullRequestList).className} post-list-wrap row-fluid`}
-                      data-stylex-owner="user-profile-pull-request-list"
+                      className={"post-list-wrap row-fluid"}
+                      data-owner="user-profile-pull-request-list"
                     >
                       {profileResponse.pullRequestItems.map((pullRequest) => (
                         <ProfilePullRequestRow
@@ -793,25 +589,19 @@ function PublicProfileBody({
                   </div>
                   <div
                     id="projects"
-                    className={`${stylex.props(styles.tabPane, activeTab === "projects" && styles.tabPaneActive).className} tab-pane${activeTab === "projects" ? " active" : ""}`}
-                    data-stylex-owner="user-profile-pane-projects"
+                    className={`tab-pane${activeTab === "projects" ? " active" : ""}`}
+                    data-owner="user-profile-pane-projects"
                   >
                     {profileResponse.memberProjects.length === 0 ? (
-                      <div
-                        className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
-                        data-stylex-owner="user-profile-projects-empty-wrap"
-                      >
-                        <p
-                          className={stylex.props(styles.emptyErrorMessage).className}
-                          data-stylex-owner="user-profile-projects-empty-message"
-                        >
+                      <div className={"error-wrap"} data-owner="user-profile-projects-empty-wrap">
+                        <p data-owner="user-profile-projects-empty-message">
                           {t("project.is.empty")}
                         </p>
                       </div>
                     ) : null}
                     <ul
-                      className={`${stylex.props(styles.projectsList).className} user-streams all-projects`}
-                      data-stylex-owner="user-profile-projects-list"
+                      className={"user-streams all-projects"}
+                      data-owner="user-profile-projects-list"
                     >
                       {profileResponse.memberProjects.map((project, index) => (
                         <ProfileProjectRow
@@ -826,10 +616,7 @@ function PublicProfileBody({
                 </div>
               </div>
             ) : (
-              <div
-                {...stylex.props(styles.guestStreamShell)}
-                data-stylex-owner="user-profile-guest-stream-shell"
-              ></div>
+              <div data-owner="user-profile-guest-stream-shell"></div>
             )}
           </section>
         </div>
@@ -851,19 +638,10 @@ function ProfileTab({
 }) {
   return (
     <li className={active ? "active" : ""}>
-      <button
-        className={stylex.props(styles.profileTabButton).className}
-        data-stylex-owner="user-profile-tab-button"
-        type="button"
-        onClick={onSelect}
-      >
+      <button data-owner="user-profile-tab-button" type="button" onClick={onSelect}>
         {label}{" "}
         {badge > 0 ? (
-          <span
-            {...stylex.props(styles.tabCountBadge)}
-            className={`${stylex.props(styles.tabCountBadge).className} num-badge`}
-            data-stylex-owner="user-profile-top-tab-count-badge"
-          >
+          <span className={"num-badge"} data-owner="user-profile-top-tab-count-badge">
             {badge}
           </span>
         ) : null}
@@ -877,18 +655,8 @@ function ConnectedSocialProviderLogo({ provider }: { provider: string }) {
 
   if (normalized === "github") {
     return (
-      <span
-        {...stylex.props(userProfileStaticStyles.providerGithub)}
-        data-stylex-owner="user-profile-provider-github"
-      >
-        <svg
-          {...stylex.props(userProfileStaticStyles.providerLogoSvg)}
-          aria-hidden="true"
-          height="24"
-          version="1.1"
-          viewBox="0 0 16 16"
-          width="19"
-        >
+      <span data-owner="user-profile-provider-github">
+        <svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38C13.71 14.53 16 11.53 16 8 16 3.58 12.42 0 8 0z" />
         </svg>
       </span>
@@ -897,13 +665,9 @@ function ConnectedSocialProviderLogo({ provider }: { provider: string }) {
 
   if (normalized === "google") {
     return (
-      <span data-stylex-owner="user-profile-provider-google">
+      <span data-owner="user-profile-provider-google">
         {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy TemplateHelper.GoogleLogo renders this provider image without an alt attribute. */}
-        <img
-          {...stylex.props(styles.providerGoogleImage)}
-          data-stylex-owner="user-profile-provider-google-image"
-          src={googleProviderLogoUrl}
-        />
+        <img data-owner="user-profile-provider-google-image" src={googleProviderLogoUrl} />
       </span>
     );
   }
@@ -942,70 +706,41 @@ function ProfileIssueRow({
   } satisfies LegacyIssueRowAttributes;
 
   return (
-    <li
-      {...legacyIssueRowAttrs}
-      {...stylex.props(styles.issueRow)}
-      className={`${stylex.props(styles.issueRow).className} post-item title`}
-      data-stylex-owner="user-profile-issue-row"
-    >
-      <div
-        {...stylex.props(styles.issueGridContent)}
-        className={`${stylex.props(styles.issueGridContent).className} span12 span-hard-wrap`}
-        data-stylex-owner="user-profile-issue-grid-content"
-      >
+    <li {...legacyIssueRowAttrs} className={"post-item title"} data-owner="user-profile-issue-row">
+      <div className={"span12 span-hard-wrap"} data-owner="user-profile-issue-grid-content">
         <div
-          {...stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper)}
-          className={`${stylex.props(styles.issueGridProjectColumn, styles.issueProjectNameWrapper).className} span2 project-name-in-my-issues fixed-height-my-issues-list`}
-          data-stylex-owner="user-profile-issue-project-name-wrapper"
+          className={"span2 project-name-in-my-issues fixed-height-my-issues-list"}
+          data-owner="user-profile-issue-project-name-wrapper"
         >
-          <span
-            {...stylex.props(styles.issueProjectName)}
-            className={`${stylex.props(styles.issueProjectName).className} infos-item project-name`}
-            data-stylex-owner="user-profile-issue-project-name"
-          >
+          <span className={"infos-item project-name"} data-owner="user-profile-issue-project-name">
             <Link
               {...LEGACY_LINK_PROPS}
               to={projectPath}
-              {...stylex.props(styles.issueProjectLink)}
-              className={`${stylex.props(styles.issueProjectLink).className} title project`}
+              className={"title project"}
               title={t("project.name")}
-              data-stylex-owner="user-profile-issue-project-link"
+              data-owner="user-profile-issue-project-link"
             >
               {projectName}
             </Link>
           </span>
-          <span
-            {...stylex.props(styles.issuePostId)}
-            className={`${stylex.props(styles.issuePostId).className} infos-item post-id`}
-            data-stylex-owner="user-profile-issue-post-id"
-          >
+          <span className={"infos-item post-id"} data-owner="user-profile-issue-post-id">
             #{issueNumber}
           </span>
         </div>
-        <div
-          {...stylex.props(styles.issueGridTitleColumn, styles.issueTitleWrap)}
-          className={`${stylex.props(styles.issueGridTitleColumn, styles.issueTitleWrap).className} title-wrap span5`}
-          data-stylex-owner="user-profile-issue-title-wrap"
-        >
-          <span
-            {...stylex.props(styles.issueTitleCell)}
-            className={`${stylex.props(styles.issueTitleCell).className} title-cell`}
-            data-stylex-owner="user-profile-issue-title-cell"
-          >
+        <div className={"title-wrap span5"} data-owner="user-profile-issue-title-wrap">
+          <span className={"title-cell"} data-owner="user-profile-issue-title-cell">
             <Link
               {...LEGACY_LINK_PROPS}
               to={issuePath}
-              {...stylex.props(styles.issueTitleLink)}
-              className={`${stylex.props(styles.issueTitleLink).className} title`}
-              data-stylex-owner="user-profile-issue-title-link"
+              className={"title"}
+              data-owner="user-profile-issue-title-link"
             >
               {stringField(issue, "title")}
             </Link>
             <ProfileIssueCommentCount issue={issue} issuePath={issuePath} />
             <span
-              {...stylex.props(styles.issueSubtaskProgressWrapper)}
-              className={`${stylex.props(styles.issueSubtaskProgressWrapper).className} for-subtask-progressbar`}
-              data-stylex-owner="user-profile-issue-subtask-progress-wrapper"
+              className={"for-subtask-progressbar"}
+              data-owner="user-profile-issue-subtask-progress-wrapper"
             >
               <ProfileIssueSubtaskSummary
                 issue={issue}
@@ -1014,29 +749,23 @@ function ProfileIssueRow({
               />
             </span>
             {labels.map((label) => {
-              const labelPresentation = stylex.props(styles.issueLabelPresentation);
-
               return (
                 <Link
                   key={label.id}
                   {...LEGACY_LINK_PROPS}
-                  {...labelPresentation}
                   to={`${projectPath}/issues?state=open&labelIds=${label.id}` as "/"}
-                  className={`${labelPresentation.className ?? ""} label issue-label list-label`.trim()}
+                  className={"label issue-label list-label"}
                   data-label-id={String(label.id)}
                   style={issueLabelStyle(label.color)}
-                  data-stylex-owner="user-profile-parent-issue-label"
+                  data-owner="user-profile-parent-issue-label"
                 >
                   {label.name}
                 </Link>
               );
             })}
             <div
-              {...stylex.props(styles.issueChildList)}
-              className={`${stylex.props(styles.issueChildList).className} child-issue-list${
-                showSubtasks ? "" : " hide"
-              }`}
-              data-stylex-owner="user-profile-child-issue-list"
+              className={`child-issue-list${showSubtasks ? "" : " hide"}`}
+              data-owner="user-profile-child-issue-list"
             >
               <ProfileIssueChildRows
                 issues={issue.childIssues ?? []}
@@ -1047,19 +776,10 @@ function ProfileIssueRow({
           </span>
         </div>
         <div
-          {...stylex.props(
-            styles.issueGridAuthorColumn,
-            styles.issueAuthor,
-            styles.issueDesktopPersonVisibility,
-          )}
-          className={`${
-            stylex.props(
-              styles.issueGridAuthorColumn,
-              styles.issueAuthor,
-              styles.issueDesktopPersonVisibility,
-            ).className
-          } span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list`}
-          data-stylex-owner="user-profile-issue-author"
+          className={
+            "span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"
+          }
+          data-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
             label={stringField(issue, "authorLabel")}
@@ -1068,19 +788,10 @@ function ProfileIssueRow({
           />
         </div>
         <div
-          {...stylex.props(
-            styles.issueGridAuthorColumn,
-            styles.issueAuthor,
-            styles.issueDesktopPersonVisibility,
-          )}
-          className={`${
-            stylex.props(
-              styles.issueGridAuthorColumn,
-              styles.issueAuthor,
-              styles.issueDesktopPersonVisibility,
-            ).className
-          } span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list`}
-          data-stylex-owner="user-profile-issue-author"
+          className={
+            "span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"
+          }
+          data-owner="user-profile-issue-author"
         >
           <ProfilePersonLink
             label={stringField(issue, "assigneeLabel")}
@@ -1088,40 +799,23 @@ function ProfileIssueRow({
             applyAuthorCellStyle
           />
         </div>
-        <div
-          {...stylex.props(styles.issueGridMetaColumn, styles.issueMeta)}
-          className={`${stylex.props(styles.issueGridMetaColumn, styles.issueMeta).className} infos span3 meta`}
-          data-stylex-owner="user-profile-issue-meta"
-        >
-          <span
-            {...stylex.props(styles.issueMetaCell)}
-            className={`${stylex.props(styles.issueMetaCell).className} meta-cell`}
-            data-stylex-owner="user-profile-issue-meta-cell"
-          >
-            <span
-              {...stylex.props(styles.issueMobileAssigneeVisibility)}
-              className={`${stylex.props(styles.issueMobileAssigneeVisibility).className} hide show-in-mobile`}
-              data-stylex-owner="user-profile-issue-mobile-assignee"
-            >
+        <div className={"infos span3 meta"} data-owner="user-profile-issue-meta">
+          <span className={"meta-cell"} data-owner="user-profile-issue-meta-cell">
+            <span className={"hide show-in-mobile"} data-owner="user-profile-issue-mobile-assignee">
               <ProfilePersonLink
                 label={stringField(issue, "assigneeLabel")}
                 loginId={stringField(issue, "assigneeLoginId")}
               />
             </span>
             <span
-              {...stylex.props(styles.issueMetadataItem)}
-              className={`${stylex.props(styles.issueMetadataItem).className} infos-item`}
-              data-stylex-owner="user-profile-issue-metadata-date"
+              className={"infos-item"}
+              data-owner="user-profile-issue-metadata-date"
               title={stringField(issue, "updatedLabel")}
             >
               {stringField(issue, "updatedLabel")}
             </span>
             {milestoneId > 0 && milestoneTitle ? (
-              <span
-                {...stylex.props(styles.issueMilestoneTag)}
-                className={`${stylex.props(styles.issueMilestoneTag).className} mileston-tag`}
-                data-stylex-owner="user-profile-issue-metadata-milestone"
-              >
+              <span className={"mileston-tag"} data-owner="user-profile-issue-metadata-milestone">
                 <Link
                   {...LEGACY_LINK_PROPS}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
@@ -1134,16 +828,11 @@ function ProfileIssueRow({
             ) : null}
             {dueDateLabel ? (
               <span
-                {...stylex.props(styles.issueDueDate, dueDateOverdue && styles.issueDueDateOverdue)}
-                className={`${stylex.props(styles.issueDueDate, dueDateOverdue && styles.issueDueDateOverdue).className} pull-right`}
-                data-stylex-owner="user-profile-issue-due-date"
+                className={"pull-right"}
+                data-owner="user-profile-issue-due-date"
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
-                <i
-                  {...stylex.props(styles.issueDueDateClock)}
-                  className={`${stylex.props(styles.issueDueDateClock).className} yobicon-clock2`}
-                  data-stylex-owner="user-profile-issue-due-date-clock"
-                ></i>
+                <i className={"yobicon-clock2"} data-owner="user-profile-issue-due-date-clock"></i>
                 {issueState === "open" && dueDateOverdue
                   ? t("issue.dueDate.overdue")
                   : issueState === "open"
@@ -1179,55 +868,19 @@ function ProfileIssueSubtaskSummary({
       {childTotalCount ? (
         <>
           <div
-            {...stylex.props(
-              styles.issueSubtaskProgressShell,
-              percentage === 100
-                ? styles.issueSubtaskProgressShellComplete
-                : styles.issueSubtaskProgressShellIncomplete,
-            )}
-            className={`${
-              stylex.props(
-                styles.issueSubtaskProgressShell,
-                percentage === 100
-                  ? styles.issueSubtaskProgressShellComplete
-                  : styles.issueSubtaskProgressShellIncomplete,
-              ).className
-            } subtask-progress upload-progress red-outline`}
-            data-stylex-owner="user-profile-issue-subtask-progress-shell"
+            className={`subtask-progress upload-progress${percentage === 100 ? " done-outline" : " red-outline"}`}
+            data-owner="user-profile-issue-subtask-progress-shell"
           >
             <div
-              {...stylex.props(
-                styles.issueSubtaskProgressBar,
-                percentage === 100
-                  ? styles.issueSubtaskProgressBarComplete
-                  : styles.issueSubtaskProgressBarIncomplete,
-                styles.progressBar(`${percentage}%`),
-              )}
-              className={`${
-                stylex.props(
-                  styles.issueSubtaskProgressBar,
-                  percentage === 100
-                    ? styles.issueSubtaskProgressBarComplete
-                    : styles.issueSubtaskProgressBarIncomplete,
-                  styles.progressBar(`${percentage}%`),
-                ).className
-              } bar red`}
-              data-stylex-owner="user-profile-subtask-progress-bar"
+              style={{ "--x-width": `${percentage}%` } as React.CSSProperties}
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              data-owner="user-profile-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>
           <span
-            {...stylex.props(
-              styles.issueSubtaskCompletionRatio,
-              percentage === 100 && styles.issueSubtaskCompletionRatioComplete,
-            )}
-            className={`${
-              stylex.props(
-                styles.issueSubtaskCompletionRatio,
-                percentage === 100 && styles.issueSubtaskCompletionRatioComplete,
-              ).className
-            } subtask-progress completion-ratio`}
-            data-stylex-owner="user-profile-issue-subtask-completion-ratio"
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+            data-owner="user-profile-issue-subtask-completion-ratio"
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {childTotalCount}
@@ -1235,13 +888,9 @@ function ProfileIssueSubtaskSummary({
         </>
       ) : null}
       {parentIssueNumber ? (
-        <span
-          {...stylex.props(styles.issueSubtaskParent)}
-          data-stylex-owner="user-profile-issue-subtask-parent"
-        >
+        <span data-owner="user-profile-issue-subtask-parent">
           <Link
             {...LEGACY_LINK_PROPS}
-            {...stylex.props(styles.issueSubtaskParentLink)}
             to="/$ownerName/$projectName/issue/$issueNumber"
             params={{ ownerName, projectName, issueNumber: String(parentIssueNumber) }}
           >
@@ -1298,34 +947,18 @@ function ProfileIssueChildRow({
   return (
     <div className="issue-item  child-issue">
       <span
-        {...stylex.props(isClosed && styles.issueChildClosedState)}
-        className={`${stylex.props(isClosed && styles.issueChildClosedState).className ?? ""} state-label ${
-          isClosed ? "closed" : "open"
-        }`.trim()}
-        {...(isClosed ? { "data-stylex-owner": "user-profile-child-closed-state" } : {})}
+        className={`state-label ${isClosed ? "closed" : "open"}`}
+        {...(isClosed ? { "data-owner": "user-profile-child-closed-state" } : {})}
       >
         {isClosed ? (
-          <i
-            {...stylex.props(styles.issueChildCheckmark)}
-            className={`${stylex.props(styles.issueChildCheckmark).className} yobicon-checkmark`}
-            data-stylex-owner="user-profile-child-checkmark"
-          ></i>
+          <i className={"yobicon-checkmark"} data-owner="user-profile-child-checkmark"></i>
         ) : null}
       </span>
       <Link {...LEGACY_LINK_PROPS} className="twoColumeModeTarget" to={issuePath}>
         <span className="item-name">
-          <span
-            {...stylex.props(styles.issueSubtaskNumber)}
-            className={`${stylex.props(styles.issueSubtaskNumber).className} subtask-number`}
-            data-stylex-owner="user-profile-child-subtask-number"
-          >
+          <span className={"subtask-number"} data-owner="user-profile-child-subtask-number">
             {issue.isDraft ? (
-              <span
-                {...stylex.props(styles.issueChildDraftNumber)}
-                data-stylex-owner="user-profile-child-draft-number"
-              >
-                #Draft
-              </span>
+              <span data-owner="user-profile-child-draft-number">#Draft</span>
             ) : (
               `#${issueNumber}`
             )}
@@ -1336,22 +969,15 @@ function ProfileIssueChildRow({
           </span>
         </span>
       </Link>
-      <span
-        {...stylex.props(styles.issueChildCountPair)}
-        className={`${stylex.props(styles.issueChildCountPair).className} font12 no-border-at-child`}
-        data-stylex-owner="user-profile-child-count-pair"
-      >
+      <span className={"font12 no-border-at-child"} data-owner="user-profile-child-count-pair">
         <ProfileIssueChildCounts issue={issue} issuePath={issuePath} />
       </span>
       {labels.map((label) => {
-        const labelPresentation = stylex.props(styles.issueLabelPresentation);
-
         return (
           <IssueLabel
             as={Link}
             {...LEGACY_LINK_PROPS}
-            {...labelPresentation}
-            className={`${labelPresentation.className ?? ""} twoColumeModeTarget`.trim()}
+            className={"twoColumeModeTarget"}
             color={label.color}
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
@@ -1371,16 +997,15 @@ function ProfileIssueChildRow({
             data-category-id={String(label.categoryId ?? "")}
             labelId={String(label.id)}
             key={String(label.id)}
-            data-stylex-owner="user-profile-child-issue-label"
+            data-owner="user-profile-child-issue-label"
           >
             {label.name}
           </IssueLabel>
         );
       })}
       <span
-        {...stylex.props(styles.issueChildDate)}
-        className={`${stylex.props(styles.issueChildDate).className} child-issue-date`}
-        data-stylex-owner="user-profile-child-date"
+        className={"child-issue-date"}
+        data-owner="user-profile-child-date"
         title={stringField(issue, "createdLabel")}
       >
         {stringField(issue, "createdLabel")}
@@ -1397,35 +1022,27 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
   }
 
   return (
-    <span
-      {...stylex.props(styles.issueChildCountGroups)}
-      className={`${stylex.props(styles.issueChildCountGroups).className} item-count-groups`}
-      data-stylex-owner="user-profile-child-count-groups"
-    >
+    <span className={"item-count-groups"} data-owner="user-profile-child-count-groups">
       {commentCount > 0 ? (
         <Link
           {...LEGACY_LINK_PROPS}
           to={issuePath}
           hash="comments"
-          {...stylex.props(styles.issueChildCountLink, styles.issueChildCommentLink)}
-          className={`${stylex.props(styles.issueChildCountLink, styles.issueChildCommentLink).className} comments-count`}
-          data-stylex-owner="user-profile-child-comment-count-link"
+          className={"comments-count"}
+          data-owner="user-profile-child-comment-count-link"
         >
           <span
-            {...stylex.props(styles.issueChildCountIcon)}
-            className={`${stylex.props(styles.issueChildCountIcon).className} count-groups item-icon`}
-            data-stylex-owner="user-profile-child-comment-count-icon"
+            className={"count-groups item-icon"}
+            data-owner="user-profile-child-comment-count-icon"
           >
             <i
-              {...stylex.props(styles.issueChildCountGlyph, styles.issueChildCommentGlyph)}
-              className={`${stylex.props(styles.issueChildCountGlyph, styles.issueChildCommentGlyph).className} yobicon-comment2`}
-              data-stylex-owner="user-profile-child-comment-count-glyph"
+              className={"yobicon-comment2"}
+              data-owner="user-profile-child-comment-count-glyph"
             ></i>
           </span>
           <span
-            {...stylex.props(styles.issueChildCountValue)}
-            className={`${stylex.props(styles.issueChildCountValue).className} count-groups item-count`}
-            data-stylex-owner="user-profile-child-comment-count-value"
+            className={"count-groups item-count"}
+            data-owner="user-profile-child-comment-count-value"
           >
             {commentCount}
           </span>
@@ -1436,35 +1053,18 @@ function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; iss
           {...LEGACY_LINK_PROPS}
           to={issuePath}
           hash="vote"
-          {...stylex.props(
-            styles.issueChildCountLink,
-            styles.issueChildVoteLink,
-            commentCount > 0 ? styles.issueChildCountLinkOffset : undefined,
-          )}
-          className={`${
-            stylex.props(
-              styles.issueChildCountLink,
-              styles.issueChildVoteLink,
-              commentCount > 0 ? styles.issueChildCountLinkOffset : undefined,
-            ).className
-          } vote-count`}
-          data-stylex-owner="user-profile-child-vote-count-link"
+          className={"vote-count"}
+          data-owner="user-profile-child-vote-count-link"
         >
           <span
-            {...stylex.props(styles.issueChildCountIcon)}
-            className={`${stylex.props(styles.issueChildCountIcon).className} count-groups item-icon`}
-            data-stylex-owner="user-profile-child-vote-count-icon"
+            className={"count-groups item-icon"}
+            data-owner="user-profile-child-vote-count-icon"
           >
-            <i
-              {...stylex.props(styles.issueChildCountGlyph, styles.issueChildVoteGlyph)}
-              className={`${stylex.props(styles.issueChildCountGlyph, styles.issueChildVoteGlyph).className} yobicon-hearts`}
-              data-stylex-owner="user-profile-child-vote-count-glyph"
-            ></i>
+            <i className={"yobicon-hearts"} data-owner="user-profile-child-vote-count-glyph"></i>
           </span>
           <span
-            {...stylex.props(styles.issueChildCountValue, styles.issueChildVoteCountValue)}
-            className={`${stylex.props(styles.issueChildCountValue, styles.issueChildVoteCountValue).className} count-groups item-count`}
-            data-stylex-owner="user-profile-child-vote-count-value"
+            className={"count-groups item-count"}
+            data-owner="user-profile-child-vote-count-value"
           >
             {voterCount}
           </span>
@@ -1503,34 +1103,23 @@ function ProfileIssueCommentCount({
   }
 
   return (
-    <span
-      {...stylex.props(styles.issueTitleCountGroups)}
-      className={`${stylex.props(styles.issueTitleCountGroups).className} item-count-groups`}
-      data-stylex-owner="user-profile-issue-title-count-groups"
-    >
+    <span className={"item-count-groups"} data-owner="user-profile-issue-title-count-groups">
       <Link
         {...LEGACY_LINK_PROPS}
         to={issuePath}
         hash="comments"
-        {...stylex.props(styles.issueCommentCountLink)}
-        className={`${stylex.props(styles.issueCommentCountLink).className} comments-count`}
-        data-stylex-owner="user-profile-issue-comment-count-link"
+        className={"comments-count"}
+        data-owner="user-profile-issue-comment-count-link"
       >
         <span
-          {...stylex.props(styles.issueCommentCountIconGroup)}
-          className={`${stylex.props(styles.issueCommentCountIconGroup).className} count-groups item-icon`}
-          data-stylex-owner="user-profile-issue-comment-count-icon-group"
+          className={"count-groups item-icon"}
+          data-owner="user-profile-issue-comment-count-icon-group"
         >
-          <i
-            {...stylex.props(styles.issueCommentCountGlyph)}
-            className={`${stylex.props(styles.issueCommentCountGlyph).className} yobicon-comment2`}
-            data-stylex-owner="user-profile-issue-comment-count-glyph"
-          ></i>
+          <i className={"yobicon-comment2"} data-owner="user-profile-issue-comment-count-glyph"></i>
         </span>
         <span
-          {...stylex.props(styles.issueCommentCountValue)}
-          className={`${stylex.props(styles.issueCommentCountValue).className} count-groups item-count`}
-          data-stylex-owner="user-profile-issue-comment-count-value"
+          className={"count-groups item-count"}
+          data-owner="user-profile-issue-comment-count-value"
         >
           {commentCount}
         </span>
@@ -1549,21 +1138,6 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   const state = stringField(pullRequest, "state", "open").toLowerCase();
   const isConflict = Boolean(pullRequest.conflict);
   const displayState = isConflict ? "conflict" : state;
-  const pullRequestStateStyle = stylex.props(
-    styles.pullRequestState,
-    displayState === "open"
-      ? styles.pullRequestStateOpen
-      : displayState === "closed"
-        ? styles.pullRequestStateClosed
-        : displayState === "rejected"
-          ? styles.pullRequestStateRejected
-          : displayState === "merged"
-            ? styles.pullRequestStateMerged
-            : styles.pullRequestStateConflict,
-  );
-  const pullRequestTitleStyle = isConflict
-    ? stylex.props(styles.pullRequestTitleLink, styles.pullRequestConflictLink)
-    : stylex.props(styles.pullRequestTitleLink);
   const receiverLoginId = stringField(pullRequest, "receiverLoginId");
   const receiverLabel = stringField(pullRequest, "receiverLabel");
   const receiverAvatarUrl = stringField(
@@ -1573,27 +1147,16 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   );
 
   return (
-    <li
-      {...stylex.props(styles.pullRequestRow)}
-      className={`${stylex.props(styles.pullRequestRow).className} post-item`}
-      data-stylex-owner="user-profile-pull-request-row"
-    >
-      <div
-        {...stylex.props(styles.pullRequestContentColumn)}
-        className={`${stylex.props(styles.pullRequestContentColumn).className} span10`}
-        data-stylex-owner="user-profile-pull-request-content-column"
-      >
+    <li className={"post-item"} data-owner="user-profile-pull-request-row">
+      <div className={"span10"} data-owner="user-profile-pull-request-content-column">
         <Link
           {...LEGACY_LINK_PROPS}
           to={projectPath}
-          {...stylex.props(styles.pullRequestProjectAvatarLink)}
-          className={`${stylex.props(styles.pullRequestProjectAvatarLink).className} avatar-wrap mlarge`}
-          data-stylex-owner="user-profile-pull-request-project-avatar-rail"
+          className={"avatar-wrap mlarge"}
+          data-owner="user-profile-pull-request-project-avatar-rail"
         >
           <img
-            {...stylex.props(styles.pullRequestProjectAvatarImage)}
-            className={stylex.props(styles.pullRequestProjectAvatarImage).className}
-            data-stylex-owner="user-profile-pull-request-project-avatar-image"
+            data-owner="user-profile-pull-request-project-avatar-image"
             src={stringField(
               pullRequest,
               "projectLogoUrl",
@@ -1602,62 +1165,46 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             alt={`${ownerName} / ${projectName}`}
           />
         </Link>
-        <div
-          {...stylex.props(styles.pullRequestTitleWrap)}
-          className={`${stylex.props(styles.pullRequestTitleWrap).className} title-wrap`}
-          data-stylex-owner="user-profile-pull-request-title-wrap"
-        >
+        <div className={"title-wrap"} data-owner="user-profile-pull-request-title-wrap">
           <Link
             {...LEGACY_LINK_PROPS}
             to={projectPath}
-            {...stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink)}
-            className={`${stylex.props(styles.pullRequestTitleLink, styles.pullRequestProjectLink).className} title project`}
-            data-stylex-owner="user-profile-pull-request-title-link"
+            className={"title project"}
+            data-owner="user-profile-pull-request-title-link"
           >
             {projectName}
           </Link>
-          <span
-            {...stylex.props(styles.pullRequestPostId)}
-            className={`${stylex.props(styles.pullRequestPostId).className} post-id`}
-            data-stylex-owner="user-profile-pull-request-post-id"
-          >
+          <span className={"post-id"} data-owner="user-profile-pull-request-post-id">
             {number}
           </span>
           <Link
             {...LEGACY_LINK_PROPS}
             to={pullRequestPath}
-            {...pullRequestTitleStyle}
-            className={`${pullRequestTitleStyle.className} title${isConflict ? " conflict" : ""}`}
-            data-stylex-owner="user-profile-pull-request-title-link"
+            className={`title${isConflict ? " conflict" : ""}`}
+            data-owner="user-profile-pull-request-title-link"
           >
             {stringField(pullRequest, "title")}
           </Link>
         </div>
-        <div
-          {...stylex.props(styles.pullRequestInfos)}
-          className={`${stylex.props(styles.pullRequestInfos).className} infos`}
-          data-stylex-owner="user-profile-pull-request-infos"
-        >
+        <div className={"infos"} data-owner="user-profile-pull-request-infos">
           {stringField(pullRequest, "contributorLoginId") ? (
             <ProfileTextLink
-              className={`${stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosLinkItem).className ?? ""} infos-item infos-link-item`}
+              className={"infos-item infos-link-item"}
               label={stringField(pullRequest, "contributorLabel")}
               loginId={stringField(pullRequest, "contributorLoginId")}
-              stylexOwner="user-profile-pull-request-infos-author-link"
+              styleOwner="user-profile-pull-request-infos-author-link"
             />
           ) : (
             <span
-              {...stylex.props(styles.pullRequestInfosItem)}
-              className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
-              data-stylex-owner="user-profile-pull-request-infos-empty-author"
+              className={"infos-item"}
+              data-owner="user-profile-pull-request-infos-empty-author"
             >
               {t("issue.noAuthor")}
             </span>
           )}
           <span
-            {...stylex.props(styles.pullRequestInfosItem)}
-            className={`${stylex.props(styles.pullRequestInfosItem).className} infos-item`}
-            data-stylex-owner="user-profile-pull-request-infos-date"
+            className={"infos-item"}
+            data-owner="user-profile-pull-request-infos-date"
             title={stringField(pullRequest, "updatedLabel")}
           >
             {stringField(pullRequest, "updatedLabel")}
@@ -1667,50 +1214,33 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               {...LEGACY_LINK_PROPS}
               to={pullRequestPath}
               hash="comments"
-              {...stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink)}
-              className={`${stylex.props(styles.pullRequestInfosItem, styles.pullRequestInfosIconLink).className} infos-item infos-icon-link`}
-              data-stylex-owner="user-profile-pull-request-infos-comment-link"
+              className={"infos-item infos-icon-link"}
+              data-owner="user-profile-pull-request-infos-comment-link"
             >
               <i
-                {...stylex.props(styles.pullRequestInfosIcon)}
-                className={`${stylex.props(styles.pullRequestInfosIcon).className} yobicon-comments`}
-                data-stylex-owner="user-profile-pull-request-infos-comment-icon"
+                className={"yobicon-comments"}
+                data-owner="user-profile-pull-request-infos-comment-icon"
               ></i>
-              <span
-                {...stylex.props(styles.pullRequestInfosCount)}
-                className={`${stylex.props(styles.pullRequestInfosCount).className} size`}
-                data-stylex-owner="user-profile-pull-request-infos-comment-size"
-              >
+              <span className={"size"} data-owner="user-profile-pull-request-infos-comment-size">
                 {numberField(pullRequest, "commentCount")}
               </span>
             </Link>
           ) : null}
         </div>
       </div>
-      <div
-        {...stylex.props(styles.pullRequestReceiverColumn)}
-        className={`${stylex.props(styles.pullRequestReceiverColumn).className} span2`}
-        data-stylex-owner="user-profile-pull-request-receiver-column"
-      >
-        <div
-          {...stylex.props(styles.pullRequestReceiverRail)}
-          className={`${stylex.props(styles.pullRequestReceiverRail).className} mt5 pull-right`}
-          data-stylex-owner="user-profile-pull-request-receiver-rail"
-        >
+      <div className={"span2"} data-owner="user-profile-pull-request-receiver-column">
+        <div className={"mt5 pull-right"} data-owner="user-profile-pull-request-receiver-rail">
           {receiverLoginId ? (
             <Link
               {...LEGACY_LINK_PROPS}
               to="/$user"
               params={{ user: receiverLoginId }}
-              {...stylex.props(styles.pullRequestReceiverAvatarLink)}
-              className={`${stylex.props(styles.pullRequestReceiverAvatarLink).className} avatar-wrap assinee`}
-              data-stylex-owner="user-profile-pull-request-receiver-avatar-link"
+              className={"avatar-wrap assinee"}
+              data-owner="user-profile-pull-request-receiver-avatar-link"
               title={receiverLabel}
             >
               <img
-                {...stylex.props(styles.pullRequestReceiverAvatarImage)}
-                className={stylex.props(styles.pullRequestReceiverAvatarImage).className}
-                data-stylex-owner="user-profile-pull-request-receiver-avatar-image"
+                data-owner="user-profile-pull-request-receiver-avatar-image"
                 src={receiverAvatarUrl}
                 width="32"
                 height="32"
@@ -1719,18 +1249,16 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             </Link>
           ) : (
             <div
-              {...stylex.props(styles.pullRequestEmptyAvatarWrap)}
-              className={`${stylex.props(styles.pullRequestEmptyAvatarWrap).className} empty-avatar-wrap`}
-              data-stylex-owner="user-profile-pull-request-empty-avatar-wrap"
+              className={"empty-avatar-wrap"}
+              data-owner="user-profile-pull-request-empty-avatar-wrap"
             >
               &nbsp;
             </div>
           )}
         </div>
         <div
-          {...pullRequestStateStyle}
-          className={`${pullRequestStateStyle.className} state ${displayState} pull-right`}
-          data-stylex-owner="user-profile-pull-request-state"
+          className={`state ${displayState} pull-right`}
+          data-owner="user-profile-pull-request-state"
         >
           {t(`pullRequest.state.${displayState}`)}
         </div>
@@ -1754,60 +1282,43 @@ function ProfileProjectRow({
   const ownerPath = `/${project.ownerName}`;
 
   return (
-    <li
-      className={`${stylex.props(styles.projectRow, isFirst ? styles.firstProjectRow : undefined).className} project`}
-      data-stylex-owner="user-profile-project-row"
-    >
-      <div className="info-wrap" data-stylex-owner="user-profile-project-info-wrap">
-        <div
-          className={`${stylex.props(styles.projectAvatarRail).className} pull-left`}
-          data-stylex-owner="user-profile-project-avatar-rail"
-        >
+    <li className={"project"} data-owner="user-profile-project-row">
+      <div className="info-wrap" data-owner="user-profile-project-info-wrap">
+        <div className={"pull-left"} data-owner="user-profile-project-avatar-rail">
           <Link
             {...LEGACY_LINK_PROPS}
             to={projectPath}
-            {...stylex.props(styles.projectAvatarLink)}
-            className={`${stylex.props(styles.projectAvatarLink).className} avatar-wrap small`}
-            data-stylex-owner="user-profile-project-avatar-link"
+            className={"avatar-wrap small"}
+            data-owner="user-profile-project-avatar-link"
           >
             <img
-              {...stylex.props(styles.projectAvatarImage)}
               src={project.logoUrl || "/assets/images/project_default_logo.png"}
               alt=""
-              data-stylex-owner="user-profile-project-avatar-image"
+              data-owner="user-profile-project-avatar-image"
             />
           </Link>
         </div>
-        <div
-          className={`${stylex.props(styles.projectInfo).className} pull-left`}
-          data-stylex-owner="user-profile-project-info"
-        >
-          <div
-            className={`${stylex.props(styles.projectHeader).className} header`}
-            data-stylex-owner="user-profile-project-header"
-          >
+        <div className={"pull-left"} data-owner="user-profile-project-info">
+          <div className={"header"} data-owner="user-profile-project-header">
             <Link
               {...LEGACY_LINK_PROPS}
               to={projectPath}
-              {...stylex.props(styles.projectTitleLink)}
-              className={`${stylex.props(styles.projectTitleLink).className} project-name`}
-              data-stylex-owner="user-profile-project-title-link"
+              className={"project-name"}
+              data-owner="user-profile-project-title-link"
             >
               {project.projectName}
             </Link>
             {project.projectScope === "private" ? (
               <i
-                {...stylex.props(styles.projectPrivateIcon)}
-                className={`${stylex.props(styles.projectPrivateIcon).className} yobicon-lock yobicon-small`}
-                data-stylex-owner="user-profile-project-private-icon"
+                className={"yobicon-lock yobicon-small"}
+                data-owner="user-profile-project-private-icon"
               ></i>
             ) : null}
             {project.originOwnerName && project.originProjectName ? (
               <>
                 <i
-                  {...stylex.props(styles.projectForkIcon)}
-                  className={`${stylex.props(styles.projectForkIcon).className} yobicon-split yobicon-white vmiddle`}
-                  data-stylex-owner="user-profile-project-fork-icon"
+                  className={"yobicon-split yobicon-white vmiddle"}
+                  data-owner="user-profile-project-fork-icon"
                 ></i>
                 <span>
                   {" "}
@@ -1818,8 +1329,7 @@ function ProfileProjectRow({
                       ownerName: project.originOwnerName,
                       projectName: project.originProjectName,
                     }}
-                    {...stylex.props(styles.projectOriginLink)}
-                    data-stylex-owner="user-profile-project-origin-link"
+                    data-owner="user-profile-project-origin-link"
                   >
                     {project.originOwnerName}/{project.originProjectName}
                   </Link>
@@ -1827,28 +1337,20 @@ function ProfileProjectRow({
               </>
             ) : null}
           </div>
-          <div
-            className={`${stylex.props(styles.projectDescription).className} desc`}
-            data-stylex-owner="user-profile-project-description"
-          >
+          <div className={"desc"} data-owner="user-profile-project-description">
             {project.overview}
           </div>
-          <div
-            className={`${stylex.props(styles.projectNameTag).className} name-tag`}
-            data-stylex-owner="user-profile-project-name-tag"
-          >
+          <div className={"name-tag"} data-owner="user-profile-project-name-tag">
             <i
-              {...stylex.props(styles.projectMemberIcon)}
-              className={`${stylex.props(styles.projectMemberIcon).className} yobicon-friends yobicon-middle`}
-              data-stylex-owner="user-profile-project-member-icon"
+              className={"yobicon-friends yobicon-middle"}
+              data-owner="user-profile-project-member-icon"
             ></i>
             <strong>{project.memberCount}</strong>{" "}
             <Link
               {...LEGACY_LINK_PROPS}
               to={ownerPath}
-              {...stylex.props(styles.projectOwnerLink)}
-              className={`${stylex.props(styles.projectOwnerLink).className} owner-name-small`}
-              data-stylex-owner="user-profile-project-owner-link"
+              className={"owner-name-small"}
+              data-owner="user-profile-project-owner-link"
             >
               {project.ownerName}
             </Link>{" "}
@@ -1862,31 +1364,21 @@ function ProfileProjectRow({
           </div>
         </div>
       </div>
-      <div
-        {...stylex.props(styles.projectStats)}
-        className={`${stylex.props(styles.projectStats).className} stats-wrap pull-right`}
-        data-stylex-owner="user-profile-project-stats"
-      >
+      <div className={"stats-wrap pull-right"} data-owner="user-profile-project-stats">
         <div className="stats">
           {project.viewerCanWatch ? (
             <Link
               to={watchPath}
               reloadDocument
-              {...stylex.props(styles.projectWatchButton)}
-              className={`${stylex.props(styles.projectWatchButton).className} ybtn watchBtn`}
-              data-stylex-owner="user-profile-project-watch-button"
+              className={"ybtn watchBtn"}
+              data-owner="user-profile-project-watch-button"
             >
               <i
-                {...stylex.props(styles.projectWatchIcon)}
-                className={`${stylex.props(styles.projectWatchIcon).className} yobicon-eye-close yobicon-middle yobicon-white`}
-                data-stylex-owner="user-profile-project-watch-icon"
+                className={"yobicon-eye-close yobicon-middle yobicon-white"}
+                data-owner="user-profile-project-watch-icon"
               ></i>
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
-              <span
-                {...stylex.props(styles.projectWatchBadge)}
-                className={`${stylex.props(styles.projectWatchBadge).className} num-badge`}
-                data-stylex-owner="user-profile-project-watch-badge"
-              >
+              <span className={"num-badge"} data-owner="user-profile-project-watch-badge">
                 {project.watchCount}
               </span>
             </Link>
@@ -1896,9 +1388,8 @@ function ProfileProjectRow({
               to="/info/leave/$ownerName/$projectName"
               params={{ ownerName: project.ownerName, projectName: project.projectName }}
               data-projectname={project.projectName}
-              {...stylex.props(styles.projectLeaveLink)}
-              className={`${stylex.props(styles.projectLeaveLink).className} nbtn black medium last leaveProject`}
-              data-stylex-owner="user-profile-project-leave-link"
+              className={"nbtn black medium last leaveProject"}
+              data-owner="user-profile-project-leave-link"
               onClick={(event) => {
                 if (
                   !window.confirm(
@@ -1910,11 +1401,7 @@ function ProfileProjectRow({
                 }
               }}
             >
-              <i
-                {...stylex.props(styles.projectTrashIcon)}
-                className={`${stylex.props(styles.projectTrashIcon).className} yobicon-trash`}
-                data-stylex-owner="user-profile-project-trash-icon"
-              ></i>{" "}
+              <i className={"yobicon-trash"} data-owner="user-profile-project-trash-icon"></i>{" "}
               {t("userinfo.leaveProject")}
             </Link>
           ) : null}
@@ -1938,15 +1425,6 @@ function ShowSubtasksCheckbox({
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
   const [isControlHovered, setIsControlHovered] = useState(false);
-  const borderProps = stylex.props(
-    styles.checkboxControlBorder,
-    isControlHovered ? styles.checkboxControlBorderHover : null,
-  );
-  const textProps = stylex.props(
-    styles.checkboxControlText,
-    isControlHovered ? styles.checkboxControlTextHover : null,
-  );
-
   const clearPopoverTimer = React.useCallback(() => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1979,30 +1457,22 @@ function ShowSubtasksCheckbox({
     },
     [onChange],
   );
-  const popoverAnchorStyleProps = stylex.props(styles.popoverAnchor, styles.checkboxControl);
-
   return (
     <div
-      {...popoverAnchorStyleProps}
-      className={`${popoverAnchorStyleProps.className ?? ""} show-subtasks mr10`.trim()}
+      className={"show-subtasks mr10"}
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      data-stylex-owner="user-profile-show-subtasks-popover-anchor"
+      data-owner="user-profile-show-subtasks-popover-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper. */}
-      <label
-        {...stylex.props(styles.checkboxControlLabel)}
-        className={`${stylex.props(styles.checkboxControlLabel).className} checkbox`.trim()}
-        data-stylex-owner="user-profile-show-subtasks-label"
-      >
+      <label className={"checkbox"} data-owner="user-profile-show-subtasks-label">
         <div
-          {...borderProps}
-          className={`show-subtasks-button-border ${borderProps.className ?? ""}`.trim()}
-          data-stylex-owner="user-profile-show-subtasks-border"
+          className={"show-subtasks-button-border"}
+          data-owner="user-profile-show-subtasks-border"
           onMouseEnter={() => setIsControlHovered(true)}
           onMouseLeave={() => setIsControlHovered(false)}
         >
@@ -2010,24 +1480,19 @@ function ShowSubtasksCheckbox({
             id="toggle-show-subtasks"
             type="checkbox"
             checked={checked}
-            {...stylex.props(styles.checkboxControlInput)}
-            data-stylex-owner="user-profile-show-subtasks-input"
+            data-owner="user-profile-show-subtasks-input"
             onChange={storeShowSubtasks}
           />
-          <span
-            {...textProps}
-            className={`show-subtasks-text ${textProps.className ?? ""}`.trim()}
-            data-stylex-owner="user-profile-show-subtasks-text"
-          >
+          <span className={"show-subtasks-text"} data-owner="user-profile-show-subtasks-text">
             {popoverTitle}
           </span>
         </div>
       </label>
       {isPopoverVisible ? (
         <div
-          className={`${stylex.props(userProfileStaticStyles.faqPopover).className} popover top`}
+          className={"popover top"}
           role="tooltip"
-          data-stylex-owner="user-profile-show-subtasks-popover"
+          data-owner="user-profile-show-subtasks-popover"
         >
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
@@ -2049,11 +1514,7 @@ function ProfilePersonLink({
 }) {
   if (!loginId) {
     return applyAuthorCellStyle ? (
-      <span
-        {...stylex.props(styles.issueAuthorCell)}
-        className={`${stylex.props(styles.issueAuthorCell).className} infos-item`}
-        data-stylex-owner="user-profile-issue-author-cell"
-      ></span>
+      <span className={"infos-item"} data-owner="user-profile-issue-author-cell"></span>
     ) : (
       <span className="infos-item"></span>
     );
@@ -2062,12 +1523,12 @@ function ProfilePersonLink({
     <ProfileTextLink
       className={
         applyAuthorCellStyle
-          ? `${stylex.props(styles.issueAuthorCell).className ?? ""} infos-item infos-link-item author-cell`
+          ? "infos-item infos-link-item author-cell"
           : "infos-item infos-link-item author-cell"
       }
       label={label}
       loginId={loginId}
-      stylexOwner={applyAuthorCellStyle ? "user-profile-issue-author-cell" : undefined}
+      styleOwner={applyAuthorCellStyle ? "user-profile-issue-author-cell" : undefined}
     />
   );
 }
@@ -2076,12 +1537,12 @@ function ProfileTextLink({
   className,
   label,
   loginId,
-  stylexOwner,
+  styleOwner,
 }: {
   className: string;
   label: string;
   loginId: string;
-  stylexOwner?: string;
+  styleOwner?: string;
 }) {
   if (!loginId) {
     return <span className="infos-item"></span>;
@@ -2093,7 +1554,7 @@ function ProfileTextLink({
       params={{ user: loginId }}
       className={className}
       title={loginId}
-      {...(stylexOwner ? { "data-stylex-owner": stylexOwner } : {})}
+      {...(styleOwner ? { "data-owner": styleOwner } : {})}
     >
       {label || loginId}
     </Link>

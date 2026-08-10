@@ -75,8 +75,8 @@ test("organization home pins the live localhost guest shell title and search-sco
   await page.goto(`${basePath}/organizations/weblabs`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -101,9 +101,9 @@ test("organization home pins the live localhost guest shell title and search-sco
   await expect(page.locator(".project-home-header > .span3")).toHaveText("");
 
   const metrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("header[data-owner=global-gnb-outer]");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     if (!(navbar instanceof HTMLElement)) {
       throw new Error("Missing header.gnb-outer");
     }
@@ -127,9 +127,9 @@ test("organization home pins the live localhost guest shell title and search-sco
   expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "All Projects",
+  ]);
 });
 
 test("organization home header renders and posts legacy enrollment utility for guest organizations", async ({
@@ -337,7 +337,7 @@ test("organization home menu links keep legacy hrefs without route-local native 
   const breadcrumbLink = page.locator(".project-breadcrumb a");
   await expect(homeMenuItem).toHaveClass(/active/);
   await expect(homeMenuLink).toHaveText("Group Home");
-  // F6 copy-fix-current-dom: app Link carries only stylex tokens
+  // F6 copy-fix-current-dom: app Link carries only style tokens
   // (organizationMenuMigrationStyles.link, $organizationName.tsx:1024) vs legacy class-less
   // anchor (menu.scala.html:27); x-token-only classes are the accepted styling mechanism.
   await expect(homeMenuLink).toHaveAttribute("class", /^(?:x[0-9a-z]+\s*)+$/u);
@@ -359,7 +359,7 @@ test("organization home create-project and member profile links preserve legacy 
 
   await page.goto(`${basePath}/organizations/weblabs`);
   const createProjectLink = page.locator(
-    '[data-stylex-owner="organization-home-create-project-wrapper"] a.ybtn-primary',
+    '[data-owner="organization-home-create-project-wrapper"] a.ybtn-primary',
   );
   const adminAvatarLink = page.locator(".project-members .member").first().locator("a.avatar-wrap");
   const adminProfileLink = page.locator(".project-members .member").first().locator("a").nth(1);
@@ -639,8 +639,8 @@ test("organization home project card route source uses Link for internal card na
   );
   expect(source).toContain('className="origin-title"');
   expect(source).not.toContain("small-font");
-  expect(source).toContain('data-stylex-owner="organization-home-project-origin"');
-  expect(source).toContain('data-stylex-owner="organization-home-project-code-update"');
+  expect(source).toContain('data-owner="organization-home-project-origin"');
+  expect(source).toContain('data-owner="organization-home-project-code-update"');
   expect(source).toContain('to="/$user"');
   expect(source).toContain("params={{ user: ownerName }}");
   expect(source).toContain('params={{ user: stringField(member.loginId, "") }}');
@@ -670,7 +670,7 @@ test("organization home filters projects like legacy item-search", async ({ page
   const filter = page.locator("#mylist-filter");
   const searchButton = page.locator(".project-search-wrap .search-btn");
   const createProjectLink = page.locator(
-    '[data-stylex-owner="organization-home-create-project-wrapper"] a.ybtn-primary',
+    '[data-owner="organization-home-create-project-wrapper"] a.ybtn-primary',
   );
 
   await expect(filter).toHaveAttribute("name", "mylist-filter");
@@ -884,9 +884,7 @@ test("organization home leave modal source insulates delegated modal bridge", ()
   expect(source).toContain(
     'className={`${leaveModalOpen ? "modal hide in" : "modal hide"} ${leaveModalStyleProps?.className ?? ""}`.trim()}',
   );
-  expect(source).toContain(
-    "const leaveModalStyleProps = leaveModalOpen ? stylex.props(styles.leaveModalVisible) : undefined;",
-  );
+
   expect(source).toContain(
     "aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}",
   );
@@ -1448,7 +1446,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
         )
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
@@ -1498,7 +1496,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, #alertLeave, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, #alertLeave, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1510,16 +1508,16 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const isPin = node.matches('[data-stylex-owner="global-sidebar-open-pin"]');
+      const isPin = node.matches('[data-owner="global-sidebar-open-pin"]');
       const isPinIcon =
-        node.parentElement?.getAttribute("data-stylex-owner") === "global-sidebar-open-pin";
+        node.parentElement?.getAttribute("data-owner") === "global-sidebar-open-pin";
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
         )
         .filter((attr) => !isPin || attr.name === "class" || attr.name === "title")
@@ -1548,11 +1546,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1560,7 +1558,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -1592,7 +1590,7 @@ async function canonicalizeScreenRoots(page: Page) {
             .replace(/\s+/g, "")
             .replace(/;$/u, "")
             .replaceAll('"', "'")
-            // F6 copy-fix-current-dom: normalize stylex custom-property paint
+            // F6 copy-fix-current-dom: normalize style custom-property paint
             // (--x-backgroundImage -> background-image) like the org-pullrequests
             // canonicalizer (organization-pullrequests.e2e.ts:800-803).
             .replace(
@@ -1625,7 +1623,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
         )
         .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")

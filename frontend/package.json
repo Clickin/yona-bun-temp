@@ -5,22 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host 127.0.0.1 --port 3101",
-    "predev": "pnpm build:legacy-css",
-    "build:legacy-css": "node scripts/build-legacy-css.mjs",
-    "prebuild": "pnpm build:legacy-css",
-    "build": "vite build && node scripts/verify-stylex-build.mjs",
+    "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 3101",
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "node ../scripts/run-wtr-e2e.mjs",
-    "test:e2e:fallback-off": "VITE_DISABLE_LEGACY_FALLBACK=1 node ../scripts/run-wtr-e2e.mjs",
-    "test:e2e:stylex-fast": "node ../scripts/stylex-verification-profile.mjs --profile fast --",
-    "test:e2e:stylex-final": "node ../scripts/stylex-verification-profile.mjs --profile final --",
+    "test:e2e:fast": "WTR_SHARDS=2 node ../scripts/run-wtr-e2e.mjs",
     "test:watch": "vitest",
     "test:e2e:wtr": "node ../scripts/run-wtr-e2e.mjs"
   },
   "dependencies": {
-    "@stylexjs/stylex": "0.19.0",
     "@tanstack/react-query": "^5.96.2",
     "@tanstack/react-router": "^1.170.18",
     "framer-motion": "^12.42.2",
@@ -31,11 +25,12 @@
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
     "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@rolldown/plugin-babel": "^0.2.3",
-    "@stylexjs/unplugin": "0.19.0",
+    "@tailwindcss/vite": "4.3.3",
     "@tanstack/router-plugin": "^1.168.23",
     "@types/node": "^24.6.0",
     "@types/react": "^19.2.2",
@@ -47,7 +42,6 @@
     "@web/test-runner-chrome": "^1.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "chrome-launcher": "^1.2.1",
-    "less": "^4.6.7",
     "puppeteer-core": "^25.5.0",
     "typescript": "^6.0.3",
     "vite": "^8.2.0",

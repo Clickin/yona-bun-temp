@@ -204,9 +204,7 @@ pub(super) fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
         normalized
     };
     match normalized.as_str() {
-        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" | "NOT_DELETED" => {
-            Ok(normalized)
-        }
+        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" | "NOT_DELETED" => Ok(normalized),
         _ => Err(DbErr::Custom("invalid site user state".to_string())),
     }
 }
@@ -294,10 +292,13 @@ pub(super) fn mention_user_model_matches(user: &n4user::Model, query: &str) -> b
         || contains_query(user.email.as_deref())
 }
 
-pub(super) fn project_issue_reference_record(model: &issue::Model) -> ProjectIssueReferenceRecord {
+pub(super) fn project_issue_reference_record(
+    model: &issue::Model,
+    backend: DatabaseBackend,
+) -> ProjectIssueReferenceRecord {
     ProjectIssueReferenceRecord {
         issue_number: model.number.unwrap_or_default(),
-        state: issue_state_from_raw(model.state),
+        state: issue_state_from_raw(backend, model.state),
         title: model.title.clone().unwrap_or_default(),
     }
 }
@@ -366,25 +367,25 @@ pub(super) fn pure_user_name(display_name: &str) -> String {
     display_name[..bracket_index].trim().to_string()
 }
 
-// Legacy source: yona-original/app/models/enumeration/State.java.
-pub(super) fn issue_state_to_raw(value: &str) -> i32 {
-    issue_state_to_raw_with_encoding(value, legacy_issue_state_encoding())
-}
-
-fn issue_state_to_raw_with_encoding(value: &str, legacy: bool) -> i32 {
-    if normalize_identity(value) == "open" {
-        if legacy { 1 } else { 0 }
-    } else if legacy {
-        2
-    } else {
-        1
+// Legacy MariaDB uses State.java's 1/2 values; Yoram's SQLite/Postgres schema uses 0/1.
+pub(super) fn issue_state_to_raw(backend: DatabaseBackend, value: &str) -> i32 {
+    let open = normalize_identity(value) == "open";
+    match backend {
+        DatabaseBackend::MySql => {
+            if open {
+                1
+            } else {
+                2
+            }
+        }
+        DatabaseBackend::Postgres | DatabaseBackend::Sqlite => {
+            if open {
+                0
+            } else {
+                1
+            }
+        }
     }
-}
-
-fn legacy_issue_state_encoding() -> bool {
-    std::env::var("YONA_LEGACY_ISSUE_STATE_ENCODING")
-        .map(|value| matches!(normalize_identity(&value).as_str(), "1" | "true" | "yes"))
-        .unwrap_or(false)
 }
 
 pub(super) const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
@@ -781,13 +782,12 @@ pub(super) fn looks_like_email_address(value: &str) -> bool {
         && !domain.ends_with('.')
         && domain.contains('.')
 }
-pub(super) fn issue_state_from_raw(value: Option<i32>) -> String {
-    issue_state_from_raw_with_encoding(value, legacy_issue_state_encoding())
-}
-
-fn issue_state_from_raw_with_encoding(value: Option<i32>, legacy: bool) -> String {
-    let raw = value.unwrap_or(if legacy { 1 } else { 0 });
-    if (legacy && raw == 1) || (!legacy && raw == 0) {
+pub(super) fn issue_state_from_raw(backend: DatabaseBackend, value: Option<i32>) -> String {
+    let open = match backend {
+        DatabaseBackend::MySql => value.unwrap_or(1) == 1,
+        DatabaseBackend::Postgres | DatabaseBackend::Sqlite => value.unwrap_or(0) == 0,
+    };
+    if open {
         "open".to_string()
     } else {
         "closed".to_string()
@@ -1114,18 +1114,34 @@ pub(super) fn project_transfer_record_from_model(
 
 #[cfg(test)]
 mod tests {
-    use super::{issue_state_from_raw_with_encoding, issue_state_to_raw_with_encoding};
+    use super::{issue_state_from_raw, issue_state_to_raw};
+    use sea_orm::DatabaseBackend;
 
     #[test]
-    fn issue_state_encoding_matches_canonical_and_legacy_storage() {
-        assert_eq!(issue_state_to_raw_with_encoding("open", false), 0);
-        assert_eq!(issue_state_to_raw_with_encoding("closed", false), 1);
-        assert_eq!(issue_state_from_raw_with_encoding(Some(0), false), "open");
-        assert_eq!(issue_state_from_raw_with_encoding(Some(1), false), "closed");
+    fn mysql_reads_both_legacy_issue_states() {
+        assert_eq!(
+            issue_state_from_raw(DatabaseBackend::MySql, Some(1)),
+            "open"
+        );
+        assert_eq!(
+            issue_state_from_raw(DatabaseBackend::MySql, Some(2)),
+            "closed"
+        );
+    }
 
-        assert_eq!(issue_state_to_raw_with_encoding("open", true), 1);
-        assert_eq!(issue_state_to_raw_with_encoding("closed", true), 2);
-        assert_eq!(issue_state_from_raw_with_encoding(Some(1), true), "open");
-        assert_eq!(issue_state_from_raw_with_encoding(Some(2), true), "closed");
+    #[test]
+    fn mysql_writes_legacy_issue_state_transitions() {
+        assert_eq!(issue_state_to_raw(DatabaseBackend::MySql, "closed"), 2);
+        assert_eq!(issue_state_to_raw(DatabaseBackend::MySql, "open"), 1);
+    }
+
+    #[test]
+    fn sqlite_and_postgres_keep_canonical_issue_states() {
+        for backend in [DatabaseBackend::Sqlite, DatabaseBackend::Postgres] {
+            assert_eq!(issue_state_from_raw(backend, Some(0)), "open");
+            assert_eq!(issue_state_from_raw(backend, Some(1)), "closed");
+            assert_eq!(issue_state_to_raw(backend, "open"), 0);
+            assert_eq!(issue_state_to_raw(backend, "closed"), 1);
+        }
     }
 }

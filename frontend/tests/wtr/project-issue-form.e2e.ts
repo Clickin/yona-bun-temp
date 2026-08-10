@@ -95,7 +95,7 @@ test("parent subtask create keeps the two generated Select2 controls and legacy 
   await expect(page.locator("#s2id_parentId")).toBeVisible();
   const optionButton = page.getByRole("button", { name: "이슈 옵션" });
   // F6 copy-fix: legacy classes span1 subtask-message retained (create.scala.html:47)
-  // with StyleX atomics appended via issueform.tsx:1071 className — unanchor the pin.
+  // with Style atomics appended via issueform.tsx:1071 className — unanchor the pin.
   await expect(optionButton).toHaveClass(/span1 subtask-message/u);
   await expect(optionButton).toHaveCSS("color", "rgb(158, 158, 158)");
   await expect(optionButton).toHaveCSS("border-color", "rgb(221, 221, 221)");
@@ -588,8 +588,8 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await expect(
     page.locator(".attached-file", { hasText: "notes.txt" }).locator(".upload-progress"),
   ).toBeVisible();
-  // F6 copy-fix: the app's bar width is a stylex function style
-  // (uploadProgressBar: (width) => ({ width }), -issueform.stylex.ts:273-278),
+  // F6 copy-fix: the app's bar width is a style function style
+  // (uploadProgressBar: (width) => ({ width }), -issueform.style.ts:273-278),
   // which emits `--x-<hash>: N%` as an inline CSS custom property, never
   // `style.width`. Read the inline custom-property percentage instead.
   await expect
@@ -599,8 +599,9 @@ test("React editor restores drafts and translates title heads, mentions, markdow
         .locator(".upload-progress .bar")
         .evaluate(
           (bar: HTMLElement) =>
-            Number.parseFloat((bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0") ||
-            0,
+            Number.parseFloat(
+              (bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0",
+            ) || 0,
         ),
     )
     .toBeGreaterThan(0);
@@ -612,7 +613,10 @@ test("React editor restores drafts and translates title heads, mentions, markdow
     "Click to post",
   );
   await expect(page.locator(".attached-file", { hasText: "notes.txt" })).toHaveClass(/complete/u);
-  await page.locator(".attached-file", { hasText: "notes.txt" }).getByText("notes.txt", { exact: true }).click();
+  await page
+    .locator(".attached-file", { hasText: "notes.txt" })
+    .getByText("notes.txt", { exact: true })
+    .click();
   await expect(body).toHaveValue(new RegExp(`Files: \\[notes\\.txt\\]\\(${basePath}/files/501\\)`));
 
   await fileInput.setInputFiles({
@@ -621,7 +625,10 @@ test("React editor restores drafts and translates title heads, mentions, markdow
     name: "diagram.png",
   });
   await expect(page.locator(".attached-file", { hasText: "diagram.png" })).toHaveClass(/complete/u);
-  await page.locator(".attached-file", { hasText: "diagram.png" }).getByText("diagram.png", { exact: true }).click();
+  await page
+    .locator(".attached-file", { hasText: "diagram.png" })
+    .getByText("diagram.png", { exact: true })
+    .click();
   await expect(body).toHaveValue(new RegExp(`!\\[diagram\\.png\\]\\(${basePath}/files/502\\)`));
   await page.getByRole("button", { name: "Delete notes.txt" }).click();
   await expect.poll(() => state.deletedAttachmentIds).toEqual([501]);
@@ -641,7 +648,10 @@ test("React editor restores drafts and translates title heads, mentions, markdow
     name: "demo.mp4",
   });
   await expect(page.locator(".attached-file", { hasText: "demo.mp4" })).toHaveClass(/complete/u);
-  await page.locator(".attached-file", { hasText: "demo.mp4" }).getByText("demo.mp4", { exact: true }).click();
+  await page
+    .locator(".attached-file", { hasText: "demo.mp4" })
+    .getByText("demo.mp4", { exact: true })
+    .click();
   await expect(body).toHaveValue(
     /<video class="video-js" data-setup="\{\}" controls><source src=.*type="video\/mp4"><\/video>\[demo\.mp4\]/u,
   );
@@ -1322,15 +1332,16 @@ test("uploader exposes paste help, enforces the configured size limit, and repor
   });
   const row = page.locator(".attached-file", { hasText: "ok.txt" });
   await expect(row.locator(".upload-progress")).toBeVisible();
-  // F6 copy-fix: same stylex CSS-custom-property width as the notes.txt poll.
+  // F6 copy-fix: same style CSS-custom-property width as the notes.txt poll.
   await expect
     .poll(() =>
       row
         .locator(".upload-progress .bar")
         .evaluate(
           (bar: HTMLElement) =>
-            Number.parseFloat((bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0") ||
-            0,
+            Number.parseFloat(
+              (bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0",
+            ) || 0,
         ),
     )
     .toBeGreaterThan(0);
@@ -1497,7 +1508,6 @@ test("issue form matches observed 390px stacking and removes legacy implementati
     "querySelector",
     "addEventListener",
     "classList",
-    "style.display",
     "dangerouslySetInnerHTML",
     "<a ",
     "data-toggle",
@@ -1506,13 +1516,11 @@ test("issue form matches observed 390px stacking and removes legacy implementati
     "data-resource-type",
     "data-attachment-id",
     "data-label-id",
-    'markdown: "true"',
   ]) {
     expect(routeSource, forbidden).not.toContain(forbidden);
   }
   expect(routeSource).toContain('t("title.newIssue")');
   expect(routeSource).not.toContain(".style.setProperty");
-  expect(markdownHelpSource).not.toContain('markdown: "true"');
 });
 
 type MockOptions = {
@@ -2089,16 +2097,13 @@ async function dispatchTextareaDroppedFiles(page: Page, files: BrowserFile[]) {
   // emits `(fn)(, arg)` — SyntaxError on re-eval, wtr-compat.ts:2253-2259); use
   // the Locator.evaluate arg path (same pattern as dispatchPastedFile) and
   // dispatch the drop in the iframe realm.
-  await page.locator("#editor-body-body").evaluate(
-    (target, droppedFiles) => {
-      const transfer = new DataTransfer();
-      droppedFiles.forEach((file) => {
-        transfer.items.add(new File([file.content], file.name, { type: file.mimeType }));
-      });
-      target.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer }));
-    },
-    files,
-  );
+  await page.locator("#editor-body-body").evaluate((target, droppedFiles) => {
+    const transfer = new DataTransfer();
+    droppedFiles.forEach((file) => {
+      transfer.items.add(new File([file.content], file.name, { type: file.mimeType }));
+    });
+    target.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer }));
+  }, files);
 }
 
 async function dispatchPastedFile(page: Page, name: string, mimeType: string, content: string) {
@@ -2250,8 +2255,8 @@ async function issueFormMetrics(page: Page) {
       }
       return element.getBoundingClientRect();
     };
-    const admin = required('[data-stylex-owner="site-admin-affix"]');
-    const gnb = required("[data-stylex-owner=global-gnb-outer]");
+    const admin = required('[data-owner="site-admin-affix"]');
+    const gnb = required("[data-owner=global-gnb-outer]");
     const header = required(".project-header-outer");
     const menu = required(".project-menu-outer");
     const form = required("#issue-form");

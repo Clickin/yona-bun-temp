@@ -77,19 +77,19 @@ test("SVN project delete form owns confirmation and DELETE redirect behavior", a
   await page.locator("#btnDelete").click();
   await expect(modal).toHaveClass(/modal hide/);
   await expect(modal).toHaveCSS("display", "block");
-  await expect(modal.locator('[data-stylex-owner="project-delete-modal-header"] h3')).toHaveText(
+  await expect(modal.locator('[data-owner="project-delete-modal-header"] h3')).toHaveText(
     "프로젝트를 삭제하시겠습니까?",
   );
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
-  await modal.locator('[data-stylex-owner="project-delete-modal-footer"] button').last().click();
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
+  await modal.locator('[data-owner="project-delete-modal-footer"] button').last().click();
   await expect(modal).toHaveCSS("display", "none");
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
 
   await page.locator("#btnDelete").click();
-  await page.locator('[data-stylex-owner="project-delete-modal-backdrop"]').click();
+  await page.locator('[data-owner="project-delete-modal-backdrop"]').click();
   await expect(modal).toHaveCSS("display", "none");
   await page.locator("#btnDelete").click();
-  await modal.locator('[data-stylex-owner="project-delete-modal-header"] button').click();
+  await modal.locator('[data-owner="project-delete-modal-header"] button').click();
   await expect(modal).toHaveCSS("display", "none");
 
   await page.locator("#btnDelete").click();

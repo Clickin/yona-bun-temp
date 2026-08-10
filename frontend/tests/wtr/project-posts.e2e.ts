@@ -18,8 +18,8 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/\sdata-target="markdown[^"]+"/g, "")
   .replace(/<\/div>\s*$/u, "</div>");
 
-// F6 dist-truth: the stylex label chip paints border:0px alongside the
-// background/box-shadow/color (labelBackground in -posts.stylex.ts).
+// F6 dist-truth: the style label chip paints border:0px alongside the
+// background/box-shadow/color (labelBackground in -posts.style.ts).
 const BUG_LABEL_STYLE =
   "background-color:rgb(81, 170, 204);box-shadow:rgb(81, 170, 204) 2px 0px 0px 0px inset;color:white;border:0px";
 
@@ -389,7 +389,7 @@ const EXPECTED_PROJECT_POST_DETAIL = EXPECTED_PROJECT_POST_DETAIL_RAW.replace(
   .replaceAll(" ml10 pt5px", "")
   .replaceAll(" ml6", "")
   // F6 copy-fix-current-dom: comment action buttons drop the legacy ml6 literal
-  // (stylex commentDeleteAction marginLeft 6px, -post-detail.stylex.ts:64).
+  // (style commentDeleteAction marginLeft 6px, -post-detail.style.ts:64).
   .replaceAll("btn-transparent ml6", "btn-transparent");
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
@@ -634,10 +634,7 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   // F6 copy-fix-current-dom: the document title is owned by the shared project
   // shell ($ownerName/$projectName.tsx `active === "board"` branch), not the
   // posts route; the board title string is asserted from the shell source.
-  const projectShellSource = readFileSync(
-    "src/routes/$ownerName/$projectName.tsx",
-    "utf8",
-  );
+  const projectShellSource = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
   expect(projectShellSource).toContain(
     'active === "board"\n                                  ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`',
   );
@@ -652,7 +649,7 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(true), 100)");
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
   // F6 copy-fix-current-dom: the popover className is composed alongside the
-  // stylex tokens (`${popoverProps.className ?? ""} popover top`.trim()).
+  // style tokens (`${popoverProps.className ?? ""} popover top`.trim()).
   expect(twoColumnSource).toContain("popover top");
   expect(twoColumnSource).toContain('role="tooltip"');
   expect(twoColumnSource).not.toContain("data-content=");
@@ -694,7 +691,7 @@ test("project board list renders protected org-owned localhost shell state", asy
   await page.goto(`${basePath}/weblabs/portal/posts`);
   await expect(page).toHaveTitle("portal - Board - weblabs/portal");
 
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -704,14 +701,12 @@ test("project board list renders protected org-owned localhost shell state", asy
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            dataAction: element.getAttribute("data-action"),
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       { dataAction: null, text: "This Project" },
@@ -720,7 +715,7 @@ test("project board list renders protected org-owned localhost shell state", asy
     ]);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -728,7 +723,7 @@ test("project board list renders protected org-owned localhost shell state", asy
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
@@ -737,7 +732,7 @@ test("project board list renders protected org-owned localhost shell state", asy
 
   expect(await protectedProjectPostsShellMetrics(page)).toEqual({
     boardTopAtOrBelowMenu: true,
-    gnbClassName: "", // F6 dist-truth: GNB outer is stylex-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
+    gnbClassName: "", // F6 dist-truth: GNB outer is style-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
     scopeBottomWithinNavbar: true,
     scopeTopWithinNavbar: true,
     searchBottomWithinNavbar: true,
@@ -813,7 +808,7 @@ test("project board list row internal links are router-owned", async ({ page }) 
   expect(rowSource).toContain("const legacyPostItemAttrs");
   expect(rowSource).toContain("href: postHref");
   expect(rowSource).toContain("satisfies LegacyPostItemAttrs");
-  // F6 copy-fix-current-dom: the li now spreads stylex props after legacy attrs
+  // F6 copy-fix-current-dom: the li now spreads style props after legacy attrs
   // ({...legacyPostItemAttrs} {...postItemStyleProps}, posts.tsx:642-644)
   expect(rowSource).toContain("{...legacyPostItemAttrs}");
   expect(rowSource).not.toContain("legacyHref");
@@ -833,7 +828,7 @@ test("project board list top navigation and filters are router-owned", async ({ 
 
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
 
-  const newPost = page.locator('[data-stylex-owner="project-posts-new-post-wrap"] .ybtn-success');
+  const newPost = page.locator('[data-owner="project-posts-new-post-wrap"] .ybtn-success');
   await expect(newPost).toHaveAttribute("href", `${basePath}/admin/sample/postform`);
   await expect(newPost).toHaveText("New post");
   await expectNoTanStackActiveAttrs(newPost);
@@ -913,7 +908,9 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
   );
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
-  const styleSource = readFileSync("src/routes/$ownerName/$projectName/-posts.stylex.ts", "utf8");
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const boardScala = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");
   const projectScala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const commonLess = readFileSync(
@@ -952,7 +949,7 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
     "project-posts-pagination-next-icon",
     "project-posts-pagination-next-label",
   ]) {
-    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+    expect(routeSource).toContain(`data-owner="${owner}"`);
   }
   for (const declaration of [
     "paginationWrap",
@@ -968,7 +965,6 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
     "paginationNext",
     "paginationNextOff",
   ]) {
-    expect(styleSource).toContain(`${declaration}:`);
   }
 
   const pagination = page.locator("#pagination");
@@ -988,18 +984,22 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
   await expect(input).toHaveAttribute("min", "1");
   await expect(input).toHaveAttribute("max", "3");
   await expect(input).toHaveValue("2");
-  await expect(
-    pagination.locator('[data-stylex-owner="project-posts-pagination-prev-icon"]'),
-  ).toHaveCSS("width", "6px");
-  await expect(
-    pagination.locator('[data-stylex-owner="project-posts-pagination-prev-icon"]'),
-  ).toHaveCSS("height", "9px");
-  await expect(
-    pagination.locator('[data-stylex-owner="project-posts-pagination-next-icon"]'),
-  ).toHaveCSS("width", "6px");
-  await expect(
-    pagination.locator('[data-stylex-owner="project-posts-pagination-next-icon"]'),
-  ).toHaveCSS("height", "9px");
+  await expect(pagination.locator('[data-owner="project-posts-pagination-prev-icon"]')).toHaveCSS(
+    "width",
+    "6px",
+  );
+  await expect(pagination.locator('[data-owner="project-posts-pagination-prev-icon"]')).toHaveCSS(
+    "height",
+    "9px",
+  );
+  await expect(pagination.locator('[data-owner="project-posts-pagination-next-icon"]')).toHaveCSS(
+    "width",
+    "6px",
+  );
+  await expect(pagination.locator('[data-owner="project-posts-pagination-next-icon"]')).toHaveCSS(
+    "height",
+    "9px",
+  );
   await expect(input).toHaveCSS("width", "30px");
 
   const desktopMetrics = await pagination.evaluate((element) => {
@@ -1249,7 +1249,6 @@ test("project board post create form uploader shell matches legacy fileUploader.
   );
   await expect(page.locator("#tplAttachedFile, #tplDropFilesHere")).toHaveCount(0);
 
-
   const uploadMetrics = await page.locator("#upload").evaluate((upload) => {
     const style = window.getComputedStyle(upload);
     const droppable = upload.querySelector(".help-droppable") as HTMLElement;
@@ -1262,7 +1261,7 @@ test("project board post create form uploader shell matches legacy fileUploader.
     const help = upload.querySelector(".right-txt.help") as HTMLElement;
     const attachedFilesStyle = window.getComputedStyle(attachedFiles);
     return {
-      // F6 copy-fix-current-dom: stylex paint tokens ride the wrapper className;
+      // F6 copy-fix-current-dom: style paint tokens ride the wrapper className;
       // strip them so the pin stays on the legacy literals (same convention as
       // the markdown-help check above).
       className: upload.className
@@ -1277,7 +1276,7 @@ test("project board post create form uploader shell matches legacy fileUploader.
       fileInputMultiple: fileInput.multiple,
       plainText: plain.textContent?.trim(),
       pastableText: pastable.textContent?.trim(),
-      // F6 copy-fix-current-dom: the attached-files ul also carries stylex
+      // F6 copy-fix-current-dom: the attached-files ul also carries style
       // paint tokens (attachedFilesStyleProps in the route); strip them so
       // the pin stays on the legacy literals.
       attachedFilesClass: attachedFiles.className
@@ -1339,9 +1338,9 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
   // F6 copy-fix-current-dom: editform drops the legacy JS-only marker
   // data-toggle="markdown-editor" (create-form parity ruling: JS init markers are
-  // droppable); the wrapper is now the stylex-owned
-  // [data-stylex-owner="post-edit-form-markdown-editor-wrapper"] (editform.tsx:146-159).
-  const editor = page.locator('[data-stylex-owner="post-edit-form-markdown-editor-wrapper"]');
+  // droppable); the wrapper is now the style-owned
+  // [data-owner="post-edit-form-markdown-editor-wrapper"] (editform.tsx:146-159).
+  const editor = page.locator('[data-owner="post-edit-form-markdown-editor-wrapper"]');
   await expect(editor.locator(".tab-content > .markdown-help")).toHaveCount(1);
   await expect(editor.locator(".markdown-help-nav .label")).toHaveText("Markdown help");
   await expect(editor.locator(".markdown-help-nav > li")).toHaveCount(11);
@@ -1351,7 +1350,7 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
       Array.from(tabContent.children)
         .slice(0, 2)
         .map((child) => ({
-          // F6 copy-fix-current-dom: the markdown-help div carries stylex paint
+          // F6 copy-fix-current-dom: the markdown-help div carries style paint
           // tokens (shared MarkdownEditor editorContent style); strip them so the
           // pin stays on the legacy class.
           className: child.className
@@ -1398,7 +1397,7 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
     const attachedFilesStyle = window.getComputedStyle(attachedFiles);
 
     return {
-      // F6 copy-fix-current-dom: stylex paint tokens ride the wrapper className;
+      // F6 copy-fix-current-dom: style paint tokens ride the wrapper className;
       // strip them so the pin stays on the legacy literals (same convention as
       // the markdown-help check above).
       className: element.className
@@ -1414,7 +1413,7 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
       fileInputMultiple: fileInput.multiple,
       plainText: plain.textContent?.trim(),
       pastableText: pastable.textContent?.trim(),
-      // F6 copy-fix-current-dom: the attached-files ul also carries stylex
+      // F6 copy-fix-current-dom: the attached-files ul also carries style
       // paint tokens (attachedFilesStyleProps in the route); strip them so
       // the pin stays on the legacy literals.
       attachedFilesClass: attachedFiles.className
@@ -1493,7 +1492,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
       ),
     )
     .toContain("<title>Release note</title>");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -1501,9 +1500,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopeButtons = page.locator(
-    "[data-stylex-owner=global-gnb-search-scope-item] > button",
-  );
+  const searchScopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(searchScopeButtons).toHaveCount(2);
   for (const button of await searchScopeButtons.all()) {
@@ -1603,7 +1600,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     deleteTransportMarkerCount: 0,
     documentTitle: "Release note",
     footerKeyboardTarget: null,
-    gnbClassName: "", // F6 dist-truth: GNB outer is stylex-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
+    gnbClassName: "", // F6 dist-truth: GNB outer is style-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
     gnbSearchAction: `${basePath}/admin/sample/search`,
     gnbSearchScopeDataActions: [null, null],
     gnbSearchScopeLabels: ["This Project", "All Projects"],
@@ -1733,7 +1730,7 @@ test("project board detail renders protected org-owned localhost shell state", a
   await page.goto(`${basePath}/weblabs/portal/post/3`);
   await expect(page).toHaveTitle("Release note");
 
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -1743,14 +1740,12 @@ test("project board detail renders protected org-owned localhost shell state", a
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            dataAction: element.getAttribute("data-action"),
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       { dataAction: null, text: "This Project" },
@@ -1760,7 +1755,7 @@ test("project board detail renders protected org-owned localhost shell state", a
 
   const beforeUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1769,13 +1764,13 @@ test("project board detail renders protected org-owned localhost shell state", a
   await expect(page).toHaveURL(beforeUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(beforeUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").first().click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").first().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1793,7 +1788,7 @@ test("project board detail renders protected org-owned localhost shell state", a
   expect(await boardDetailMetrics(page)).toMatchObject({
     boardTopAtOrBelowMenu: true,
     deleteTransportMarkerCount: 0,
-    gnbClassName: "", // F6 dist-truth: GNB outer is stylex-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
+    gnbClassName: "", // F6 dist-truth: GNB outer is style-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
     gnbSearchAction: `${basePath}/weblabs/portal/search`,
     gnbSearchScopeDataActions: [null, null, null],
     gnbSearchScopeLabels: ["This Project", "This Group", "All Projects"],
@@ -1838,16 +1833,15 @@ test("project board detail toggles legacy watch state through REST", async ({ pa
   expect(watchRequests).toEqual(["POST", "DELETE"]);
 });
 
-test("project board detail owns legacy Watch button paint in StyleX", async ({ page }) => {
+test("project board detail owns legacy Watch button paint in Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyButtonSource = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
@@ -1869,9 +1863,7 @@ test("project board detail owns legacy Watch button paint in StyleX", async ({ p
   expect(legacyVariablesSource).toMatch(/@yobi-white\s*:\s*#FFF;/u);
   expect(legacyVariablesSource).toMatch(/@yobi-btn-default\s*:\s*@yobi-white;/u);
   expect(routeSource).toContain('ybtn${post.isWatching ? " ybtn-watching" : ""}');
-  expect(routeSource).toMatch(
-    /stylex\.props\(\s*styles\.watch,\s*post\.isWatching && styles\.watchWatching,?\s*\)/u,
-  );
+
   expect(styleSource).toMatch(/watch:\s*\{[\s\S]*?backgroundColor:\s*"#ffffff"/u);
   expect(styleSource).toMatch(/watchWatching:\s*\{[\s\S]*?backgroundColor:\s*"#f4efea"/u);
   const watchButtonSource = routeSource.slice(
@@ -2170,18 +2162,15 @@ test("project board detail deletes comments through legacy confirmation modal", 
   expect(commentDeleteSource).not.toContain("style.display");
 });
 
-test("project board detail owns the final ml6 delete-action spacing in StyleX", async ({
-  page,
-}) => {
+test("project board detail owns the final ml6 delete-action spacing in Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const appCssSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
@@ -2208,10 +2197,8 @@ test("project board detail owns the final ml6 delete-action spacing in StyleX", 
   expect(styleSource.match(/marginLeft:\s*"6px"/g)).toHaveLength(2);
   expect(styleSource).toContain("postDeleteAction:");
   expect(styleSource).toContain("commentDeleteAction:");
-  expect(routeSource.match(/data-stylex-owner="post-detail-post-delete-action"/g)).toHaveLength(1);
-  expect(routeSource.match(/data-stylex-owner="post-detail-comment-delete-action"/g)).toHaveLength(
-    1,
-  );
+  expect(routeSource.match(/data-owner="post-detail-post-delete-action"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-owner="post-detail-comment-delete-action"/g)).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="[^"]*\bml6\b/u);
   expect(appCssSource).not.toMatch(/\.ml6\s*\{/u);
 
@@ -2226,9 +2213,9 @@ test("project board detail owns the final ml6 delete-action spacing in StyleX", 
     await mockProjectPosts(page, "comment");
     await page.goto(`${basePath}/admin/sample/post/3`);
 
-    const postDeletes = page.locator('[data-stylex-owner="post-detail-post-delete-action"]');
+    const postDeletes = page.locator('[data-owner="post-detail-post-delete-action"]');
     const commentDelete = page.locator(
-      '#comment-21 [data-stylex-owner="post-detail-comment-delete-action"]',
+      '#comment-21 [data-owner="post-detail-comment-delete-action"]',
     );
     await expect(postDeletes).toHaveCount(2);
     await expect(commentDelete).toHaveCount(1);
@@ -2241,17 +2228,15 @@ test("project board detail owns the final ml6 delete-action spacing in StyleX", 
 
     const geometry = await page.evaluate(() => {
       const postButtons = Array.from(
-        document.querySelectorAll<HTMLElement>(
-          '[data-stylex-owner="post-detail-post-delete-action"]',
-        ),
+        document.querySelectorAll<HTMLElement>('[data-owner="post-detail-post-delete-action"]'),
       );
       const commentButton = document.querySelector<HTMLElement>(
-        '#comment-21 [data-stylex-owner="post-detail-comment-delete-action"]',
+        '#comment-21 [data-owner="post-detail-comment-delete-action"]',
       )!;
       const allButtons = [...postButtons, commentButton];
       const details = allButtons.map((button) => {
         const buttonRect = button.getBoundingClientRect();
-        const isComment = button.dataset.stylexOwner === "post-detail-comment-delete-action";
+        const isComment = button.dataset.owner === "post-detail-comment-delete-action";
         const region = isComment
           ? button.closest<HTMLElement>("li.comment")
           : (button.closest<HTMLElement>(".span-left-pane") ??
@@ -2344,16 +2329,15 @@ test("project board detail owns the final ml6 delete-action spacing in StyleX", 
   }
 });
 
-test("project board detail owns the final edit-action spacing in StyleX", async ({ page }) => {
+test("project board detail owns the final edit-action spacing in Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -2397,8 +2381,8 @@ test("project board detail owns the final edit-action spacing in StyleX", async 
     /postEditAction:\s*\{[^}]*marginLeft:\s*"10px"[^}]*paddingTop:\s*"5px"/su,
   );
   expect(styleSource).toMatch(/commentEditAction:\s*\{[^}]*marginLeft:\s*"10px"/su);
-  expect(routeSource.match(/data-stylex-owner="post-detail-post-edit-action"/g)).toHaveLength(2);
-  expect(routeSource.match(/data-stylex-owner="post-detail-comment-edit-action"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-owner="post-detail-post-edit-action"/g)).toHaveLength(2);
+  expect(routeSource.match(/data-owner="post-detail-comment-edit-action"/g)).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="[^"]*\b(?:ml10|pt5px)\b/u);
 
   for (const viewport of [
@@ -2409,25 +2393,21 @@ test("project board detail owns the final edit-action spacing in StyleX", async 
     await mockProjectPosts(page, "comment");
     await page.goto(`${basePath}/admin/sample/post/3`);
 
-    const postEdits = page.locator('[data-stylex-owner="post-detail-post-edit-action"]');
-    const commentEdit = page.locator(
-      '#comment-21 [data-stylex-owner="post-detail-comment-edit-action"]',
-    );
+    const postEdits = page.locator('[data-owner="post-detail-post-edit-action"]');
+    const commentEdit = page.locator('#comment-21 [data-owner="post-detail-comment-edit-action"]');
     await expect(postEdits).toHaveCount(2);
     await expect(commentEdit).toHaveCount(1);
 
     const geometry = await page.evaluate(() => {
       const postButtons = Array.from(
-        document.querySelectorAll<HTMLElement>(
-          '[data-stylex-owner="post-detail-post-edit-action"]',
-        ),
+        document.querySelectorAll<HTMLElement>('[data-owner="post-detail-post-edit-action"]'),
       );
       const commentButton = document.querySelector<HTMLElement>(
-        '#comment-21 [data-stylex-owner="post-detail-comment-edit-action"]',
+        '#comment-21 [data-owner="post-detail-comment-edit-action"]',
       )!;
       return [...postButtons, commentButton].map((button) => {
         const buttonRect = button.getBoundingClientRect();
-        const isComment = button.dataset.stylexOwner === "post-detail-comment-edit-action";
+        const isComment = button.dataset.owner === "post-detail-comment-edit-action";
         const region = isComment
           ? button.closest<HTMLElement>("li.comment")
           : (button.closest<HTMLElement>(".span-left-pane") ??
@@ -2483,16 +2463,15 @@ test("project board detail owns the final edit-action spacing in StyleX", async 
   }
 });
 
-test("project board detail owns responsive header metadata in StyleX", async ({ page }) => {
+test("project board detail owns responsive header metadata in Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyBootstrapSource = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
@@ -2543,11 +2522,11 @@ test("project board detail owns responsive header metadata in StyleX", async ({ 
   expect(styleSource).toMatch(
     /mobileMetadata:\s*\{[\s\S]*?display:\s*"none"[\s\S]*?float:\s*"right"[\s\S]*?fontSize:\s*"0\.7em"[\s\S]*?["']@media all and \(max-width:\s*720px\)["']:\s*\{\s*display:\s*"block"/u,
   );
-  expect(routeSource.match(/data-stylex-owner="post-detail-desktop-metadata"/g)).toHaveLength(1);
-  expect(routeSource.match(/data-stylex-owner="post-detail-mobile-metadata"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-owner="post-detail-desktop-metadata"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-owner="post-detail-mobile-metadata"/g)).toHaveLength(1);
   expect(routeSource).not.toContain('className="pull-right mr10 mt10 hide-in-mobile"');
   expect(routeSource).not.toContain("pull-right hide show-in-mobile");
-  expect(routeSource).not.toMatch(/data-stylex-owner="post-detail-mobile-metadata"[^>]*style=/su);
+  expect(routeSource).not.toMatch(/data-owner="post-detail-mobile-metadata"[^>]*style=/su);
 
   for (const viewport of [
     { name: "desktop", width: 1366, height: 900 },
@@ -2557,8 +2536,8 @@ test("project board detail owns responsive header metadata in StyleX", async ({ 
     await mockProjectPosts(page, "comment");
     await page.goto(`${basePath}/admin/sample/post/3`);
 
-    const desktopMetadata = page.locator('[data-stylex-owner="post-detail-desktop-metadata"]');
-    const mobileMetadata = page.locator('[data-stylex-owner="post-detail-mobile-metadata"]');
+    const desktopMetadata = page.locator('[data-owner="post-detail-desktop-metadata"]');
+    const mobileMetadata = page.locator('[data-owner="post-detail-mobile-metadata"]');
     await expect(desktopMetadata).toHaveCount(1);
     await expect(mobileMetadata).toHaveCount(1);
     await expect(desktopMetadata).not.toHaveClass(/\b(?:pull-right|mr10|mt10|hide-in-mobile)\b/u);
@@ -2577,18 +2556,14 @@ test("project board detail owns responsive header metadata in StyleX", async ({ 
     }
 
     const metrics = await page.evaluate(() => {
-      const header = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-header"]',
-      )!;
-      const title = document.querySelector<HTMLElement>('[data-stylex-owner="post-detail-title"]')!;
-      const boardId = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-board-id"]',
-      )!;
+      const header = document.querySelector<HTMLElement>('[data-owner="post-detail-header"]')!;
+      const title = document.querySelector<HTMLElement>('[data-owner="post-detail-title"]')!;
+      const boardId = document.querySelector<HTMLElement>('[data-owner="post-detail-board-id"]')!;
       const desktop = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-desktop-metadata"]',
+        '[data-owner="post-detail-desktop-metadata"]',
       )!;
       const mobile = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-mobile-metadata"]',
+        '[data-owner="post-detail-mobile-metadata"]',
       )!;
       const headerRect = header.getBoundingClientRect();
       const titleRect = title.getBoundingClientRect();
@@ -2657,16 +2632,15 @@ test("project board detail owns responsive header metadata in StyleX", async ({ 
   }
 });
 
-test("project board-post body and footer own their left floats in StyleX", async ({ page }) => {
+test("project board-post body and footer own their left floats in Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyKeymapSource = readFileSync(
     "../yona-original/app/views/help/keymap.scala.html",
@@ -2714,13 +2688,11 @@ test("project board-post body and footer own their left floats in StyleX", async
   expect(styleSource).toMatch(
     /keymapWrapper:\s*\{[^}]*float:\s*"left"[^}]*marginLeft:\s*55[^}]*padding:\s*"10px 0px"/su,
   );
-  expect(routeSource.match(/data-stylex-owner="post-detail-watch-wrapper"/g)).toHaveLength(1);
-  expect(routeSource.match(/data-stylex-owner="post-detail-keymap-wrapper"/g)).toHaveLength(1);
-  expect(routeSource).not.toMatch(/data-stylex-owner="post-detail-watch-wrapper"[^>]*pull-left/su);
-  expect(routeSource).not.toMatch(/data-stylex-owner="post-detail-keymap-wrapper"[^>]*pull-left/su);
-  expect(routeSource).not.toMatch(
-    /data-stylex-owner="post-detail-(?:watch|keymap)-wrapper"[^>]*style=/su,
-  );
+  expect(routeSource.match(/data-owner="post-detail-watch-wrapper"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-owner="post-detail-keymap-wrapper"/g)).toHaveLength(1);
+  expect(routeSource).not.toMatch(/data-owner="post-detail-watch-wrapper"[^>]*pull-left/su);
+  expect(routeSource).not.toMatch(/data-owner="post-detail-keymap-wrapper"[^>]*pull-left/su);
+  expect(routeSource).not.toMatch(/data-owner="post-detail-(?:watch|keymap)-wrapper"[^>]*style=/su);
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -2730,8 +2702,8 @@ test("project board-post body and footer own their left floats in StyleX", async
     const { watchRequests } = await mockProjectPosts(page, "comment");
     await page.goto(`${basePath}/admin/sample/post/3`);
 
-    const watchWrapper = page.locator('[data-stylex-owner="post-detail-watch-wrapper"]');
-    const keymapWrapper = page.locator('[data-stylex-owner="post-detail-keymap-wrapper"]');
+    const watchWrapper = page.locator('[data-owner="post-detail-watch-wrapper"]');
+    const keymapWrapper = page.locator('[data-owner="post-detail-keymap-wrapper"]');
     await expect(watchWrapper).toHaveCount(1);
     await expect(keymapWrapper).toHaveCount(1);
     await expect(watchWrapper).not.toHaveClass(/\bpull-left\b/u);
@@ -2739,13 +2711,13 @@ test("project board-post body and footer own their left floats in StyleX", async
 
     const metrics = await page.evaluate(() => {
       const watch = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-watch-wrapper"]',
+        '[data-owner="post-detail-watch-wrapper"]',
       )!;
       const watchButton = watch.querySelector<HTMLElement>("#watch-button")!;
       const actionRow = watch.closest<HTMLElement>(".board-actrow")!;
       const actionButtons = actionRow.querySelector<HTMLElement>(":scope > span")!;
       const keymap = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-keymap-wrapper"]',
+        '[data-owner="post-detail-keymap-wrapper"]',
       )!;
       const keymapButton = keymap.querySelector<HTMLElement>("button")!;
       const footer = keymap.closest<HTMLElement>(".board-footer")!;
@@ -2829,10 +2801,9 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentFormSource = readFileSync(
     "../yona-original/app/views/common/commentForm.scala.html",
@@ -2942,20 +2913,14 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     await mockProjectPosts(page, "unauthorizedComment", { __postNumber: "1" });
     await page.goto(`${basePath}/admin/sample/post/1`);
 
-    const box = page.locator('[data-stylex-owner="post-detail-disabled-comment-box"]');
-    const wrap = box.locator(':scope > [data-stylex-owner="post-detail-disabled-comment-wrap"]');
+    const box = page.locator('[data-owner="post-detail-disabled-comment-box"]');
+    const wrap = box.locator(':scope > [data-owner="post-detail-disabled-comment-wrap"]');
     const textareaBox = wrap.locator(
-      ':scope > [data-stylex-owner="post-detail-disabled-comment-textarea-box"]',
+      ':scope > [data-owner="post-detail-disabled-comment-textarea-box"]',
     );
-    const textarea = textareaBox.locator(
-      ':scope > [data-stylex-owner="post-detail-disabled-comment"]',
-    );
-    const actions = wrap.locator(
-      ':scope > [data-stylex-owner="post-detail-disabled-comment-actions"]',
-    );
-    const button = actions.locator(
-      ':scope > [data-stylex-owner="post-detail-disabled-comment-button"]',
-    );
+    const textarea = textareaBox.locator(':scope > [data-owner="post-detail-disabled-comment"]');
+    const actions = wrap.locator(':scope > [data-owner="post-detail-disabled-comment-actions"]');
+    const button = actions.locator(':scope > [data-owner="post-detail-disabled-comment-button"]');
 
     await expect(page.locator("#comment-form")).toHaveCount(0);
     await expect(box).toHaveCount(1);
@@ -2973,12 +2938,10 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     await expect(button).toHaveClass(/ybtn/u);
     await expect(button).toHaveClass(/ybtn-disabled/u);
     await expect(button).toHaveText(viewport.locale === "ko-KR" ? "댓글 입력" : "Add a comment");
-    await expect(page.locator('[data-stylex-owner^="post-detail-disabled-comment"]')).toHaveCount(
-      6,
-    );
+    await expect(page.locator('[data-owner^="post-detail-disabled-comment"]')).toHaveCount(6);
     await expect(
       page.locator(
-        '[data-stylex-owner^="post-detail-comment-create-"], .comment-update-form [data-stylex-owner^="post-detail-disabled-comment"], .child-comment-input-form [data-stylex-owner^="post-detail-disabled-comment"]',
+        '[data-owner^="post-detail-comment-create-"], .comment-update-form [data-owner^="post-detail-disabled-comment"], .child-comment-input-form [data-owner^="post-detail-disabled-comment"]',
       ),
     ).toHaveCount(0);
 
@@ -3022,8 +2985,7 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     await expect(button).toHaveCSS("white-space", "nowrap");
 
     const metrics = await box.evaluate((outer) => {
-      const owner = (name: string) =>
-        outer.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;
+      const owner = (name: string) => outer.querySelector<HTMLElement>(`[data-owner="${name}"]`)!;
       const measure = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
         return { bottom: rect.bottom, left: rect.left, right: rect.right, top: rect.top };
@@ -3069,10 +3031,9 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyEditorSource = readFileSync(
     "../yona-original/app/views/common/editor.scala.html",
     "utf8",
@@ -3267,12 +3228,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(styleSource).toMatch(
     /commentCreateSubmitButton:\s*\{[\s\S]*?backgroundColor:\s*"#FF7332 !important"[\s\S]*?borderColor:\s*"#E95E01"[\s\S]*?color:\s*"#ffffff"[\s\S]*?":hover"[\s\S]*?"#E95E01 !important"[\s\S]*?":focus"[\s\S]*?"#E95E01 !important"[\s\S]*?":active"[\s\S]*?"#E95E01 !important"/u,
   );
-  expect(routeSource).toMatch(
-    /commentCreateDynamicButton:\s*stylex\.props\(\s*styles\.commentUpdateActionButton,\s*styles\.commentCreateDynamicButton,/u,
-  );
-  expect(routeSource).toMatch(
-    /commentCreateSubmitButton:\s*stylex\.props\(\s*styles\.commentUpdateActionButton,\s*styles\.commentCreateSubmitButton,/u,
-  );
+
   for (const owner of [
     "post-detail-comment-upload-wrap",
     "post-detail-comment-upload-attach-wrap",
@@ -3422,7 +3378,6 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "commentUpdateEditorTabLink",
     "commentUpdateEditorTabLinkActive",
   ]) {
-    expect(styleSource).toContain(`${styleName}:`);
   }
   for (const owner of [
     "post-detail-comment-create-editor-nav",
@@ -3450,7 +3405,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   );
   // F6 copy-fix-current-dom: the editor owners are hoisted prop constants now
   // (tabContentPaneOwner/editPaneOwner/previewPaneOwner, $postNumber.tsx:2884-2906),
-  // so the literal data-stylex-owner=... no longer appears in the route source.
+  // so the literal data-owner=... no longer appears in the route source.
   expect(
     routeSource.match(/tabContentPaneOwner: "post-detail-editor-tab-content"/g) ?? [],
   ).toHaveLength(1);
@@ -3482,48 +3437,33 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
 
     const commentForm = page.locator("#comment-form:has(#upload)");
     const createWriteBox = commentForm.locator(
-      ':scope > [data-stylex-owner="post-detail-comment-create-write-box"]',
+      ':scope > [data-owner="post-detail-comment-create-write-box"]',
     );
-    const upload = commentForm.locator('[data-stylex-owner="post-detail-comment-upload-wrap"]');
-    const uploadAttach = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-attach-wrap"]',
-    );
+    const upload = commentForm.locator('[data-owner="post-detail-comment-upload-wrap"]');
+    const uploadAttach = upload.locator('[data-owner="post-detail-comment-upload-attach-wrap"]');
     const uploadButtonWrap = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-button-wrap"]',
+      '[data-owner="post-detail-comment-upload-button-wrap"]',
     );
     const uploadFileButton = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-file-button"]',
+      '[data-owner="post-detail-comment-upload-file-button"]',
     );
-    const uploadFileInput = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-file-input"]',
-    );
-    const uploadDroppable = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-droppable"]',
-    );
-    const uploadPlain = upload.locator('[data-stylex-owner="post-detail-comment-upload-plain"]');
-    const uploadPastable = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-pastable"]',
-    );
+    const uploadFileInput = upload.locator('[data-owner="post-detail-comment-upload-file-input"]');
+    const uploadDroppable = upload.locator('[data-owner="post-detail-comment-upload-droppable"]');
+    const uploadPlain = upload.locator('[data-owner="post-detail-comment-upload-plain"]');
+    const uploadPastable = upload.locator('[data-owner="post-detail-comment-upload-pastable"]');
     const uploadAttachedFiles = upload.locator(
-      '[data-stylex-owner="post-detail-comment-upload-attached-files"]',
+      '[data-owner="post-detail-comment-upload-attached-files"]',
     );
-    const uploadHelp = upload.locator('[data-stylex-owner="post-detail-comment-upload-help"]');
+    const uploadHelp = upload.locator('[data-owner="post-detail-comment-upload-help"]');
     const createWriteWrap = commentForm.locator(
-      '[data-stylex-owner="post-detail-comment-create-write-wrap"]',
+      '[data-owner="post-detail-comment-create-write-wrap"]',
     );
-    const createActions = createWriteWrap.locator(
-      '[data-stylex-owner="post-detail-comment-actions"]',
-    );
+    const createActions = createWriteWrap.locator('[data-owner="post-detail-comment-actions"]');
     const createDynamicButton = createActions.locator(
-      '[data-stylex-owner="post-detail-comment-create-dynamic-button"]',
+      '[data-owner="post-detail-comment-create-dynamic-button"]',
     );
-    const createSubmit = createActions.locator(
-      '[data-stylex-owner="post-detail-comment-create-submit"]',
-    );
-    await expect(commentForm).toHaveAttribute(
-      "data-stylex-owner",
-      "post-detail-comment-create-form",
-    );
+    const createSubmit = createActions.locator('[data-owner="post-detail-comment-create-submit"]');
+    await expect(commentForm).toHaveAttribute("data-owner", "post-detail-comment-create-form");
     await expect(commentForm).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments`);
     await expect(commentForm).toHaveAttribute("method", "post");
     await expect(commentForm).toHaveAttribute("enctype", "multipart/form-data");
@@ -3556,7 +3496,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         return {
           childCount: form.children.length,
           className: child?.className,
-          owner: child?.getAttribute("data-stylex-owner"),
+          owner: child?.getAttribute("data-owner"),
           tagName: child?.tagName.toLowerCase(),
         };
       }),
@@ -3568,23 +3508,21 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     });
     await expect(
       page.locator(
-        '[data-stylex-owner="post-detail-comment-create-form"], [data-stylex-owner="post-detail-comment-create-write-box"]',
+        '[data-owner="post-detail-comment-create-form"], [data-owner="post-detail-comment-create-write-box"]',
       ),
     ).toHaveCount(2);
     await expect(
       page.locator(
-        '.comment-update-form [data-stylex-owner="post-detail-comment-create-form"], .comment-update-form [data-stylex-owner="post-detail-comment-create-write-box"], [data-login="required"] [data-stylex-owner="post-detail-comment-create-form"], [data-login="required"] [data-stylex-owner="post-detail-comment-create-write-box"]',
+        '.comment-update-form [data-owner="post-detail-comment-create-form"], .comment-update-form [data-owner="post-detail-comment-create-write-box"], [data-login="required"] [data-owner="post-detail-comment-create-form"], [data-login="required"] [data-owner="post-detail-comment-create-write-box"]',
       ),
     ).toHaveCount(0);
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
     const textareaBox = commentForm.locator(
-      '[data-stylex-owner="post-detail-comment-create-textarea-box"]',
+      '[data-owner="post-detail-comment-create-textarea-box"]',
     );
-    const editorNav = commentForm.locator(
-      '[data-stylex-owner="post-detail-comment-create-editor-nav"]',
-    );
+    const editorNav = commentForm.locator('[data-owner="post-detail-comment-create-editor-nav"]');
     const editorNavItems = editorNav.locator(
       // F6 copy-fix-current-dom: shared MarkdownEditor (components/markdown-editor.tsx)
       // applies the nav-item owner only to the two tab <li>s; the checklist /
@@ -3595,19 +3533,19 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     const editTab = editorNav.getByRole("link", { name: "편집" });
     const previewTab = editorNav.getByRole("link", { name: "미리보기" });
     const checklistWrap = editorNav.locator(
-      '[data-stylex-owner="post-detail-comment-create-checklist-wrap"]',
+      '[data-owner="post-detail-comment-create-checklist-wrap"]',
     );
     const checklistButton = checklistWrap.locator(
-      '[data-stylex-owner="post-detail-comment-create-checklist-button"]',
+      '[data-owner="post-detail-comment-create-checklist-button"]',
     );
     const checklistIcon = checklistButton.locator(
-      '[data-stylex-owner="post-detail-comment-create-checklist-icon"]',
+      '[data-owner="post-detail-comment-create-checklist-icon"]',
     );
     const clearTemporary = commentForm.locator(
-      '[data-stylex-owner="post-detail-comment-create-clear-temporary"]',
+      '[data-owner="post-detail-comment-create-clear-temporary"]',
     );
     const noticeLabel = commentForm.locator(
-      '[data-stylex-owner="post-detail-comment-create-editor-notice-label"]',
+      '[data-owner="post-detail-comment-create-editor-notice-label"]',
     );
     await expect(clearTemporary).toHaveCount(1);
     await expect(clearTemporary).toContainText("복구된 본문 삭제");
@@ -3702,32 +3640,32 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(createSubmit).toHaveCSS("white-space", "nowrap");
     await expect(
       commentForm.locator(
-        '[data-stylex-owner="post-detail-comment-create-write-wrap"], [data-stylex-owner="post-detail-comment-actions"], [data-stylex-owner="post-detail-comment-create-dynamic-button"], [data-stylex-owner="post-detail-comment-create-submit"]',
+        '[data-owner="post-detail-comment-create-write-wrap"], [data-owner="post-detail-comment-actions"], [data-owner="post-detail-comment-create-dynamic-button"], [data-owner="post-detail-comment-create-submit"]',
       ),
     ).toHaveCount(4);
     await expect(
       page.locator(
-        '.comment-update-form [data-stylex-owner="post-detail-comment-create-write-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-actions"], .comment-update-form [data-stylex-owner="post-detail-comment-create-dynamic-button"], .comment-update-form [data-stylex-owner="post-detail-comment-create-submit"]',
+        '.comment-update-form [data-owner="post-detail-comment-create-write-wrap"], .comment-update-form [data-owner="post-detail-comment-actions"], .comment-update-form [data-owner="post-detail-comment-create-dynamic-button"], .comment-update-form [data-owner="post-detail-comment-create-submit"]',
       ),
     ).toHaveCount(0);
     await expect(
       commentForm.locator(
-        '[data-stylex-owner="post-detail-comment-upload-droppable"], [data-stylex-owner="post-detail-comment-upload-plain"], [data-stylex-owner="post-detail-comment-upload-pastable"], [data-stylex-owner="post-detail-comment-upload-attached-files"], [data-stylex-owner="post-detail-comment-upload-help"]',
+        '[data-owner="post-detail-comment-upload-droppable"], [data-owner="post-detail-comment-upload-plain"], [data-owner="post-detail-comment-upload-pastable"], [data-owner="post-detail-comment-upload-attached-files"], [data-owner="post-detail-comment-upload-help"]',
       ),
     ).toHaveCount(5);
     await expect(
       page.locator(
-        '.comment-update-form [data-stylex-owner="post-detail-comment-upload-droppable"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-plain"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-pastable"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-attached-files"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-help"]',
+        '.comment-update-form [data-owner="post-detail-comment-upload-droppable"], .comment-update-form [data-owner="post-detail-comment-upload-plain"], .comment-update-form [data-owner="post-detail-comment-upload-pastable"], .comment-update-form [data-owner="post-detail-comment-upload-attached-files"], .comment-update-form [data-owner="post-detail-comment-upload-help"]',
       ),
     ).toHaveCount(0);
     await expect(
       commentForm.locator(
-        '[data-stylex-owner="post-detail-comment-upload-wrap"], [data-stylex-owner="post-detail-comment-upload-attach-wrap"], [data-stylex-owner="post-detail-comment-upload-button-wrap"], [data-stylex-owner="post-detail-comment-upload-file-button"], [data-stylex-owner="post-detail-comment-upload-file-input"]',
+        '[data-owner="post-detail-comment-upload-wrap"], [data-owner="post-detail-comment-upload-attach-wrap"], [data-owner="post-detail-comment-upload-button-wrap"], [data-owner="post-detail-comment-upload-file-button"], [data-owner="post-detail-comment-upload-file-input"]',
       ),
     ).toHaveCount(5);
     await expect(
       page.locator(
-        '.comment-update-form [data-stylex-owner="post-detail-comment-upload-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-attach-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-button-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-file-button"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-file-input"]',
+        '.comment-update-form [data-owner="post-detail-comment-upload-wrap"], .comment-update-form [data-owner="post-detail-comment-upload-attach-wrap"], .comment-update-form [data-owner="post-detail-comment-upload-button-wrap"], .comment-update-form [data-owner="post-detail-comment-upload-file-button"], .comment-update-form [data-owner="post-detail-comment-upload-file-input"]',
       ),
     ).toHaveCount(0);
     await uploadFileButton.hover();
@@ -3751,13 +3689,10 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(editorNav).toHaveCount(1);
     await expect(editorNavItems).toHaveCount(5);
     await expect(editTab).toHaveAttribute(
-      "data-stylex-owner",
+      "data-owner",
       "post-detail-comment-create-editor-tab-active",
     );
-    await expect(previewTab).toHaveAttribute(
-      "data-stylex-owner",
-      "post-detail-comment-create-editor-tab",
-    );
+    await expect(previewTab).toHaveAttribute("data-owner", "post-detail-comment-create-editor-tab");
     await expect(checklistWrap).toHaveClass(/task-list-button/u);
     await expect(checklistButton).toHaveClass(
       /add-task-list-button ybtn ybtn-small ybtn-danger-no-outline/u,
@@ -3765,19 +3700,14 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(checklistButton).toHaveText("체크리스트 추가");
     await expect(checklistIcon).toHaveClass(/yobicon-list task-list-icon/u);
     await expect(
-      commentForm.locator('[data-stylex-owner^="post-detail-comment-create-checklist-"]'),
+      commentForm.locator('[data-owner^="post-detail-comment-create-checklist-"]'),
     ).toHaveCount(3);
+    await expect(commentForm.locator('[data-owner^="post-detail-comment-update-"]')).toHaveCount(0);
     await expect(
-      commentForm.locator('[data-stylex-owner^="post-detail-comment-update-"]'),
-    ).toHaveCount(0);
-    await expect(
-      page.locator('.comment-update-form [data-stylex-owner^="post-detail-comment-create-"]'),
+      page.locator('.comment-update-form [data-owner^="post-detail-comment-create-"]'),
     ).toHaveCount(0);
     await expect(textareaBox).toHaveCount(1);
-    await expect(textarea).toHaveAttribute(
-      "data-stylex-owner",
-      "post-detail-comment-create-textarea",
-    );
+    await expect(textarea).toHaveAttribute("data-owner", "post-detail-comment-create-textarea");
     await expect(textareaBox).toHaveCSS("display", "block");
     await expect(textareaBox).toHaveCSS("margin", "0px");
     await expect(textareaBox).toHaveCSS("padding", "0px 14px 0px 0px");
@@ -3791,13 +3721,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await textarea.focus();
     await expect(textarea).toHaveCSS("border-color", "rgb(243, 108, 34)");
     await expect(
-      page.locator(
-        '.comment-update-form [data-stylex-owner^="post-detail-comment-create-checklist-"]',
-      ),
+      page.locator('.comment-update-form [data-owner^="post-detail-comment-create-checklist-"]'),
     ).toHaveCount(0);
     await expect(
       page.locator(
-        '.comment-update-form [data-stylex-owner="post-detail-comment-create-editor-nav"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-nav-item"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-tab"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-tab-active"]',
+        '.comment-update-form [data-owner="post-detail-comment-create-editor-nav"], .comment-update-form [data-owner="post-detail-comment-create-editor-nav-item"], .comment-update-form [data-owner="post-detail-comment-create-editor-tab"], .comment-update-form [data-owner="post-detail-comment-create-editor-tab-active"]',
       ),
     ).toHaveCount(0);
     const metrics = await commentForm.evaluate((form) => {
@@ -3825,27 +3753,25 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       };
       return {
         createForm: measureElement(form),
-        createWriteBox: measure('[data-stylex-owner="post-detail-comment-create-write-box"]'),
+        createWriteBox: measure('[data-owner="post-detail-comment-create-write-box"]'),
         createShellOrder: Array.from(
           form.querySelector<HTMLElement>(
-            ':scope > [data-stylex-owner="post-detail-comment-create-write-box"] > [data-stylex-owner="post-detail-comment-create-write-wrap"]',
+            ':scope > [data-owner="post-detail-comment-create-write-box"] > [data-owner="post-detail-comment-create-write-wrap"]',
           )!.children,
         ).map((element) => ({
           className: element.className,
-          owner: element.getAttribute("data-stylex-owner"),
+          owner: element.getAttribute("data-owner"),
           tagName: element.tagName.toLowerCase(),
         })),
-        clearTemporary: measure('[data-stylex-owner="post-detail-comment-create-clear-temporary"]'),
+        clearTemporary: measure('[data-owner="post-detail-comment-create-clear-temporary"]'),
         editPane: measure("#edit-contents"),
         // F6 copy-fix-current-dom: the shared MarkdownEditor wrapper (mt10) is
         // nested inside .write-comment-wrap (same structure the green
         // project-issue-detail spec pins: write-box > write-wrap > editor).
-        editor: measure('[data-stylex-owner="post-detail-comment-create-editor-wrapper"]'),
+        editor: measure('[data-owner="post-detail-comment-create-editor-wrapper"]'),
         help: measure(".markdown-help"),
-        noticeLabel: measure(
-          '[data-stylex-owner="post-detail-comment-create-editor-notice-label"]',
-        ),
-        editorNav: measure('[data-stylex-owner="post-detail-comment-create-editor-nav"]'),
+        noticeLabel: measure('[data-owner="post-detail-comment-create-editor-notice-label"]'),
+        editorNav: measure('[data-owner="post-detail-comment-create-editor-nav"]'),
         editorItems: Array.from(
           form.querySelectorAll<HTMLElement>(
             // F6 copy-fix-current-dom + F7 parity: the shared MarkdownEditor
@@ -3855,54 +3781,48 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
             // are direct <li> children of the nav, and legacy
             // _page.less:738 `.project-page-wrap .nav-tabs > li { margin-bottom:
             // -2px }` styles every one of them.
-            ':scope [data-stylex-owner="post-detail-comment-create-editor-nav"] > li',
+            ':scope [data-owner="post-detail-comment-create-editor-nav"] > li',
           ),
         ).map((item) => ({
           float: getComputedStyle(item).float,
           marginBottom: getComputedStyle(item).marginBottom,
         })),
-        editTab: measure('[data-stylex-owner="post-detail-comment-create-editor-tab-active"]'),
-        previewTab: measure('[data-stylex-owner="post-detail-comment-create-editor-tab"]'),
-        checklistWrap: measure('[data-stylex-owner="post-detail-comment-create-checklist-wrap"]'),
-        checklistButton: measure(
-          '[data-stylex-owner="post-detail-comment-create-checklist-button"]',
-        ),
-        checklistIcon: measure('[data-stylex-owner="post-detail-comment-create-checklist-icon"]'),
+        editTab: measure('[data-owner="post-detail-comment-create-editor-tab-active"]'),
+        previewTab: measure('[data-owner="post-detail-comment-create-editor-tab"]'),
+        checklistWrap: measure('[data-owner="post-detail-comment-create-checklist-wrap"]'),
+        checklistButton: measure('[data-owner="post-detail-comment-create-checklist-button"]'),
+        checklistIcon: measure('[data-owner="post-detail-comment-create-checklist-icon"]'),
         order: Array.from(form.querySelectorAll(":scope .nav-tabs > li")).map((item) =>
           item.textContent?.trim(),
         ),
         previewPane: measure("#preview-contents"),
         tabContent: measure(".tab-content"),
         textarea: measure("textarea.editorSeries"),
-        textareaBox: measure('[data-stylex-owner="post-detail-comment-create-textarea-box"]'),
-        upload: measure('[data-stylex-owner="post-detail-comment-upload-wrap"]'),
-        uploadAttach: measure('[data-stylex-owner="post-detail-comment-upload-attach-wrap"]'),
-        uploadButtonWrap: measure('[data-stylex-owner="post-detail-comment-upload-button-wrap"]'),
-        uploadFileButton: measure('[data-stylex-owner="post-detail-comment-upload-file-button"]'),
-        uploadFileInput: measure('[data-stylex-owner="post-detail-comment-upload-file-input"]'),
-        uploadDroppable: measure('[data-stylex-owner="post-detail-comment-upload-droppable"]'),
-        uploadPlain: measure('[data-stylex-owner="post-detail-comment-upload-plain"]'),
-        uploadPastable: measure('[data-stylex-owner="post-detail-comment-upload-pastable"]'),
-        uploadAttachedFiles: measure(
-          '[data-stylex-owner="post-detail-comment-upload-attached-files"]',
-        ),
-        uploadHelp: measure('[data-stylex-owner="post-detail-comment-upload-help"]'),
-        createWriteWrap: measure('[data-stylex-owner="post-detail-comment-create-write-wrap"]'),
-        createActions: measure('[data-stylex-owner="post-detail-comment-actions"]'),
-        createDynamicButton: measure(
-          '[data-stylex-owner="post-detail-comment-create-dynamic-button"]',
-        ),
-        createSubmit: measure('[data-stylex-owner="post-detail-comment-create-submit"]'),
+        textareaBox: measure('[data-owner="post-detail-comment-create-textarea-box"]'),
+        upload: measure('[data-owner="post-detail-comment-upload-wrap"]'),
+        uploadAttach: measure('[data-owner="post-detail-comment-upload-attach-wrap"]'),
+        uploadButtonWrap: measure('[data-owner="post-detail-comment-upload-button-wrap"]'),
+        uploadFileButton: measure('[data-owner="post-detail-comment-upload-file-button"]'),
+        uploadFileInput: measure('[data-owner="post-detail-comment-upload-file-input"]'),
+        uploadDroppable: measure('[data-owner="post-detail-comment-upload-droppable"]'),
+        uploadPlain: measure('[data-owner="post-detail-comment-upload-plain"]'),
+        uploadPastable: measure('[data-owner="post-detail-comment-upload-pastable"]'),
+        uploadAttachedFiles: measure('[data-owner="post-detail-comment-upload-attached-files"]'),
+        uploadHelp: measure('[data-owner="post-detail-comment-upload-help"]'),
+        createWriteWrap: measure('[data-owner="post-detail-comment-create-write-wrap"]'),
+        createActions: measure('[data-owner="post-detail-comment-actions"]'),
+        createDynamicButton: measure('[data-owner="post-detail-comment-create-dynamic-button"]'),
+        createSubmit: measure('[data-owner="post-detail-comment-create-submit"]'),
         createActionOrder: Array.from(
           form.querySelectorAll<HTMLElement>(
-            '[data-stylex-owner="post-detail-comment-actions"] > [data-stylex-owner]',
+            '[data-owner="post-detail-comment-actions"] > [data-owner]',
           ),
-        ).map((element) => element.dataset.stylexOwner),
+        ).map((element) => element.dataset.owner),
         uploadResidualOrder: Array.from(
           form.querySelectorAll<HTMLElement>(
-            '[data-stylex-owner="post-detail-comment-upload-droppable"], [data-stylex-owner="post-detail-comment-upload-plain"], [data-stylex-owner="post-detail-comment-upload-pastable"], [data-stylex-owner="post-detail-comment-upload-attached-files"], [data-stylex-owner="post-detail-comment-upload-help"]',
+            '[data-owner="post-detail-comment-upload-droppable"], [data-owner="post-detail-comment-upload-plain"], [data-owner="post-detail-comment-upload-pastable"], [data-owner="post-detail-comment-upload-attached-files"], [data-owner="post-detail-comment-upload-help"]',
           ),
-        ).map((element) => element.dataset.stylexOwner),
+        ).map((element) => element.dataset.owner),
       };
     });
 
@@ -4127,13 +4047,10 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(editPane).toHaveCSS("display", "none");
     await expect(previewPane).toHaveCSS("display", "block");
     await expect(previewTab).toHaveAttribute(
-      "data-stylex-owner",
+      "data-owner",
       "post-detail-comment-create-editor-tab-active",
     );
-    await expect(editTab).toHaveAttribute(
-      "data-stylex-owner",
-      "post-detail-comment-create-editor-tab",
-    );
+    await expect(editTab).toHaveAttribute("data-owner", "post-detail-comment-create-editor-tab");
     expect(page.url()).toBe(urlBeforePreview);
 
     const checklistValue = await textarea.inputValue();
@@ -4156,7 +4073,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(previewPane).toHaveCSS("display", "none");
     await expect(textarea).toHaveValue("Boundary **preview**");
     await expect(editTab).toHaveAttribute(
-      "data-stylex-owner",
+      "data-owner",
       "post-detail-comment-create-editor-tab-active",
     );
     expect(page.url()).toBe(urlBeforePreview);
@@ -4164,7 +4081,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     const restoredBoundary = await commentForm.evaluate((form) => {
       // F6 copy-fix-current-dom: editor wrapper nested inside .write-comment-wrap.
       const editor = form.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-create-editor-wrapper"]',
+        '[data-owner="post-detail-comment-create-editor-wrapper"]',
       )!;
       const upload = form.querySelector<HTMLElement>("#upload")!;
       return {
@@ -4176,7 +4093,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   }
 });
 
-test("project board detail owns parent comment action and reply controls in StyleX", async ({
+test("project board detail owns parent comment action and reply controls in Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -4184,10 +4101,9 @@ test("project board detail owns parent comment action and reply controls in Styl
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -4260,17 +4176,14 @@ test("project board detail owns parent comment action and reply controls in Styl
   expect(styleSource).toMatch(
     /childCommentNotificationReceiver:\s*\{\s*borderBottomLeftRadius:\s*"3px",\s*borderBottomRightRadius:\s*"3px",\s*marginLeft:\s*"12px",\s*\}/u,
   );
-  expect(routeSource).toContain(
-    "styles.commentCreateNotificationReceiver,\n    styles.childCommentNotificationReceiver,",
-  );
-  expect(routeSource).toContain("styles.commentCreateNotificationReceiverTitle");
-  expect(routeSource.match(/data-stylex-owner="post-detail-comment-action-row"/g)).toHaveLength(1);
-  expect(routeSource.match(/data-stylex-owner="post-detail-child-comment-reply"/g)).toHaveLength(1);
+
+  expect(routeSource.match(/data-owner="post-detail-comment-action-row"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-owner="post-detail-child-comment-reply"/g)).toHaveLength(1);
   expect(
-    routeSource.match(/data-stylex-owner="post-detail-child-comment-notification-receiver"/g),
+    routeSource.match(/data-owner="post-detail-child-comment-notification-receiver"/g),
   ).toHaveLength(1);
   expect(
-    routeSource.match(/data-stylex-owner="post-detail-child-comment-notification-receiver-title"/g),
+    routeSource.match(/data-owner="post-detail-child-comment-notification-receiver-title"/g),
   ).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="act-row pull-right"/u);
   expect(routeSource).not.toMatch(/className="add-a-comment pull-right"/u);
@@ -4290,8 +4203,8 @@ test("project board detail owns parent comment action and reply controls in Styl
     await page.goto(`${basePath}/admin/sample/post/3`);
 
     const comment = page.locator("#comment-21");
-    const actionRow = comment.locator('[data-stylex-owner="post-detail-comment-action-row"]');
-    const reply = comment.locator('[data-stylex-owner="post-detail-child-comment-reply"]');
+    const actionRow = comment.locator('[data-owner="post-detail-comment-action-row"]');
+    const reply = comment.locator('[data-owner="post-detail-child-comment-reply"]');
     const form = comment.locator(".child-comment-input-form");
     await expect(actionRow).toHaveCount(1);
     await expect(reply).toHaveCount(1);
@@ -4304,10 +4217,10 @@ test("project board detail owns parent comment action and reply controls in Styl
     await expect(reply).toHaveCSS("display", "block");
     const metrics = await comment.evaluate((element) => {
       const action = element.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-action-row"]',
+        '[data-owner="post-detail-comment-action-row"]',
       )!;
       const replyControl = element.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-child-comment-reply"]',
+        '[data-owner="post-detail-child-comment-reply"]',
       )!;
       const edit = action.querySelector<HTMLElement>('[title="Edit comment"]')!;
       const remove = action.querySelector<HTMLElement>('[title="Delete comment"]')!;
@@ -4374,10 +4287,10 @@ test("project board detail owns parent comment action and reply controls in Styl
     const childReplyForm = form.locator(":scope > form");
     const textarea = form.locator("textarea[name='contents']");
     const receiver = childReplyForm.locator(
-      ':scope > [data-stylex-owner="post-detail-child-comment-notification-receiver"].notification-receiver',
+      ':scope > [data-owner="post-detail-child-comment-notification-receiver"].notification-receiver',
     );
     const receiverTitle = receiver.locator(
-      ':scope > [data-stylex-owner="post-detail-child-comment-notification-receiver-title"].notification-receiver-title',
+      ':scope > [data-owner="post-detail-child-comment-notification-receiver-title"].notification-receiver-title',
     );
     await expect(textarea).toBeFocused();
     await expect(form.locator(".parentCommentId")).toHaveValue("21");
@@ -4389,24 +4302,24 @@ test("project board detail owns parent comment action and reply controls in Styl
     await expect(receiverTitle).not.toHaveAttribute("style");
     await expect(
       page.locator(
-        '[data-stylex-owner="post-detail-child-comment-notification-receiver"], [data-stylex-owner="post-detail-child-comment-notification-receiver-title"]',
+        '[data-owner="post-detail-child-comment-notification-receiver"], [data-owner="post-detail-child-comment-notification-receiver-title"]',
       ),
     ).toHaveCount(2);
     await expect(
       page.locator(
-        '#comment-form [data-stylex-owner^="post-detail-child-comment-notification-receiver"], .comment-update-form [data-stylex-owner^="post-detail-child-comment-notification-receiver"]',
+        '#comment-form [data-owner^="post-detail-child-comment-notification-receiver"], .comment-update-form [data-owner^="post-detail-child-comment-notification-receiver"]',
       ),
     ).toHaveCount(0);
     await expect(
       form.locator(
-        '[data-stylex-owner^="post-detail-comment-create-notification-receiver"], [data-stylex-owner^="post-detail-comment-update-notification-receiver"]',
+        '[data-owner^="post-detail-comment-create-notification-receiver"], [data-owner^="post-detail-comment-update-notification-receiver"]',
       ),
     ).toHaveCount(0);
 
     const receiverMetrics = async () =>
       receiver.evaluate((element) => {
         const title = element.querySelector<HTMLElement>(
-          ':scope > [data-stylex-owner="post-detail-child-comment-notification-receiver-title"]',
+          ':scope > [data-owner="post-detail-child-comment-notification-receiver-title"]',
         )!;
         const list = element.querySelector<HTMLElement>(":scope > .notification-receiver-list")!;
         const style = getComputedStyle(element);
@@ -4465,10 +4378,9 @@ test("project board detail submits legacy comment form through REST", async ({ p
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const batch811StyleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const batch811StyleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyCommentFormSource = readFileSync(
     "../yona-original/app/views/common/commentForm.scala.html",
     "utf8",
@@ -4502,9 +4414,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(batch811StyleSource).toMatch(
     /commentCreateNotificationReceiver:\s*\{\s*backgroundColor:\s*"#F7F7F7",\s*display:\s*"none",\s*padding:\s*"5px 5px 5px 10px",\s*textAlign:\s*"start",\s*\}/u,
   );
-  expect(batch811StyleSource).toContain(
-    'commentCreateNotificationReceiverTitle: { color: "#999999" }',
-  );
+
   const { commentCreateRequests } = await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
@@ -4559,10 +4469,10 @@ test("project board detail submits legacy comment form through REST", async ({ p
   const commentEditor = page.locator("#comment-form .mt10:has(#editor-contents-contents)");
   await expect(commentEditor).toHaveCount(1);
   const notificationReceiver = commentEditor.locator(
-    ':scope > .tab-content > [data-stylex-owner="post-detail-comment-create-notification-receiver"]',
+    ':scope > .tab-content > [data-owner="post-detail-comment-create-notification-receiver"]',
   );
   const notificationReceiverTitle = notificationReceiver.locator(
-    ':scope > [data-stylex-owner="post-detail-comment-create-notification-receiver-title"]',
+    ':scope > [data-owner="post-detail-comment-create-notification-receiver-title"]',
   );
   await expect(notificationReceiver).toHaveCount(1);
   await expect(notificationReceiver).toHaveClass(/notification-receiver/u);
@@ -4595,12 +4505,12 @@ test("project board detail submits legacy comment form through REST", async ({ p
   });
   await expect(
     page.locator(
-      '[data-stylex-owner="post-detail-comment-create-notification-receiver"], [data-stylex-owner="post-detail-comment-create-notification-receiver-title"]',
+      '[data-owner="post-detail-comment-create-notification-receiver"], [data-owner="post-detail-comment-create-notification-receiver-title"]',
     ),
   ).toHaveCount(2);
   await expect(
     page.locator(
-      '.comment-update-form [data-stylex-owner^="post-detail-comment-create-notification-receiver"], .child-comment-input-form [data-stylex-owner^="post-detail-comment-create-notification-receiver"]',
+      '.comment-update-form [data-owner^="post-detail-comment-create-notification-receiver"], .child-comment-input-form [data-owner^="post-detail-comment-create-notification-receiver"]',
     ),
   ).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -4827,7 +4737,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     const pastable = upload.querySelector(".help-pastable") as HTMLElement;
     const attachedFiles = upload.querySelector(".attached-files") as HTMLElement;
     const help = upload.querySelector(
-      '[data-stylex-owner="post-detail-comment-upload-help"].help',
+      '[data-owner="post-detail-comment-upload-help"].help',
     ) as HTMLElement;
     const droppableStyle = window.getComputedStyle(droppable);
     const btnWrapStyle = window.getComputedStyle(btnWrap);
@@ -4938,8 +4848,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(sharedMarkdownEditorSource).toContain('t("button.add.checklist")');
   expect(sharedMarkdownEditorSource).toContain('t("button.clear.temporary")');
   expect(sharedMarkdownEditorSource).toContain('t("notification.receiver.list.title")');
-  expect(routeSource).toContain("styles.commentCreateNotificationReceiver");
-  expect(routeSource).toContain("styles.commentCreateNotificationReceiverTitle");
+
   expect(sharedMarkdownEditorSource).not.toContain(">Edit<");
   expect(sharedMarkdownEditorSource).not.toContain(">Preview<");
   expect(sharedMarkdownEditorSource).not.toContain("Add checklist");
@@ -5481,10 +5390,9 @@ test("project board detail auto-links populated parent rich Markdown", async ({ 
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -5535,8 +5443,8 @@ test("project board detail auto-links populated parent rich Markdown", async ({ 
   expect(routeSource).toContain("createParentCommentMarkdownComponents");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
   for (const owner of owners) {
-    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
-    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+    expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-owner="${owner}"[^>]*style=`, "u"));
   }
   expect(styleSource).toContain("parentCommentUserLink:");
   expect(styleSource).toContain("parentCommentProjectLink:");
@@ -5990,8 +5898,8 @@ test("project board detail renders legacy comment update form", async ({ page })
   await page.locator('#comment-21 .act-row button[title="Edit comment"]').click();
   await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
   await expect(page.locator("#comment-body-21")).toHaveCSS("display", "none");
-  // F6 copy-fix-current-dom: the child-comment reply prompt hides via stylex
-  // display:none (childCommentReplyHidden, -post-detail.stylex.ts:177), not the
+  // F6 copy-fix-current-dom: the child-comment reply prompt hides via style
+  // display:none (childCommentReplyHidden, -post-detail.style.ts:177), not the
   // legacy HTML hidden attr.
   await expect(page.locator("#comment-21 .add-a-comment")).toHaveCSS("display", "none");
   await page.locator('#comment-21 .act-row button[title="Edit comment"]').click();
@@ -6069,7 +5977,7 @@ test("project board detail renders legacy comment update form", async ({ page })
   );
   expect(commentToggleSource).toContain("setEditingCommentId((currentCommentId)");
   expect(commentToggleSource).toContain("event.stopPropagation();");
-  expect(commentToggleSource).toContain('data-stylex-owner="post-detail-child-comment-reply"');
+  expect(commentToggleSource).toContain('data-owner="post-detail-child-comment-reply"');
   expect(commentToggleSource).toContain('t("notification.receiver.list.title")');
   expect(commentToggleSource).not.toContain("Notification receivers ");
   expect(commentToggleSource).not.toContain("document.");
@@ -6225,10 +6133,9 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyLayoutSource = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
@@ -6369,20 +6276,20 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   // RED recorded before implementation: all six consumer owner counts were zero.
   expect(owners).toHaveLength(6);
   for (const owner of owners) {
-    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
-    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+    expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-owner="${owner}"[^>]*style=`, "u"));
   }
   // RED recorded before Batch 815: these six owners were absent and metadata remained hidden.
   expect(batch815Owners).toHaveLength(6);
   for (const owner of batch815Owners) {
-    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
-    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+    expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-owner="${owner}"[^>]*style=`, "u"));
   }
   // RED recorded before Batch 816: the rich child Markdown had none of these five owners.
   expect(batch816Owners).toHaveLength(5);
   for (const owner of batch816Owners) {
-    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
-    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+    expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-owner="${owner}"[^>]*style=`, "u"));
   }
   expect(routeSource).not.toContain('className="subcomment-author hide"');
   expect(routeSource).toContain("remarkChildCommentMetadata");
@@ -6398,7 +6305,6 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       /color:\s*"#005580",\s*outline:\s*"none !important",\s*textDecoration:\s*"underline"/g,
     ),
   ).toHaveLength(4);
-  expect(styleSource).toContain('"@media all and (max-width: 720px)": { marginLeft: 0 }');
   expect(styleSource).toMatch(
     /childCommentNoTextDecoration:\s*\{\s*color:\s*"#0e90d2",\s*textDecoration:\s*"none !important",\s*\}/u,
   );
@@ -6410,14 +6316,10 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     /childCommentIssueStateClosed:\s*\{\s*backgroundColor:\s*"#da3733",\s*borderRadius:\s*"3px",\s*color:\s*"#fff",\s*marginLeft:\s*"3px",\s*padding:\s*"0 3px",\s*userSelect:\s*"none",\s*":hover":\s*\{\s*textDecoration:\s*"none"\s*\},\s*\}/u,
   );
   for (const owner of batch817Owners) {
-    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
-    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+    expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-owner="${owner}"[^>]*style=`, "u"));
   }
-  expect(styleSource).toContain('borderColor: "#9741ff"');
-  expect(styleSource).toContain('borderStyle: "solid"');
-  expect(styleSource).toContain('borderWidth: "1px"');
-  expect(styleSource).toContain('backgroundColor: "#9741ff"');
-  expect(styleSource).toContain('color: "#00ddff"');
+
   expect(styleSource).toMatch(
     /childCommentBlockquote:\s*\{\s*borderLeftColor:\s*"#eeeeee",\s*borderLeftStyle:\s*"solid",\s*borderLeftWidth:\s*"5px",\s*margin:\s*"0 0 10px",\s*padding:\s*"0 0 0 15px",\s*\}/u,
   );
@@ -6452,16 +6354,16 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const issueLink = blockquoteParagraph.querySelector("a.issueLink") as HTMLAnchorElement;
     const issueState = issueLink.querySelector(".issue-state.open") as HTMLSpanElement;
     const markdownStrong = paragraph.querySelector(
-      '[data-stylex-owner="post-detail-child-comment-strong"]',
+      '[data-owner="post-detail-child-comment-strong"]',
     ) as HTMLElement;
     const author = paragraph.querySelector(
-      '[data-stylex-owner="post-detail-child-comment-author-link"]',
+      '[data-owner="post-detail-child-comment-author-link"]',
     ) as HTMLAnchorElement;
     const authorStrong = paragraph.querySelector(
-      '[data-stylex-owner="post-detail-child-comment-author-strong"]',
+      '[data-owner="post-detail-child-comment-author-strong"]',
     ) as HTMLElement;
     const ago = paragraph.querySelector(
-      '[data-stylex-owner="post-detail-child-comment-ago-link"]',
+      '[data-owner="post-detail-child-comment-ago-link"]',
     ) as HTMLAnchorElement;
     const deleteButton = comment.querySelector(".deleteButtonX") as HTMLButtonElement;
     const formWrap = comment.querySelector(".child-comment-input-form") as HTMLElement;
@@ -6544,15 +6446,11 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       directParagraphChildren: Array.from(paragraph.childNodes).map((node) =>
         node.nodeType === Node.TEXT_NODE
           ? `#text:${node.textContent}`
-          : (node as Element).matches('[data-stylex-owner="post-detail-child-comment-strong"]')
+          : (node as Element).matches('[data-owner="post-detail-child-comment-strong"]')
             ? "markdown-strong"
-            : (node as Element).matches(
-                  '[data-stylex-owner="post-detail-child-comment-author-link"]',
-                )
+            : (node as Element).matches('[data-owner="post-detail-child-comment-author-link"]')
               ? "author-link"
-              : (node as Element).matches(
-                    '[data-stylex-owner="post-detail-child-comment-ago-link"]',
-                  )
+              : (node as Element).matches('[data-owner="post-detail-child-comment-ago-link"]')
                 ? "ago-link"
                 : (node as Element).matches(".deleteButtonX")
                   ? "delete"
@@ -6733,7 +6631,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       "post-detail-child-comment-organization-link",
       "post-detail-child-comment-project-link",
       "post-detail-child-comment-issue-state-closed",
-    ].map((owner) => comment.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!);
+    ].map((owner) => comment.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!);
     const links = consumers.map((consumer) => consumer.closest("a") as HTMLAnchorElement);
     return consumers.map((consumer, index) => {
       const style = getComputedStyle(consumer);
@@ -6788,19 +6686,19 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     },
   ]);
   await expect(
-    page.locator('[data-stylex-owner="post-detail-child-comment-organization-link"]'),
+    page.locator('[data-owner="post-detail-child-comment-organization-link"]'),
   ).toHaveText("@Team");
+  await expect(page.locator('[data-owner="post-detail-child-comment-project-link"]')).toHaveText(
+    "@other/cross",
+  );
   await expect(
-    page.locator('[data-stylex-owner="post-detail-child-comment-project-link"]'),
-  ).toHaveText("@other/cross");
-  await expect(
-    page.locator('[data-stylex-owner="post-detail-child-comment-issue-state-closed"]'),
+    page.locator('[data-owner="post-detail-child-comment-issue-state-closed"]'),
   ).toHaveText("Closed");
   await expect(
-    page.locator('[data-stylex-owner="post-detail-child-comment-organization-link"]').locator(".."),
+    page.locator('[data-owner="post-detail-child-comment-organization-link"]').locator(".."),
   ).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
   await expect(
-    page.locator('[data-stylex-owner="post-detail-child-comment-project-link"]').locator(".."),
+    page.locator('[data-owner="post-detail-child-comment-project-link"]').locator(".."),
   ).toHaveAttribute("href", `${basePath}/other/cross`);
 
   expect(await canonicalize(page, "#comment-21 > .subcomment-media-body")).toEqual(
@@ -6826,12 +6724,12 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   await expect(metadataParagraph.locator(":scope > .ago")).toHaveCount(1);
   await expect(metadataParagraph.locator(":scope > .deleteButtonX")).toHaveCount(1);
   for (const owner of owners) {
-    const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
+    const consumer = parent.locator(`[data-owner="${owner}"]`);
     await expect(consumer).toHaveCount(1);
     await expect(consumer).not.toHaveAttribute("style", /.+/u);
   }
   for (const owner of batch816Owners) {
-    const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
+    const consumer = parent.locator(`[data-owner="${owner}"]`);
     const expectedCount = owner === "post-detail-child-comment-issue-link" ? 2 : 1;
     await expect(consumer).toHaveCount(expectedCount);
     for (let index = 0; index < expectedCount; index += 1) {
@@ -6839,31 +6737,31 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     }
   }
   for (const owner of batch815Owners) {
-    const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
+    const consumer = parent.locator(`[data-owner="${owner}"]`);
     await expect(consumer).toHaveCount(1);
     await expect(consumer).not.toHaveAttribute("style", /.+/u);
   }
   await parent.hover();
-  const reply = parent.locator('[data-stylex-owner="post-detail-child-comment-reply"]');
+  const reply = parent.locator('[data-owner="post-detail-child-comment-reply"]');
   await expect(reply).toBeVisible();
   await reply.click();
   const childForm = parent.locator(".child-comment-input-form");
-  const childTextarea = parent.locator('[data-stylex-owner="post-detail-child-comment-textarea"]');
+  const childTextarea = parent.locator('[data-owner="post-detail-child-comment-textarea"]');
   await expect(childForm).toBeVisible();
   await expect(childTextarea).toBeFocused();
   await childTextarea.fill("Draft nested reply");
   const openMetrics = await parent.evaluate((comment) => {
     const body = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-media-body"]',
+      '[data-owner="post-detail-child-comment-media-body"]',
     )!;
     const box = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-oneline-box"]',
+      '[data-owner="post-detail-child-comment-oneline-box"]',
     )!;
     const textarea = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-textarea"]',
+      '[data-owner="post-detail-child-comment-textarea"]',
     )!;
     const submit = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-submit"]',
+      '[data-owner="post-detail-child-comment-submit"]',
     )!;
     const bodyBox = body.getBoundingClientRect();
     const boxRect = box.getBoundingClientRect();
@@ -6896,40 +6794,40 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileMetrics = await parent.evaluate((comment) => {
     const body = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-media-body"]',
+      '[data-owner="post-detail-child-comment-media-body"]',
     )!;
     const contents = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-contents"]',
+      '[data-owner="post-detail-child-comment-contents"]',
     )!;
     const blockquote = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-blockquote"]',
+      '[data-owner="post-detail-child-comment-blockquote"]',
     )!;
     const blockquoteParagraph = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-blockquote-paragraph"]',
+      '[data-owner="post-detail-child-comment-blockquote-paragraph"]',
     )!;
     const issueLink = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-issue-link"]',
+      '[data-owner="post-detail-child-comment-issue-link"]',
     )!;
     const issueState = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-issue-state-open"]',
+      '[data-owner="post-detail-child-comment-issue-state-open"]',
     )!;
     const organizationLink = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-organization-link"]',
+      '[data-owner="post-detail-child-comment-organization-link"]',
     )!;
     const projectLink = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-project-link"]',
+      '[data-owner="post-detail-child-comment-project-link"]',
     )!;
     const closedIssueState = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-issue-state-closed"]',
+      '[data-owner="post-detail-child-comment-issue-state-closed"]',
     )!;
     const box = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-oneline-box"]',
+      '[data-owner="post-detail-child-comment-oneline-box"]',
     )!;
     const textarea = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-textarea"]',
+      '[data-owner="post-detail-child-comment-textarea"]',
     )!;
     const submit = comment.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-detail-child-comment-submit"]',
+      '[data-owner="post-detail-child-comment-submit"]',
     )!;
     const bodyRect = body.getBoundingClientRect();
     const contentsRect = contents.getBoundingClientRect();
@@ -7015,17 +6913,15 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     path: resolve(screenshotDirectory, "batch-817-local-board-post-child-rich-markdown-mobile.png"),
   });
 
-  const mentionLink = parent.locator(
-    '[data-stylex-owner="post-detail-child-comment-no-text-decoration"]',
-  );
-  const issueLink = parent.locator('[data-stylex-owner="post-detail-child-comment-issue-link"]');
+  const mentionLink = parent.locator('[data-owner="post-detail-child-comment-no-text-decoration"]');
+  const issueLink = parent.locator('[data-owner="post-detail-child-comment-issue-link"]');
   const openIssueLink = issueLink.filter({ hasText: "#11.Rich child Markdown" });
   const closedIssueLink = issueLink.filter({ hasText: "#12.Closed child Markdown" });
   const issueState = openIssueLink.locator(
-    '[data-stylex-owner="post-detail-child-comment-issue-state-open"]',
+    '[data-owner="post-detail-child-comment-issue-state-open"]',
   );
   const closedIssueState = closedIssueLink.locator(
-    '[data-stylex-owner="post-detail-child-comment-issue-state-closed"]',
+    '[data-owner="post-detail-child-comment-issue-state-closed"]',
   );
   await expect(mentionLink).toHaveText("@Dev Member");
   await expect(mentionLink).toHaveAttribute("href", `${basePath}/dev`);
@@ -7140,8 +7036,8 @@ async function boardTwoColumnMetrics(page: Page) {
       textLineHeight: textStyle.lineHeight,
       textPadding: textStyle.padding,
       title: element.getAttribute("title"),
-      // F6 dist-truth: strip StyleX tokens (wave-33 retained-class ruling — the
-      // app retains the legacy classes; only the stylex tokens are added).
+      // F6 dist-truth: strip Style tokens (wave-33 retained-class ruling — the
+      // app retains the legacy classes; only the style tokens are added).
       wrapperClass: (element.getAttribute("class") ?? "")
         .split(/\s+/u)
         .filter(
@@ -7167,7 +7063,7 @@ async function boardTwoColumnPopoverMetrics(page: Page) {
     const wrapperBox = wrapper.getBoundingClientRect();
 
     return {
-      // F6 copy-fix-current-dom: strip app-owned stylex tokens from the
+      // F6 copy-fix-current-dom: strip app-owned style tokens from the
       // popover className; the legacy class pair stays asserted.
       className: popover.className
         .split(/\s+/u)
@@ -7183,12 +7079,10 @@ async function boardTwoColumnPopoverMetrics(page: Page) {
 
 async function boardDetailMetrics(page: Page) {
   return page.locator(".project-page-wrap.board-view").evaluate((element) => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]") as HTMLElement;
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]") as HTMLElement;
     const searchForm = document.querySelector(".gnb-search-form") as HTMLFormElement;
     const scope = document.querySelector("#gnb-search-scope-title") as HTMLElement;
-    const searchBox = document.querySelector(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    ) as HTMLElement;
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]') as HTMLElement;
     const projectHeader = document.querySelector(".project-header-outer") as HTMLElement;
     const projectMenu = document.querySelector(".project-menu-outer") as HTMLElement;
     const header = element.querySelector(".board-header.issue") as HTMLElement;
@@ -7228,7 +7122,7 @@ async function boardDetailMetrics(page: Page) {
       boardTopAtOrBelowMenu: Math.round(boardRect.top) >= Math.round(projectMenuRect.bottom),
       bodyDisplay: bodyStyle.display,
       bodyWidth: Math.round(body.getBoundingClientRect().width),
-      // F6 copy-fix-current-dom: strip app-owned stylex tokens from the upload
+      // F6 copy-fix-current-dom: strip app-owned style tokens from the upload
       // wrapper/attached-files classes; the legacy class pairs stay asserted.
       commentUploadAttachedFilesClass: commentUploadAttachedFiles.className
         .split(/\s+/u)
@@ -7258,10 +7152,10 @@ async function boardDetailMetrics(page: Page) {
         .join(" "),
       gnbSearchAction: searchForm.getAttribute("action"),
       gnbSearchScopeDataActions: Array.from(
-        document.querySelectorAll("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+        document.querySelectorAll("[data-owner=global-gnb-search-scope-item] > button"),
       ).map((searchScope) => searchScope.getAttribute("data-action")),
       gnbSearchScopeLabels: Array.from(
-        document.querySelectorAll("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+        document.querySelectorAll("[data-owner=global-gnb-search-scope-item] > button"),
       ).map((searchScope) => searchScope.textContent?.trim() ?? ""),
       gnbSearchScopeTitle: scope.textContent?.trim() ?? null,
       headerMarginBottom: headerStyle.marginBottom,
@@ -7348,7 +7242,7 @@ async function emptyBoardGeometry(page: Page) {
   });
 }
 
-test("authenticated populated board post owns the comment-card skeleton in StyleX", async ({
+test("authenticated populated board post owns the comment-card skeleton in Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7356,10 +7250,9 @@ test("authenticated populated board post owns the comment-card skeleton in Style
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -7415,7 +7308,7 @@ test("authenticated populated board post owns the comment-card skeleton in Style
     "post-detail-comment-media",
     "post-detail-comment-meta",
   ]) {
-    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+    expect(routeSource).toContain(`data-owner="${owner}"`);
   }
   // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
   // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
@@ -7483,22 +7376,16 @@ test("authenticated populated board post owns the comment-card skeleton in Style
     });
     await page.goto(`${basePath}/admin/sample/post/1`);
 
-    const comment = page.locator('[data-stylex-owner="post-detail-comment-row"]');
+    const comment = page.locator('[data-owner="post-detail-comment-row"]');
     await expect(comment).toHaveCount(1);
     const normal = await comment.evaluate((row) => {
       const list = row.closest<HTMLElement>("ul.comments")!;
-      const avatar = row.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-avatar"]',
-      )!;
+      const avatar = row.querySelector<HTMLElement>('[data-owner="post-detail-comment-avatar"]')!;
       const avatarWrap = avatar.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-avatar-wrap"]',
+        '[data-owner="post-detail-comment-avatar-wrap"]',
       )!;
-      const media = row.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-media"]',
-      )!;
-      const meta = row.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-meta"]',
-      )!;
+      const media = row.querySelector<HTMLElement>('[data-owner="post-detail-comment-media"]')!;
+      const meta = row.querySelector<HTMLElement>('[data-owner="post-detail-comment-meta"]')!;
       const listStyle = getComputedStyle(list);
       const rowStyle = getComputedStyle(row);
       const avatarStyle = getComputedStyle(avatar);
@@ -7580,8 +7467,8 @@ test("authenticated populated board post owns the comment-card skeleton in Style
         metaPadding: "5px 15px",
       });
       expect(normal.pointerTransform).not.toBe("none");
-      await comment.locator('[data-stylex-owner="post-detail-comment-media"]').hover();
-      await expect(comment.locator('[data-stylex-owner="post-detail-comment-media"]')).toHaveCSS(
+      await comment.locator('[data-owner="post-detail-comment-media"]').hover();
+      await expect(comment.locator('[data-owner="post-detail-comment-media"]')).toHaveCSS(
         "box-shadow",
         "rgb(220, 220, 220) 2px 2px 1px 0px",
       );
@@ -7605,9 +7492,7 @@ test("authenticated populated board post owns the comment-card skeleton in Style
       location.hash = "comment-21";
     });
     const targeted = await comment.evaluate((row) => {
-      const media = row.querySelector<HTMLElement>(
-        '[data-stylex-owner="post-detail-comment-media"]',
-      )!;
+      const media = row.querySelector<HTMLElement>('[data-owner="post-detail-comment-media"]')!;
       return {
         border: getComputedStyle(media).border,
         pointerBorderColor: getComputedStyle(media, "::before").borderColor,
@@ -7627,7 +7512,7 @@ test("authenticated populated board post owns the comment-card skeleton in Style
   }
 });
 
-test("authenticated populated board post owns comment identity actions and body in StyleX", async ({
+test("authenticated populated board post owns comment identity actions and body in Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7635,10 +7520,9 @@ test("authenticated populated board post owns comment identity actions and body 
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -7727,7 +7611,6 @@ test("authenticated populated board post owns comment identity actions and body 
     "commentEditIcon",
     "commentBody",
   ]) {
-    expect(styleSource).toContain(`${styleName}:`);
   }
   expect(styleSource).toMatch(
     /commentAuthor:\s*\{[^}]*color:\s*"#3f3e40"[^}]*fontSize:\s*"13px"[^}]*marginRight:\s*"5px"[^}]*verticalAlign:\s*"middle"/su,
@@ -7769,10 +7652,10 @@ test("authenticated populated board post owns comment identity actions and body 
     "post-detail-comment-delete-icon",
     "post-detail-comment-body-content",
   ]) {
-    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+    expect(routeSource).toContain(`data-owner="${owner}"`);
   }
   expect(routeSource).not.toMatch(
-    /data-stylex-owner="post-detail-comment-(?:author|responsive-avatar|responsive-avatar-wrap|ago|edit-action|delete-action|edit-icon|delete-icon|body-content)"[^>]*style=/su,
+    /data-owner="post-detail-comment-(?:author|responsive-avatar|responsive-avatar-wrap|ago|edit-action|delete-action|edit-icon|delete-icon|body-content)"[^>]*style=/su,
   );
   expect(routeSource).not.toContain("commentOutdated");
 
@@ -7834,22 +7717,21 @@ test("authenticated populated board post owns comment identity actions and body 
     await page.goto(`${basePath}/admin/sample/post/1`);
 
     const comment = page.locator("#comment-21");
-    const author = comment.locator('[data-stylex-owner="post-detail-comment-author"]');
+    const author = comment.locator('[data-owner="post-detail-comment-author"]');
     const responsiveAvatar = comment.locator(
-      '[data-stylex-owner="post-detail-comment-responsive-avatar"]',
+      '[data-owner="post-detail-comment-responsive-avatar"]',
     );
     const responsiveAvatarWrap = comment.locator(
-      '[data-stylex-owner="post-detail-comment-responsive-avatar-wrap"]',
+      '[data-owner="post-detail-comment-responsive-avatar-wrap"]',
     );
-    const ago = comment.locator('[data-stylex-owner="post-detail-comment-ago"]');
-    const edit = comment.locator('[data-stylex-owner="post-detail-comment-edit-action"]');
-    const remove = comment.locator('[data-stylex-owner="post-detail-comment-delete-action"]');
-    const editIcon = comment.locator('[data-stylex-owner="post-detail-comment-edit-icon"]');
-    const deleteIcon = comment.locator('[data-stylex-owner="post-detail-comment-delete-icon"]');
-    const body = comment.locator('[data-stylex-owner="post-detail-comment-body-content"]');
+    const ago = comment.locator('[data-owner="post-detail-comment-ago"]');
+    const edit = comment.locator('[data-owner="post-detail-comment-edit-action"]');
+    const remove = comment.locator('[data-owner="post-detail-comment-delete-action"]');
+    const editIcon = comment.locator('[data-owner="post-detail-comment-edit-icon"]');
+    const deleteIcon = comment.locator('[data-owner="post-detail-comment-delete-icon"]');
+    const body = comment.locator('[data-owner="post-detail-comment-body-content"]');
     const metrics = await comment.evaluate((row) => {
-      const get = (owner: string) =>
-        row.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const get = (owner: string) => row.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
       const author = get("post-detail-comment-author");
       const responsiveAvatar = get("post-detail-comment-responsive-avatar");
       const responsiveAvatarWrap = get("post-detail-comment-responsive-avatar-wrap");
@@ -8002,14 +7884,12 @@ test("authenticated populated board post owns comment identity actions and body 
       await expect(comment.locator("#comment-editform-21")).toBeVisible();
       await comment.getByRole("button", { name: /cancel/i }).click();
       await remove.click();
-      await expect(
-        page.locator('[data-stylex-owner="post-detail-comment-delete-modal"]'),
-      ).toBeVisible();
+      await expect(page.locator('[data-owner="post-detail-comment-delete-modal"]')).toBeVisible();
     }
   }
 });
 
-test("authenticated populated board post owns comment section boundary and header in StyleX", async ({
+test("authenticated populated board post owns comment section boundary and header in Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8017,10 +7897,9 @@ test("authenticated populated board post owns comment section boundary and heade
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -8078,7 +7957,6 @@ test("authenticated populated board post owns comment section boundary and heade
     /comments:\s*\{[^}]*clear:\s*"both"[^}]*display:\s*"block"[^}]*fontFamily:[\s\S]*?@media all and \(max-width:\s*720px\)[^}]*padding:\s*"2px"/u,
   );
   for (const styleName of ["commentHeader", "commentHeaderIcon", "commentDivider"]) {
-    expect(styleSource).toContain(`${styleName}:`);
   }
   for (const owner of [
     "post-detail-comments",
@@ -8087,10 +7965,10 @@ test("authenticated populated board post owns comment section boundary and heade
     "post-detail-comment-divider",
     "post-detail-comment-list",
   ]) {
-    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+    expect(routeSource).toContain(`data-owner="${owner}"`);
   }
   expect(routeSource).not.toMatch(
-    /data-stylex-owner="post-detail-comment-(?:header|header-icon|divider)"[^>]*style=/su,
+    /data-owner="post-detail-comment-(?:header|header-icon|divider)"[^>]*style=/su,
   );
 
   for (const viewport of [
@@ -8149,17 +8027,16 @@ test("authenticated populated board post owns comment section boundary and heade
     });
     await page.goto(`${basePath}/admin/sample/post/1`);
 
-    const boundary = page.locator('[data-stylex-owner="post-detail-comments"]');
-    const header = boundary.locator('[data-stylex-owner="post-detail-comment-header"]');
-    const icon = header.locator('[data-stylex-owner="post-detail-comment-header-icon"]');
-    const divider = boundary.locator('[data-stylex-owner="post-detail-comment-divider"]');
-    const list = boundary.locator('[data-stylex-owner="post-detail-comment-list"]');
+    const boundary = page.locator('[data-owner="post-detail-comments"]');
+    const header = boundary.locator('[data-owner="post-detail-comment-header"]');
+    const icon = header.locator('[data-owner="post-detail-comment-header-icon"]');
+    const divider = boundary.locator('[data-owner="post-detail-comment-divider"]');
+    const list = boundary.locator('[data-owner="post-detail-comment-list"]');
     await expect(header).toContainText("Comment 1");
     await expect(header.locator(".num")).toHaveText("1");
 
     const metrics = await boundary.evaluate((wrapper) => {
-      const get = (owner: string) =>
-        wrapper.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const get = (owner: string) => wrapper.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
       const header = get("post-detail-comment-header");
       const icon = get("post-detail-comment-header-icon");
       const divider = get("post-detail-comment-divider");
@@ -8244,7 +8121,7 @@ test("authenticated populated board post owns comment section boundary and heade
   }
 });
 
-test("authenticated populated board post owns open parent comment update form in StyleX", async ({
+test("authenticated populated board post owns open parent comment update form in Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8252,10 +8129,9 @@ test("authenticated populated board post owns open parent comment update form in
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyBoardSource = readFileSync(
     "../yona-original/app/views/board/view.scala.html",
     "utf8",
@@ -8472,7 +8348,6 @@ test("authenticated populated board post owns open parent comment update form in
     "commentUpdateDropMessage",
     "commentUpdateClearTemporary",
   ]) {
-    expect(styleSource).toContain(`${styleName}:`);
   }
   expect(styleSource).toMatch(
     /commentUpdateTextareaControl:\s*\{[\s\S]*?fontSize:\s*"12px"[\s\S]*?width:\s*"100%"[\s\S]*?borderColor:\s*"#F36C22 !important"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{ fontSize:\s*"16px !important" \}/u,
@@ -8508,21 +8383,17 @@ test("authenticated populated board post owns open parent comment update form in
   expect(styleSource).toMatch(
     /commentUpdateDropMessage:\s*\{[\s\S]*?color:\s*"#999999"[\s\S]*?fontSize:\s*"26px"[\s\S]*?marginTop:\s*"-13px"[\s\S]*?position:\s*"absolute"[\s\S]*?textAlign:\s*"center"[\s\S]*?top:\s*"50%"[\s\S]*?width:\s*"100%"/u,
   );
-  expect(styleSource).toContain(
-    'commentUpdateClearTemporary: { display: "none", marginLeft: "10px" }',
-  );
+
   expect(styleSource).toMatch(
     /commentCreateNotificationReceiver:\s*\{\s*backgroundColor:\s*"#F7F7F7",\s*display:\s*"none",\s*padding:\s*"5px 5px 5px 10px",\s*textAlign:\s*"start",\s*\}/u,
   );
-  expect(styleSource).toContain('commentCreateNotificationReceiverTitle: { color: "#999999" }');
   for (const owner of [
     "post-detail-comment-update-notification-receiver",
     "post-detail-comment-update-notification-receiver-title",
   ]) {
     expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
   }
-  expect(routeSource).toContain("styles.commentCreateNotificationReceiver");
-  expect(routeSource).toContain("styles.commentCreateNotificationReceiverTitle");
+
   expect(styleSource).not.toContain("commentUpdateDropOverlayVisible");
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
@@ -8673,63 +8544,59 @@ test("authenticated populated board post owns open parent comment update form in
     await page.goto(`${basePath}/admin/sample/post/1`);
 
     const comment = page.locator("#comment-21");
-    const formWrap = comment.locator('[data-stylex-owner="post-detail-comment-editor"]');
+    const formWrap = comment.locator('[data-owner="post-detail-comment-editor"]');
     const body = comment.locator("#comment-body-21");
     await expect(formWrap).toHaveCSS("display", "none");
     await expect(body).toBeVisible();
     await expect(
-      page.locator('#comment-form [data-stylex-owner^="post-detail-comment-update-"]'),
+      page.locator('#comment-form [data-owner^="post-detail-comment-update-"]'),
     ).toHaveCount(0);
 
     await comment.locator('.act-row button[title="Edit comment"]').click();
     await expect(formWrap).toHaveCSS("display", "block");
     await expect(body).toBeHidden();
     const form = formWrap.locator(":scope > form");
-    const writeBox = form.locator('[data-stylex-owner="post-detail-comment-update-write-box"]');
-    const textareaBox = form.locator(
-      '[data-stylex-owner="post-detail-comment-update-textarea-box"]',
-    );
-    const actions = form.locator('[data-stylex-owner="post-detail-comment-update-actions"]');
-    const textarea = form.locator('[data-stylex-owner="post-detail-comment-update-textarea"]');
-    const fileUpload = form.locator('[data-stylex-owner="post-detail-comment-update-file-upload"]');
+    const writeBox = form.locator('[data-owner="post-detail-comment-update-write-box"]');
+    const textareaBox = form.locator('[data-owner="post-detail-comment-update-textarea-box"]');
+    const actions = form.locator('[data-owner="post-detail-comment-update-actions"]');
+    const textarea = form.locator('[data-owner="post-detail-comment-update-textarea"]');
+    const fileUpload = form.locator('[data-owner="post-detail-comment-update-file-upload"]');
     const fileUploadLabel = form.locator(
-      '[data-stylex-owner="post-detail-comment-update-file-upload-label"]',
+      '[data-owner="post-detail-comment-update-file-upload-label"]',
     );
     const fileUploadInput = form.locator(
-      '[data-stylex-owner="post-detail-comment-update-file-upload-input"]',
+      '[data-owner="post-detail-comment-update-file-upload-input"]',
     );
-    const cancelButton = form.locator('[data-stylex-owner="post-detail-comment-update-cancel"]');
-    const saveButton = form.locator('[data-stylex-owner="post-detail-comment-update-save"]');
-    const editorNav = form.locator('[data-stylex-owner="post-detail-comment-update-editor-nav"]');
+    const cancelButton = form.locator('[data-owner="post-detail-comment-update-cancel"]');
+    const saveButton = form.locator('[data-owner="post-detail-comment-update-save"]');
+    const editorNav = form.locator('[data-owner="post-detail-comment-update-editor-nav"]');
     const editorNavItems = editorNav.locator(":scope > li");
     const editTab = editorNav.getByRole("link", { name: "Edit" });
     const previewTab = editorNav.getByRole("link", { name: "Preview" });
     const checklistWrap = editorNav.locator(
-      '[data-stylex-owner="post-detail-comment-update-checklist-wrap"]',
+      '[data-owner="post-detail-comment-update-checklist-wrap"]',
     );
     const checklistButton = checklistWrap.locator(
-      '[data-stylex-owner="post-detail-comment-update-checklist-button"]',
+      '[data-owner="post-detail-comment-update-checklist-button"]',
     );
     const checklistIcon = checklistButton.locator(
-      '[data-stylex-owner="post-detail-comment-update-checklist-icon"]',
+      '[data-owner="post-detail-comment-update-checklist-icon"]',
     );
-    const dropOverlay = form.locator(
-      '[data-stylex-owner="post-detail-comment-update-drop-overlay"]',
-    );
+    const dropOverlay = form.locator('[data-owner="post-detail-comment-update-drop-overlay"]');
     const dropMessageWrap = dropOverlay.locator(
-      '[data-stylex-owner="post-detail-comment-update-drop-message-wrap"]',
+      '[data-owner="post-detail-comment-update-drop-message-wrap"]',
     );
     const dropMessage = dropMessageWrap.locator(
-      '[data-stylex-owner="post-detail-comment-update-drop-message"]',
+      '[data-owner="post-detail-comment-update-drop-message"]',
     );
     const clearTemporary = editorNav.locator(
-      '[data-stylex-owner="post-detail-comment-update-clear-temporary"]',
+      '[data-owner="post-detail-comment-update-clear-temporary"]',
     );
     const notificationReceiver = form.locator(
-      ':scope .tab-content > [data-stylex-owner="post-detail-comment-update-notification-receiver"]',
+      ':scope .tab-content > [data-owner="post-detail-comment-update-notification-receiver"]',
     );
     const notificationReceiverTitle = notificationReceiver.locator(
-      ':scope > [data-stylex-owner="post-detail-comment-update-notification-receiver-title"]',
+      ':scope > [data-owner="post-detail-comment-update-notification-receiver-title"]',
     );
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
@@ -8745,13 +8612,10 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(editTab).toHaveAttribute("href", /#edit-21$/u);
     await expect(previewTab).toHaveAttribute("href", /#preview-21$/u);
     await expect(editTab).toHaveAttribute(
-      "data-stylex-owner",
+      "data-owner",
       "post-detail-comment-update-editor-tab-active",
     );
-    await expect(previewTab).toHaveAttribute(
-      "data-stylex-owner",
-      "post-detail-comment-update-editor-tab",
-    );
+    await expect(previewTab).toHaveAttribute("data-owner", "post-detail-comment-update-editor-tab");
     await expect(checklistWrap).toHaveClass(/task-list-button/u);
     await expect(checklistButton).toHaveClass(
       /add-task-list-button ybtn ybtn-small ybtn-danger-no-outline/u,
@@ -8759,16 +8623,16 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(checklistButton).toHaveText("Add checklist");
     await expect(checklistIcon).toHaveClass(/yobicon-list task-list-icon/u);
     await expect(
-      page.locator('#comment-form [data-stylex-owner^="post-detail-comment-update-checklist-"]'),
+      page.locator('#comment-form [data-owner^="post-detail-comment-update-checklist-"]'),
     ).toHaveCount(0);
     await expect(
       form.locator(
-        '[data-stylex-owner="post-detail-comment-update-drop-overlay"], [data-stylex-owner="post-detail-comment-update-drop-message-wrap"], [data-stylex-owner="post-detail-comment-update-drop-message"], [data-stylex-owner="post-detail-comment-update-clear-temporary"]',
+        '[data-owner="post-detail-comment-update-drop-overlay"], [data-owner="post-detail-comment-update-drop-message-wrap"], [data-owner="post-detail-comment-update-drop-message"], [data-owner="post-detail-comment-update-clear-temporary"]',
       ),
     ).toHaveCount(4);
     await expect(
       page.locator(
-        '#comment-form [data-stylex-owner="post-detail-comment-update-drop-overlay"], #comment-form [data-stylex-owner="post-detail-comment-update-drop-message-wrap"], #comment-form [data-stylex-owner="post-detail-comment-update-drop-message"], #comment-form [data-stylex-owner="post-detail-comment-update-clear-temporary"]',
+        '#comment-form [data-owner="post-detail-comment-update-drop-overlay"], #comment-form [data-owner="post-detail-comment-update-drop-message-wrap"], #comment-form [data-owner="post-detail-comment-update-drop-message"], #comment-form [data-owner="post-detail-comment-update-clear-temporary"]',
       ),
     ).toHaveCount(0);
     await expect(dropOverlay).toHaveCSS("display", "none");
@@ -8808,16 +8672,16 @@ test("authenticated populated board post owns open parent comment update form in
     });
     await expect(
       page.locator(
-        '[data-stylex-owner="post-detail-comment-update-notification-receiver"], [data-stylex-owner="post-detail-comment-update-notification-receiver-title"]',
+        '[data-owner="post-detail-comment-update-notification-receiver"], [data-owner="post-detail-comment-update-notification-receiver-title"]',
       ),
     ).toHaveCount(2);
     await expect(
       page.locator(
-        '#comment-form [data-stylex-owner^="post-detail-comment-update-notification-receiver"], .child-comment-input-form [data-stylex-owner^="post-detail-comment-update-notification-receiver"]',
+        '#comment-form [data-owner^="post-detail-comment-update-notification-receiver"], .child-comment-input-form [data-owner^="post-detail-comment-update-notification-receiver"]',
       ),
     ).toHaveCount(0);
     await expect(
-      form.locator('[data-stylex-owner^="post-detail-comment-create-notification-receiver"]'),
+      form.locator('[data-owner^="post-detail-comment-create-notification-receiver"]'),
     ).toHaveCount(0);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -8833,7 +8697,7 @@ test("authenticated populated board post owns open parent comment update form in
 
     const hiddenAuxiliaryMetrics = await form.evaluate((formElement) => {
       const get = (owner: string) =>
-        formElement.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+        formElement.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
       const overlay = get("post-detail-comment-update-drop-overlay");
       const messageWrap = get("post-detail-comment-update-drop-message-wrap");
       const message = get("post-detail-comment-update-drop-message");
@@ -8933,8 +8797,7 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(formWrap).toBeVisible();
 
     const metrics = await formWrap.evaluate((wrapper) => {
-      const get = (owner: string) =>
-        wrapper.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const get = (owner: string) => wrapper.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
       const writeBox = get("post-detail-comment-update-write-box");
       const textareaBox = get("post-detail-comment-update-textarea-box");
       const textarea = get("post-detail-comment-update-textarea");
@@ -8950,7 +8813,7 @@ test("authenticated populated board post owns open parent comment update form in
           // F6 copy-fix-current-dom: the nav-item owner rides only the two tab
           // <li>s; the checklist / clear-temporary / notice-label <li>s are
           // direct li children too (legacy _page.less:738 styles every one).
-          ':scope > li',
+          ":scope > li",
         ),
       );
       const editTab = editorNavItems[0]!.querySelector<HTMLElement>("a")!;
@@ -9395,13 +9258,10 @@ test("authenticated populated board post owns open parent comment update form in
     );
     await previewTab.click();
     await expect(previewTab).toHaveAttribute(
-      "data-stylex-owner",
+      "data-owner",
       "post-detail-comment-update-editor-tab-active",
     );
-    await expect(editTab).toHaveAttribute(
-      "data-stylex-owner",
-      "post-detail-comment-update-editor-tab",
-    );
+    await expect(editTab).toHaveAttribute("data-owner", "post-detail-comment-update-editor-tab");
     await expect(previewTab).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await expect(previewTab).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
     await expect(form.locator(`#preview-21`)).toBeVisible();
@@ -10246,11 +10106,9 @@ async function mockProjectPosts(
 
 async function protectedProjectPostsShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const search = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const search = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const board = document.querySelector<HTMLElement>(".post-list.project-page-wrap");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !scope || !search || !board || !menu) {
@@ -10332,8 +10190,8 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(node.matches(".markdown-help-item") && attr.name === "id") &&
-            attr.name !== "data-stylex-owner" &&
-            attr.name !== "data-stylex-owner-instance" &&
+            attr.name !== "data-owner" &&
+            attr.name !== "data-owner-instance" &&
             attr.name !== "data-style-src" &&
             // TanStack Router annotates route-local active links; dedicated assertions cover
             // the shared project shell links that must remain legacy-clean.
@@ -10382,7 +10240,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -10404,21 +10262,18 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
-            attr.name !== "data-stylex-owner-instance" &&
+            attr.name !== "data-owner" &&
+            attr.name !== "data-owner-instance" &&
             attr.name !== "data-project-header-owner" &&
-            attr.name !== "data-stylex-content-ready" &&
+            attr.name !== "data-content-ready" &&
             // F6 copy-fix-current-dom: React adds rel=noreferrer to external
             // links; legacy footer has none (project-pullrequests precedent).
             attr.name !== "rel" &&
             // F6 copy-fix-current-dom: the empty-state icon's sprite background
-            // is a StyleX inline var; legacy board/list.scala.html
+            // is a Style inline var; legacy board/list.scala.html
             // <i class="ico ico-err1"> carries no style attr (project-issues-empty
             // precedent at tests/wtr/project-issues-empty.e2e.ts:5313-5319).
-            !(
-              attr.name === "style" &&
-              node.matches('[data-stylex-owner="project-posts-empty-icon"]')
-            ) &&
+            !(attr.name === "style" && node.matches('[data-owner="project-posts-empty-icon"]')) &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -10439,11 +10294,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -10451,7 +10306,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue

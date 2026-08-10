@@ -72,15 +72,24 @@ impl AppRepositoryImpl<'_> {
         };
 
         let open_condition = Condition::all()
-            .add(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
+            .add(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "open",
+            ))))
             .add(issue::Column::ParentId.is_null());
         let closed_condition = Condition::all()
-            .add(issue::Column::State.eq(Some(issue_state_to_raw("closed"))))
+            .add(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "closed",
+            ))))
             .add(issue::Column::ParentId.is_null());
         let assigned_condition = actor_id
             .map(|actor_id| {
                 Condition::all()
-                    .add(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+                    .add(issue::Column::State.eq(Some(issue_state_to_raw(
+                        self.db.get_database_backend(),
+                        state,
+                    ))))
                     .add(assignee::Column::UserId.eq(Some(actor_id)))
                     .add(assignee::Column::ProjectId.eq(Some(project.id)))
             })
@@ -88,7 +97,10 @@ impl AppRepositoryImpl<'_> {
         let authored_condition = actor_id
             .map(|actor_id| {
                 Condition::all()
-                    .add(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+                    .add(issue::Column::State.eq(Some(issue_state_to_raw(
+                        self.db.get_database_backend(),
+                        state,
+                    ))))
                     .add(issue::Column::AuthorId.eq(Some(actor_id)))
             })
             .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
@@ -100,7 +112,10 @@ impl AppRepositoryImpl<'_> {
                     .filter(issue_comment::Column::AuthorId.eq(Some(actor_id)))
                     .into_query();
                 Condition::all()
-                    .add(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+                    .add(issue::Column::State.eq(Some(issue_state_to_raw(
+                        self.db.get_database_backend(),
+                        state,
+                    ))))
                     .add(issue::Column::Id.in_subquery(issue_ids))
             })
             .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
@@ -279,7 +294,6 @@ impl AppRepositoryImpl<'_> {
                 )
                 .await;
         }
-
 
         let backend = self.db.get_database_backend();
         let condition = project_issue_list_condition(project.id, &filter, backend);
@@ -463,6 +477,7 @@ impl AppRepositoryImpl<'_> {
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
             .filter(issue::Column::ParentId.is_null())
             .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
                 filter.state.as_deref().unwrap_or("open"),
             ))))
             .filter(issue::Column::IsDraft.eq(Some(0)));
@@ -676,17 +691,23 @@ impl AppRepositoryImpl<'_> {
 
         let open_issue_count = matches_without_state
             .iter()
-            .filter(|(row, _)| issue_state_from_raw(row.state) == "open")
+            .filter(|(row, _)| {
+                issue_state_from_raw(self.db.get_database_backend(), row.state) == "open"
+            })
             .count() as u32;
         let closed_issue_count = matches_without_state
             .iter()
-            .filter(|(row, _)| issue_state_from_raw(row.state) == "closed")
+            .filter(|(row, _)| {
+                issue_state_from_raw(self.db.get_database_backend(), row.state) == "closed"
+            })
             .count() as u32;
 
         let state = normalize_identity(&filter.state);
         let mut state_matches = matches_without_state
             .into_iter()
-            .filter(|(row, _)| issue_state_from_raw(row.state) == state)
+            .filter(|(row, _)| {
+                issue_state_from_raw(self.db.get_database_backend(), row.state) == state
+            })
             .collect::<Vec<_>>();
         sort_issue_models_for_organization(&mut state_matches, &filter.order_by, &filter.order_dir);
 
@@ -764,14 +785,15 @@ fn project_issue_list_condition(
 
     if let Some(state) = filter.state.as_deref() {
         if !state.trim().is_empty() {
-            condition = condition
-                .add(Expr::col((issue::Entity, issue::Column::State)).eq(issue_state_to_raw(state)));
+            condition = condition.add(
+                Expr::col((issue::Entity, issue::Column::State))
+                    .eq(issue_state_to_raw(backend, state)),
+            );
         }
     }
     if filter.author_id.is_some_and(|author_id| author_id > 0) {
-        condition = condition.add(
-            Expr::col((issue::Entity, issue::Column::AuthorId)).eq(filter.author_id.unwrap()),
-        );
+        condition = condition
+            .add(Expr::col((issue::Entity, issue::Column::AuthorId)).eq(filter.author_id.unwrap()));
     }
     if let Some(login_id) = filter.author_login_id.as_deref() {
         if !login_id.trim().is_empty() {
@@ -784,7 +806,10 @@ fn project_issue_list_condition(
             );
         }
     }
-    if filter.commenter_id.is_some_and(|commenter_id| commenter_id > 0) {
+    if filter
+        .commenter_id
+        .is_some_and(|commenter_id| commenter_id > 0)
+    {
         let mut commenter_sub = Query::select();
         commenter_sub
             .column((issue_comment::Entity, issue_comment::Column::IssueId))
@@ -793,8 +818,8 @@ fn project_issue_list_condition(
                 Expr::col((issue_comment::Entity, issue_comment::Column::AuthorId))
                     .eq(filter.commenter_id.unwrap()),
             );
-        condition = condition
-            .add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(commenter_sub));
+        condition =
+            condition.add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(commenter_sub));
     }
     if let Some(due_date) = filter.due_date {
         let date = due_date.date();
@@ -809,14 +834,13 @@ fn project_issue_list_condition(
             .add(Expr::col((issue::Entity, issue::Column::DueDate)).lt(end));
     }
     if let Some(milestone_id) = filter.milestone_id {
-        condition = condition.add(
-            Expr::col((issue::Entity, issue::Column::MilestoneId)).eq(milestone_id),
-        );
+        condition =
+            condition.add(Expr::col((issue::Entity, issue::Column::MilestoneId)).eq(milestone_id));
     }
     if let Some(assignee_user_id) = filter.assignee_id {
         if assignee_user_id <= 0 {
-            condition = condition
-                .add(Expr::col((issue::Entity, issue::Column::AssigneeId)).is_null());
+            condition =
+                condition.add(Expr::col((issue::Entity, issue::Column::AssigneeId)).is_null());
         } else {
             let mut assignee_sub = Query::select();
             assignee_sub
@@ -825,8 +849,9 @@ fn project_issue_list_condition(
                 .and_where(
                     Expr::col((assignee::Entity, assignee::Column::UserId)).eq(assignee_user_id),
                 );
-            condition = condition
-                .add(Expr::col((issue::Entity, issue::Column::AssigneeId)).in_subquery(assignee_sub));
+            condition = condition.add(
+                Expr::col((issue::Entity, issue::Column::AssigneeId)).in_subquery(assignee_sub),
+            );
         }
     }
     if let Some(assignee_login_id) = filter.assignee_login_id.as_deref() {
@@ -841,23 +866,36 @@ fn project_issue_list_condition(
                         .equals((n4user::Entity, n4user::Column::Id)),
                 )
                 .and_where(
-                    Expr::expr(Func::lower(Expr::col((n4user::Entity, n4user::Column::LoginId))))
-                        .eq(normalize_identity(assignee_login_id)),
+                    Expr::expr(Func::lower(Expr::col((
+                        n4user::Entity,
+                        n4user::Column::LoginId,
+                    ))))
+                    .eq(normalize_identity(assignee_login_id)),
                 );
-            condition = condition
-                .add(Expr::col((issue::Entity, issue::Column::AssigneeId)).in_subquery(assignee_sub));
+            condition = condition.add(
+                Expr::col((issue::Entity, issue::Column::AssigneeId)).in_subquery(assignee_sub),
+            );
         }
     }
     if !filter.label_ids.is_empty() {
         let mut labeled_sub = Query::select();
         labeled_sub
-            .column((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
+            .column((
+                issue_issue_label::Entity,
+                issue_issue_label::Column::IssueId,
+            ))
             .from(issue_issue_label::Entity)
             .and_where(
-                Expr::col((issue_issue_label::Entity, issue_issue_label::Column::IssueLabelId))
-                    .is_in(filter.label_ids.iter().copied()),
+                Expr::col((
+                    issue_issue_label::Entity,
+                    issue_issue_label::Column::IssueLabelId,
+                ))
+                .is_in(filter.label_ids.iter().copied()),
             )
-            .group_by_col((issue_issue_label::Entity, issue_issue_label::Column::IssueId))
+            .group_by_col((
+                issue_issue_label::Entity,
+                issue_issue_label::Column::IssueId,
+            ))
             .and_having(
                 Expr::expr(Func::count_distinct(Expr::col((
                     issue_issue_label::Entity,
@@ -865,8 +903,8 @@ fn project_issue_list_condition(
                 ))))
                 .eq(filter.label_ids.len() as u64),
             );
-        condition = condition
-            .add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(labeled_sub));
+        condition =
+            condition.add(Expr::col((issue::Entity, issue::Column::Id)).in_subquery(labeled_sub));
     }
     if let Some(text_filter) = filter.filter.as_deref() {
         let needle = normalize_identity(text_filter);

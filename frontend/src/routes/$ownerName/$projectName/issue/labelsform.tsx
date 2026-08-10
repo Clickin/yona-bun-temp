@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CountBadge } from "../../../../components/count-badge";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
+import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import {
   Fragment,
   useRef,
   useState,
+  type CSSProperties,
   type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
@@ -26,125 +27,6 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { labelsFormColors, labelsFormDynamicStyles, labelsFormStyles } from "./-labelsform.stylex";
-import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
-
-const styles = stylex.create({
-  copyForm: { margin: "30px auto" },
-  newForm: { margin: "30px auto" },
-  formLegend: { display: "block", marginBottom: "10px" },
-  formWrap: { display: "inline-block", position: "relative", verticalAlign: "top" },
-  input: {
-    borderColor: labelsFormColors.fieldBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: labelsFormColors.mutedText,
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 6px",
-    width: "214px",
-  },
-  inputWithTrailingMargin: { marginRight: "5px" },
-  submitInfo: {
-    backgroundColor: labelsFormColors.actionInfo,
-    borderColor: labelsFormColors.actionBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: labelsFormColors.white,
-    cursor: "pointer",
-    fontSize: "14px",
-    lineHeight: "20px",
-    minWidth: "100px",
-    padding: "4px 12px",
-    textAlign: "center",
-    verticalAlign: "top",
-  },
-  submitPrimary: {
-    backgroundColor: labelsFormColors.actionPrimary,
-    borderColor: labelsFormColors.actionPrimary,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: labelsFormColors.white,
-    cursor: "pointer",
-    fontSize: "14px",
-    lineHeight: "20px",
-    minWidth: "100px",
-    padding: "4px 12px",
-    textAlign: "center",
-    verticalAlign: "top",
-  },
-  confirmActions: { textAlign: "center" },
-  list: { margin: "0 auto" },
-  listHead: {
-    backgroundColor: labelsFormColors.listSurface,
-    borderTopColor: labelsFormColors.border,
-    borderTopStyle: "solid",
-    borderTopWidth: "2px",
-  },
-  listCategory: { verticalAlign: "top" },
-  listCategoryColumn: {
-    paddingRight: "18px",
-    lineHeight: "30px",
-    textAlign: "right",
-  },
-  listNameColumn: { paddingLeft: "8px", lineHeight: "30px" },
-  categoryHeading: {
-    marginRight: "20px",
-    textAlign: "right",
-  },
-  categoryName: { marginRight: "2px" },
-  exclusiveIcon: {
-    color: labelsFormColors.notice,
-    cursor: "help",
-    marginRight: "5px",
-    verticalAlign: "middle",
-  },
-  listTableCell: { borderTopStyle: "none" },
-  listTableLabel: { display: "block", fontSize: "12px", maxWidth: "90%" },
-  listTableRow: { borderBottomColor: labelsFormColors.border, borderBottomStyle: "solid" },
-  listTableRowLast: { borderBottomStyle: "none" },
-  listActions: {
-    borderTopStyle: "none",
-    paddingRight: "1px",
-    textAlign: "right",
-    width: "150px",
-  },
-  editCategoryForm: { marginTop: "20px" },
-  editCategoryFields: { textAlign: "center" },
-  editCategoryActions: { textAlign: "center" },
-  editCategoryName: {
-    display: "block",
-    fontSize: "15px",
-    margin: "20px auto",
-    textAlign: "center",
-    width: "68%",
-  },
-  editLabelForm: { marginTop: "20px" },
-  editLabelFields: { textAlign: "center" },
-  editLabelActions: { textAlign: "center" },
-  editLabelName: { marginBottom: "0", marginLeft: "20px" },
-  editPresetColors: { display: "block", marginTop: "10px" },
-  presetColorButton: {
-    border: "0",
-    borderRadius: "2px",
-    boxShadow: "inset 0px -1px 1px rgba(0, 0, 0, 0.3)",
-    display: "inline-block",
-    height: "24px",
-    lineHeight: "1",
-    marginRight: "1px",
-    marginTop: "0",
-    outline: "none",
-    padding: "1px 12px",
-  },
-  presetColorButtonActive: {
-    boxShadow: "inset 1px 1px 4px rgba(0, 0, 0, 0.25)",
-  },
-});
-
-const inputWithTrailingMarginStyleProps = stylex.props(
-  styles.input,
-  styles.inputWithTrailingMargin,
-);
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -182,6 +64,9 @@ const EDIT_LABEL_COLORS = [
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+const inputWithTrailingMarginStyleProps = {
+  className: "project-labels-form-input-trailing-margin",
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/labelsform")({
@@ -532,10 +417,7 @@ function ProjectLabelsBody({
   return (
     <>
       <div className="page-wrap-outer">
-        <div
-          className="project-page-wrap label-editor-wrap"
-          data-stylex-owner="project-labels-form-page"
-        >
+        <div className="project-page-wrap label-editor-wrap" data-owner="project-labels-form-page">
           <ProjectSettingMenu
             active="labels"
             ownerName={ownerName}
@@ -552,22 +434,11 @@ function ProjectLabelsBody({
                   `/${ownerName}/${projectName}/copyLabels`,
                 )}
                 method="post"
-                {...stylex.props(styles.copyForm)}
-                className={stylex.props(styles.copyForm).className}
-                data-stylex-owner="project-labels-copy-form"
+                data-owner="project-labels-copy-form"
                 onSubmit={onCopy}
               >
-                <strong
-                  {...stylex.props(styles.formLegend)}
-                  className={stylex.props(styles.formLegend).className}
-                  data-stylex-owner="project-labels-copy-legend"
-                >
-                  {t("label.copy.append")}
-                </strong>
-                <div
-                  {...stylex.props(styles.formWrap)}
-                  className={stylex.props(styles.formWrap).className}
-                >
+                <strong data-owner="project-labels-copy-legend">{t("label.copy.append")}</strong>
+                <div className="project-labels-form-wrap">
                   <input
                     type="text"
                     name="owner"
@@ -578,17 +449,11 @@ function ProjectLabelsBody({
                   <input
                     type="text"
                     name="projectName"
-                    {...stylex.props(styles.input)}
-                    className={stylex.props(styles.input).className}
+                    className="project-labels-form-input"
                     placeholder={t("project.name")}
                   />
                 </div>
-                <button
-                  {...stylex.props(styles.submitInfo)}
-                  type="submit"
-                  className={stylex.props(styles.submitInfo).className}
-                  data-stylex-owner="project-labels-copy-submit"
-                >
+                <button type="submit" data-owner="project-labels-copy-submit">
                   {t("label.copy")}
                 </button>
                 <div>{t("label.copy.description")}</div>
@@ -601,32 +466,12 @@ function ProjectLabelsBody({
                   `/${ownerName}/${projectName}/issue/labels`,
                 )}
                 method="post"
-                {...stylex.props(styles.newForm)}
-                className={stylex.props(styles.newForm).className}
-                data-stylex-owner="project-labels-new-form"
+                data-owner="project-labels-new-form"
                 onSubmit={onCreate}
               >
-                <strong
-                  {...stylex.props(styles.formLegend)}
-                  className={stylex.props(styles.formLegend).className}
-                >
-                  {t("label.new")}
-                </strong>
-                <div
-                  {...stylex.props(styles.formWrap)}
-                  className={stylex.props(styles.formWrap).className}
-                >
-                  <div
-                    {...(showCategoryTypeahead
-                      ? stylex.props(labelsFormStyles.typeaheadAnchor)
-                      : undefined)}
-                    className={
-                      showCategoryTypeahead
-                        ? stylex.props(labelsFormStyles.typeaheadAnchor).className
-                        : undefined
-                    }
-                    data-stylex-owner="project-labels-typeahead-anchor"
-                  >
+                <strong className="project-labels-form-legend">{t("label.new")}</strong>
+                <div className="project-labels-form-wrap">
+                  <div data-owner="project-labels-typeahead-anchor">
                     <input
                       type="text"
                       name="category"
@@ -661,37 +506,24 @@ function ProjectLabelsBody({
                       autoComplete="off"
                       placeholder={t("label.name")}
                       onFocus={onNameFocus}
-                      {...(newLabelNameColor
-                        ? stylex.props(
-                            labelsFormDynamicStyles.newLabelBackground(newLabelNameColor),
-                          )
-                        : undefined)}
-                      {...stylex.props(styles.input)}
-                      className={`${stylex.props(styles.input).className} ${newLabelNameColor ? (stylex.props(labelsFormDynamicStyles.newLabelBackground(newLabelNameColor)).className ?? "") : ""}${contrastClass(newLabelNameColor)}`.trim()}
+                      style={newLabelNameColor ? { backgroundColor: newLabelNameColor } : undefined}
+                      className={`project-labels-form-input${contrastClass(newLabelNameColor)}`.trim()}
                     />
                     {showCategoryTypeahead ? (
                       <ul
-                        {...stylex.props(
-                          labelsFormDynamicStyles.typeaheadPosition(
-                            newLabelCategoryInputRef.current
-                              ? `${newLabelCategoryInputRef.current.offsetWidth}px`
-                              : undefined,
-                            newLabelCategoryInputRef.current
-                              ? `${newLabelCategoryInputRef.current.offsetHeight}px`
-                              : undefined,
-                          ),
-                        )}
-                        className={`typeahead dropdown-menu ${stylex.props(
-                          labelsFormDynamicStyles.typeaheadPosition(
-                            newLabelCategoryInputRef.current
-                              ? `${newLabelCategoryInputRef.current.offsetWidth}px`
-                              : undefined,
-                            newLabelCategoryInputRef.current
-                              ? `${newLabelCategoryInputRef.current.offsetHeight}px`
-                              : undefined,
-                          ),
-                        ).className ?? ""}`.trim()}
-                        data-stylex-owner="project-labels-typeahead-menu"
+                        style={{
+                          display: "block",
+                          left: 0,
+                          position: "fixed",
+                          top: newLabelCategoryInputRef.current
+                            ? `calc(${newLabelCategoryInputRef.current.offsetHeight}px - 10px)`
+                            : undefined,
+                          minWidth: newLabelCategoryInputRef.current
+                            ? `${newLabelCategoryInputRef.current.offsetWidth}px`
+                            : undefined,
+                        }}
+                        className="typeahead dropdown-menu"
+                        data-owner="project-labels-typeahead-menu"
                       >
                         {categoryTypeaheadSuggestions.map((suggestion, index) => (
                           <li
@@ -704,8 +536,7 @@ function ProjectLabelsBody({
                           >
                             <button
                               type="button"
-                              {...stylex.props(labelsFormStyles.categorySuggestionButton)}
-                              data-stylex-owner="project-labels-category-suggestion"
+                              data-owner="project-labels-category-suggestion"
                               onClick={() => selectCategoryTypeaheadSuggestion(suggestion.value)}
                             >
                               {suggestion.parts.map((part, partIndex) =>
@@ -726,11 +557,8 @@ function ProjectLabelsBody({
                     ) : null}
                   </div>
                   <div
-                    {...(isNewLabelColorsVisible
-                      ? stylex.props(labelsFormStyles.presetColorsVisible)
-                      : undefined)}
-                    className={`label-preset-colors${isNewLabelColorsVisible ? ` ${stylex.props(labelsFormStyles.presetColorsVisible).className}` : ""}`.trim()}
-                    data-stylex-owner="project-labels-preset-colors"
+                    className={`label-preset-colors${isNewLabelColorsVisible ? " project-labels-preset-colors-visible" : ""}`.trim()}
+                    data-owner="project-labels-preset-colors"
                   >
                     {NEW_LABEL_COLORS.map((color) => (
                       <ColorButton
@@ -743,14 +571,12 @@ function ProjectLabelsBody({
                     <input
                       type="text"
                       name="color"
-                      {...(colorInputStyle(newLabelNameColor)
-                        ? stylex.props(
-                            labelsFormDynamicStyles.colorInputBoxShadow(
-                              colorInputStyle(newLabelNameColor)!,
-                            ),
-                          )
-                        : {})}
-                      className={`input-small input-label-color${colorInputStyle(newLabelNameColor) ? ` ${stylex.props(labelsFormDynamicStyles.colorInputBoxShadow(colorInputStyle(newLabelNameColor)!)).className ?? ""}` : ""}`.trim()}
+                      style={
+                        colorInputStyle(newLabelNameColor)
+                          ? { boxShadow: `inset 0 0 0 2px ${newLabelNameColor}` }
+                          : undefined
+                      }
+                      className={`input-small input-label-color${colorInputStyle(newLabelNameColor) ? " project-labels-custom-color" : ""}`.trim()}
                       placeholder={t("label.customColor")}
                       value={newLabelColor}
                       onBlur={onNewLabelColorBlur}
@@ -765,10 +591,9 @@ function ProjectLabelsBody({
                   </div>
                 </div>
                 <button
-                  {...stylex.props(styles.submitPrimary)}
                   type="submit"
-                  className={stylex.props(styles.submitPrimary).className}
-                  data-stylex-owner="project-labels-new-submit"
+                  className="project-labels-new-submit"
+                  data-owner="project-labels-new-submit"
                 >
                   {t("label.add")}
                 </button>
@@ -776,12 +601,7 @@ function ProjectLabelsBody({
             </>
           ) : null}
 
-          <div
-            {...stylex.props(styles.list)}
-            id="labelsList"
-            className={`${stylex.props(styles.list).className} issue-label-list-wrap`}
-            data-stylex-owner="project-labels-list"
-          >
+          <div id="labelsList" className="issue-label-list-wrap" data-owner="project-labels-list">
             <ProjectLabelsList
               basePath={runtimeConfig.basePath}
               onDeleteLabel={setPendingLabelDeletion}
@@ -903,27 +723,16 @@ function ProjectLabelsList({
   const { t } = useLegacyMessages();
 
   if (labels.length === 0) {
-    const errorWrap = stylex.props(labelsFormStyles.errorWrap);
-    const errorIcon = stylex.props(labelsFormStyles.errorIcon(legacySpriteUrl));
-    const errorMessage = stylex.props(labelsFormStyles.errorMessage);
     return (
-      <div
-        {...errorWrap}
-        className={`${errorWrap.className ?? ""} error-wrap`.trim()}
-        data-stylex-owner="project-labels-empty-error-wrap"
-      >
+      <div className="error-wrap" data-owner="project-labels-empty-error-wrap">
         <i
-          {...errorIcon}
-          className={`${errorIcon.className ?? ""} ico ico-err1`.trim()}
-          data-stylex-owner="project-labels-empty-error-icon"
+          className="ico ico-err1"
+          style={
+            { "--project-labels-empty-error-sprite": `url(${legacySpriteUrl})` } as CSSProperties
+          }
+          data-owner="project-labels-empty-error-icon"
         ></i>
-        <p
-          {...errorMessage}
-          className={`${errorMessage.className ?? ""}`.trim()}
-          data-stylex-owner="project-labels-empty-error-message"
-        >
-          {t("label.list.empty")}
-        </p>
+        <p data-owner="project-labels-empty-error-message">{t("label.list.empty")}</p>
       </div>
     );
   }
@@ -933,51 +742,28 @@ function ProjectLabelsList({
 
   return (
     <>
-      <div
-        {...stylex.props(labelsFormStyles.listHeader)}
-        className={`${stylex.props(labelsFormStyles.listHeader).className} row-fluid list-head`}
-        data-stylex-owner="project-labels-list-head"
-      >
-        <div
-          {...stylex.props(labelsFormStyles.listHeaderCategory)}
-          className={`${stylex.props(labelsFormStyles.listHeaderCategory).className} span3 category`}
-          data-stylex-owner="project-labels-list-category"
-        >
+      <div className="row-fluid list-head" data-owner="project-labels-list-head">
+        <div className="span3 category" data-owner="project-labels-list-category">
           <strong>{t("label.category")}</strong>
         </div>
-        <div
-          {...stylex.props(labelsFormStyles.listHeaderName)}
-          className={`${stylex.props(labelsFormStyles.listHeaderName).className} span9 name`}
-          data-stylex-owner="project-labels-list-name"
-        >
+        <div className="span9 name" data-owner="project-labels-list-name">
           <strong>{t("label.name")}</strong>
         </div>
       </div>
       {categories.map((category) => (
         <div
-          {...stylex.props(styles.listCategory)}
-          className={`${stylex.props(styles.listCategory).className} row-fluid list-item category-wrap`}
-          data-stylex-owner="project-labels-category-list"
+          className="row-fluid list-item category-wrap"
+          data-owner="project-labels-category-list"
           data-category={category.id}
           data-category-name={category.name}
           key={category.id || category.name}
         >
           <div className="span3">
-            <h5
-              {...stylex.props(styles.categoryHeading)}
-              className={`${stylex.props(styles.categoryHeading).className} mr20`}
-              data-stylex-owner="project-labels-category-heading"
-            >
-              <span
-                {...stylex.props(styles.categoryName)}
-                className={`${stylex.props(styles.categoryName).className} category-name`}
-              >
-                {category.name}
-              </span>
+            <h5 className="mr20" data-owner="project-labels-category-heading">
+              <span className="project-labels-category-name category-name">{category.name}</span>
               <p className="mt5">
                 <i
-                  {...stylex.props(styles.exclusiveIcon)}
-                  className={`${stylex.props(styles.exclusiveIcon).className} category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
+                  className={`project-labels-category-exclusive category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
                   data-html="true"
                   title={`${t("label.category.option")}<br>${t(
                     category.isExclusive
@@ -1009,27 +795,20 @@ function ProjectLabelsList({
                   const labelName = stringField(label.name, "");
                   return (
                     <tr
-                      {...stylex.props(
-                        styles.listTableRow,
-                        labelIndex === category.labels.length - 1 && styles.listTableRowLast,
-                      )}
+                      className="project-labels-list-table-row"
                       data-label-id={labelId}
                       key={labelId || labelName}
                     >
-                      <td {...stylex.props(styles.listTableCell)}>
+                      <td className="project-labels-list-table-cell">
                         <span
-                          {...stylex.props(styles.listTableLabel)}
-                          className={`${stylex.props(styles.listTableLabel).className} issue-label active`}
+                          className="project-labels-list-table-label issue-label active"
                           data-label-id={labelId}
                           data-label-name={labelName}
                         >
                           {labelName}
                         </span>
                       </td>
-                      <td
-                        {...stylex.props(styles.listActions)}
-                        className={`${stylex.props(styles.listActions).className} actions`}
-                      >
+                      <td className="project-labels-list-actions actions">
                         {canManageIssueLabels ? (
                           <>
                             <button
@@ -1301,11 +1080,7 @@ function IssueLabelConfirmModal({
             <LegacyDialogText className="msg" text={message} />
             <LegacyDialogText className="desc" text={description} />
           </div>
-          <div
-            {...stylex.props(styles.confirmActions)}
-            className={`${stylex.props(styles.confirmActions).className} center-txt buttons mt20 mb20`}
-            data-stylex-owner="project-labels-confirm-actions"
-          >
+          <div className="center-txt buttons mt20 mb20" data-owner="project-labels-confirm-actions">
             {buttons.map((button) => (
               <button
                 type="button"
@@ -1357,21 +1132,15 @@ function EditCategoryModal({
           </button>
         </div>
         <div
-          {...stylex.props(styles.editCategoryForm)}
-          className={`${stylex.props(styles.editCategoryForm).className} message edit-label-category-form`}
-          data-stylex-owner="project-labels-edit-category-modal"
+          className="message edit-label-category-form"
+          data-owner="project-labels-edit-category-modal"
         >
-          <div
-            {...stylex.props(styles.editCategoryFields)}
-            className={stylex.props(styles.editCategoryFields).className}
-            data-stylex-owner="project-labels-edit-category-fields"
-          >
+          <div data-owner="project-labels-edit-category-fields">
             <input
               key={category ? `category-name-${category.id}` : "category-name-empty"}
               type="text"
               name="name"
-              {...stylex.props(styles.editCategoryName)}
-              className={`${stylex.props(styles.editCategoryName).className} text category-name`}
+              className="project-labels-edit-category-name text category-name"
               placeholder={t("label.category")}
               value={category?.name || undefined}
               onChange={(event) =>
@@ -1489,11 +1258,7 @@ function EditCategoryModal({
             </div>
           </div>
 
-          <div
-            {...stylex.props(styles.editCategoryActions)}
-            className={`${stylex.props(styles.editCategoryActions).className} buttons mt20 mb20`}
-            data-stylex-owner="project-labels-edit-category-actions"
-          >
+          <div className="buttons mt20 mb20" data-owner="project-labels-edit-category-actions">
             <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
               {t("button.save")}
             </button>
@@ -1535,10 +1300,8 @@ function EditLabelModal({
     }
   }
   const categories = Array.from(categoriesById.values());
-  // API-provided preview color is a Dynamic StyleX carrier; literal background declarations stay retired.
-  const labelNameBackground = label?.color
-    ? stylex.props(labelsFormDynamicStyles.labelNameBackground(label.color))
-    : undefined;
+  // API-provided preview color is a Dynamic Style carrier; literal background declarations stay retired.
+  const labelNameColor = label?.color ?? "";
 
   return (
     <>
@@ -1558,16 +1321,8 @@ function EditLabelModal({
             ×
           </button>
         </div>
-        <div
-          {...stylex.props(styles.editLabelForm)}
-          className={`${stylex.props(styles.editLabelForm).className} message edit-label-form`}
-          data-stylex-owner="project-labels-edit-label-modal"
-        >
-          <div
-            {...stylex.props(styles.editLabelFields)}
-            className={stylex.props(styles.editLabelFields).className}
-            data-stylex-owner="project-labels-edit-label-fields"
-          >
+        <div className="message edit-label-form" data-owner="project-labels-edit-label-modal">
+          <div data-owner="project-labels-edit-label-fields">
             <select
               key={label ? `label-category-${label.id}` : "label-category-empty"}
               name="category.id"
@@ -1658,19 +1413,19 @@ function EditLabelModal({
               key={label ? `label-name-${label.id}` : "label-name-empty"}
               type="text"
               name="name"
-              {...stylex.props(styles.editLabelName)}
               maxLength={250}
               placeholder={t("label.name")}
               value={label?.name || undefined}
               onChange={(event) => label && onChange({ ...label, name: event.currentTarget.value })}
-              {...(labelNameBackground ?? {})}
-              className={`${stylex.props(styles.editLabelName).className} text input-label-name ${labelNameBackground?.className ?? ""}`}
+              style={
+                labelNameColor
+                  ? ({ "--project-labels-edit-label-name-bg": labelNameColor } as CSSProperties)
+                  : undefined
+              }
+              className="project-labels-edit-label-name text input-label-name"
             />
 
-            <div
-              {...stylex.props(styles.editPresetColors)}
-              className={`${stylex.props(styles.editPresetColors).className} label-preset-colors edit`}
-            >
+            <div className="project-labels-edit-preset-colors label-preset-colors edit">
               {EDIT_LABEL_COLORS.map((color) => (
                 <ColorButton
                   color={color}
@@ -1689,21 +1444,15 @@ function EditLabelModal({
                 onChange={(event) =>
                   label && onChange({ ...label, color: event.currentTarget.value })
                 }
-                {...(colorInputStyle(label?.color ?? "")
-                  ? stylex.props(
-                      labelsFormDynamicStyles.colorInputBoxShadow(
-                        colorInputStyle(label?.color ?? "")!,
-                      ),
-                    )
-                  : {})}
+                style={
+                  colorInputStyle(label?.color ?? "")
+                    ? { boxShadow: `inset 25px 0 0 ${label?.color ?? ""}` }
+                    : undefined
+                }
               />
             </div>
           </div>
-          <div
-            {...stylex.props(styles.editLabelActions)}
-            className={`${stylex.props(styles.editLabelActions).className} buttons mt20 mb20`}
-            data-stylex-owner="project-labels-edit-label-actions"
-          >
+          <div className="buttons mt20 mb20" data-owner="project-labels-edit-label-actions">
             <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
               {t("button.save")}
             </button>
@@ -1731,15 +1480,12 @@ function ColorButton({
   isActive?: boolean;
   onSelect?: () => void;
 }) {
-  const presetColorStyleProps = stylex.props(labelsFormDynamicStyles.presetColorBackground(color));
-
   return (
     <button
       type="button"
-      {...stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive)}
-      {...presetColorStyleProps}
-      className={`${stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive).className} issue-label btn-preset-color${isActive ? " active" : ""} ${presetColorStyleProps.className ?? ""}`.trim()}
-      data-stylex-owner="project-labels-preset-color"
+      style={{ backgroundColor: color }}
+      className={`issue-label btn-preset-color${isActive ? " active" : ""}`.trim()}
+      data-owner="project-labels-preset-color"
       onClick={onSelect}
     ></button>
   );
@@ -1825,9 +1571,7 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        {...(booleanField(menuSetting.code)
-          ? {}
-          : stylex.props(labelsFormStyles.changeVcsMenuHidden))}
+        {...(booleanField(menuSetting.code) ? {} : { style: { display: "none" } })}
       >
         <Link
           {...LEGACY_LINK_PROPS}

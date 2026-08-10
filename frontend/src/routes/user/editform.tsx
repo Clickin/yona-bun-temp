@@ -1,7 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { uploadTemporaryAttachment } from "../../api/attachments";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
@@ -12,15 +11,7 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
-import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
-import {
-  userSettingsPageColors,
-  userSettingsProfileColors,
-  userSettingsProfileStyles,
-  userSettingsTabColors,
-  userSettingsAvatarStyles,
-} from "./-editform.stylex";
 
 export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
@@ -38,145 +29,6 @@ const legacyEditTabLinkActiveOptions = {
   includeSearch: true,
 } as const;
 const legacyEditTabLinkInactiveSearch = { __legacyEditTabActiveMarker: undefined };
-const styles = stylex.create({
-  breadcrumbOuter: {
-    boxSizing: "border-box",
-    minWidth: { [globalBreakpoints.mobile]: "10px" },
-    padding: "0px 10px",
-    width: "100%",
-  },
-  breadcrumbInner: {
-    margin: "0px auto",
-  },
-  breadcrumbHeading: {
-    color: "inherit",
-    fontFamily: "inherit",
-    fontSize: "24.5px",
-    fontWeight: "700",
-    lineHeight: "30px",
-    margin: "0px",
-    padding: "10px 10px 5px",
-    textRendering: "auto",
-  },
-  editTabs: {
-    backgroundColor: "transparent",
-    borderBottomColor: userSettingsTabColors.border,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    boxSizing: "content-box",
-    color: userSettingsTabColors.rootText,
-    display: "block",
-    fontFamily: "inherit",
-    fontSize: "13px",
-    fontWeight: "400",
-    lineHeight: "20px",
-    listStyle: "none",
-    margin: "20px 0px",
-    padding: "0px",
-    "::before": { content: '""', display: "table", lineHeight: "0px" },
-    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
-  },
-  editTabItem: {
-    backgroundColor: "transparent",
-    borderWidth: "0px",
-    boxSizing: "content-box",
-    color: "inherit",
-    display: "list-item",
-    float: "left",
-    fontFamily: "inherit",
-    fontSize: "13px",
-    fontWeight: "400",
-    lineHeight: "20px",
-    listStyle: "none",
-    margin: "0px 0px -1px",
-    padding: "0px",
-  },
-  editTabLink: {
-    backgroundColor: {
-      default: "transparent",
-      ":hover": userSettingsTabColors.hoverSurface,
-      ":focus": userSettingsTabColors.focusSurface,
-    },
-    borderTopColor: {
-      default: "transparent",
-      ":hover": userSettingsTabColors.hoverBorder,
-      ":focus": userSettingsTabColors.hoverBorder,
-    },
-    borderRightColor: {
-      default: "transparent",
-      ":hover": userSettingsTabColors.hoverBorder,
-      ":focus": userSettingsTabColors.hoverBorder,
-    },
-    borderBottomColor: {
-      default: "transparent",
-      ":hover": userSettingsTabColors.border,
-      ":focus": userSettingsTabColors.border,
-    },
-    borderLeftColor: {
-      default: "transparent",
-      ":hover": userSettingsTabColors.hoverBorder,
-      ":focus": userSettingsTabColors.hoverBorder,
-    },
-    borderRadius: "4px 4px 0px 0px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxSizing: "content-box",
-    color: userSettingsTabColors.linkText,
-    cursor: "pointer",
-    display: "block",
-    fontFamily: "inherit",
-    fontSize: "13px",
-    fontWeight: "700",
-    lineHeight: "20px",
-    margin: "0px 2px 0px 0px",
-    outline: "none",
-    padding: { default: "8px 30px", [globalBreakpoints.mobile]: "8px 5px" },
-    textDecoration: { default: "none", ":hover": "none", ":focus": "none" },
-  },
-  editTabLinkActive: {
-    backgroundColor: {
-      default: userSettingsTabColors.activeSurface,
-      ":hover": userSettingsTabColors.activeSurface,
-      ":focus": userSettingsTabColors.activeSurface,
-    },
-    borderTopColor: {
-      default: userSettingsTabColors.border,
-      ":hover": userSettingsTabColors.border,
-      ":focus": userSettingsTabColors.border,
-    },
-    borderRightColor: {
-      default: userSettingsTabColors.border,
-      ":hover": userSettingsTabColors.border,
-      ":focus": userSettingsTabColors.border,
-    },
-    borderBottomColor: { default: "transparent", ":hover": "transparent", ":focus": "transparent" },
-    borderLeftColor: {
-      default: userSettingsTabColors.border,
-      ":hover": userSettingsTabColors.border,
-      ":focus": userSettingsTabColors.border,
-    },
-    color: userSettingsTabColors.activeText,
-    cursor: "default",
-  },
-  settingsPageOuter: {
-    boxSizing: "border-box",
-    marginTop: "10px",
-    minHeight: "450px",
-    minWidth: { [globalBreakpoints.mobile]: "10px" },
-    padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" },
-    width: "100%",
-  },
-  settingsPage: {
-    backgroundColor: userSettingsPageColors.pageSurface,
-    margin: "0px auto",
-  },
-  profileAction: {
-    color: userSettingsProfileColors.rootText,
-  },
-  avatarCrop: {
-    borderColor: userSettingsProfileColors.divider,
-  },
-});
 
 function UserProfileSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -226,27 +78,15 @@ function UserSettingsNestedLayout({
   return (
     <>
       <UserProfileSettingsTitle loginId={loginId} />
-      <div
-        {...stylex.props(styles.breadcrumbOuter)}
-        data-stylex-owner="user-settings-breadcrumb-outer"
-      >
-        <div
-          {...stylex.props(styles.breadcrumbInner)}
-          data-stylex-owner="user-settings-breadcrumb-inner"
-        >
-          <h3
-            {...stylex.props(styles.breadcrumbHeading)}
-            data-stylex-owner="user-settings-breadcrumb-heading"
-          >
+      <div className="" data-owner="user-settings-breadcrumb-outer">
+        <div className="" data-owner="user-settings-breadcrumb-inner">
+          <h3 data-owner="user-settings-breadcrumb-heading">
             {t(activeTab === "token" ? "userinfo.token" : "userinfo.accountSetting")}
           </h3>
         </div>
       </div>
-      <div
-        {...stylex.props(styles.settingsPageOuter)}
-        data-stylex-owner="user-settings-page-wrap-outer"
-      >
-        <div {...stylex.props(styles.settingsPage)} data-stylex-owner="user-settings-page-wrap">
+      <div className="" data-owner="user-settings-page-wrap-outer">
+        <div className="" data-owner="user-settings-page-wrap">
           <EditTabMenu active={activeTab} />
           {activeTab === "profile" ? (
             <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
@@ -358,24 +198,13 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       avatarMutation.mutate(avatarFile);
     }
   };
-  const avatarProgressHiddenProps = avatarMutation.isPending
-    ? undefined
-    : stylex.props(userSettingsAvatarStyles.hidden);
-  const avatarProgressFullProps = avatarMutation.isPending
-    ? stylex.props(userSettingsAvatarStyles.progressFull)
-    : undefined;
-  const avatarCropVisibleProps = avatarCropModalOpen
-    ? stylex.props(userSettingsAvatarStyles.cropVisible)
-    : undefined;
-
   return (
     <>
       <form
         id="frmBasic"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-        {...stylex.props(userSettingsProfileStyles.form)}
-        data-stylex-owner="user-settings-profile-form"
+        data-owner="user-settings-profile-form"
         onSubmit={(event) => {
           event.preventDefault();
           const form = event.currentTarget;
@@ -389,51 +218,42 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       >
         <dl>
           <dt>{t("user.loginId")}</dt>
-          <dd
-            {...stylex.props(userSettingsProfileStyles.profileFieldRow)}
-            data-stylex-owner="user-settings-profile-login-id-row"
-          >
+          <dd data-owner="user-settings-profile-login-id-row">
             <input
               type="text"
-              className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
-              data-stylex-owner="user-settings-profile-field"
+              className="text"
+              data-owner="user-settings-profile-field"
               value={loginId}
               readOnly
             />
           </dd>
           <dt>{t("user.name")}</dt>
-          <dd
-            {...stylex.props(userSettingsProfileStyles.profileFieldRow)}
-            data-stylex-owner="user-settings-profile-name-row"
-          >
+          <dd data-owner="user-settings-profile-name-row">
             <input
               key={`name-${displayName}`}
               type="text"
               name="name"
-              className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
-              data-stylex-owner="user-settings-profile-field"
+              className="text"
+              data-owner="user-settings-profile-field"
               defaultValue={displayName}
             />
           </dd>
           <dt>{t("user.email")}</dt>
-          <dd
-            {...stylex.props(userSettingsProfileStyles.profileFieldRow)}
-            data-stylex-owner="user-settings-profile-email-row"
-          >
+          <dd data-owner="user-settings-profile-email-row">
             <input
               key={`email-${email}`}
               type="email"
               name="email"
-              className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
-              data-stylex-owner="user-settings-profile-field"
+              className="text"
+              data-owner="user-settings-profile-field"
               defaultValue={email}
             />
           </dd>
           <dd>
             <button
               type="submit"
-              className={`ybtn ybtn-success ${stylex.props(styles.profileAction).className}`}
-              data-stylex-owner="user-settings-profile-action"
+              className="ybtn ybtn-success"
+              data-owner="user-settings-profile-action"
             >
               {t("userinfo.editProfile")}
             </button>
@@ -445,8 +265,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         id="frmAvatar"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-        {...stylex.props(userSettingsAvatarStyles.form)}
-        data-stylex-owner="user-settings-avatar-form"
+        data-owner="user-settings-avatar-form"
         onSubmit={(event) => {
           event.preventDefault();
           if (avatarFile) {
@@ -458,45 +277,31 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <input type="hidden" name="email" value={email} />
 
         <div className="avatar-frm">
-          <div
-            className={`avatar-wrap xlarge ${stylex.props(userSettingsAvatarStyles.wrap).className}`}
-            data-stylex-owner="user-settings-avatar-wrap"
-          >
-            {/* min-width in the colocated StyleX owner preserves the legacy 128px contract against `.avatar-wrap img { width: 100%; }`. */}
+          <div className="avatar-wrap xlarge" data-owner="user-settings-avatar-wrap">
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
-            <img
-              src={avatarUrl || undefined}
-              className={stylex.props(userSettingsAvatarStyles.image).className}
-              data-stylex-owner="user-settings-avatar-image"
-            />
+            <img src={avatarUrl || undefined} data-owner="user-settings-avatar-image" />
           </div>
           <div
-            {...avatarProgressHiddenProps}
-            className={`upload-progress avatar ${stylex.props(userSettingsAvatarStyles.progress).className} ${avatarProgressHiddenProps?.className ?? ""}`.trim()}
-            data-stylex-owner="user-settings-avatar-progress"
+            className={`upload-progress avatar${avatarMutation.isPending ? "" : " hide"}`.trim()}
+            data-owner="user-settings-avatar-progress"
           >
             <div
-              className={`bar orange ${stylex.props(userSettingsAvatarStyles.progressBar).className} ${
-                avatarProgressFullProps?.className ?? ""
-              }`.trim()}
-              data-stylex-owner="user-settings-avatar-progress-bar"
+              className={`bar orange${avatarMutation.isPending ? " is-full" : ""}`.trim()}
+              data-owner="user-settings-avatar-progress-bar"
             ></div>
           </div>
-          <div
-            className={`btn-wrap ${stylex.props(userSettingsAvatarStyles.uploadWrap, userSettingsAvatarStyles.uploadWrapMargin).className}`}
-            data-stylex-owner="user-settings-avatar-upload-wrap"
-          >
+          <div className="btn-wrap" data-owner="user-settings-avatar-upload-wrap">
             <div
-              className={`ybtn ybtn-small fake-file-wrap btnUploadAvatar ${stylex.props(userSettingsAvatarStyles.upload).className}`}
-              data-stylex-owner="user-settings-avatar-upload"
+              className="ybtn ybtn-small fake-file-wrap btnUploadAvatar"
+              data-owner="user-settings-avatar-upload"
             >
               {t("userinfo.changeAvatar")}
               <input
                 key={avatarFileInputKey}
                 id="avatarFile"
                 type="file"
-                className={`file ${stylex.props(userSettingsAvatarStyles.uploadInput).className}`}
-                data-stylex-owner="user-settings-avatar-upload-input"
+                className="file"
+                data-owner="user-settings-avatar-upload-input"
                 name="filePath"
                 accept="image/*"
                 onChange={handleAvatarFileChange}
@@ -506,10 +311,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         </div>
       </form>
 
-      <div
-        className={`reset-user-visited-list ${stylex.props(userSettingsProfileStyles.resetVisited).className}`}
-        data-stylex-owner="user-settings-reset-visited"
-      >
+      <div className="reset-user-visited-list" data-owner="user-settings-reset-visited">
         <hr />
         <form
           method="post"
@@ -526,38 +328,23 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
       <div
         id="avatarCropWrap"
-        data-stylex-owner="user-settings-avatar-crop"
+        data-owner="user-settings-avatar-crop"
         role="dialog"
         data-backdrop="static"
         aria-hidden={
           avatarCropModalHasOpened ? (avatarCropModalOpen ? "false" : "true") : undefined
         }
-        {...avatarCropVisibleProps}
-        className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className} ${avatarCropVisibleProps?.className ?? ""}`.trim()}
+        className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
       >
-        <div
-          className={`modal-header ${stylex.props(userSettingsAvatarStyles.cropHeader).className}`}
-          data-stylex-owner="user-settings-avatar-crop-header"
-        >
-          <div
-            className={`avatar-wrap xlarge ${stylex.props(userSettingsAvatarStyles.wrap).className}`}
-            data-stylex-owner="user-settings-avatar-crop-wrap"
-          >
+        <div className="modal-header" data-owner="user-settings-avatar-crop-header">
+          <div className="avatar-wrap xlarge" data-owner="user-settings-avatar-crop-wrap">
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
-            <img
-              src={avatarPreviewUrl || undefined}
-              className={stylex.props(userSettingsAvatarStyles.image).className}
-              data-stylex-owner="user-settings-avatar-crop-image"
-            />
+            <img src={avatarPreviewUrl || undefined} data-owner="user-settings-avatar-crop-image" />
           </div>
         </div>
         <div className="modal-body">
           {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop preview image without an alt attribute. */}
-          <img
-            src={avatarPreviewUrl || undefined}
-            className={stylex.props(userSettingsAvatarStyles.cropPreview).className}
-            data-stylex-owner="user-settings-avatar-crop-preview"
-          />
+          <img src={avatarPreviewUrl || undefined} data-owner="user-settings-avatar-crop-preview" />
           <canvas width="128" height="128" className="hide"></canvas>
         </div>
         <div className="modal-footer">
@@ -597,23 +384,23 @@ function EditTabMenu({ active }: { active: string }) {
   ] as const;
 
   return (
-    <ul {...stylex.props(styles.editTabs)} data-stylex-owner="user-settings-edit-tabs">
+    <ul className="" data-owner="user-settings-edit-tabs">
       {tabs.map((tab) => {
         const selected = active === tab.key;
         return (
           <li
             key={tab.key}
-            {...stylex.props(styles.editTabItem)}
             data-selected={selected}
-            data-stylex-owner="user-settings-edit-tab-item"
+            className=""
+            data-owner="user-settings-edit-tab-item"
           >
             <Link
-              {...stylex.props(styles.editTabLink, selected && styles.editTabLinkActive)}
               to={tab.to}
               search={legacyEditTabLinkInactiveSearch}
               activeOptions={legacyEditTabLinkActiveOptions}
               activeProps={legacyEditTabLinkActiveProps}
-              data-stylex-owner="user-settings-edit-tab-link"
+              className=""
+              data-owner="user-settings-edit-tab-link"
             >
               {t(tab.message)}
             </Link>

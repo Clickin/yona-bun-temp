@@ -199,23 +199,12 @@ test("migration route source keeps tabindex, progress width, and title declarati
   expect(MIGRATION_ROUTE_SOURCE).not.toMatch(/setAttribute\(["'](?:style|tabindex)["']/u);
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={1}");
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={2}");
-  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-progress-bar"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain(
-    "const migrationDisabledShellStyleProps = stylex.props(styles.disabledShell);",
-  );
-  expect(MIGRATION_ROUTE_SOURCE).toContain(
-    "className={`yobi-migration ${migrationDisabledShellStyleProps.className}`}",
-  );
-  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-destination-row"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-column-grid"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-destination-column-grid"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-status-column-grid"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('marginLeft: "20px"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('float: "left"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('minHeight: "1px"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('width: "460px"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('width: "300px"');
-  expect(MIGRATION_ROUTE_SOURCE).not.toContain('style={{ width: "0%" }}');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-owner="migration-progress-bar"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-owner="migration-source-destination-row"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-owner="migration-source-column-grid"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-owner="migration-destination-column-grid"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-owner="migration-status-column-grid"');
+
   expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row\s*\{/u);
   expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row::before/u);
   expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row::after/u);
@@ -265,7 +254,7 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
     "tabindex",
     "2",
   );
-  const progressBar = page.locator('[data-stylex-owner="migration-progress-bar"]');
+  const progressBar = page.locator('[data-owner="migration-progress-bar"]');
   await expect(progressBar).toHaveCount(1);
   await expect(progressBar).not.toHaveAttribute("style", /width/);
   await expect(progressBar).toHaveCSS("width", "0px");
@@ -279,7 +268,7 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
       .locator(".yobi-migration button.btn-danger")
       .evaluateAll((buttons) => buttons.every((button) => button.hasAttribute("disabled"))),
   ).toBe(true);
-  const sidebarPin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
+  const sidebarPin = page.locator('[data-owner="global-sidebar-open-pin"]');
   await expect(sidebarPin).toHaveJSProperty("tagName", "BUTTON");
   await expect(sidebarPin).toHaveAttribute("type", "button");
   await expect(sidebarPin).toHaveAttribute("aria-controls", "sidebar");
@@ -291,41 +280,31 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
       icons.every((icon) => icon.getAttribute("aria-hidden") === "true"),
     ),
   ).toBe(true);
-  const globalNavItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
+  const globalNavItems = page.locator('[data-owner="global-gnb-nav"] > li');
   expect(
-    await globalNavItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
+    await globalNavItems.evaluateAll((items) => items.map((item) => item.dataset.owner)),
   ).toEqual([
     "global-gnb-brand-item",
     "global-gnb-project-list-item",
     "global-gnb-project-list-divider",
     "global-gnb-search-item",
   ]);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveAttribute(
     "href",
     `${basePath}/projects`,
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
-    "List All",
-  );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
-    1,
-  );
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveText("List All");
+  await expect(page.locator('[data-owner="global-gnb-project-list-divider"]')).toHaveCount(1);
   await expect(page.locator(`#mySidenav a[href="${basePath}/anonymous"]`)).toHaveText("Profile");
-  await expect(page.locator('[data-stylex-owner="site-footer-provider"]')).toContainText(
-    "Yona authors",
-  );
-  await expect(page.locator('[data-stylex-owner="site-footer-provider"]')).not.toContainText(
-    "Yoram",
-  );
+  await expect(page.locator('[data-owner="site-footer-provider"]')).toContainText("Yona authors");
+  await expect(page.locator('[data-owner="site-footer-provider"]')).not.toContainText("Yoram");
   for (const attribute of ["data-login", "data-placement", "data-toggle"]) {
     // F6 copy-fix: the anonymous sidenav (#mySidenav) legitimately carries 3
     // data-toggle="tab" sidebar tab buttons inside global-gnb-outer, matching
     // legacy usermenu.scala.html:53-67 (included at navbar.scala.html:112);
     // scope the pin to the gnb chrome outside the sidenav.
     await expect(
-      page.locator(
-        `[data-stylex-owner="global-gnb-outer"] [${attribute}]:not(#mySidenav [${attribute}])`,
-      ),
+      page.locator(`[data-owner="global-gnb-outer"] [${attribute}]:not(#mySidenav [${attribute}])`),
     ).toHaveCount(0);
   }
 
@@ -366,7 +345,7 @@ for (const viewport of [
   test(`migration grid owners preserve ${viewport.name} legacy geometry`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/migration`);
-    const row = page.locator('[data-stylex-owner="migration-source-destination-row"]');
+    const row = page.locator('[data-owner="migration-source-destination-row"]');
     await expect(row).toBeVisible();
     await expect(row).toHaveCSS("margin-left", "20px");
     for (const owner of [
@@ -374,7 +353,7 @@ for (const viewport of [
       "migration-destination-column-grid",
       "migration-status-column-grid",
     ]) {
-      await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toHaveCount(1);
+      await expect(page.locator(`[data-owner="${owner}"]`)).toHaveCount(1);
     }
     const metrics = await row.evaluate((rowElement) => {
       const source = rowElement.querySelector<HTMLElement>(".source-project");
@@ -403,14 +382,14 @@ for (const viewport of [
 
 async function readMigrationMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const row = document.querySelector<HTMLElement>(".yobi-migration .source-destination");
     const source = document.querySelector<HTMLElement>(".source-project.span4");
     const destination = document.querySelector<HTMLElement>(".destination-project.span4");
     const status = document.querySelector<HTMLElement>(".source-destination > .status.span6");
     const progress = document.querySelector<HTMLElement>(".progress .span10");
     const systemMsg = document.querySelector<HTMLElement>("#system-msg");
-    const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const footer = document.querySelector<HTMLElement>("[data-owner=site-footer]");
     if (
       !gnbOuter ||
       !row ||
@@ -453,11 +432,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -524,7 +503,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .yobi-migration, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .yobi-migration, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");

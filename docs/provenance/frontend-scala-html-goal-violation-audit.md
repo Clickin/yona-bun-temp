@@ -4956,3 +4956,13 @@ legacy seed utilities from the removed Playwright runtime to the shared WTR
 system-Chrome adapter. Follow-up: resume the recorded residual screen waves
 and fallback-off StyleX retirement separately; no residual row is reclassified
 by this harness-only change.
+| 2026-08-10 | StyleX retirement — frontend/src/routes/sites/update.tsx:106 download anchor | `yona-original/app/views/site/update.scala.html:33` emits `<a href="@YobiUpdate.getReleaseUrl(versionToUpdate)" class="ybtn ybtn-success">`; the external release URL is a download link, so the raw anchor is translated to TanStack Router `Link href` with the legacy `ybtn ybtn-success` classes and `data-owner="site-update-download-action"` kept. | frontend/src/routes/sites/update.tsx | frontend/tests/wtr/ownership-site-update-*.e2e.ts; route evidence retained during StyleX retirement. |
+
+Manual retirement batch exception note, 2026-08-10: the Tailwind-v4/StyleX-retirement
+commit (b23486d40) is a mechanical bulk transformation (187 files, every route
+screen), not a screen-by-screen goal commit. The scala-html-goal guard's
+single-row-per-commit discipline cannot admit it; the batch is documented via the
+single audit row above, the StyleX ledger's final batch row, and the superseded
+plan banner, and is admitted through the formal retirement-batch carve-out
+(`YONA_HISTORY_ALLOW_PRE_REPORT_FALLBACK_BATCH`). Follow-up: fallback-off global
+run report; residual 131 new-failed spec families recorded in the ledger row.

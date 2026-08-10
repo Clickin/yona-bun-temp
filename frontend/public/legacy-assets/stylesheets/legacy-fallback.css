@@ -25109,9 +25109,4 @@ img.mfp-img {
     }
 }
 
-/* Wave 0 nonvisual precedence probe; both layers preserve display: contents. */
-#main [data-stylex-root-boundary] {
-  --yoram-stylex-root-boundary: legacy;
-  display: contents;
-}
 }

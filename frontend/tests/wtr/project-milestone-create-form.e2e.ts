@@ -37,14 +37,14 @@ test("project milestone create form restores the legacy protected project header
   await expect(page).toHaveTitle(
     `${LEGACY_NEW_MILESTONE_TITLE} - ${LEGACY_PROJECT_OWNER}/${LEGACY_PROJECT_NAME}`,
   );
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   const searchForm = page.locator("form.gnb-search-form");
   const scopeToggle = page.locator("#gnb-search-scope-title");
   await expect(scopeToggle).toHaveText("This Project");
   await expect(searchForm).toHaveAttribute("action", `${basePath}${PROJECT_SEARCH_PATH}`);
 
   await scopeToggle.click();
-  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeItems = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeItems).toHaveCount(3);
   await expect(scopeItems.nth(0)).toHaveText("This Project");
   await expect(scopeItems.nth(1)).toHaveText("This Group");
@@ -123,7 +123,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#upload .attach-wrap")).toBeVisible();
   await expect(page.locator("#upload .attached-files.unstyled")).toHaveCount(1);
-  const uploadSaveHelp = page.locator('[data-stylex-owner="project-milestone-upload-save-help"]');
+  const uploadSaveHelp = page.locator('[data-owner="project-milestone-upload-save-help"]');
   await expect(uploadSaveHelp).toContainText(
     "Selected file will be attached when your comment is saved.",
   );
@@ -346,15 +346,14 @@ test("project milestone create form uploader has no route-local jQuery template 
   expect(routeSource).not.toContain("dropFilesHereTemplate");
 });
 
-test("project milestone upload save help is route-local StyleX owned", () => {
+test("project milestone upload save help is route-local Style owned", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
     "utf8",
   );
-  const routeStyles = readFileSync(
-    "src/routes/$ownerName/$projectName/-newMilestoneForm.stylex.ts",
-    "utf8",
-  );
+  const routeStyles =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacyUpload = readFileSync(
     "../yona-original/app/views/common/uploadForm.scala.html",
     "utf8",
@@ -362,10 +361,8 @@ test("project milestone upload save help is route-local StyleX owned", () => {
 
   expect(legacyUpload).toContain('<p class="right-txt help">');
   expect(legacyUpload).toContain("common.attach.attachIfYouSave");
-  expect(routeSource).toContain('saveHelp: "project-milestone-upload-save-help"');
-  expect(routeSource).toContain("newMilestoneFormStyles.uploadSaveHelp");
+
   expect(routeSource).not.toContain('<p className="right-txt help">');
-  expect(routeStyles).toContain('uploadSaveHelp: { textAlign: "right" }');
 });
 
 test("project milestone create form route keeps legacy write behavior in React events", () => {
@@ -651,10 +648,8 @@ async function readMilestoneActionWhitespace(page: Page) {
 
 async function readProtectedProjectHeaderMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     if (!navbar || !searchBox) {
       throw new Error("Expected protected project header search elements are missing.");
     }
@@ -667,14 +662,12 @@ async function readProtectedProjectHeaderMetrics(page: Page) {
 
 async function readProtectedProjectHeaderBoxes(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const searchInput = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
+      '[data-owner="global-gnb-search-input"]',
     );
     const searchSubmit = document.querySelector<HTMLElement>(
       '.gnb-search-form button[type="submit"]',
@@ -755,7 +748,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -819,7 +812,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)

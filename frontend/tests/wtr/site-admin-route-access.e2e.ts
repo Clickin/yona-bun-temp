@@ -39,8 +39,8 @@ test("anonymous direct site-management URL preserves its URL and renders the leg
   await page.goto(`${basePath}/sites/userList`);
 
   await expect(page).toHaveURL(`${basePath}/sites/userList`);
-  await expect(page.locator('[data-stylex-owner="site-user-list-page-wrap-outer"]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="site-user-list-title-heading"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-page-wrap-outer"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-title-heading"]')).toHaveCount(0);
   await expect(page.locator(".error-wrap .ico.ico-err2")).toBeVisible();
   await expect(page.locator(".error-wrap p")).toHaveText(
     "You are not authorized to access this page or not logged in.",
@@ -62,8 +62,8 @@ test("non-admin direct site-management URL preserves its URL and renders the leg
   await page.goto(`${basePath}/sites/userList`);
 
   await expect(page).toHaveURL(`${basePath}/sites/userList`);
-  await expect(page.locator('[data-stylex-owner="site-user-list-page-wrap-outer"]')).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="site-user-list-title-heading"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-page-wrap-outer"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-title-heading"]')).toHaveCount(0);
   await expect(page.locator(".error-wrap .ico.ico-err2")).toBeVisible();
   await expect(page.locator(".error-wrap p")).toHaveText(
     "You are not authorized to access this page or not logged in.",
@@ -83,11 +83,9 @@ test("site admin can open the legacy users management content", async ({ page })
   await page.goto(`${basePath}/sites/userList`);
 
   await expect(page).toHaveURL(`${basePath}/sites/userList`);
-  await expect(page.locator('[data-stylex-owner="site-user-list-page-wrap-outer"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-user-list-title-heading"]')).toHaveText(
-    "Users",
-  );
-  await expect(page.locator('[data-stylex-owner="site-user-list-sidebar-nav"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-user-list-page-wrap-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-user-list-title-heading"]')).toHaveText("Users");
+  await expect(page.locator('[data-owner="site-user-list-sidebar-nav"]')).toBeVisible();
 });
 
 async function mockSiteAccess(

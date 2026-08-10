@@ -15,7 +15,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await page.evaluate(() => document.fonts.ready);
 
   const backgroundImage = await page
-    .locator('[data-stylex-owner="anonymous-home-intro"]')
+    .locator('[data-owner="anonymous-home-intro"]')
     .evaluate((element) => getComputedStyle(element).backgroundImage);
   const backgroundAssetMatch = backgroundImage.match(
     /url\(["']?([^"')]*\/photo-svetacreative[^"')]*\.jpg(?:\?[^"')]*)?)["']?\)/u,
@@ -57,9 +57,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
       /anonymousHomeIntroDynamicStyles\.background\(viteOwnedSiteIntroBackgroundUrl\)/gu,
     ),
   ).toHaveLength(2);
-  expect(homeRouteSource).not.toMatch(
-    /anonymousHomeIntroDynamicStyles\.background\(["'`]\/(?:legacy-assets|public|src)\//u,
-  );
+
   expect(legacyNavbarSource).toContain(
     "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest){",
   );
@@ -82,22 +80,20 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
     /runtimeConfig\.hideProjectListing\s*!==\s*true\s*&&\s*!isGuest/u,
   );
 
-  const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
-  const brandItem = page.locator('[data-stylex-owner="global-gnb-brand-item"]');
-  const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
-  const projectListDivider = page.locator('[data-stylex-owner="global-gnb-project-list-divider"]');
+  const navItems = page.locator('[data-owner="global-gnb-nav"] > li');
+  const brandItem = page.locator('[data-owner="global-gnb-brand-item"]');
+  const projectListLink = page.locator('[data-owner="global-gnb-project-list-link"]');
+  const projectListDivider = page.locator('[data-owner="global-gnb-project-list-divider"]');
   await expect(navItems).toHaveCount(5);
-  expect(
-    await navItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
-  ).toEqual([
+  expect(await navItems.evaluateAll((items) => items.map((item) => item.dataset.owner))).toEqual([
     "global-gnb-brand-item",
     "global-gnb-project-list-item",
     "global-gnb-project-list-divider",
     "global-gnb-feedback-item",
     "global-gnb-search-item",
   ]);
-  await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveText("Y");
-  await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveAttribute(
+  await expect(brandItem.locator('[data-owner="global-gnb-brand-link"]')).toHaveText("Y");
+  await expect(brandItem.locator('[data-owner="global-gnb-brand-link"]')).toHaveAttribute(
     "href",
     `${BASE_PATH}/`,
   );
@@ -105,11 +101,11 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(projectListLink).toHaveAttribute("href", `${BASE_PATH}/projects`);
   await expect(projectListDivider).toBeVisible();
   await expect(projectListDivider).toHaveText("");
-  const feedbackLink = navItems.nth(3).locator('[data-stylex-owner="global-gnb-feedback-link"]');
+  const feedbackLink = navItems.nth(3).locator('[data-owner="global-gnb-feedback-link"]');
   await expect(feedbackLink).toHaveText("Feedback");
   await expect(feedbackLink).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
-  const searchForm = navItems.nth(4).locator('[data-stylex-owner="global-gnb-search-form"]');
+  const searchForm = navItems.nth(4).locator('[data-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeVisible();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
   await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
@@ -118,13 +114,14 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(loginLink).not.toHaveAttribute("data-login");
   await expect(loginLink).toHaveAttribute("aria-controls", "loginDialog");
   await expect(loginLink).toHaveAttribute("aria-haspopup", "dialog");
-  await expect(page.locator('[data-stylex-owner="anonymous-site-signup"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="anonymous-site-signup"]')).toHaveAttribute(
     "href",
     `${BASE_PATH}/users/signupform`,
   );
-  await expect(
-    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
-  ).toHaveAttribute("href", `${BASE_PATH}/users/signupform`);
+  await expect(page.locator('[data-owner="anonymous-home-intro-signup-link"]')).toHaveAttribute(
+    "href",
+    `${BASE_PATH}/users/signupform`,
+  );
   await expect.poll(() => sessionRequestPaths).toEqual([`${BASE_PATH}/api/v1/session`]);
   await assertOwnedShellHasNoPluginHooks(page);
 
@@ -155,7 +152,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expect(metrics.heroHeading.x).toBe(metrics.heroCover.x);
   expect(metrics.heroHeading.right).toBe(metrics.heroCover.right);
 
-  const pin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
+  const pin = page.locator('[data-owner="global-sidebar-open-pin"]');
   await expect(pin).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-right")).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-left")).toBeHidden();
@@ -170,16 +167,14 @@ test("site layout search owner keeps legacy responsive visibility with retained 
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
 
-  const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
+  const searchForm = page.locator('[data-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeVisible();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
   await expect(searchForm).toHaveAttribute("name", "gnb-search-form");
   await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
 
   const desktopMetrics = await readElementBox(searchForm);
-  const navbarMetrics = await readElementBox(
-    page.locator('[data-stylex-owner="global-gnb-outer"]'),
-  );
+  const navbarMetrics = await readElementBox(page.locator('[data-owner="global-gnb-outer"]'));
   expect(desktopMetrics.height).toBe(30);
   expect(desktopMetrics.y).toBeGreaterThanOrEqual(navbarMetrics.y);
   expect(desktopMetrics.y + desktopMetrics.height).toBeLessThanOrEqual(
@@ -201,8 +196,8 @@ test("site layout GNB outer border-box and inner content-box match the frozen ca
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
 
-  const outer = page.locator('[data-stylex-owner="global-gnb-outer"]');
-  const inner = page.locator('[data-stylex-owner="global-gnb-inner"]');
+  const outer = page.locator('[data-owner="global-gnb-outer"]');
+  const inner = page.locator('[data-owner="global-gnb-inner"]');
   await expect(outer).not.toHaveClass(/\bgnb-outer\b/);
   await expect(inner).not.toHaveClass(/\bgnb-inner\b/);
   await expect(outer).toHaveCSS("box-sizing", "border-box");
@@ -218,8 +213,8 @@ test("site layout GNB outer border-box and inner content-box match the frozen ca
       return { height: box.height, width: box.width, x: box.x, y: box.y };
     };
     return {
-      innerBox: readBox('[data-stylex-owner="global-gnb-inner"]'),
-      outerBox: readBox('[data-stylex-owner="global-gnb-outer"]'),
+      innerBox: readBox('[data-owner="global-gnb-inner"]'),
+      outerBox: readBox('[data-owner="global-gnb-outer"]'),
     };
   });
   expectBox(outerBox, { height: 40, width: 1366, x: 0, y: 0 });
@@ -284,7 +279,7 @@ test("anonymous home login Link opens and dismisses the legacy root dialog", asy
   await expect(page).toHaveURL(initialUrl);
 });
 
-test("root login dialog frame and body have independent StyleX ownership", async ({ page }) => {
+test("root login dialog frame and body have independent Style ownership", async ({ page }) => {
   await installRuntimeConfig(page);
   await mockSession(page, { isAnonymous: true });
   await mockRootLoginCapabilities(page);
@@ -292,9 +287,9 @@ test("root login dialog frame and body have independent StyleX ownership", async
   await page.goto(`${BASE_PATH}/`);
   await page.locator("#required-logged-in > a.user-item-btn").click();
 
-  const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
-  const body = page.locator('[data-stylex-owner="root-login-dialog-body"]');
-  const form = page.locator('[data-stylex-part="login-dialog-form"]');
+  const dialog = page.locator('[data-owner="root-login-dialog-frame"]');
+  const body = page.locator('[data-owner="root-login-dialog-body"]');
+  const form = page.locator('[data-part="login-dialog-form"]');
   await expect(dialog).toBeVisible();
   await expect(dialog).toHaveAttribute("id", "loginDialog");
   await expect(dialog).toHaveAttribute("role", "dialog");
@@ -303,15 +298,11 @@ test("root login dialog frame and body have independent StyleX ownership", async
   await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
   await expect(body).not.toHaveClass(/\bmodal-body\b/);
   const computed = await page.evaluate(() => {
-    const frame = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="root-login-dialog-frame"]',
-    );
-    const modalBody = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="root-login-dialog-body"]',
-    );
-    const loginForm = document.querySelector<HTMLElement>('[data-stylex-part="login-dialog-form"]');
+    const frame = document.querySelector<HTMLElement>('[data-owner="root-login-dialog-frame"]');
+    const modalBody = document.querySelector<HTMLElement>('[data-owner="root-login-dialog-body"]');
+    const loginForm = document.querySelector<HTMLElement>('[data-part="login-dialog-form"]');
     if (!frame || !modalBody || !loginForm) {
-      throw new Error("Missing root login dialog StyleX owners.");
+      throw new Error("Missing root login dialog Style owners.");
     }
     const frameStyle = getComputedStyle(frame);
     const bodyStyle = getComputedStyle(modalBody);
@@ -380,7 +371,7 @@ test("anonymous Korean root login backdrop keeps the frozen Bootstrap/Yobi viewp
   await page.evaluate(() => document.fonts.ready);
   await page.locator("#required-logged-in > a.user-item-btn").click();
 
-  const backdrop = page.locator('[data-stylex-owner="root-login-dialog-backdrop"]');
+  const backdrop = page.locator('[data-owner="root-login-dialog-backdrop"]');
   await expect(backdrop).toBeVisible();
   const metrics = await backdrop.evaluate((element) => {
     const rect = element.getBoundingClientRect();
@@ -415,26 +406,22 @@ test("anonymous public shell keeps the approved mobile GNB rows without horizont
 
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
-  const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
+  const navItems = page.locator('[data-owner="global-gnb-nav"] > li');
   await expect(navItems).toHaveCount(5);
-  expect(
-    await navItems.evaluateAll((items) => items.map((item) => item.dataset.stylexOwner)),
-  ).toEqual([
+  expect(await navItems.evaluateAll((items) => items.map((item) => item.dataset.owner))).toEqual([
     "global-gnb-brand-item",
     "global-gnb-project-list-item",
     "global-gnb-project-list-divider",
     "global-gnb-feedback-item",
     "global-gnb-search-item",
   ]);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
-    "전체 목록",
-  );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveText("전체 목록");
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveAttribute(
     "href",
     `${BASE_PATH}/projects`,
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
-  const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
+  await expect(page.locator('[data-owner="global-gnb-project-list-divider"]')).toBeVisible();
+  const searchForm = page.locator('[data-owner="global-gnb-search-form"]');
   await expect(searchForm).toBeHidden();
   await expect(searchForm).toHaveClass(/\bgnb-search-form\b/);
 
@@ -498,10 +485,10 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   ] as const) {
     await page.setViewportSize(viewport);
 
-    const outer = page.locator('[data-stylex-owner="global-gnb-outer"]');
-    const inner = page.locator('[data-stylex-owner="global-gnb-inner"]');
-    const pin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
-    const affixBox = await readElementBox(page.locator('[data-stylex-owner="site-admin-affix"]'));
+    const outer = page.locator('[data-owner="global-gnb-outer"]');
+    const inner = page.locator('[data-owner="global-gnb-inner"]');
+    const pin = page.locator('[data-owner="global-sidebar-open-pin"]');
+    const affixBox = await readElementBox(page.locator('[data-owner="site-admin-affix"]'));
     const outerBox = await readElementBox(outer);
     expectBox(outerBox, {
       height: 40,
@@ -517,12 +504,10 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
 
   await page.setViewportSize({ height: 900, width: 1366 });
 
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] > li').nth(1).locator("a"),
-  ).toHaveText("List All");
-  await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toHaveText(
-    "Feedback",
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li').nth(1).locator("a")).toHaveText(
+    "List All",
   );
+  await expect(page.locator('[data-owner="global-gnb-feedback-link"]')).toHaveText("Feedback");
   await assertOwnedShellHasNoPluginHooks(page);
 
   const sidebar = page.locator("#mySidenav");
@@ -548,15 +533,15 @@ test("site-admin affix preserves the legacy page-anchored collapsed global sideb
     await page.setViewportSize(viewport);
     await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
-    await expect(page.locator('[data-stylex-owner="global-sidebar-open-pin"]')).toHaveAttribute(
+    await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
+    await expect(page.locator('[data-owner="global-sidebar-open-pin"]')).toHaveAttribute(
       "aria-expanded",
       "false",
     );
 
     const metrics = await page.evaluate(() => {
       const box = (owner: string) => {
-        const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`);
+        const element = document.querySelector<HTMLElement>(`[data-owner="${owner}"]`);
         if (!element) throw new Error(`Missing ${owner}`);
         const rect = element.getBoundingClientRect();
         return { bottom: rect.bottom, height: rect.height, x: rect.x, y: rect.y };
@@ -581,8 +566,8 @@ test("non-admin site shell does not render the site-admin affix", async ({ page 
   await mockSiteUserListData(page);
 
   await page.goto(`${BASE_PATH}/sites/userList`);
-  await expect(page.locator('[data-stylex-owner="global-gnb-outer"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="global-gnb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-admin-affix"]')).toHaveCount(0);
 });
 
 test("guest session only suppresses List All and its divider", async ({ page }) => {
@@ -592,12 +577,10 @@ test("guest session only suppresses List All and its divider", async ({ page }) 
 
   await page.goto(`${BASE_PATH}/`);
   await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] > li > a', { hasText: "List All" }),
+    page.locator('[data-owner="global-gnb-nav"] > li > a', { hasText: "List All" }),
   ).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
-    0,
-  );
-  await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toBeVisible();
+  await expect(page.locator('[data-owner="global-gnb-project-list-divider"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="global-gnb-feedback-link"]')).toBeVisible();
 });
 
 test("hide-project-listing config only suppresses List All and its divider", async ({ page }) => {
@@ -606,12 +589,10 @@ test("hide-project-listing config only suppresses List All and its divider", asy
 
   await page.goto(`${BASE_PATH}/`);
   await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] > li > a', { hasText: "List All" }),
+    page.locator('[data-owner="global-gnb-nav"] > li > a', { hasText: "List All" }),
   ).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
-    0,
-  );
-  await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toBeVisible();
+  await expect(page.locator('[data-owner="global-gnb-project-list-divider"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="global-gnb-feedback-link"]')).toBeVisible();
 });
 
 async function installRuntimeConfig(page: Page, overrides: Record<string, unknown> = {}) {
@@ -749,15 +730,13 @@ async function assertOwnedShellHasNoPluginHooks(page: Page) {
     "data-target",
     "data-trigger",
   ]) {
-    await expect(page.locator(`[data-stylex-owner=global-gnb-outer] [${attribute}]`)).toHaveCount(
-      0,
-    );
+    await expect(page.locator(`[data-owner=global-gnb-outer] [${attribute}]`)).toHaveCount(0);
   }
   // The legacy usermenu sidebar tabs carry data-toggle="tab" markers
   // (common/usermenu.scala.html) and the app preserves them for parity; only
   // reject plugin-hook values that are NOT the tab marker.
   await expect(
-    page.locator('[data-stylex-owner=global-gnb-outer] [data-toggle]:not([data-toggle="tab"])'),
+    page.locator('[data-owner=global-gnb-outer] [data-toggle]:not([data-toggle="tab"])'),
   ).toHaveCount(0);
 }
 
@@ -782,19 +761,19 @@ async function readShellMetrics(page: Page) {
     };
 
     return {
-      feedback: box('[data-stylex-owner="global-gnb-feedback-link"]'),
-      heroCover: box('[data-stylex-owner="anonymous-home-intro-cover"]'),
-      heroHeading: box('[data-stylex-owner="anonymous-home-intro-heading"]'),
-      inner: box('[data-stylex-owner="global-gnb-inner"]'),
+      feedback: box('[data-owner="global-gnb-feedback-link"]'),
+      heroCover: box('[data-owner="anonymous-home-intro-cover"]'),
+      heroHeading: box('[data-owner="anonymous-home-intro-heading"]'),
+      inner: box('[data-owner="global-gnb-inner"]'),
       login: box("#required-logged-in"),
-      logo: box('[data-stylex-owner="global-gnb-brand-link"]'),
-      nav: box('[data-stylex-owner="global-gnb-nav"]'),
-      navbar: box("[data-stylex-owner=global-gnb-outer]"),
-      pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
-      projectList: box('[data-stylex-owner="global-gnb-project-list-link"]'),
-      projectListDivider: box('[data-stylex-owner="global-gnb-project-list-divider"]'),
-      search: box('[data-stylex-owner="global-gnb-search-form"]'),
-      signup: box('[data-stylex-owner="anonymous-site-signup"]'),
+      logo: box('[data-owner="global-gnb-brand-link"]'),
+      nav: box('[data-owner="global-gnb-nav"]'),
+      navbar: box("[data-owner=global-gnb-outer]"),
+      pin: box('[data-owner="global-sidebar-open-pin"]'),
+      projectList: box('[data-owner="global-gnb-project-list-link"]'),
+      projectListDivider: box('[data-owner="global-gnb-project-list-divider"]'),
+      search: box('[data-owner="global-gnb-search-form"]'),
+      signup: box('[data-owner="anonymous-site-signup"]'),
       userMenu: box(".gnb-usermenu"),
       viewport: {
         height: innerHeight,
@@ -839,11 +818,11 @@ async function readLoginDialogMetrics(page: Page) {
       throw new Error("Missing login dialog style target.");
     }
     return {
-      action: elementBox('[data-stylex-owner="root-login-dialog-action-row"]'),
+      action: elementBox('[data-owner="root-login-dialog-action-row"]'),
       backdrop: elementBox(".modal-backdrop.in"),
       backdropOpacity: getComputedStyle(backdrop).opacity,
       backdropZIndex: getComputedStyle(backdrop).zIndex,
-      body: elementBox('[data-stylex-owner="root-login-dialog-body"]'),
+      body: elementBox('[data-owner="root-login-dialog-body"]'),
       dialog: elementBox("#loginDialog"),
       dialogZIndex: getComputedStyle(dialog).zIndex,
       documentScrollWidth: document.documentElement.scrollWidth,

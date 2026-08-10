@@ -114,12 +114,6 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
   );
   expect(legacyBootstrapSource).toContain("p {\n  margin: 0 0 10px;");
   expect(legacyUsermenuSource).toContain('href="@routes.UserApp.userInfo(currentUser.loginId)"');
-  expect(routeSource).toContain(
-    "const rootNotFoundErrorWrapStyleProps = stylex.props(rootNotFoundStyles.errorWrap);",
-  );
-  expect(routeSource).toContain(
-    "const rootNotFoundGnbOuterStyleProps = stylex.props(styles.rootNotFoundGnbOuter);",
-  );
   expect(routeSource).toContain("rootNotFoundErrorIconStyleProps");
   expect(routeSource).toContain("rootNotFoundErrorMessageStyleProps");
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim();");

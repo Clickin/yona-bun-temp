@@ -26,7 +26,7 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
     "Reset password for Yoram",
   );
   await expect(routeRoot.locator(":scope > .reset-password .highlight")).toHaveText("Yoram");
-  await expect(routeRoot.locator('[data-stylex-part="reset-password-title-highlight"]')).toHaveCSS(
+  await expect(routeRoot.locator('[data-part="reset-password-title-highlight"]')).toHaveCSS(
     "color",
     "rgb(255, 115, 50)",
   );
@@ -100,15 +100,12 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
   expectBox(desktop.submit, { height: 30, width: 400, x: 440, y: 348 });
   expect(desktop.password.right).toBeLessThanOrEqual(desktop.form.right);
   expect(desktop.submit.right).toBe(desktop.form.right);
-  await expect(routeRoot.locator('[data-stylex-part="reset-password-title"]')).toHaveCSS(
-    "margin",
-    "0px",
-  );
-  await expect(routeRoot.locator('[data-stylex-part="reset-password-copy"]')).toHaveCSS(
+  await expect(routeRoot.locator('[data-part="reset-password-title"]')).toHaveCSS("margin", "0px");
+  await expect(routeRoot.locator('[data-part="reset-password-copy"]')).toHaveCSS(
     "margin-bottom",
     "0px",
   );
-  await expect(routeRoot.locator('[data-stylex-part="reset-password-password"]')).toHaveCSS(
+  await expect(routeRoot.locator('[data-part="reset-password-password"]')).toHaveCSS(
     "box-sizing",
     "content-box",
   );
@@ -451,14 +448,14 @@ async function readResetPasswordMetrics(page: Page) {
 
 async function expectValidationPopovers(page: Page, messages: string[]) {
   const popovers = page.locator(
-    'form[name="passwordReset"] [data-stylex-part="reset-password-validation-popover-content"]',
+    'form[name="passwordReset"] [data-part="reset-password-validation-popover-content"]',
   );
   await expect(popovers).toHaveText(messages);
 }
 
 async function readPopoverBoxes(page: Page) {
   return page
-    .locator('form[name="passwordReset"] [data-stylex-owner="reset-password-validation-popover"]')
+    .locator('form[name="passwordReset"] [data-owner="reset-password-validation-popover"]')
     .evaluateAll((popovers) =>
       popovers.map((popover) => {
         const box = popover.getBoundingClientRect();

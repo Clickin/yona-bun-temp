@@ -11,14 +11,10 @@
     font-style: normal;
   }
 
-  /* F7 app-fix: the generated legacy fallback (which carried the yobicon glyph
-   * rules from yona-original/public/stylesheets/yobicon/style.css) is not linked
-   * in canonical fallback-off dists, so yobicon icons rendered with zero width
-   * (no ::before content). Port the base icon rule + lock glyph so the
-   * project-private badge paints (style.css:15-16 base, :4177-4179 lock). */
-  [data-yobicon],
-  [class^="yobicon-"],
-  [class*=" yobicon-"] {
+  /* The legacy fallback (always linked) carries the yobicon glyph rules from
+   * yona-original/public/stylesheets/yobicon/style.css; this file only keeps
+   * the font face plus the attribute-based icon utility for data-yobicon. */
+  [data-yobicon] {
     font-family: "yobicon";
     font-style: normal;
     font-variant: normal;
@@ -34,10 +30,6 @@
 
   [data-yobicon]:before {
     content: attr(data-yobicon);
-  }
-
-  .yobicon-lock:before {
-    content: "\e21e";
   }
 }
 

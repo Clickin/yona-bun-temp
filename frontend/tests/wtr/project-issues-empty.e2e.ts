@@ -5,10 +5,12 @@ const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
   "utf8",
 );
-const PROJECT_ISSUES_STYLE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/-issues.stylex.ts", import.meta.url),
-  "utf8",
-);
+const PROJECT_ISSUES_STYLE_SOURCE =
+  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
+  readFileSync(
+    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+    "utf8",
+  );
 const PROJECT_ISSUES_APP_CSS_SOURCE = readFileSync(
   new URL("../src/app.css", import.meta.url),
   "utf8",
@@ -350,15 +352,12 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const issuePostItemClassName = [");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("currentIssueRowHoverStyle");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    "{...(currentIssueRowHoverStyle\n        ? stylex.props(styles.issueRowHoverBackground",
-  );
+
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("params={issueParams}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="comments"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="vote"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("to={childLabelRoutePath(String(label.id))}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.massUpdateOptionButton");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("stylex.props(styles.massUpdateOptionButton)");
+
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="btn dropdown-toggle medium"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-format="user"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-format="milestone"');
@@ -600,7 +599,7 @@ test("protected org-owned project issue list exposes legacy group search scope a
 
   await page.goto(`${basePath}/weblabs/portal/issues`);
   await expect(page).toHaveTitle("portal - Issue - weblabs/portal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -608,11 +607,11 @@ test("protected org-owned project issue list exposes legacy group search scope a
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/u);
   const scopeButtons = page.locator(
-    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+    '[data-owner=global-gnb-search-scope-item] > button[type="button"]',
   );
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
@@ -662,10 +661,10 @@ test("protected org-owned project issue list exposes legacy group search scope a
   await expect(row.locator(".item-count-groups")).toHaveCount(0);
   await expect(page.locator(".issue-label")).toHaveCount(0);
   await expect(
-    // copy-fix-current-dom: export wrapper is React-owned with StyleX float
-    // (stylex-project-issues-action-floats pins NOT pull-left); legacy
+    // copy-fix-current-dom: export wrapper is React-owned with Style float
+    // (style-project-issues-action-floats pins NOT pull-left); legacy
     // `.pull-left a.ybtn.small` selector retired, match the owner instead
-    page.locator('[data-stylex-owner="project-issues-excel-download"] a.ybtn.small'),
+    page.locator('[data-owner="project-issues-excel-download"] a.ybtn.small'),
   ).toHaveAttribute("href", `${basePath}/weblabs/portal/issues?format=xls`);
   await expect(page.getByRole("button", { name: "Keyboard shortcuts" })).toBeVisible();
 });
@@ -679,9 +678,9 @@ test("protected org-owned project issue list keeps legacy gnb and issue-row geom
   await page.goto(`${basePath}/weblabs/portal/issues`);
   await expect(page.locator("#issue-item-2")).toBeVisible();
   const boxes = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const searchForm = document.querySelector(".gnb-search-form");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     const issueRow = document.querySelector("#issue-item-2");
     const issueTitle = document.querySelector("#issue-item-2 .title-wrap");
     const issueMeta = document.querySelector("#issue-item-2 .infos");
@@ -759,11 +758,7 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   expect(await issueListAssetSources(page, basePath)).toEqual([]);
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    "{...(keymapOpen ? stylex.props(issueListKeymapStyles.visible) : undefined)}",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.twoColumnPopover");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.showSubtasksPopover");
+
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="popover top"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE.split("}, 100);").length - 1).toBeGreaterThanOrEqual(4);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="popover"');
@@ -800,6 +795,10 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     newIssueAboveTabs: true,
     tabBeforeEmptyState: true,
     emptyIconBeforeText: true,
+    searchFormMarginBottom: "2px",
+    searchDividerBorderTop: "1px solid rgb(238, 238, 238)",
+    searchDividerMargin: "20px 0px",
+    searchStartsBelowDivider: true,
     searchBarBorder: "1px solid rgb(204, 204, 204)",
     searchBarBorderRadius: "3px",
     searchBarHeight: "20px",
@@ -811,11 +810,9 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     page.locator('.issue-list-wrap #span10 > .pull-left a[href="#helpKeys"]'),
   ).toHaveCount(0);
   // copy-fix-current-dom: legacy help/keymap.scala.html wraps the trigger in
-  // `.pull-left`; the React keymap is owner-marked with StyleX float
-  // (stylex-project-issues-keymap), match the owner instead
-  const keymapButton = page.locator(
-    '[data-stylex-owner="project-issues-keymap"] > button[type="button"]',
-  );
+  // `.pull-left`; the React keymap is owner-marked with Style float
+  // (style-project-issues-keymap), match the owner instead
+  const keymapButton = page.locator('[data-owner="project-issues-keymap"] > button[type="button"]');
   await expect(keymapButton).toHaveText("Keyboard shortcuts");
   await expect(keymapButton).toHaveClass("ybtn ybtn-inverse ybtn-mini");
   await expect(keymapButton).not.toHaveAttribute("data-toggle", "modal");
@@ -849,10 +846,11 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/u);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/u);
-  // React-owned visibility: the app renders `in` + a stylex display class
+  // React-owned visibility: the app renders `in` + a style display class
   // instead of legacy jQuery's inline style="display:block" — pin the computed
   // style (F6 copy-fix-current-dom).
   await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
+  await expect(page.locator("#helpKeys")).toBeFocused();
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   expect(page.url()).toBe(beforeUrl);
   expect(
@@ -991,13 +989,11 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
 
-  const advancedSearch = page.locator('[data-stylex-owner="project-issues-search-advanced"]');
+  const advancedSearch = page.locator('[data-owner="project-issues-search-advanced"]');
   await expect(advancedSearch).toHaveCount(1);
   await expect(advancedSearch).toHaveCSS("margin-top", "10px");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="project-issues-search-advanced"',
-  );
-  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain('searchAdvanced: { marginTop: "10px" }');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-search-advanced"');
+
   expect(PROJECT_ISSUES_APP_CSS_SOURCE).not.toContain(
     ".issue-list-page .left-menu .srch-advanced {",
   );
@@ -1008,11 +1004,11 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain("margin-top:10px;");
 
   const labelsWrap = page.locator(".labels-wrap");
-  const labelsOwner = page.locator('[data-stylex-owner="project-issues-labels-wrap"]');
+  const labelsOwner = page.locator('[data-owner="project-issues-labels-wrap"]');
   await expect(labelsOwner).toHaveCount(1);
   await expect(labelsOwner).toHaveCSS("position", "relative");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-stylex-owner="project-issues-labels-wrap"');
-  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain('labelsWrap: { position: "relative" }');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-labels-wrap"');
+
   expect(PROJECT_ISSUES_APP_CSS_SOURCE).not.toContain(".issue-list-page .left-menu .labels-wrap {");
   expect(LEGACY_ISSUE_SEARCH_SOURCE).toContain('<div class="labels-wrap">');
   expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain(".labels-wrap {");
@@ -1249,8 +1245,8 @@ test("project issue list search form renders selected milestone status like lega
   await expect(status.locator(".due-date")).toHaveClass("due-date");
   await expect(status.locator(".due-date strong")).toHaveText("Jul 5, 2026");
   await expect(status.locator(".due-date .date")).toHaveText("(4 days left)");
-  // copy-fix-current-dom: the bar's width is owned by Dynamic StyleX
-  // (stylex-project-issues-progress-inline-residual pins progressBar() and no
+  // copy-fix-current-dom: the bar's width is owned by Dynamic Style
+  // (style-project-issues-progress-inline-residual pins progressBar() and no
   // inline width); legacy partial_status.scala.html:46 inline style attr is
   // retired — pin the computed width instead
   // F5 dist-truth: measured 50% of the 375.312px progress track at the
@@ -1260,9 +1256,9 @@ test("project issue list search form renders selected milestone status like lega
     "187.656px",
   );
   // copy-fix-current-dom: legacy .pull-right wrapper is React-owned with
-  // StyleX float (milestoneProgressCount), match the owner instead
+  // Style float (milestoneProgressCount), match the owner instead
   await expect(
-    status.locator('[data-stylex-owner="project-issues-milestone-progress-count"] strong'),
+    status.locator('[data-owner="project-issues-milestone-progress-count"] strong'),
   ).toHaveText("1 / 2");
   await expect(page.locator("#advanced-search-form .milestone-info + hr")).toHaveCount(1);
 });
@@ -1383,6 +1379,40 @@ test("project issue advanced search prefers legacy current-user options and subm
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-advanced-search-submit");
+});
+
+test("advanced-search Select2 displays activate native controls and retain prior filters", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&state=closed`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+
+  for (const id of ["authorId", "assigneeId", "milestoneId"]) {
+    await page.locator(`#s2id_${id}`).click();
+    await expect(page.locator(`#${id}`)).toBeFocused();
+  }
+
+  const authorValue = await page.locator("#authorId option").nth(2).getAttribute("value");
+  expect(authorValue).not.toBeNull();
+  await page.locator("#authorId").selectOption(authorValue!);
+  await expect.poll(() => new URL(page.url()).searchParams.get("authorId")).toBe(authorValue);
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("bug");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
+  await expect(page.locator("#s2id_authorId .select2-chosen")).toHaveText("Dev Member");
+
+  const assigneeValue = await page.locator("#assigneeId option").nth(2).getAttribute("value");
+  expect(assigneeValue).not.toBeNull();
+  await page.locator("#assigneeId").selectOption(assigneeValue!);
+  await expect.poll(() => new URL(page.url()).searchParams.get("assigneeId")).toBe(assigneeValue);
+  await expect.poll(() => new URL(page.url()).searchParams.get("authorId")).toBe(authorValue);
+  await expect(page.locator("#s2id_assigneeId .select2-chosen")).toHaveText("Assigned");
+
+  await page.locator("#milestoneId").selectOption("-1");
+  await expect.poll(() => new URL(page.url()).searchParams.get("milestoneId")).toBe("-1");
+  await expect.poll(() => new URL(page.url()).searchParams.get("assigneeId")).toBe(assigneeValue);
+  await expect(page.locator("#s2id_milestoneId .select2-chosen")).toHaveText("No milestone");
 });
 
 test("populated project issue list matches legacy partial_list.scala.html DOM", async ({
@@ -1545,11 +1575,11 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
 
-  const listAllLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  const listAllLink = page.locator('[data-owner="global-gnb-project-list-link"]');
   await expect(listAllLink).toHaveText("List All");
   await expect(listAllLink).toHaveAttribute("href", `${basePath}/projects`);
 
-  const feedbackLink = page.locator('[data-stylex-owner="global-gnb-nav"] a[target="_blank"]', {
+  const feedbackLink = page.locator('[data-owner="global-gnb-nav"] a[target="_blank"]', {
     hasText: "Feedback",
   });
   await expect(feedbackLink).toHaveAttribute(
@@ -1557,9 +1587,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
     "https://github.com/yona-projects/yona/issues",
   );
 
-  const searchScopeButtons = page.locator(
-    "[data-stylex-owner=global-gnb-search-scope-item] > button",
-  );
+  const searchScopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(searchScopeButtons).toHaveCount(2);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -1570,7 +1598,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator('[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]', {
+    .locator('[data-owner=global-gnb-search-scope-item] > button[type="button"]', {
       hasText: "All Projects",
     })
     .click();
@@ -1579,7 +1607,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator('[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]', {
+    .locator('[data-owner=global-gnb-search-scope-item] > button[type="button"]', {
       hasText: "This Project",
     })
     .click();
@@ -1606,7 +1634,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await expect(page.locator(".project-menu-gruop > li.active .menu-name")).toHaveText("Issue");
   const shellBoxes = await page.evaluate(() => {
-    const gnb = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const gnb = document.querySelector("[data-owner=global-gnb-outer]");
     const header = document.querySelector(".project-header-outer");
     const menu = document.querySelector(".project-menu-outer");
     const pageWrap = document.querySelector(".page-wrap-outer");
@@ -1994,11 +2022,11 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug&state=open&pageNum=1`);
   await expect(
-    // copy-fix-current-dom: export wrapper is React-owned with StyleX float
-    // (stylex-project-issues-action-floats pins NOT pull-left); legacy
+    // copy-fix-current-dom: export wrapper is React-owned with Style float
+    // (style-project-issues-action-floats pins NOT pull-left); legacy
     // `.pull-left a.ybtn.small` selector retired, match the owner instead
     page.locator(
-      '[data-stylex-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
+      '[data-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
     ),
   ).toHaveAttribute("href", `${basePath}/admin/sample/issues?filter=bug&state=open&format=xls`);
 
@@ -2008,7 +2036,7 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
 
   await expect(
     page.locator(
-      '[data-stylex-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
+      '[data-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
     ),
   ).toHaveAttribute(
     "href",
@@ -2329,11 +2357,12 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
     };
   });
 
-  await page.goto(`${basePath}/admin/sample/issues?filter=bulk&pageNum=3`);
+  await page.goto(
+    `${basePath}/admin/sample/issues?assigneeId=1&authorId=2&commenterId=3&dueDate=2026-07-02&filter=bulk&labelIds=8&labelIds=9&milestoneId=5&pageNum=3&state=closed`,
+  );
   await expect(page.locator(".filter-wrap .filters")).toBeVisible();
-  // copy-fix-current-dom: app sort filters are onClick-driven buttons without
-  // legacy orderBy/data attributes; identify by index (filters: dueDate,
-  // updatedDate, createdDate, numOfComments) and by active/arrow classes
+  // The app translates the legacy order anchors into React-owned buttons while
+  // retaining the order attributes used to expose direction.
   const filters = page.locator('.filter-wrap .filters button.filter[type="button"]');
   const dueDateFilter = filters.nth(0);
   const updatedFilter = filters.nth(1);
@@ -2345,6 +2374,8 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
   await expect(updatedFilter).toHaveAttribute("type", "button");
   await expect(updatedFilter).toHaveClass("filter active");
   await expect(updatedFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
+  await expect(updatedFilter).toHaveCSS("color", "rgb(243, 108, 34)");
+  await expect(updatedFilter).toHaveCSS("font-weight", "700");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-sort-filter";
   });
@@ -2355,9 +2386,27 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
   await expect.poll(() => new URL(page.url()).searchParams.get("orderDir") ?? "").toBe("desc");
   await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bulk");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  const retainedSearch = new URL(page.url()).searchParams;
+  expect(Object.fromEntries(retainedSearch.entries())).toMatchObject({
+    assigneeId: "1",
+    authorId: "2",
+    commenterId: "3",
+    dueDate: "2026-07-02",
+    filter: "bulk",
+    milestoneId: "5",
+    state: "closed",
+  });
+  expect(retainedSearch.getAll("labelIds")).toEqual(["8", "9"]);
   await expect(dueDateFilter).toHaveClass("filter active");
   await expect(dueDateFilter).toHaveAttribute("type", "button");
   await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
+  await expect(dueDateFilter).toHaveCSS("color", "rgb(243, 108, 34)");
+  await expect(dueDateFilter).toHaveCSS("font-weight", "700");
+  await expect(updatedFilter).toHaveCSS("color", "rgb(102, 102, 102)");
+  await expect(updatedFilter).toHaveCSS("font-weight", "400");
+  await dueDateFilter.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("orderDir")).toBe("asc");
+  await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow");
   await expect(updatedFilter).toHaveClass("filter");
   await expect(updatedFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   expect(
@@ -2564,12 +2613,12 @@ test("project issue list open due date shows legacy relative until text", async 
   );
 });
 
-test("project issue due-date clock owns legacy mr3 spacing with route StyleX", async ({ page }) => {
+test("project issue due-date clock owns legacy mr3 spacing with route Style", async ({ page }) => {
   expect(LEGACY_ISSUE_LIST_SOURCE).toContain('<i class="yobicon-clock2 mr3 vmiddle"></i>');
   expect(LEGACY_COMMON_LESS_SOURCE).toContain(".mr3 { margin-right:3px; }");
-  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain('dueDateIcon: { marginRight: "3px" }');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-stylex-owner="project-issues-due-date-icon"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.dueDateIcon");
+
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-due-date-icon"');
+
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobicon-clock2 mr3 vmiddle");
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -2580,7 +2629,7 @@ test("project issue due-date clock owns legacy mr3 spacing with route StyleX", a
   const desktop = await page.locator("#issue-item-42").evaluate((row) => {
     const dueDate = row.querySelector(".mr20.mt10.overdue") as HTMLElement;
     const icon = dueDate.querySelector(
-      '[data-stylex-owner="project-issues-due-date-icon"]',
+      '[data-owner="project-issues-due-date-icon"]',
     ) as HTMLElement;
     const label = dueDate.querySelector("span.vmiddle") as HTMLElement;
     const dueDateBox = dueDate.getBoundingClientRect();
@@ -2612,7 +2661,7 @@ test("project issue due-date clock owns legacy mr3 spacing with route StyleX", a
   const mobile = await page.locator("#issue-item-42").evaluate((row) => {
     const dueDate = row.querySelector(".mr20.mt10.overdue") as HTMLElement;
     const icon = dueDate.querySelector(
-      '[data-stylex-owner="project-issues-due-date-icon"]',
+      '[data-owner="project-issues-due-date-icon"]',
     ) as HTMLElement;
     const iconBox = icon.getBoundingClientRect();
     return {
@@ -2794,6 +2843,8 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
     "asc",
   );
 
+  await expect(page.locator(".check-all > label[for='check-all'] > #check-all")).toHaveCount(1);
+  await expect(page.locator(".check-all > label")).toHaveCount(1);
   expect(await issueListMassUpdateMetrics(page)).toEqual({
     formPosition: "relative",
     groupDisplay: "inline-block",
@@ -3037,7 +3088,7 @@ test("project issue list mass update dropdown opens through route-local React st
   await expect(page.locator("#mass-update-form .btn.dropdown-toggle.medium")).toHaveCount(5);
   await expect(page.locator("#mass-update-form button[data-toggle='dropdown']")).toHaveCount(0);
   await expect(
-    page.locator("[data-stylex-owner=global-gnb-outer] button[data-toggle='dropdown']"),
+    page.locator("[data-owner=global-gnb-outer] button[data-toggle='dropdown']"),
   ).toHaveCount(0);
   await expect(page.locator("#state > button")).toHaveClass(/btn dropdown-toggle medium/u);
   await expect(page.locator("#state > button")).not.toHaveAttribute("data-toggle", "dropdown");
@@ -3342,8 +3393,8 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
 
   await page.locator("#issue-item-42 .infos").click();
   await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
-  // copy-fix-current-dom: reveal is conditional StyleX display (no inline
-  // style; stylex-project-issues-child-list pins childIssueListVisible)
+  // copy-fix-current-dom: reveal is conditional Style display (no inline
+  // style; style-project-issues-child-list pins childIssueListVisible)
   await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveCSS("display", "block");
 });
 
@@ -3384,8 +3435,8 @@ test("project issue show-subtasks toggle follows legacy yona.showSubtask localSt
   await toggle.click();
   await expect(toggle).toBeChecked();
   await expect(childList).toBeVisible();
-  // copy-fix-current-dom: reveal is conditional StyleX display (no inline
-  // style; stylex-project-issues-child-list pins childIssueListVisible)
+  // copy-fix-current-dom: reveal is conditional Style display (no inline
+  // style; style-project-issues-child-list pins childIssueListVisible)
   await expect(childList).toHaveCSS("display", "block");
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
@@ -3599,11 +3650,11 @@ async function issueListShellMetrics(page: Page) {
   return page.locator(".issue-list-wrap").evaluate((wrap) => {
     const leftMenu = wrap.querySelector(".left-menu") as HTMLElement;
     const rightPane = wrap.querySelector("#span10") as HTMLElement;
-    // copy-fix-current-dom: new-issue action is React-owned with StyleX float
-    // (stylex-project-issues-action-floats pins NOT pull-right); legacy wrapper
+    // copy-fix-current-dom: new-issue action is React-owned with Style float
+    // (style-project-issues-action-floats pins NOT pull-right); legacy wrapper
     // class retired from the app, query the owner instead
     const newIssue = rightPane.querySelector(
-      '[data-stylex-owner="project-issues-new-issue-action"]',
+      '[data-owner="project-issues-new-issue-action"]',
     ) as HTMLElement;
     const tabs = rightPane.querySelector(".nav-tabs") as HTMLElement;
     const emptyState = rightPane.querySelector(".error-wrap") as HTMLElement;
@@ -3613,20 +3664,26 @@ async function issueListShellMetrics(page: Page) {
     const searchButton = searchBar.querySelector(".search-btn") as HTMLElement;
     const advanced = leftMenu.querySelector(".srch-advanced") as HTMLElement;
     const issueOption = leftMenu.querySelector(".issue-option") as HTMLElement;
+    const searchForm = leftMenu.querySelector("#search") as HTMLElement;
+    const searchDivider = searchForm.querySelector(":scope > hr") as HTMLElement;
     const wrapStyle = window.getComputedStyle(wrap);
     const searchBarStyle = window.getComputedStyle(searchBar);
     const searchButtonStyle = window.getComputedStyle(searchButton);
     const advancedStyle = window.getComputedStyle(advanced);
     const issueOptionStyle = window.getComputedStyle(issueOption);
+    const searchFormStyle = window.getComputedStyle(searchForm);
+    const searchDividerStyle = window.getComputedStyle(searchDivider);
     const newIssueRect = newIssue.getBoundingClientRect();
     const tabsRect = tabs.getBoundingClientRect();
     const emptyStateRect = emptyState.getBoundingClientRect();
     const emptyIconRect = emptyIcon.getBoundingClientRect();
     const emptyTextRect = emptyText.getBoundingClientRect();
+    const searchDividerRect = searchDivider.getBoundingClientRect();
+    const searchContainerRect = searchBar.parentElement?.getBoundingClientRect();
 
     return {
       wrapClear: wrapStyle.clear,
-      // copy-fix-current-dom: the results pane carries the route's StyleX
+      // copy-fix-current-dom: the results pane carries the route's Style
       // results class (x-token) ahead of the legacy classes; strip it here
       leftMenuClassName: leftMenu.className,
       rightPaneClassName: rightPane.className
@@ -3636,6 +3693,12 @@ async function issueListShellMetrics(page: Page) {
       newIssueAboveTabs: newIssueRect.top <= tabsRect.top,
       tabBeforeEmptyState: tabsRect.top < emptyStateRect.top,
       emptyIconBeforeText: emptyIconRect.top < emptyTextRect.top,
+      searchFormMarginBottom: searchFormStyle.marginBottom,
+      searchDividerBorderTop: searchDividerStyle.borderTop,
+      searchDividerMargin: searchDividerStyle.margin,
+      searchStartsBelowDivider: Boolean(
+        searchContainerRect && searchContainerRect.top >= searchDividerRect.bottom,
+      ),
       searchBarBorder: searchBarStyle.border,
       searchBarBorderRadius: searchBarStyle.borderRadius,
       searchBarHeight: searchBarStyle.height,
@@ -3690,12 +3753,10 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
     const checkbox = row.querySelector(".mass-update-check") as HTMLElement;
     const input = checkbox.querySelector("input") as HTMLElement;
     const title = row.querySelector(".title-wrap") as HTMLElement;
-    const issueTitle = row.querySelector(
-      '[data-stylex-owner="project-issues-title"]',
-    ) as HTMLElement;
-    const infos = row.querySelector('[data-stylex-owner="project-issues-infos"]') as HTMLElement;
+    const issueTitle = row.querySelector('[data-owner="project-issues-title"]') as HTMLElement;
+    const infos = row.querySelector('[data-owner="project-issues-infos"]') as HTMLElement;
     const assigneeAvatar = row.querySelector(
-      '[data-stylex-owner="project-issues-assignee-avatar"]',
+      '[data-owner="project-issues-assignee-avatar"]',
     ) as HTMLElement;
     const checkboxBox = checkbox.getBoundingClientRect();
     const inputBox = input.getBoundingClientRect();
@@ -3706,7 +3767,7 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
     const infosStyle = window.getComputedStyle(infos);
     const assigneeAvatarStyle = window.getComputedStyle(assigneeAvatar);
     return {
-      checkboxHasStyleXOwner: checkbox.getAttribute("data-stylex-owner"),
+      checkboxHasStyleOwner: checkbox.getAttribute("data-owner"),
       checkboxBox,
       checkboxFloat: checkboxStyle.float,
       checkboxMarginRight: checkboxStyle.marginRight,
@@ -3725,7 +3786,7 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
       assigneeAvatarMarginRight: assigneeAvatarStyle.marginRight,
     };
   });
-  expect(desktop.checkboxHasStyleXOwner).toBe("project-issues-mass-update-check");
+  expect(desktop.checkboxHasStyleOwner).toBe("project-issues-mass-update-check");
   expect(desktop.checkboxFloat).toBe("left");
   expect(desktop.checkboxMarginRight).toBe("15px");
   expect(desktop.inputMarginTop).toBe("15px");
@@ -3746,7 +3807,7 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
   await page.setViewportSize({ width: 720, height: 900 });
   await expect(page.locator("#issue-item-42 .mass-update-check")).toBeHidden();
   await expect(page.locator("#issue-item-42 .title-wrap")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-issues-title"]').last()).toHaveCSS(
+  await expect(page.locator('[data-owner="project-issues-title"]').last()).toHaveCSS(
     "font-size",
     "16px",
   );
@@ -3865,7 +3926,7 @@ async function issueListMassUpdateMetrics(page: Page) {
 async function issueListDraftMetrics(page: Page) {
   return page.locator("#span10").evaluate((rightPane) => {
     const newIssue = rightPane.querySelector(
-      "[data-stylex-owner=project-issues-new-issue-action]",
+      "[data-owner=project-issues-new-issue-action]",
     ) as HTMLElement;
     const tabs = rightPane.querySelector(":scope > .nav-tabs") as HTMLElement;
     const filterWrap = rightPane.querySelector(":scope > .filter-wrap") as HTMLElement;
@@ -3908,7 +3969,7 @@ async function issueListDraftMetrics(page: Page) {
 async function issueListEmptyDraftSuppressionMetrics(page: Page) {
   return page.locator("#span10").evaluate((rightPane) => {
     const newIssue = rightPane.querySelector(
-      "[data-stylex-owner=project-issues-new-issue-action]",
+      "[data-owner=project-issues-new-issue-action]",
     ) as HTMLElement;
     const tabs = rightPane.querySelector(":scope > .nav-tabs") as HTMLElement;
     const emptyState = rightPane.querySelector(":scope > .error-wrap") as HTMLElement;
@@ -5007,7 +5068,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -5030,13 +5091,11 @@ async function canonicalizeScreenRoots(page: Page) {
       const stateTabLink = node.matches(
         ".issue-list-wrap .nav-tabs.nm > li:nth-child(1) > a, .issue-list-wrap .nav-tabs.nm > li:nth-child(2) > a",
       );
-      // copy-fix-current-dom: the manage-label action floats via StyleX
+      // copy-fix-current-dom: the manage-label action floats via Style
       // (labelManageAction float:right, manageLabel marginLeft); legacy
       // partial_searchform.scala.html:129-131 carries literal pull-right and
       // an inline margin-left:2px — restore both for DOM parity.
-      const isManageLabelAction = node.matches(
-        '[data-stylex-owner="project-issues-label-manage-action"]',
-      );
+      const isManageLabelAction = node.matches('[data-owner="project-issues-label-manage-action"]');
       const attrs = stateTabLink
         ? 'type="button"'
         : Array.from(node.attributes)
@@ -5050,14 +5109,12 @@ async function canonicalizeScreenRoots(page: Page) {
               return `${attr.name}=${JSON.stringify(value)}`;
             })
             .join(" ");
-      const tagName = node.matches('[data-stylex-owner="global-sidebar-open-pin"]')
+      const tagName = node.matches('[data-owner="global-sidebar-open-pin"]')
         ? "div"
         : stateTabLink
           ? "button"
           : node.tagName.toLowerCase();
-      const manageLabelSpanAttrs = node.matches(
-        '[data-stylex-owner="project-issues-manage-label"]',
-      )
+      const manageLabelSpanAttrs = node.matches('[data-owner="project-issues-manage-label"]')
         ? `${attrs} style=${JSON.stringify("margin-left:2px")}`
         : attrs;
       const open = manageLabelSpanAttrs ? `<${tagName} ${manageLabelSpanAttrs}>` : `<${tagName}>`;
@@ -5073,19 +5130,19 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-search-scope-menu"]')
+        attr.ownerElement?.matches('[data-owner="global-gnb-search-scope-menu"]')
       ) {
-        // copy-fix-current-dom: app scope menu is StyleX-only (visibility via
+        // copy-fix-current-dom: app scope menu is Style-only (visibility via
         // openMenu); legacy navbar.scala.html:68 ul class="dropdown-menu flat
         // right" is restored here since the app must not toggle .open
         return "dropdown-menu flat right";
@@ -5096,7 +5153,7 @@ async function canonicalizeScreenRoots(page: Page) {
         // copy-fix-current-dom: app gnb-nav ul carries x-tokens only (no literal
         // gnb-nav token), so match the owner instead of the class value; strip
         // directly (no recursion: the owner-based match would re-enter)
-        attr.ownerElement.closest('[data-stylex-owner="global-gnb-nav"]') !== null
+        attr.ownerElement.closest('[data-owner="global-gnb-nav"]') !== null
       ) {
         return attr.value
           .split(/\s+/u)
@@ -5108,7 +5165,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         attr.name === "class" &&
-        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        attr.ownerElement?.closest('.pin, [data-owner="global-sidebar-open-pin"]')
       ) {
         return attr.value
           .split(/\s+/u)
@@ -5124,12 +5181,10 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (attr.name === "style") {
         const normalized = normalizeStyleAttr(attr.value);
-        // copy-fix-current-dom: the subtask bar width is a StyleX dynamic var
+        // copy-fix-current-dom: the subtask bar width is a Style dynamic var
         // (progressBar()); legacy partial_list_subtask.scala.html:18 keeps an
         // inline style="width:N%" — convert the var back
-        if (
-          attr.ownerElement?.matches('[data-stylex-owner="project-issues-subtask-progress-bar"]')
-        ) {
+        if (attr.ownerElement?.matches('[data-owner="project-issues-subtask-progress-bar"]')) {
           return normalized.replace(/--x-[A-Za-z0-9-]+:(\d+(?:\.\d+)?%)/u, "width:$1");
         }
         return normalized;
@@ -5172,7 +5227,7 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       if (attr.name === "class") {
-        // copy-fix-current-dom: strip React StyleX atomic classes and
+        // copy-fix-current-dom: strip React Style atomic classes and
         // build-marker tokens from every class attr, mirroring the expected
         // side's canonicalizeHtml class branch — the React shell (sidenav
         // panes, gnb-usermenu items, project-header nodes) carries x-tokens
@@ -5188,11 +5243,11 @@ async function canonicalizeScreenRoots(page: Page) {
               !className.includes("__"),
           )
           .join(" ");
-        // copy-fix-current-dom: the due-date clock margins via StyleX
+        // copy-fix-current-dom: the due-date clock margins via Style
         // (dueDateIcon marginRight:3px); legacy partial_list.scala.html
         // <i class="yobicon-clock2 mr3 vmiddle"> carries literal mr3
         if (
-          attr.ownerElement?.matches('[data-stylex-owner="project-issues-due-date-icon"]') &&
+          attr.ownerElement?.matches('[data-owner="project-issues-due-date-icon"]') &&
           !stripped.split(/\s+/u).includes("mr3")
         ) {
           return stripped.replace("yobicon-clock2", "yobicon-clock2 mr3").trim();
@@ -5235,16 +5290,15 @@ async function canonicalizeScreenRoots(page: Page) {
       const reactOwnedNavbarAttribute =
         ((isGlobalSidebarOpenPin(node) || node.matches("#sidebar-open-btn > button")) &&
           (attr.name === "aria-controls" || attr.name === "aria-expanded")) ||
-        (isGlobalSidebarOpenPin(node) &&
-          (attr.name === "type" || attr.name === "data-stylex-owner")) ||
-        (node.closest('[data-stylex-owner="global-sidebar-open-pin"]') !== null &&
+        (isGlobalSidebarOpenPin(node) && (attr.name === "type" || attr.name === "data-owner")) ||
+        (node.closest('[data-owner="global-sidebar-open-pin"]') !== null &&
           attr.name === "aria-hidden");
       if (
         attr.name.startsWith("data-v-") ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-owner" ||
+        attr.name === "data-owner" ||
         attr.name === "data-project-header-owner" ||
-        attr.name === "data-stylex-content-ready" ||
+        attr.name === "data-content-ready" ||
         attr.name === "aria-busy" ||
         pluginOnlyAttributes.has(attr.name) ||
         attr.name === "state" ||
@@ -5253,10 +5307,9 @@ async function canonicalizeScreenRoots(page: Page) {
         // legacy partial_searchform.scala.html btn-calendar has no aria-label
         (node.matches(".btn-calendar") && attr.name === "aria-label") ||
         // copy-fix-current-dom: the empty-state icon's sprite background is a
-        // StyleX inline var; legacy issue/list.scala.html <i class="ico ico-err1">
+        // Style inline var; legacy issue/list.scala.html <i class="ico ico-err1">
         // carries no style attr
-        (node.matches('[data-stylex-owner="project-issues-empty-error-icon"]') &&
-          attr.name === "style") ||
+        (node.matches('[data-owner="project-issues-empty-error-icon"]') && attr.name === "style") ||
         reactOwnedNavbarAttribute ||
         attr.name === "alt" ||
         attr.name === "aria-current" ||
@@ -5269,7 +5322,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function isGlobalSidebarOpenPin(node: Element | null) {
-      return node?.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') === true;
+      return node?.matches('.pin, [data-owner="global-sidebar-open-pin"]') === true;
     }
   });
 }
@@ -5430,7 +5483,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         pluginOnlyAttributes.has(attr.name) ||
         attr.name === "state" ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-owner" ||
+        attr.name === "data-owner" ||
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||

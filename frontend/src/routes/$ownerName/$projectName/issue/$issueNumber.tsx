@@ -1,21 +1,35 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
+  isValidElement,
+  use,
   useEffect,
+  useMemo,
   useId,
   useRef,
   useState,
-  use,
+  type ComponentPropsWithoutRef,
   type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from "react";
-import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, {
+  defaultSchema,
+  type Options as RehypeSanitizeOptions,
+} from "rehype-sanitize";
+import ReactMarkdown, {
+  defaultUrlTransform,
+  type Components,
+  type ExtraProps,
+} from "react-markdown";
+import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism";
+import { ghcolors } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
+import { type IssueAssignableUserItem } from "../../../../api/issue-meta";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { listProjectMilestonesQueryOptions } from "../../../../api/milestones";
 import { currentSessionQueryOptions } from "../../../../api/session";
@@ -27,15 +41,22 @@ import { useWireframeContentProgress } from "../../../../components/route-fetch-
 import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../../api/types";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
+  createIssueComment,
   deleteIssueComment,
   deleteIssue,
   massUpdateIssues,
   readIssueDetail,
   readSessionBootstrap,
+  searchIssueAssignableUsers,
+  searchIssueSharableUsers,
+  shareIssue,
   toggleFavoriteIssue,
+  unshareIssue,
   unwatchIssue,
   unvoteIssue,
   unvoteIssueComment,
+  updateIssueComment,
+  updateIssueState,
   updateIssueWeight,
   voteIssue,
   voteIssueComment,
@@ -52,23 +73,252 @@ import { IssueLabel } from "../../../../components/issue-label";
 import { IssueDueDateInput } from "../../../../components/issue-due-date-input";
 import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
 import "../../../../yobicon-font.css";
-import { styles } from "./-issue-detail.stylex";
-
-const issueSharerStyles = stylex.create({ visible: { display: "block" } });
-
-const issueInlineOwners = stylex.create({
-  fullWidth: { width: "100%" },
-  disabledComment: { cursor: "text" },
-});
-
-const disabledCommentActionsClassName = stylex.props(styles.disabledCommentActions).className;
-const disabledVoteStyleProps = stylex.props(styles.disabledVote);
-const issueVoteIconStyleProps = stylex.props(styles.issueVoteIcon);
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+const LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES: Record<string, true> = {
+  className: true,
+  height: true,
+  id: true,
+  width: true,
+};
+const ISSUE_MARKDOWN_BASE_ATTRIBUTES = Object.fromEntries(
+  Object.entries(defaultSchema.attributes ?? {}).map(([tagName, attributes]) => [
+    tagName,
+    attributes.filter(
+      (attribute) =>
+        !Array.isArray(attribute) || !(String(attribute[0]) in LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES),
+    ),
+  ]),
+) as NonNullable<RehypeSanitizeOptions["attributes"]>;
+const ISSUE_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
+  ...defaultSchema,
+  clobber: [],
+  attributes: {
+    ...ISSUE_MARKDOWN_BASE_ATTRIBUTES,
+    "*": [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES["*"] ?? []), "className", "id", "width", "height"],
+    a: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.a ?? []), "href", "name", "target"],
+    iframe: [
+      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.iframe ?? []),
+      "width",
+      "height",
+      "src",
+      "frameBorder",
+      "allow",
+      "allowFullScreen",
+    ],
+    input: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.input ?? []), "type", "disabled", "checked"],
+    ol: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.ol ?? []), "start"],
+    source: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.source ?? []), "src", "type"],
+    video: [
+      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.video ?? []),
+      "dataSetup",
+      "controls",
+      "preload",
+      "type",
+      "autoPlay",
+      "height",
+      "width",
+      "src",
+    ],
+  },
+  protocols: {
+    ...defaultSchema.protocols,
+    href: ["http", "https", "mailto", "file", "zpl"],
+    src: ["http", "https", "file", "zpl"],
+  },
+  tagNames: [
+    ...new Set([
+      ...(defaultSchema.tagNames ?? []),
+      "video",
+      "source",
+      "iframe",
+      "input",
+      "pre",
+      "br",
+      "hr",
+      "ol",
+      "span",
+    ]),
+  ],
+};
+const issueMarkdownSyntaxTheme = {
+  ...ghcolors,
+  'pre[class*="language-"]': {},
+  'code[class*="language-"]': {},
+};
+
+type IssueMarkdownLinkProps = ComponentPropsWithoutRef<"a"> &
+  ExtraProps & {
+    basePath: string;
+  };
+
+function IssueMarkdownLink({
+  basePath,
+  children,
+  href,
+  node: _node,
+  rel: _rel,
+  target,
+  ...props
+}: IssueMarkdownLinkProps) {
+  if (!href) {
+    return <>{children}</>;
+  }
+  if (props.download !== undefined) {
+    return (
+      <Link
+        {...props}
+        href={href}
+        rel={target ? "noopener noreferrer" : undefined}
+        target={target}
+        to={toLinkTarget(basePath, href)}
+      >
+        {children}
+      </Link>
+    );
+  }
+  if (href.startsWith("#")) {
+    return (
+      <Link
+        {...props}
+        {...LEGACY_LINK_PROPS}
+        hash={href.slice(1)}
+        rel={target ? "noopener noreferrer" : undefined}
+        search={true}
+        target={target}
+        to="."
+      >
+        {children}
+      </Link>
+    );
+  }
+  const internalPath = markdownInternalPath(href, basePath);
+  if (internalPath) {
+    return (
+      <Link
+        {...props}
+        {...LEGACY_LINK_PROPS}
+        rel={target ? "noopener noreferrer" : undefined}
+        target={target}
+        to={internalPath as "/"}
+      >
+        {children}
+      </Link>
+    );
+  }
+  // TanStack Link renders URL-string `to` as an external anchor href; a bare
+  // `href` prop is overridden by the built current-location href, so external
+  // and download markdown links carry the URL in `to`.
+  return (
+    <Link
+      {...props}
+      href={href}
+      rel={target ? "noopener noreferrer" : undefined}
+      target={target}
+      to={href}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function IssueMarkdownPre({
+  children,
+  className,
+  node: _node,
+  ...props
+}: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
+  const code = Array.isArray(children) ? children[0] : children;
+  if (isValidElement<{ children?: ReactNode; className?: string }>(code)) {
+    const language = code.props.className?.match(/(?:^|\s)language-([^\s]+)/u)?.[1];
+    if (language) {
+      return (
+        <SyntaxHighlighter
+          language={language}
+          style={issueMarkdownSyntaxTheme}
+          PreTag="pre"
+          codeTagProps={{
+            className: code.props.className,
+          }}
+          data-owner="project-issue-detail-markdown-code-block"
+        >
+          {String(code.props.children ?? "").replace(/\n$/u, "")}
+        </SyntaxHighlighter>
+      );
+    }
+  }
+  return (
+    <pre {...props} className={className ?? ""} data-owner="project-issue-detail-markdown-pre">
+      {children}
+    </pre>
+  );
+}
+
+const ISSUE_MARKDOWN_COMPONENTS: Components = {
+  blockquote: ({ node: _node, ...props }) => <blockquote {...props} />,
+  code: ({ className, node: _node, ...props }) => {
+    return <code {...props} className={className ?? ""} />;
+  },
+  h1: ({ node: _node, ...props }) => <h1 {...props} />,
+  h2: ({ node: _node, ...props }) => <h2 {...props} />,
+  h3: ({ node: _node, ...props }) => <h3 {...props} />,
+  img: ({ node: _node, ...props }) => <img {...props} />,
+  li: ({ node: _node, ...props }) => <li {...props} />,
+  ol: ({ node: _node, ...props }) => <ol {...props} />,
+  p: ({ node: _node, ...props }) => <p {...props} />,
+  pre: IssueMarkdownPre,
+  table: ({ node: _node, ...props }) => <table {...props} />,
+  td: ({ node: _node, ...props }) => <td {...props} />,
+  th: ({ node: _node, ...props }) => <th {...props} />,
+  ul: ({ node: _node, ...props }) => <ul {...props} />,
+  video: ({ className, node: _node, ...props }) => {
+    return (
+      <video
+        {...props}
+        className={className ?? ""}
+        data-owner="project-issue-detail-markdown-video"
+      />
+    );
+  },
+};
+
+function IssueMarkdown({ basePath, children }: { basePath: string; children: string }) {
+  const components = useMemo<Components>(
+    () => ({
+      ...ISSUE_MARKDOWN_COMPONENTS,
+      a: (props) => <IssueMarkdownLink {...props} basePath={basePath} />,
+    }),
+    [basePath],
+  );
+  return (
+    <ReactMarkdown
+      components={components}
+      rehypePlugins={[rehypeRaw, [rehypeSanitize, ISSUE_MARKDOWN_SANITIZE_SCHEMA]]}
+      remarkPlugins={[remarkGfm]}
+      urlTransform={(url) => issueMarkdownUrlTransform(basePath, url)}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
+
+function issueMarkdownUrlTransform(basePath: string, url: string) {
+  const safeUrl = defaultUrlTransform(url);
+  return url.startsWith("/") && !url.startsWith("//") ? prefixBasePath(basePath, safeUrl) : safeUrl;
+}
+
+function markdownInternalPath(href: string, basePath: string) {
+  if (!href.startsWith("/") || href.startsWith("//")) {
+    return null;
+  }
+  if (basePath !== "/" && (href === basePath || href.startsWith(`${basePath}/`))) {
+    return href.slice(basePath.length) || "/";
+  }
+  return href;
+}
 
 function stripMarkdownComments(markdown: string) {
   return markdown.replace(/<!--[\s\S]*?-->/gu, "");
@@ -104,8 +354,14 @@ function LegacyHoverPopover({
     onMouseLeave: hide,
     ...(focusable ? { onBlur: hide, onFocus: show } : {}),
   };
-  const popoverStyleProps = position
-    ? stylex.props(styles.legacyPopoverPosition(position.left, position.top - 10))
+  const popoverStyle: React.CSSProperties | undefined = position
+    ? {
+        display: "block",
+        left: position.left,
+        position: "fixed",
+        top: position.top - 10,
+        transform: "translate(-50%, -100%)",
+      }
     : undefined;
 
   return (
@@ -113,9 +369,9 @@ function LegacyHoverPopover({
       {children(triggerProps)}
       {position ? (
         <div
-          {...popoverStyleProps}
-          className={`popover top in ${popoverStyleProps?.className ?? ""}`.trim()}
-          data-stylex-owner="issue-detail-legacy-popover"
+          style={popoverStyle}
+          className="popover top in"
+          data-owner="issue-detail-legacy-popover"
         >
           <div className="arrow"></div>
           <div className="popover-content">{content}</div>
@@ -257,55 +513,36 @@ function ProjectIssueDetailWireframe({ runtimeConfig }: { runtimeConfig: Runtime
   const nestedProjectShell = use(ProjectNestedShellContext);
   const body = (
     <div
-      className={`${stylex.props(styles.page).className} page-wrap-outer`}
-      data-stylex-owner="project-issue-detail-page"
+      className="page-wrap-outer"
+      data-owner="project-issue-detail-page"
       data-wireframe="project-issue-detail"
       aria-busy="true"
     >
       <div className="project-page-wrap board-view issue-detail-page">
-        <div
-          className={`${stylex.props(styles.header).className} board-header issue`}
-          data-stylex-owner="project-issue-detail-header"
-        >
-          <div
-            {...stylex.props(styles.title)}
-            className={`${stylex.props(styles.title).className} title`}
-            aria-hidden="true"
-          >
+        <div className="board-header issue" data-owner="project-issue-detail-header">
+          <div className="title" aria-hidden="true">
             {"\u00a0"}
           </div>
         </div>
-        <div
-          className={`${stylex.props(styles.body).className} board-body row-fluid`}
-          data-stylex-owner="project-issue-detail-body"
-        >
+        <div className="board-body row-fluid" data-owner="project-issue-detail-body">
           <div className="span9 span-left-pane">
-            <div
-              className={`${stylex.props(styles.author).className} author-info`}
-              aria-hidden="true"
-            >
+            <div className="author-info" aria-hidden="true">
               {"\u00a0"}
             </div>
             <div
-              className={`${stylex.props(styles.content).className} content markdown-wrap`}
+              className="issue-detail-wireframe-content content markdown-wrap"
               aria-hidden="true"
             >
               {"\u00a0"}
             </div>
           </div>
-          <div
-            className={`${stylex.props(styles.sidebar).className} span3 span-right-pane`}
-            aria-hidden="true"
-          >
-            <div
-              {...stylex.props(styles.issueInfo)}
-              className={`${stylex.props(styles.issueInfo).className} issue-info`}
-            >
-              <dl {...stylex.props(styles.sidebarMetaDl)}>
+          <div className="span3 span-right-pane" aria-hidden="true">
+            <div className="issue-detail-issue-info issue-info">
+              <dl>
                 <dt>{"\u00a0"}</dt>
-                <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
+                <dd>{"\u00a0"}</dd>
                 <dt>{"\u00a0"}</dt>
-                <dd {...stylex.props(styles.sidebarMetaDd)}>{"\u00a0"}</dd>
+                <dd>{"\u00a0"}</dd>
               </dl>
             </div>
           </div>
@@ -434,27 +671,11 @@ function ProjectIssueNotFoundBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div
-      className={`${stylex.props(styles.page).className} page-wrap-outer`}
-      data-stylex-owner="project-issue-detail-page"
-    >
+    <div className="page-wrap-outer" data-owner="project-issue-detail-page">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(styles.errorWrap)}
-          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-          data-stylex-owner="project-issue-detail-error-wrap"
-        >
-          <i
-            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
-            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-            data-stylex-owner="project-issue-detail-error-icon"
-          ></i>
-          <p
-            {...stylex.props(styles.errorMessage)}
-            data-stylex-owner="project-issue-detail-error-message"
-          >
-            {t("error.notfound.issue_post")}
-          </p>
+        <div className="error-wrap" data-owner="project-issue-detail-error-wrap">
+          <i className="ico ico-err2" data-owner="project-issue-detail-error-icon"></i>
+          <p data-owner="project-issue-detail-error-message">{t("error.notfound.issue_post")}</p>
           <Link
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
@@ -518,7 +739,7 @@ function IssueDetailBody({
   const canDelete = booleanField(issue.viewerCanDelete);
   const canBeDeleted = issue.canBeDeleted !== false;
   const canComment = booleanField(issue.viewerCanComment);
-  const canWatch = issue.viewerCanWatch !== false;
+  const canWatch = !currentUserIsAnonymous && issue.viewerCanWatch !== false;
   const hasVoted = booleanField(issue.hasVoted);
   const [hasVotedIssue, setHasVotedIssue] = useState(hasVoted);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
@@ -549,7 +770,6 @@ function IssueDetailBody({
   ]
     .filter(Boolean)
     .join(" ");
-  const sharerListStyleProps = sharerListOpen ? stylex.props(issueSharerStyles.visible) : undefined;
   const bodyMarkdown = translatedBodyMarkdown ?? stringField(issue.bodyMarkdown);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
   const historyMarkdown = stringField(issue.historyMarkdown);
@@ -718,6 +938,28 @@ function IssueDetailBody({
       });
     },
   });
+  const sharerMutation = useMutation({
+    mutationFn: async ({
+      loginId,
+      remove,
+      targetType,
+    }: {
+      loginId: string;
+      remove: boolean;
+      targetType?: string;
+    }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const input = { issueNumber, loginId, ownerName, projectName, targetType };
+      return remove
+        ? unshareIssue(runtimeConfig, csrfToken, input)
+        : shareIssue(runtimeConfig, csrfToken, input);
+    },
+    onSuccess() {
+      void queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+    },
+  });
   useEffect(() => {
     setDueDateValue(dueDateLabel);
     setCommittedDueDateValue(dueDateLabel.trim());
@@ -760,61 +1002,27 @@ function IssueDetailBody({
     setDeleteModalOpen(true);
   };
 
-  const issueBadgeVariant =
-    issueState === "open"
-      ? styles.badgeOpen
-      : issueState === "closed"
-        ? styles.badgeClosed
-        : issueState === "rejected"
-          ? styles.badgeRejected
-          : issueState === "merged"
-            ? styles.badgeMerged
-            : issueState === "conflict"
-              ? styles.badgeConflict
-              : null;
-  const issueBadgeProps = issueBadgeVariant
-    ? stylex.props(styles.badge, issueBadgeVariant)
-    : stylex.props(styles.badge);
-
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap board-view issue-detail-page">
-        <div
-          className={`${stylex.props(styles.header).className} board-header issue`}
-          data-stylex-owner="project-issue-detail-header"
-        >
+        <div className="board-header issue" data-owner="project-issue-detail-header">
           <div
-            {...stylex.props(styles.desktopMetadata)}
-            className={`${stylex.props(styles.desktopMetadata).className} pull-right mr10 mt10 hide-in-mobile`}
-            data-stylex-owner="project-issue-detail-desktop-metadata"
+            className="pull-right mr10 mt10 hide-in-mobile"
+            data-owner="project-issue-detail-desktop-metadata"
           >
-            <div
-              {...stylex.props(styles.date)}
-              className={`${stylex.props(styles.date).className} date`}
-              data-stylex-owner="project-issue-detail-date"
-              title={createdLabel}
-            >
+            <div className="date" data-owner="project-issue-detail-date" title={createdLabel}>
               {createdDisplayLabel}
             </div>
             <span
-              {...issueBadgeProps}
-              className={`${issueBadgeProps.className} badge badge-issue-${issueState}`}
-              data-stylex-owner="project-issue-detail-state-badge"
+              className={`badge badge-issue-${issueState}`}
+              data-owner="project-issue-detail-state-badge"
             >
               {stateLabel}
             </span>
           </div>
-          <div
-            {...stylex.props(styles.title)}
-            className={`${stylex.props(styles.title).className} title`}
-            data-stylex-owner="project-issue-detail-title"
-          >
+          <div className="title" data-owner="project-issue-detail-title">
             {issue.parentIssueId ? <span className="subtask-mark">subtask</span> : null}
-            <strong
-              {...stylex.props(styles.boardId)}
-              className={`${stylex.props(styles.boardId).className} board-id`}
-              data-stylex-owner="project-issue-detail-board-id"
-            >
+            <strong className="board-id" data-owner="project-issue-detail-board-id">
               {isDraft ? <span className="draft-number">#Draft</span> : issueNumber}
             </strong>
             {issue.title}
@@ -832,22 +1040,13 @@ function IssueDetailBody({
                 star
               </i>
             </span>
-            <div
-              className={`${stylex.props(styles.mobileMetadata).className} hide show-in-mobile`}
-              data-stylex-owner="project-issue-detail-mobile-metadata"
-            >
-              <span
-                {...stylex.props(styles.date)}
-                className={`${stylex.props(styles.date).className} date`}
-                data-stylex-owner="project-issue-detail-date"
-                title={createdLabel}
-              >
+            <div className="hide show-in-mobile" data-owner="project-issue-detail-mobile-metadata">
+              <span className="date" data-owner="project-issue-detail-date" title={createdLabel}>
                 {createdDisplayLabel}
               </span>
               <span
-                {...issueBadgeProps}
-                className={`${issueBadgeProps.className} badge badge-small badge-issue-${issueState}`}
-                data-stylex-owner="project-issue-detail-state-badge"
+                className={`badge badge-small badge-issue-${issueState}`}
+                data-owner="project-issue-detail-state-badge"
               >
                 {stateLabel}
               </span>
@@ -859,15 +1058,9 @@ function IssueDetailBody({
             </div>
           ) : null}
         </div>
-        <div
-          className={`${stylex.props(styles.body).className} board-body row-fluid`}
-          data-stylex-owner="project-issue-detail-body"
-        >
+        <div className="board-body row-fluid" data-owner="project-issue-detail-body">
           <div className="span9 span-left-pane">
-            <div
-              className={`${stylex.props(styles.author).className} author-info`}
-              data-stylex-owner="project-issue-detail-author"
-            >
+            <div className="author-info" data-owner="project-issue-detail-author">
               <Link
                 to="/$user"
                 params={{ user: stringField(issue.authorLoginId) }}
@@ -896,6 +1089,7 @@ function IssueDetailBody({
                 )}
               </Link>
               <IssuePostingHistory
+                basePath={basePath}
                 historyMarkdown={historyMarkdown}
                 loginTo={`/users/loginform?redirectUrl=/${ownerName}/${projectName}/issue/${issueNumber}`}
                 isAnonymous={currentUserIsAnonymous}
@@ -918,38 +1112,28 @@ function IssueDetailBody({
                 <div id={`issue-body-${issueNumber}`}>
                   <TasklistBar markdown={bodyMarkdown} />
                   <div
-                    className={`${stylex.props(styles.content).className} content markdown-wrap`}
-                    data-stylex-owner="project-issue-detail-content"
+                    className="content markdown-wrap"
+                    data-owner="project-issue-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <IssueMarkdown basePath={basePath}>
                       {stripMarkdownComments(bodyMarkdown)}
-                    </ReactMarkdown>
+                    </IssueMarkdown>
                   </div>
                 </div>
               </>
             ) : (
-              <div
-                className={`${stylex.props(styles.emptyContent).className} content empty-content`}
-                data-stylex-owner="project-issue-detail-empty"
-              ></div>
+              <div className="content empty-content" data-owner="project-issue-detail-empty"></div>
             )}
             <div
               className="attachments"
               id="attachments"
               data-attachments={JSON.stringify(issue.attachments ?? [])}
             >
-              <AttachedFiles attachments={issue.attachments} basePath={basePath} />
+              <AttachedFiles attachments={issue.attachments} />
             </div>
-            <div
-              className={`${stylex.props(styles.actions).className} board-actrow`}
-              data-stylex-owner="project-issue-detail-actions"
-            >
-              <div
-                {...stylex.props(styles.boardActionGroup)}
-                className={`${stylex.props(styles.boardActionGroup).className} pull-left`}
-                data-stylex-owner="project-issue-detail-board-action-group"
-              >
+            <div className="board-actrow" data-owner="project-issue-detail-actions">
+              <div className="pull-left" data-owner="project-issue-detail-board-action-group">
                 <div>
                   {canWatch ? (
                     <button
@@ -979,8 +1163,8 @@ function IssueDetailBody({
                     </LegacyHoverPopover>
                   ) : null}
                   <span
-                    className={`${stylex.props(styles.mobileNewSubtask).className} project-btn-item hide show-in-mobile-inline ml4`}
-                    data-stylex-owner="project-issue-detail-mobile-new-subtask"
+                    className="project-btn-item hide show-in-mobile-inline ml4"
+                    data-owner="project-issue-detail-mobile-new-subtask"
                   >
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
                       {t("button.newSubtask")}
@@ -1005,16 +1189,15 @@ function IssueDetailBody({
               />
               {translationApiEnabled ? (
                 <button
-                  {...stylex.props(styles.issueTranslationButton)}
                   type="button"
                   id="translate"
-                  className={`icon btn-transparent-with-fontsize-lineheight ${stylex.props(styles.issueTranslationButton).className}`}
-                  data-stylex-owner="project-issue-detail-translation-button"
+                  className="icon btn-transparent-with-fontsize-lineheight"
+                  data-owner="project-issue-detail-translation-button"
                   title="Translation"
                   disabled={translatePending || translatedBodyMarkdown !== null}
                   onClick={() => void translateIssueBody()}
                 >
-                  <i className="yobicon-lang"></i>
+                  <i className="yobicon-lang" data-yobicon={"\ue1a3"}></i>
                 </button>
               ) : null}
               <IssueActionButtons
@@ -1028,15 +1211,8 @@ function IssueDetailBody({
                 projectName={projectName}
               />
             </div>
-            <dl
-              {...sharerListStyleProps}
-              className={`${sharerListClassName} ${sharerListStyleProps?.className ?? ""}`.trim()}
-              data-stylex-owner="issue-detail-sharer-list"
-            >
-              <dt
-                className={`issue-share-title ${stylex.props(styles.sharerTitle).className}`}
-                data-stylex-owner="project-issue-detail-sharer-title"
-              >
+            <dl className={sharerListClassName} data-owner="issue-detail-sharer-list">
+              <dt className="issue-share-title" data-owner="project-issue-detail-sharer-title">
                 {t("issue.sharer")}{" "}
                 <span className="num issue-sharer-count">
                   {sharers.length ? ` ${String(sharers.length)}` : ""}
@@ -1045,17 +1221,17 @@ function IssueDetailBody({
               <dd
                 id="sharer-list"
                 className={sharerListVisible ? "" : "hideFromDisplayOnly"}
-                {...sharerListStyleProps}
-                data-stylex-owner="issue-detail-sharer-list-content"
+                data-owner="issue-detail-sharer-list-content"
               >
                 {canUpdate ? (
-                  <input
-                    type="hidden"
-                    className="bigdrop width100p"
-                    id="issueSharer"
-                    name="issueSharer"
-                    placeholder={t("issue.sharer.select")}
-                    defaultValue={sharerValue}
+                  <LegacySharerControl
+                    issue={issue}
+                    runtimeConfig={runtimeConfig}
+                    value={sharerValue}
+                    onAdd={(loginId, targetType) =>
+                      sharerMutation.mutate({ loginId, remove: false, targetType })
+                    }
+                    onRemove={(loginId) => sharerMutation.mutate({ loginId, remove: true })}
                   />
                 ) : (
                   sharers.map((sharer) => {
@@ -1092,15 +1268,11 @@ function IssueDetailBody({
               />
             ) : null}
           </div>
-          <div
-            className={`${stylex.props(styles.sidebar).className} span3 span-right-pane`}
-            data-stylex-owner="project-issue-detail-sidebar"
-          >
+          <div className="span3 span-right-pane" data-owner="project-issue-detail-sidebar">
             <div
-              {...stylex.props(styles.issueInfo)}
-              className={`${stylex.props(styles.issueInfo).className} issue-info`}
-              data-stylex-owner="project-issue-detail-sidebar-meta"
-              data-stylex-owner-issue-info="project-issue-detail-issue-info"
+              className="issue-info"
+              data-owner="project-issue-detail-sidebar-meta"
+              data-owner-issue-info="project-issue-detail-issue-info"
             >
               <form
                 id="issueUpdateForm"
@@ -1108,41 +1280,32 @@ function IssueDetailBody({
                 method="post"
               >
                 <input type="hidden" name="issues[0].id" value={issueId} />
-                <dl
-                  {...stylex.props(styles.sidebarMetaDl)}
-                  data-stylex-owner="issue-detail-sidebar-dl"
-                >
+                <dl data-owner="issue-detail-sidebar-dl">
                   {showIssue ? (
-                    <dd
-                      {...stylex.props(styles.sidebarMetaDd)}
-                      className={`${stylex.props(styles.sidebarMetaDd).className} project-btn-item`}
-                      data-stylex-owner="issue-detail-sidebar-dd"
-                    >
+                    <dd className="project-btn-item" data-owner="issue-detail-sidebar-dd">
                       <Link to={newSubtaskPath} className="ybtn ybtn-success">
                         {t("button.newSubtask")}
                       </Link>
                     </dd>
                   ) : null}
                   <dt>{t("issue.assignee")}</dt>
-                  <dd
-                    {...stylex.props(styles.sidebarMetaDd)}
-                    data-stylex-owner="issue-detail-sidebar-dd"
-                  >
+                  <dd data-owner="issue-detail-sidebar-dd">
                     {canUpdate ? (
                       <>
                         <input
                           type="hidden"
-                          className={`${stylex.props(issueInlineOwners.fullWidth).className} bigdrop`}
+                          className="bigdrop"
                           id="assignee"
                           name="assigneeLoginId"
                           placeholder={t("issue.noAssignee")}
                           value={selectedAssigneeLoginId}
                           readOnly
                           style={{ width: "100%" }}
-                          data-stylex-owner="issue-detail-assignee-input"
+                          data-owner="issue-detail-assignee-input"
                         />
                         <LegacyAssigneeControl
                           issue={issue}
+                          runtimeConfig={runtimeConfig}
                           value={selectedAssigneeLoginId}
                           onChange={(value) => {
                             setSelectedAssigneeLoginId(value);
@@ -1168,11 +1331,7 @@ function IssueDetailBody({
                             alt=""
                           />
                         </span>
-                        <strong
-                          {...stylex.props(styles.sidebarMetaAssigneeName)}
-                          className={`${stylex.props(styles.sidebarMetaAssigneeName).className} name`}
-                          data-stylex-owner="issue-detail-sidebar-assignee-name"
-                        >
+                        <strong className="name" data-owner="issue-detail-sidebar-assignee-name">
                           {stringField(issue.assigneeLabel)}
                         </strong>
                         <span className="loginid">
@@ -1187,15 +1346,9 @@ function IssueDetailBody({
                   </dd>
                 </dl>
                 {showMilestone ? (
-                  <dl
-                    {...stylex.props(styles.sidebarMetaDl)}
-                    data-stylex-owner="issue-detail-sidebar-dl"
-                  >
+                  <dl data-owner="issue-detail-sidebar-dl">
                     <dt>{t("milestone")}</dt>
-                    <dd
-                      {...stylex.props(styles.sidebarMetaDd)}
-                      data-stylex-owner="issue-detail-sidebar-dd"
-                    >
+                    <dd data-owner="issue-detail-sidebar-dd">
                       {milestonesPending ? (
                         stringField(issue.milestoneTitle) || t("issue.noMilestone")
                       ) : hasProjectMilestones ? (
@@ -1237,10 +1390,7 @@ function IssueDetailBody({
                     </dd>
                   </dl>
                 ) : null}
-                <dl
-                  {...stylex.props(styles.sidebarMetaDl)}
-                  data-stylex-owner="issue-detail-sidebar-dl"
-                >
+                <dl data-owner="issue-detail-sidebar-dl">
                   <dt>
                     {t("issue.dueDate")}
                     <span
@@ -1255,10 +1405,7 @@ function IssueDetailBody({
                         : ""}
                     </span>
                   </dt>
-                  <dd
-                    {...stylex.props(styles.sidebarMetaDd)}
-                    data-stylex-owner="issue-detail-sidebar-dd"
-                  >
+                  <dd data-owner="issue-detail-sidebar-dd">
                     {canUpdate ? (
                       <div className="search search-bar">
                         <IssueDueDateInput
@@ -1327,11 +1474,7 @@ function IssueDetailBody({
           <input type="hidden" id="numOfComments" value={String(issue.commentCount ?? 0)} />
           <input type="hidden" id="issueUpdateDate" value={issueUpdateMillis} />
         </div>
-        <div
-          {...stylex.props(styles.boardFooter)}
-          className={`${stylex.props(styles.boardFooter).className} board-footer`}
-          data-stylex-owner="project-issue-detail-board-footer"
-        >
+        <div className="board-footer" data-owner="project-issue-detail-board-footer">
           <IssueDetailKeymap project={project} />
         </div>
       </div>
@@ -1364,12 +1507,14 @@ function IssueDetailBody({
 }
 
 function IssuePostingHistory({
+  basePath,
   historyMarkdown,
   isAnonymous,
   loginTo,
   updatedByAuthorLabel,
   updatedLabel,
 }: {
+  basePath: string;
   historyMarkdown: string;
   isAnonymous: boolean;
   loginTo: string;
@@ -1414,17 +1559,15 @@ function IssuePostingHistory({
       <div
         ref={modalRef}
         id="-yona-posting-history"
-        className={`${stylex.props(styles.modal).className} ${open ? "modal in" : "modal hide"}`}
-        data-stylex-owner="issue-detail-history-modal"
+        className={open ? "modal in" : "modal hide"}
+        data-owner="issue-detail-history-modal"
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
       >
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
-        >
+        <div className="modal-header issue-detail-modal-section issue-detail-modal-header">
           <button
             type="button"
-            className={`${stylex.props(styles.modalClose).className} close`}
+            className="close issue-detail-modal-close"
             aria-hidden="true"
             onClick={closeHistory}
           >
@@ -1432,14 +1575,12 @@ function IssuePostingHistory({
           </button>
           <h5 className="nm">{t("change.history")}</h5>
         </div>
-        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <div className="modal-body issue-detail-modal-section">
+          <IssueMarkdown basePath={basePath}>
             {stripMarkdownComments(historyMarkdown)}
-          </ReactMarkdown>
+          </IssueMarkdown>
         </div>
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
-        >
+        <div className="modal-footer issue-detail-modal-section issue-detail-modal-footer">
           <button className="ybtn ybtn-info ybtn-small" aria-hidden="true" onClick={closeHistory}>
             {t("button.confirm")}
           </button>
@@ -1482,9 +1623,8 @@ function IssueVote({
     <>
       <div
         id="vote"
-        {...stylex.props(styles.issueVoteWrap)}
-        className={`${stylex.props(styles.issueVoteWrap).className} vote-wrap ${voters.length ? "voter-exists" : ""}`}
-        data-stylex-owner="project-issue-detail-vote-wrap"
+        className={`vote-wrap ${voters.length ? "voter-exists" : ""}`}
+        data-owner="project-issue-detail-vote-wrap"
       >
         {canComment ? (
           <button
@@ -1494,39 +1634,28 @@ function IssueVote({
             onClick={onIssueVote}
           >
             <span
-              {...stylex.props(
-                styles.issueVoteHeart,
-                hasVoted ? styles.issueVoteHeartWatching : undefined,
-              )}
-              className={`${stylex.props(styles.issueVoteHeart, hasVoted ? styles.issueVoteHeartWatching : undefined).className} heart`}
-              data-stylex-owner="project-issue-detail-vote-heart"
+              className={`heart${hasVoted ? " is-voted" : ""}`}
+              data-owner="project-issue-detail-vote-heart"
             >
               <i
-                {...issueVoteIconStyleProps}
-                className={`${issueVoteIconStyleProps.className} yobicon-hearts`}
-                data-stylex-owner="project-issue-detail-vote-heart-icon"
-                data-stylex-owner-instance="active"
+                className="yobicon-hearts"
+                data-owner="project-issue-detail-vote-heart-icon"
+                data-owner-instance="active"
               ></i>
             </span>
           </button>
         ) : (
           <span
-            {...disabledVoteStyleProps}
-            className={`ybtn-disabled ${disabledVoteStyleProps.className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-detail-disabled-vote"
+            className="ybtn-disabled"
+            data-owner="project-issue-detail-disabled-vote"
             title={t("user.login.alert")}
             data-login="required"
           >
-            <span
-              {...stylex.props(styles.issueVoteHeart)}
-              className={`${stylex.props(styles.issueVoteHeart).className} heart`}
-              data-stylex-owner="project-issue-detail-vote-heart-disabled"
-            >
+            <span className="heart" data-owner="project-issue-detail-vote-heart-disabled">
               <i
-                {...issueVoteIconStyleProps}
-                className={`${issueVoteIconStyleProps.className} yobicon-hearts`}
-                data-stylex-owner="project-issue-detail-vote-heart-icon"
-                data-stylex-owner-instance="disabled"
+                className="yobicon-hearts"
+                data-owner="project-issue-detail-vote-heart-icon"
+                data-owner-instance="disabled"
               ></i>
             </span>
           </span>
@@ -1583,30 +1712,20 @@ function IssueVoterAvatars({
     .join("");
 
   return (
-    <div
-      {...stylex.props(styles.issueVoterListWrap)}
-      className={`${stylex.props(styles.issueVoterListWrap).className} voter-list-wrap`}
-      data-stylex-owner="project-issue-detail-voter-list-wrap"
-    >
-      <ul
-        {...stylex.props(styles.issueVoterList)}
-        className={`${stylex.props(styles.issueVoterList).className} voter-list`}
-        data-stylex-owner="project-issue-detail-voter-list"
-      >
+    <div className="voter-list-wrap" data-owner="project-issue-detail-voter-list-wrap">
+      <ul className="voter-list" data-owner="project-issue-detail-voter-list">
         {visibleVoters.map((voter) => (
           <li
-            {...stylex.props(styles.issueVoterListItem)}
-            className={`${stylex.props(styles.issueVoterListItem).className} voter-list-item`}
-            data-stylex-owner="project-issue-detail-voter-list-item"
+            className="voter-list-item"
+            data-owner="project-issue-detail-voter-list-item"
             key={stringField(voter.loginId)}
           >
             <Link
               {...LEGACY_LINK_PROPS}
               to="/$user"
               params={{ user: stringField(voter.loginId) }}
-              {...stylex.props(styles.issueVoterAvatar)}
-              className={`${stylex.props(styles.issueVoterAvatar).className} avatar-wrap smaller`}
-              data-stylex-owner="project-issue-detail-voter-avatar"
+              className="avatar-wrap smaller"
+              data-owner="project-issue-detail-voter-avatar"
               title={stringField(voter.userLabel)}
             >
               <img src={stringField(voter.avatarUrl)} alt="" />
@@ -1615,10 +1734,9 @@ function IssueVoterAvatars({
         ))}
         {overflowVoters.length ? (
           <li
-            {...stylex.props(styles.issueVoterListItem, styles.issueVoterListItemLast)}
-            className={`${stylex.props(styles.issueVoterListItem, styles.issueVoterListItemLast).className} voter-list-item`}
+            className="voter-list-item"
             data-html="true"
-            data-stylex-owner="project-issue-detail-voter-overflow"
+            data-owner="project-issue-detail-voter-overflow"
             title={overflowTitle}
           >
             <button type="button" onClick={onOpen}>
@@ -1673,25 +1791,19 @@ function IssueVoterListDialog({
       <div
         ref={modalRef}
         id={id}
-        className={`${stylex.props(styles.modal).className} ${open ? `${stylex.props(styles.votersModalVisible).className ?? ""} modal hide voters-dialog in` : "modal hide voters-dialog"}`.trim()}
-        data-stylex-owner="issue-detail-voters-modal"
-        {...(open ? { style: stylex.props(styles.votersModalVisible).style } : {})}
+        className={open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}
+        data-owner="issue-detail-voters-modal"
+        {...(open ? { style: { display: "block" } } : {})}
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, () => onClose?.())}
       >
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
-        >
-          <button
-            type="button"
-            className={`${stylex.props(styles.modalClose).className} close`}
-            onClick={onClose}
-          >
+        <div className="modal-header issue-detail-modal-section issue-detail-modal-header">
+          <button type="button" className="close issue-detail-modal-close" onClick={onClose}>
             ×
           </button>
           <h5 className="nm">{t("issue.voters")}</h5>
         </div>
-        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
+        <div className="modal-body issue-detail-modal-section">
           <ul className="unstyled">
             {voters.map((voter) => (
               <li key={stringField(voter.loginId)}>
@@ -1716,9 +1828,7 @@ function IssueVoterListDialog({
             ))}
           </ul>
         </div>
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
-        >
+        <div className="modal-footer issue-detail-modal-section issue-detail-modal-footer">
           <button id="copyEmailBtn" className="ybtn ybtn-info ybtn-small" onClick={copyEmailText}>
             {t("button.copy.email")}
           </button>
@@ -1786,7 +1896,7 @@ function IssueWeight({
         onClick={() => weightMutation.mutate("upvote")}
         title={`${weightLabel}: Upvote`}
       >
-        <i className="yobicon-arrow-up-alt"></i>
+        <i className="yobicon-arrow-up-alt" data-yobicon={"\ue01d"}></i>
       </button>
       <button
         className="ybtn ybtn-small"
@@ -1794,7 +1904,7 @@ function IssueWeight({
         onClick={() => weightMutation.mutate("downvote")}
         title={`${weightLabel}: Down vote`}
       >
-        <i className="yobicon-arrow-down-alt"></i>
+        <i className="yobicon-arrow-down-alt" data-yobicon={"\ue01e"}></i>
       </button>
       <LegacyHoverPopover content={t("issue.weight.description")}>
         {(popoverProps) => (
@@ -2101,44 +2211,205 @@ function IssueLabelSelect({
   );
 }
 
-function LegacyAssigneeControl({
+function LegacySharerControl({
   issue,
-  onChange,
+  onAdd,
+  onRemove,
+  runtimeConfig,
   value,
 }: {
   issue: RestIssueDetailResponse;
-  onChange: (value: string) => void;
+  onAdd: (loginId: string, targetType?: string) => void;
+  onRemove: (loginId: string) => void;
+  runtimeConfig: RuntimeConfig;
   value: string;
 }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
-  const loginId = stringField(issue.assigneeLoginId);
+  const [query, setQuery] = useState("");
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = numberField(issue.issueNumber);
+  const selectedLoginIds = new Set(
+    (issue.sharers ?? []).map((sharer) => stringField(sharer.loginId)),
+  );
+  const usersQuery = useQuery({
+    enabled: open,
+    queryFn: () =>
+      searchIssueSharableUsers(runtimeConfig, {
+        issueNumber,
+        ownerName,
+        projectName,
+        query: query.trim(),
+      }),
+    queryKey: [
+      "project-issue-detail",
+      ownerName,
+      projectName,
+      issueNumber,
+      "sharable-users",
+      query,
+    ],
+  });
+  const users = (usersQuery.data?.items ?? []).filter(
+    (user) => !selectedLoginIds.has(user.loginId),
+  );
+
+  return (
+    <>
+      <input
+        type="hidden"
+        className="bigdrop width100p"
+        id="issueSharer"
+        name="issueSharer"
+        placeholder={t("issue.sharer.select")}
+        value={value}
+        readOnly
+      />
+      <div className="select2-container select2-container-multi width100p">
+        <ul className="select2-choices">
+          {(issue.sharers ?? []).map((sharer) => {
+            const loginId = stringField(sharer.loginId);
+            return (
+              <li className="select2-search-choice" key={loginId}>
+                <div>{stringField(sharer.userLabel, loginId)}</div>
+                <button
+                  type="button"
+                  className="select2-search-choice-close"
+                  aria-label={`${stringField(sharer.userLabel, loginId)} ${t("button.delete")}`}
+                  onClick={() => onRemove(loginId)}
+                ></button>
+              </li>
+            );
+          })}
+          <li className="select2-search-field">
+            <input
+              type="text"
+              value={query}
+              aria-label={t("issue.sharer.select")}
+              autoComplete="off"
+              placeholder={selectedLoginIds.size ? "" : t("issue.sharer.select")}
+              onFocus={() => setOpen(true)}
+              onChange={(event) => {
+                setQuery(event.currentTarget.value);
+                setOpen(true);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setOpen(false);
+                }
+              }}
+            />
+          </li>
+        </ul>
+        {open ? (
+          <div className="select2-drop select2-drop-active">
+            <ul className="select2-results" role="listbox">
+              {users.map((user) => (
+                <li key={`${user.type}:${user.loginId}`}>
+                  <button
+                    type="button"
+                    className="select2-result-label"
+                    role="option"
+                    onClick={() => {
+                      onAdd(user.loginId, user.type);
+                      setQuery("");
+                      setOpen(false);
+                    }}
+                  >
+                    {user.displayName || user.loginId} {user.loginId}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function LegacyAssigneeControl({
+  issue,
+  onChange,
+  runtimeConfig,
+  value,
+}: {
+  issue: RestIssueDetailResponse;
+  onChange: (value: string) => void;
+  runtimeConfig: RuntimeConfig;
+  value: string;
+}) {
+  const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<IssueAssignableUserItem | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const ownerName = stringField(issue.ownerName);
+  const projectName = stringField(issue.projectName);
+  const issueNumber = numberField(issue.issueNumber);
+  const initialLoginId = stringField(issue.assigneeLoginId);
+  const usersQuery = useQuery({
+    enabled: open,
+    queryFn: () =>
+      searchIssueAssignableUsers(runtimeConfig, {
+        issueNumber,
+        ownerName,
+        projectName,
+        query: query.trim(),
+      }),
+    queryKey: [
+      "project-issue-detail",
+      ownerName,
+      projectName,
+      issueNumber,
+      "assignable-users",
+      query,
+    ],
+  });
+  const users = usersQuery.data?.items ?? [];
+  const choose = (user: IssueAssignableUserItem | null) => {
+    setSelectedUser(user);
+    onChange(user?.loginId ?? "");
+    setQuery("");
+    setOpen(false);
+  };
+  const openControl = () => {
+    setOpen(true);
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  };
+  const displayLoginId =
+    selectedUser?.loginId ?? (value === initialLoginId ? initialLoginId : value);
+  const displayName =
+    selectedUser?.displayName ??
+    (displayLoginId === initialLoginId ? stringField(issue.assigneeLabel, initialLoginId) : value);
+
   return (
     <div
-      className={`${stylex.props(issueInlineOwners.fullWidth).className} select2-container bigdrop${open ? " select2-dropdown-open" : ""}`}
+      className={`select2-container bigdrop${open ? " select2-dropdown-open" : ""}`}
       role="combobox"
       aria-label={t("issue.assignee")}
       aria-expanded={open}
       aria-controls="issue-assignee-results"
-      data-stylex-owner="issue-detail-assignee-control"
+      data-owner="issue-detail-assignee-control"
     >
       <div
         className="select2-choice"
         role="button"
         tabIndex={0}
-        onClick={() => setOpen((current) => !current)}
-        onKeyDown={(event) => activateLegacyControl(event, () => setOpen((current) => !current))}
+        onClick={() => (open ? setOpen(false) : openControl())}
+        onKeyDown={(event) => activateLegacyControl(event, openControl)}
       >
         <span className="select2-chosen">
-          {value && loginId ? (
+          {value ? (
             <span className="usf-group">
-              {issue.assigneeAvatarUrl ? (
+              {value === initialLoginId && issue.assigneeAvatarUrl ? (
                 <span className="avatar-wrap smaller">
                   <img src={stringField(issue.assigneeAvatarUrl)} width="20" height="20" alt="" />
                 </span>
               ) : null}
-              <strong className="name">{stringField(issue.assigneeLabel, loginId)}</strong>
-              <span className="loginid"> {loginId}</span>
+              <strong className="name">{displayName}</strong>
+              <span className="loginid"> {displayLoginId}</span>
             </span>
           ) : (
             t("issue.noAssignee")
@@ -2150,49 +2421,50 @@ function LegacyAssigneeControl({
       </div>
       {open ? (
         <div className="select2-drop select2-drop-active">
+          <div className="select2-search">
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="select2-input"
+              value={query}
+              aria-label={t("issue.assignee")}
+              autoComplete="off"
+              onChange={(event) => setQuery(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setOpen(false);
+                }
+              }}
+            />
+          </div>
           <ul id="issue-assignee-results" className="select2-results" role="listbox">
             <li className={!value ? "select2-highlighted" : undefined}>
-              <div
+              <button
+                type="button"
                 className="select2-result-label"
                 role="option"
-                tabIndex={0}
                 aria-selected={!value}
-                onClick={() => {
-                  onChange("");
-                  setOpen(false);
-                }}
-                onKeyDown={(event) =>
-                  activateLegacyControl(event, () => {
-                    onChange("");
-                    setOpen(false);
-                  })
-                }
+                onClick={() => choose(null)}
               >
                 {t("issue.noAssignee")}
-              </div>
+              </button>
             </li>
-            {loginId ? (
-              <li className={value === loginId ? "select2-highlighted" : undefined}>
-                <div
+            {users.map((user) => (
+              <li
+                className={value === user.loginId ? "select2-highlighted" : undefined}
+                key={`${user.type}:${user.loginId}`}
+              >
+                <button
+                  type="button"
                   className="select2-result-label"
                   role="option"
-                  tabIndex={0}
-                  aria-selected={value === loginId}
-                  onClick={() => {
-                    onChange(loginId);
-                    setOpen(false);
-                  }}
-                  onKeyDown={(event) =>
-                    activateLegacyControl(event, () => {
-                      onChange(loginId);
-                      setOpen(false);
-                    })
-                  }
+                  aria-selected={value === user.loginId}
+                  onClick={() => choose(user)}
                 >
-                  {stringField(issue.assigneeLabel, loginId)} {loginId}
-                </div>
+                  {user.displayName || user.loginId} {user.loginId}
+                </button>
               </li>
-            ) : null}
+            ))}
           </ul>
         </div>
       ) : null}
@@ -2218,36 +2490,26 @@ function LegacyLabelControl({
     );
   return (
     <div
-      {...stylex.props(styles.labelControl)}
-      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""} ${stylex.props(styles.labelControl).className ?? ""}`.trim()}
-      data-stylex-owner="project-issue-detail-label-control"
+      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`.trim()}
+      data-owner="project-issue-detail-label-control"
     >
-      <ul
-        {...stylex.props(styles.labelChoices)}
-        className={`select2-choices ${stylex.props(styles.labelChoices).className}`}
-      >
+      <ul className="select2-choices">
         {labels
           .filter((label) => selectedLabelIds.has(stringField(label.id)))
           .map((label) => (
-            <li
-              {...stylex.props(styles.labelChoice)}
-              className={`select2-search-choice ${stylex.props(styles.labelChoice).className}`}
-              key={stringField(label.id)}
-            >
+            <li className="select2-search-choice" key={stringField(label.id)}>
               <div>
                 <IssueLabel
                   as="strong"
-                  {...stylex.props(styles.labelGeometry)}
                   className="label static"
                   color={stringField(label.color)}
                   labelId={stringField(label.id)}
-                  data-stylex-owner="project-issue-detail-label-geometry"
+                  data-owner="project-issue-detail-label-geometry"
                 >
                   {stringField(label.name)}
                 </IssueLabel>
               </div>
               <span
-                {...stylex.props(styles.labelChoiceClose)}
                 className="select2-search-choice-close"
                 role="button"
                 tabIndex={0}
@@ -2259,16 +2521,12 @@ function LegacyLabelControl({
               ></span>
             </li>
           ))}
-        <li
-          {...stylex.props(styles.labelSearchField)}
-          className={`select2-search-field ${stylex.props(styles.labelSearchField).className}`}
-        >
+        <li className="select2-search-field">
           <input
-            {...stylex.props(styles.labelSearchInput)}
-            className={`${stylex.props(styles.labelSearchInput).className} select2-input`}
+            className="select2-input"
             aria-label={t("label.select")}
             autoComplete="off"
-            data-stylex-owner="project-issue-detail-label-search-input"
+            data-owner="project-issue-detail-label-search-input"
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
           />
@@ -2296,7 +2554,7 @@ function LegacyLabelControl({
                       className="label"
                       color={stringField(label.color)}
                       labelId={id}
-                      data-stylex-owner="project-issue-detail-label-color"
+                      data-owner="project-issue-detail-label-color"
                     >
                       {stringField(label.name)}
                     </IssueLabel>
@@ -2353,7 +2611,7 @@ function IssueSelectedLabels({
             className="label static"
             color={stringField(label.color)}
             labelId={String(label.id)}
-            data-stylex-owner="project-issue-detail-label-geometry"
+            data-owner="project-issue-detail-label-geometry"
             key={String(label.id)}
           >
             {label.name}
@@ -2402,36 +2660,18 @@ function IssueChildIssues({
   ];
 
   if (isDirectSharedChildIssue || (!totalCount && visibleChildren.length === 0)) {
-    return (
-      <div
-        className={`${stylex.props(styles.subtasks).className} subtasks`}
-        data-stylex-owner="project-issue-detail-subtasks"
-      ></div>
-    );
+    return <div className="subtasks" data-owner="project-issue-detail-subtasks"></div>;
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
-  // Dynamic StyleX carries the server-derived percentage through a custom property.
-  const progressStyle = stylex.props(styles.subtaskProgressBar(`${percentage}%`));
+  const progressStyle = { "--x-subtask-progress-width": `${percentage}%` } as React.CSSProperties;
   const assigneeLabel = isCurrentIssueParent ? stringField(issue.assigneeLabel) : "";
   const parentIssueStateVariant = parentIssueState.toLowerCase();
-  const parentIssueStateStyleProps =
-    parentIssueStateVariant === "open"
-      ? stylex.props(styles.parentIssueState, styles.parentIssueStateOpen)
-      : parentIssueStateVariant === "closed"
-        ? stylex.props(styles.parentIssueState, styles.parentIssueStateClosed)
-        : stylex.props(styles.parentIssueState);
 
   return (
-    <div
-      className={`${stylex.props(styles.subtasks).className} subtasks`}
-      data-stylex-owner="project-issue-detail-subtasks"
-    >
+    <div className="subtasks" data-owner="project-issue-detail-subtasks">
       <div className="child-issues">
-        <div
-          className={`${stylex.props(styles.subtaskItem, styles.parentIssue).className} issue-item parent-issue`}
-          data-stylex-owner="project-issue-detail-parent-issue"
-        >
+        <div className="issue-item parent-issue" data-owner="project-issue-detail-parent-issue">
           <Link
             {...LEGACY_LINK_PROPS}
             to="/$ownerName/$projectName/issue/$issueNumber"
@@ -2441,13 +2681,13 @@ function IssueChildIssues({
             {`#${parentIssueNumber} ${parentIssueTitle}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
           </Link>
           <div
-            className={`${stylex.props(styles.subtaskProgressShell).className} upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}
-            data-stylex-owner="project-issue-detail-subtask-progress-shell"
+            className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}
+            data-owner="project-issue-detail-subtask-progress-shell"
           >
             <div
-              {...progressStyle}
-              className={`${progressStyle.className} bar ${percentage === 100 ? "done" : "red"}`}
-              data-stylex-owner="project-issue-detail-subtask-progress-bar"
+              style={progressStyle}
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              data-owner="project-issue-detail-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>
@@ -2456,15 +2696,15 @@ function IssueChildIssues({
             {totalCount}{" "}
           </span>
           <span
-            className={`${parentIssueStateStyleProps.className} parent-issue-state ${parentIssueState}`}
-            data-stylex-owner="project-issue-detail-parent-state"
+            className={`parent-issue-state ${parentIssueState}`}
+            data-owner="project-issue-detail-parent-state"
           >
             {issueStateLabel(parentIssueState, t)}
           </span>
         </div>
         <hr
-          className={`${stylex.props(styles.parentIssueDelimiter).className} parent-issue-delimeter`}
-          data-stylex-owner="project-issue-detail-parent-issue-delimiter"
+          className="parent-issue-delimeter"
+          data-owner="project-issue-detail-parent-issue-delimiter"
         />
         <div className="child-issues">
           {visibleChildren.map((child) => (
@@ -2501,8 +2741,8 @@ function IssueChildIssue({
 
   return (
     <div
-      className={`${stylex.props(styles.subtaskItem).className} ${isSelected ? stylex.props(styles.selectedChild).className : ""} issue-item ${isSelected ? "selected-child" : ""} child-issue`.trim()}
-      data-stylex-owner={
+      className={`issue-item ${isSelected ? "selected-child" : ""} child-issue`.trim()}
+      data-owner={
         isSelected ? "project-issue-detail-selected-child" : "project-issue-detail-subtask-item"
       }
     >
@@ -2530,8 +2770,8 @@ function IssueChildIssue({
         </span>
       </Link>
       <span
-        className={`${stylex.props(styles.childCommentVoteText).className} font12 no-border-at-child`}
-        data-stylex-owner="project-issue-detail-child-comment-vote-text"
+        className="font12 no-border-at-child"
+        data-owner="project-issue-detail-child-comment-vote-text"
       >
         <IssueChildCommentAndVotePair
           child={child}
@@ -2543,12 +2783,11 @@ function IssueChildIssue({
         <IssueLabel
           as={Link}
           {...LEGACY_LINK_PROPS}
-          {...stylex.props(styles.labelGeometry)}
           to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}`}
           className="label list-label twoColumeModeTarget"
           color={stringField(label.color)}
           labelId={stringField(label.id)}
-          data-stylex-owner="project-issue-detail-label-geometry"
+          data-owner="project-issue-detail-label-geometry"
           key={String(label.id)}
           data-category-id={stringField(label.categoryId)}
         >
@@ -2577,53 +2816,24 @@ function IssueChildCommentAndVotePair({
     return null;
   }
 
-  const itemCountGroupStyleProps = stylex.props(
-    styles.itemCountGroup,
-    styles.itemCountGroupNoBorder,
-  );
-  const commentLinkStyleProps = stylex.props(styles.itemCountLinkComment);
-  const voteLinkStyleProps = commentCount
-    ? stylex.props(styles.itemCountLinkVote, styles.itemCountLinkOffset)
-    : stylex.props(styles.itemCountLinkVote);
-  const commentIconStyleProps = stylex.props(
-    styles.countGroup,
-    styles.countGroupIcon,
-    styles.countGroupIconFirst,
-  );
-  const voteIconStyleProps = stylex.props(
-    styles.countGroup,
-    styles.countGroupIcon,
-    !commentCount ? styles.countGroupIconFirst : undefined,
-  );
-  const countStyleProps = stylex.props(styles.countGroup, styles.countGroupCount);
-
   return (
-    <span
-      {...itemCountGroupStyleProps}
-      className={`${itemCountGroupStyleProps.className} item-count-groups`}
-      data-stylex-owner="project-issue-detail-item-count-group"
-    >
+    <span className="item-count-groups" data-owner="project-issue-detail-item-count-group">
       {commentCount ? (
         <Link
           {...LEGACY_LINK_PROPS}
-          {...commentLinkStyleProps}
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={{ ownerName, projectName, issueNumber: stringField(child.issueNumber) }}
           hash="comments"
-          className={`${commentLinkStyleProps.className} comments-count comments-count-color`}
-          data-stylex-owner="project-issue-detail-comment-count-link"
+          className="comments-count comments-count-color"
+          data-owner="project-issue-detail-comment-count-link"
         >
           <span
-            {...commentIconStyleProps}
-            className={`${commentIconStyleProps.className} count-groups item-icon`}
-            data-stylex-owner="project-issue-detail-comment-count-icon"
+            className="count-groups item-icon issue-detail-count-group-icon-first"
+            data-owner="project-issue-detail-comment-count-icon"
           >
-            <i className="yobicon-comment2"></i>
+            <i className="yobicon-comment2" data-yobicon={"\ue274"}></i>
           </span>
-          <span
-            {...countStyleProps}
-            className={`${countStyleProps.className} count-groups item-count`}
-          >
+          <span className="count-groups item-count issue-detail-count-group-count">
             {commentCount}
           </span>
         </Link>
@@ -2631,24 +2841,19 @@ function IssueChildCommentAndVotePair({
       {voterCount ? (
         <Link
           {...LEGACY_LINK_PROPS}
-          {...voteLinkStyleProps}
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={{ ownerName, projectName, issueNumber: stringField(child.issueNumber) }}
           hash="vote"
-          className={`${voteLinkStyleProps.className} vote-count vote-color`}
-          data-stylex-owner="project-issue-detail-vote-count-link"
+          className={`vote-count vote-color${commentCount ? " issue-detail-vote-count-link-offset" : ""}`}
+          data-owner="project-issue-detail-vote-count-link"
         >
           <span
-            {...voteIconStyleProps}
-            className={`${voteIconStyleProps.className} count-groups item-icon`}
-            data-stylex-owner="project-issue-detail-vote-count-icon"
+            className={`count-groups item-icon${commentCount ? "" : " issue-detail-count-group-icon-first"}`}
+            data-owner="project-issue-detail-vote-count-icon"
           >
-            <i className="yobicon-hearts"></i>
+            <i className="yobicon-hearts" data-yobicon={"\ue4b0"}></i>
           </span>
-          <span
-            {...countStyleProps}
-            className={`${countStyleProps.className} count-groups item-count strong`}
-          >
+          <span className="count-groups item-count strong issue-detail-count-group-count">
             {voterCount}
           </span>
         </Link>
@@ -2676,22 +2881,18 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div
-      {...stylex.props(styles.keymapWrapper)}
-      className={stylex.props(styles.keymapWrapper).className}
-      data-stylex-owner="issue-detail-keymap-wrapper"
-    >
+    <div data-owner="issue-detail-keymap-wrapper">
       <button type="button" className="ybtn ybtn-inverse ybtn-mini" onClick={openKeymap}>
         {t("title.keymap")}
       </button>
       <div
         ref={modalRef}
         id="helpKeys"
-        className={`${stylex.props(styles.modal, styles.keymapModal).className} ${open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}`}
-        data-stylex-owner="issue-detail-keymap-modal"
+        className={open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
+        data-owner="issue-detail-keymap-modal"
         tabIndex={-1}
         role="dialog"
-        {...(open ? { style: stylex.props(styles.keymapModalVisible).style } : {})}
+        {...(open ? { style: { display: "block" } } : {})}
         onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
       >
         <div className="row-fluid">
@@ -2789,13 +2990,12 @@ function IssueActionButtons({
       {canUpdate ? (
         <button
           type="button"
-          {...stylex.props(styles.issueActionEdit)}
-          className={`${stylex.props(styles.issueActionEdit).className} icon btn-transparent-with-fontsize-lineheight`}
-          data-stylex-owner="project-issue-detail-action-edit"
+          className="icon btn-transparent-with-fontsize-lineheight"
+          data-owner="project-issue-detail-action-edit"
           title={t("button.edit")}
           onClick={onEditClick}
         >
-          <i className="yobicon-edit-2"></i>
+          <i className="yobicon-edit-2" data-yobicon={"\ue51d"}></i>
         </button>
       ) : (
         <Link
@@ -2805,25 +3005,23 @@ function IssueActionButtons({
         >
           <button
             type="button"
-            {...stylex.props(styles.issueActionEdit)}
-            className={`${stylex.props(styles.issueActionEdit).className} icon btn-transparent-with-fontsize-lineheight`}
-            data-stylex-owner="project-issue-detail-action-edit"
+            className="icon btn-transparent-with-fontsize-lineheight"
+            data-owner="project-issue-detail-action-edit"
             title={t("button.show.original")}
           >
-            <i className="yobicon-edit-2"></i>
+            <i className="yobicon-edit-2" data-yobicon={"\ue51d"}></i>
           </button>
         </Link>
       )}
       {canBeDeleted && canDelete ? (
         <button
           type="button"
-          {...stylex.props(styles.issueActionDelete)}
-          className={`${stylex.props(styles.issueActionDelete).className} icon btn-transparent-with-fontsize-lineheight`}
-          data-stylex-owner="project-issue-detail-action-delete"
+          className="icon btn-transparent-with-fontsize-lineheight"
+          data-owner="project-issue-detail-action-delete"
           title={t("button.delete")}
           onClick={onDeleteClick}
         >
-          <i className="yobicon-trash"></i>
+          <i className="yobicon-trash" data-yobicon={"\ue838"}></i>
         </button>
       ) : null}
       {!canBeDeleted ? (
@@ -2831,12 +3029,11 @@ function IssueActionButtons({
           {(popoverProps) => (
             <button
               type="button"
-              {...stylex.props(styles.issueActionDelete)}
-              className={`${stylex.props(styles.issueActionDelete).className} icon disabled btn-transparent-with-fontsize-lineheight`}
-              data-stylex-owner="project-issue-detail-action-delete"
+              className="icon disabled btn-transparent-with-fontsize-lineheight"
+              data-owner="project-issue-detail-action-delete"
               {...popoverProps}
             >
-              <i className="yobicon-trash"></i>
+              <i className="yobicon-trash" data-yobicon={"\ue838"}></i>
             </button>
           )}
         </LegacyHoverPopover>
@@ -2886,11 +3083,7 @@ function IssueMainTimeline({
   const hasTimelineItems = timeline.length > 0;
 
   return (
-    <div
-      id="comments"
-      className={`${stylex.props(styles.timeline).className} board-comment-wrap`}
-      data-stylex-owner="project-issue-detail-timeline"
-    >
+    <div id="comments" className="board-comment-wrap" data-owner="project-issue-detail-timeline">
       <div id="timeline">
         <div className="timeline-list">
           <div className="comment-header">
@@ -2929,7 +3122,7 @@ function IssueMainTimeline({
           ) : null}
         </div>
       </div>
-      <IssueCommentForm basePath={basePath} issue={issue} />
+      <IssueCommentForm basePath={basePath} issue={issue} runtimeConfig={runtimeConfig} />
     </div>
   );
 }
@@ -2937,35 +3130,68 @@ function IssueMainTimeline({
 function IssueCommentForm({
   basePath,
   issue,
+  runtimeConfig,
 }: {
   basePath: string;
   issue: RestIssueDetailResponse;
+  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const [contentsMarkdown, setContentsMarkdown] = useState("");
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
+  const nextState = stringField(issue.state, "open").toLowerCase() === "open" ? "closed" : "open";
+  const detailQueryKey = [
+    "project-issue-detail",
+    ownerName,
+    projectName,
+    Number(issueNumber) || 0,
+  ] as const;
+  const submitMutation = useMutation({
+    mutationFn: async (withStateTransition: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      if (!withStateTransition || contentsMarkdown.trim()) {
+        await createIssueComment(runtimeConfig, csrfToken, {
+          contentsMarkdown,
+          issueNumber,
+          ownerName,
+          projectName,
+        });
+      }
+      if (withStateTransition) {
+        await updateIssueState(runtimeConfig, csrfToken, {
+          issueNumber,
+          ownerName,
+          projectName,
+          state: nextState,
+        });
+      }
+    },
+    onSuccess() {
+      setContentsMarkdown("");
+      void queryClient.invalidateQueries({ queryKey: detailQueryKey });
+    },
+  });
 
   if (!booleanField(issue.viewerCanComment)) {
     return (
       <div
-        className={`${stylex.props(styles.unauthorizedComment).className} write-comment-box`}
+        className="write-comment-box"
         title={t("user.login.alert")}
         data-login="required"
-        data-stylex-owner="project-issue-detail-unauthorized-comment"
+        data-owner="project-issue-detail-unauthorized-comment"
       >
         <div className="write-comment-wrap">
           <div className="textarea-box">
             <textarea
-              className={`${stylex.props(issueInlineOwners.disabledComment).className} comment disabled`}
+              className="comment disabled"
               disabled
-              data-stylex-owner="issue-detail-disabled-comment-secondary"
+              data-owner="issue-detail-disabled-comment-secondary"
             ></textarea>
           </div>
-          <div
-            className={`${disabledCommentActionsClassName} right-txt`}
-            data-stylex-owner="project-issue-detail-disabled-comment-actions"
-          >
+          <div className="right-txt" data-owner="project-issue-detail-disabled-comment-actions">
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
           </div>
         </div>
@@ -2974,43 +3200,61 @@ function IssueCommentForm({
   }
 
   return (
-    <>
-      <form
-        id="comment-form"
-        action={prefixBasePath(
-          basePath,
-          `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
-        )}
-        method="post"
-        encType="multipart/form-data"
-      >
-        <div
-          className={`${stylex.props(styles.commentForm).className} write-comment-box`}
-          data-stylex-owner="project-issue-detail-comment-form"
-        >
-          <div className="write-comment-wrap">
-            <MarkdownEditor
-              {...issueDetailMarkdownEditorProps("comment-body", "contents", "", "contents")}
-            />
-            <UploadForm
-              resourceType="ISSUE_COMMENT"
-              wrapperId="upload"
-              helpClassName={`${stylex.props(styles.uploadHelp).className} help`}
-              helpOwner="project-issue-detail-upload-help"
-            />
-            <div
-              className={stylex.props(styles.commentFormActions).className}
-              data-stylex-owner="project-issue-detail-comment-actions"
-            >
-              <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
-              <button type="submit" className="ybtn ybtn-success">
-                {t("button.comment.new")}
+    <form
+      id="comment-form"
+      action={prefixBasePath(
+        basePath,
+        `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
+      )}
+      method="post"
+      encType="multipart/form-data"
+      onSubmit={(event) => {
+        event.preventDefault();
+        submitMutation.mutate(false);
+      }}
+    >
+      <div className="write-comment-box" data-owner="project-issue-detail-comment-form">
+        <div className="write-comment-wrap">
+          <MarkdownEditor
+            {...issueDetailMarkdownEditorProps("comment-body", "contents", "", "contents")}
+            textareaValue={contentsMarkdown}
+            textareaOnChange={(event) => setContentsMarkdown(event.currentTarget.value)}
+            textareaExtraProps={{
+              onKeyDown(event) {
+                if (event.key === "Enter" && event.shiftKey && (event.ctrlKey || event.metaKey)) {
+                  event.preventDefault();
+                  submitMutation.mutate(true);
+                }
+              },
+            }}
+          />
+          <UploadForm
+            resourceType="ISSUE_COMMENT"
+            wrapperId="upload"
+            helpClassName="help"
+            helpOwner="project-issue-detail-upload-help"
+          />
+          <div data-owner="project-issue-detail-comment-actions">
+            {booleanField(issue.viewerCanUpdate) ? (
+              <button
+                type="button"
+                className="ybtn"
+                id="dynamic-comment-btn"
+                disabled={submitMutation.isPending}
+                onClick={() => submitMutation.mutate(true)}
+              >
+                {t(
+                  `${contentsMarkdown.length ? "button.commentAndNextState" : "button.nextState"}.${nextState}`,
+                )}
               </button>
-            </div>
+            ) : null}
+            <button type="submit" className="ybtn ybtn-success" disabled={submitMutation.isPending}>
+              {t("button.comment.new")}
+            </button>
           </div>
         </div>
-      </form>
-    </>
+      </div>
+    </form>
   );
 }
 
@@ -3050,26 +3294,13 @@ function IssueEventRow({
 
   if (eventType === "ISSUE_STATE_CHANGED") {
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
-        <span
-          {...stylex.props(styles.timelineEventState, timelineEventStateVariant(newValue))}
-          className={`${stylex.props(styles.timelineEventState, timelineEventStateVariant(newValue)).className} state ${newValue}`}
-          data-stylex-owner="issue-detail-timeline-event-state"
-        >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
+        <span className={`state ${newValue}`} data-owner="issue-detail-timeline-event-state">
           {issueStateLabel(newValue, t)}
         </span>
         {sender}
         {issueStateEventText(newValue)}
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3082,17 +3313,8 @@ function IssueEventRow({
     const targetLoginId = stringField(event.targetLoginId, stringField(event.newValue));
     const targetLabel = stringField(event.targetLabel, targetLoginId);
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
-        <span
-          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
-          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
-          data-stylex-owner="issue-detail-timeline-event-state"
-        >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
+        <span className="state changed" data-owner="issue-detail-timeline-event-state">
           {t("issue.state.assigned")}
         </span>
         {sender}
@@ -3107,11 +3329,7 @@ function IssueEventRow({
             loginId={targetLoginId}
           />
         )}
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3139,17 +3357,8 @@ function IssueEventRow({
         </span>
       );
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
-        <span
-          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
-          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state milestone-changed`}
-          data-stylex-owner="issue-detail-timeline-event-state"
-        >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
+        <span className="state milestone-changed" data-owner="issue-detail-timeline-event-state">
           {t("issue.update.milestone.id")}
         </span>
         {language === "ko-KR" ? (
@@ -3161,11 +3370,7 @@ function IssueEventRow({
             {sender} changed milestone to {milestone}
           </>
         )}
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3178,17 +3383,8 @@ function IssueEventRow({
     const [fromOwner, fromProject] = stringField(event.oldValue).split("/");
     const fromProjectName = [fromOwner, fromProject].filter(Boolean).join("/");
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
-        <span
-          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
-          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
-          data-stylex-owner="issue-detail-timeline-event-state"
-        >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
+        <span className="state changed" data-owner="issue-detail-timeline-event-state">
           moved
         </span>
         {sender} moved this issue from{" "}
@@ -3202,11 +3398,7 @@ function IssueEventRow({
             {fromProjectName}
           </Link>
         </strong>
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3218,17 +3410,8 @@ function IssueEventRow({
   if (eventType === "ISSUE_REFERRED_FROM_COMMIT") {
     const commitId = stringField(event.newValue);
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
-        <span
-          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
-          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
-          data-stylex-owner="issue-detail-timeline-event-state"
-        >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
+        <span className="state changed" data-owner="issue-detail-timeline-event-state">
           mentioned
         </span>
         {sender} mentioned this issue in{" "}
@@ -3244,11 +3427,7 @@ function IssueEventRow({
             @{commitId}
           </Link>
         </strong>
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3261,17 +3440,8 @@ function IssueEventRow({
     const pullRequestNumber = stringField(event.pullRequestNumber, stringField(event.newValue));
     const pullRequestTitle = stringField(event.pullRequestTitle, pullRequestNumber);
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
-        <span
-          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
-          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
-          data-stylex-owner="issue-detail-timeline-event-state"
-        >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
+        <span className="state changed" data-owner="issue-detail-timeline-event-state">
           mentioned
         </span>
         {sender} mentioned this issue in{" "}
@@ -3286,11 +3456,7 @@ function IssueEventRow({
             {pullRequestTitle}
           </Link>
         </strong>
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3317,26 +3483,13 @@ function IssueEventRow({
       />
     );
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
         {grouped ? (
-          <span
-            {...stylex.props(styles.timelineEventState)}
-            className={`${stylex.props(styles.timelineEventState).className} state`}
-            data-stylex-owner="issue-detail-timeline-event-state"
-          ></span>
+          <span className="state" data-owner="issue-detail-timeline-event-state"></span>
         ) : (
           <span
-            {...stylex.props(
-              styles.timelineEventState,
-              timelineEventStateVariant(added ? "sharer-added" : "sharer-deleted"),
-            )}
-            className={`${stylex.props(styles.timelineEventState, timelineEventStateVariant(added ? "sharer-added" : "sharer-deleted")).className} state ${added ? "sharer-added" : "sharer-deleted"}`}
-            data-stylex-owner="issue-detail-timeline-event-state"
+            className={`state ${added ? "sharer-added" : "sharer-deleted"}`}
+            data-owner="issue-detail-timeline-event-state"
           >
             {added ? t("issue.sharer") : t("issue.event.sharer.deleted.title")}
           </span>
@@ -3344,11 +3497,7 @@ function IssueEventRow({
         {sender}
         {added ? " shared current issue to " : " cancelled issue sharing with "}
         {target}
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3365,26 +3514,13 @@ function IssueEventRow({
       issue.labels,
     );
     return (
-      <li
-        {...stylex.props(styles.timelineEvent)}
-        className={`${stylex.props(styles.timelineEvent).className} event`}
-        id={`event-${eventId}`}
-        data-stylex-owner="issue-detail-timeline-event"
-      >
+      <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
         {grouped ? (
-          <span
-            {...stylex.props(styles.timelineEventState)}
-            className={`${stylex.props(styles.timelineEventState).className} state`}
-            data-stylex-owner="issue-detail-timeline-event-state"
-          ></span>
+          <span className="state" data-owner="issue-detail-timeline-event-state"></span>
         ) : (
           <span
-            {...stylex.props(
-              styles.timelineEventState,
-              timelineEventStateVariant(added ? "label-added" : "label-deleted"),
-            )}
-            className={`${stylex.props(styles.timelineEventState, timelineEventStateVariant(added ? "label-added" : "label-deleted")).className} state ${added ? "label-added" : "label-deleted"}`}
-            data-stylex-owner="issue-detail-timeline-event-state"
+            className={`state ${added ? "label-added" : "label-deleted"}`}
+            data-owner="issue-detail-timeline-event-state"
           >
             {added ? "Added" : "Removed"}
           </span>
@@ -3392,11 +3528,7 @@ function IssueEventRow({
         {sender}
         {added ? " added " : " removed "}
         {label} label
-        <span
-          {...stylex.props(styles.timelineEventDate)}
-          className={`${stylex.props(styles.timelineEventDate).className} date`}
-          data-stylex-owner="issue-detail-timeline-event-date"
-        >
+        <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3406,18 +3538,9 @@ function IssueEventRow({
   }
 
   return (
-    <li
-      {...stylex.props(styles.timelineEvent)}
-      className={`${stylex.props(styles.timelineEvent).className} event`}
-      id={`event-${eventId}`}
-      data-stylex-owner="issue-detail-timeline-event"
-    >
+    <li className="event" id={`event-${eventId}`} data-owner="issue-detail-timeline-event">
       {stringField(event.newValue)} by {sender}
-      <span
-        {...stylex.props(styles.timelineEventDate)}
-        className={`${stylex.props(styles.timelineEventDate).className} date`}
-        data-stylex-owner="issue-detail-timeline-event-date"
-      >
+      <span className="date" data-owner="issue-detail-timeline-event-date">
         <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
           {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
         </Link>
@@ -3598,17 +3721,13 @@ function IssueCommentRow({
               {...LEGACY_LINK_PROPS}
               to="."
               hash={commentHash}
-              className={`${stylex.props(styles.shareLinkHidden).className} share-link`}
-              data-stylex-owner="issue-detail-share-link"
+              className="share-link"
+              data-owner="issue-detail-share-link"
             >
               [Link]
             </Link>
           </span>
-          <span
-            {...stylex.props(styles.commentActionRow)}
-            className={`${stylex.props(styles.commentActionRow).className} act-row pull-right`}
-            data-stylex-owner="project-issue-detail-comment-action-row"
-          >
+          <span className="act-row pull-right" data-owner="project-issue-detail-comment-action-row">
             <span className="new-issue-by">
               <Link
                 {...LEGACY_LINK_PROPS}
@@ -3633,10 +3752,13 @@ function IssueCommentRow({
                   onCommentVote(commentId, hasVoted);
                 }}
               >
-                <i className="yobicon-hearts vote-heart-on"></i>
+                <i className="yobicon-hearts vote-heart-on" data-yobicon={"\ue4b0"}></i>
               </button>
             ) : currentUserIsAnonymous ? (
-              <i className="yobicon-hearts vote-heart-off vote-heart-disable-hover"></i>
+              <i
+                className="yobicon-hearts vote-heart-off vote-heart-disable-hover"
+                data-yobicon={"\ue4b0"}
+              ></i>
             ) : (
               <button
                 type="button"
@@ -3647,29 +3769,27 @@ function IssueCommentRow({
                   onCommentVote(commentId, hasVoted);
                 }}
               >
-                <i className="yobicon-hearts vote-heart-off"></i>
+                <i className="yobicon-hearts vote-heart-off" data-yobicon={"\ue4b0"}></i>
               </button>
             )}
             {translationApiEnabled ? (
               <button
                 type="button"
-                {...stylex.props(styles.commentTranslationButton)}
-                className={`${stylex.props(styles.commentTranslationButton).className} icon btn-transparent-with-fontsize-lineheight comment-translate`}
-                data-stylex-owner="project-issue-detail-comment-translation-button"
+                className="icon btn-transparent-with-fontsize-lineheight comment-translate"
+                data-owner="project-issue-detail-comment-translation-button"
                 data-comment-id={commentId}
                 title="Translation"
                 disabled={translatePending || translatedContentsMarkdown !== null}
                 onClick={() => void translateComment()}
               >
-                <i className="yobicon-lang"></i>
+                <i className="yobicon-lang" data-yobicon={"\ue1a3"}></i>
               </button>
             ) : null}
             {canRead ? (
               <button
                 type="button"
-                {...stylex.props(styles.commentActionEdit)}
-                className={`${stylex.props(styles.commentActionEdit).className} btn-transparent-with-fontsize-lineheight`}
-                data-stylex-owner="project-issue-detail-comment-action-edit"
+                className="btn-transparent-with-fontsize-lineheight"
+                data-owner="project-issue-detail-comment-action-edit"
                 data-comment-id={commentId}
                 title="Edit comment"
                 onClick={(event) => {
@@ -3680,22 +3800,21 @@ function IssueCommentRow({
                   setReplyVisible(false);
                 }}
               >
-                <i className="yobicon-edit-2"></i>
+                <i className="yobicon-edit-2" data-yobicon={"\ue51d"}></i>
               </button>
             ) : null}
             {canDelete ? (
               <button
                 type="button"
-                {...stylex.props(styles.commentActionDelete)}
-                className={`${stylex.props(styles.commentActionDelete).className} btn-transparent-with-fontsize-lineheight`}
-                data-stylex-owner="project-issue-detail-comment-action-delete"
+                className="btn-transparent-with-fontsize-lineheight"
+                data-owner="project-issue-detail-comment-action-delete"
                 title="Delete comment"
                 onClick={(event) => {
                   insulateModalButtonClick(event);
                   onCommentDeleteRequest(deleteUri);
                 }}
               >
-                <i className="yobicon-trash"></i>
+                <i className="yobicon-trash" data-yobicon={"\ue838"}></i>
               </button>
             ) : null}
           </span>
@@ -3707,16 +3826,18 @@ function IssueCommentRow({
           contentsMarkdown={contentsMarkdown}
           formOpen={commentEditOpen}
           issue={issue}
+          runtimeConfig={runtimeConfig}
           showNotification={isAuthorComment}
           onCancel={(event) => {
             event.preventDefault();
             event.stopPropagation();
             setCommentEditOpen(false);
           }}
+          onSaved={() => setCommentEditOpen(false)}
         />
         <div
           id={`comment-body-${commentId}`}
-          {...(commentEditOpen ? stylex.props(styles.commentBodyHidden) : {})}
+          {...(commentEditOpen ? { style: { display: "none" } } : {})}
         >
           <TasklistBar markdown={contentsMarkdown} />
           <div
@@ -3725,15 +3846,18 @@ function IssueCommentRow({
             data-via-email={String(viaEmail)}
             data-yobi-original-message-processed={viaEmail ? "true" : undefined}
           >
-            <OriginalMessageMarkdown contentsMarkdown={contentsMarkdown} viaEmail={viaEmail} />
+            <OriginalMessageMarkdown
+              basePath={basePath}
+              contentsMarkdown={contentsMarkdown}
+              viaEmail={viaEmail}
+            />
           </div>
           <div
-            {...stylex.props(styles.commentAttachments)}
-            className={`${stylex.props(styles.commentAttachments).className} attachments`}
-            data-stylex-owner="project-issue-detail-comment-attachments"
+            className="attachments"
+            data-owner="project-issue-detail-comment-attachments"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
           >
-            <AttachedFiles attachments={comment.attachments} basePath={basePath} />
+            <AttachedFiles attachments={comment.attachments} />
           </div>
         </div>
       </div>
@@ -3746,6 +3870,7 @@ function IssueCommentRow({
         }}
         formOpen={childFormOpen}
         issue={issue}
+        runtimeConfig={runtimeConfig}
         onCommentDeleteRequest={onCommentDeleteRequest}
         parentCommentId={commentId}
         replyVisible={replyVisible}
@@ -3759,9 +3884,11 @@ function IssueCommentRow({
 }
 
 function OriginalMessageMarkdown({
+  basePath,
   contentsMarkdown,
   viaEmail,
 }: {
+  basePath: string;
   contentsMarkdown: string;
   viaEmail: boolean;
 }) {
@@ -3770,26 +3897,23 @@ function OriginalMessageMarkdown({
   const originalMessage = viaEmail ? splitOriginalMessage(sanitizedContentsMarkdown) : null;
 
   if (!originalMessage) {
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{sanitizedContentsMarkdown}</ReactMarkdown>;
+    return <IssueMarkdown basePath={basePath}>{sanitizedContentsMarkdown}</IssueMarkdown>;
   }
 
   return (
     <>
       {originalMessage.visibleMarkdown ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+        <IssueMarkdown basePath={basePath}>{originalMessage.visibleMarkdown}</IssueMarkdown>
       ) : null}
       <button
         type="button"
-        className={stylex.props(styles.originalMessageToggle).className}
-        data-stylex-owner="project-issue-detail-original-message-toggle"
+        data-owner="project-issue-detail-original-message-toggle"
         onClick={() => setShowOriginalMessage((current) => !current)}
       >
         ...
       </button>
       <div hidden={!showOriginalMessage}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {originalMessage.originalMarkdown}
-        </ReactMarkdown>
+        <IssueMarkdown basePath={basePath}>{originalMessage.originalMarkdown}</IssueMarkdown>
       </div>
     </>
   );
@@ -3833,6 +3957,7 @@ function ChildComments({
   onCommentDeleteRequest,
   parentCommentId,
   replyVisible,
+  runtimeConfig,
   toggleForm,
 }: {
   basePath: string;
@@ -3843,8 +3968,10 @@ function ChildComments({
   onCommentDeleteRequest: (requestUri: string) => void;
   parentCommentId: string;
   replyVisible: boolean;
+  runtimeConfig: RuntimeConfig;
   toggleForm: () => void;
 }) {
+  const queryClient = useQueryClient();
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
@@ -3855,32 +3982,47 @@ function ChildComments({
     basePath,
     `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
   );
+  const [contentsMarkdown, setContentsMarkdown] = useState("");
   const [notificationVisible, setNotificationVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return createIssueComment(runtimeConfig, csrfToken, {
+        contentsMarkdown,
+        issueNumber,
+        ownerName,
+        parentCommentId,
+        projectName,
+      });
+    },
+    onSuccess() {
+      void queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+      setContentsMarkdown("");
+      closeForm();
+    },
+  });
 
   return (
     <>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
-        {...stylex.props(styles.childCommentReply)}
-        {...stylex.props(
-          replyVisible ? styles.childCommentReplyVisible : styles.childCommentReplyHidden,
-        )}
-        data-stylex-owner="project-issue-detail-child-comment-reply"
+        data-owner="project-issue-detail-child-comment-reply"
         onClick={() => {
           toggleForm();
           if (!formOpen) {
             requestAnimationFrame(() => textareaRef.current?.focus());
           }
         }}
-        className={`${stylex.props(styles.childCommentReply).className} ${stylex.props(replyVisible ? styles.childCommentReplyVisible : styles.childCommentReplyHidden).className} add-a-comment`}
+        className={`add-a-comment${replyVisible ? "" : " issue-detail-child-comment-reply-hidden"}`}
       >
         Reply
       </div>
       <div
-        {...stylex.props(styles.childCommentSurface)}
-        className={`${stylex.props(styles.childCommentSurface).className} subcomment-media-body`}
-        data-stylex-owner="project-issue-detail-child-comment-surface"
+        className="subcomment-media-body"
+        data-owner="project-issue-detail-child-comment-surface"
       >
         <div className="child-comments">
           {childComments.map((comment) => (
@@ -3895,13 +4037,18 @@ function ChildComments({
         </div>
         {booleanField(issue.viewerCanComment) ? (
           <div
-            {...stylex.props(
-              formOpen ? styles.childCommentFormVisible : styles.childCommentFormHidden,
-            )}
-            data-stylex-owner="project-issue-detail-child-comment-form"
-            className={`${stylex.props(formOpen ? styles.childCommentFormVisible : styles.childCommentFormHidden).className} child-comment-input-form`}
+            data-owner="project-issue-detail-child-comment-form"
+            className={`child-comment-input-form${formOpen ? "" : " issue-detail-child-comment-form-hidden"}`}
           >
-            <form action={newCommentAction} method="post" encType="multipart/form-data">
+            <form
+              action={newCommentAction}
+              method="post"
+              encType="multipart/form-data"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitMutation.mutate();
+              }}
+            >
               <input
                 className="parentCommentId"
                 type="hidden"
@@ -3909,18 +4056,24 @@ function ChildComments({
                 value={parentCommentId}
               />
               <div
-                {...stylex.props(styles.childCommentFormRow)}
-                className={`${stylex.props(styles.childCommentFormRow).className} oneline-comment-box`}
-                data-stylex-owner="project-issue-detail-child-comment-form-row"
+                className="oneline-comment-box"
+                data-owner="project-issue-detail-child-comment-form-row"
               >
                 <textarea
                   ref={textareaRef}
-                  {...stylex.props(styles.childCommentFormTextarea)}
-                  className={`${stylex.props(styles.childCommentFormTextarea).className} editorSeries`}
+                  className="issue-detail-child-comment-textarea editorSeries"
+                  value={contentsMarkdown}
                   name="contents"
                   rows={1}
                   placeholder={`Reply (${replyShortcutKey} + ENTER)`}
                   onFocus={() => setNotificationVisible(true)}
+                  onChange={(event) => setContentsMarkdown(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                      event.preventDefault();
+                      submitMutation.mutate();
+                    }
+                  }}
                   onKeyUp={(event) => {
                     if (event.key === "Escape") {
                       closeForm();
@@ -3929,27 +4082,20 @@ function ChildComments({
                   {...{ markdown: "true" }}
                 ></textarea>
                 <button
-                  {...stylex.props(styles.childCommentFormSubmit)}
-                  className={`${stylex.props(styles.childCommentFormSubmit).className} ybtn ybtn-success`}
+                  className="issue-detail-child-comment-submit ybtn ybtn-success"
                   type="submit"
+                  disabled={submitMutation.isPending}
                 >
                   OK
                 </button>
               </div>
               <div
-                {...stylex.props(styles.childCommentNotificationReceiver)}
-                {...stylex.props(
-                  notificationVisible
-                    ? styles.childCommentNotificationReceiverVisible
-                    : styles.childCommentNotificationReceiverHidden,
-                )}
-                data-stylex-owner="project-issue-detail-child-comment-notification-receiver"
-                className={`${stylex.props(styles.childCommentNotificationReceiver).className} ${stylex.props(notificationVisible ? styles.childCommentNotificationReceiverVisible : styles.childCommentNotificationReceiverHidden).className} notification-receiver`}
+                data-owner="project-issue-detail-child-comment-notification-receiver"
+                className={`notification-receiver${notificationVisible ? "" : " issue-detail-notification-receiver-hidden"}`}
               >
                 <span
-                  {...stylex.props(styles.childCommentNotificationReceiverTitle)}
-                  data-stylex-owner="project-issue-detail-child-comment-notification-receiver-title"
-                  className={`${stylex.props(styles.childCommentNotificationReceiverTitle).className} notification-receiver-title`}
+                  data-owner="project-issue-detail-child-comment-notification-receiver-title"
+                  className="notification-receiver-title"
                 >
                   {"Notification receivers "}
                 </span>
@@ -3989,14 +4135,10 @@ function ChildComment({
 
   return (
     <div className="one-line-comment">
-      <div
-        {...stylex.props(styles.childCommentContents)}
-        className={`${stylex.props(styles.childCommentContents).className} contents`}
-        data-stylex-owner="project-issue-detail-child-comment-contents"
-      >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      <div className="contents" data-owner="project-issue-detail-child-comment-contents">
+        <IssueMarkdown basePath={basePath}>
           {stripMarkdownComments(stringField(comment.contentsMarkdown))}
-        </ReactMarkdown>
+        </IssueMarkdown>
         <span className="subcomment-author hide">
           -{" "}
           <Link
@@ -4019,9 +4161,8 @@ function ChildComment({
           {booleanField(comment.viewerCanDelete) ? (
             <button
               type="button"
-              {...stylex.props(styles.childCommentDelete)}
-              className={`${stylex.props(styles.childCommentDelete).className} btn-transparent deleteButtonX`}
-              data-stylex-owner="project-issue-detail-child-comment-delete"
+              className="btn-transparent deleteButtonX"
+              data-owner="project-issue-detail-child-comment-delete"
               title="Delete comment"
               onClick={(event) => {
                 insulateModalButtonClick(event);
@@ -4044,8 +4185,10 @@ function CommentUpdateForm({
   contentsMarkdown,
   formOpen,
   issue,
-  showNotification,
   onCancel,
+  onSaved,
+  runtimeConfig,
+  showNotification,
 }: {
   basePath: string;
   canUpdate: boolean;
@@ -4053,20 +4196,43 @@ function CommentUpdateForm({
   contentsMarkdown: string;
   formOpen: boolean;
   issue: RestIssueDetailResponse;
-  showNotification: boolean;
   onCancel: (event: MouseEvent<HTMLButtonElement>) => void;
+  onSaved: () => void;
+  runtimeConfig: RuntimeConfig;
+  showNotification: boolean;
 }) {
+  const queryClient = useQueryClient();
   const commentId = stringField(comment.id);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
   const attachments = attachmentItems(comment.attachments);
-
+  const [editedMarkdown, setEditedMarkdown] = useState(contentsMarkdown);
+  useEffect(() => setEditedMarkdown(contentsMarkdown), [contentsMarkdown]);
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateIssueComment(runtimeConfig, csrfToken, {
+        attachmentIds: attachments.map((attachment) => stringField(attachment.id)).filter(Boolean),
+        commentId,
+        contentsMarkdown: editedMarkdown,
+        issueNumber,
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      void queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+      onSaved();
+    },
+  });
   return (
     <div
       id={`comment-editform-${commentId}`}
-      {...(formOpen ? stylex.props(styles.replyVisible) : {})}
-      className={`${formOpen ? `${stylex.props(styles.replyVisible).className} ` : ""}comment-update-form`}
+      {...(formOpen ? { style: { display: "block" } } : {})}
+      className="comment-update-form"
     >
       <form
         action={prefixBasePath(
@@ -4075,6 +4241,10 @@ function CommentUpdateForm({
         )}
         method="post"
         encType="multipart/form-data"
+        onSubmit={(event) => {
+          event.preventDefault();
+          updateMutation.mutate();
+        }}
       >
         <input type="hidden" name="id" value={commentId} />
         <div className="write-comment-box">
@@ -4086,6 +4256,8 @@ function CommentUpdateForm({
                 contentsMarkdown,
                 commentId,
               )}
+              textareaValue={editedMarkdown}
+              textareaOnChange={(event) => setEditedMarkdown(event.currentTarget.value)}
             />
             <div className="upload-drop-here">
               <div className="msg-wrap">
@@ -4093,8 +4265,8 @@ function CommentUpdateForm({
               </div>
             </div>
             <div
-              className={`${stylex.props(styles.commentUpdateActions).className} comment-update-button upload-button-line`}
-              data-stylex-owner="project-issue-detail-comment-update-actions"
+              className="comment-update-button upload-button-line"
+              data-owner="project-issue-detail-comment-update-actions"
             >
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
@@ -4132,7 +4304,11 @@ function CommentUpdateForm({
                 Cancel
               </button>
               {canUpdate ? (
-                <button type="submit" className="ybtn ybtn-info">
+                <button
+                  type="submit"
+                  className="ybtn ybtn-info"
+                  disabled={updateMutation.isPending}
+                >
                   Save
                 </button>
               ) : null}
@@ -4185,13 +4361,12 @@ function issueDetailMarkdownEditorProps(
   wrapId: string,
 ): MarkdownEditorProps {
   return {
-    wrapperClassName:
-      `mt10 markdown-editor ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim(),
-    wrapperStyleProps: stylex.props(styles.markdownEditorWrapper),
+    wrapperClassName: `mt10 markdown-editor `.trim(),
+
     wrapperOwner: "project-issue-detail-markdown-editor-wrapper",
     wrapperInstance: wrapId,
     tabClickPreventDefault: true,
-    tabContentClassName: `${stylex.props(styles.editorTabContent).className} tab-content`,
+    tabContentClassName: ` tab-content`,
     tabContentPaneOwner: "project-issue-detail-editor-tab-content",
     tabContentPaneInstance: wrapId,
     editPaneId: `edit-${wrapId}`,
@@ -4201,10 +4376,10 @@ function issueDetailMarkdownEditorProps(
     textareaMode: editorMode,
     textareaDefaultValue: value,
     previewClassName: `markdown-preview markdown-wrap ${editorMode}`,
-    notificationRevealStyle: stylex.props(styles.notificationVisible),
+    notificationRevealStyle: { style: { display: "block" } },
     notificationOwner: "project-issue-detail-markdown-editor-notification-receiver",
     notificationInstance: wrapId,
-    notificationTitleStyleProps: stylex.props(styles.markdownEditorNotificationReceiverTitle),
+    notificationTitleStyleProps: { style: { color: "#999" } },
     notificationTitleOwner: "project-issue-detail-markdown-editor-notification-receiver-title",
   };
 }
@@ -4235,38 +4410,36 @@ function TasklistBar({ markdown }: { markdown: string }) {
   const percentage = hasTasks ? (completed / tasks.length) * 100 : 0;
   const width = `${percentage}%`;
   const complete = hasTasks && percentage === 100;
-  const tasklistStyles = hasTasks
-    ? stylex.props(styles.tasklist, styles.tasklistVisible)
-    : stylex.props(styles.tasklist);
-  const titleStyles = stylex.props(styles.taskTitle, styles.taskTitleWidth(width));
-  const progressBarStyles = stylex.props(styles.taskProgressBar(width, complete));
+  const titleStyle = {
+    fontWeight: 500,
+    width,
+  };
+  const progressBarStyle = {
+    backgroundColor: complete ? "#8bc34a" : "red",
+    height: "2px",
+    transitionDuration: "0.2s",
+    "--x-task-progress-width": width,
+  } as React.CSSProperties;
   return (
     <div
-      className={`${tasklistStyles.className} tasklist task-show`}
-      data-stylex-owner="project-issue-detail-tasklist"
+      className={`tasklist task-show${hasTasks ? " project-issue-detail-tasklist-visible" : ""}`}
+      data-owner="project-issue-detail-tasklist"
     >
-      <div
-        {...titleStyles}
-        className={`${titleStyles.className} task-title`}
-        data-stylex-owner="project-issue-detail-task-title"
-      >
+      <div style={titleStyle} className="task-title" data-owner="project-issue-detail-task-title">
         Tasks
         <span
-          className={`${stylex.props(styles.taskDoneCounter).className} done-counter`}
-          data-stylex-owner="project-issue-detail-task-done-counter"
+          className="issue-detail-task-done-counter done-counter"
+          data-owner="project-issue-detail-task-done-counter"
         >
           {hasTasks ? `(${completed}/${tasks.length})` : null}
         </span>
       </div>
-      <div
-        className={`${stylex.props(styles.taskProgress).className} task-progress`}
-        data-stylex-owner="project-issue-detail-task-progress"
-      >
+      <div className="task-progress" data-owner="project-issue-detail-task-progress">
         <div
-          {...progressBarStyles}
-          className={`${progressBarStyles.className} bar ${complete ? "green" : "red"}`}
-          data-stylex-owner="project-issue-detail-task-progress-bar"
-          data-stylex-owner-instance="tasklist"
+          style={progressBarStyle}
+          className={`bar ${complete ? "green" : "red"}`}
+          data-owner="project-issue-detail-task-progress-bar"
+          data-owner-instance="tasklist"
           title="Tasklist"
         ></div>
       </div>
@@ -4292,8 +4465,7 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
     return (
       <>
         <span
-          {...stylex.props(styles.voterSummary)}
-          data-stylex-owner="issue-detail-voter-summary"
+          data-owner="issue-detail-voter-summary"
           data-html="true"
           title={`${voters
             .slice(0, 5)
@@ -4347,8 +4519,8 @@ function IssueIndexTimeline({
   return (
     <div
       id="comments"
-      className={`${stylex.props(styles.indexTimeline).className} board-comment-wrap`}
-      data-stylex-owner="project-issue-detail-index-timeline"
+      className="board-comment-wrap"
+      data-owner="project-issue-detail-index-timeline"
     >
       <div id="timeline">
         <div className="timeline-list">
@@ -4430,7 +4602,7 @@ function IssueIndexComment({
         <div className="index-comment-author">
           {childComments.length > 0 ? (
             <span className="comment-exists">
-              <i className="yobicon-comment2"></i>
+              <i className="yobicon-comment2" data-yobicon={"\ue274"}></i>
               {childComments.length > 1 ? childComments.length : ""}
             </span>
           ) : null}
@@ -4458,8 +4630,8 @@ function IssueIndexComment({
               {...LEGACY_LINK_PROPS}
               to="."
               hash={commentHash}
-              className={`${stylex.props(styles.shareLinkHidden).className} share-link`}
-              data-stylex-owner="issue-detail-share-link-secondary"
+              className="share-link"
+              data-owner="issue-detail-share-link-secondary"
             >
               [Link]
             </Link>
@@ -4502,33 +4674,25 @@ function DeleteConfirm({
       <div
         ref={modalRef}
         id="deleteConfirm"
-        className={`${stylex.props(styles.modal).className} ${open ? "modal fade in" : "modal hide fade"}`}
-        data-stylex-owner="issue-detail-delete-confirm-modal"
+        className={open ? "modal fade in" : "modal hide fade"}
+        data-owner="issue-detail-delete-confirm-modal"
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, onCancel)}
       >
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
-        >
-          <button
-            type="button"
-            className={`${stylex.props(styles.modalClose).className} close`}
-            onClick={closeDialog}
-          >
+        <div className="modal-header issue-detail-modal-section issue-detail-modal-header">
+          <button type="button" className="close issue-detail-modal-close" onClick={closeDialog}>
             ×
           </button>
-          <h3 className={stylex.props(styles.modalTitle).className}>{title}</h3>
+          <h3 className="issue-detail-modal-title">{title}</h3>
         </div>
-        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
-          <p className={stylex.props(styles.modalBodyText).className}>{message}</p>
+        <div className="modal-body issue-detail-modal-section">
+          <p className="issue-detail-modal-body-text">{message}</p>
         </div>
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
-        >
+        <div className="modal-footer issue-detail-modal-section issue-detail-modal-footer">
           <button
             type="button"
-            className={`${stylex.props(styles.dangerButton).className} ybtn ybtn-danger`}
-            data-stylex-owner="project-issue-detail-delete-danger-button"
+            className="ybtn ybtn-danger"
+            data-owner="project-issue-detail-delete-danger-button"
             onClick={confirmDelete}
           >
             {confirmLabel}
@@ -4579,35 +4743,27 @@ function CommentDeleteConfirm({
       <div
         ref={modalRef}
         id="comment-delete-modal"
-        className={`${stylex.props(styles.modal).className} modal ${open ? "in " : "hide "}fade`}
-        data-stylex-owner="issue-detail-comment-delete-modal"
+        className={`modal ${open ? "in " : "hide "}fade`}
+        data-owner="issue-detail-comment-delete-modal"
         aria-hidden={open ? "false" : undefined}
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, onCancel)}
       >
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
-        >
-          <button
-            type="button"
-            className={`${stylex.props(styles.modalClose).className} close`}
-            onClick={closeDialog}
-          >
+        <div className="modal-header issue-detail-modal-section issue-detail-modal-header">
+          <button type="button" className="close issue-detail-modal-close" onClick={closeDialog}>
             ×
           </button>
-          <h3 className={stylex.props(styles.modalTitle).className}>{title}</h3>
+          <h3 className="issue-detail-modal-title">{title}</h3>
         </div>
-        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
-          <p className={stylex.props(styles.modalBodyText).className}>{message}</p>
+        <div className="modal-body issue-detail-modal-section">
+          <p className="issue-detail-modal-body-text">{message}</p>
         </div>
-        <div
-          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
-        >
+        <div className="modal-footer issue-detail-modal-section issue-detail-modal-footer">
           <button
             id="comment-delete-confirm"
             type="button"
-            className={`${stylex.props(styles.dangerButton).className} ybtn ybtn-danger`}
-            data-stylex-owner="project-issue-detail-comment-delete-danger-button"
+            className="ybtn ybtn-danger"
+            data-owner="project-issue-detail-comment-delete-danger-button"
             onClick={confirmDelete}
           >
             {confirmLabel}
@@ -4634,14 +4790,13 @@ function compareLabels(
 
 function AttachedFiles({
   attachments,
-  basePath,
 }: {
   attachments?:
     | RestIssueDetailResponse["attachments"]
     | { attachments?: RestIssueDetailResponse["attachments"] };
-  basePath: string;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const files = attachmentItems(attachments);
 
   if (files.length === 0) {
@@ -4656,21 +4811,31 @@ function AttachedFiles({
         const href = stringField(file.url);
         const sizeReadable = stringField(file.sizeLabel, stringField(file.size));
         const downloadHref = attachmentDownloadHref(href);
-        const downloadPath = attachmentLinkPath(basePath, downloadHref);
-        const filePath = attachmentLinkPath(basePath, href);
+        // TanStack Link renders `to` base-prefixed and overrides a bare `href`
+        // with the current location; carry the base-relative path in `to` so
+        // the anchor renders the real href (reloadDocument keeps it native).
+        const downloadLinkProps: ComponentPropsWithoutRef<typeof Link> = {
+          href: downloadHref,
+          reloadDocument: true,
+          to: toLinkTarget(router.basepath, downloadHref),
+        };
+        const fileLinkProps: ComponentPropsWithoutRef<typeof Link> = {
+          href,
+          reloadDocument: true,
+          target: "_blank",
+          to: toLinkTarget(router.basepath, href),
+        };
 
         return (
           <li className="attach" key={`${id}:${href}:${name}`}>
             <Link
-              to={downloadPath}
-              href={downloadHref}
-              reloadDocument
+              {...downloadLinkProps}
               className="download ybtn ybtn-mini"
               title={`${t("button.download")} ${name}`}
             >
               <i className="yobicon-download"></i>
             </Link>
-            <Link to={filePath} href={href} reloadDocument target="_blank" className="vmiddle">
+            <Link {...fileLinkProps} className="vmiddle">
               <i className="yobicon-paperclip"></i>
               <span className="filename">{name}</span>
               <span className="filesize">({sizeReadable})</span>
@@ -4702,13 +4867,18 @@ function attachmentDownloadHref(href: string) {
   return href.includes("?") ? `${href}&action=download` : `${href}?action=download`;
 }
 
-function attachmentLinkPath(basePath: string, href: string) {
-  if (href === "" || basePath === "" || basePath === "/") {
-    return href;
-  }
-  if (href.startsWith(basePath)) {
-    const path = href.slice(basePath.length);
-    return path === "" ? "/" : path;
+// TanStack Link prefixes `to` with the router basepath and overrides a bare
+// `href` prop with the current location. Hrefs arriving here are already
+// base-prefixed (API attachment urls, markdown urlTransform), so hand `to`
+// the base-relative path; external URLs pass through untouched.
+function toLinkTarget(basePath: string, href: string): string {
+  if (
+    basePath !== "/" &&
+    href.startsWith("/") &&
+    !href.startsWith("//") &&
+    href.startsWith(`${basePath}/`)
+  ) {
+    return href.slice(basePath.length) || "/";
   }
   return href;
 }
@@ -4792,11 +4962,10 @@ function issueEventLabelBox(value: string, labels: RestIssueDetailResponse["labe
   return (
     <IssueLabel
       as="div"
-      {...stylex.props(styles.labelGeometry)}
       className="label"
       color={stringField(label.color)}
       labelId={String(label.id)}
-      data-stylex-owner="project-issue-detail-label-geometry"
+      data-owner="project-issue-detail-label-geometry"
     >
       {labelName}
     </IssueLabel>
@@ -4818,33 +4987,6 @@ function isAddingEvent(event: IssueTimelineItem) {
 
 function isDeletingEvent(event: IssueTimelineItem) {
   return stringField(event.newValue) === "" && stringField(event.oldValue) !== "";
-}
-
-function timelineEventStateVariant(variant: string) {
-  switch (variant) {
-    case "open":
-      return styles.timelineStateOpen;
-    case "closed":
-      return styles.timelineStateClosed;
-    case "changed":
-    case "merged":
-    case "milestone-changed":
-      return styles.timelineStateChanged;
-    case "rejected":
-      return styles.timelineStateRejected;
-    case "conflict":
-      return styles.timelineStateConflict;
-    case "resolved":
-      return styles.timelineStateResolved;
-    case "sharer-added":
-    case "label-added":
-      return styles.timelineStateAdded;
-    case "sharer-deleted":
-    case "label-deleted":
-      return styles.timelineStateDeleted;
-    default:
-      return undefined;
-  }
 }
 
 function stringField(value: unknown, fallback = "") {

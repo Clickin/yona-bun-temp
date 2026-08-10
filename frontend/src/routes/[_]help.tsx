@@ -1,159 +1,12 @@
 import * as React from "react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath } from "../runtime-config";
-import { globalBreakpoints } from "../theme.stylex";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { helpColors } from "./-help.stylex";
-
-const faqStyles = stylex.create({
-  sprite: (spriteUrl: string) => ({
-    "--help-faq-sprite": `url(${spriteUrl})`,
-  }),
-});
 type ExternalLinkTo = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 const externalLinkTo = (value: string) => value as unknown as ExternalLinkTo;
-
-const styles = stylex.create({
-  breadcrumbOuter: {
-    boxSizing: "border-box",
-    minWidth: { [globalBreakpoints.mobile]: "10px" },
-    padding: "0px 10px",
-    width: "100%",
-  },
-  breadcrumbInner: {
-    margin: "0px auto",
-  },
-  breadcrumbHeading: {
-    lineHeight: "30px",
-    padding: "10px 10px 5px",
-  },
-  pageWrapOuter: {
-    boxSizing: "border-box",
-    marginTop: "10px",
-    minHeight: "450px",
-    minWidth: { [globalBreakpoints.mobile]: "10px" },
-    padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" },
-    width: "100%",
-  },
-  pageWrap: {
-    backgroundColor: helpColors.pageSurface,
-    margin: "0px auto",
-  },
-  faqList: {
-    listStyle: "none",
-    margin: "30px 0px 0px",
-    padding: "0px",
-  },
-  faqRow: {
-    borderBottomColor: helpColors.faqBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    marginBottom: "14px",
-  },
-  faqLastRow: {
-    borderBottomStyle: "none",
-  },
-  faqQuestionWrap: {
-    boxSizing: "content-box",
-    display: "table",
-    lineHeight: 1.2,
-    marginBottom: "14px",
-    padding: "0px 15px",
-    width: "100%",
-  },
-  faqQuestionWrapOpen: {
-    marginBottom: "16px",
-  },
-  faqIcon: {
-    backgroundImage: "none",
-    display: "inline-block",
-    fontFamily: "yobicon",
-    fontSize: "2em",
-    fontStyle: "normal",
-    fontVariant: "normal",
-    fontWeight: "bold",
-    lineHeight: 1,
-    textDecoration: "none",
-    verticalAlign: "middle",
-    WebkitFontSmoothing: "antialiased",
-    MozOsxFontSmoothing: "grayscale",
-  },
-  faqQuestionIcon: {
-    color: helpColors.faqQuestionIcon,
-    "::before": { content: '"\\e48f"' },
-  },
-  faqQuestionControl: {
-    backgroundColor: "transparent",
-    borderStyle: "none",
-    borderWidth: "0px",
-    boxShadow: "none",
-    color: "inherit",
-    display: "block",
-    fontFamily: "inherit",
-    fontSize: "inherit",
-    fontWeight: "inherit",
-    height: "100%",
-    lineHeight: "inherit",
-    padding: "0px",
-    textAlign: "inherit",
-    width: "100%",
-  },
-  faqQuestion: {
-    boxSizing: "content-box",
-    color: helpColors.faqQuestionText,
-    display: "table-cell",
-    fontSize: "14px",
-    lineHeight: 1.2,
-    textAlign: "start",
-    textDecoration: "none",
-    verticalAlign: "middle",
-    width: "85%",
-  },
-  faqToggleIcon: {
-    backgroundImage: "var(--help-faq-sprite)",
-    backgroundPosition: "-3px -144px",
-    backgroundRepeat: "no-repeat",
-    display: "inline-block",
-    height: "14px",
-    margin: "17px",
-    verticalAlign: "middle",
-    width: "14px",
-  },
-  faqToggleIconOpen: {
-    backgroundPosition: "-20px -144px",
-  },
-  faqAnswerWrap: {
-    backgroundColor: helpColors.faqAnswerSurface,
-    borderTopColor: helpColors.faqBorder,
-    borderTopStyle: "solid",
-    borderTopWidth: "1px",
-    boxSizing: "content-box",
-    display: "none",
-    padding: "15px",
-  },
-  faqAnswerWrapOpen: {
-    display: "table",
-  },
-  faqAnswerIcon: {
-    color: helpColors.faqAnswerIcon,
-    marginRight: "30px",
-    "::before": { content: '"\\e480"' },
-  },
-  faqAnswer: {
-    boxSizing: "content-box",
-    display: "table-cell",
-    lineHeight: "180%",
-    paddingRight: "9%",
-    textAlign: "justify",
-    verticalAlign: "top",
-    width: "100%",
-    wordBreak: "break-all",
-  },
-});
 
 const legacyAnswerLinkActiveOptions = {
   exact: true,
@@ -235,25 +88,14 @@ function HelpTocScreen({ appName }: { appName: string }) {
 
   return (
     <>
-      <div
-        {...stylex.props(styles.breadcrumbOuter)}
-        data-stylex-owner="help-shell-breadcrumb-outer"
-      >
-        <div
-          {...stylex.props(styles.breadcrumbInner)}
-          data-stylex-owner="help-shell-breadcrumb-inner"
-        >
-          <h3
-            {...stylex.props(styles.breadcrumbHeading)}
-            data-stylex-owner="help-shell-breadcrumb-heading"
-          >
-            {t("title.help")}
-          </h3>
+      <div data-owner="help-shell-breadcrumb-outer">
+        <div data-owner="help-shell-breadcrumb-inner">
+          <h3 data-owner="help-shell-breadcrumb-heading">{t("title.help")}</h3>
         </div>
       </div>
-      <div {...stylex.props(styles.pageWrapOuter)} data-stylex-owner="help-shell-page-wrap-outer">
-        <div {...stylex.props(styles.pageWrap)} data-stylex-owner="help-shell-page-wrap">
-          <ul {...stylex.props(styles.faqList)} data-stylex-owner="help-faq-list">
+      <div data-owner="help-shell-page-wrap-outer">
+        <div data-owner="help-shell-page-wrap">
+          <ul data-owner="help-faq-list">
             <HelpFaqRow
               answer={
                 <>
@@ -419,26 +261,18 @@ function HelpFaqRow({
 }) {
   return (
     <li
-      {...stylex.props(styles.faqRow, isLast && styles.faqLastRow)}
       data-index={index}
       data-state={isOpen ? "open" : "closed"}
-      data-stylex-owner="help-faq-row"
+      data-owner="help-faq-row"
       onClick={() => onToggle(index)}
       onKeyDown={(event) => onKeyDown(event, index)}
     >
-      <div
-        {...stylex.props(styles.faqQuestionWrap, isOpen && styles.faqQuestionWrapOpen)}
-        data-stylex-owner="help-faq-question-wrap"
-      >
-        <i
-          {...stylex.props(styles.faqIcon, styles.faqQuestionIcon)}
-          data-stylex-owner="help-faq-question-icon"
-        />
-        <span {...stylex.props(styles.faqQuestion)} data-stylex-owner="help-faq-question">
+      <div data-owner="help-faq-question-wrap">
+        <i data-owner="help-faq-question-icon" />
+        <span data-owner="help-faq-question">
           <button
-            {...stylex.props(styles.faqQuestionControl)}
             aria-expanded={isOpen}
-            data-stylex-owner="help-faq-question-control"
+            data-owner="help-faq-question-control"
             onClick={(event) => {
               event.stopPropagation();
               onToggle(index);
@@ -448,28 +282,11 @@ function HelpFaqRow({
             {question}
           </button>
         </span>
-        <i
-          {...stylex.props(
-            styles.faqToggleIcon,
-            faqStyles.sprite(legacySpriteUrl),
-            isOpen && styles.faqToggleIconOpen,
-          )}
-          aria-hidden="true"
-          data-stylex-owner="help-faq-toggle-icon"
-        />
+        <i aria-hidden="true" data-owner="help-faq-toggle-icon" />
       </div>
-      <div
-        {...stylex.props(styles.faqAnswerWrap, isOpen && styles.faqAnswerWrapOpen)}
-        data-state={isOpen ? "open" : "closed"}
-        data-stylex-owner="help-faq-answer-wrap"
-      >
-        <i
-          {...stylex.props(styles.faqIcon, styles.faqAnswerIcon)}
-          data-stylex-owner="help-faq-answer-icon"
-        />
-        <div {...stylex.props(styles.faqAnswer)} data-stylex-owner="help-faq-answer">
-          {answer}
-        </div>
+      <div data-state={isOpen ? "open" : "closed"} data-owner="help-faq-answer-wrap">
+        <i data-owner="help-faq-answer-icon" />
+        <div data-owner="help-faq-answer">{answer}</div>
       </div>
     </li>
   );

@@ -1,4 +1,3 @@
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PullRequestFileUploader } from "../../../../../components/file-uploader";
 import { PullRequestMarkdownEditor } from "../../../../../components/markdown-editor";
@@ -16,7 +15,6 @@ import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { styles as sx } from "./-editform.stylex";
 
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
@@ -67,24 +65,25 @@ function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: Runtim
 
 function ProjectPullRequestEditErrorBody({ status }: { status: 403 | 404 }) {
   const { t } = useLegacyMessages();
+  const errorIconStyle = {
+    backgroundImage: `url(${legacySpriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  };
   return (
-    <div className="page-wrap-outer" data-stylex-owner="pull-request-edit-error-page">
+    <div className="page-wrap-outer" data-owner="pull-request-edit-error-page">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(sx.errorWrap)}
-          className={`${stylex.props(sx.errorWrap).className} error-wrap`.trim()}
-          data-stylex-owner="pull-request-edit-error-wrap"
-        >
+        <div className="error-wrap" data-owner="pull-request-edit-error-wrap">
           <i
-            {...stylex.props(sx.errorIcon(`url(${legacySpriteUrl})`))}
-            className={`${stylex.props(sx.errorIcon(`url(${legacySpriteUrl})`)).className} ico ico-err2`.trim()}
-            data-stylex-owner="pull-request-edit-error-icon"
+            style={errorIconStyle}
+            className="ico ico-err2"
+            data-owner="pull-request-edit-error-icon"
           ></i>
-          <p
-            {...stylex.props(sx.errorMessage)}
-            className={stylex.props(sx.errorMessage).className}
-            data-stylex-owner="pull-request-edit-error-message"
-          >
+          <p data-owner="pull-request-edit-error-message">
             {t(status === 404 ? "error.notfound" : "error.forbidden")}
           </p>
         </div>
@@ -184,8 +183,8 @@ function ProjectPullRequestEditBody({
               `/${ownerName}/${projectName}/pullRequest/${prNumber}/edit`,
             )}
             encType="multipart/form-data"
-            className={`${stylex.props(sx.form).className} nm`}
-            data-stylex-owner="pull-request-edit-form"
+            className="nm"
+            data-owner="pull-request-edit-form"
             onSubmit={(event) => {
               event.preventDefault();
               submitForm(event.currentTarget);
@@ -201,23 +200,29 @@ function ProjectPullRequestEditBody({
                 {status.message}
               </div>
             ) : null}
-            <div data-stylex-owner="pull-request-edit-editor">
+            <div data-owner="pull-request-edit-editor">
               <input
                 type="text"
                 id="title"
                 name="title"
                 maxLength={255}
-                className={`${stylex.props(sx.title).className} text`}
+                className="text"
                 defaultValue={pullRequest.title}
                 placeholder={t("title")}
               />
-              <div {...stylex.props(sx.editorWrap)}>
+              <div className="pr-edit-editor-wrap">
                 <PullRequestMarkdownEditor
                   value={pullRequest.bodyMarkdown}
-                  wrapperClassName={`${stylex.props(sx.markdownEditorWrapper).className} mt10`.trim()}
-                  wrapperStyle={stylex.props(sx.markdownEditorWrapper)}
-                  editorStyle={stylex.props(sx.editor)}
-                  tabContentClassName={`${stylex.props(sx.editorTabContent).className} tab-content`}
+                  wrapperClassName="mt10"
+                  editorStyle={{
+                    style: {
+                      borderColor: "#dddddd",
+                      borderStyle: "solid",
+                      borderWidth: "1px",
+                      height: "300px",
+                    },
+                  }}
+                  tabContentClassName="tab-content"
                   owners={{
                     wrapper: "pull-request-editform-markdown-editor-wrapper",
                     tabContent: "pull-request-edit-editor-tab-content",
@@ -226,15 +231,20 @@ function ProjectPullRequestEditBody({
               </div>
               <PullRequestFileUploader
                 resourceId={pullRequest.id}
-                wrapperStyleProps={stylex.props(sx.uploader)}
-                attachedFilesStyleProps={stylex.props(sx.attachmentDivider)}
-                helpClassName={`help ${stylex.props(sx.uploadSaveHelp).className ?? ""}`.trim()}
+                attachedFilesStyleProps={{
+                  style: {
+                    borderTopColor: "#e0e0e0",
+                    borderTopStyle: "solid",
+                    borderTopWidth: "1px",
+                  },
+                }}
+                helpClassName="help"
                 owners={{
                   wrapper: "pull-request-edit-uploader",
                   saveHelp: "pull-request-edit-upload-save-help",
                 }}
               />
-              <div className={`${stylex.props(sx.actions).className} actions`}>
+              <div className="pr-edit-actions actions">
                 <button type="submit" className="ybtn ybtn-success">
                   {t("button.save")}
                 </button>
@@ -256,8 +266,8 @@ function ProjectPullRequestEditBody({
             <div className="tab-content">
               <div
                 id="__commits"
-                className={`${stylex.props(sx.mergeResult).className} code-browse-wrap tab-pane active`}
-                data-stylex-owner="pull-request-edit-merge-result"
+                className="code-browse-wrap tab-pane active"
+                data-owner="pull-request-edit-merge-result"
               >
                 {mergeResult ? (
                   <MergeResult
@@ -311,31 +321,24 @@ function PullRequestConflictConfirmModal({
     <>
       <div
         id="pullRequestConflictConfirm"
-        className={`${stylex.props(sx.conflictModal).className} modal in yobiDialog`}
-        data-stylex-owner="pull-request-edit-conflict-modal"
+        className="modal in yobiDialog"
+        data-owner="pull-request-edit-conflict-modal"
         tabIndex={-1}
         role="dialog"
         aria-hidden={false}
         aria-modal="true"
       >
         <div className="btn-dismiss">
-          <button
-            type="button"
-            className={`${stylex.props(sx.conflictDismiss).className} btn-transparent`}
-            onClick={onClose}
-          >
+          <button type="button" className="btn-transparent" onClick={onClose}>
             &times;
           </button>
         </div>
         <div className="message">
           <div className="center-text">
             <p className="msg">{t("pullRequest.ignore.conflict")}</p>
-            <p className={`${stylex.props(sx.conflictDescription).className} desc`}></p>
+            <p className="pr-edit-conflict-desc desc"></p>
           </div>
-          <div
-            className={`${stylex.props(sx.conflictActions).className} buttons`}
-            data-stylex-owner="pull-request-edit-conflict-actions"
-          >
+          <div className="buttons" data-owner="pull-request-edit-conflict-actions">
             <button type="button" className="ybtn ybtn-default" onClick={onClose}>
               {t("button.cancel")}
             </button>
@@ -359,25 +362,18 @@ function PullRequestDisabledBranchSelectors({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div
-      className={`${stylex.props(sx.selectors).className} pull-request-wrap`}
-      data-stylex-owner="pull-request-edit-selectors"
-    >
+    <div className="pull-request-wrap" data-owner="pull-request-edit-selectors">
       <div className="pull-left">
-        <label
-          htmlFor="fromProjectId"
-          className={`${stylex.props(sx.fieldTitle).className} field-title`}
-        >
+        <label htmlFor="fromProjectId" className="field-title">
           {t("pullRequest.from")}
         </label>
         <select
-          {...stylex.props(sx.projectSelect)}
           id="fromProjectId"
           name="fromProjectId"
-          className={`${stylex.props(sx.projectSelect).className} mr5`}
+          className="mr5"
           defaultValue={String(selected.fromProjectId)}
           disabled
-          data-stylex-owner="pull-request-edit-from-project-select"
+          data-owner="pull-request-edit-from-project-select"
         >
           {formOptions.fromProjects.map((project) => (
             <option key={project.id} value={project.id}>
@@ -404,24 +400,20 @@ function PullRequestDisabledBranchSelectors({
         <input type="hidden" name="fromProjectId" value={selected.fromProjectId} />
         <input type="hidden" name="fromBranch" value={selected.fromBranch} />
       </div>
-      <div className={`${stylex.props(sx.arrow).className} arrow`}>
+      <div className="arrow">
         <i className="yobicon-right-2"></i>
       </div>
       <div className="pull-right">
-        <label
-          htmlFor="toProjectId"
-          className={`${stylex.props(sx.fieldTitle).className} field-title`}
-        >
+        <label htmlFor="toProjectId" className="field-title">
           {t("pullRequest.to")}
         </label>
         <select
-          {...stylex.props(sx.projectSelect)}
           id="toProjectId"
           name="toProjectId"
-          className={`${stylex.props(sx.projectSelect).className} mr5`}
+          className="mr5"
           defaultValue={String(selected.toProjectId)}
           disabled
-          data-stylex-owner="pull-request-edit-to-project-select"
+          data-owner="pull-request-edit-to-project-select"
         >
           {formOptions.toProjects.map((project) => (
             <option key={project.id} value={project.id}>

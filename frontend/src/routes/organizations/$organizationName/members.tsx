@@ -1,16 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
 import {
+  acceptOrganizationEnrollmentRest,
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
@@ -21,12 +22,9 @@ import type { OrganizationAdminView, YoramRecord, YoramUserItem } from "../../..
 import { RestApiError } from "../../../api/rest-client";
 import { EnrollmentRequest } from "../../../components/enrollment-request";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { globalBreakpoints } from "../../../theme.stylex";
-import { errorStyles } from "./-organization-members.stylex";
-import { organizationMemberColors } from "./-members.stylex";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
@@ -62,27 +60,19 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
 function OrganizationMembersErrorBody({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
-  const iconProps = stylex.props(errorStyles.icon, errorStyles.sprite(`url(${legacySpriteUrl})`));
 
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(errorStyles.wrap)}
-          className={`${stylex.props(errorStyles.wrap).className} error-wrap`}
-          data-stylex-owner="organization-members-error-wrap"
-        >
+        <div className="error-wrap" data-owner="organization-members-error-wrap">
           <i
-            {...iconProps}
-            className={`${iconProps.className ?? ""} ico ico-err2`.trim()}
-            data-stylex-owner="organization-members-error-icon"
+            className="ico ico-err2"
+            style={
+              { "--organization-members-error-sprite": `url(${legacySpriteUrl})` } as CSSProperties
+            }
+            data-owner="organization-members-error-icon"
           ></i>
-          <p
-            {...stylex.props(errorStyles.message)}
-            data-stylex-owner="organization-members-error-message"
-          >
-            {t(messageKey)}
-          </p>
+          <p data-owner="organization-members-error-message">{t(messageKey)}</p>
         </div>
       </div>
     </div>
@@ -120,8 +110,6 @@ function OrganizationMembersBody({
   const memberSuggestions = (memberSearchQuery.data?.items ?? []).map(parseLegacyMemberSearchItem);
   const showTypeaheadSuggestions =
     isTypeaheadOpen && normalizedLoginQuery.length > 0 && memberSuggestions.length > 0;
-  const deleteModalStyleProps =
-    deleteUserId === null ? undefined : stylex.props(styles.deleteModalVisible);
   const closeDeleteMemberModal = () => setDeleteUserId(null);
   const openDeleteMemberModal = (event: MouseEvent<HTMLButtonElement>, userId: number) => {
     insulateOrganizationMembersDeleteModalButtonClick(event);
@@ -152,16 +140,11 @@ function OrganizationMembersBody({
   });
   const acceptEnrollmentMutation = useMutation({
     mutationFn: async (userId: number) => {
-      // Legacy yobi.organization.Member.js _onClickEnrollAcceptBtns fills
-      // #loginId with the pending loginId and submits the #addNewMember add
-      // form; the accept happens through the add-member REST call.
-      const pending = organization.enrollmentRequests.find(
-        (entry) => numberField(entry.userId) === userId,
-      );
-      const loginId = stringField(pending?.loginId, "");
-      if (loginId) {
-        addLoginId(loginId);
-      }
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
+        organizationName,
+        userId,
+      });
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: adminQueryKey });
@@ -261,8 +244,8 @@ function OrganizationMembersBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer" data-stylex-owner="organization-members-page">
-        <div className="project-page-wrap" data-stylex-owner="organization-members-shell">
+      <div className="page-wrap-outer" data-owner="organization-members-page">
+        <div className="project-page-wrap" data-owner="organization-members-shell">
           <OrganizationSettingMenu
             active="members"
             basePath={runtimeConfig.basePath}
@@ -271,8 +254,8 @@ function OrganizationMembersBody({
 
           {/* Legacy class contract: className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`} */}
           <div
-            className={`${stylex.props(styles.addFormBubble).className ?? ""} inner-bubble${showTypeaheadSuggestions ? " open" : ""}`.trim()}
-            data-stylex-owner="organization-members-header"
+            className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
+            data-owner="organization-members-header"
           >
             <form
               className="nm"
@@ -282,15 +265,15 @@ function OrganizationMembersBody({
               )}
               method="post"
               id="addNewMember"
-              data-stylex-owner="organization-members-add-form"
+              data-owner="organization-members-add-form"
               onSubmit={onAdd}
             >
               <input
                 type="text"
-                className={`${stylex.props(styles.addFormUsername).className ?? ""} text uname`.trim()}
+                className="text uname"
                 id="loginId"
                 name="loginId"
-                data-stylex-owner="organization-members-add-form-input"
+                data-owner="organization-members-add-form-input"
                 required={true}
                 autoComplete="off"
                 ref={loginIdInputRef}
@@ -326,8 +309,7 @@ function OrganizationMembersBody({
                   >
                     <button
                       type="button"
-                      {...stylex.props(styles.suggestionAction)}
-                      data-stylex-owner="organization-members-suggestion-action"
+                      data-owner="organization-members-suggestion-action"
                       onMouseDown={(event) => {
                         event.preventDefault();
                         selectSuggestion(suggestion);
@@ -344,11 +326,7 @@ function OrganizationMembersBody({
             ) : null}
           </div>
 
-          <ul
-            {...stylex.props(styles.memberList)}
-            className={`${stylex.props(styles.memberList).className} members project row-fluid`}
-            data-stylex-owner="organization-members-list"
-          >
+          <ul className="members project row-fluid" data-owner="organization-members-list">
             {organization.members.map((member) => (
               <OrganizationMember
                 key={stringField(member.loginId, "")}
@@ -369,9 +347,8 @@ function OrganizationMembersBody({
 
           <div
             id="alertDeletion"
-            {...deleteModalStyleProps}
-            className={`${deleteUserId === null ? "modal hide" : "modal hide in"} ${deleteModalStyleProps?.className ?? ""}`.trim()}
-            data-stylex-owner="organization-members-delete-modal"
+            className={`modal hide${deleteUserId === null ? "" : " in"}`}
+            data-owner="organization-members-delete-modal"
           >
             <div className="modal-header">
               <button type="button" className="close" onClick={dismissDeleteMemberModal}>
@@ -457,42 +434,28 @@ function OrganizationMember({
   const role = stringField(member.role, "");
 
   return (
-    <li
-      {...stylex.props(styles.memberRow)}
-      className={`${stylex.props(styles.memberRow).className} member span6 span-hard-wrap`}
-      data-stylex-owner="organization-member-row"
-    >
+    <li className="member span6 span-hard-wrap" data-owner="organization-member-row">
       <Link
-        {...stylex.props(styles.memberAvatar)}
         activeProps={{
           "aria-current": undefined,
-          className: stylex.props(styles.memberAvatar).className,
+          className: undefined,
           "data-status": undefined,
         }}
-        className={stylex.props(styles.memberAvatar).className}
-        data-stylex-owner="organization-member-avatar"
+        data-owner="organization-member-avatar"
         params={{ user: loginId }}
         to="/$user"
       >
         <img
-          {...stylex.props(styles.memberAvatarImage)}
-          data-stylex-owner="organization-member-avatar-image"
+          data-owner="organization-member-avatar-image"
           src={stringField(member.avatarUrl, "/assets/images/default-avatar-64.png")}
           width="64"
           height="64"
           alt=""
         />
       </Link>
-      <div {...stylex.props(styles.memberName)} data-stylex-owner="organization-member-name">
-        {stringField(member.userLabel, loginId)}
-      </div>
-      <div {...stylex.props(styles.memberId)} data-stylex-owner="organization-member-id">
-        @{loginId}
-      </div>
-      <div
-        className={`${stylex.props(styles.memberMeta).className ?? ""} member-setting`.trim()}
-        data-stylex-owner="organization-member-meta"
-      >
+      <div data-owner="organization-member-name">{stringField(member.userLabel, loginId)}</div>
+      <div data-owner="organization-member-id">@{loginId}</div>
+      <div className="member-setting" data-owner="organization-member-meta">
         <div className={roleDropdownOpen ? "btn-group open" : "btn-group"}>
           <button
             className="btn dropdown-toggle large"
@@ -520,7 +483,7 @@ function OrganizationMember({
                 >
                   <button
                     type="button"
-                    className={`${stylex.props(styles.roleMenuItem).className} role-menu-item`}
+                    className="role-menu-item"
                     data-loginid={loginId}
                     onClick={(event) => {
                       event.preventDefault();
@@ -547,121 +510,6 @@ function OrganizationMember({
   );
 }
 
-const styles = stylex.create({
-  // Frozen organization/members.scala.html + _page.less .inner-bubble boundary.
-  addFormBubble: {
-    marginBottom: "10px",
-    position: "relative",
-  },
-  // Frozen _page.less .inner-bubble .text.uname declarations.
-  addFormUsername: {
-    borderRadius: "2px",
-    margin: 0,
-    width: {
-      default: "384px",
-      [globalBreakpoints.mobile]: "inherit !important",
-    },
-  },
-  deleteModalVisible: {
-    display: "block",
-  },
-  // Legacy organization/members.scala.html typeahead action declarations.
-  suggestionAction: {
-    backgroundColor: "transparent",
-    borderStyle: "none",
-    borderColor: "transparent",
-    borderWidth: 0,
-    display: "block",
-    padding: "3px 20px",
-    textAlign: "left",
-    width: "100%",
-  },
-  memberList: {
-    listStyle: "none",
-    margin: "0px",
-    width: "100%",
-    "::before": { content: '""', display: "table", lineHeight: "0px" },
-    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
-  },
-  // Frozen _page.less .members.project .member .member-setting declarations.
-  memberMeta: {
-    position: "absolute",
-    right: 0,
-    top: "15px",
-  },
-  memberRow: {
-    borderBottomColor: organizationMemberColors.rowBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    boxSizing: "border-box",
-    display: "block",
-    float: "left",
-    marginLeft: "5px",
-    minHeight: "30px",
-    minWidth: {
-      default: null,
-      [globalBreakpoints.mobile]: "95%",
-    },
-    padding: "10px 5px",
-    position: "relative",
-    width: {
-      default: "48.93617021276595%",
-      [globalBreakpoints.mobile]: "100vw",
-    },
-  },
-  roleMenuItem: {
-    backgroundColor: "transparent",
-    border: "0",
-    clear: "both",
-    color: "#333",
-    display: "block",
-    fontWeight: "normal",
-    lineHeight: "20px",
-    padding: "3px 20px",
-    textAlign: "left",
-    whiteSpace: "nowrap",
-    width: "100%",
-    ":hover": {
-      backgroundColor: "#0081c2",
-      backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)",
-      color: "#fff",
-      outline: "0",
-      textDecoration: "none",
-    },
-    ":focus": {
-      backgroundColor: "#0081c2",
-      backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)",
-      color: "#fff",
-      outline: "0",
-      textDecoration: "none",
-    },
-  },
-  memberAvatar: {
-    backgroundColor: organizationMemberColors.avatarSurface,
-    borderRadius: "3px",
-    display: "inline-block",
-    float: "left",
-    height: "40px",
-    marginRight: "10px",
-    overflow: "hidden",
-    verticalAlign: "middle",
-    width: "40px",
-  },
-  memberAvatarImage: {
-    verticalAlign: "top",
-    width: "100%",
-  },
-  memberName: {
-    fontWeight: "bold",
-    lineHeight: "20px",
-    marginTop: "2px",
-  },
-  memberId: {
-    color: organizationMemberColors.idText,
-    lineHeight: "20px",
-  },
-});
-
 function OrganizationSettingMenu({
   active,
   organizationName,
@@ -676,7 +524,12 @@ function OrganizationSettingMenu({
     <ul className="nav nav-tabs">
       <li className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }}
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
           activeProps={{
             "aria-current": undefined,
             className: undefined,
@@ -694,7 +547,12 @@ function OrganizationSettingMenu({
       </li>
       <li className={active === "members" ? "active" : ""}>
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }}
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
           activeProps={{
             "aria-current": undefined,
             className: undefined,
@@ -709,7 +567,12 @@ function OrganizationSettingMenu({
       </li>
       <li className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }}
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
           activeProps={{
             "aria-current": undefined,
             className: undefined,

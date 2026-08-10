@@ -1,5 +1,4 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   type ChangeEvent,
@@ -18,19 +17,9 @@ import {
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
 import { apiQueryKeys } from "../../../api/query-keys";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { styles } from "./-organization-issues.stylex";
-
-const organizationHeaderStyles = stylex.create({
-  background: (backgroundImage: string) => ({ backgroundImage }),
-});
-
-const errorIconSpriteStyles = stylex.create({
-  sprite: (backgroundImage: string) => ({ backgroundImage }),
-});
 
 type OrganizationIssuesSearch = {
   assigneeId: string;
@@ -233,13 +222,9 @@ function OrganizationIssuesBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer" data-stylex-owner="organization-issues-page">
-        <div
-          {...stylex.props(styles.page)}
-          className={`page-wrap ${stylex.props(styles.page).className ?? ""}`.trim()}
-          data-stylex-owner="organization-issues-wrap"
-        >
-          <div className="row-fluid issue-list-wrap" data-stylex-owner="organization-issues-list">
+      <div className="page-wrap-outer" data-owner="organization-issues-page">
+        <div className="page-wrap" data-owner="organization-issues-wrap">
+          <div className="row-fluid issue-list-wrap" data-owner="organization-issues-list">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
                 <QuickSearch
@@ -249,8 +234,7 @@ function OrganizationIssuesBody({
                   search={search}
                 />
                 <form
-                  className={stylex.props(styles.search).className}
-                  data-stylex-owner="organization-issues-search"
+                  data-owner="organization-issues-search"
                   id="search"
                   name="search"
                   action={prefixBasePath(
@@ -264,8 +248,7 @@ function OrganizationIssuesBody({
                     id="projects"
                     name="projectNames[]"
                     multiple
-                    {...stylex.props(styles.projectSelect)}
-                    data-stylex-owner="organization-issues-project-select"
+                    data-owner="organization-issues-project-select"
                     data-placeholder={t("organization.choose.projects")}
                     data-container-css-class="fullsize"
                     defaultValue={search.projectNames}
@@ -285,23 +268,17 @@ function OrganizationIssuesBody({
                   <input type="hidden" name="assigneeId" value={search.assigneeId} />
                   <input type="hidden" name="mentionId" value={search.mentionId} />
                   <div className="search">
-                    <div
-                      {...stylex.props(styles.searchBar)}
-                      className={`search-bar ${stylex.props(styles.searchBar).className ?? ""}`.trim()}
-                      data-stylex-owner="organization-issues-search-bar"
-                    >
+                    <div className="search-bar" data-owner="organization-issues-search-bar">
                       <input
                         name="filter"
-                        {...stylex.props(styles.searchInput)}
-                        className={`textbox full ${stylex.props(styles.searchInput).className ?? ""}`.trim()}
-                        data-stylex-owner="organization-issues-search-input"
+                        className="textbox full"
+                        data-owner="organization-issues-search-input"
                         type="text"
                         defaultValue={search.filter}
                       />
                       <button
-                        {...stylex.props(styles.searchButton)}
-                        className={`search-btn ${stylex.props(styles.searchButton).className ?? ""}`.trim()}
-                        data-stylex-owner="organization-issues-search-button"
+                        className="search-btn"
+                        data-owner="organization-issues-search-button"
                         type="submit"
                       >
                         <i className="yobicon-search"></i>
@@ -314,13 +291,9 @@ function OrganizationIssuesBody({
             <div
               className="span10 span-hard-wrap"
               id="span10"
-              data-stylex-owner="organization-issues-results"
+              data-owner="organization-issues-results"
             >
-              <ul
-                {...stylex.props(styles.tabs)}
-                className={`nav nav-tabs nm ${stylex.props(styles.tabs).className ?? ""}`.trim()}
-                data-stylex-owner="organization-issues-tabs"
-              >
+              <ul className="nav nav-tabs nm" data-owner="organization-issues-tabs">
                 <StateTab
                   active={search.state === "open"}
                   count={issues.openIssueCount}
@@ -348,11 +321,7 @@ function OrganizationIssuesBody({
                       orderDir={search.orderDir}
                     />
                   ) : null}
-                  <ul
-                    {...stylex.props(styles.list)}
-                    className={`${stylex.props(styles.list).className} post-list-wrap`}
-                    data-stylex-owner="organization-issues-items"
-                  >
+                  <ul className="post-list-wrap" data-owner="organization-issues-items">
                     {issues.items.map((issue) => (
                       <OrganizationIssueItem
                         basePath={runtimeConfig.basePath}
@@ -372,25 +341,9 @@ function OrganizationIssuesBody({
                   />
                 </>
               ) : (
-                <div
-                  {...stylex.props(styles.empty, styles.errorWrap)}
-                  className={`${stylex.props(styles.empty, styles.errorWrap).className} error-wrap`}
-                  data-stylex-owner="organization-issues-empty"
-                >
-                  <i
-                    {...stylex.props(
-                      styles.errorIcon,
-                      errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`),
-                    )}
-                    className={`${stylex.props(styles.errorIcon, errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`)).className ?? ""} ico ico-err1`.trim()}
-                    data-stylex-owner="organization-issues-empty-icon"
-                  ></i>
-                  <p
-                    {...stylex.props(styles.errorMessage)}
-                    data-stylex-owner="organization-issues-empty-message"
-                  >
-                    {t("issue.is.empty")}
-                  </p>
+                <div className="error-wrap" data-owner="organization-issues-empty">
+                  <i className="ico ico-err1" data-owner="organization-issues-empty-icon"></i>
+                  <p data-owner="organization-issues-empty-message">{t("issue.is.empty")}</p>
                 </div>
               )}
             </div>
@@ -419,11 +372,7 @@ function QuickSearch({
   const projectNames = search.projectNames.join(",");
 
   return (
-    <ul
-      {...stylex.props(styles.quickSearch)}
-      className={`${stylex.props(styles.quickSearch).className} lst-stacked unstyled`}
-      data-stylex-owner="organization-issues-quick-search"
-    >
+    <ul className="lst-stacked unstyled" data-owner="organization-issues-quick-search">
       <li className={!search.assigneeId && !search.authorId && !search.mentionId ? "active" : ""}>
         <button
           type="button"
@@ -535,15 +484,10 @@ function IssueFilters({
     { field: "createdDate", label: t("common.order.date") },
     { field: "numOfComments", label: t("common.order.comments") },
   ];
-  const filtersStyleProps = stylex.props(styles.filters);
 
   return (
     <div className="filter-wrap small-heights">
-      <div
-        {...filtersStyleProps}
-        className={`filters ${filtersStyleProps.className ?? ""}`.trim()}
-        data-stylex-owner="organization-issues-filters"
-      >
+      <div className="filters" data-owner="organization-issues-filters">
         {filters.map((filter) => {
           const active = orderBy === filter.field;
           const nextDir = active && orderDir === "desc" ? "asc" : "desc";
@@ -591,12 +535,6 @@ function OrganizationIssuePagination({
   const pageNum = clampPageNum(currentPage, totalPages);
   const hasPrev = pageNum > 1;
   const hasNext = pageNum < totalPages;
-  const paginationRoot = stylex.props(styles.pagination);
-  const paginationPageNums = stylex.props(styles.paginationPageNums);
-  const paginationPageNum = stylex.props(styles.paginationPageNum);
-  const paginationIconPageNum = stylex.props(styles.paginationIconPageNum);
-  const paginationIcon = stylex.props(styles.paginationIcon(`url(${legacySpriteUrl})`));
-  const paginationInput = stylex.props(styles.paginationInput, styles.paginationNoSpinner);
   const pageRoutePath = (nextPageNum: number) =>
     organizationIssuesRoutePath(organizationName, {
       ...search,
@@ -618,22 +556,13 @@ function OrganizationIssuePagination({
 
   return (
     <div
-      {...paginationRoot}
       id="pagination"
-      className={`${paginationRoot.className} page-navigation-wrap`}
-      data-stylex-owner="organization-issues-pagination"
+      className="page-navigation-wrap"
+      data-owner="organization-issues-pagination"
       data-total={totalPages}
     >
-      <ul
-        {...paginationPageNums}
-        className={`${paginationPageNums.className} page-nums`}
-        data-stylex-owner="organization-issues-pagination-page-nums"
-      >
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
-          className={`${paginationPageNum.className} ${paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="organization-issues-pagination-prev-page"
-        >
+      <ul className="page-nums" data-owner="organization-issues-pagination-page-nums">
+        <li className="page-num ikon" data-owner="organization-issues-pagination-prev-page">
           {hasPrev ? (
             <Link
               activeProps={{
@@ -644,51 +573,30 @@ function OrganizationIssuePagination({
               to={pageRoutePath(pageNum - 1)}
             >
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationPrev,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(styles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="organization-issues-pagination-prev-icon"
+                className="ico btn-pg-prev"
+                data-owner="organization-issues-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(styles.paginationIconLabel)}
-                data-stylex-owner="organization-issues-pagination-prev-label"
-              >
+              <span data-owner="organization-issues-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </Link>
           ) : (
             <>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationPrev,
-                  styles.paginationPrevOff,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="organization-issues-pagination-prev-icon"
+                className="ico btn-pg-prev off"
+                data-owner="organization-issues-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
-                className="off"
-                data-stylex-owner="organization-issues-pagination-prev-label"
-              >
+              <span className="off" data-owner="organization-issues-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...paginationPageNum}
-          className={`${paginationPageNum.className} page-num`}
-          data-stylex-owner="organization-issues-pagination-input-page"
-        >
+        <li className="page-num" data-owner="organization-issues-pagination-input-page">
           <input
-            {...paginationInput}
             type="number"
             pattern="[0-9]*"
-            className={`${paginationInput.className} input-mini nospinner`}
+            className="input-mini nospinner"
             name="pageNum"
             max={totalPages}
             min={1}
@@ -698,28 +606,16 @@ function OrganizationIssuePagination({
               event.currentTarget.select();
             }}
             onKeyDown={handleInputKeyDown}
-            data-stylex-owner="organization-issues-pagination-input"
+            data-owner="organization-issues-pagination-input"
           />
         </li>
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationDelimiter)}
-          className={`${paginationPageNum.className} ${stylex.props(styles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="organization-issues-pagination-delimiter"
-        >
+        <li className="page-num delimiter" data-owner="organization-issues-pagination-delimiter">
           /
         </li>
-        <li
-          {...paginationPageNum}
-          className={`${paginationPageNum.className} page-num`}
-          data-stylex-owner="organization-issues-pagination-total"
-        >
+        <li className="page-num" data-owner="organization-issues-pagination-total">
           {totalPages}
         </li>
-        <li
-          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
-          className={`${paginationPageNum.className} ${paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="organization-issues-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="organization-issues-pagination-next-page">
           {hasNext ? (
             <Link
               activeProps={{
@@ -729,38 +625,22 @@ function OrganizationIssuePagination({
               }}
               to={pageRoutePath(pageNum + 1)}
             >
-              <span
-                {...stylex.props(styles.paginationIconLabel)}
-                data-stylex-owner="organization-issues-pagination-next-label"
-              >
+              <span data-owner="organization-issues-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationNext,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(styles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="organization-issues-pagination-next-icon"
+                className="ico btn-pg-next"
+                data-owner="organization-issues-pagination-next-icon"
               ></i>
             </Link>
           ) : (
             <>
-              <span
-                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
-                className="off"
-                data-stylex-owner="organization-issues-pagination-next-label"
-              >
+              <span className="off" data-owner="organization-issues-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  styles.paginationIcon(`url(${legacySpriteUrl})`),
-                  styles.paginationNext,
-                  styles.paginationNextOff,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="organization-issues-pagination-next-icon"
+                className="ico btn-pg-next off"
+                data-owner="organization-issues-pagination-next-icon"
               ></i>
             </>
           )}
@@ -794,23 +674,19 @@ function OrganizationIssueItem({
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyIssueRowAttrs = { href: issueHref } satisfies LegacyIssueRowAttributes;
-  const dueDateStyleProps = stylex.props(styles.dueDateWrapper);
-  const assigneeRailStyleProps = stylex.props(styles.assigneeRail);
 
   return (
     <li
-      {...stylex.props(styles.row)}
-      className={`${stylex.props(styles.row).className} post-item title`}
-      data-stylex-owner="organization-issues-row"
+      className="post-item title"
+      data-owner="organization-issues-row"
       id={`issue-item-${issue.id}`}
       {...legacyIssueRowAttrs}
     >
       <div className="span10 span-hard-wrap">
         <Link
           to={authorRoutePath}
-          {...stylex.props(styles.avatar)}
-          className={`${stylex.props(styles.avatar).className} avatar-wrap mlarge hide-in-mobile`}
-          data-stylex-owner="organization-issues-row-avatar"
+          className="avatar-wrap mlarge hide-in-mobile"
+          data-owner="organization-issues-row-avatar"
           title={issue.authorLoginId}
         >
           <img
@@ -821,25 +697,12 @@ function OrganizationIssueItem({
             alt=""
           />
         </Link>
-        <div
-          {...stylex.props(styles.titleWrap)}
-          data-stylex-owner="organization-issues-row-title-wrap"
-          className="title-wrap"
-        >
-          <Link
-            to={issueRoutePath}
-            {...stylex.props(styles.title)}
-            className={`${stylex.props(styles.title).className} title`}
-            data-stylex-owner="organization-issues-row-title"
-          >
+        <div className="title-wrap" data-owner="organization-issues-row-title-wrap">
+          <Link to={issueRoutePath} className="title" data-owner="organization-issues-row-title">
             {issue.title}
           </Link>
         </div>
-        <div
-          {...stylex.props(styles.meta)}
-          className={`${stylex.props(styles.meta).className} infos`}
-          data-stylex-owner="organization-issues-row-meta"
-        >
+        <div className="infos" data-owner="organization-issues-row-meta">
           {issue.authorLabel ? (
             <Link
               to={authorRoutePath}
@@ -893,11 +756,7 @@ function OrganizationIssueItem({
           <Link to={projectRoutePath} className="infos-link-item group-project-name">
             {issue.projectName}
           </Link>
-          <span
-            {...stylex.props(styles.postId)}
-            className={`${stylex.props(styles.postId).className} post-id margin-right-5`}
-            data-stylex-owner="organization-issues-row-post-id"
-          >
+          <span className="post-id margin-right-5" data-owner="organization-issues-row-post-id">
             #{issue.issueNumber}
           </span>
           {issue.labels.map((label) => (
@@ -922,11 +781,7 @@ function OrganizationIssueItem({
         </div>
       </div>
       <div className="span2 hide-in-mobile">
-        <div
-          {...assigneeRailStyleProps}
-          className={`mt5 ${assigneeRailStyleProps.className ?? ""}`.trim()}
-          data-stylex-owner="organization-issues-assignee-rail"
-        >
+        <div className="mt5" data-owner="organization-issues-assignee-rail">
           {issue.assigneeLoginId ? (
             <Link
               to={assigneeRoutePath}
@@ -949,9 +804,8 @@ function OrganizationIssueItem({
         </div>
         {issue.dueDateLabel ? (
           <div
-            {...dueDateStyleProps}
-            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
-            data-stylex-owner="organization-issues-due-date"
+            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""}`}
+            data-owner="organization-issues-due-date"
             title={issue.dueDateLabel}
           >
             <i className="yobicon-clock2"></i>
@@ -994,13 +848,11 @@ function TwoColumnModeCheckbox() {
   };
 
   useEffect(() => clearPopoverTimers, []);
-  const twoColumnAnchorStyleProps = stylex.props(styles.twoColumnAnchor);
 
   return (
     <div
-      {...twoColumnAnchorStyleProps}
-      className={`${twoColumnAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
-      data-stylex-owner="organization-issues-two-column-anchor"
+      className="two-column-icon mr10 hide-in-mobile"
+      data-owner="organization-issues-two-column-anchor"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
       onBlur={hideDelayedPopover}
@@ -1027,7 +879,7 @@ function TwoColumnModeCheckbox() {
       {showPopover ? (
         <div
           className="popover top"
-          data-stylex-owner="organization-issues-two-column-popover"
+          data-owner="organization-issues-two-column-popover"
           role="tooltip"
         >
           <div className="arrow"></div>
@@ -1050,9 +902,9 @@ function OrganizationHeader({
 }) {
   return (
     <div
-      {...stylex.props(organizationHeaderStyles.background(`url('${logoUrl}')`))}
+      style={{ backgroundImage: `url('${logoUrl}')` }}
       className="project-header-outer"
-      data-stylex-owner="organization-issues-header-background"
+      data-owner="organization-issues-header-background"
     >
       <div className="project-header-inner">
         <div className="project-header-wrap">

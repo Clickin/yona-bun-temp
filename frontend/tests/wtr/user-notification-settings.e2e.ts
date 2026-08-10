@@ -111,11 +111,11 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator("#notification-projects a").last()).toHaveText(
     "weblabs / projectAlpha",
   );
+  await expect(page.locator('[data-owner="user-notification-project-pane"][id="2"]')).toHaveCount(
+    1,
+  );
   await expect(
-    page.locator('[data-stylex-owner="user-notification-project-pane"][id="2"]'),
-  ).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="user-notification-project-pane"][id="7"]'),
+    page.locator('[data-owner="user-notification-project-pane"][id="7"]'),
   ).toHaveAttribute("data-selected", "true");
   await expect(page).toHaveURL(`${basePath}/user/editform/notifications#7`);
 
@@ -128,7 +128,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
     tableDisplay: "table",
   });
 
-  const editTabs = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
+  const editTabs = page.locator('[data-owner="user-settings-edit-tab-item"]');
   await expect(editTabs).toHaveCount(5);
   await expect(editTabs).toHaveText([
     "Edit profile",
@@ -154,7 +154,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
         className:
-          link.getAttribute("data-stylex-owner") === "user-settings-edit-tab-link"
+          link.getAttribute("data-owner") === "user-settings-edit-tab-link"
             ? null
             : link.getAttribute("class"),
         dataStatus: link.getAttribute("data-status"),
@@ -169,13 +169,13 @@ test("current-user notification settings page matches legacy user/edit_notificat
   ]);
 
   await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Email settings")'),
+    page.locator('[data-owner="user-settings-edit-tab-link"]:has-text("Email settings")'),
   ).toHaveAttribute("href", `${basePath}/user/editform/emails`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "notifications-email-tab";
   });
   await page
-    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Email settings")')
+    .locator('[data-owner="user-settings-edit-tab-link"]:has-text("Email settings")')
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/emails`);
   expect(
@@ -188,10 +188,10 @@ test("current-user notification settings page matches legacy user/edit_notificat
   });
   await page.locator('#notification-projects a:has-text("admin / projectYobi")').click();
   await expect(
-    page.locator('[data-stylex-owner="user-notification-project-item"]').first(),
+    page.locator('[data-owner="user-notification-project-item"]').first(),
   ).toHaveAttribute("data-selected", "true");
   await expect(
-    page.locator('[data-stylex-owner="user-notification-project-pane"][id="2"]'),
+    page.locator('[data-owner="user-notification-project-pane"][id="2"]'),
   ).toHaveAttribute("data-selected", "true");
   await expect(page).toHaveURL(`${basePath}/user/editform/notifications#2`);
   expect(await readNotificationProjectTabAnchors(page)).toEqual([
@@ -221,14 +221,14 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator('input.notiUpdate[data-toggle="switch"]')).toHaveCount(0);
   await expect(
     page.locator(
-      '[data-stylex-owner="user-notification-project-pane"][id="2"] [data-stylex-owner="user-notification-switch"]',
+      '[data-owner="user-notification-project-pane"][id="2"] [data-owner="user-notification-switch"]',
     ),
   ).toHaveCount(NOTIFICATION_TYPES.length);
   const newCommentSwitch = page
-    .locator('[data-stylex-owner="user-notification-project-pane"][id="2"] tr', {
+    .locator('[data-owner="user-notification-project-pane"][id="2"] tr', {
       hasText: "New comment on post or issue added",
     })
-    .locator('[data-stylex-owner="user-notification-switch"]');
+    .locator('[data-owner="user-notification-switch"]');
   await expect(newCommentSwitch).toHaveAttribute("role", "switch");
   await expect(newCommentSwitch).toHaveAttribute("aria-checked", "true");
   const toggleResponse = page.waitForResponse(
@@ -269,7 +269,7 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).toContain("includeHash: true");
   expect(source).toContain("includeSearch: true");
   expect(source).toContain("explicitUndefined: true");
-  expect(source).toContain('data-stylex-owner="user-notification-project-link"');
+  expect(source).toContain('data-owner="user-notification-project-link"');
   expect(source).toContain(
     "const projectTabLinkInactiveSearch = { __legacyNotificationProjectTabActiveMarker: undefined }",
   );
@@ -427,17 +427,15 @@ function expectedNotificationRow(projectId: string, eventType: string, label: st
 async function readNotificationSettingsMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+      '[data-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-page-wrap-outer"]',
+      '[data-owner="user-settings-page-wrap-outer"]',
     );
-    const nav = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-edit-tabs"]',
-    );
+    const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const projectList = document.querySelector<HTMLElement>("#notification-projects");
     const activePane = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-notification-project-pane"][data-selected="true"]',
+      '[data-owner="user-notification-project-pane"][data-selected="true"]',
     );
     const table = activePane?.querySelector<HTMLElement>("table");
     if (!breadcrumb || !pageWrapOuter || !nav || !projectList || !activePane || !table) {
@@ -459,7 +457,7 @@ async function readNotificationProjectTabAnchors(page: Page) {
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className:
-        link.getAttribute("data-stylex-owner") === "user-notification-project-link"
+        link.getAttribute("data-owner") === "user-notification-project-link"
           ? null
           : link.getAttribute("class"),
       dataStatus: link.getAttribute("data-status"),
@@ -474,7 +472,7 @@ async function readNotificationProjectTabAnchors(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     function visit(current: Element): string {
-      if (current.matches('[data-stylex-owner="user-notification-table"]')) {
+      if (current.matches('[data-owner="user-notification-table"]')) {
         return canonicalNotificationTable(current, true);
       }
       const stableAttributes = [
@@ -529,9 +527,7 @@ async function canonicalizeScreenRoots(page: Page) {
             : (row.querySelector('input[type="checkbox"]') as HTMLInputElement | null)?.checked ===
               true;
           const visibleLabels = react
-            ? Array.from(
-                row.querySelectorAll('[data-stylex-owner="user-notification-switch-label"]'),
-              )
+            ? Array.from(row.querySelectorAll('[data-owner="user-notification-switch-label"]'))
                 .map((node) => node.textContent?.trim() ?? "")
                 .join(" ")
             : `${row.querySelector(".switch")?.getAttribute("data-on-label") ?? ""} ${row.querySelector(".switch")?.getAttribute("data-off-label") ?? ""}`.trim();
@@ -554,7 +550,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
-        const owner = current.getAttribute("data-stylex-owner");
+        const owner = current.getAttribute("data-owner");
         if (owner === "user-settings-breadcrumb-outer") {
           return 'class="site-breadcrumb-outer"';
         }
@@ -599,18 +595,18 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -631,7 +627,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner="user-settings-breadcrumb-outer"], [data-stylex-owner="user-settings-page-wrap-outer"]',
+        '.unsupported, [data-owner="user-settings-breadcrumb-outer"], [data-owner="user-settings-page-wrap-outer"]',
       ),
     )
       .map((root) => visit(root))
@@ -698,9 +694,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               : (row.querySelector('input[type="checkbox"]') as HTMLInputElement | null)
                   ?.checked === true;
             const visibleLabels = react
-              ? Array.from(
-                  row.querySelectorAll('[data-stylex-owner="user-notification-switch-label"]'),
-                )
+              ? Array.from(row.querySelectorAll('[data-owner="user-notification-switch-label"]'))
                   .map((node) => node.textContent?.trim() ?? "")
                   .join(" ")
               : `${row.querySelector(".switch")?.getAttribute("data-on-label") ?? ""} ${row.querySelector(".switch")?.getAttribute("data-off-label") ?? ""}`.trim();

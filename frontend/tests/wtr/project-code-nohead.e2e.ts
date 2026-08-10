@@ -186,22 +186,22 @@ async function mockProjectCodeNoHead(page: Page) {
 }
 
 async function assertProjectSearchShell(page: Page, basePath: string) {
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   // bucket-3: app re-added legacy classes (matches legacy navbar.scala.html:105
   // `<div class="search-box @if(project != null || org !=null) {select}">`); the
-  // not.toHaveClass pins reflected the intermediate StyleX migration state.
+  // not.toHaveClass pins reflected the intermediate Style migration state.
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
 
   const currentUrl = `${basePath}/admin/sample/code`;
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeItems = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeItems).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeItems).toHaveCount(3);
   await expect
@@ -219,13 +219,13 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
       [null, null],
     ]);
   const projectScope = page
-    .locator("[data-stylex-owner=global-gnb-search-scope-menu]")
+    .locator("[data-owner=global-gnb-search-scope-menu]")
     .getByRole("button", { name: "This Project" });
   const groupScope = page
-    .locator("[data-stylex-owner=global-gnb-search-scope-menu]")
+    .locator("[data-owner=global-gnb-search-scope-menu]")
     .getByRole("button", { name: "This Group" });
   const allScope = page
-    .locator("[data-stylex-owner=global-gnb-search-scope-menu]")
+    .locator("[data-owner=global-gnb-search-scope-menu]")
     .getByRole("button", { name: "All Projects" });
 
   await page.locator("#gnb-search-scope-title").click();
@@ -253,11 +253,11 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
   await expect(page).toHaveURL(currentUrl);
 
   const boxes = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const form = document.querySelector(".gnb-search-form");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const input = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
+    const input = document.querySelector('[data-owner="global-gnb-search-input"]');
     const submit = document.querySelector('.gnb-search-form button[type="submit"]');
     if (!navbar || !form || !searchBox || !scopeButton || !input || !submit) {
       return null;
@@ -380,7 +380,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -435,7 +435,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)

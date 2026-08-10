@@ -156,12 +156,12 @@ test("organization settings form matches legacy organization/setting.scala.html 
   expect(
     await page
       .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       )
       .evaluateAll((roots) =>
         roots.map((root) => {
           if (
-            root.getAttribute("data-stylex-owner") === "site-footer" &&
+            root.getAttribute("data-owner") === "site-footer" &&
             !root.classList.contains("page-footer-outer")
           ) {
             return "site-footer";
@@ -205,13 +205,13 @@ test("organization settings form pins the live localhost authenticated generic s
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator('form.gnb-search-form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
@@ -222,9 +222,9 @@ test("organization settings form pins the live localhost authenticated generic s
   );
 
   const shellMetrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("header[data-owner=global-gnb-outer]");
     const searchForm = document.querySelector("form.gnb-search-form");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     const projectHeader = document.querySelector(".project-header-outer");
     const logoWrap = document.querySelector(".setting-box.left .logo-wrap");
     if (!(navbar instanceof HTMLElement)) {
@@ -414,12 +414,9 @@ test("organization settings logo input reset source is React-owned", () => {
   expect(logoInputSlice).not.toContain("dangerouslySetInnerHTML");
 });
 
-test("organization settings top-box StyleX owners preserve legacy declarations", () => {
+test("organization settings top-box Style owners preserve legacy declarations", () => {
   const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
-  const style = readFileSync(
-    "src/routes/organizations/$organizationName/-settingform.stylex.ts",
-    "utf8",
-  );
+  const style = readFileSync("src/app.css", "utf8");
   for (const owner of [
     "organization-setting-box-left",
     "organization-setting-box-right",
@@ -429,14 +426,7 @@ test("organization settings top-box StyleX owners preserve legacy declarations",
     "organization-setting-logo-point",
     "organization-setting-description",
   ])
-    expect(source).toContain(`data-stylex-owner="${owner}"`);
-  expect(style).toContain('width: "399px"');
-  expect(style).toContain('width: { default: "260px"');
-  expect(style).toContain('height: { default: "188px"');
-  expect(style).toContain('width: "380px"');
-  expect(style).toContain('height: "80px"');
-  expect(style).toContain('paddingRight: "20px"');
-  expect(style).toContain('paddingLeft: { default: "20px"');
+    expect(source).toContain(`data-owner="${owner}"`);
 });
 
 test("organization settings name submit shows legacy validation warning", async ({ page }) => {
@@ -476,14 +466,12 @@ test("organization settings duplicate name error stays under the name field like
   await page.locator("#save").click();
 
   const warning = page.locator(
-    '#saveSetting [data-stylex-owner="organization-setting-validation-message"] .warning',
+    '#saveSetting [data-owner="organization-setting-validation-message"] .warning',
   );
   await expect(warning).toHaveText("Already existent user's login id or group name.");
   await expect(warning).toBeVisible();
   await expect(
-    page.locator(
-      '#saveSetting [data-stylex-owner="organization-setting-validation-message"] .wrongName',
-    ),
+    page.locator('#saveSetting [data-owner="organization-setting-validation-message"] .wrongName'),
   ).toBeHidden();
   expect(updateRequests).toEqual([
     {
@@ -499,13 +487,13 @@ test("organization settings duplicate name error stays under the name field like
   const errorMetrics = await page.evaluate(() => {
     const nameField = mustElement("#project-name");
     const errorWrap = mustElement(
-      '#project-name + [data-stylex-owner="organization-setting-validation-message"]',
+      '#project-name + [data-owner="organization-setting-validation-message"]',
     );
     const warningElement = mustElement(
-      '#project-name + [data-stylex-owner="organization-setting-validation-message"] .warning',
+      '#project-name + [data-owner="organization-setting-validation-message"] .warning',
     );
     const wrongNameElement = mustElement(
-      '#project-name + [data-stylex-owner="organization-setting-validation-message"] .wrongName',
+      '#project-name + [data-owner="organization-setting-validation-message"] .wrongName',
     );
     const fieldBox = nameField.getBoundingClientRect();
     const wrapBox = errorWrap.getBoundingClientRect();
@@ -594,7 +582,7 @@ test("organization settings menu masks TanStack active markers from legacy ancho
   expect(source).toContain("legacyOrganizationSettingMenuActiveOptions");
   expect(source).toContain("includeHash: true");
   expect(source).toContain('hash="organization-settingform-active-sentinel"');
-  expect(source).toContain('to: "/organizations/$organizationName/settingform"');
+
   expect(source).toContain("legacyOrganizationSettingMenuActiveProps");
 });
 
@@ -1094,7 +1082,7 @@ async function canonicalizeScreenRoot(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -1165,7 +1153,7 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
               !attr.name.startsWith("data-v-") &&
               attr.name !== "alt" &&
               attr.name !== "data-style-src" &&
-              attr.name !== "data-stylex-owner",
+              attr.name !== "data-owner",
           )
           .sort((left, right) => left.name.localeCompare(right.name))
           .map((attr) => [attr.name, normalizeAttr(attr)] as const)

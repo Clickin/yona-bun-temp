@@ -16,10 +16,12 @@ const SHARED_MARKDOWN_HELP_SOURCE = readFileSync(
   "utf8",
 );
 
-const SHARED_MARKDOWN_HELP_STYLE_SOURCE = readFileSync(
-  new URL("../src/routes/-legacy-markdown-help.stylex.ts", import.meta.url),
-  "utf8",
-);
+const SHARED_MARKDOWN_HELP_STYLE_SOURCE =
+  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
+  readFileSync(
+    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+    "utf8",
+  );
 
 const LEGACY_MARKDOWN_HELP_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -224,9 +226,7 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
   expect(LEGACY_RESPONSIVE_LESS_SOURCE).toMatch(
     /@media all\s*\{[\s\S]*?\.page-footer-outer\s*\{\s*padding:\s*10px;/u,
   );
-  expect(SITE_LAYOUT_SHELL_SOURCE).toMatch(
-    /const siteFooterStyles = stylex\.create\(\{[\s\S]*?outer:\s*\{[\s\S]*?padding:\s*"10px"/u,
-  );
+
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain(
@@ -267,11 +267,7 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
       [];
     Element.prototype.addEventListener = function (type, listener, options) {
       if (type === "click" && this instanceof HTMLElement) {
-        if (
-          this.matches(
-            '[data-stylex-owner="help-faq-row"], [data-stylex-owner="help-faq-question-control"]',
-          )
-        ) {
+        if (this.matches('[data-owner="help-faq-row"], [data-owner="help-faq-question-control"]')) {
           (
             window as unknown as { __helpFaqNativeListenerTypes: string[] }
           ).__helpFaqNativeListenerTypes.push(type);
@@ -289,14 +285,15 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
       .first()
       .evaluate((title) => title.innerHTML),
   ).toBe("Help");
-  await expect(page.locator('[data-stylex-owner="help-shell-breadcrumb-outer"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="help-shell-page-wrap-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="help-shell-breadcrumb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="help-shell-page-wrap-outer"]')).toBeVisible();
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
   await expect(page.locator('.qas > .qa .question[href="#!/toggle"]')).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="help-faq-question-control"]').first(),
-  ).toHaveJSProperty("tagName", "BUTTON");
-  await expect(page.locator('[data-stylex-owner="help-faq-answer"] a')).toHaveCount(5);
+  await expect(page.locator('[data-owner="help-faq-question-control"]').first()).toHaveJSProperty(
+    "tagName",
+    "BUTTON",
+  );
+  await expect(page.locator('[data-owner="help-faq-answer"] a')).toHaveCount(5);
   expect(await renderedHelpAnswerLinks(page)).toEqual([
     {
       href: "https://github.com/doortts/yona#korean",
@@ -402,8 +399,8 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
     questionWidth: "1144.09px",
   });
 
-  const faqItems = page.locator('[data-stylex-owner="help-faq-row"]');
-  const questions = page.locator('[data-stylex-owner="help-faq-question-control"]');
+  const faqItems = page.locator('[data-owner="help-faq-row"]');
+  const questions = page.locator('[data-owner="help-faq-question-control"]');
   const initialHash = new URL(page.url()).hash;
   await expect(faqItems.nth(0)).toHaveAttribute("data-state", "closed");
   await expect(faqItems.nth(1)).toHaveAttribute("data-state", "closed");
@@ -423,7 +420,7 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
   await expect(faqItems.nth(0)).toHaveAttribute("data-state", "closed");
   await expect(faqItems.nth(1)).toHaveAttribute("data-state", "open");
 
-  await faqItems.nth(0).locator('[data-stylex-owner="help-faq-toggle-icon"]').click();
+  await faqItems.nth(0).locator('[data-owner="help-faq-toggle-icon"]').click();
   expect(new URL(page.url()).hash).toBe(initialHash);
   await expect(faqItems.nth(0)).toHaveAttribute("data-state", "open");
   await expect(faqItems.nth(1)).toHaveAttribute("data-state", "open");
@@ -439,9 +436,7 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
   // wtr-compat Locator.locator(child, {hasText}) drops the hasText option
   // (bucket-1 gap); filter at page level instead — only one FAQ answer link
   // carries the 메인화면 text, so this matches the same anchor.
-  const homeLink = page
-    .locator('[data-stylex-owner="help-faq-answer"] a')
-    .filter({ hasText: "메인화면" });
+  const homeLink = page.locator('[data-owner="help-faq-answer"] a').filter({ hasText: "메인화면" });
   await expect(homeLink).toHaveAttribute("href", `${basePath}/`);
   await page.evaluate(() => {
     (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "home-link";
@@ -457,7 +452,7 @@ test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async
     .toBe("home-link");
 
   await page.goto(`${basePath}/_help`);
-  const logoLink = page.locator('[data-stylex-owner="global-gnb-brand-link"]');
+  const logoLink = page.locator('[data-owner="global-gnb-brand-link"]');
   await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
   await page.evaluate(() => {
     (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "logo-link";
@@ -477,7 +472,7 @@ test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(`${basePath}/_help`);
-  await expect(page.locator('[data-stylex-owner="help-shell-breadcrumb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="help-shell-breadcrumb-outer"]')).toBeVisible();
 
   // Key-order-normalized via toMatchObject for the wtr-compat toEqual
   // JSON.stringify gap (order-sensitive object equality).
@@ -525,22 +520,13 @@ test("shared markdown help uses typed React targets without legacy target marker
   expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain("font-size: 16px !important;");
   expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain("padding: 0 0 0 1.5em !important;");
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("MARKDOWN_HELP_NAV_ITEMS.map");
-  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("active && navStyles.navChoiceActive");
+
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("onClick={() => toggleActiveTarget(target)}");
-  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
-    "const checklistTaskListResponsiveStyleProps = stylex.props(contentStyles.taskList)",
-  );
+
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("{...checklistTaskListResponsiveStyleProps}");
-  expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(
-    'fontSize: { default: "inherit", [globalBreakpoints.mobile]: "16px" }',
-  );
-  expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(
-    '[globalBreakpoints.mobile]: "0px 0px 0px 1.5em"',
-  );
+
   for (const ownerName of ["root", "list", "item", "label", "choice", "button"]) {
-    expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
-      `data-stylex-owner="markdown-help-nav-${ownerName}"`,
-    );
+    expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(`data-owner="markdown-help-nav-${ownerName}"`);
   }
   for (const styleName of [
     "root:",
@@ -563,7 +549,7 @@ test("shared markdown help uses typed React targets without legacy target marker
     expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(styleName);
   }
   const themeBlock = SHARED_MARKDOWN_HELP_STYLE_SOURCE.slice(
-    SHARED_MARKDOWN_HELP_STYLE_SOURCE.indexOf("stylex.defineVars({"),
+    SHARED_MARKDOWN_HELP_STYLE_SOURCE.indexOf("style.defineVars({"),
     SHARED_MARKDOWN_HELP_STYLE_SOURCE.indexOf("});") + 3,
   );
   for (const geometry of ["margin:", "padding:", "width:", "height:"])
@@ -627,7 +613,7 @@ test("shared markdown help uses typed React targets without legacy target marker
   const linkNav = navItems.filter({ hasText: /^Link$/u });
   const listNav = navItems.filter({ hasText: /^List$/u });
   await expect(linkNav).toHaveText("Link");
-  await expect(markdownHelp).toHaveAttribute("data-stylex-owner", "markdown-help-nav-root");
+  await expect(markdownHelp).toHaveAttribute("data-owner", "markdown-help-nav-root");
   await expect(markdownHelp.locator(".markdown-help-nav")).toHaveCSS(
     "background-color",
     "rgb(247, 247, 247)",
@@ -679,16 +665,16 @@ test("shared markdown help uses typed React targets without legacy target marker
   await codeNav.locator("button").click();
   const codePane = markdownHelp.locator(".markdown-help-wrap > .markdownCodes");
   await expect(codePane).toBeVisible();
-  await expect(codePane).toHaveAttribute("data-stylex-owner", "markdown-help-pane");
-  await expect(codePane.locator('[data-stylex-owner="markdown-help-input-pre"]')).toHaveCSS(
+  await expect(codePane).toHaveAttribute("data-owner", "markdown-help-pane");
+  await expect(codePane.locator('[data-owner="markdown-help-input-pre"]')).toHaveCSS(
     "white-space",
     "pre",
   );
-  await expect(codePane.locator('[data-stylex-owner="markdown-help-output-pre"]')).toHaveCSS(
+  await expect(codePane.locator('[data-owner="markdown-help-output-pre"]')).toHaveCSS(
     "background-color",
     "rgb(239, 239, 239)",
   );
-  await expect(codePane.locator('[data-stylex-owner="markdown-help-output-pre-code"]')).toHaveCSS(
+  await expect(codePane.locator('[data-owner="markdown-help-output-pre-code"]')).toHaveCSS(
     "border-top-width",
     "0px",
   );
@@ -696,15 +682,15 @@ test("shared markdown help uses typed React targets without legacy target marker
   const tableNav = navItems.filter({ hasText: /^Table$/u });
   await tableNav.locator("button").click();
   const tablePane = markdownHelp.locator(".markdown-help-wrap > .markdownTables");
-  const table = tablePane.locator('[data-stylex-owner="markdown-help-table"]');
+  const table = tablePane.locator('[data-owner="markdown-help-table"]');
   await expect(tablePane).toBeVisible();
   await expect(table).toHaveCSS("border-collapse", "collapse");
   await expect(table.locator("th").first()).toHaveCSS("min-width", "45px");
   await expect(table.locator("td").first()).toHaveCSS("word-break", "break-all");
   expect(
     await table.evaluate((element) => {
-      const pane = element.closest<HTMLElement>('[data-stylex-owner="markdown-help-pane"]');
-      const output = element.closest<HTMLElement>('[data-stylex-owner="markdown-help-output"]');
+      const pane = element.closest<HTMLElement>('[data-owner="markdown-help-pane"]');
+      const output = element.closest<HTMLElement>('[data-owner="markdown-help-output"]');
       if (!pane || !output) throw new Error("missing table containment owners");
       const paneBox = pane.getBoundingClientRect();
       const outputBox = output.getBoundingClientRect();
@@ -719,7 +705,7 @@ test("shared markdown help uses typed React targets without legacy target marker
   const taskNav = navItems.filter({ hasText: /^Checklist$/u });
   await taskNav.locator("button").click();
   const taskPane = markdownHelp.locator(".markdown-help-wrap > .markdownTaskList");
-  await expect(taskPane.locator('[data-stylex-owner="markdown-help-task-list"]')).toHaveCSS(
+  await expect(taskPane.locator('[data-owner="markdown-help-task-list"]')).toHaveCSS(
     "list-style-type",
     "disc",
   );
@@ -734,17 +720,17 @@ test("shared markdown help uses typed React targets without legacy target marker
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator(".markdown-help")).toBeVisible();
   await expect(
-    page.locator('.markdown-help-nav > [data-stylex-owner="markdown-help-nav-choice"]').first(),
+    page.locator('.markdown-help-nav > [data-owner="markdown-help-nav-choice"]').first(),
   ).toHaveCSS("padding", "5px 8px");
   await page
     .locator(".markdown-help-nav > .help-nav")
     .filter({ hasText: /^Checklist$/u })
     .click();
   await expect(
-    page.locator(".markdownTaskList").locator('[data-stylex-owner="markdown-help-task-list"]'),
+    page.locator(".markdownTaskList").locator('[data-owner="markdown-help-task-list"]'),
   ).toHaveCSS("font-size", "16px");
   await expect(
-    page.locator(".markdownTaskList").locator('[data-stylex-owner="markdown-help-task-list"]'),
+    page.locator(".markdownTaskList").locator('[data-owner="markdown-help-task-list"]'),
   ).toHaveCSS("padding-left", "24px");
   expect(await readMarkdownHelpMobileMetrics(page)).toEqual({
     labelContainedInNav: true,
@@ -852,7 +838,7 @@ async function readMarkdownHelpMobileMetrics(page: Page) {
 }
 
 async function renderedHelpAnswerLinks(page: Page) {
-  return page.locator('[data-stylex-owner="help-faq-answer"] a').evaluateAll((links) =>
+  return page.locator('[data-owner="help-faq-answer"] a').evaluateAll((links) =>
     links.map((link) => ({
       href: link.getAttribute("href"),
       text: link.textContent?.trim(),
@@ -861,7 +847,7 @@ async function renderedHelpAnswerLinks(page: Page) {
 }
 
 async function renderedHelpAnswerLinkActiveMarkers(page: Page) {
-  return page.locator('[data-stylex-owner="help-faq-answer"] a').evaluateAll((links) =>
+  return page.locator('[data-owner="help-faq-answer"] a').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className: link.getAttribute("class"),
@@ -873,12 +859,12 @@ async function renderedHelpAnswerLinkActiveMarkers(page: Page) {
 }
 
 async function readExternalAnswerLinkContainment(page: Page) {
-  return page.locator('[data-stylex-owner="help-faq-answer"] a').evaluateAll((links) =>
+  return page.locator('[data-owner="help-faq-answer"] a').evaluateAll((links) =>
     links
       .filter((link) => link.getAttribute("href")?.startsWith("https://github.com/"))
       .map((link) => {
-        const answer = link.closest('[data-stylex-owner="help-faq-answer"]');
-        const qa = link.closest('[data-stylex-owner="help-faq-row"]');
+        const answer = link.closest('[data-owner="help-faq-answer"]');
+        const qa = link.closest('[data-owner="help-faq-row"]');
         if (!answer) {
           throw new Error("Expected external FAQ link to stay inside a legacy answer cell.");
         }
@@ -906,31 +892,27 @@ async function readExternalAnswerLinkContainment(page: Page) {
 
 async function readDesktopHelpMetrics(page: Page) {
   const closedMetrics = await page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
+    const logo = document.querySelector<HTMLElement>('[data-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-shell-page-wrap-outer"]',
+      '[data-owner="help-shell-page-wrap-outer"]',
     );
     const breadcrumbHeading = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-shell-breadcrumb-inner"] h3',
+      '[data-owner="help-shell-breadcrumb-inner"] h3',
     );
-    const qas = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-list"]');
-    const firstQa = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-row"]');
+    const qas = document.querySelector<HTMLElement>('[data-owner="help-faq-list"]');
+    const firstQa = document.querySelector<HTMLElement>('[data-owner="help-faq-row"]');
     const questionWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-faq-question-wrap"]',
+      '[data-owner="help-faq-question-wrap"]',
     );
-    const question = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-question"]');
-    const answerWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-faq-answer-wrap"]',
-    );
-    const answer = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-answer"]');
-    const icon = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-toggle-icon"]');
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const question = document.querySelector<HTMLElement>('[data-owner="help-faq-question"]');
+    const answerWrap = document.querySelector<HTMLElement>('[data-owner="help-faq-answer-wrap"]');
+    const answer = document.querySelector<HTMLElement>('[data-owner="help-faq-answer"]');
+    const icon = document.querySelector<HTMLElement>('[data-owner="help-faq-toggle-icon"]');
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !gnbOuter ||
       !gnbInner ||
@@ -996,19 +978,17 @@ async function readDesktopHelpMetrics(page: Page) {
     };
   });
 
-  const row = page.locator('[data-stylex-owner="help-faq-row"]').first();
-  const question = page.locator('[data-stylex-owner="help-faq-question"]').first();
+  const row = page.locator('[data-owner="help-faq-row"]').first();
+  const question = page.locator('[data-owner="help-faq-question"]').first();
   await question.click();
   await expect(row).toHaveAttribute("data-state", "open");
   const openMetrics = await page.evaluate(() => {
     const questionWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-faq-question-wrap"]',
+      '[data-owner="help-faq-question-wrap"]',
     );
-    const answerWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-faq-answer-wrap"]',
-    );
-    const answer = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-answer"]');
-    const icon = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-toggle-icon"]');
+    const answerWrap = document.querySelector<HTMLElement>('[data-owner="help-faq-answer-wrap"]');
+    const answer = document.querySelector<HTMLElement>('[data-owner="help-faq-answer"]');
+    const icon = document.querySelector<HTMLElement>('[data-owner="help-faq-toggle-icon"]');
     if (!questionWrap || !answerWrap || !answer || !icon) {
       throw new Error("Expected open help metric targets are missing.");
     }
@@ -1026,21 +1006,19 @@ async function readDesktopHelpMetrics(page: Page) {
 
 async function readMobileHelpMetrics(page: Page) {
   const closedMetrics = await page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const siteBreadcrumb = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-shell-breadcrumb-outer"]',
+      '[data-owner="help-shell-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-shell-page-wrap-outer"]',
+      '[data-owner="help-shell-page-wrap-outer"]',
     );
-    const qas = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-list"]');
-    const firstQa = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-row"]');
-    const question = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-question"]');
-    const answerWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-faq-answer-wrap"]',
-    );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const qas = document.querySelector<HTMLElement>('[data-owner="help-faq-list"]');
+    const firstQa = document.querySelector<HTMLElement>('[data-owner="help-faq-row"]');
+    const question = document.querySelector<HTMLElement>('[data-owner="help-faq-question"]');
+    const answerWrap = document.querySelector<HTMLElement>('[data-owner="help-faq-answer-wrap"]');
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
     if (
       !gnbOuter ||
       !siteBreadcrumb ||
@@ -1079,14 +1057,12 @@ async function readMobileHelpMetrics(page: Page) {
     };
   });
 
-  const row = page.locator('[data-stylex-owner="help-faq-row"]').first();
-  const question = page.locator('[data-stylex-owner="help-faq-question"]').first();
+  const row = page.locator('[data-owner="help-faq-row"]').first();
+  const question = page.locator('[data-owner="help-faq-question"]').first();
   await question.click();
   await expect(row).toHaveAttribute("data-state", "open");
   const openMetrics = await page.evaluate(() => {
-    const answerWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="help-faq-answer-wrap"]',
-    );
+    const answerWrap = document.querySelector<HTMLElement>('[data-owner="help-faq-answer-wrap"]');
     if (!answerWrap) throw new Error("Expected open help mobile metric target is missing.");
     const style = getComputedStyle(answerWrap);
     return {
@@ -1218,17 +1194,17 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="help-shell-breadcrumb-heading"]') ||
-          current.matches('[data-stylex-owner="help-shell-breadcrumb-inner"]') ||
-          current.matches('[data-stylex-owner="help-shell-breadcrumb-outer"]') ||
-          current.matches('[data-stylex-owner="help-shell-page-wrap"]') ||
-          current.matches('[data-stylex-owner="help-shell-page-wrap-outer"]') ||
-          current.matches('[data-stylex-owner^="help-faq-"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="help-shell-breadcrumb-heading"]') ||
+          current.matches('[data-owner="help-shell-breadcrumb-inner"]') ||
+          current.matches('[data-owner="help-shell-breadcrumb-outer"]') ||
+          current.matches('[data-owner="help-shell-page-wrap"]') ||
+          current.matches('[data-owner="help-shell-page-wrap-outer"]') ||
+          current.matches('[data-owner^="help-faq-"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1236,7 +1212,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)
@@ -1275,10 +1251,10 @@ async function canonicalizeScreenRoots(page: Page) {
             current.hasAttribute(name) &&
             !(
               name === "class" &&
-              (current.matches('[data-stylex-owner="help-faq-question"]') ||
-                current.matches('[data-stylex-owner="help-shell-breadcrumb-heading"]'))
+              (current.matches('[data-owner="help-faq-question"]') ||
+                current.matches('[data-owner="help-shell-breadcrumb-heading"]'))
             ) &&
-            !(name === "style" && current.matches('[data-stylex-owner="help-faq-toggle-icon"]')),
+            !(name === "style" && current.matches('[data-owner="help-faq-toggle-icon"]')),
         )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
@@ -1307,7 +1283,7 @@ async function canonicalizeScreenRoots(page: Page) {
     // serialization intentionally compares only the two roots owned by the Help route.
     const roots = Array.from(
       document.querySelectorAll(
-        '[data-stylex-owner="help-shell-breadcrumb-outer"], [data-stylex-owner="help-shell-page-wrap-outer"]',
+        '[data-owner="help-shell-breadcrumb-outer"], [data-owner="help-shell-page-wrap-outer"]',
       ),
     );
     return roots.map((root) => visit(root)).join("");

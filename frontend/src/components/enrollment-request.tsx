@@ -1,7 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { useLegacyMessages } from "../i18n";
-import { enrollmentAvatarWrap, enrollmentDetails } from "./enrollment-request.stylex";
 
 // Consolidated from the organization and project members screens
 // (members.tsx in both). Per-screen differences are props so each screen's
@@ -47,15 +45,10 @@ export function EnrollmentRequest({
 }) {
   const { t } = useLegacyMessages();
   const loginId = stringField(user.loginId, "");
-  const avatarWrapProps = stylex.props(enrollmentAvatarWrap.root);
-  const detailsStyleProps = stylex.props(enrollmentDetails.root);
 
   return (
     <div className="span2">
-      <div
-        className={`${avatarWrapProps.className ?? ""} mr10`.trim()}
-        data-stylex-owner={avatarWrapOwner}
-      >
+      <div className="mr10" data-owner={avatarWrapOwner}>
         <Link
           {...(activeOptions === undefined ? {} : { activeOptions })}
           activeProps={activeProps}
@@ -71,7 +64,7 @@ export function EnrollmentRequest({
           />
         </Link>
       </div>
-      <div className={detailsStyleProps.className} data-stylex-owner={detailsOwner}>
+      <div data-owner={detailsOwner}>
         <span>
           <Link
             {...(activeOptions === undefined ? {} : { activeOptions })}

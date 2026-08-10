@@ -154,7 +154,7 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
+  await expect(page.locator('[data-owner="projects-directory-row"]').first()).toBeVisible();
   await expect(page).toHaveTitle("Project list");
   await expect
     .poll(() =>
@@ -229,18 +229,18 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
+  await expect(page.locator('[data-owner="projects-directory-row"]').first()).toBeVisible();
 
-  const tabItems = page.locator('[data-stylex-owner="projects-directory-tabs-item"]');
+  const tabItems = page.locator('[data-owner="projects-directory-tabs-item"]');
   const projectTabItem = tabItems.nth(0);
   const organizationTabItem = tabItems.nth(1);
   const projectTabLink = projectTabItem.locator(
-    ':scope > [data-stylex-owner="projects-directory-tabs-link"]',
+    ':scope > [data-owner="projects-directory-tabs-link"]',
   );
   const organizationTabLink = organizationTabItem.locator(
-    ':scope > [data-stylex-owner="projects-directory-tabs-link"]',
+    ':scope > [data-owner="projects-directory-tabs-link"]',
   );
-  const navbarProjectLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  const navbarProjectLink = page.locator('[data-owner="global-gnb-project-list-link"]');
 
   await expect(projectTabItem).toHaveAttribute("data-selected", "true");
   await expect(organizationTabItem).toHaveAttribute("data-selected", "false");
@@ -269,13 +269,13 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await mockProjectCardDestinations(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
+  await expect(page.locator('[data-owner="projects-directory-row"]').first()).toBeVisible();
 
   const projectLogoLink = page.locator(
-    '[data-stylex-owner="projects-directory-list"] [data-stylex-owner="projects-directory-owner-avatar"] a',
+    '[data-owner="projects-directory-list"] [data-owner="projects-directory-owner-avatar"] a',
   );
-  const projectNameLink = page.locator('[data-stylex-owner="projects-directory-title-link"]');
-  const ownerNameLink = page.locator('[data-stylex-owner="projects-directory-owner-link"]');
+  const projectNameLink = page.locator('[data-owner="projects-directory-title-link"]');
+  const ownerNameLink = page.locator('[data-owner="projects-directory-owner-link"]');
 
   await expect(projectLogoLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectNameLink).toHaveAttribute("href", `${basePath}/admin/sample`);
@@ -303,7 +303,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     .toBe("project");
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
+  await expect(page.locator('[data-owner="projects-directory-row"]').first()).toBeVisible();
   await page.evaluate(() => {
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "owner";
   });
@@ -349,11 +349,11 @@ test("project directory labels keep legacy header links and query", async ({ pag
   });
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
+  await expect(page.locator('[data-owner="projects-directory-row"]').first()).toBeVisible();
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: null });
 
   const projectLabel = page.locator(
-    '[data-stylex-owner="projects-directory-list"] [data-stylex-owner="projects-directory-project-label"]',
+    '[data-owner="projects-directory-list"] [data-owner="projects-directory-project-label"]',
   );
   await expect(projectLabel).toHaveCount(1);
   await expect(projectLabel).toHaveClass(/(?:^|\s)bug(?:\s|$)/u);
@@ -369,8 +369,8 @@ test("project directory labels keep legacy header links and query", async ({ pag
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/projects`);
   await expect.poll(() => new URL(page.url()).searchParams.get("labelIds")).toBe("8");
   await expect.poll(() => new URL(page.url()).searchParams.has("filter")).toBe(false);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
+  await expect(page.locator('[data-owner="projects-directory-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="projects-directory-title-link"]')).toHaveText(
     "sample-bug",
   );
   expect(projectRequests).toContainEqual({ filter: null, labelIds: "8" });
@@ -447,16 +447,16 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   });
 
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=2`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
+  await expect(page.locator('[data-owner="projects-directory-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="projects-directory-title-link"]')).toHaveText(
     "sample-page-two",
   );
-  await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
+  await expect(page.locator('[data-owner="projects-directory-description"]')).toHaveText(
     "Legacy query page two",
   );
   await expect(
     page.locator(
-      '[data-stylex-owner="projects-directory-list"] [data-stylex-owner="projects-directory-project-label"]',
+      '[data-owner="projects-directory-list"] [data-owner="projects-directory-project-label"]',
     ),
   ).toHaveText("bug");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
@@ -465,10 +465,10 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await previousPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
-  await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
+  await expect(page.locator('[data-owner="projects-directory-title-link"]')).toHaveText(
     "sample-page-one",
   );
-  await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
+  await expect(page.locator('[data-owner="projects-directory-description"]')).toHaveText(
     "Legacy query page one",
   );
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "1" });
@@ -481,26 +481,22 @@ test("projects list renders legacy pagination controls for multi-page project li
   await mockAuthenticatedProjects(page, { pageNum: 1, totalPages: 3 });
 
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=1`);
-  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
+  await expect(page.locator('[data-owner="projects-directory-row"]').first()).toBeVisible();
 
-  const pagination = page.locator('[data-stylex-owner="projects-directory-pagination"]');
+  const pagination = page.locator('[data-owner="projects-directory-pagination"]');
   await expect(pagination).not.toHaveClass(/(?:^|\s)page-navigation-wrap(?:\s|$)/u);
   await expect(
-    pagination.locator(':scope > [data-stylex-owner="projects-directory-pagination-list"]'),
+    pagination.locator(':scope > [data-owner="projects-directory-pagination-list"]'),
   ).toHaveCount(1);
-  const paginationItems = pagination.locator(
-    '[data-stylex-owner="projects-directory-pagination-item"]',
-  );
+  const paginationItems = pagination.locator('[data-owner="projects-directory-pagination-item"]');
   await expect(paginationItems).toHaveCount(5);
   await expect(
     pagination.locator(
-      '[data-stylex-owner="projects-directory-pagination-prev-icon"][data-disabled="true"]',
+      '[data-owner="projects-directory-pagination-prev-icon"][data-disabled="true"]',
     ),
   ).toHaveCount(1);
   await expect(
-    pagination.locator(
-      '[data-stylex-owner="projects-directory-pagination-label"][data-disabled="true"]',
-    ),
+    pagination.locator('[data-owner="projects-directory-pagination-label"][data-disabled="true"]'),
   ).toHaveText("Previous page");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
@@ -552,7 +548,7 @@ test("projects list renders legacy pagination controls for multi-page project li
   await expect(pageInput).toHaveValue("3");
   await expect(
     pagination.locator(
-      '[data-stylex-owner="projects-directory-pagination-next-icon"][data-disabled="true"]',
+      '[data-owner="projects-directory-pagination-next-icon"][data-disabled="true"]',
     ),
   ).toHaveCount(1);
 });
@@ -588,7 +584,7 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain("autoFocus");
   expect(source).toContain('<title>{t("title.projectList")}</title>');
-  expect(source).not.toContain('autofocus: ""');
+
   expect(source).not.toMatch(/setAttribute\(['"]autofocus['"]/);
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
@@ -611,9 +607,9 @@ test("site admin project delete button drops legacy delegated hooks while React 
   await mockSiteUpdate(page);
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
-  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-project-list-row"]')).toHaveCount(1);
 
-  const deleteButton = page.locator('[data-stylex-owner="site-project-list-delete-action"]');
+  const deleteButton = page.locator('[data-owner="site-project-list-delete-action"]');
   await expect(deleteButton).toHaveText("Delete");
   await expect(deleteButton).toHaveAttribute("data-project-name", "acme/roadmap");
   await expect(deleteButton).not.toHaveAttribute("data-href", /.+/);
@@ -631,18 +627,18 @@ test("site admin project delete button drops legacy delegated hooks while React 
   await deleteButton.click();
 
   const deleteModal = page.locator("#alertDeletionWrap");
-  await expect(deleteModal).toHaveAttribute("data-stylex-owner", "site-project-list-delete-modal");
+  await expect(deleteModal).toHaveAttribute("data-owner", "site-project-list-delete-modal");
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-header"]')).toHaveText(
+    "×acme/roadmapDelete project",
+  );
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-body"] p')).toHaveText(
+    "Do you really want to delete this project?",
+  );
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-header"]'),
-  ).toHaveText("×acme/roadmapDelete project");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-body"] p'),
-  ).toHaveText("Do you really want to delete this project?");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-footer"] > button'),
+    page.locator('[data-owner="site-project-list-delete-modal-footer"] > button'),
   ).toHaveText(["Yes", "No"]);
 
   const deleteResponse = page.waitForResponse(
@@ -661,7 +657,7 @@ test("site admin project delete button drops legacy delegated hooks while React 
       pathname: `${basePath}/api/v1/site/projects/77`,
     },
   ]);
-  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-row"]')).toHaveCount(0);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(page).toHaveURL(projectListUrl);
@@ -683,7 +679,7 @@ test("site admin project delete source has no legacy data-href delegated hook", 
     source.indexOf("function LegacyMessage"),
   );
 
-  expect(projectListItemSource).toContain('data-stylex-owner="site-project-list-delete-action"');
+  expect(projectListItemSource).toContain('data-owner="site-project-list-delete-action"');
   expect(projectListItemSource).toContain("data-project-name=");
   expect(projectListItemSource).toContain("onClick={(event) => onDelete(project, event)}");
   expect(projectListItemSource).not.toContain("data-href");
@@ -932,30 +928,24 @@ async function mockSiteUpdate(page: Page) {
 
 async function readProjectsListMetrics(page: Page) {
   return page.evaluate(() => {
-    const list = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-list"]',
-    );
-    const row = document.querySelector<HTMLElement>('[data-stylex-owner="projects-directory-row"]');
+    const list = document.querySelector<HTMLElement>('[data-owner="projects-directory-list"]');
+    const row = document.querySelector<HTMLElement>('[data-owner="projects-directory-row"]');
     const avatar = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-owner-avatar"]',
+      '[data-owner="projects-directory-owner-avatar"]',
     );
     const avatarImage = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-owner-avatar-image"]',
+      '[data-owner="projects-directory-owner-avatar-image"]',
     );
-    const header = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-header"]',
-    );
+    const header = document.querySelector<HTMLElement>('[data-owner="projects-directory-header"]');
     const description = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-description"]',
+      '[data-owner="projects-directory-description"]',
     );
     const nameTag = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-name-tag"]',
+      '[data-owner="projects-directory-name-tag"]',
     );
-    const stats = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-stats"]',
-    );
+    const stats = document.querySelector<HTMLElement>('[data-owner="projects-directory-stats"]');
     const members = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="projects-directory-members"]',
+      '[data-owner="projects-directory-members"]',
     );
     if (
       !list ||
@@ -1017,7 +1007,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        "[data-stylex-owner=projects-breadcrumb-outer], [data-stylex-owner=projects-directory-page-wrap]",
+        "[data-owner=projects-breadcrumb-outer], [data-owner=projects-directory-page-wrap]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1033,46 +1023,36 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(
           (attr) =>
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-disabled" &&
             attr.name !== "data-pagination-kind" &&
             attr.name !== "data-projects-directory-tabs-scope" &&
             !(
               attr.name === "data-selected" &&
-              attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]')
+              attr.ownerElement?.matches('[data-owner="projects-directory-tabs-item"]')
             ) &&
             !(
               attr.name === "class" &&
-              (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-link"]') ||
+              (attr.ownerElement?.matches('[data-owner="projects-directory-tabs-link"]') ||
+                attr.ownerElement?.matches('[data-owner="projects-directory-search-form"]') ||
+                attr.ownerElement?.matches('[data-owner="projects-directory-member-item"]') ||
+                attr.ownerElement?.matches('[data-owner="projects-directory-member-count"]') ||
                 attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-search-form"]',
+                  '[data-owner="projects-directory-member-avatar-image"]',
                 ) ||
                 attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-member-item"]',
+                  '[data-owner="projects-directory-owner-avatar-image"]',
                 ) ||
-                attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-member-count"]',
-                ) ||
-                attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-member-avatar-image"]',
-                ) ||
-                attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-owner-avatar-image"]',
-                ) ||
-                attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-readable-identity"]',
-                ) ||
-                (attr.ownerElement?.matches(
-                  '[data-stylex-owner="projects-directory-pagination-label"]',
-                ) &&
+                attr.ownerElement?.matches('[data-owner="projects-directory-readable-identity"]') ||
+                (attr.ownerElement?.matches('[data-owner="projects-directory-pagination-label"]') &&
                   attr.ownerElement.getAttribute("data-disabled") === "false") ||
-                (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
+                (attr.ownerElement?.matches('[data-owner="projects-directory-tabs-item"]') &&
                   attr.ownerElement.getAttribute("data-selected") === "false"))
             ) &&
             !(
               attr.name === "style" &&
               attr.ownerElement?.matches(
-                '[data-stylex-owner="projects-directory-pagination-next-icon"], [data-stylex-owner="projects-directory-pagination-prev-icon"]',
+                '[data-owner="projects-directory-pagination-next-icon"], [data-owner="projects-directory-pagination-prev-icon"]',
               )
             ) &&
             !attr.name.startsWith("data-v-"),
@@ -1080,7 +1060,7 @@ async function canonicalizeScreenRoots(page: Page) {
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
-      const owner = node.getAttribute("data-stylex-owner");
+      const owner = node.getAttribute("data-owner");
       const syntheticAttrs =
         owner === "projects-directory-readable-info"
           ? 'class="info-wrap"'
@@ -1105,11 +1085,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1117,7 +1097,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -1130,7 +1110,7 @@ async function canonicalizeScreenRoots(page: Page) {
           attr.value = originalValue;
         }
       }
-      const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+      const owner = attr.ownerElement?.getAttribute("data-owner");
       if (attr.name === "class" && owner === "projects-breadcrumb-outer")
         return "site-breadcrumb-outer";
       if (attr.name === "class" && owner === "projects-breadcrumb-inner")

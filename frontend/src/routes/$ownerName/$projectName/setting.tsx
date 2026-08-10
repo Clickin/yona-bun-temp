@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CountBadge } from "../../../components/count-badge";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
@@ -22,143 +21,6 @@ import {
   ProjectHeader as SharedProjectHeader,
   ProjectMenu as SharedProjectMenu,
 } from "../$projectName";
-import { styles } from "./-setting.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  form: stylex.props(styles.form),
-  frame: stylex.props(styles.frame),
-  topBox: stylex.props(styles.topBox),
-  bottomBox: stylex.props(styles.bottomBox),
-  settingFields: stylex.props(styles.settingFields),
-  settingFieldTerm: stylex.props(styles.settingFieldTerm),
-  settingFieldDescription: stylex.props(styles.settingFieldDescription),
-  settingFieldLabel: stylex.props(styles.settingFieldLabel),
-  settingBox: stylex.props(styles.settingBox),
-  settingBoxLeft: stylex.props(styles.settingBoxLeft),
-  settingBoxRight: stylex.props(styles.settingBoxRight),
-  logo: stylex.props(styles.logo),
-  logoDesc: stylex.props(styles.logoDesc),
-  descsList: stylex.props(styles.descsList),
-  logoUploadButton: stylex.props(styles.logoUploadButton),
-  logoUploadInput: stylex.props(styles.logoUploadInput),
-  descsItem: stylex.props(styles.descsItem),
-  descsLast: stylex.props(styles.descsLast),
-  input: stylex.props(styles.input),
-  nameField: stylex.props(styles.nameField),
-  namePopover: stylex.props(styles.namePopover),
-  textarea: stylex.props(styles.textarea),
-  oldPlace: stylex.props(styles.oldPlace),
-  radioInput: stylex.props(styles.radioInput),
-  defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
-  defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
-  defaultBranchDropHidden: stylex.props(styles.defaultBranchDropHidden),
-  defaultBranchDropVisible: stylex.props(styles.defaultBranchDropVisible),
-  defaultBranchChoice: stylex.props(styles.defaultBranchChoice),
-  defaultBranchChosen: stylex.props(styles.defaultBranchChosen),
-  defaultBranchLabel: stylex.props(styles.defaultBranchLabel),
-  defaultBranchArrow: stylex.props(styles.defaultBranchArrow),
-  defaultBranchArrowGlyph: stylex.props(styles.defaultBranchArrowGlyph),
-  defaultBranchSearch: stylex.props(styles.defaultBranchSearch),
-  defaultBranchSearchInput: stylex.props(styles.defaultBranchSearchInput),
-  defaultBranchResults: stylex.props(styles.defaultBranchResults),
-  defaultBranchResultItem: stylex.props(styles.defaultBranchResultItem),
-  defaultBranchResult: stylex.props(styles.defaultBranchResult),
-  defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
-  issueTemplateEdit: stylex.props(styles.issueTemplateEdit),
-  middleBox: stylex.props(styles.middleBox),
-  cuLabel: stylex.props(styles.cuLabel),
-  cuDesc: stylex.props(styles.cuDesc),
-  cuNote: stylex.props(styles.cuNote),
-  reviewerNote: stylex.props(styles.cuNote, styles.reviewerNote),
-} as const;
-
-const textareaStaticStyles = stylex.create({
-  overflow: { overflow: "hidden", overflowWrap: "break-word", resize: "none" },
-});
-
-const reviewerDropdownStyles = stylex.create({
-  group: {
-    display: "inline-block",
-    position: "relative",
-    verticalAlign: "middle",
-  },
-  toggle: {
-    backgroundColor: "#ffffff",
-    borderColor: "rgba(0,0,0,.15)",
-    borderRadius: "3px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxShadow: "0 1px 0 rgba(0,0,0,.05)",
-    color: "#333333",
-    display: "inline-block",
-    fontSize: "14px",
-    lineHeight: "20px",
-    marginBottom: "0px",
-    marginLeft: ".3em",
-    outline: "0px",
-    padding: "0px",
-    paddingLeft: "12px",
-    position: "relative",
-    textAlign: "left",
-    textShadow: "none",
-    transition: "all 0.3s ease",
-    verticalAlign: "middle",
-    whiteSpace: "nowrap",
-  },
-  toggleOpen: { backgroundColor: "#f2f2f2" },
-  label: {
-    display: "inline-block",
-    float: "left",
-    margin: "0px",
-    overflow: "hidden",
-    padding: "4px 0px",
-    paddingRight: "9px",
-    width: "116px",
-  },
-  caretWrap: {
-    float: "right",
-    margin: "0px",
-    padding: "4px 9px",
-  },
-  caret: {
-    borderLeftColor: "transparent",
-    borderLeftStyle: "solid",
-    borderLeftWidth: "4px",
-    borderRightColor: "transparent",
-    borderRightStyle: "solid",
-    borderRightWidth: "4px",
-    borderTopColor: "#4f4f4f",
-    borderTopStyle: "solid",
-    borderTopWidth: "4px",
-    display: "inline-block",
-    height: "0px",
-    verticalAlign: "top",
-    width: "0px",
-  },
-  menu: {
-    backgroundClip: "padding-box",
-    backgroundColor: "#ffffff",
-    borderColor: "rgba(0,0,0,0.2)",
-    borderRadius: "2px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxShadow: "-2px 2px 1px rgba(0,0,0,0.1)",
-    float: "left",
-    left: "0px",
-    listStyle: "none",
-    margin: "2px 0px 0px",
-    minWidth: "160px",
-    overflow: "hidden",
-    padding: "0px",
-    position: "absolute",
-    top: "100%",
-    zIndex: "1000",
-  },
-  menuHidden: { display: "none" },
-  menuVisible: { display: "block" },
-  item: { marginBottom: "1px" },
-});
 
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
@@ -403,16 +265,8 @@ function ProjectSettingBody({
       setOverviewHeight(legacyAutosizeContentHeight(textarea));
     }
   }, [overview]);
-  const textareaHeightProps = stylex.props(styles.textareaHeight(`${overviewHeight}px`));
-  const textareaClassName = [
-    "textarea",
-    sx.textarea.className,
-    stylex.props(styles.legacyTextareaHeight).className,
-    textareaHeightProps.className,
-    stylex.props(textareaStaticStyles.overflow).className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const textareaHeightStyle = { height: `${overviewHeight}px` };
+  const textareaClassName = "textarea";
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -514,105 +368,58 @@ function ProjectSettingBody({
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/setting`)}
         encType="multipart/form-data"
-        {...sx.form}
-        className={`${sx.form.className} nm`}
-        data-stylex-owner="project-setting-form"
+        className="nm"
+        data-owner="project-setting-form"
         onSubmit={onSubmit}
       >
-        <div
-          {...sx.frame}
-          className={`${sx.frame.className} bubble-wrap gray`}
-          data-stylex-owner="project-setting-frame"
-        >
+        <div className="bubble-wrap gray" data-owner="project-setting-frame">
           <input type="hidden" name="id" value={projectId(project)} />
           <input
             type="hidden"
             name="watchingCount"
             value={numberField(recordField(project).watchCount)}
           />
-          <div
-            {...sx.topBox}
-            className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}
-            data-stylex-owner="project-setting-top-box"
-          >
-            <div
-              className={`${sx.settingBox.className} ${sx.settingBoxLeft.className} setting-box left`}
-              data-stylex-owner="project-setting-setting-box-left"
-            >
+          <div className="box-wrap top clearfix frm-wrap" data-owner="project-setting-top-box">
+            <div className="setting-box left" data-owner="project-setting-setting-box-left">
               <div
-                {...sx.logo}
-                {...stylex.props(
-                  styles.logoBackground(
-                    `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
-                  ),
-                )}
+                className="logo-wrap"
                 style={{
                   backgroundImage: `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
                 }}
-                className={`${sx.logo.className} logo-wrap`}
-                data-stylex-owner="project-setting-logo"
+                data-owner="project-setting-logo"
               ></div>
-              <div
-                className={`${sx.logoDesc.className} logo-desc`}
-                data-stylex-owner="project-setting-logo-desc"
-              >
-                <ul
-                  {...sx.descsList}
-                  className={`${sx.descsList.className} unstyled descs`}
-                  data-stylex-owner="project-setting-descs-list"
-                >
-                  <li
-                    className={sx.descsItem.className}
-                    data-stylex-owner="project-setting-descs-item"
-                  >
+              <div className="logo-desc" data-owner="project-setting-logo-desc">
+                <ul className="unstyled descs" data-owner="project-setting-descs-list">
+                  <li className="" data-owner="project-setting-descs-item">
                     <strong>{t("project.logo")}</strong>
                   </li>
-                  <li
-                    className={sx.descsItem.className}
-                    data-stylex-owner="project-setting-descs-item"
-                  >
+                  <li className="" data-owner="project-setting-descs-item">
                     {t("project.logo.type")}{" "}
-                    <span
-                      {...stylex.props(styles.point)}
-                      className={`${stylex.props(styles.point).className} point`}
-                      data-stylex-owner="project-setting-point"
-                    >
+                    <span className="point" data-owner="project-setting-point">
                       bmp, jpg, gif, png
                     </span>
                   </li>
-                  <li
-                    className={sx.descsItem.className}
-                    data-stylex-owner="project-setting-descs-item"
-                  >
+                  <li className="" data-owner="project-setting-descs-item">
                     {t("project.logo.maxFileSize")}{" "}
-                    <span
-                      {...stylex.props(styles.point)}
-                      className={`${stylex.props(styles.point).className} point`}
-                      data-stylex-owner="project-setting-point"
-                    >
+                    <span className="point" data-owner="project-setting-point">
                       5MB
                     </span>
                   </li>
-                  <li
-                    className={sx.descsLast.className}
-                    data-stylex-owner="project-setting-descs-last"
-                  >
+                  <li className="" data-owner="project-setting-descs-last">
                     <div className="btn-wrap">
                       <div
-                        {...sx.logoUploadButton}
-                        className={`${sx.logoUploadButton.className} nbtn medium white fake-file-wrap`}
-                        data-stylex-owner="project-setting-logo-upload-button"
+                        className="nbtn medium white fake-file-wrap"
+                        data-owner="project-setting-logo-upload-button"
                       >
                         <i className="yobicon-upload"></i> {t("button.upload")}
                         <input
                           key={logoInputResetKey}
-                          {...sx.logoUploadInput}
                           id="logoPath"
                           type="file"
-                          className={`${sx.logoUploadInput.className} file`}
+                          className="file"
                           name="logoPath"
                           accept="image/*"
-                          data-stylex-owner="project-setting-logo-upload-input"
+                          data-owner="project-setting-logo-upload-input"
                           onChange={onChangeLogoPath}
                         />
                       </div>
@@ -621,29 +428,17 @@ function ProjectSettingBody({
                 </ul>
               </div>
             </div>
-            {/* Keep the legacy setting-box/right owner adjacent to the StyleX border cascade. */}
-            <dl
-              {...stylex.props(styles.settingFields, styles.settingBox, styles.settingBoxRight)}
-              className={`${stylex.props(styles.settingFields, styles.settingBox, styles.settingBoxRight).className} setting-box right`}
-              data-stylex-owner="project-setting-setting-box-right"
-            >
-              <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
-                <label
-                  {...sx.settingFieldLabel}
-                  data-stylex-owner="project-setting-name-label"
-                  htmlFor="project-name"
-                >
+            {/* Keep the legacy setting-box/right owner adjacent to the Style border cascade. */}
+            <dl className="setting-box right" data-owner="project-setting-setting-box-right">
+              <dt className="" data-owner="project-setting-name-term">
+                <label className="" data-owner="project-setting-name-label" htmlFor="project-name">
                   {t("project.name.placeholder")}
                 </label>
               </dt>
-              <dd
-                {...sx.nameField}
-                className={`${sx.nameField.className} ${sx.settingFieldDescription.className}`}
-                data-stylex-owner="project-setting-name-field"
-              >
+              <dd className="" data-owner="project-setting-name-field">
                 <input
-                  {...sx.input}
-                  data-stylex-owner="project-setting-name-input"
+                  className=""
+                  data-owner="project-setting-name-input"
                   id="project-name"
                   type="text"
                   name="name"
@@ -655,11 +450,7 @@ function ProjectSettingBody({
                   onMouseLeave={() => setProjectNamePopoverHovered(false)}
                 />
                 {isProjectNamePopoverVisible ? (
-                  <div
-                    className="popover left in"
-                    {...sx.namePopover}
-                    data-stylex-owner="project-setting-name-popover"
-                  >
+                  <div className="popover left in" data-owner="project-setting-name-popover">
                     <div className="arrow"></div>
                     <div className="popover-title" aria-hidden="true"></div>
                     <div className="popover-content">{t("project.transfer.description6")}</div>
@@ -668,33 +459,30 @@ function ProjectSettingBody({
                 {oldPlace ? (
                   <div>
                     {t("project.previous.place", { args: [""] })}
-                    <span style={{ color: "red" }} data-stylex-owner="project-setting-old-place">
+                    <span style={{ color: "red" }} data-owner="project-setting-old-place">
                       {oldPlace}
                     </span>
                   </div>
                 ) : null}
                 <br />
               </dd>
-              <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-description-term">
+              <dt className="" data-owner="project-setting-description-term">
                 <label
-                  {...sx.settingFieldLabel}
-                  data-stylex-owner="project-setting-description-label"
+                  className=""
+                  data-owner="project-setting-description-label"
                   htmlFor="project-desc"
                 >
                   {t("project.description.placeholder")}
                 </label>
               </dt>
-              <dd
-                {...sx.settingFieldDescription}
-                data-stylex-owner="project-setting-description-field"
-              >
+              <dd className="" data-owner="project-setting-description-field">
                 <textarea
-                  {...textareaHeightProps}
+                  style={textareaHeightStyle}
                   ref={overviewRef}
                   id="project-desc"
                   name="overview"
                   maxLength={250}
-                  data-stylex-owner="project-setting-description"
+                  data-owner="project-setting-description"
                   className={textareaClassName}
                   value={overview}
                   onChange={(event) => setOverview(event.currentTarget.value)}
@@ -703,31 +491,19 @@ function ProjectSettingBody({
             </dl>
           </div>
 
-          <div
-            {...sx.middleBox}
-            className={`${sx.middleBox.className} box-wrap middle`}
-            data-stylex-owner="project-setting-middle-share"
-          >
-            <div
-              {...sx.cuLabel}
-              className={`${sx.cuLabel.className} cu-label`}
-              data-stylex-owner="project-setting-cu-label-share"
-            >
+          <div className="box-wrap middle" data-owner="project-setting-middle-share">
+            <div className="cu-label" data-owner="project-setting-cu-label-share">
               {t("project.shareOption")}
             </div>{" "}
-            <div
-              {...sx.cuDesc}
-              className={`${sx.cuDesc.className} cu-desc`}
-              data-stylex-owner="project-setting-cu-desc-share"
-            >
+            <div className="cu-desc" data-owner="project-setting-cu-desc-share">
               <input
                 name="projectScope"
                 type="radio"
-                className={`${sx.radioInput.className} radio-btn`}
+                className="radio-btn"
                 id="public"
                 value="PUBLIC"
                 defaultChecked={projectScope === "PUBLIC"}
-                data-stylex-owner="project-setting-radio-public"
+                data-owner="project-setting-radio-public"
               />
               <label htmlFor="public" className="bg-radiobtn label-public">
                 {t("project.public")}
@@ -750,51 +526,35 @@ function ProjectSettingBody({
               <input
                 name="projectScope"
                 type="radio"
-                className={`${sx.radioInput.className} radio-btn`}
+                className="radio-btn"
                 id="private"
                 value="PRIVATE"
                 defaultChecked={projectScope === "PRIVATE"}
-                data-stylex-owner="project-setting-radio-private"
+                data-owner="project-setting-radio-private"
               />
               <label htmlFor="private" className="bg-radiobtn label-private">
                 {t("project.private")}
               </label>{" "}
-              <span
-                {...sx.cuNote}
-                className={`${sx.cuNote.className} note`}
-                data-stylex-owner="project-setting-cu-note-share"
-              >
+              <span className="note" data-owner="project-setting-cu-note-share">
                 {t("project.private.notice")}
               </span>
             </div>
           </div>
 
           {isGit ? (
-            <div
-              {...sx.middleBox}
-              className={`${sx.middleBox.className} box-wrap middle`}
-              data-stylex-owner="project-setting-middle-issue-template"
-            >
-              <div
-                {...sx.cuLabel}
-                className={`${sx.cuLabel.className} cu-label`}
-                data-stylex-owner="project-setting-cu-label-issue-template"
-              >
+            <div className="box-wrap middle" data-owner="project-setting-middle-issue-template">
+              <div className="cu-label" data-owner="project-setting-cu-label-issue-template">
                 {t("issue.template")}
               </div>{" "}
-              <div
-                {...sx.cuDesc}
-                className={`${sx.cuDesc.className} cu-desc`}
-                data-stylex-owner="project-setting-cu-desc-issue-template"
-              >
+              <div className="cu-desc" data-owner="project-setting-cu-desc-issue-template">
                 <Link
                   activeOptions={legacyProjectSettingsLinkActiveOptions}
                   activeProps={legacyProjectSettingsLinkSuppressActiveProps}
                   to="/$ownerName/$projectName/postform"
                   params={{ ownerName, projectName }}
                   search={{ issueTemplate: true }}
-                  className={`${sx.issueTemplateEdit.className} ybtn`}
-                  data-stylex-owner="project-setting-issue-template-edit"
+                  className="ybtn"
+                  data-owner="project-setting-issue-template-edit"
                   target="_blank"
                 >
                   {t("issue.template.edit")}
@@ -803,31 +563,19 @@ function ProjectSettingBody({
             </div>
           ) : null}
 
-          <div
-            {...sx.middleBox}
-            className={`${sx.middleBox.className} box-wrap middle`}
-            data-stylex-owner="project-setting-middle-code-accessible"
-          >
-            <div
-              {...sx.cuLabel}
-              className={`${sx.cuLabel.className} cu-label`}
-              data-stylex-owner="project-setting-cu-label-code-accessible"
-            >
+          <div className="box-wrap middle" data-owner="project-setting-middle-code-accessible">
+            <div className="cu-label" data-owner="project-setting-cu-label-code-accessible">
               {t("project.codeAccessible")}
             </div>{" "}
-            <div
-              {...sx.cuDesc}
-              className={`${sx.cuDesc.className} cu-desc`}
-              data-stylex-owner="project-setting-cu-desc-code-accessible"
-            >
+            <div className="cu-desc" data-owner="project-setting-cu-desc-code-accessible">
               <input
                 name="isCodeAccessibleMemberOnly"
                 type="radio"
                 id="codeAccessibleMemberOnly"
-                className={`${sx.radioInput.className} radio-btn`}
+                className="radio-btn"
                 value="true"
                 defaultChecked={booleanField(recordField(project).codeMemberOnly)}
-                data-stylex-owner="project-setting-radio-code-members"
+                data-owner="project-setting-radio-code-members"
               />
               <label htmlFor="codeAccessibleMemberOnly" className="bg-radiobtn label-public">
                 {t("button.yes")}
@@ -836,56 +584,38 @@ function ProjectSettingBody({
                 name="isCodeAccessibleMemberOnly"
                 type="radio"
                 id="codeAccessibleAnyone"
-                className={`${sx.radioInput.className} radio-btn`}
+                className="radio-btn"
                 value="false"
                 defaultChecked={!booleanField(recordField(project).codeMemberOnly)}
-                data-stylex-owner="project-setting-radio-code-anyone"
+                data-owner="project-setting-radio-code-anyone"
               />
               <label htmlFor="codeAccessibleAnyone" className="bg-radiobtn label-private">
                 {t("button.no")}
               </label>
-              <span
-                {...sx.cuNote}
-                className={`${sx.cuNote.className} note`}
-                data-stylex-owner="project-setting-cu-note-code-accessible"
-              ></span>
+              <span className="note" data-owner="project-setting-cu-note-code-accessible"></span>
             </div>
           </div>
 
           {isGit ? (
             <>
               <div
-                className={`${sx.middleBox.className} box-wrap middle reviewer-count-wrap ${
-                  stylex.props(
-                    reviewerCountPanelVisible
-                      ? styles.reviewerCountPanelVisible
-                      : styles.reviewerCountPanelHidden,
-                  ).className
-                }`}
+                className={`box-wrap middle reviewer-count-wrap${reviewerCountPanelVisible ? " is-visible" : " is-hidden"}`}
                 id="reviewerCountSettingPanel"
-                data-stylex-owner="project-setting-middle-reviewer"
+                data-owner="project-setting-middle-reviewer"
               >
-                <div
-                  {...sx.cuLabel}
-                  className={`${sx.cuLabel.className} cu-label vmiddle`}
-                  data-stylex-owner="project-setting-cu-label-reviewer"
-                >
+                <div className="cu-label vmiddle" data-owner="project-setting-cu-label-reviewer">
                   {t("project.reviewer.count")}
                 </div>{" "}
-                <div
-                  {...sx.cuDesc}
-                  className={`${sx.cuDesc.className} cu-desc`}
-                  data-stylex-owner="project-setting-cu-desc-reviewer"
-                >
+                <div className="cu-desc" data-owner="project-setting-cu-desc-reviewer">
                   <input
                     name="isUsingReviewerCount"
                     type="radio"
-                    className={`${sx.radioInput.className} radio-btn`}
+                    className="radio-btn"
                     id="reviewerCountEnable"
                     value="true"
                     checked={reviewerCountEnabled}
                     onChange={() => setReviewerCountEnabled(true)}
-                    data-stylex-owner="project-setting-radio-reviewer-enable"
+                    data-owner="project-setting-radio-reviewer-enable"
                   />
                   <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
                     {t("project.reviewer.count.enable")}
@@ -893,25 +623,19 @@ function ProjectSettingBody({
                   <input
                     name="isUsingReviewerCount"
                     type="radio"
-                    className={`${sx.radioInput.className} radio-btn`}
+                    className="radio-btn"
                     id="reviewerCountDisable"
                     value="false"
                     checked={!reviewerCountEnabled}
                     onChange={() => setReviewerCountEnabled(false)}
-                    data-stylex-owner="project-setting-radio-reviewer-disable"
+                    data-owner="project-setting-radio-reviewer-disable"
                   />
                   <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
                     {t("project.reviewer.count.disable")}
                   </label>
                   <div
                     id="welReviewerCount"
-                    className={`hide ${
-                      stylex.props(
-                        reviewerCountEnabled
-                          ? styles.reviewerCountControlsVisible
-                          : styles.reviewerCountControlsHidden,
-                      ).className
-                    }`}
+                    className={`hide s2e-reviewer-count-controls${reviewerCountEnabled ? " is-visible" : ""}`}
                   >
                     <input
                       type="hidden"
@@ -919,51 +643,29 @@ function ProjectSettingBody({
                       value={selectedDefaultReviewerCount}
                     />
                     <div
-                      className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""} ${stylex.props(reviewerDropdownStyles.group).className}`}
-                      data-stylex-owner="project-reviewer-count-dropdown"
+                      className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""}`}
+                      data-owner="project-reviewer-count-dropdown"
                     >
                       <button
-                        className={`btn dropdown-toggle large ${
-                          stylex.props(
-                            reviewerDropdownStyles.toggle,
-                            reviewerCountDropdownOpen ? reviewerDropdownStyles.toggleOpen : null,
-                          ).className
-                        }`}
+                        className={`btn dropdown-toggle large s2e-reviewer-dropdown-toggle${reviewerCountDropdownOpen ? " is-open" : ""}`}
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
                           setReviewerCountDropdownOpen((open) => !open);
                         }}
                       >
-                        <span
-                          className={`d-label ${stylex.props(reviewerDropdownStyles.label).className}`}
-                        >
+                        <span className="d-label s2e-reviewer-dropdown-label">
                           {selectedDefaultReviewerCount}
                         </span>
-                        <span
-                          className={`d-caret ${stylex.props(reviewerDropdownStyles.caretWrap).className}`}
-                        >
-                          <span
-                            className={`caret ${stylex.props(reviewerDropdownStyles.caret).className}`}
-                          ></span>
+                        <span className="d-caret s2e-reviewer-dropdown-caret-wrap">
+                          <span className="caret s2e-reviewer-dropdown-caret"></span>
                         </span>
                       </button>
                       <ul
-                        className={`dropdown-menu ${
-                          stylex.props(
-                            reviewerDropdownStyles.menu,
-                            reviewerCountDropdownOpen
-                              ? reviewerDropdownStyles.menuVisible
-                              : reviewerDropdownStyles.menuHidden,
-                          ).className
-                        }`}
+                        className={`dropdown-menu s2e-reviewer-dropdown-menu${reviewerCountDropdownOpen ? " is-visible" : " is-hidden"}`}
                       >
                         {reviewerPoints.map((point) => (
-                          <li
-                            className={stylex.props(reviewerDropdownStyles.item).className}
-                            data-value={point}
-                            key={point}
-                          >
+                          <li className="s2e-reviewer-dropdown-item" data-value={point} key={point}>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -979,11 +681,7 @@ function ProjectSettingBody({
                         ))}
                       </ul>
                     </div>
-                    <span
-                      {...sx.reviewerNote}
-                      className={`${sx.reviewerNote.className} note ml10`}
-                      data-stylex-owner="project-setting-cu-note-reviewer"
-                    >
+                    <span className="note ml10" data-owner="project-setting-cu-note-reviewer">
                       {t("project.reviewer.count.description")}
                     </span>
                   </div>
@@ -991,51 +689,28 @@ function ProjectSettingBody({
               </div>
 
               <div
-                className={`${sx.middleBox.className} box-wrap middle ${
-                  stylex.props(
-                    menuCodeChecked
-                      ? styles.defaultBranchPanelVisible
-                      : styles.defaultBranchPanelHidden,
-                  ).className
-                }`}
+                className={`box-wrap middle${menuCodeChecked ? " is-visible" : " is-hidden"}`}
                 id="defaultBranceSettingPanel"
-                data-stylex-owner="project-setting-middle-default-branch"
+                data-owner="project-setting-middle-default-branch"
               >
                 <div
-                  {...sx.cuLabel}
-                  className={`${sx.cuLabel.className} cu-label vmiddle`}
-                  data-stylex-owner="project-setting-cu-label-default-branch"
+                  className="cu-label vmiddle"
+                  data-owner="project-setting-cu-label-default-branch"
                 >
                   {t("code.branches.defaultBranch")}
                 </div>{" "}
-                <div
-                  {...sx.cuDesc}
-                  className={`${sx.cuDesc.className} cu-desc`}
-                  data-stylex-owner="project-setting-cu-desc-default-branch"
-                >
+                <div className="cu-desc" data-owner="project-setting-cu-desc-default-branch">
                   <DefaultBranchSelect2 branches={branches} defaultBranch={defaultBranch} />
                 </div>
               </div>
             </>
           ) : null}
 
-          <div
-            {...sx.middleBox}
-            className={`${sx.middleBox.className} box-wrap middle`}
-            data-stylex-owner="project-setting-middle-menu"
-          >
-            <div
-              {...sx.cuLabel}
-              className={`${sx.cuLabel.className} cu-label vmiddle`}
-              data-stylex-owner="project-setting-cu-label-menu"
-            >
+          <div className="box-wrap middle" data-owner="project-setting-middle-menu">
+            <div className="cu-label vmiddle" data-owner="project-setting-cu-label-menu">
               {t("project.menu.setting")}
             </div>{" "}
-            <div
-              {...sx.cuDesc}
-              className={`${sx.cuDesc.className} cu-desc`}
-              data-stylex-owner="project-setting-cu-desc-menu"
-            >
+            <div className="cu-desc" data-owner="project-setting-cu-desc-menu">
               <MenuCheckbox
                 id="menuSettingCode"
                 name="code"
@@ -1106,14 +781,10 @@ function ProjectSettingBody({
           </div>
         </div>
 
-        <div
-          {...sx.bottomBox}
-          className={`${sx.bottomBox.className} box-wrap bottom`}
-          data-stylex-owner="project-setting-bottom-box"
-        >
+        <div className="box-wrap bottom" data-owner="project-setting-bottom-box">
           <button
-            className={`${stylex.props(styles.save).className} ybtn ybtn-success`}
-            data-stylex-owner="project-setting-save"
+            className="ybtn ybtn-success"
+            data-owner="project-setting-save"
             id="save"
             type="submit"
           >
@@ -1125,12 +796,8 @@ function ProjectSettingBody({
   );
 
   return renderProjectPage ? (
-    <div
-      {...sx.page}
-      className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
-      data-stylex-owner="project-setting-page"
-    >
-      <div className="project-page-wrap" data-stylex-owner="project-setting-shell">
+    <div className="page-wrap-outer" data-owner="project-setting-page">
+      <div className="project-page-wrap" data-owner="project-setting-shell">
         {settingContent}
       </div>
     </div>
@@ -1164,72 +831,58 @@ function DefaultBranchSelect2({
     <>
       <div
         id="s2id_project-default-branch"
-        data-stylex-owner="project-setting-default-branch-container"
-        className={`${sx.defaultBranchContainer.className} select2-container${open ? " select2-dropdown-open select2-container-active" : ""}`}
+        data-owner="project-setting-default-branch-container"
+        className={`select2-container${open ? " select2-dropdown-open select2-container-active" : ""}`}
       >
         <button
           type="button"
-          {...sx.defaultBranchChoice}
-          className={`${sx.defaultBranchChoice.className ?? ""} select2-choice`.trim()}
-          data-stylex-owner="project-setting-default-branch-choice"
+          className="select2-choice"
+          data-owner="project-setting-default-branch-choice"
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
-          <span
-            className={`select2-chosen ${sx.defaultBranchChosen.className ?? ""}`.trim()}
-            data-stylex-owner="project-setting-default-branch-chosen"
-          >
+          <span className="select2-chosen" data-owner="project-setting-default-branch-chosen">
             <strong
-              className={`branch-label branch ${sx.defaultBranchLabel.className ?? ""}`.trim()}
-              data-stylex-owner="project-setting-default-branch-label"
+              className="branch-label branch"
+              data-owner="project-setting-default-branch-label"
             >
               branch
             </strong>{" "}
             {selectedBranch}
           </span>
           <span
-            className={`select2-arrow ${sx.defaultBranchArrow.className ?? ""}`.trim()}
-            data-stylex-owner="project-setting-default-branch-arrow"
+            className="select2-arrow"
+            data-owner="project-setting-default-branch-arrow"
             aria-hidden="true"
           >
-            <b
-              className={sx.defaultBranchArrowGlyph.className}
-              data-stylex-owner="project-setting-default-branch-arrow-glyph"
-            ></b>
+            <b className="" data-owner="project-setting-default-branch-arrow-glyph"></b>
           </span>
         </button>
         <input className="select2-focusser select2-offscreen" type="text" />
         <div
-          className={`${sx.defaultBranchDrop.className} select2-drop select2-display-none select2-with-searchbox branches ${open ? `select2-drop-active ${sx.defaultBranchDropVisible.className ?? ""}` : (sx.defaultBranchDropHidden.className ?? "")}`.trim()}
-          data-stylex-owner="project-setting-default-branch-drop"
+          className={`select2-drop select2-display-none select2-with-searchbox branches ${open ? `select2-drop-active is-visible` : "is-hidden"}`.trim()}
+          data-owner="project-setting-default-branch-drop"
         >
-          <div
-            className={`select2-search ${sx.defaultBranchSearch.className ?? ""}`.trim()}
-            data-stylex-owner="project-setting-default-branch-search"
-          >
+          <div className="select2-search" data-owner="project-setting-default-branch-search">
             <input
-              className={`select2-input ${sx.defaultBranchSearchInput.className ?? ""}`.trim()}
-              data-stylex-owner="project-setting-default-branch-search-input"
+              className="select2-input"
+              data-owner="project-setting-default-branch-search-input"
               onChange={(event) => setSearchTerm(event.currentTarget.value)}
               type="text"
               value={searchTerm}
             />
           </div>
-          <ul
-            className={`select2-results ${sx.defaultBranchResults.className ?? ""}`.trim()}
-            data-stylex-owner="project-setting-default-branch-results"
-          >
+          <ul className="select2-results" data-owner="project-setting-default-branch-results">
             {visibleBranches.map((branchName) => (
               <li
                 key={branchName}
-                className={`select2-results-dept-0 select2-result select2-result-selectable ${sx.defaultBranchResultItem.className ?? ""}${branchName === selectedBranch ? " select2-selected" : ""}`.trim()}
-                data-stylex-owner="project-setting-default-branch-result-item"
+                className={`select2-results-dept-0 select2-result select2-result-selectable${branchName === selectedBranch ? " select2-selected" : ""}`.trim()}
+                data-owner="project-setting-default-branch-result-item"
               >
                 <button
                   type="button"
-                  {...sx.defaultBranchResult}
-                  className={`select2-result-label ${sx.defaultBranchResult.className ?? ""}`.trim()}
-                  data-stylex-owner="project-setting-default-branch-result"
+                  className="select2-result-label"
+                  data-owner="project-setting-default-branch-result"
                   onClick={() => {
                     setSelectedBranch(branchName);
                     setOpen(false);
@@ -1237,8 +890,8 @@ function DefaultBranchSelect2({
                   }}
                 >
                   <strong
-                    className={`branch-label branch ${sx.defaultBranchLabel.className ?? ""}`.trim()}
-                    data-stylex-owner="project-setting-default-branch-result-label"
+                    className="branch-label branch"
+                    data-owner="project-setting-default-branch-result-label"
                   >
                     branch
                   </strong>{" "}
@@ -1254,8 +907,8 @@ function DefaultBranchSelect2({
         name="defaultBranch"
         data-format="branch"
         data-dropdown-css-class="branches"
-        data-stylex-owner="project-setting-default-branch-select"
-        className={`${sx.defaultBranchSelect.className} select2-offscreen`}
+        data-owner="project-setting-default-branch-select"
+        className="select2-offscreen"
         style={{ minWidth: "220px" }}
         tabIndex={-1}
         value={selectedBranch}
@@ -1290,14 +943,14 @@ function MenuCheckbox({
 }) {
   return (
     <label
-      className={`${stylex.props(styles.menuCheckboxLabel, first && styles.menuCheckboxLabelFirst).className} bg-radiobtn label-public inline-list`}
+      className={`bg-radiobtn label-public inline-list${first ? " is-first" : ""}`}
       htmlFor={id}
-      data-stylex-owner={`project-menu-checkbox-${name}-label`}
+      data-owner={`project-menu-checkbox-${name}-label`}
     >
       <input
         type="checkbox"
-        className={`${stylex.props(styles.menuCheckboxInput).className} radio-btn`}
-        data-stylex-owner={`project-menu-checkbox-${name}-input`}
+        className="radio-btn"
+        data-owner={`project-menu-checkbox-${name}-input`}
         id={id}
         name={name}
         value="true"
@@ -1327,147 +980,115 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const enrolledMemberCount = enrolledUserCount(project);
-  const submenuListProps = stylex.props(styles.projectSettingSubmenuList);
-  const submenuItemClassName = stylex.props(styles.projectSettingSubmenuItem).className;
-  const submenuLinkProps = (isActive: boolean) =>
-    stylex.props(
-      styles.projectSettingSubmenuLink,
-      isActive && styles.projectSettingSubmenuLinkActive,
-    );
+  const submenuLinkClassName = (isActive: boolean) =>
+    `s2e-setting-submenu-link${isActive ? " is-active" : ""}`;
   const submenuActiveProps = {
     ...legacyProjectSettingsLinkSuppressActiveProps,
-    className: submenuLinkProps(true).className,
+    className: submenuLinkClassName(true),
   };
 
   return (
-    <ul
-      {...submenuListProps}
-      className={`${submenuListProps.className} nav nav-tabs`}
-      data-stylex-owner="project-setting-submenu-list"
-    >
+    <ul className="nav nav-tabs" data-owner="project-setting-submenu-list">
       <li
         id="subMenuProjectSetting"
-        className={`${submenuItemClassName} ${active === "setting" ? "active" : ""}`.trim()}
-        data-stylex-owner="project-setting-submenu-item"
+        className={`${active === "setting" ? "active" : ""}`.trim()}
+        data-owner="project-setting-submenu-item"
       >
         <Link
-          className={submenuLinkProps(active === "setting").className}
+          className={submenuLinkClassName(active === "setting")}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to={selfRoutePath}
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
-          data-stylex-owner-active={
+          data-owner="project-setting-submenu-link"
+          data-owner-active={
             active === "setting" ? "project-setting-submenu-link-active" : undefined
           }
         >
           {t("project.setting")}
         </Link>
       </li>
-      <li
-        id="subMenuProjectMember"
-        className={submenuItemClassName}
-        data-stylex-owner="project-setting-submenu-item"
-      >
+      <li id="subMenuProjectMember" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkProps(false).className}
+          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/members"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
+          data-owner="project-setting-submenu-link"
         >
           {t("project.member")}
           <CountBadge count={enrolledMemberCount} className="num-badge" />
         </Link>
       </li>
-      <li
-        id="subMenuIssueLabel"
-        className={submenuItemClassName}
-        data-stylex-owner="project-setting-submenu-item"
-      >
+      <li id="subMenuIssueLabel" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkProps(false).className}
+          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
+          data-owner="project-setting-submenu-link"
         >
           {t("issue.label")}
         </Link>
       </li>
-      <li
-        id="subMenuWebhook"
-        className={submenuItemClassName}
-        data-stylex-owner="project-setting-submenu-item"
-      >
+      <li id="subMenuWebhook" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkProps(false).className}
+          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/webhooks"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
+          data-owner="project-setting-submenu-link"
         >
           {t("project.webhook")}
         </Link>
       </li>
-      <li
-        id="subMenuProjectTransfer"
-        className={submenuItemClassName}
-        data-stylex-owner="project-setting-submenu-item"
-      >
+      <li id="subMenuProjectTransfer" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkProps(false).className}
+          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/transfer"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
+          data-owner="project-setting-submenu-link"
         >
           {t("project.transfer")}
         </Link>
       </li>
-      <li
-        id="subMenuProjectDelete"
-        className={submenuItemClassName}
-        data-stylex-owner="project-setting-submenu-item"
-      >
+      <li id="subMenuProjectDelete" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkProps(false).className}
+          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/deleteform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
+          data-owner="project-setting-submenu-link"
         >
           {t("project.delete")}
         </Link>
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className={`${submenuItemClassName} ${
-          stylex.props(showCode ? styles.changeVcsMenuVisible : styles.changeVcsMenuHidden)
-            .className
-        }`}
+        className=""
         style={showCode ? undefined : { display: "none" }}
-        data-stylex-owner="project-setting-submenu-item"
+        data-owner="project-setting-submenu-item"
       >
         <Link
-          className={submenuLinkProps(false).className}
+          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/changeVCS"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
-          data-stylex-owner="project-setting-submenu-link"
+          data-owner="project-setting-submenu-link"
         >
           {t("project.changeVCS")}
         </Link>

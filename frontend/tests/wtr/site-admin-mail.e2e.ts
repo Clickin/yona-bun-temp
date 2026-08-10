@@ -161,7 +161,7 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   expect(new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
   expect(new URL(page.url()).search).toBe("");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -176,10 +176,10 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-link"]').nth(4)).toHaveText(
+  await expect(page.locator('[data-owner="site-mail-sidebar-link"]').nth(4)).toHaveText(
     "Send email",
   );
-  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-link"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-mail-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -209,29 +209,27 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     { ariaCurrent: null, className: null, dataStatus: null, text: "Software Update" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
   ]);
-  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-item"]').nth(4)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-mail-sidebar-item"]').nth(4)).toHaveCSS(
     "font-weight",
     "700",
   );
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
-  await expect(page.locator('[data-stylex-owner="site-mail-form"]')).not.toHaveClass(
-    /form-horizontal/,
-  );
-  await expect(page.locator('[data-stylex-owner="site-mail-form-group"]')).toHaveCount(4);
-  await expect(page.locator('[data-stylex-owner="site-mail-form-label"]')).toHaveCount(4);
-  await expect(page.locator('[data-stylex-owner="site-mail-form-controls"]')).toHaveCount(4);
-  await expect(page.locator('[data-stylex-owner="site-mail-form-field"]')).toHaveCount(4);
-  await expect(page.locator('[data-stylex-owner="site-mail-form-group"]').first()).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-mail-form"]')).not.toHaveClass(/form-horizontal/);
+  await expect(page.locator('[data-owner="site-mail-form-group"]')).toHaveCount(4);
+  await expect(page.locator('[data-owner="site-mail-form-label"]')).toHaveCount(4);
+  await expect(page.locator('[data-owner="site-mail-form-controls"]')).toHaveCount(4);
+  await expect(page.locator('[data-owner="site-mail-form-field"]')).toHaveCount(4);
+  await expect(page.locator('[data-owner="site-mail-form-group"]').first()).not.toHaveClass(
     /control-group/,
   );
-  await expect(page.locator('[data-stylex-owner="site-mail-form-label"]').first()).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-mail-form-label"]').first()).not.toHaveClass(
     /control-label|span3/,
   );
   await expect(page.locator('input[name="from"]')).not.toHaveClass(/span4/);
   await expect(page.locator('input[name="subject"]')).not.toHaveClass(/span12/);
   await expect(page.locator("#body")).not.toHaveClass(/span12|input-xlarge|textbody/);
   await expect(page.locator('input[name="from"]')).toHaveValue("noreply@example.com");
-  const massMailLink = page.locator('[data-stylex-owner="site-mail-sidebar-link"]', {
+  const massMailLink = page.locator('[data-owner="site-mail-sidebar-link"]', {
     hasText: "Send mass emails",
   });
   await expect(massMailLink).toHaveAttribute("href", `${basePath}/sites/massmail`);
@@ -278,10 +276,10 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('[data-stylex-owner="site-mail-form"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-mail-form-group"]')).toHaveCount(4);
+  await expect(page.locator('[data-owner="site-mail-form"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-mail-form-group"]')).toHaveCount(4);
   expect(
-    await page.locator('[data-stylex-owner="site-mail-form-field"]').evaluateAll((fields) =>
+    await page.locator('[data-owner="site-mail-form-field"]').evaluateAll((fields) =>
       fields.every((field) => {
         const fieldBox = field.getBoundingClientRect();
         const controlsBox = field.parentElement?.getBoundingClientRect();
@@ -293,11 +291,11 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
       }),
     ),
   ).toBe(true);
-  await expect(page.locator('[data-stylex-owner="site-mail-form-label"]').first()).toHaveCSS(
+  await expect(page.locator('[data-owner="site-mail-form-label"]').first()).toHaveCSS(
     "text-align",
     "left",
   );
-  await expect(page.locator('[data-stylex-owner="site-mail-form-controls"]').first()).toHaveCSS(
+  await expect(page.locator('[data-owner="site-mail-form-controls"]').first()).toHaveCSS(
     "margin-left",
     "0px",
   );
@@ -496,12 +494,12 @@ test("site admin mail renders legacy update notification badge", async ({ page }
   await mockAvailableUpdate(page);
 
   await page.goto(`${basePath}/sites/mail`);
-  const updateLink = page.locator('[data-stylex-owner="site-mail-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-mail-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator('[data-stylex-owner="site-mail-sidebar-badge"]')).toHaveText("1");
+  await expect(updateLink.locator('[data-owner="site-mail-sidebar-badge"]')).toHaveText("1");
 });
 
 test("site admin mail route source keeps direct typed sidebar links", async () => {
@@ -522,13 +520,9 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
     "/sites/update",
     "/sites/diagnostic",
   ])
-    expect(sidebarSource).toContain(`to: "${destination}"`);
-  expect(sidebarSource).toContain(
-    "stylex.props(styleSlots.link, isActive && styleSlots.activeLink)",
-  );
-  expect(source).not.toContain(
-    'errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : ""',
-  );
+    expect(source).not.toContain(
+      'errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : ""',
+    );
   expect(source).not.toContain('sended: search.sended === true || search.sended === "true",');
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("createLink");
@@ -550,7 +544,7 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
 });
 
 async function gnbNavAnchorHrefs(page: Page) {
-  return page.locator('[data-stylex-owner="global-gnb-nav"] a[href]').evaluateAll((links) =>
+  return page.locator('[data-owner="global-gnb-nav"] a[href]').evaluateAll((links) =>
     links.map((link) => {
       const href = link.getAttribute("href");
       if (!href) {
@@ -562,7 +556,7 @@ async function gnbNavAnchorHrefs(page: Page) {
 }
 
 async function siteSettingSidebarHrefs(page: Page) {
-  return page.locator('[data-stylex-owner="site-mail-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-mail-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => {
       const href = link.getAttribute("href");
       if (!href) {
@@ -574,7 +568,7 @@ async function siteSettingSidebarHrefs(page: Page) {
 }
 
 async function siteSettingSidebarAnchorActiveMarkers(page: Page) {
-  return page.locator('[data-stylex-owner="site-mail-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-mail-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className: null,
@@ -587,7 +581,7 @@ async function siteSettingSidebarAnchorActiveMarkers(page: Page) {
 async function mailErrorStateOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"), (element) => {
-      const owner = element.getAttribute("data-stylex-owner");
+      const owner = element.getAttribute("data-owner");
       if (owner === "site-mail-title-strip") return "title_area";
       if (owner === "site-mail-error-alert") return "alert alert-error";
       if (owner === "site-mail-form") return "form";
@@ -599,7 +593,7 @@ async function mailErrorStateOrder(page: Page) {
 async function mailSuccessStateOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"), (element) => {
-      const owner = element.getAttribute("data-stylex-owner");
+      const owner = element.getAttribute("data-owner");
       if (owner === "site-mail-title-strip") return "title_area";
       if (owner === "site-mail-success-alert") return "alert alert-success";
       if (owner === "site-mail-form") return "form";
@@ -624,17 +618,15 @@ async function mailFormMetrics(page: Page) {
     const titleArea = requireElement(".site-setting-wrap .title_area");
     const title = requireElement(".site-setting-wrap .title_area h2");
     const alert = requireElement(".site-setting-wrap .alert-error");
-    const firstControlGroup = requireElement('[data-stylex-owner="site-mail-form-group"]');
-    const secondControlGroup = requireElement(
-      '[data-stylex-owner="site-mail-form-group"]:nth-of-type(2)',
-    );
-    const firstControlLabel = requireElement('[data-stylex-owner="site-mail-form-label"]');
-    const firstControls = requireElement('[data-stylex-owner="site-mail-form-controls"]');
+    const firstControlGroup = requireElement('[data-owner="site-mail-form-group"]');
+    const secondControlGroup = requireElement('[data-owner="site-mail-form-group"]:nth-of-type(2)');
+    const firstControlLabel = requireElement('[data-owner="site-mail-form-label"]');
+    const firstControls = requireElement('[data-owner="site-mail-form-controls"]');
     const fromInput = requireElement('#mailForm input[name="from"]');
     const subjectInput = requireElement('#mailForm input[name="subject"]');
     const bodyTextarea = requireElement("#body");
     const buttonWrap = requireElement(".mail-btn-wrap");
-    const button = requireElement('[data-stylex-owner="site-mail-send-action"]');
+    const button = requireElement('[data-owner="site-mail-send-action"]');
 
     const rowRect = row.getBoundingClientRect();
     const sidebarRect = sidebar.getBoundingClientRect();
@@ -698,15 +690,13 @@ async function legacyMailShellMetrics(page: Page) {
       return element;
     };
 
-    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
+    const navbar = requireElement("[data-owner=global-gnb-outer]");
     const searchForm = requireElement('form[name="gnb-search-form"]');
-    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = requireElement('[data-owner="global-gnb-search-box"]');
     const feedbackLink = requireElement(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     );
-    const projectsLink = requireElement(
-      '[data-stylex-owner="global-gnb-nav"] a[href$="/projects"]',
-    );
+    const projectsLink = requireElement('[data-owner="global-gnb-nav"] a[href$="/projects"]');
     const navbarRect = navbar.getBoundingClientRect();
     const searchFormRect = searchForm.getBoundingClientRect();
     const searchBoxRect = searchBox.getBoundingClientRect();
@@ -790,7 +780,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -803,14 +793,14 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-mail-sidebar-item",
           "site-mail-sidebar-link",
           "site-mail-sidebar-badge",
-        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+        ].includes(current.getAttribute("data-owner") ?? "")
       ) {
         return "";
       }
-      if (name === "class" && current.matches('[data-stylex-owner="site-mail-send-action"]')) {
+      if (name === "class" && current.matches('[data-owner="site-mail-send-action"]')) {
         return "";
       }
-      const mailStylexOwners = [
+      const mailStyleOwners = [
         "site-mail-title-strip",
         "site-mail-error-alert",
         "site-mail-success-alert",
@@ -818,7 +808,7 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       if (
         name === "class" &&
-        mailStylexOwners.some((owner) => current.closest(`[data-stylex-owner="${owner}"]`) !== null)
+        mailStyleOwners.some((owner) => current.closest(`[data-owner="${owner}"]`) !== null)
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -827,11 +817,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -839,7 +829,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)

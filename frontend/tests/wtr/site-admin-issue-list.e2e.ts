@@ -166,15 +166,15 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect
     .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
     .toBe(`${basePath}/sites/issueList`);
-  await expect(page.locator('[data-stylex-owner="site-issue-list-setting-wrap"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator('[data-owner="site-issue-list-setting-wrap"]')).toBeVisible();
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
   await expect(
     page
-      .locator('[data-stylex-owner="global-gnb-nav"] > li > a')
+      .locator('[data-owner="global-gnb-nav"] > li > a')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).resolves.toEqual([
     `${basePath}/`,
@@ -186,10 +186,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]').nth(2),
-  ).toHaveText("Issues");
-  await expect(page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-issue-list-sidebar-link"]').nth(2)).toHaveText(
+    "Issues",
+  );
+  await expect(page.locator('[data-owner="site-issue-list-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -201,7 +201,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ]);
   await expect(
     page
-      .locator('[data-stylex-owner="site-issue-list-sidebar-link"]')
+      .locator('[data-owner="site-issue-list-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).resolves.toEqual([
     `${basePath}/sites/userList`,
@@ -213,11 +213,11 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator('[data-stylex-owner="site-issue-list-sidebar-item"]').nth(2)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-issue-list-sidebar-item"]').nth(2)).toHaveCSS(
     "font-weight",
     "700",
   );
-  await expect(page.locator('[data-stylex-owner="site-issue-list-sidebar-item"]').nth(2)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-issue-list-sidebar-item"]').nth(2)).toHaveCSS(
     "border-left-color",
     "rgb(243, 108, 34)",
   );
@@ -225,7 +225,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(
     await legacyLinkSnapshot(
       page,
-      '[data-stylex-owner="site-issue-list-sidebar-item"]:nth-child(3) > [data-stylex-owner="site-issue-list-sidebar-link"]',
+      '[data-owner="site-issue-list-sidebar-item"]:nth-child(3) > [data-owner="site-issue-list-sidebar-link"]',
     ),
   ).toEqual([
     {
@@ -240,28 +240,28 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ]);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveText("Open");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveAttribute("href", `${basePath}/sites/issueList?state=open`);
   const openStateItems = page.locator(
-    '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"]',
+    '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"]',
   );
   await expect(openStateItems.first()).toHaveAttribute("data-selected", "true");
   await expect(openStateItems.nth(1)).toHaveAttribute("data-selected", "false");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveText(["Open", "Closed"]);
   expect(
     await legacyLinkSnapshot(
       page,
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toEqual([
     {
@@ -285,48 +285,48 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ]);
   const closedTab = page.getByRole("link", { exact: true, name: "Closed" });
   await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
-  await expect(page.locator('[data-stylex-owner="site-issue-list-row"]')).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="site-issue-list-project-avatar"]'),
-  ).toHaveAttribute("href", `${basePath}/acme/roadmap`);
-  await expect(page.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-issue-list-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-issue-list-project-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap`,
   );
-  await expect(page.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-issue-list-project-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
+  await expect(page.locator('[data-owner="site-issue-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/issue/42`,
   );
-  await expect(page.locator('[data-stylex-owner="site-issue-list-author-avatar"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-issue-list-author-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/alice`,
   );
   await expect(
-    page.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
+    page.locator('[data-owner="site-issue-list-metadata-item"]').first(),
   ).toHaveAttribute("href", `${basePath}/alice`);
   await expect(
-    page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+    page.locator('[data-owner="site-issue-list-author-avatar-image"]'),
   ).not.toHaveAttribute("alt", /.*/);
   await expect(
-    page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+    page.locator('[data-owner="site-issue-list-author-avatar-image"]'),
   ).not.toHaveAttribute("width", /.*/);
   await expect(
-    page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+    page.locator('[data-owner="site-issue-list-author-avatar-image"]'),
   ).not.toHaveAttribute("height", /.*/);
+  await expect(page.locator('[data-owner="site-issue-list-metadata-item"] a')).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap/issue/42#comments`,
+  );
   await expect(
-    page.locator('[data-stylex-owner="site-issue-list-metadata-item"] a'),
-  ).toHaveAttribute("href", `${basePath}/acme/roadmap/issue/42#comments`);
-  await expect(
-    page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]', {
+    page.locator('[data-owner="site-issue-list-sidebar-link"]', {
       hasText: "Send mass emails",
     }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  await expect(page.locator('[data-stylex-owner="site-issue-list-pagination"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-issue-list-pagination"]')).not.toHaveClass(
     /\bpage-navigation-wrap\b/u,
   );
-  await expect(page.locator('[data-stylex-owner="site-issue-list-pagination-item"]')).toHaveCount(
-    5,
-  );
+  await expect(page.locator('[data-owner="site-issue-list-pagination-item"]')).toHaveCount(5);
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
@@ -406,7 +406,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("open");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveText("Open");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
@@ -439,7 +439,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveText("Closed");
   expect(
@@ -447,7 +447,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-issues-tabs");
 
   await mockPosts(page);
-  const postsLink = page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]', {
+  const postsLink = page.locator('[data-owner="site-issue-list-sidebar-link"]', {
     hasText: "Posts",
   });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
@@ -456,10 +456,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   });
   await postsLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
-  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
+  await expect(page.locator('[data-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
     "Posts",
   );
-  await expect(page.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-post-list-row"]')).toHaveCount(1);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-posts-nav");
@@ -529,18 +529,18 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect.poll(() => issueRequests).toEqual([{ page: "1", state: "closed" }]);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveText("Closed");
   const closedStateItems = page.locator(
-    '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"]',
+    '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"]',
   );
   await expect(closedStateItems.first()).toHaveAttribute("data-selected", "false");
   await expect(closedStateItems.nth(1)).toHaveAttribute("data-selected", "true");
   expect(
     await legacyLinkSnapshot(
       page,
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toEqual([
     {
@@ -563,65 +563,70 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
     },
   ]);
 
-  const row = page.locator('[data-stylex-owner="site-issue-list-row"]');
+  const row = page.locator('[data-owner="site-issue-list-row"]');
   await expect(row).toHaveCount(1);
-  const projectAvatar = row.locator('[data-stylex-owner="site-issue-list-project-avatar"]');
+  const projectAvatar = row.locator('[data-owner="site-issue-list-project-avatar"]');
   await expect(projectAvatar).toHaveAttribute("href", `${basePath}/beta/archive`);
   await expect(projectAvatar.locator("img")).toHaveAttribute("src", "/logos/closed-roadmap.png");
   await expect(projectAvatar.locator("img")).toHaveAttribute("alt", "archive");
-  await expect(row.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveAttribute(
+  await expect(row.locator('[data-owner="site-issue-list-project-link"]')).toHaveAttribute(
     "href",
     `${basePath}/beta/archive`,
   );
-  await expect(row.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveText(
+  await expect(row.locator('[data-owner="site-issue-list-project-link"]')).toHaveText(
     "beta/archive",
   );
-  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveAttribute(
+  await expect(row.locator('[data-owner="site-issue-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/beta/archive/issue/77`,
   );
-  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText(
+  await expect(row.locator('[data-owner="site-issue-list-title-link"]')).toHaveText(
     "Close archived task",
   );
-  await expect(row.locator('[data-stylex-owner="site-issue-list-author-avatar"]')).toHaveAttribute(
+  await expect(row.locator('[data-owner="site-issue-list-author-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/bob`,
   );
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
-  ).toHaveAttribute("src", "/avatars/closed-author.png");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
-  ).toHaveAttribute("alt", "Bob Legal Name");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
-  ).toHaveAttribute("width", "16");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
-  ).toHaveAttribute("height", "16");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
-  ).toHaveAttribute("href", `${basePath}/bob`);
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
-  ).toHaveText("Bob Display");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').nth(1),
-  ).toHaveAttribute("title", "2026-06-28 09:15");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').nth(1),
-  ).toHaveText("2 days ago");
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-metadata-item"] a'),
-  ).toHaveAttribute("href", `${basePath}/beta/archive/issue/77#comments`);
-  await expect(row.locator('[data-stylex-owner="site-issue-list-metadata-item"] a')).toHaveText(
-    "8",
+  await expect(row.locator('[data-owner="site-issue-list-author-avatar-image"]')).toHaveAttribute(
+    "src",
+    "/avatars/closed-author.png",
   );
-  const commentsIcon = row.locator('[data-stylex-owner="site-issue-list-comments-icon"]');
+  await expect(row.locator('[data-owner="site-issue-list-author-avatar-image"]')).toHaveAttribute(
+    "alt",
+    "Bob Legal Name",
+  );
+  await expect(row.locator('[data-owner="site-issue-list-author-avatar-image"]')).toHaveAttribute(
+    "width",
+    "16",
+  );
+  await expect(row.locator('[data-owner="site-issue-list-author-avatar-image"]')).toHaveAttribute(
+    "height",
+    "16",
+  );
+  await expect(row.locator('[data-owner="site-issue-list-metadata-item"]').first()).toHaveAttribute(
+    "href",
+    `${basePath}/bob`,
+  );
+  await expect(row.locator('[data-owner="site-issue-list-metadata-item"]').first()).toHaveText(
+    "Bob Display",
+  );
+  await expect(row.locator('[data-owner="site-issue-list-metadata-item"]').nth(1)).toHaveAttribute(
+    "title",
+    "2026-06-28 09:15",
+  );
+  await expect(row.locator('[data-owner="site-issue-list-metadata-item"]').nth(1)).toHaveText(
+    "2 days ago",
+  );
+  await expect(row.locator('[data-owner="site-issue-list-metadata-item"] a')).toHaveAttribute(
+    "href",
+    `${basePath}/beta/archive/issue/77#comments`,
+  );
+  await expect(row.locator('[data-owner="site-issue-list-metadata-item"] a')).toHaveText("8");
+  const commentsIcon = row.locator('[data-owner="site-issue-list-comments-icon"]');
   await expect(commentsIcon).toHaveCount(1);
   await expect(commentsIcon).not.toHaveClass(/\byobicon-comments\b/u);
 
-  await expect(page.locator('[data-stylex-owner="site-issue-list-pagination"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-issue-list-pagination"]')).not.toHaveClass(
     /\bpage-navigation-wrap\b/u,
   );
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
@@ -641,7 +646,7 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toHaveText("Closed");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
@@ -690,9 +695,9 @@ test("site admin issue list preserves invalid nonblank state for backend rejecti
   await expect.poll(() => issueRequests.some((request) => request.state === "waiting")).toBe(true);
   expect(issueRequests.filter((request) => request.state === "open")).toEqual([]);
   expect(issueRequests[0]).toEqual({ page: "1", state: "waiting" });
-  const invalidStateTabs = page.locator('[data-stylex-owner="site-issue-list-state-tabs"]');
+  const invalidStateTabs = page.locator('[data-owner="site-issue-list-state-tabs"]');
   const invalidStateItems = invalidStateTabs.locator(
-    '[data-stylex-owner="site-issue-list-state-tab-item"]',
+    '[data-owner="site-issue-list-state-tab-item"]',
   );
   await expect(invalidStateItems.locator('[data-selected="true"]')).toHaveCount(0);
   await expect(invalidStateItems.first()).toHaveAttribute("data-selected", "false");
@@ -700,7 +705,7 @@ test("site admin issue list preserves invalid nonblank state for backend rejecti
   expect(
     await legacyLinkSnapshot(
       page,
-      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+      '[data-owner="site-issue-list-state-tabs"] [data-owner="site-issue-list-state-tab-link"]',
     ),
   ).toEqual([
     {
@@ -746,14 +751,12 @@ test("site admin issue list renders legacy update notification badge", async ({ 
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
-  const updateLink = page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-issue-list-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(
-    updateLink.locator('[data-stylex-owner="site-issue-list-sidebar-badge"]'),
-  ).toHaveText("1");
+  await expect(updateLink.locator('[data-owner="site-issue-list-sidebar-badge"]')).toHaveText("1");
 });
 
 test("site admin issue list falls back to the legacy default project logo for blank logo URLs", async ({
@@ -780,11 +783,12 @@ test("site admin issue list falls back to the legacy default project logo for bl
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
+  await expect(page.locator('[data-owner="site-issue-list-project-avatar-image"]')).toHaveAttribute(
+    "src",
+    "/assets/images/project_default_logo.png",
+  );
   await expect(
-    page.locator('[data-stylex-owner="site-issue-list-project-avatar-image"]'),
-  ).toHaveAttribute("src", "/assets/images/project_default_logo.png");
-  await expect(
-    page.locator('[data-stylex-owner="site-issue-list-project-avatar-image"][src=""]'),
+    page.locator('[data-owner="site-issue-list-project-avatar-image"][src=""]'),
   ).toHaveCount(0);
   expect(
     consoleErrors.find((message) =>
@@ -807,14 +811,14 @@ test("site admin issue list custom author avatar alt uses legacy user name", asy
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
-  const authorAvatar = page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]');
+  const authorAvatar = page.locator('[data-owner="site-issue-list-author-avatar-image"]');
   await expect(authorAvatar).toHaveAttribute("src", "/avatars/alice-custom.png");
   await expect(authorAvatar).toHaveAttribute("alt", "Alice Legal Name");
   await expect(authorAvatar).toHaveAttribute("width", "16");
   await expect(authorAvatar).toHaveAttribute("height", "16");
-  await expect(
-    page.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
-  ).toHaveText("Alice Display");
+  await expect(page.locator('[data-owner="site-issue-list-metadata-item"]').first()).toHaveText(
+    "Alice Display",
+  );
 });
 
 test("site admin issue list resets decimal pagination input without navigation", async ({
@@ -1089,7 +1093,7 @@ async function mockUpdate(
 }
 
 async function siteSettingNavActiveMarkerLeaks(page: Page) {
-  return page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-issue-list-sidebar-link"]').evaluateAll((links) =>
     links.flatMap((link) => {
       const leaked = ["aria-current", "data-status"].filter((name) => link.hasAttribute(name));
       return leaked.map((name) => `${link.textContent?.trim() ?? ""}:${name}`);
@@ -1102,7 +1106,7 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className: new Set(["site-issue-list-state-tab-link", "site-issue-list-sidebar-link"]).has(
-        link.getAttribute("data-stylex-owner") ?? "",
+        link.getAttribute("data-owner") ?? "",
       )
         ? null
         : link.getAttribute("class"),
@@ -1117,11 +1121,11 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
 
 async function closedIssueListLayoutMetrics(page: Page) {
   return page.evaluate(() => {
-    const content = requireElement('[data-stylex-owner="site-issue-list-setting-content-column"]');
-    const titleArea = requireElement('[data-stylex-owner="site-issue-list-title-strip"]');
-    const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
-    const row = requireElement('[data-stylex-owner="site-issue-list-row"]');
-    const meta = requireElement('[data-stylex-owner="site-issue-list-metadata"]');
+    const content = requireElement('[data-owner="site-issue-list-setting-content-column"]');
+    const titleArea = requireElement('[data-owner="site-issue-list-title-strip"]');
+    const tabs = requireElement('[data-owner="site-issue-list-state-tabs"]');
+    const row = requireElement('[data-owner="site-issue-list-row"]');
+    const meta = requireElement('[data-owner="site-issue-list-metadata"]');
     const pagination = requireElement("#pagination");
     const contentRect = content.getBoundingClientRect();
     const titleAreaRect = titleArea.getBoundingClientRect();
@@ -1140,9 +1144,9 @@ async function closedIssueListLayoutMetrics(page: Page) {
       paginationBelowRow: paginationRect.top >= rowRect.bottom,
       rowInsideContent: rowRect.top >= contentRect.top && rowRect.bottom <= contentRect.bottom,
       rowLinkOrder: Array.from(row.querySelectorAll("a")).map((link) => {
-        const stylexOwner = link.getAttribute("data-stylex-owner");
-        if (stylexOwner) {
-          return `owner:${stylexOwner}`;
+        const styleOwner = link.getAttribute("data-owner");
+        if (styleOwner) {
+          return `owner:${styleOwner}`;
         }
         return link.getAttribute("class") ?? "";
       }),
@@ -1162,23 +1166,21 @@ async function closedIssueListLayoutMetrics(page: Page) {
 
 async function issueListMetrics(page: Page) {
   return page.evaluate(() => {
-    const row = requireElement('[data-stylex-owner="site-issue-list-setting-grid"]');
-    const sidebar = requireElement('[data-stylex-owner="site-issue-list-setting-sidebar-column"]');
-    const content = requireElement('[data-stylex-owner="site-issue-list-setting-content-column"]');
-    const titleArea = requireElement('[data-stylex-owner="site-issue-list-title-strip"]');
-    const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
-    const firstRow = requireElement('[data-stylex-owner="site-issue-list-row"]');
-    const avatarWrap = requireElement('[data-stylex-owner="site-issue-list-project-avatar"]');
-    const avatarImage = requireElement(
-      '[data-stylex-owner="site-issue-list-project-avatar-image"]',
-    );
-    const postInfo = requireElement('[data-stylex-owner="site-issue-list-info"]');
-    const postProject = requireElement('[data-stylex-owner="site-issue-list-project-link"]');
-    const separator = requireElement('[data-stylex-owner="site-issue-list-separator"]');
-    const postTitle = requireElement('[data-stylex-owner="site-issue-list-title-link"]');
-    const meta = requireElement('[data-stylex-owner="site-issue-list-metadata"]');
-    const metaAvatar = requireElement('[data-stylex-owner="site-issue-list-author-avatar"]');
-    const metaItem = requireElement('[data-stylex-owner="site-issue-list-metadata-item"]');
+    const row = requireElement('[data-owner="site-issue-list-setting-grid"]');
+    const sidebar = requireElement('[data-owner="site-issue-list-setting-sidebar-column"]');
+    const content = requireElement('[data-owner="site-issue-list-setting-content-column"]');
+    const titleArea = requireElement('[data-owner="site-issue-list-title-strip"]');
+    const tabs = requireElement('[data-owner="site-issue-list-state-tabs"]');
+    const firstRow = requireElement('[data-owner="site-issue-list-row"]');
+    const avatarWrap = requireElement('[data-owner="site-issue-list-project-avatar"]');
+    const avatarImage = requireElement('[data-owner="site-issue-list-project-avatar-image"]');
+    const postInfo = requireElement('[data-owner="site-issue-list-info"]');
+    const postProject = requireElement('[data-owner="site-issue-list-project-link"]');
+    const separator = requireElement('[data-owner="site-issue-list-separator"]');
+    const postTitle = requireElement('[data-owner="site-issue-list-title-link"]');
+    const meta = requireElement('[data-owner="site-issue-list-metadata"]');
+    const metaAvatar = requireElement('[data-owner="site-issue-list-author-avatar"]');
+    const metaItem = requireElement('[data-owner="site-issue-list-metadata-item"]');
     const rowRect = row.getBoundingClientRect();
     const firstRowStyle = getComputedStyle(firstRow);
     const avatarWrapStyle = getComputedStyle(avatarWrap);
@@ -1238,15 +1240,13 @@ async function issueListMetrics(page: Page) {
 
 async function legacyGnbMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = requireElement('[data-stylex-owner="global-gnb-inner"]');
+    const navbar = requireElement("[data-owner=global-gnb-outer]");
+    const gnbInner = requireElement('[data-owner="global-gnb-inner"]');
     const search = requireElement('form[name="gnb-search-form"]');
     const feedbackLink = requireElement(
-      '[data-stylex-owner="global-gnb-nav"] > li > a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] > li > a[href="https://github.com/yona-projects/yona/issues"]',
     );
-    const listAllLink = requireElement(
-      '[data-stylex-owner="global-gnb-nav"] > li > a[href$="/projects"]',
-    );
+    const listAllLink = requireElement('[data-owner="global-gnb-nav"] > li > a[href$="/projects"]');
     const userMenu = requireElement(".gnb-usermenu");
     const navbarRect = navbar.getBoundingClientRect();
     const gnbInnerRect = gnbInner.getBoundingClientRect();
@@ -1278,33 +1278,27 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-issue-list-breadcrumb-outer], [data-stylex-owner=site-issue-list-page-wrap-outer], [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], [data-owner=site-issue-list-breadcrumb-outer], [data-owner=site-issue-list-page-wrap-outer], [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      if (
-        name === "class" &&
-        current.matches('[data-stylex-owner="site-issue-list-pagination-icon"]')
-      ) {
+      if (name === "class" && current.matches('[data-owner="site-issue-list-pagination-icon"]')) {
         const isPrevious = current.closest("li")?.matches(":first-child") ?? false;
         const isOff = current.getAttribute("data-pagination-state") === "off";
         return `ico ${isPrevious ? "btn-pg-prev" : "btn-pg-next"}${isOff ? " off" : ""}`;
       }
-      if (
-        name === "class" &&
-        current.matches('[data-stylex-owner="site-issue-list-comments-icon"]')
-      ) {
+      if (name === "class" && current.matches('[data-owner="site-issue-list-comments-icon"]')) {
         return "yobicon-comments";
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1345,17 +1339,14 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-issue-list-pagination-input",
           "site-issue-list-pagination-label",
           "site-issue-list-pagination-icon",
-        ]).has(current.getAttribute("data-stylex-owner") ?? "")
+        ]).has(current.getAttribute("data-owner") ?? "")
       ) {
         return value
           .split(/\s+/u)
           .filter((token) => !token.startsWith("x"))
           .join(" ");
       }
-      if (
-        name === "class" &&
-        current.matches('[data-stylex-owner="site-issue-list-container"] > li')
-      ) {
+      if (name === "class" && current.matches('[data-owner="site-issue-list-container"] > li')) {
         return value
           .split(/\s+/u)
           .filter(
@@ -1365,7 +1356,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        current.matches('[data-stylex-owner="site-issue-list-container"] > li > a:first-child')
+        current.matches('[data-owner="site-issue-list-container"] > li > a:first-child')
       ) {
         return value
           .split(/\s+/u)
@@ -1376,7 +1367,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        current.matches('[data-stylex-owner="site-issue-list-container"] > li > div:last-child')
+        current.matches('[data-owner="site-issue-list-container"] > li > div:last-child')
       ) {
         return value
           .split(/\s+/u)
@@ -1386,7 +1377,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         current.matches(
-          '[data-stylex-owner="site-issue-list-container"] > li > div:last-child > a:first-child',
+          '[data-owner="site-issue-list-container"] > li > div:last-child > a:first-child',
         )
       ) {
         return value
@@ -1397,7 +1388,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         current.matches(
-          '[data-stylex-owner="site-issue-list-container"] > li > div:last-child > :not(:first-child)',
+          '[data-owner="site-issue-list-container"] > li > div:last-child > :not(:first-child)',
         )
       ) {
         return value
@@ -1447,7 +1438,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)

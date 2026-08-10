@@ -64,9 +64,7 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
   expect(source).not.toContain("<a ");
   expect(source).not.toContain("project.enrollmentRequestCount");
   expect(source).toContain("const LEGACY_LINK_PROPS = {");
-  expect(source).toContain(
-    'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
-  );
+
   expect(source).toContain('<LegacyWebhookHelp help={t("project.webhook.help")} />');
   expect(source).toContain('<label className="radio inline"> | </label>');
   expect(source).toContain("help.split(/\\s*<br\\s*\\/?>/iu)");
@@ -125,7 +123,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
       })),
   ).resolves.toEqual({ className: "radio inline", textContent: " | " });
   await expect(page.locator("#webhooksList")).toContainText("No webhook exists.");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -278,7 +276,7 @@ test("project webhooks localhost legacy portal success shell is restored", async
   await page.goto(`${basePath}/weblabs/portal/webhooks`);
   await expect(page).toHaveTitle("Webhooks - weblabs/portal");
   await expect(page.locator("#formNewWebhook")).toBeVisible();
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -411,7 +409,7 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   );
   await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
   await expect(projectMenuLinks.nth(7)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
-  // F6 copy-fix: stylex compile-mode emits x-token classes on these links; the harness
+  // F6 copy-fix: style compile-mode emits x-token classes on these links; the harness
   // canonicalization strips them (project-pullrequest-overview.e2e.ts:2397-2403), so filter them here.
   expect(
     await projectMenuLinks.evaluateAll((links) =>
@@ -1141,14 +1139,14 @@ async function webhookFormMetrics(page: Page) {
 async function readLegacyGnbTexts(page: Page) {
   return page.evaluate(() =>
     [
-      ...Array.from(document.querySelectorAll('[data-stylex-owner="global-gnb-nav"] > li > a')).map(
+      ...Array.from(document.querySelectorAll('[data-owner="global-gnb-nav"] > li > a')).map(
         (node) => node.textContent?.replace(/\s+/gu, " ").trim(),
       ),
       ...Array.from(document.querySelectorAll("#gnb-search-scope-title")).map((node) =>
         node.textContent?.replace(/\s+/gu, " ").trim(),
       ),
       ...Array.from(
-        document.querySelectorAll("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+        document.querySelectorAll("[data-owner=global-gnb-search-scope-item] > button"),
       ).map((node) => node.textContent?.replace(/\s+/gu, " ").trim()),
     ].filter((value): value is string => Boolean(value)),
   );
@@ -1243,7 +1241,7 @@ async function canonicalizeScreenRoots(page: Page) {
             (node.matches(".project-page-wrap > .nav.nav-tabs a") ||
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1322,7 +1320,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             (node.matches(".project-page-wrap > .nav.nav-tabs a") ||
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))

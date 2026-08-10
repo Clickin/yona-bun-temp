@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import {
   Link,
   Navigate,
@@ -15,7 +14,6 @@ import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { rootColors, rootNotFoundStyles, rootProviderStyles } from "./-root.stylex";
 
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
@@ -34,10 +32,6 @@ const legacyPlainLinkActiveProps = {
   "data-status": undefined,
 };
 type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
-
-const rootNotFoundErrorWrapStyleProps = stylex.props(rootNotFoundStyles.errorWrap);
-const rootNotFoundErrorIconStyleProps = stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl));
-const rootNotFoundErrorMessageStyleProps = stylex.props(rootNotFoundStyles.errorMessage);
 
 type RootToast = {
   durationMs?: number;
@@ -79,223 +73,6 @@ const RootLoginDialogContext = React.createContext<(() => boolean) | null>(null)
 const ROOT_YOBI_TOAST_DURATION_MS = 5000;
 const GITHUB_OAUTH_LOGO_PATH =
   "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59 0.4 0.07 0.55-0.17 0.55-0.38 0-0.19-0.01-0.82-0.01-1.49-2.01 0.37-2.53-0.49-2.69-0.94-0.09-0.23-0.48-0.94-0.82-1.13-0.28-0.15-0.68-0.52-0.01-0.53 0.63-0.01 1.08 0.58 1.23 0.82 0.72 1.21 1.87 0.87 2.33 0.66 0.07-0.52 0.28-0.87 0.51-1.07-1.78-0.2-3.64-0.89-3.64-3.95 0-0.87 0.31-1.59 0.82-2.15-0.08-0.2-0.36-1.02 0.08-2.12 0 0 0.67-0.21 2.2 0.82 0.64-0.18 1.32-0.27 2-0.27 0.68 0 1.36 0.09 2 0.27 1.53-1.04 2.2-0.82 2.2-0.82 0.44 1.1 0.16 1.92 0.08 2.12 0.51 0.56 0.82 1.27 0.82 2.15 0 3.07-1.87 3.75-3.65 3.95 0.29 0.25 0.54 0.73 0.54 1.48 0 1.07-0.01 1.93-0.01 2.2 0 0.21 0.15 0.46 0.55 0.38C13.71 14.53 16 11.53 16 8 16 3.58 12.42 0 8 0z";
-const styles = stylex.create({
-  grayTextSeparator: { color: rootColors.grayText },
-  rootLoginDialogSeparator: { marginLeft: "10px", marginRight: "10px" },
-  rootEventBoundary: {
-    "--yoram-stylex-root-boundary": "stylex",
-    display: "contents",
-  },
-  rootNotFoundGnbOuter: {
-    boxSizing: "border-box",
-    paddingBlock: "0px",
-    paddingInline: "10px",
-  },
-  rootToastContainer: {
-    position: "fixed",
-    right: "20px",
-    bottom: "25px",
-    zIndex: "9999",
-    margin: "10px",
-    overflow: "hidden",
-  },
-  rootToast: {
-    position: "relative",
-    boxSizing: "border-box",
-    width: "450px",
-    padding: "10px 20px",
-    margin: "10px",
-    fontSize: "13px",
-    fontWeight: "700",
-    color: rootColors.toastText,
-    wordBreak: "keep-all",
-    overflowWrap: "break-word",
-    outline: "none",
-    backgroundColor: rootColors.toastSurface,
-    borderRadius: "2px",
-    boxShadow: rootColors.toastShadow,
-    opacity: "0.9",
-    transitionDuration: "0.3s",
-  },
-  rootToastDismiss: {
-    position: "absolute",
-    top: "5px",
-    left: "420px",
-  },
-  rootToastDismissButton: {
-    color: rootColors.toastText,
-    fontSize: "25px",
-    fontWeight: "700",
-    backgroundColor: "transparent",
-    borderStyle: "none",
-    borderWidth: "0px",
-    padding: "0px",
-    outline: "none",
-  },
-  rootToastSpacer: {
-    display: "inline-block",
-    width: "0px",
-    height: "50px",
-    verticalAlign: "middle",
-  },
-  rootToastMessage: {
-    display: "inline-block",
-    width: "90%",
-    margin: "0px",
-    fontSize: "15px",
-    verticalAlign: "middle",
-    wordBreak: "break-all",
-    overflowWrap: "break-word",
-  },
-  // common/loginDialog.scala.html + frozen Bootstrap modal/_page.less/_responsive.less.
-  rootLoginDialog: {
-    display: "none",
-    position: "fixed",
-    top: "10%",
-    left: {
-      default: "50%",
-      // _responsive.less:205-212 resolves the root dialog to the viewport's left edge.
-      "@media (max-width: 720px)": "0px",
-    },
-    zIndex: "1050",
-    width: {
-      default: "460px",
-      "@media (max-width: 767px)": "100%",
-    },
-    marginLeft: {
-      default: "-230px",
-      "@media (max-width: 767px)": "0px",
-    },
-    backgroundColor: rootColors.loginDialogSurface,
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: rootColors.loginDialogBorder,
-    borderRadius: "6px",
-    outline: "none",
-    boxShadow: rootColors.loginDialogShadow,
-    backgroundClip: "padding-box",
-  },
-  rootLoginDialogVisible: { display: "block" },
-  // frozen Bootstrap bootstrap.css:5196-5200.
-  rootLoginDialogBody: {
-    position: "relative",
-    maxHeight: "400px",
-    padding: "15px",
-    overflowY: "auto",
-  },
-  rootLoginDialogErrorVisible: { display: "block" },
-  rootLoginDialogForm: {
-    margin: "20px auto",
-    width: {
-      "@media (max-width: 767px)": "inherit",
-    },
-  },
-  rootLoginDialogInput: {
-    boxShadow: "none",
-  },
-  rootLoginDialogTextInput: {
-    boxSizing: "content-box",
-    minHeight: "0px",
-    width: {
-      "@media (max-width: 767px)": "95%",
-    },
-  },
-  rootLoginDialogError: {
-    display: "none",
-    marginBottom: "20px",
-    color: rootColors.errorText,
-  },
-  rootLoginDialogErrorIcon: {
-    verticalAlign: "middle",
-    marginRight: "5px",
-    fontSize: "13px",
-  },
-  // frozen _page.less:835-839 and 6568-6570. The generic `.checkbox`
-  // important shorthand cannot remain once the dialog-specific class retires.
-  rootLoginDialogCheckbox: {
-    display: "inline-block",
-    marginTop: "4px",
-    marginRight: "2px",
-    marginBottom: "2px",
-    marginLeft: "2px",
-    minHeight: "20px",
-    verticalAlign: "top",
-    width: "auto",
-  },
-  rootLoginDialogRememberLabel: {
-    display: "inline-block",
-    fontSize: "12px",
-    lineHeight: "20px",
-    marginBottom: "5px",
-  },
-  rootLoginDialogButtonRow: {
-    display: "block",
-    textAlign: "center",
-    width: "auto",
-  },
-  // frozen _page.less:1626-1645. Keep the dialog's lower rows independent
-  // from the generated legacy fallback stylesheet.
-  rootLoginDialogSocialTitleLine: {
-    lineHeight: "20px",
-    marginTop: "12px",
-    marginBottom: "10px",
-  },
-  rootLoginDialogActionRow: {
-    lineHeight: "22px",
-    overflow: "auto",
-    textAlign: "right",
-  },
-  // frozen Bootstrap bootstrap.css:6097-6099. The legacy template uses this
-  // for the remember-me control, so it cannot depend on fallback CSS here.
-  rootLoginDialogRememberGroup: {
-    float: "left",
-  },
-  rootLoginDialogSubmit: {
-    width: "100%",
-  },
-  // common/scripts.scala.html + frozen _common.less:162.
-  // Keep the legacy classes for the global dialog DOM contract while StyleX
-  // owns the visible confirmation-row alignment.
-  rootYoramDialogActionRow: {
-    textAlign: "center",
-  },
-  // common/loginDialog.scala.html + frozen Bootstrap/.modal-backdrop + _override.less
-  rootLoginDialogBackdrop: {
-    position: "fixed",
-    top: "0px",
-    right: "0px",
-    bottom: "0px",
-    left: "0px",
-    zIndex: "1040",
-    backgroundColor: "#000000",
-    opacity: "0.5",
-  },
-});
-const rootLoginDialogFormClassName = stylex.props(styles.rootLoginDialogForm).className;
-const rootLoginDialogInputClassName = stylex.props(styles.rootLoginDialogInput).className;
-const rootLoginDialogTextInputClassName = stylex.props(styles.rootLoginDialogTextInput).className;
-const rootLoginDialogErrorClassName = stylex.props(styles.rootLoginDialogError).className;
-const rootLoginDialogErrorIconClassName = stylex.props(styles.rootLoginDialogErrorIcon).className;
-const rootLoginDialogCheckboxClassName = stylex.props(styles.rootLoginDialogCheckbox).className;
-const rootLoginDialogRememberLabelClassName = stylex.props(
-  styles.rootLoginDialogRememberLabel,
-).className;
-const rootLoginDialogSeparatorStyleProps = stylex.props(
-  styles.grayTextSeparator,
-  styles.rootLoginDialogSeparator,
-);
-const rootLoginDialogButtonRowClassName = stylex.props(styles.rootLoginDialogButtonRow).className;
-const rootLoginDialogSocialTitleLineClassName = stylex.props(
-  styles.rootLoginDialogSocialTitleLine,
-).className;
-const rootLoginDialogActionRowClassName = stylex.props(styles.rootLoginDialogActionRow).className;
-const rootLoginDialogRememberGroupClassName = stylex.props(
-  styles.rootLoginDialogRememberGroup,
-).className;
-const rootLoginDialogSubmitClassName = stylex.props(styles.rootLoginDialogSubmit).className;
-const rootLoginDialogBackdropClassName = stylex.props(styles.rootLoginDialogBackdrop).className;
-const rootNotFoundGnbOuterStyleProps = stylex.props(styles.rootNotFoundGnbOuter);
-
 export function useRootToast() {
   const setRootToast = React.use(RootToastContext);
   if (!setRootToast) {
@@ -429,11 +206,7 @@ function RootResetShell() {
               onDismiss={closeRootShellModal}
             />
           </LegacyI18nProvider>
-          <div
-            {...stylex.props(styles.rootToastContainer)}
-            id="yobiToasts"
-            data-stylex-owner="root-toast-container"
-          >
+          <div id="yobiToasts" data-owner="root-toast-container">
             {rootToast ? (
               <RootYoramToast
                 durationMs={rootToast.durationMs}
@@ -484,21 +257,12 @@ function RootResetShell() {
           {rootShellModal ? (
             // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Bootstrap 2 dismisses through the backdrop; root key capture provides Escape dismissal.
             <div
-              {...(rootShellModal === "loginDialog"
-                ? stylex.props(styles.rootLoginDialogBackdrop)
-                : {})}
-              className={[
-                "modal-backdrop in",
-                rootShellModal === "loginDialog" ? rootLoginDialogBackdropClassName : null,
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              data-stylex-owner={
+              {...(rootShellModal === "loginDialog" ? {} : {})}
+              className="modal-backdrop in"
+              data-owner={
                 rootShellModal === "loginDialog" ? "root-login-dialog-backdrop" : undefined
               }
-              data-stylex-part={
-                rootShellModal === "loginDialog" ? "login-dialog-backdrop" : undefined
-              }
+              data-part={rootShellModal === "loginDialog" ? "login-dialog-backdrop" : undefined}
               onClick={closeRootShellModal}
             ></div>
           ) : null}
@@ -514,8 +278,7 @@ function RootResetShell() {
           rootShellContent
         ) : (
           <div
-            {...stylex.props(styles.rootEventBoundary)}
-            data-stylex-root-boundary=""
+            data-root-boundary=""
             onClickCapture={handleRootShellClick}
             onKeyDownCapture={handleRootShellKeyDown}
           >
@@ -546,22 +309,15 @@ function RootYoramToast({
   }, [durationMs, onDismiss]);
 
   return (
-    <div
-      {...stylex.props(styles.rootToast)}
-      tabIndex={-1}
-      data-stylex-owner="root-yoram-toast"
-      data-stylex-part="toast"
-    >
-      <div {...stylex.props(styles.rootToastDismiss)} data-stylex-part="toast-dismiss">
-        <button {...stylex.props(styles.rootToastDismissButton)} type="button" onClick={onDismiss}>
+    <div tabIndex={-1} data-owner="root-yoram-toast" data-part="toast">
+      <div data-part="toast-dismiss">
+        <button type="button" onClick={onDismiss}>
           &times;
         </button>
       </div>
       <div>
-        <span {...stylex.props(styles.rootToastSpacer)} />
-        <div {...stylex.props(styles.rootToastMessage)} data-stylex-part="toast-message">
-          {message}
-        </div>
+        <span />
+        <div data-part="toast-message">{message}</div>
       </div>
     </div>
   );
@@ -587,10 +343,7 @@ function RootYoramDialog({ isOpen, onDismiss }: RootYoramDialogProps) {
           <p className="msg" />
           <p className="desc" />
         </div>
-        <div
-          className={`${stylex.props(styles.rootYoramDialogActionRow).className} center-txt buttons`}
-          data-stylex-owner="root-yoram-dialog-action-row"
-        >
+        <div className={" center-txt buttons"} data-owner="root-yoram-dialog-action-row">
           <button type="button" className="ybtn ybtn-info" onClick={onDismiss}>
             {t("button.confirm")}
           </button>
@@ -710,29 +463,22 @@ function RootLoginDialog({
   const socialProviders = Array.isArray(capabilities?.enabledSocialProviders)
     ? capabilities.enabledSocialProviders
     : [];
-  const rootLoginDialogProps = stylex.props(
-    styles.rootLoginDialog,
-    visible && styles.rootLoginDialogVisible,
-  );
-
   return (
     <div
       id="loginDialog"
-      {...rootLoginDialogProps}
-      className={rootLoginDialogProps.className}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}
-      data-stylex-owner="root-login-dialog-frame"
+      data-owner="root-login-dialog-frame"
     >
-      <div {...stylex.props(styles.rootLoginDialogBody)} data-stylex-owner="root-login-dialog-body">
+      <div data-owner="root-login-dialog-body">
         <div className="pull-right">
           {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy common/loginDialog.scala.html renders aria-hidden on the focusable close button. */}
           <button
             type="button"
             className="close"
             aria-hidden="true"
-            data-stylex-part="login-dialog-close"
+            data-part="login-dialog-close"
             onClick={onDismiss}
           >
             &times;
@@ -741,21 +487,13 @@ function RootLoginDialog({
         <form
           action={prefixBasePath(basePath, "/users/login")}
           method="post"
-          className={["frm-wrap login-form-wrap", rootLoginDialogFormClassName]
-            .filter(Boolean)
-            .join(" ")}
-          data-stylex-part="login-dialog-form"
+          className="frm-wrap login-form-wrap"
+          data-part="login-dialog-form"
           onSubmit={onSubmit}
           key={resetNonce}
         >
           {socialLoginOnly ? (
-            <div
-              className={["btns-row nm", rootLoginDialogButtonRowClassName]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {t("app.warn.support.social.login.only")}
-            </div>
+            <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
           ) : (
             <>
               <dl>
@@ -764,13 +502,7 @@ function RootLoginDialog({
                     id="loginIdOrEmailD"
                     name="loginIdOrEmail"
                     type="text"
-                    className={[
-                      "text email",
-                      rootLoginDialogInputClassName,
-                      rootLoginDialogTextInputClassName,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                    className="text email"
                     autoComplete="off"
                     placeholder={t("user.login.key")}
                     ref={inputRef}
@@ -783,13 +515,7 @@ function RootLoginDialog({
                     id="passwordD"
                     name="password"
                     type="password"
-                    className={[
-                      "text password",
-                      rootLoginDialogInputClassName,
-                      rootLoginDialogTextInputClassName,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                    className="text password"
                     autoComplete="off"
                     placeholder={t("user.password")}
                     value={state.password}
@@ -798,45 +524,23 @@ function RootLoginDialog({
                 </dd>
               </dl>
               <div
-                className={["error", rootLoginDialogErrorClassName].filter(Boolean).join(" ")}
-                {...(state.errorMessage ? stylex.props(styles.rootLoginDialogErrorVisible) : {})}
-                data-stylex-owner="root-login-dialog-error"
+                className="error"
+                style={state.errorMessage ? { display: "block" } : { display: "none" }}
+                data-owner="root-login-dialog-error"
               >
-                <i
-                  className={["yobicon-error", rootLoginDialogErrorIconClassName]
-                    .filter(Boolean)
-                    .join(" ")}
-                />
-                <span className="error-message">{state.errorMessage ?? ""}</span>
+                <i className="yobicon-error" />
+                <span className="error-message">{t(state.errorMessage ?? "")}</span>
               </div>
-              <div
-                className={["btns-row nm", rootLoginDialogButtonRowClassName]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <button
-                  type="submit"
-                  className={["ybtn ybtn-primary fullsize", rootLoginDialogSubmitClassName]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
+              <div className="btns-row nm">
+                <button type="submit" className="ybtn ybtn-primary fullsize">
                   {t("button.login")}
                 </button>
               </div>
             </>
           )}
-          <div
-            className={["btns-row nm", rootLoginDialogButtonRowClassName].filter(Boolean).join(" ")}
-          >
+          <div className="btns-row nm">
             {socialProviders.length > 0 && !socialLoginOnly ? (
-              <div
-                className={["social-login-title-line", rootLoginDialogSocialTitleLineClassName]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                {" "}
-                {t("title.or")}
-              </div>
+              <div className="social-login-title-line"> {t("title.or")}</div>
             ) : null}
             {socialProviders.map((provider) => (
               <RootOAuthProviderLink
@@ -847,43 +551,22 @@ function RootLoginDialog({
             ))}
           </div>
           {!socialLoginOnly ? (
-            <div
-              className={["act-row mt20", rootLoginDialogActionRowClassName]
-                .filter(Boolean)
-                .join(" ")}
-              data-stylex-owner="root-login-dialog-action-row"
-            >
-              <div
-                className={["pull-left", rootLoginDialogRememberGroupClassName]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
+            <div className="act-row mt20" data-owner="root-login-dialog-action-row">
+              <div className="pull-left">
                 <input
                   id="remember-meD"
                   type="checkbox"
                   name="rememberMe"
-                  className={[rootLoginDialogInputClassName, rootLoginDialogCheckboxClassName]
-                    .filter(Boolean)
-                    .join(" ")}
+                  className=""
                   checked={state.rememberMe}
                   onChange={(event) => onRememberMeChange(event.target.checked)}
                 />
-                <label
-                  htmlFor="remember-meD"
-                  className={["bg-checkbox", rootLoginDialogRememberLabelClassName]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
+                <label htmlFor="remember-meD" className="bg-checkbox">
                   {t("title.rememberMe")}
                 </label>
               </div>
               <Link to="/lostPassword">{t("title.resetPassword")}</Link>
-              <span
-                {...rootLoginDialogSeparatorStyleProps}
-                data-stylex-owner="root-login-dialog-separator"
-              >
-                |
-              </span>
+              <span data-owner="root-login-dialog-separator">|</span>
               <Link to="/users/signupform">{t("title.signup")}</Link>
             </div>
           ) : null}
@@ -903,34 +586,17 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
   return (
     <Link to={providerLoginPath} className="ybtn oauth-login-btn" reloadDocument>
       {normalized === "github" ? (
-        <span
-          className={`${stylex.props(rootProviderStyles.logo).className} auth-provider-logo`}
-          data-stylex-owner="root-provider-logo"
-        >
-          <span
-            className={`${stylex.props(rootProviderStyles.github).className} github`}
-            data-stylex-owner="root-provider-github"
-          >
-            <svg
-              {...stylex.props(rootProviderStyles.logoSvg)}
-              aria-hidden="true"
-              height="24"
-              version="1.1"
-              viewBox="0 0 16 16"
-              width="19"
-            >
+        <span className={" auth-provider-logo"} data-owner="root-provider-logo">
+          <span className={" github"} data-owner="root-provider-github">
+            <svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19">
               <path d={GITHUB_OAUTH_LOGO_PATH} />
             </svg>
           </span>{" "}
           <span className="provider-name">Sign in with github</span>
         </span>
       ) : (
-        <span
-          className={`${stylex.props(rootProviderStyles.logo).className} auth-provider-logo`}
-          data-stylex-owner="root-provider-logo"
-        >
+        <span className={" auth-provider-logo"} data-owner="root-provider-logo">
           <img
-            {...stylex.props(rootProviderStyles.logoSvg)}
             src={prefixBasePath(
               basePath,
               "/assets/images/provider-logo/btn_google_light_normal_ios.svg",
@@ -979,10 +645,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
 
   return (
     <>
-      <header
-        {...rootNotFoundGnbOuterStyleProps}
-        className={`${rootNotFoundGnbOuterStyleProps.className} gnb-outer`}
-      >
+      <header className="gnb-outer">
         <div className="gnb-inner">
           <Link
             activeOptions={legacyPlainLinkActiveOptions}
@@ -1087,27 +750,14 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       </header>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div
-            {...rootNotFoundErrorWrapStyleProps}
-            className={`${rootNotFoundErrorWrapStyleProps.className} error-wrap`}
-            data-stylex-owner="root-alias-notfound-error-wrap"
-          >
-            <i
-              {...rootNotFoundErrorIconStyleProps}
-              className={`${rootNotFoundErrorIconStyleProps.className} ico ico-err2`}
-              data-stylex-owner="root-alias-notfound-error-icon"
-            />
-            <p
-              {...rootNotFoundErrorMessageStyleProps}
-              data-stylex-owner="root-alias-notfound-error-message"
-            >
-              {t("error.notfound")}
-            </p>
+          <div className={" error-wrap"} data-owner="root-alias-notfound-error-wrap">
+            <i className={" ico ico-err2"} data-owner="root-alias-notfound-error-icon" />
+            <p data-owner="root-alias-notfound-error-message">{t("error.notfound")}</p>
             <Link
               activeOptions={legacyPlainLinkActiveOptions}
               activeProps={legacyPlainLinkActiveProps}
               className="ybtn ybtn-info"
-              data-stylex-owner="root-alias-notfound-home"
+              data-owner="root-alias-notfound-home"
               to="/"
             >
               {t("menu.home")}

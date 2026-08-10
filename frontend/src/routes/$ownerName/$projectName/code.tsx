@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { useState, useLayoutEffect, type FormEvent } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { codeFindFilesQueryOptions, codeGrepFilesQueryOptions } from "../../../api/code";
@@ -8,21 +7,6 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { codeColors, searchStyles } from "./-code.stylex";
-
-const styles = stylex.create({
-  noHeadPage: { margin: "20px auto 0px" },
-  noHeadColumn: { padding: "0px 10px" },
-  noHeadAlert: {
-    backgroundColor: codeColors.alertSurface,
-    borderColor: codeColors.alertBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: codeColors.alertText,
-    padding: "8px 35px 8px 14px",
-  },
-  noHeadHeading: { color: codeColors.headingText, fontSize: "14px", lineHeight: "20px" },
-});
 
 export const Route = createFileRoute("/$ownerName/$projectName/code")({
   component: ProjectCodeRoute,
@@ -112,12 +96,12 @@ export function ProjectCodeSearchPanel({
   };
 
   return (
-    <div {...stylex.props(searchStyles.container)} data-testid="code-search-panel">
-      <div {...stylex.props(searchStyles.header)}>
+    <div className="code-search-container" data-testid="code-search-panel">
+      <div className="code-search-header">
         <button
           type="button"
           data-testid="code-search-tab-find"
-          {...stylex.props(searchStyles.tabButton, mode === "find" && searchStyles.tabButtonActive)}
+          className={`code-search-tab-button${mode === "find" ? " is-active" : ""}`}
           onClick={() => setMode("find")}
         >
           Find File
@@ -125,14 +109,14 @@ export function ProjectCodeSearchPanel({
         <button
           type="button"
           data-testid="code-search-tab-grep"
-          {...stylex.props(searchStyles.tabButton, mode === "grep" && searchStyles.tabButtonActive)}
+          className={`code-search-tab-button${mode === "grep" ? " is-active" : ""}`}
           onClick={() => setMode("grep")}
         >
           Search in File
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} {...stylex.props(searchStyles.form)}>
+      <form onSubmit={handleSubmit} className="code-search-form">
         <input
           type="text"
           data-testid="code-search-input"
@@ -143,13 +127,9 @@ export function ProjectCodeSearchPanel({
           }
           value={queryInput}
           onChange={(e) => setQueryInput(e.target.value)}
-          {...stylex.props(searchStyles.searchInput)}
+          className="code-search-input"
         />
-        <button
-          type="submit"
-          data-testid="code-search-submit"
-          {...stylex.props(searchStyles.searchButton)}
-        >
+        <button type="submit" data-testid="code-search-submit" className="code-search-submit">
           Search
         </button>
       </form>
@@ -157,20 +137,20 @@ export function ProjectCodeSearchPanel({
       {mode === "find" ? (
         <div data-testid="code-search-find-results">
           {findQuery.isLoading ? (
-            <div {...stylex.props(searchStyles.emptyState)}>Searching files…</div>
+            <div className="code-search-empty">Searching files…</div>
           ) : findQuery.data?.paths && findQuery.data.paths.length > 0 ? (
-            <ul {...stylex.props(searchStyles.resultList)}>
+            <ul className="code-search-result-list">
               {findQuery.data.paths.map((filePath) => (
                 <li
                   key={filePath}
-                  {...stylex.props(searchStyles.resultItem)}
+                  className="code-search-result-item"
                   data-testid="code-search-result-item"
                 >
                   <Link
                     to={
                       `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}/${filePath}` as any
                     }
-                    {...stylex.props(searchStyles.resultItemPath)}
+                    className="code-search-result-item-path"
                   >
                     {filePath}
                   </Link>
@@ -178,7 +158,7 @@ export function ProjectCodeSearchPanel({
               ))}
             </ul>
           ) : activeQuery.trim().length > 0 ? (
-            <div {...stylex.props(searchStyles.emptyState)} data-testid="code-search-empty">
+            <div className="code-search-empty" data-testid="code-search-empty">
               No matching files found.
             </div>
           ) : null}
@@ -186,32 +166,32 @@ export function ProjectCodeSearchPanel({
       ) : (
         <div data-testid="code-search-grep-results">
           {grepQuery.isLoading ? (
-            <div {...stylex.props(searchStyles.emptyState)}>Searching content…</div>
+            <div className="code-search-empty">Searching content…</div>
           ) : grepQuery.data?.matches && grepQuery.data.matches.length > 0 ? (
-            <ul {...stylex.props(searchStyles.resultList)}>
+            <ul className="code-search-result-list">
               {grepQuery.data.matches.map((item) => (
                 <li
                   key={`${item.path}:${item.lineNumber}:${item.content}`}
-                  {...stylex.props(searchStyles.resultItem)}
+                  className="code-search-result-item"
                   data-testid="code-search-result-item"
                 >
                   <Link
                     to={
                       `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}/${item.path}` as any
                     }
-                    {...stylex.props(searchStyles.resultItemPath)}
+                    className="code-search-result-item-path"
                   >
                     {item.path} (line {item.lineNumber})
                   </Link>
-                  <div {...stylex.props(searchStyles.resultMatchSnippet)}>
-                    <span {...stylex.props(searchStyles.lineNumber)}>L{item.lineNumber}:</span>
+                  <div className="code-search-result-match-snippet">
+                    <span className="code-search-line-number">L{item.lineNumber}:</span>
                     {item.content}
                   </div>
                 </li>
               ))}
             </ul>
           ) : activeQuery.trim().length > 0 ? (
-            <div {...stylex.props(searchStyles.emptyState)} data-testid="code-search-empty">
+            <div className="code-search-empty" data-testid="code-search-empty">
               No matching content found.
             </div>
           ) : null}
@@ -279,24 +259,13 @@ function ProjectCodeNoHead({
   const codeUrl = isSvn
     ? svnCheckoutUrl(repositoryUrl, runtimeConfig.basePath, ownerName, projectName)
     : repositoryUrl;
-  const noHeadPageProps = stylex.props(styles.noHeadPage);
-  const noHeadColumnProps = stylex.props(styles.noHeadColumn);
-
   return (
     <>
       <title>{browserTitle}</title>
-      <div
-        {...noHeadPageProps}
-        className={`page-wrap-outer ${noHeadPageProps.className ?? ""}`.trim()}
-        data-stylex-owner="project-code-nohead-page"
-      >
-        <div className="project-page-wrap" data-stylex-owner="project-code-nohead-shell">
+      <div className="page-wrap-outer" data-owner="project-code-nohead-page">
+        <div className="project-page-wrap" data-owner="project-code-nohead-shell">
           <div className="row-fluid">
-            <div
-              {...noHeadColumnProps}
-              className={`span12 ${noHeadColumnProps.className ?? ""}`.trim()}
-              data-stylex-owner="project-code-nohead-column"
-            >
+            <div className="span12" data-owner="project-code-nohead-column">
               <NoHeadAlert message={t("code.nohead")} />
               {booleanField(project.viewerCanUpdate) ? (
                 isSvn ? (
@@ -377,17 +346,10 @@ function svnCheckoutUrl(
 
 function NoHeadAlert({ message }: { message: string }) {
   const heading = /<h4>([\s\S]*)<\/h4>/u.exec(message)?.[1] ?? message;
-  const noHeadAlertProps = stylex.props(styles.noHeadAlert);
 
   return (
-    <div
-      {...noHeadAlertProps}
-      className={`alert alert-block ${noHeadAlertProps.className ?? ""}`.trim()}
-      data-stylex-owner="project-code-nohead-alert"
-    >
-      <h4 {...stylex.props(styles.noHeadHeading)} data-stylex-owner="project-code-nohead-heading">
-        {heading}
-      </h4>
+    <div className="alert alert-block" data-owner="project-code-nohead-alert">
+      <h4 data-owner="project-code-nohead-heading">{heading}</h4>
     </div>
   );
 }

@@ -474,7 +474,7 @@ test("global search matches localhost legacy empty issue result DOM for sample k
       ),
     )
     .toContain("Search");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -550,7 +550,7 @@ test("global project search renders legacy partial_projects.scala.html populated
   );
 });
 
-test("global search residual StyleX owners preserve populated, empty, and category navigation geometry", async ({
+test("global search residual Style owners preserve populated, empty, and category navigation geometry", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -562,23 +562,17 @@ test("global search residual StyleX owners preserve populated, empty, and catego
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/search?keyword=sample&searchType=project`);
-    await expect(page.locator('[data-stylex-owner="global-search-category-item"]')).toHaveCount(8);
-    await expect(page.locator('[data-stylex-owner="global-search-avatar"]')).toBeVisible();
-    await expect(page.locator('[data-stylex-owner="global-search-content"]')).toBeVisible();
-    await expect(page.locator('[data-stylex-owner="global-search-meta"]')).toHaveCount(2);
-    await expect(page.locator('[data-stylex-owner="global-search-keyword"]')).toHaveCount(2);
+    await expect(page.locator('[data-owner="global-search-category-item"]')).toHaveCount(8);
+    await expect(page.locator('[data-owner="global-search-avatar"]')).toBeVisible();
+    await expect(page.locator('[data-owner="global-search-content"]')).toBeVisible();
+    await expect(page.locator('[data-owner="global-search-meta"]')).toHaveCount(2);
+    await expect(page.locator('[data-owner="global-search-keyword"]')).toHaveCount(2);
 
     const metrics = await page.evaluate(() => {
-      const avatar = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="global-search-avatar"]',
-      );
-      const content = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="global-search-content"]',
-      );
-      const item = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="global-search-result-item"]',
-      );
-      const meta = document.querySelector<HTMLElement>('[data-stylex-owner="global-search-meta"]');
+      const avatar = document.querySelector<HTMLElement>('[data-owner="global-search-avatar"]');
+      const content = document.querySelector<HTMLElement>('[data-owner="global-search-content"]');
+      const item = document.querySelector<HTMLElement>('[data-owner="global-search-result-item"]');
+      const meta = document.querySelector<HTMLElement>('[data-owner="global-search-meta"]');
       if (!avatar || !content || !item || !meta) throw new Error("missing residual owners");
       const avatarBox = avatar.getBoundingClientRect();
       const itemBox = item.getBoundingClientRect();
@@ -598,9 +592,9 @@ test("global search residual StyleX owners preserve populated, empty, and catego
       noOverflow: true,
     });
 
-    await page.locator('[data-stylex-owner="global-search-category-item"] a').first().click();
+    await page.locator('[data-owner="global-search-category-item"] a').first().click();
     await expect(page).toHaveURL(`${basePath}/search?keyword=sample&searchType=issue`);
-    const emptyResult = page.locator('[data-stylex-owner="global-search-empty-result"]');
+    const emptyResult = page.locator('[data-owner="global-search-empty-result"]');
     await expect(emptyResult).toBeVisible();
     expect(
       await emptyResult.evaluate((element) => {
@@ -1334,8 +1328,8 @@ async function readRequestTextTooLargeMetrics(page: Page) {
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const errorIcon = document.querySelector<HTMLElement>(".error-wrap .ico-err2");
     const errorText = document.querySelector<HTMLElement>(".error-wrap p");
-    const footerOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
+    const footerOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const footer = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
     const missing = Object.entries({
       errorIcon,
       errorText,
@@ -1386,8 +1380,8 @@ async function readDefaultSearchErrorMetrics(page: Page, iconSelector: string) {
     const errorIcon = document.querySelector<HTMLElement>(selector);
     const errorText = document.querySelector<HTMLElement>(".error-wrap p");
     const action = document.querySelector<HTMLElement>(".error-wrap .ybtn");
-    const footerOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
+    const footerOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const footer = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
     const missing = Object.entries({
       action,
       errorIcon,
@@ -2283,7 +2277,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -2312,7 +2306,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !(attr.name === "aria-haspopup" && attr.value === "dialog") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
@@ -2349,11 +2343,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -2361,7 +2355,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -2497,7 +2491,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.value === "tooltip" &&
         attr.ownerElement instanceof Element &&
         attr.ownerElement.classList.contains("pin") &&
-        attr.ownerElement.closest('[data-stylex-owner="global-gnb-inner"]') !== null
+        attr.ownerElement.closest('[data-owner="global-gnb-inner"]') !== null
       );
     }
 
@@ -2614,7 +2608,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !(attr.name === "aria-haspopup" && attr.value === "dialog") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )

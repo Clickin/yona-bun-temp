@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
@@ -17,17 +16,11 @@ import {
 } from "../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { useLockedLinkClick } from "../../../components/route-fetch-lock";
 import { TwoColumnModeCheckbox } from "../../../components/two-column-mode-checkbox";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { styles } from "./-posts.stylex";
-
-const errorIconSpriteStyles = stylex.create({
-  sprite: (backgroundImage: string) => ({ backgroundImage }),
-});
 
 type ProjectPostsRouteSearch = {
   filter?: string;
@@ -44,20 +37,6 @@ type ProjectPostsSearch = {
   orderDir: string;
   pageNum: number;
 };
-
-const twoColumnModePopoverStyles = stylex.create({
-  popover: {
-    bottom: "100%",
-    display: "block",
-    left: "50%",
-    marginBottom: "10px",
-    minWidth: "276px",
-    pointerEvents: "none",
-    position: "absolute",
-    transform: "translateX(-50%)",
-    zIndex: 1010,
-  },
-});
 
 type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 const legacyRouteLocalActiveProps = {
@@ -120,8 +99,8 @@ function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     return (
       <div
         className="page-wrap-outer"
-        data-stylex-owner="project-posts-loading-shell"
-        data-stylex-content-ready="false"
+        data-owner="project-posts-loading-shell"
+        data-content-ready="false"
         aria-busy="true"
       />
     );
@@ -169,20 +148,10 @@ function ProjectPostsBody({
   };
 
   return (
-    <div
-      className="page-wrap-outer"
-      data-stylex-owner="project-posts-page"
-      data-stylex-content-ready="true"
-    >
-      <div className="post-list project-page-wrap" data-stylex-owner="project-posts-list">
+    <div className="page-wrap-outer" data-owner="project-posts-page" data-content-ready="true">
+      <div className="post-list project-page-wrap" data-owner="project-posts-list">
         <div className="search-wrap underline">
-          <form
-            id="option_form"
-            action={action}
-            method="get"
-            className={stylex.props(styles.search).className}
-            data-stylex-owner="project-posts-search"
-          >
+          <form id="option_form" action={action} method="get" data-owner="project-posts-search">
             <input type="hidden" name="orderBy" value={search.orderBy} />
             <input type="hidden" name="orderDir" value={search.orderDir} />
             <div className="search-bar">
@@ -207,20 +176,13 @@ function ProjectPostsBody({
               />
             ) : null}
             <TwoColumnModeCheckbox
-              anchorStyle={styles.twoColumnMode}
-              labelStyle={styles.twoColumnModeLabel}
-              popoverStyle={twoColumnModePopoverStyles.popover}
               anchorOwner="project-posts-two-column-mode"
               labelOwner="project-posts-two-column-mode-label"
               popoverOwner="project-posts-two-column-popover"
               wrapPopoverContentInP
             />
           </form>
-          <div
-            {...stylex.props(styles.newPostWrap)}
-            className={stylex.props(styles.newPostWrap).className}
-            data-stylex-owner="project-posts-new-post-wrap"
-          >
+          <div data-owner="project-posts-new-post-wrap">
             <Link
               to="/$ownerName/$projectName/postform"
               params={{ ownerName, projectName }}
@@ -234,24 +196,9 @@ function ProjectPostsBody({
         </div>
 
         {!hasPosts ? (
-          <div
-            {...stylex.props(styles.errorWrap)}
-            className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-            data-stylex-owner="project-posts-empty"
-          >
-            <i
-              {...stylex.props(styles.errorIcon)}
-              {...stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`))}
-              className={`${stylex.props(styles.errorIcon).className} ${stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`)).className ?? ""} ico ico-err1`.trim()}
-              data-stylex-owner="project-posts-empty-icon"
-            ></i>
-            <p
-              {...stylex.props(styles.errorMessage)}
-              className={stylex.props(styles.errorMessage).className}
-              data-stylex-owner="project-posts-empty-message"
-            >
-              {t("post.is.empty")}
-            </p>
+          <div className="error-wrap" data-owner="project-posts-empty">
+            <i className="ico ico-err1" data-owner="project-posts-empty-icon"></i>
+            <p data-owner="project-posts-empty-message">{t("post.is.empty")}</p>
           </div>
         ) : (
           <>
@@ -259,11 +206,7 @@ function ProjectPostsBody({
               <BoardFilters ownerName={ownerName} projectName={projectName} search={search} />
             ) : null}
             {posts.notices.length > 0 ? (
-              <ul
-                {...stylex.props(styles.postListWrap, styles.postNoticeWrap)}
-                className={`${stylex.props(styles.postListWrap, styles.postNoticeWrap).className ?? ""} post-list-wrap notice-wrap`.trim()}
-                data-stylex-owner="project-posts-notices"
-              >
+              <ul className="post-list-wrap notice-wrap" data-owner="project-posts-notices">
                 {posts.notices.map((post) => (
                   <ProjectBoardPost
                     basePath={runtimeConfig.basePath}
@@ -276,11 +219,7 @@ function ProjectPostsBody({
                 ))}
               </ul>
             ) : null}
-            <ul
-              {...stylex.props(styles.postListWrap)}
-              className={`${stylex.props(styles.postListWrap).className ?? ""} post-list-wrap`.trim()}
-              data-stylex-owner="project-posts-items"
-            >
+            <ul className="post-list-wrap" data-owner="project-posts-items">
               {posts.items.map((post) => (
                 <ProjectBoardPost
                   basePath={runtimeConfig.basePath}
@@ -419,22 +358,11 @@ function BoardFilters({
   ];
 
   return (
-    <div
-      className={`${stylex.props(styles.filterWrap).className ?? ""} filter-wrap board`.trim()}
-      data-stylex-owner="project-posts-filter-wrap"
-    >
-      <div
-        className={`${stylex.props(styles.filters).className ?? ""} filters`.trim()}
-        data-stylex-owner="project-posts-filters"
-      >
+    <div className="filter-wrap board" data-owner="project-posts-filter-wrap">
+      <div className="filters" data-owner="project-posts-filters">
         {filters.map((filter, index) => {
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
-          const filterStyleProps = stylex.props(
-            styles.filter,
-            index === filters.length - 1 && styles.filterLast,
-            active && styles.filterActive,
-          );
           return (
             <Link
               to={boardListHref("", ownerName, projectName, {
@@ -443,15 +371,15 @@ function BoardFilters({
                 orderDir: active ? nextDir : "desc",
               })}
               activeProps={legacyRouteLocalActiveProps}
-              className={`${filterStyleProps.className ?? ""} filter${active ? " active" : ""}`.trim()}
-              data-stylex-owner="project-posts-filter"
+              className={`filter${active ? " active" : ""}`.trim()}
+              data-owner="project-posts-filter"
               key={filter.field}
             >
               <i
-                className={`${stylex.props(styles.filterIcon).className ?? ""} ico btn-gray-arrow ${
+                className={`ico btn-gray-arrow ${
                   !active || search.orderDir === "desc" ? " down " : ""
                 }`.trim()}
-                data-stylex-owner="project-posts-filter-icon"
+                data-owner="project-posts-filter-icon"
               ></i>
               {filter.label}
             </Link>
@@ -506,56 +434,32 @@ function BoardPagination({
   };
 
   return (
-    <div
-      id="pagination"
-      className={`${stylex.props(styles.paginationWrap).className} page-navigation-wrap`}
-      data-stylex-owner="project-posts-pagination"
-    >
-      <ul
-        className={`${stylex.props(styles.paginationPageNums).className} page-nums`}
-        data-stylex-owner="project-posts-pagination-page-nums"
-      >
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="project-posts-pagination-prev-page"
-        >
+    <div id="pagination" className="page-navigation-wrap" data-owner="project-posts-pagination">
+      <ul className="page-nums" data-owner="project-posts-pagination-page-nums">
+        <li className="page-num ikon" data-owner="project-posts-pagination-prev-page">
           {hasPrev ? (
             <Link
               to={boardListHref("", ownerName, projectName, pageSearch(currentPage - 1))}
               activeProps={legacyRouteLocalActiveProps}
             >
-              <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="project-posts-pagination-prev-icon"
-              ></i>
-              <span
-                className={stylex.props(styles.paginationIconLabel).className}
-                data-stylex-owner="project-posts-pagination-prev-label"
-              >
-                {t("button.prevPage")}
-              </span>
+              <i className="ico btn-pg-prev" data-owner="project-posts-pagination-prev-icon"></i>
+              <span data-owner="project-posts-pagination-prev-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="project-posts-pagination-prev-icon"
+                className="ico btn-pg-prev off"
+                data-owner="project-posts-pagination-prev-icon"
               ></i>
-              <span
-                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="project-posts-pagination-prev-label"
-              >
+              <span className="off" data-owner="project-posts-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
-          data-stylex-owner="project-posts-pagination-input-page"
-        >
+        <li className="page-num" data-owner="project-posts-pagination-input-page">
           <input
-            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
+            className="input-mini nospinner"
             type="number"
             pattern="[0-9]*"
             name="pageNum"
@@ -565,52 +469,32 @@ function BoardPagination({
             key={`${currentPage}-${totalPages}`}
             onClick={(event) => event.currentTarget.select()}
             onKeyDown={handleInputKeyDown}
-            data-stylex-owner="project-posts-pagination-input"
+            data-owner="project-posts-pagination-input"
           />
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="project-posts-pagination-delimiter"
-        >
+        <li className="page-num delimiter" data-owner="project-posts-pagination-delimiter">
           /
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
-          data-stylex-owner="project-posts-pagination-total"
-        >
+        <li className="page-num" data-owner="project-posts-pagination-total">
           {totalPages}
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="project-posts-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="project-posts-pagination-next-page">
           {hasNext ? (
             <Link
               to={boardListHref("", ownerName, projectName, pageSearch(currentPage + 1))}
               activeProps={legacyRouteLocalActiveProps}
             >
-              <span
-                className={stylex.props(styles.paginationIconLabel).className}
-                data-stylex-owner="project-posts-pagination-next-label"
-              >
-                {t("button.nextPage")}
-              </span>
-              <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="project-posts-pagination-next-icon"
-              ></i>
+              <span data-owner="project-posts-pagination-next-label">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next" data-owner="project-posts-pagination-next-icon"></i>
             </Link>
           ) : (
             <>
-              <span
-                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="project-posts-pagination-next-label"
-              >
+              <span className="off" data-owner="project-posts-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="project-posts-pagination-next-icon"
+                className="ico btn-pg-next off"
+                data-owner="project-posts-pagination-next-icon"
               ></i>
             </>
           )}
@@ -644,20 +528,13 @@ function ProjectBoardPost({
     href: postHref,
   } satisfies LegacyPostItemAttrs;
 
-  const postItemStyleProps = stylex.props(styles.postItem);
   return (
-    <li
-      {...legacyPostItemAttrs}
-      {...postItemStyleProps}
-      className={`${postItemStyleProps.className ?? ""} ${legacyPostItemAttrs.className}`.trim()}
-      data-stylex-owner="project-posts-item"
-    >
+    <li {...legacyPostItemAttrs} data-owner="project-posts-item">
       <Link
         to={authorRoutePath}
         activeProps={legacyRouteLocalActiveProps}
-        {...stylex.props(styles.postAvatar)}
-        className={`${stylex.props(styles.postAvatar).className ?? ""} avatar-wrap mlarge hide-in-mobile`.trim()}
-        data-stylex-owner="project-posts-avatar"
+        className="avatar-wrap mlarge hide-in-mobile"
+        data-owner="project-posts-avatar"
         title={post.authorLoginId}
       >
         <img
@@ -669,11 +546,7 @@ function ProjectBoardPost({
           height="32"
         />
       </Link>
-      <div
-        {...stylex.props(styles.postTitleWrap)}
-        className={`${stylex.props(styles.postTitleWrap).className ?? ""} title-wrap`.trim()}
-        data-stylex-owner="project-posts-title-wrap"
-      >
+      <div className="title-wrap" data-owner="project-posts-title-wrap">
         {post.notice ? (
           <>
             <span className="label label-notice">{t("post.notice")}</span>{" "}
@@ -700,11 +573,7 @@ function ProjectBoardPost({
           {titleParts.title}
         </Link>
       </div>
-      <div
-        {...stylex.props(styles.postInfos)}
-        className={`${stylex.props(styles.postInfos).className ?? ""} infos`.trim()}
-        data-stylex-owner="project-posts-infos"
-      >
+      <div className="infos" data-owner="project-posts-infos">
         {post.authorLabel ? (
           <Link
             to={authorRoutePath}
@@ -735,7 +604,7 @@ function ProjectBoardPost({
               className="label issue-label list-label active"
               data-category-id={label.categoryId}
               data-label-id={String(label.id)}
-              data-stylex-owner="project-posts-label-button"
+              data-owner="project-posts-label-button"
               key={label.id}
               style={{
                 ...issueLabelStyle(label.color),
@@ -809,7 +678,6 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
   const modalClassName = isOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help";
-  const keymapOpenStyleProps = isOpen ? stylex.props(styles.keymapOpen) : undefined;
   const closeModal = (event: ReactMouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -817,10 +685,7 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div
-      className={`pull-left ${stylex.props(styles.keymap).className}`.trim()}
-      data-stylex-owner="project-posts-keymap"
-    >
+    <div className="pull-left" data-owner="project-posts-keymap">
       <button
         type="button"
         className="ybtn ybtn-inverse ybtn-mini"
@@ -834,9 +699,8 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
       </button>
       <div
         id="helpKeys"
-        {...keymapOpenStyleProps}
-        className={`${modalClassName} ${keymapOpenStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="project-posts-keymap-modal"
+        className={modalClassName}
+        data-owner="project-posts-keymap-modal"
         tabIndex={-1}
         role="dialog"
         onKeyUp={(event) => {

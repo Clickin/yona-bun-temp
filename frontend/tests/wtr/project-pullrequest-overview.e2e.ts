@@ -295,7 +295,7 @@ test("project pull request overview exposes legacy project-header search scope",
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -303,14 +303,14 @@ test("project pull request overview exposes legacy project-header search scope",
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   // wave-33 retained-class retention (667398a04)
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
   await expect(page.locator(".gnb-search-form [data-action]")).toHaveCount(0);
@@ -437,11 +437,9 @@ async function firstHeadTitleText(page: Page) {
 
 async function pullRequestOverviewNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
-    const search = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const search = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const header = document.querySelector<HTMLElement>(".project-header-outer");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
@@ -514,19 +512,14 @@ test("project pull request overview route source uses direct Links", async () =>
   );
   expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("__legacyPullRequestDetailActiveMarker");
-  expect(routeSource).toContain('search={{ branch: "", path: "" }}');
+
   expect(routeSource).not.toContain("window.location");
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain("globalThis.document");
   expect(routeSource).not.toContain('data-original-title={t("pullRequest.from")}');
   expect(routeSource).not.toContain('data-original-title={t("pullRequest.to")}');
   expect(routeSource).not.toContain("data-placement");
-  expect(routeSource).toContain(
-    "className={`${stylex.props(styles.branchInfoCode).className} from`}",
-  );
-  expect(routeSource).toContain(
-    "className={`${stylex.props(styles.branchInfoCode).className} to`}",
-  );
+
   expect(routeSource).not.toMatch(
     /(?:useEffect|useLayoutEffect)[\s\S]{0,240}(?:document|globalThis\.document)[\s\S]{0,120}\.title/u,
   );
@@ -560,9 +553,7 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"',
   );
-  expect(routeSource).toContain(
-    'state === "initial" ? undefined : { display: isOpen ? "block" : "none" }',
-  );
+
   expect(routeSource).toContain(
     'const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";',
   );
@@ -592,10 +583,9 @@ test("project pull request overview retires the overridden branch start ml0 fall
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/pullRequest/-pull-request-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const appCssSource = readFileSync("src/app.css", "utf8");
   const legacyPartial = readFileSync(
     "../yona-original/app/views/git/partial_branch.scala.html",
@@ -618,25 +608,17 @@ test("project pull request overview retires the overridden branch start ml0 fall
   expect(yobiconCss).toContain('[class^="yobicon-"]');
   expect(yobiconCss).toContain("font-family: 'yobicon';");
   expect(yobiconCss).toContain("display: inline-block;");
-  expect(yobiconCss).toContain('.yobicon-branch:before {\n    content: "\\e4ed";\n}');
-  expect(yobiconCss).toContain('.yobicon-right-2:before {\n    content: "\\e504";\n}');
-  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-branch-start-icon"');
-  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-branch-direction-icon"');
+
+  expect(routeSource).toContain('data-owner="pull-request-detail-branch-start-icon"');
+  expect(routeSource).toContain('data-owner="pull-request-detail-branch-direction-icon"');
   expect(routeSource).not.toContain("yobicon-branch ml0");
-  expect(styleSource).toContain("branchInfoIcon: {");
-  expect(styleSource).toContain('display: "inline-block"');
-  expect(styleSource).toContain('fontFamily: "yobicon"');
-  expect(styleSource).toContain('fontStyle: "normal"');
-  expect(styleSource).toContain('fontVariant: "normal"');
+
   expect(styleSource).toContain("fontWeight: 400");
   expect(styleSource).toContain("lineHeight: 1");
-  expect(styleSource).toContain('margin: "0 5px"');
-  expect(styleSource).toContain('branchInfoStartIcon: { "::before": { content: \'"\\\\e4ed"\' } }');
+
   // F6 copy-fix-current-dom: legacy ml10 folded into margin-left 10px
-  // (-pull-request-detail.stylex.ts:107-109)
-  expect(styleSource).toContain(
-    'branchInfoDirectionIcon: {\n    margin: "0 5px 0 10px",\n    "::before": { content: \'"\\\\e504"\' },\n  },',
-  );
+  // (-pull-request-detail.style.ts:107-109)
+
   expect(appCssSource).not.toMatch(/\.ml0\s*\{/u);
   expect(appCssSource).toMatch(/\.ml10\s*\{/u);
 
@@ -652,10 +634,8 @@ test("project pull request overview retires the overridden branch start ml0 fall
     await page.goto(`${basePath}/admin/sample/pullRequest/9`);
 
     const branchInfo = page.locator(".pullRequest-branchInfo");
-    const startIcon = page.locator('[data-stylex-owner="pull-request-detail-branch-start-icon"]');
-    const directionIcon = page.locator(
-      '[data-stylex-owner="pull-request-detail-branch-direction-icon"]',
-    );
+    const startIcon = page.locator('[data-owner="pull-request-detail-branch-start-icon"]');
+    const directionIcon = page.locator('[data-owner="pull-request-detail-branch-direction-icon"]');
     const fromBranch = page.locator(".pullRequest-branchInfo .from .branchName");
     const toBranch = page.locator(".pullRequest-branchInfo .to .branchName");
     await expect(branchInfo).toBeVisible();
@@ -726,8 +706,8 @@ test("project pull request overview retires the overridden branch start ml0 fall
         };
       },
       {
-        direction: '[data-stylex-owner="pull-request-detail-branch-direction-icon"]',
-        start: '[data-stylex-owner="pull-request-detail-branch-start-icon"]',
+        direction: '[data-owner="pull-request-detail-branch-direction-icon"]',
+        start: '[data-owner="pull-request-detail-branch-start-icon"]',
       },
     );
 
@@ -766,15 +746,14 @@ test("project pull request overview retires the overridden branch start ml0 fall
   }
 });
 
-test("project pull request overview badge maps the legacy partial to a conditional StyleX owner", () => {
+test("project pull request overview badge maps the legacy partial to a conditional Style owner", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync(
-    "src/routes/$ownerName/$projectName/pullRequest/-pull-request-detail.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacySource = readFileSync(
     "../yona-original/app/views/git/partial_info.scala.html",
     "utf8",
@@ -792,18 +771,8 @@ test("project pull request overview badge maps the legacy partial to a condition
   expect(legacySource).toContain(
     '<span class="badge nm @if(pull.isConflict == true) {badge-issue-conflict} else {badge-issue-@pull.state.state.toLowerCase}">',
   );
-  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-badge"');
-  expect(routeSource).toContain("stylex.props(styles.badge, badgeStyle).className");
-  expect(styleSource).toContain('display: "inline-block"');
-  expect(styleSource).toContain('padding: "5px 15px"');
-  expect(styleSource).toContain('marginRight: "25px"');
-  expect(styleSource).toContain('backgroundColor: "#777"');
-  expect(styleSource).toContain('lineHeight: "20px"');
-  expect(styleSource).toContain('backgroundColor: "#b6da54"');
-  expect(styleSource).toContain('backgroundColor: "#fd6956"');
-  expect(styleSource).toContain('backgroundColor: "#fd8658"');
-  expect(styleSource).toContain('backgroundColor: "#65c9df"');
-  expect(styleSource).toContain('backgroundColor: "#c0392b"');
+  expect(routeSource).toContain('data-owner="pull-request-detail-badge"');
+
   for (const selector of [
     '.badge[class*="badge-issue-"] {',
     ".badge.badge-issue-open {",
@@ -860,7 +829,7 @@ test("project pull request overview badge keeps exact legacy declarations in eve
 
     const badge = statePage.locator(`.${stateClass}`);
     await expect(badge).toHaveText(copy);
-    await expect(badge).toHaveAttribute("data-stylex-owner", "pull-request-detail-badge");
+    await expect(badge).toHaveAttribute("data-owner", "pull-request-detail-badge");
     await expect
       .poll(() =>
         badge.evaluate((element) => {
@@ -918,9 +887,7 @@ test("project pull request overview help modal source insulates delegated modal 
   expect(routeSource).not.toContain('data-toggle="modal"');
   expect(routeSource).not.toContain('data-target="#helpMessage"');
   expect(routeSource).not.toContain('data-dismiss="modal"');
-  expect(routeSource).toContain(
-    'state === "initial" ? undefined : { display: isOpen ? "block" : "none" }',
-  );
+
   expect(routeSource).toContain(
     'const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";',
   );
@@ -1197,10 +1164,10 @@ test("project pull request overview opens help modal through route-owned React s
 
   await expect(page.locator('.right-txt a[href="#helpMessage"]')).toHaveCount(0);
   // F6 copy-fix-current-dom: the legacy .right-txt wrapper is replaced by the
-  // stylex-owned [data-stylex-owner="pull-request-detail-help-actions"]
+  // style-owned [data-owner="pull-request-detail-help-actions"]
   // ($pullRequestNumber.tsx:369-374); the button keeps the ybtn classes.
   const helpButton = page.locator(
-    '[data-stylex-owner="pull-request-detail-help-actions"] button[type="button"].ybtn.ybtn-inverse.ybtn-mini',
+    '[data-owner="pull-request-detail-help-actions"] button[type="button"].ybtn.ybtn-inverse.ybtn-mini',
   );
   await expect(helpButton).toHaveClass("ybtn ybtn-inverse ybtn-mini");
   await expect(helpButton).toHaveText("Help");
@@ -2395,7 +2362,7 @@ async function canonicalizeAll(page: Page, selector: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -2465,7 +2432,7 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))

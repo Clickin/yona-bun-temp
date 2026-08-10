@@ -1,8 +1,7 @@
-import * as stylex from "@stylexjs/stylex";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import type { FormEvent, HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
+import type { CSSProperties, FormEvent, HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
 import {
@@ -16,7 +15,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { styles as issueStyles } from "./-issues.stylex";
 
 type UserIssuesSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
@@ -250,17 +248,13 @@ function UserIssuesBody({
   };
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="user-issues-page">
-      <div
-        {...stylex.props(issueStyles.page)}
-        className={`page-wrap ${stylex.props(issueStyles.page).className}`}
-        data-stylex-owner="user-issues-shell"
-      >
+    <div className="page-wrap-outer" data-owner="user-issues-page">
+      <div className="page-wrap" data-owner="user-issues-shell">
         <MySeriesMenuTabs
           hideDefaultLoginPageButton={isDefaultLoginPageSet}
           onSetDefaultLoginPage={(path) => setDefaultLoginPage.mutate(path)}
         />
-        <div className="row-fluid issue-list-wrap" data-stylex-owner="user-issues-list-shell">
+        <div className="row-fluid issue-list-wrap" data-owner="user-issues-list-shell">
           <div className="left-menu span2 span-hard-wrap">
             <div className="inner advanced">
               <QuickSearch
@@ -285,28 +279,21 @@ function UserIssuesBody({
                 <input type="hidden" name="sharerId" value={activeFilterIds.sharerId} />
                 <input type="hidden" name="favoriteId" value={activeFilterIds.favoriteId} />
                 <div
-                  {...stylex.props(issueStyles.searchWrapper)}
-                  className={`search myissues-search-input ${stylex.props(issueStyles.searchWrapper).className}`}
-                  data-stylex-owner="user-issues-search-wrapper"
+                  className="search myissues-search-input"
+                  data-owner="user-issues-search-wrapper"
                 >
-                  <div
-                    {...stylex.props(issueStyles.searchBar)}
-                    className={`search-bar ${stylex.props(issueStyles.searchBar).className}`}
-                    data-stylex-owner="user-issues-search-bar"
-                  >
+                  <div className="search-bar" data-owner="user-issues-search-bar">
                     <input
                       name="filter"
-                      {...stylex.props(issueStyles.searchInput)}
-                      className={`textbox full ${stylex.props(issueStyles.searchInput).className}`}
-                      data-stylex-owner="user-issues-search-input"
+                      className="textbox full"
+                      data-owner="user-issues-search-input"
                       type="text"
                       placeholder={t("issue.search")}
                       defaultValue={search.query}
                     />
                     <button
-                      {...stylex.props(issueStyles.searchButton)}
-                      className={`search-btn ${stylex.props(issueStyles.searchButton).className}`}
-                      data-stylex-owner="user-issues-search-button"
+                      className="search-btn"
+                      data-owner="user-issues-search-button"
                       type="submit"
                     >
                       <i className="yobicon-search"></i>
@@ -317,11 +304,7 @@ function UserIssuesBody({
             </div>
           </div>
           <div className="span10 span-hard-wrap" id="span10">
-            <ul
-              {...stylex.props(issueStyles.tabs)}
-              className={`nav nav-tabs nm ${stylex.props(issueStyles.tabs).className}`}
-              data-stylex-owner="user-issues-tabs"
-            >
+            <ul className="nav nav-tabs nm" data-owner="user-issues-tabs">
               <StateTab
                 active={search.state === "open"}
                 count={issues.openIssueCount}
@@ -345,11 +328,7 @@ function UserIssuesBody({
                   }}
                 />
               </li>
-              <li
-                {...stylex.props(issueStyles.controlsListItem)}
-                className={`show-subtasks-li ${stylex.props(issueStyles.controlsListItem).className}`}
-                data-stylex-owner="user-issues-subtasks-list-item"
-              >
+              <li className="show-subtasks-li" data-owner="user-issues-subtasks-list-item">
                 <ShowSubtasksCheckbox
                   checked={showSubtasksAlways}
                   onToggle={(checked) => {
@@ -370,7 +349,10 @@ function UserIssuesBody({
                 ) : (
                   <div className="filter-wrap small-heights"></div>
                 )}
-                <ul className="post-list-wrap my-issues" data-stylex-owner="user-issues-items">
+                <ul
+                  className={`post-list-wrap my-issues${useTwoColumnMode ? " is-two-column" : ""}`}
+                  data-owner="user-issues-items"
+                >
                   {issues.items.map((issue) => (
                     <UserIssueItem
                       basePath={basePath}
@@ -380,7 +362,6 @@ function UserIssuesBody({
                       }
                       search={search}
                       showSubtasksAlways={showSubtasksAlways}
-                      useTwoColumnMode={useTwoColumnMode}
                     />
                   ))}
                 </ul>
@@ -394,22 +375,21 @@ function UserIssuesBody({
                 />
               </>
             ) : (
-              <div
-                {...stylex.props(issueStyles.errorWrap)}
-                className={`${stylex.props(issueStyles.errorWrap).className} error-wrap`}
-                data-stylex-owner="user-issues-empty-error-wrap"
-              >
+              <div className="error-wrap" data-owner="user-issues-empty-error-wrap">
                 <i
-                  {...stylex.props(issueStyles.errorIcon(legacySpriteUrl))}
-                  className={`${stylex.props(issueStyles.errorIcon(legacySpriteUrl)).className} ico ico-err1`}
-                  data-stylex-owner="user-issues-empty-error-icon"
+                  style={{
+                    backgroundImage: `url(${legacySpriteUrl})`,
+                    backgroundPosition: "-5px -160px",
+                    backgroundRepeat: "no-repeat",
+                    display: "inline-block",
+                    height: "82px",
+                    verticalAlign: "middle",
+                    width: "62px",
+                  }}
+                  className="ico ico-err1"
+                  data-owner="user-issues-empty-error-icon"
                 ></i>
-                <p
-                  {...stylex.props(issueStyles.errorMessage)}
-                  data-stylex-owner="user-issues-empty-error-message"
-                >
-                  {t("issue.is.empty")}
-                </p>
+                <p data-owner="user-issues-empty-error-message">{t("issue.is.empty")}</p>
               </div>
             )}
           </div>
@@ -438,15 +418,12 @@ function IssuePagination({
 
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
-  const paginationRoot = stylex.props(issueStyles.pagination);
-  const paginationPageNums = stylex.props(issueStyles.paginationPageNums);
-  const paginationPageNum = stylex.props(issueStyles.paginationPageNum);
-  const paginationIconPageNum = stylex.props(issueStyles.paginationIconPageNum);
-  const paginationIcon = stylex.props(issueStyles.paginationIcon(`url(${legacySpriteUrl})`));
-  const paginationInput = stylex.props(
-    issueStyles.paginationInput,
-    issueStyles.paginationNoSpinner,
-  );
+  const paginationIconStyle = {
+    backgroundImage: `url(${legacySpriteUrl})`,
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    verticalAlign: "middle",
+  } as CSSProperties;
   const pageRoutePath = (pageNum: number) => userIssuesRoutePath({ ...search, pageNum });
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
@@ -464,22 +441,13 @@ function IssuePagination({
 
   return (
     <div
-      {...paginationRoot}
       id="pagination"
-      className={`${paginationRoot.className} page-navigation-wrap`}
-      data-stylex-owner="user-issues-pagination"
+      className="page-navigation-wrap"
+      data-owner="user-issues-pagination"
       data-total={totalPages}
     >
-      <ul
-        {...paginationPageNums}
-        className={`${paginationPageNums.className} page-nums`}
-        data-stylex-owner="user-issues-pagination-page-nums"
-      >
-        <li
-          {...stylex.props(issueStyles.paginationPageNum, issueStyles.paginationIconPageNum)}
-          className={`${paginationPageNum.className} ${paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="user-issues-pagination-prev-page"
-        >
+      <ul className="page-nums" data-owner="user-issues-pagination-page-nums">
+        <li className="page-num ikon" data-owner="user-issues-pagination-prev-page">
           {hasPrev ? (
             <Link
               activeProps={{
@@ -490,52 +458,28 @@ function IssuePagination({
               to={pageRoutePath(currentPage - 1)}
             >
               <i
-                {...stylex.props(
-                  issueStyles.paginationIcon(`url(${legacySpriteUrl})`),
-                  issueStyles.paginationPrev,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(issueStyles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="user-issues-pagination-prev-icon"
+                style={paginationIconStyle}
+                className="ico btn-pg-prev"
+                data-owner="user-issues-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(issueStyles.paginationIconLabel)}
-                data-stylex-owner="user-issues-pagination-prev-label"
-              >
-                {t("button.prevPage")}
-              </span>
+              <span data-owner="user-issues-pagination-prev-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
-                {...stylex.props(
-                  issueStyles.paginationIcon(`url(${legacySpriteUrl})`),
-                  issueStyles.paginationPrev,
-                  issueStyles.paginationPrevOff,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(issueStyles.paginationPrev, issueStyles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="user-issues-pagination-prev-icon"
+                style={paginationIconStyle}
+                className="ico btn-pg-prev off"
+                data-owner="user-issues-pagination-prev-icon"
               ></i>
-              <span
-                {...stylex.props(
-                  issueStyles.paginationIconLabel,
-                  issueStyles.paginationIconLabelOff,
-                )}
-                className="off"
-                data-stylex-owner="user-issues-pagination-prev-label"
-              >
+              <span className="off" data-owner="user-issues-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...paginationPageNum}
-          className={`${paginationPageNum.className} page-num`}
-          data-stylex-owner="user-issues-pagination-input-page"
-        >
+        <li className="page-num" data-owner="user-issues-pagination-input-page">
           <input
-            {...paginationInput}
-            className={`${paginationInput.className} input-mini nospinner`}
+            className="input-mini nospinner"
             defaultValue={currentPage}
             key={currentPage}
             max={totalPages}
@@ -547,28 +491,16 @@ function IssuePagination({
               event.currentTarget.select();
             }}
             onKeyDown={handleInputKeyDown}
-            data-stylex-owner="user-issues-pagination-input"
+            data-owner="user-issues-pagination-input"
           />
         </li>
-        <li
-          {...stylex.props(issueStyles.paginationPageNum, issueStyles.paginationDelimiter)}
-          className={`${paginationPageNum.className} ${stylex.props(issueStyles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="user-issues-pagination-delimiter"
-        >
+        <li className="page-num delimiter" data-owner="user-issues-pagination-delimiter">
           /
         </li>
-        <li
-          {...paginationPageNum}
-          className={`${paginationPageNum.className} page-num`}
-          data-stylex-owner="user-issues-pagination-total"
-        >
+        <li className="page-num" data-owner="user-issues-pagination-total">
           {totalPages}
         </li>
-        <li
-          {...stylex.props(issueStyles.paginationPageNum, issueStyles.paginationIconPageNum)}
-          className={`${paginationPageNum.className} ${paginationIconPageNum.className} page-num ikon`}
-          data-stylex-owner="user-issues-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="user-issues-pagination-next-page">
           {hasNext ? (
             <Link
               activeProps={{
@@ -578,41 +510,22 @@ function IssuePagination({
               }}
               to={pageRoutePath(currentPage + 1)}
             >
-              <span
-                {...stylex.props(issueStyles.paginationIconLabel)}
-                data-stylex-owner="user-issues-pagination-next-label"
-              >
-                {t("button.nextPage")}
-              </span>
+              <span data-owner="user-issues-pagination-next-label">{t("button.nextPage")}</span>
               <i
-                {...stylex.props(
-                  issueStyles.paginationIcon(`url(${legacySpriteUrl})`),
-                  issueStyles.paginationNext,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(issueStyles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="user-issues-pagination-next-icon"
+                style={paginationIconStyle}
+                className="ico btn-pg-next"
+                data-owner="user-issues-pagination-next-icon"
               ></i>
             </Link>
           ) : (
             <>
-              <span
-                {...stylex.props(
-                  issueStyles.paginationIconLabel,
-                  issueStyles.paginationIconLabelOff,
-                )}
-                className="off"
-                data-stylex-owner="user-issues-pagination-next-label"
-              >
+              <span className="off" data-owner="user-issues-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  issueStyles.paginationIcon(`url(${legacySpriteUrl})`),
-                  issueStyles.paginationNext,
-                  issueStyles.paginationNextOff,
-                )}
-                className={`${paginationIcon.className} ${stylex.props(issueStyles.paginationNext, issueStyles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="user-issues-pagination-next-icon"
+                style={paginationIconStyle}
+                className="ico btn-pg-next off"
+                data-owner="user-issues-pagination-next-icon"
               ></i>
             </>
           )}
@@ -655,9 +568,6 @@ function MySeriesMenuTabs({
   const defaultLoginPagePopoverTimer = useRef<number | null>(null);
   const defaultLoginPageTitle = t("button.setDefaultLoginPage");
   const defaultLoginPageContent = t("button.setDefaultLoginPage.desc");
-  const defaultLoginPageHiddenProps = hideDefaultLoginPageButton
-    ? stylex.props(issueStyles.defaultLoginPageHidden)
-    : undefined;
   const legacyTabActiveOptions = {
     exact: true,
     explicitUndefined: true,
@@ -726,17 +636,13 @@ function MySeriesMenuTabs({
           {t("user.files")}
         </Link>
       </li>
-      <li
-        {...stylex.props(issueStyles.relativeAnchor)}
-        data-stylex-owner="user-issues-default-login-anchor"
-      >
+      <li data-owner="user-issues-default-login-anchor">
         <button
           type="button"
           id="setDefaultLoginPage"
           title={defaultLoginPageTitle}
-          {...defaultLoginPageHiddenProps}
-          className={`ybtn hide-in-mobile ${defaultLoginPageHiddenProps?.className ?? ""}`.trim()}
-          data-stylex-owner="user-issues-default-login-button"
+          className={`ybtn hide-in-mobile${hideDefaultLoginPageButton ? " hide" : ""}`.trim()}
+          data-owner="user-issues-default-login-button"
           onBlur={hideDefaultLoginPagePopover}
           onClick={() => {
             hideDefaultLoginPagePopover();
@@ -749,10 +655,7 @@ function MySeriesMenuTabs({
           {defaultLoginPageTitle}
         </button>
         {isDefaultLoginPagePopoverVisible && !hideDefaultLoginPageButton ? (
-          <div
-            {...stylex.props(issueStyles.defaultLoginPagePopover)}
-            data-stylex-owner="user-issues-default-login-popover"
-          >
+          <div data-owner="user-issues-default-login-popover">
             <div className="popover bottom" role="tooltip">
               <div className="arrow" />
               <h3 className="popover-title">{defaultLoginPageTitle}</h3>
@@ -906,11 +809,7 @@ function IssueFilters({
 
   return (
     <div className="filter-wrap small-heights">
-      <div
-        {...stylex.props(issueStyles.filters)}
-        className={`filters pull-right ${stylex.props(issueStyles.filters).className}`}
-        data-stylex-owner="user-issues-filters"
-      >
+      <div className="filters pull-right" data-owner="user-issues-filters">
         {filters.map((filter) => {
           const active = orderBy === filter.field;
           const nextDir = active && orderDir === "desc" ? "asc" : "desc";
@@ -944,13 +843,11 @@ function UserIssueItem({
   issue,
   search,
   showSubtasksAlways,
-  useTwoColumnMode,
 }: {
   basePath: string;
   issue: RestIssueListItem;
   search: UserIssuesSearch;
   showSubtasksAlways: boolean;
-  useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
   const issueRoutePath = `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`;
@@ -972,22 +869,16 @@ function UserIssueItem({
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId && issue.assigneeLabel;
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const childListVisible = showSubtasksAlways || isChildListVisible;
   const legacyIssueRowAttrs = {
     className: "post-item title",
     href: issueHref,
     id: `issue-item-${issue.id}`,
   } satisfies LegacyIssueRowAttrs;
-  const rowStyleProps = stylex.props(
-    useTwoColumnMode ? issueStyles.issueRowTwoColumn : null,
-    isHovered ? issueStyles.issueRowHovered : null,
-  );
 
   return (
     <li
       {...legacyIssueRowAttrs}
-      className={`${legacyIssueRowAttrs.className} ${rowStyleProps.className ?? ""}`.trim()}
       onClick={() => {
         setIsChildListVisible(true);
       }}
@@ -995,12 +886,6 @@ function UserIssueItem({
         if (event.key === "Enter" || event.key === " ") {
           setIsChildListVisible(true);
         }
-      }}
-      onMouseEnter={() => {
-        setIsHovered(true);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
       }}
     >
       <div className="span12 span-hard-wrap">
@@ -1016,25 +901,18 @@ function UserIssueItem({
           <span className="title-cell">
             {issueWeight > 0 ? (
               <span className="weight-up-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
-                <i
-                  {...stylex.props(issueStyles.weightUpArrow)}
-                  className={`yobicon-angle-circled-up ${stylex.props(issueStyles.weightUpArrow).className}`}
-                ></i>
+                <i className="yobicon-angle-circled-up"></i>
               </span>
             ) : null}
             {issueWeight < 0 ? (
               <span className="weight-down-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
-                <i
-                  {...stylex.props(issueStyles.weightDownArrow)}
-                  className={`yobicon-angle-circled-down ${stylex.props(issueStyles.weightDownArrow).className}`}
-                ></i>
+                <i className="yobicon-angle-circled-down"></i>
               </span>
             ) : null}
             <Link
               to={issueRoutePath}
-              {...stylex.props(issueStyles.issueTitle)}
-              className={`title ${stylex.props(issueStyles.issueTitle).className}`}
-              data-stylex-owner="user-issues-issue-title"
+              className="title"
+              data-owner="user-issues-issue-title"
               onClick={(event) => {
                 event.stopPropagation();
               }}
@@ -1054,21 +932,16 @@ function UserIssueItem({
                 className={`label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 color={label.color}
                 labelId={label.id}
-                data-stylex-owner="user-issues-issue-label-background"
+                data-owner="user-issues-issue-label-background"
                 key={String(label.id)}
               >
                 {label.name}
               </IssueLabel>
             ))}
             <div
-              {...(childListVisible ? stylex.props(issueStyles.childIssueListVisible) : undefined)}
-              className={`child-issue-list hide ${
-                childListVisible
-                  ? (stylex.props(issueStyles.childIssueListVisible).className ?? "")
-                  : ""
-              }`.trim()}
+              className="child-issue-list hide"
               style={childListVisible ? { display: "block" } : undefined}
-              data-stylex-owner="user-issues-child-list-visible"
+              data-owner="user-issues-child-list-visible"
             >
               <UserIssueChildRows issue={issue} />
             </div>
@@ -1112,9 +985,9 @@ function UserIssueItem({
             ) : null}
             {issue.dueDateLabel ? (
               <span
-                className={`pull-right ${stylex.props(issueStyles.dueDate).className}${issue.dueDateOverdue ? " overdue" : ""}`}
+                className={`pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
                 title={`Due date: ${issue.dueDateLabel}`}
-                data-stylex-owner="user-issues-due-date"
+                data-owner="user-issues-due-date"
               >
                 <i className="yobicon-clock2"></i>
                 {issue.state === "open" && issue.dueDateOverdue
@@ -1126,10 +999,7 @@ function UserIssueItem({
         </div>
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
-            <div
-              className={`${stylex.props(issueStyles.assigneeRail).className} mt5 hide-in-mobile`}
-              data-stylex-owner="user-issues-assignee-rail"
-            >
+            <div className="mt5 hide-in-mobile" data-owner="user-issues-assignee-rail">
               <Link to={assigneeRoutePath} className="avatar-wrap assinee" title={assigneeTitle}>
                 <img
                   src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
@@ -1224,31 +1094,18 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
       {childTotalCount ? (
         <>
           <div
-            {...stylex.props(
-              issueStyles.subtaskProgress,
-              percentage === 100
-                ? issueStyles.subtaskProgressDone
-                : issueStyles.subtaskProgressOpen,
-            )}
             className={`subtask-progress upload-progress ${
               percentage === 100 ? "done-outline" : "red-outline"
-            } ${stylex.props(issueStyles.subtaskProgress, percentage === 100 ? issueStyles.subtaskProgressDone : issueStyles.subtaskProgressOpen).className}`}
+            }`}
           >
             <div
-              {...stylex.props(
-                issueStyles.subtaskProgressBar,
-                percentage === 100
-                  ? issueStyles.subtaskProgressDoneBar
-                  : issueStyles.subtaskProgressOpenBar,
-              )}
-              className={`${stylex.props(issueStyles.subtaskProgressBar, percentage === 100 ? issueStyles.subtaskProgressDoneBar : issueStyles.subtaskProgressOpenBar).className} bar ${percentage === 100 ? "done" : "red"}`}
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
               style={{ width: `${percentage}%` }}
               title="Subtask"
             ></div>
           </div>
           <span
-            {...stylex.props(issueStyles.subtaskProgressRatio)}
-            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""} ${stylex.props(issueStyles.subtaskProgressRatio).className}`}
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {childTotalCount}
@@ -1320,7 +1177,7 @@ function UserIssueChildRow({
           data-category-id={String(label.categoryId ?? "")}
           labelId={String(label.id)}
           key={String(label.id)}
-          data-stylex-owner="user-issues-child-issue-label-background"
+          data-owner="user-issues-child-issue-label-background"
           to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${label.id}` as "/"}
         >
           {label.name}
@@ -1451,18 +1308,6 @@ function TwoColumnModeCheckbox({
   const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.two.column.mode");
   const popoverContent = t("common.two.column.mode.desc");
-  const [isControlHovered, setIsControlHovered] = useState(false);
-  const borderProps = stylex.props(
-    issueStyles.modeControlBorder,
-    isControlHovered ? issueStyles.modeControlBorderHover : null,
-    checked ? issueStyles.modeControlBorderSelected : null,
-  );
-  const textProps = stylex.props(
-    issueStyles.modeControlText,
-    isControlHovered ? issueStyles.modeControlTextHover : null,
-    checked ? issueStyles.modeControlTextSelected : null,
-  );
-  const anchorProps = stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl);
   const clearPopoverTimer = () => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1488,48 +1333,33 @@ function TwoColumnModeCheckbox({
     <div
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...anchorProps}
-      className={`two-column-icon mr10 hide-in-mobile ${anchorProps.className ?? ""}`.trim()}
-      data-stylex-owner="user-issues-two-column-anchor"
+      className="two-column-icon mr10 hide-in-mobile"
+      data-owner="user-issues-two-column-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label
-        {...stylex.props(issueStyles.modeControlLabel)}
-        className={`checkbox ${stylex.props(issueStyles.modeControlLabel).className}`}
-      >
+      <label className="checkbox">
         <div
-          {...borderProps}
-          className={`two-column-icon-border${checked ? " two-column-icon-selected" : ""} ${borderProps.className ?? ""}`.trim()}
-          data-stylex-owner="user-issues-two-column-border"
-          onMouseEnter={() => setIsControlHovered(true)}
-          onMouseLeave={() => setIsControlHovered(false)}
+          className={`two-column-icon-border${checked ? " two-column-icon-selected" : ""}`}
+          data-owner="user-issues-two-column-border"
         >
           <input
             checked={checked}
             id="two-column-mode"
             type="checkbox"
-            {...stylex.props(issueStyles.modeControlInput)}
-            data-stylex-owner="user-issues-two-column-input"
+            data-owner="user-issues-two-column-input"
             onChange={(event) => onToggle(event.currentTarget.checked)}
           />
-          <span
-            {...textProps}
-            className={`two-column-mode-text ${textProps.className ?? ""}`.trim()}
-            data-stylex-owner="user-issues-two-column-text"
-          >
+          <span className="two-column-mode-text" data-owner="user-issues-two-column-text">
             {t("common.two.column.view")}
           </span>
         </div>
       </label>
       {isPopoverVisible ? (
-        <div
-          {...stylex.props(issueStyles.twoColumnPopover)}
-          data-stylex-owner="user-issues-two-column-popover"
-        >
+        <div data-owner="user-issues-two-column-popover">
           <div className="popover top" role="tooltip">
             <div className="arrow" />
             <h3 className="popover-title">{popoverTitle}</h3>
@@ -1555,18 +1385,6 @@ function ShowSubtasksCheckbox({
   const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
-  const [isControlHovered, setIsControlHovered] = useState(false);
-  const borderProps = stylex.props(
-    issueStyles.modeControlBorder,
-    isControlHovered ? issueStyles.modeControlBorderHover : null,
-    checked ? issueStyles.modeControlBorderSelected : null,
-  );
-  const textProps = stylex.props(
-    issueStyles.modeControlText,
-    isControlHovered ? issueStyles.modeControlTextHover : null,
-    checked ? issueStyles.modeControlTextSelected : null,
-  );
-  const anchorProps = stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl);
   const clearPopoverTimer = () => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1592,48 +1410,33 @@ function ShowSubtasksCheckbox({
     <div
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...anchorProps}
-      className={`show-subtasks mr10 ${anchorProps.className ?? ""}`.trim()}
-      data-stylex-owner="user-issues-subtasks-anchor"
+      className="show-subtasks mr10"
+      data-owner="user-issues-subtasks-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label
-        {...stylex.props(issueStyles.modeControlLabel)}
-        className={`checkbox ${stylex.props(issueStyles.modeControlLabel).className}`}
-      >
+      <label className="checkbox">
         <div
-          {...borderProps}
-          className={`show-subtasks-button-border${checked ? " show-subtasks-selected" : ""} ${borderProps.className ?? ""}`.trim()}
-          data-stylex-owner="user-issues-subtasks-border"
-          onMouseEnter={() => setIsControlHovered(true)}
-          onMouseLeave={() => setIsControlHovered(false)}
+          className={`show-subtasks-button-border${checked ? " show-subtasks-selected" : ""}`}
+          data-owner="user-issues-subtasks-border"
         >
           <input
             checked={checked}
             id="toggle-show-subtasks"
             type="checkbox"
-            {...stylex.props(issueStyles.modeControlInput)}
-            data-stylex-owner="user-issues-subtasks-input"
+            data-owner="user-issues-subtasks-input"
             onChange={(event) => onToggle(event.currentTarget.checked)}
           />
-          <span
-            {...textProps}
-            className={`show-subtasks-text ${textProps.className ?? ""}`.trim()}
-            data-stylex-owner="user-issues-subtasks-text"
-          >
+          <span className="show-subtasks-text" data-owner="user-issues-subtasks-text">
             {t("common.show.subtasks")}
           </span>
         </div>
       </label>
       {isPopoverVisible ? (
-        <div
-          {...stylex.props(issueStyles.showSubtasksPopover)}
-          data-stylex-owner="user-issues-show-subtasks-popover"
-        >
+        <div data-owner="user-issues-show-subtasks-popover">
           <div className="popover top" role="tooltip">
             <div className="arrow" />
             <h3 className="popover-title">{popoverTitle}</h3>

@@ -132,11 +132,8 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await expect(fileRow).toHaveClass(/attachment-file-detail row hover/);
   await page.locator(".attachment-files-header").hover();
   await expect(fileRow).toHaveClass(/attachment-file-detail row/);
-  await expect(page.locator('[data-stylex-owner="user-files-search-input"]')).toHaveAttribute(
-    "value",
-    "",
-  );
-  await expect(page.locator('[data-stylex-owner="user-files-search-input"]')).toHaveValue("");
+  await expect(page.locator('[data-owner="user-files-search-input"]')).toHaveAttribute("value", "");
+  await expect(page.locator('[data-owner="user-files-search-input"]')).toHaveValue("");
 
   const previewLink = page.locator(".attachment-file-detail .file-preview > a");
   await expect(previewLink).toHaveAttribute("href", `${basePath}/files/7`);
@@ -265,13 +262,13 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
-  await page.locator('[data-stylex-owner="user-files-search-input"]').fill("fresh");
+  await page.locator('[data-owner="user-files-search-input"]').fill("fresh");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-search";
   });
-  await page.locator('[data-stylex-owner="user-files-search-action"]').click();
+  await page.locator('[data-owner="user-files-search-action"]').click();
   await expect(page).toHaveURL(`${basePath}/user/files?filter=fresh&pageNum=1`);
-  await expect(page.locator('[data-stylex-owner="user-files-search-input"]')).toHaveValue("");
+  await expect(page.locator('[data-owner="user-files-search-input"]')).toHaveValue("");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("files-search");
@@ -411,12 +408,12 @@ test("current-user files row uses href semantics for backend file URLs", () => {
 
 async function readUserFilesMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const search = document.querySelector<HTMLElement>('[data-stylex-owner="user-files-search"]');
+    const search = document.querySelector<HTMLElement>('[data-owner="user-files-search"]');
     const files = document.querySelector<HTMLElement>(".attachment-files");
     const firstRow = document.querySelector<HTMLElement>(".attachment-files .row");
-    const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const footer = document.querySelector<HTMLElement>("[data-owner=site-footer]");
     if (!gnbOuter || !pageWrapOuter || !search || !files || !firstRow || !footer) {
       throw new Error("Expected user files metric targets are missing.");
     }
@@ -482,18 +479,18 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string): string {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -536,7 +533,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .page-wrap-outer, [data-owner=site-footer]",
       ),
     )
       .map((root) => visit(root))

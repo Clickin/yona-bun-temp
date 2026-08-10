@@ -1,6 +1,5 @@
 import { useState, type ChangeEvent, type MouseEvent } from "react";
 import { CountBadge } from "../../../components/count-badge";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -16,176 +15,6 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { projectTransferColors, projectTransferConditionalStyles } from "./-transfer.stylex";
-
-const styles = stylex.create({
-  bubble: {
-    backgroundColor: projectTransferColors.bubbleSurface,
-  },
-  row: {
-    color: projectTransferColors.descriptionText,
-  },
-  label: {
-    color: projectTransferColors.labelText,
-  },
-  description: {
-    color: projectTransferColors.descriptionText,
-  },
-  input: {
-    backgroundColor: projectTransferColors.inputSurface,
-    borderColor: projectTransferColors.inputBorder,
-    color: projectTransferColors.inputText,
-  },
-  notices: {
-    color: projectTransferColors.noticeText,
-  },
-  notice: {
-    color: projectTransferColors.noticeText,
-  },
-  checkbox: {
-    accentColor: projectTransferColors.checkboxAccent,
-  },
-  agreementLabel: {
-    // F7 app-fix: legacy label inherits body line-height 20px (bootstrap.css:180);
-    // app.css :root overrides to 18px — pin explicit 20px (ledger 524-525 pattern).
-    color: projectTransferColors.agreementText,
-    lineHeight: "20px",
-  },
-  actionBox: {
-    padding: { default: "20px 0 12px", "@media (max-width: 720px)": "10px 0" },
-    textAlign: "center",
-  },
-  action: {
-    backgroundColor: {
-      default: projectTransferColors.actionSurface,
-      ":hover": projectTransferColors.actionHoverSurface,
-      ":focus": projectTransferColors.actionHoverSurface,
-      ":active": projectTransferColors.actionHoverSurface,
-    },
-    borderColor: {
-      default: projectTransferColors.actionBorder,
-      ":hover": projectTransferColors.actionHoverBorder,
-      ":focus": projectTransferColors.actionHoverBorder,
-      ":active": projectTransferColors.actionHoverBorder,
-    },
-    borderRadius: "3px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxShadow: projectTransferColors.actionShadow,
-    color: {
-      default: projectTransferColors.actionText,
-      ":hover": projectTransferColors.actionHoverText,
-      ":focus": projectTransferColors.actionHoverText,
-      ":active": projectTransferColors.actionHoverText,
-    },
-    cursor: "pointer",
-    display: "inline-block",
-    fontSize: "14px",
-    fontWeight: "400",
-    lineHeight: "20px",
-    margin: "0 0 0 .3em",
-    outline: "0 none",
-    padding: "4px 12px",
-    position: "relative",
-    textAlign: "center",
-    textDecoration: { default: "none", ":hover": "none", ":focus": "none", ":active": "none" },
-    transition: "all 0.3s ease",
-    verticalAlign: "middle",
-    whiteSpace: "nowrap",
-    zIndex: "2",
-  },
-  firstAction: { marginLeft: "0" },
-  dangerAction: {
-    backgroundColor: {
-      default: projectTransferColors.dangerSurface,
-      ":hover": projectTransferColors.dangerBorder,
-      ":focus": projectTransferColors.dangerBorder,
-      ":active": projectTransferColors.dangerBorder,
-    },
-    borderColor: {
-      default: projectTransferColors.dangerBorder,
-      ":hover": projectTransferColors.dangerBorder,
-      ":focus": projectTransferColors.dangerBorder,
-      ":active": projectTransferColors.dangerBorder,
-    },
-    color: {
-      default: projectTransferColors.primaryText,
-      ":hover": projectTransferColors.primaryText,
-      ":focus": projectTransferColors.primaryText,
-      ":active": projectTransferColors.primaryText,
-    },
-  },
-  modal: {
-    backgroundColor: projectTransferColors.modalSurface,
-    borderColor: projectTransferColors.modalBorder,
-    borderRadius: "6px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    boxShadow: projectTransferColors.modalShadow,
-    color: projectTransferColors.modalText,
-    left: { default: "50%", "@media (max-width: 720px)": "0" },
-    marginLeft: { default: "-280px", "@media (max-width: 720px)": "0" },
-    outline: "none",
-    position: "fixed",
-    top: "10%",
-    width: { default: "560px", "@media (max-width: 720px)": "100%" },
-    zIndex: "1050",
-  },
-  modalClosed: { display: "none" },
-  modalOpen: { display: "block" },
-  header: {
-    borderBottomColor: projectTransferColors.footerBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    padding: "9px 15px",
-  },
-  close: {
-    background: "transparent",
-    border: "0",
-    color: projectTransferColors.backdrop,
-    cursor: "pointer",
-    float: "right",
-    fontSize: "20px",
-    fontWeight: "700",
-    lineHeight: "20px",
-    marginTop: "2px",
-    opacity: { default: "0.2", ":hover": "0.4", ":focus": "0.4" },
-    padding: "0",
-    textShadow: projectTransferColors.closeTextShadow,
-  },
-  heading: { fontSize: "24.5px", fontWeight: "700", lineHeight: "30px", margin: "0" },
-  body: { maxHeight: "400px", overflowY: "auto", padding: "15px", position: "relative" },
-  footer: {
-    backgroundColor: projectTransferColors.footerSurface,
-    borderRadius: "0 0 6px 6px",
-    borderTopColor: projectTransferColors.footerBorder,
-    borderTopStyle: "solid",
-    borderTopWidth: "1px",
-    boxShadow: projectTransferColors.footerShadow,
-    padding: "14px 15px 15px",
-    textAlign: "right",
-  },
-  backdrop: {
-    backgroundColor: projectTransferColors.backdrop,
-    bottom: "0",
-    left: "0",
-    opacity: "0.5",
-    position: "fixed",
-    right: "0",
-    top: "0",
-    zIndex: "1040",
-  },
-});
-
-const actionBoxStyleProps = stylex.props(styles.actionBox);
-const dangerActionStyleProps = stylex.props(styles.action, styles.firstAction, styles.dangerAction);
-const defaultActionStyleProps = stylex.props(styles.action);
-const headerStyleProps = stylex.props(styles.header);
-const closeStyleProps = stylex.props(styles.close);
-const headingStyleProps = stylex.props(styles.heading);
-const bodyStyleProps = stylex.props(styles.body);
-const footerStyleProps = stylex.props(styles.footer);
-const backdropStyleProps = stylex.props(styles.backdrop);
 
 const legacyLinkActiveOptions = {
   exact: true,
@@ -383,36 +212,19 @@ function ProjectTransferBody({
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
-          <div
-            {...stylex.props(styles.bubble)}
-            className={`${stylex.props(styles.bubble).className} bubble-wrap gray wp`}
-            data-stylex-owner="project-transfer-bubble"
-          >
-            <div
-              {...stylex.props(styles.row)}
-              className={`${stylex.props(styles.row).className} row-fluid`}
-              data-stylex-owner="project-transfer-owner-row"
-            >
-              <div
-                {...stylex.props(styles.label)}
-                className={`${stylex.props(styles.label).className} cu-label`}
-                data-stylex-owner="project-transfer-owner-label"
-              >
+          <div className="bubble-wrap gray wp" data-owner="project-transfer-bubble">
+            <div className="row-fluid" data-owner="project-transfer-owner-row">
+              <div className="cu-label" data-owner="project-transfer-owner-label">
                 {t("project.transfer.new.owner")}
               </div>{" "}
-              <div
-                {...stylex.props(styles.description)}
-                className={`${stylex.props(styles.description).className} cu-desc`}
-                data-stylex-owner="project-transfer-owner-description"
-              >
+              <div className="cu-desc" data-owner="project-transfer-owner-description">
                 <p>
                   <input
-                    {...stylex.props(styles.input)}
                     type="text"
                     id="owner"
                     name="owner"
-                    className={stylex.props(styles.input).className}
-                    data-stylex-owner="project-transfer-owner-input"
+                    className=""
+                    data-owner="project-transfer-owner-input"
                     value={destination}
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       setDestination(event.target.value);
@@ -421,70 +233,33 @@ function ProjectTransferBody({
                 </p>
               </div>
             </div>
-            <div
-              {...stylex.props(styles.row)}
-              className={`${stylex.props(styles.row).className} row-fluid`}
-              data-stylex-owner="project-transfer-agreement-row"
-            >
-              <div
-                {...stylex.props(styles.label)}
-                className={`${stylex.props(styles.label).className} cu-label`}
-                data-stylex-owner="project-transfer-agreement-label"
-              >
+            <div className="row-fluid" data-owner="project-transfer-agreement-row">
+              <div className="cu-label" data-owner="project-transfer-agreement-label">
                 {t("project.transfer")}
               </div>{" "}
-              <div
-                {...stylex.props(styles.description)}
-                className={`${stylex.props(styles.description).className} cu-desc`}
-                data-stylex-owner="project-transfer-agreement-description"
-              >
-                <ul
-                  {...stylex.props(styles.notices)}
-                  className={stylex.props(styles.notices).className}
-                  data-stylex-owner="project-transfer-notices"
-                >
-                  <li
-                    {...stylex.props(styles.notice)}
-                    className={`${stylex.props(styles.notice).className} notice`}
-                    data-stylex-owner="project-transfer-notice"
-                  >
+              <div className="cu-desc" data-owner="project-transfer-agreement-description">
+                <ul className="" data-owner="project-transfer-notices">
+                  <li className="notice" data-owner="project-transfer-notice">
                     <strong>{t("project.transfer.description1")}</strong>
                   </li>
-                  <li
-                    {...stylex.props(styles.notice)}
-                    className={`${stylex.props(styles.notice).className} notice`}
-                    data-stylex-owner="project-transfer-notice"
-                  >
+                  <li className="notice" data-owner="project-transfer-notice">
                     <strong>{t("project.transfer.description2")}</strong>
                   </li>
-                  <li
-                    {...stylex.props(styles.notice)}
-                    className={`${stylex.props(styles.notice).className} notice`}
-                    data-stylex-owner="project-transfer-notice"
-                  >
+                  <li className="notice" data-owner="project-transfer-notice">
                     <strong>{t("project.transfer.description3")}</strong>
                   </li>
-                  <li
-                    {...stylex.props(styles.notice)}
-                    className={`${stylex.props(styles.notice).className} notice`}
-                    data-stylex-owner="project-transfer-notice"
-                  >
+                  <li className="notice" data-owner="project-transfer-notice">
                     <strong>{t("project.transfer.description4")}</strong>
                   </li>
-                  <li
-                    {...stylex.props(styles.notice)}
-                    className={`${stylex.props(styles.notice).className} notice`}
-                    data-stylex-owner="project-transfer-notice"
-                  >
+                  <li className="notice" data-owner="project-transfer-notice">
                     <strong>{t("project.transfer.description5")}</strong>
                   </li>
                 </ul>
                 <p>
                   <input
                     type="checkbox"
-                    {...stylex.props(styles.checkbox)}
-                    className={`${stylex.props(styles.checkbox).className} checkbox`}
-                    data-stylex-owner="project-transfer-checkbox"
+                    className="checkbox"
+                    data-owner="project-transfer-checkbox"
                     autoComplete="off"
                     id="accept"
                     checked={isTransferAccepted}
@@ -493,10 +268,9 @@ function ProjectTransferBody({
                     }}
                   />
                   <label
-                    {...stylex.props(styles.agreementLabel)}
                     htmlFor="accept"
-                    className={`${stylex.props(styles.agreementLabel).className} bg-checkbox label-agreement`}
-                    data-stylex-owner="project-transfer-agreement"
+                    className="bg-checkbox label-agreement"
+                    data-owner="project-transfer-agreement"
                   >
                     {t("project.transfer.accept")}
                   </label>
@@ -504,73 +278,46 @@ function ProjectTransferBody({
               </div>
             </div>
           </div>
-          <div
-            {...actionBoxStyleProps}
-            className={`${actionBoxStyleProps.className ?? ""} box-wrap bottom`.trim()}
-            data-stylex-owner="project-transfer-action-box"
-          >
+          <div className="box-wrap bottom" data-owner="project-transfer-action-box">
             <button
-              {...dangerActionStyleProps}
               type="button"
               id="btnTransfer"
-              className={`${dangerActionStyleProps.className ?? ""} ybtn ybtn-danger`.trim()}
-              data-stylex-owner="project-transfer-action"
+              className="ybtn ybtn-danger"
+              data-owner="project-transfer-action"
               onClick={openTransferModal}
             >
               <i className="yobicon-database"></i> {t("project.transfer.this")}
             </button>
           </div>
           <div
-            {...stylex.props(
-              styles.modal,
-              isTransferModalOpen ? styles.modalOpen : styles.modalClosed,
-            )}
-            className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide${isTransferModalOpen ? " in" : ""}`}
+            className={`modal hide${isTransferModalOpen ? " in" : ""}${isTransferModalOpen ? " is-visible" : " is-hidden"}`}
             id="alertTransfer"
-            data-stylex-owner="project-transfer-modal"
+            data-owner="project-transfer-modal"
             aria-hidden={!isTransferModalOpen}
           >
-            <div
-              {...headerStyleProps}
-              className={`${headerStyleProps.className} modal-header`}
-              data-stylex-owner="project-transfer-modal-header"
-            >
+            <div className="modal-header" data-owner="project-transfer-modal-header">
               <button
-                {...closeStyleProps}
                 type="button"
-                className={`${closeStyleProps.className} close`.trim()}
-                data-stylex-owner="project-transfer-modal-header"
+                className="close"
+                data-owner="project-transfer-modal-header"
                 onClick={dismissTransferModal}
               >
                 ×
               </button>
-              <h3
-                {...headingStyleProps}
-                className={headingStyleProps.className}
-                data-stylex-owner="project-transfer-modal-header"
-              >
+              <h3 className="" data-owner="project-transfer-modal-header">
                 {t("project.transfer.requestion")}
               </h3>
             </div>
-            <div
-              {...bodyStyleProps}
-              className={`${bodyStyleProps.className} modal-body`}
-              data-stylex-owner="project-transfer-modal-body"
-            >
+            <div className="modal-body" data-owner="project-transfer-modal-body">
               <p>{t("project.transfer.description")}</p>
               <p>{t("project.transfer.reaccept")}</p>
             </div>
-            <div
-              {...footerStyleProps}
-              className={`${footerStyleProps.className} modal-footer`}
-              data-stylex-owner="project-transfer-modal-footer"
-            >
+            <div className="modal-footer" data-owner="project-transfer-modal-footer">
               <button
-                {...dangerActionStyleProps}
                 id="btnTransferExec"
                 type="button"
-                className={`${dangerActionStyleProps.className} ybtn ybtn-danger`.trim()}
-                data-stylex-owner="project-transfer-modal-footer"
+                className="ybtn ybtn-danger"
+                data-owner="project-transfer-modal-footer"
                 disabled={hasTransferRequestStarted || transferMutation.isPending}
                 onClick={() => {
                   if (hasTransferRequestStarted || transferMutation.isPending) {
@@ -583,10 +330,9 @@ function ProjectTransferBody({
                 {t("button.yes")}
               </button>
               <button
-                {...defaultActionStyleProps}
                 type="button"
-                className={`${defaultActionStyleProps.className} ybtn`.trim()}
-                data-stylex-owner="project-transfer-modal-footer"
+                className="ybtn"
+                data-owner="project-transfer-modal-footer"
                 onClick={dismissTransferModal}
               >
                 {t("button.no")}
@@ -596,9 +342,8 @@ function ProjectTransferBody({
           {isTransferModalOpen ? (
             // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- legacy Bootstrap backdrop is a div and dismisses the transfer modal on click.
             <div
-              {...backdropStyleProps}
-              className={`${backdropStyleProps.className} modal-backdrop in`}
-              data-stylex-owner="project-transfer-modal-backdrop"
+              className="modal-backdrop in"
+              data-owner="project-transfer-modal-backdrop"
               onClick={closeTransferModal}
             />
           ) : null}
@@ -619,9 +364,7 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const memberEnrollmentCount = projectMemberCount(project);
-  const codeMenuStyleProps = booleanField(projectMenuSetting(project).code)
-    ? undefined
-    : stylex.props(projectTransferConditionalStyles.hidden);
+  const codeMenuHidden = !booleanField(projectMenuSetting(project).code);
 
   return (
     <ul className="nav nav-tabs">
@@ -694,9 +437,8 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        {...codeMenuStyleProps}
-        className={` ${codeMenuStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="project-transfer-code-menu"
+        className={`${codeMenuHidden ? "is-hidden" : ""}`.trim()}
+        data-owner="project-transfer-code-menu"
       >
         <Link
           activeOptions={legacyLinkActiveOptions}

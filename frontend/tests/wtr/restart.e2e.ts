@@ -369,7 +369,7 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter((name) => current.hasAttribute(name))
         .map((name) => {
           const value =
-            name === "class" && current.closest('[data-stylex-owner="restart-notice"]')
+            name === "class" && current.closest('[data-owner="restart-notice"]')
               ? (current.getAttribute(name) ?? "")
                   .split(/\s+/u)
                   .filter(

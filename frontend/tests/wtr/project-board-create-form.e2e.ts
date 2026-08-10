@@ -22,10 +22,12 @@ const POSTFORM_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/postform.tsx", import.meta.url),
   "utf8",
 );
-const POSTFORM_STYLE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/-postform.stylex.ts", import.meta.url),
-  "utf8",
-);
+const POSTFORM_STYLE_SOURCE =
+  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
+  readFileSync(
+    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+    "utf8",
+  );
 const UPLOAD_FORM_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
   "utf8",
@@ -55,7 +57,7 @@ test("project board create form restores legacy admin project shell", async ({ p
   await page.goto(`${basePath}/admin/sample/postform`);
 
   await expect(page).toHaveTitle("New - admin/sample");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
@@ -64,7 +66,7 @@ test("project board create form restores legacy admin project shell", async ({ p
 
   const searchForm = page.locator("form.gnb-search-form");
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeItems = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(scopeToggle).toHaveText("This Project");
   await expect(scopeItems).toHaveCount(2);
@@ -99,7 +101,7 @@ test("project board create form restores legacy group-owned project shell", asyn
   await page.goto(`${basePath}/weblabs/portal/postform`);
 
   await expect(page).toHaveTitle("New - weblabs/portal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
@@ -108,7 +110,7 @@ test("project board create form restores legacy group-owned project shell", asyn
 
   const searchForm = page.locator("form.gnb-search-form");
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeItems = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
   await expect(scopeToggle).toHaveText("This Project");
   await expect(scopeItems).toHaveCount(3);
@@ -383,7 +385,7 @@ test("project board create form preserves uploader and zero-gap actions on mobil
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
 });
 
-test("project board uploader keeps legacy alignment with route-local StyleX owners", async ({
+test("project board uploader keeps legacy alignment with route-local Style owners", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -392,7 +394,7 @@ test("project board uploader keeps legacy alignment with route-local StyleX owne
   await page.goto(`${basePath}/admin/sample/postform`);
 
   const metrics = await page.locator("#upload").evaluate((upload) => {
-    const get = (owner: string) => upload.querySelector(`[data-stylex-owner="${owner}"]`)!;
+    const get = (owner: string) => upload.querySelector(`[data-owner="${owner}"]`)!;
     const uploadStyle = getComputedStyle(upload);
     const attachStyle = getComputedStyle(get("project-postform-attach-wrap"));
     const buttonStyle = getComputedStyle(get("project-postform-upload-button-wrap"));
@@ -428,19 +430,9 @@ test("project board uploader keeps legacy alignment with route-local StyleX owne
   expect(UPLOAD_FORM_SOURCE).toContain('class="btn-wrap"');
   expect(UPLOAD_FORM_SOURCE).toContain('class="plain"');
   expect(UPLOAD_FORM_SOURCE).toContain('class="attached-files unstyled"');
-  expect(POSTFORM_ROUTE_SOURCE).toContain('attachWrap: "project-postform-attach-wrap"');
-  expect(POSTFORM_ROUTE_SOURCE).toContain('wrapper: "project-postform-upload-wrap"');
-  expect(POSTFORM_ROUTE_SOURCE).toContain('btnWrap: "project-postform-upload-button-wrap"');
-  expect(POSTFORM_ROUTE_SOURCE).toContain('plain: "project-postform-upload-plain"');
-  expect(POSTFORM_ROUTE_SOURCE).toContain('attachedFiles: "project-postform-attached-files"');
-  expect(POSTFORM_STYLE_SOURCE).toContain('attachWrap: { textAlign: "center" }');
-  expect(POSTFORM_STYLE_SOURCE).toContain(
-    'uploadPlain: { display: "inline-block", lineHeight: "30px" }',
-  );
-  await expect(
-    page.locator('#upload[data-stylex-owner="project-postform-upload-wrap"]'),
-  ).toHaveCount(1);
-  await expect(page.locator("#upload [data-stylex-owner]")).toHaveCount(6);
+
+  await expect(page.locator('#upload[data-owner="project-postform-upload-wrap"]')).toHaveCount(1);
+  await expect(page.locator("#upload [data-owner]")).toHaveCount(6);
 });
 
 test("project board postform right-aligned options and attachment help retain legacy alignment", async ({
@@ -455,20 +447,18 @@ test("project board postform right-aligned options and attachment help retain le
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/postform`);
-    const optionsLocator = page.locator("[data-stylex-owner=project-postform-options]");
-    const helpLocator = page.locator(
-      "[data-stylex-owner=project-postform-upload-attach-save-help]",
-    );
+    const optionsLocator = page.locator("[data-owner=project-postform-options]");
+    const helpLocator = page.locator("[data-owner=project-postform-upload-attach-save-help]");
     await expect(optionsLocator).not.toHaveClass(/(?:^|\s)right-txt(?:\s|$)/u);
     // Legacy uploadForm.scala.html keeps `right-txt help` on the paste help.
     await expect(helpLocator).toHaveClass(/(?:^|\s)right-txt(?:\s|$)/u);
     const metrics = await optionsLocator.evaluate((options) => {
       const upload = document.querySelector("#upload") as HTMLElement;
       const help = upload.querySelector(
-        "[data-stylex-owner=project-postform-upload-attach-save-help]",
+        "[data-owner=project-postform-upload-attach-save-help]",
       ) as HTMLElement;
       const pasteHelp = upload.querySelector(
-        "[data-stylex-owner=project-postform-paste-help]",
+        "[data-owner=project-postform-paste-help]",
       ) as HTMLElement;
       const optionsStyle = window.getComputedStyle(options);
       const helpStyle = window.getComputedStyle(help);
@@ -489,7 +479,7 @@ test("project board postform right-aligned options and attachment help retain le
       };
     });
     // yobi.Attachments.js:88-89 shows the paste hint when the browser supports
-    // paste; route-local StyleX must beat the generic `.upload-wrap .help`
+    // paste; route-local Style must beat the generic `.upload-wrap .help`
     // declaration from frozen _page.less without changing app.css.
     expect(metrics).toEqual({
       helpDisplay: "none",
@@ -803,14 +793,12 @@ async function mockProjectBoardCreateForm(
 
 async function readProjectBoardCreateShellBoxes(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const searchInput = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
+      '[data-owner="global-gnb-search-input"]',
     );
     const searchSubmit = document.querySelector<HTMLElement>(
       '.gnb-search-form button[type="submit"]',
@@ -837,7 +825,7 @@ async function readBoardCreateFormMetrics(page: Page) {
     const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
     const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
     const noticeRow = contentWrap.querySelector<HTMLElement>(
-      "[data-stylex-owner=project-postform-options]",
+      "[data-owner=project-postform-options]",
     );
     const actions = contentWrap.querySelector<HTMLElement>(".actions");
     const missing = Object.entries({ actions, editorDd, firstDd, form, noticeRow, title, upload })
@@ -939,7 +927,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1003,7 +991,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)

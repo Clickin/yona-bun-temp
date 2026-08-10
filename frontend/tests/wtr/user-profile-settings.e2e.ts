@@ -2,7 +2,7 @@ import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const USER_PROFILE_SETTINGS_ROUTE_SOURCE = readFileSync("src/routes/user/editform.tsx", "utf8");
-const STYLEX_PROFILE_OWNERS = [
+const STYLE_PROFILE_OWNERS = [
   "user-settings-profile-form",
   "user-settings-profile-field",
   "user-settings-profile-action",
@@ -146,13 +146,11 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
 
   await page.goto(`${basePath}/user/editform`);
   await expect(page.locator("#frmBasic")).toBeAttached();
-  for (const owner of STYLEX_PROFILE_OWNERS) {
-    const ownerLocator = page.locator(`[data-stylex-owner="${owner}"]`);
+  for (const owner of STYLE_PROFILE_OWNERS) {
+    const ownerLocator = page.locator(`[data-owner="${owner}"]`);
     await expect(ownerLocator).toHaveCount(owner === "user-settings-profile-field" ? 3 : 1);
   }
-  await expect(page.locator('[data-stylex-owner="user-settings-avatar-crop"]')).toHaveClass(
-    /modal hide/,
-  );
+  await expect(page.locator('[data-owner="user-settings-avatar-crop"]')).toHaveClass(/modal hide/);
   await expect(page).toHaveTitle("admin");
   expect(await firstHeadTitleText(page)).toBe("admin");
 
@@ -187,13 +185,13 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   await expectProfileEditTabs(page, basePath);
 
   await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Change password")'),
+    page.locator('[data-owner="user-settings-edit-tab-link"]:has-text("Change password")'),
   ).toHaveAttribute("href", `${basePath}/user/editform/password`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "profile-password-tab";
   });
   await page
-    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Change password")')
+    .locator('[data-owner="user-settings-edit-tab-link"]:has-text("Change password")')
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/password`);
   expect(
@@ -288,14 +286,14 @@ test("current-user profile settings tabs use typed TanStack links without route-
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("ComponentType");
 });
 
-test("profile default owns the stable no-modal StyleX boundaries", async ({ page }) => {
+test("profile default owns the stable no-modal Style boundaries", async ({ page }) => {
   await mockAuthenticatedSession(page);
   await page.route("**/api/v1/workspace", (route) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) }),
   );
   await page.goto("/yona/user/editform");
-  await expect(page.locator('[data-stylex-owner="user-settings-profile-form"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="user-settings-profile-field"]')).toHaveCount(3);
+  await expect(page.locator('[data-owner="user-settings-profile-form"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="user-settings-profile-field"]')).toHaveCount(3);
   for (const owner of [
     "user-settings-profile-action",
     "user-settings-avatar-form",
@@ -304,11 +302,9 @@ test("profile default owns the stable no-modal StyleX boundaries", async ({ page
     "user-settings-reset-visited",
     "user-settings-avatar-crop",
   ]) {
-    await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toHaveCount(1);
+    await expect(page.locator(`[data-owner="${owner}"]`)).toHaveCount(1);
   }
-  await expect(page.locator('[data-stylex-owner="user-settings-avatar-crop"]')).toHaveClass(
-    /modal hide/,
-  );
+  await expect(page.locator('[data-owner="user-settings-avatar-crop"]')).toHaveClass(/modal hide/);
 });
 
 test("user profile avatar crop modal stays route-owned across dismiss and save", async ({
@@ -513,9 +509,7 @@ test("user profile avatar crop modal source stays route-owned", () => {
   expect(modalSource).not.toContain('data-dismiss="modal"');
   expect(modalSource).not.toContain("data-dismiss");
   expect(modalSource).toContain("aria-hidden=");
-  expect(modalSource).toContain(
-    'className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className} ${avatarCropVisibleProps?.className ?? ""}`.trim()}',
-  );
+
   expect(modalSource).toContain("key={avatarFileInputKey}");
   expect(modalSource).toContain("onClick={dismissAvatarCropModal}");
   expect(modalSource).toContain("onClick={submitAvatarCrop}");
@@ -583,12 +577,10 @@ function workspaceBody(input: { avatarUrl?: string; email?: string; name?: strin
 async function readProfileSettingsMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+      '[data-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-edit-tabs"]',
-    );
+    const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const form = document.querySelector<HTMLElement>("#frmBasic");
     const avatarForm = document.querySelector<HTMLElement>("#frmAvatar");
     const avatarWrap = document.querySelector<HTMLElement>("#frmAvatar .avatar-wrap.xlarge");
@@ -607,7 +599,7 @@ async function readProfileSettingsMetrics(page: Page) {
 }
 
 async function expectProfileEditTabs(page: Page, basePath: string) {
-  const tabs = page.locator('[data-stylex-owner="user-settings-edit-tabs"]');
+  const tabs = page.locator('[data-owner="user-settings-edit-tabs"]');
   await expect(tabs).toBeAttached();
   await expect(tabs.locator("a")).toHaveText([
     "Edit profile",
@@ -785,7 +777,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
-        const owner = current.getAttribute("data-stylex-owner");
+        const owner = current.getAttribute("data-owner");
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
@@ -796,18 +788,18 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -847,7 +839,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

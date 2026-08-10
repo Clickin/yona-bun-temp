@@ -144,7 +144,7 @@ fn project_seed_sql(backend: DbBackend) -> &'static str {
 fn issue_seed_sql(backend: DbBackend) -> &'static str {
     match backend {
         DbBackend::MySql => {
-            "INSERT IGNORE INTO `issue` (`id`, `title`, `body`, `created_date`, `updated_date`, `author_id`, `author_login_id`, `author_name`, `project_id`, `number`, `num_of_comments`, `state`, `due_date`, `milestone_id`, `assignee_id`, `history`, `parent_id`, `weight`, `updated_by_author_id`, `is_draft`) VALUES (1, 'Pilot issue', NULL, NULL, NULL, NULL, NULL, NULL, 1, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0);"
+            "INSERT IGNORE INTO `issue` (`id`, `title`, `body`, `created_date`, `updated_date`, `author_id`, `author_login_id`, `author_name`, `project_id`, `number`, `num_of_comments`, `state`, `due_date`, `milestone_id`, `assignee_id`, `history`, `parent_id`, `weight`, `updated_by_author_id`, `is_draft`) VALUES (1, 'Pilot issue', NULL, NULL, NULL, NULL, NULL, NULL, 1, 1, 0, 1, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0);"
         }
         DbBackend::Sqlite => {
             "INSERT OR IGNORE INTO `issue` (`id`, `title`, `body`, `created_date`, `updated_date`, `author_id`, `author_login_id`, `author_name`, `project_id`, `number`, `num_of_comments`, `state`, `due_date`, `milestone_id`, `assignee_id`, `history`, `parent_id`, `weight`, `updated_by_author_id`, `is_draft`) VALUES (1, 'Pilot issue', NULL, NULL, NULL, NULL, NULL, NULL, 1, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0);"

@@ -62,11 +62,11 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
 
   await page.goto(`${basePath}/admin/sample/transfer`);
   await expect(page).toHaveTitle("Project Transfer - admin/sample");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   expect(
-    await page.locator('[data-stylex-owner="global-gnb-nav"] > li > a').evaluateAll((anchors) =>
+    await page.locator('[data-owner="global-gnb-nav"] > li > a').evaluateAll((anchors) =>
       anchors.map((anchor) => ({
         href: anchor.getAttribute("href"),
         text: anchor.textContent?.trim() ?? "",
@@ -264,7 +264,7 @@ test("project transfer exposes legacy group search scope for organization-owned 
 
   await page.goto(transferFormUrl);
   await expect(page).toHaveTitle("Project Transfer - admin/sample");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -276,7 +276,7 @@ test("project transfer exposes legacy group search scope for organization-owned 
   await expect(page.locator("#subMenuProjectTransfer")).toHaveClass("active");
   await expect(page.locator("#btnTransfer")).toBeVisible();
 
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   expect(
     await scopeButtons.evaluateAll((buttons) =>
@@ -592,17 +592,12 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(transferStateSlice).toContain("checked={isTransferAccepted}");
   expect(transferStateSlice).toContain("setDestination(event.target.value)");
   expect(transferStateSlice).toContain("setIsTransferAccepted(event.target.checked)");
-  // F6 copy-fix: transfer.tsx now drives modal visibility with stylex (styles.modalOpen/modalClosed,
+  // F6 copy-fix: transfer.tsx now drives modal visibility with style (styles.modalOpen/modalClosed,
   // lines 131-132,523-525) instead of a className ternary + style prop; the backdrop is conditional
-  // on isTransferModalOpen with data-stylex-owner="project-transfer-modal-backdrop".
+  // on isTransferModalOpen with data-owner="project-transfer-modal-backdrop".
+
   expect(transferStateSlice).toContain(
-    'className={`${stylex.props(styles.modal, isTransferModalOpen ? styles.modalOpen : styles.modalClosed).className} modal hide${isTransferModalOpen ? " in" : ""}`}',
-  );
-  expect(transferStateSlice).toContain(
-    "isTransferModalOpen ? styles.modalOpen : styles.modalClosed",
-  );
-  expect(transferStateSlice).toContain(
-    '            <div\n              {...backdropStyleProps}\n              className={`${backdropStyleProps.className} modal-backdrop in`}\n              data-stylex-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
+    '            <div\n              {...backdropStyleProps}\n              className={`${backdropStyleProps.className} modal-backdrop in`}\n              data-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
   );
 });
 
@@ -1072,10 +1067,10 @@ async function readDesktopTransferMetrics(page: Page) {
 
 async function readProjectTransferShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
+    const navbar = requireElement("[data-owner=global-gnb-outer]");
     const projectHeader = requireElement(".project-header-outer");
     const searchScope = requireElement("#gnb-search-scope-title");
-    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = requireElement('[data-owner="global-gnb-search-box"]');
     const projectMenu = requireElement(".project-menu-outer");
     return {
       navbar: navbar.getBoundingClientRect().toJSON(),
@@ -1416,7 +1411,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "aria-hidden",
         )
         .filter((attr) => !shouldIgnoreRouterActiveAttr(node, attr))
@@ -1486,7 +1481,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "aria-hidden",
         )
         .filter((attr) => !shouldIgnoreRouterActiveAttr(node, attr))

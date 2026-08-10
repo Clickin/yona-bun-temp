@@ -5,7 +5,6 @@ import { MilestoneDatePicker } from "../../../components/milestone-date-picker";
 import { MilestoneMarkdownEditor } from "../../../components/markdown-editor";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import * as stylex from "@stylexjs/stylex";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { createProjectMilestone, readSessionBootstrap } from "../../../auth-workspace-client";
@@ -14,58 +13,6 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { newMilestoneColors, newMilestoneFormStyles } from "./-newMilestoneForm.stylex";
-
-const styles = stylex.create({
-  save: {
-    backgroundColor: newMilestoneColors.actionInfo,
-    borderColor: newMilestoneColors.actionInfoBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: "#fff",
-    cursor: "pointer",
-    display: "inline-block",
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 12px",
-    textAlign: "center",
-    textDecoration: "none",
-    verticalAlign: "middle",
-    whiteSpace: "nowrap",
-  },
-  cancel: {
-    backgroundColor: "#fff",
-    borderColor: newMilestoneColors.fieldBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: "#333",
-    display: "inline-block",
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 12px",
-    textAlign: "center",
-    textDecoration: "none",
-    verticalAlign: "middle",
-    whiteSpace: "nowrap",
-  },
-  notice: { color: newMilestoneColors.notice },
-  dueDate: {
-    borderColor: newMilestoneColors.fieldBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: newMilestoneColors.mutedText,
-    display: "inline-block",
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "4px 6px",
-  },
-});
-
-const saveStyleProps = stylex.props(styles.save);
-const cancelStyleProps = stylex.props(styles.cancel);
-const dueDateStyleProps = stylex.props(styles.dueDate);
-const actionStyleProps = stylex.props(newMilestoneFormStyles.actions);
-const markdownEditorWrapperStyleProps = stylex.props(newMilestoneFormStyles.markdownEditorWrapper);
 
 export const Route = createFileRoute("/$ownerName/$projectName/newMilestoneForm")({
   component: ProjectMilestoneCreateFormRoute,
@@ -195,7 +142,7 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
             )}
             id="milestone-form"
             encType="multipart/form-data"
-            data-stylex-owner="project-milestone-create-form"
+            data-owner="project-milestone-create-form"
             onSubmit={(event) => {
               event.preventDefault();
               const form = event.currentTarget;
@@ -229,7 +176,7 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                       name="title"
                       defaultValue=""
                       className="zen-mode text title"
-                      data-stylex-owner="project-milestone-title"
+                      data-owner="project-milestone-title"
                       maxLength={250}
                       tabIndex={1}
                       placeholder={t("title")}
@@ -247,15 +194,12 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
               <div className="row-fluid">
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd
-                      className={stylex.props(newMilestoneFormStyles.editorPositioned).className}
-                      data-stylex-owner="project-milestone-editor-wrapper"
-                    >
+                    <dd className="" data-owner="project-milestone-editor-wrapper">
                       <MilestoneMarkdownEditor
                         contentsRef={contentsRef}
                         dataToggle={false}
-                        wrapperClassName={`mt10 ${markdownEditorWrapperStyleProps.className ?? ""}`.trim()}
-                        tabContentClassName={`tab-content ${stylex.props(newMilestoneFormStyles.editorTabContent).className}`}
+                        wrapperClassName="mt10"
+                        tabContentClassName="tab-content"
                         owners={{
                           wrapper: "project-milestone-markdown-editor-wrapper",
                           tabContent: "project-milestone-editor-tab-content",
@@ -265,39 +209,30 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                   </dl>
 
                   <MilestoneFileUploader
-                    helpClassName={`right-txt help ${stylex.props(newMilestoneFormStyles.uploadSaveHelp).className ?? ""}`.trim()}
+                    helpClassName="right-txt help"
                     owners={{
                       wrapper: "project-milestone-upload-wrap",
                       pasteHelp: "project-milestone-paste-help",
                       saveHelp: "project-milestone-upload-save-help",
                     }}
-                    pasteHelpStyleProps={stylex.props(newMilestoneFormStyles.pasteHelpVisible)}
+                    pasteHelpStyleProps={{ style: { display: "block" } }}
                   />
 
-                  <div
-                    className={`actrow ${actionStyleProps.className}`}
-                    data-stylex-owner="project-milestone-actions"
-                  >
-                    <button
-                      {...saveStyleProps}
-                      type="submit"
-                      className={saveStyleProps.className}
-                      data-stylex-owner="project-milestone-save"
-                    >
+                  <div className="actrow" data-owner="project-milestone-actions">
+                    <button type="submit" className="" data-owner="project-milestone-save">
                       {t("button.save")}
                     </button>{" "}
                     <Link
                       to="/$ownerName/$projectName/milestones"
                       params={{ ownerName, projectName }}
-                      {...cancelStyleProps}
-                      className={cancelStyleProps.className}
-                      data-stylex-owner="project-milestone-cancel"
+                      className=""
+                      data-owner="project-milestone-cancel"
                     >
                       {t("button.cancel")}
                     </Link>
                   </div>
                 </div>
-                <div className="span3 span-hard-wrap" data-stylex-owner="project-milestone-options">
+                <div className="span3 span-hard-wrap" data-owner="project-milestone-options">
                   <dl className="issue-option">
                     <dt>{t("milestone.form.state")}</dt>
                     <dd>
@@ -337,9 +272,8 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                             type="text"
                             name="dueDate"
                             id="dueDate"
-                            {...dueDateStyleProps}
-                            className={`${dueDateStyleProps.className} validate due-date`}
-                            data-stylex-owner="project-milestone-due-date"
+                            className="validate due-date"
+                            data-owner="project-milestone-due-date"
                             autoComplete="off"
                             value={dueDate}
                             onChange={(event) => setDueDate(event.currentTarget.value)}

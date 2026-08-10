@@ -194,14 +194,14 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     .toBe("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/userList`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="global-gnb-nav"] a[href]')
+      .locator('[data-owner="global-gnb-nav"] a[href]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/`,
@@ -214,13 +214,13 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  const sidebarRoot = page.locator('[data-stylex-owner="site-user-list-sidebar-nav"]');
-  const sidebarLinks = sidebarRoot.locator('[data-stylex-owner="site-user-list-sidebar-link"]');
+  const sidebarRoot = page.locator('[data-owner="site-user-list-sidebar-nav"]');
+  const sidebarLinks = sidebarRoot.locator('[data-owner="site-user-list-sidebar-link"]');
   const selectedSidebarItem = sidebarRoot.locator(
-    ':scope > [data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"]',
+    ':scope > [data-owner="site-user-list-sidebar-item"][data-selected="true"]',
   );
   await expect(
-    selectedSidebarItem.locator('[data-stylex-owner="site-user-list-sidebar-link"]'),
+    selectedSidebarItem.locator('[data-owner="site-user-list-sidebar-link"]'),
   ).toHaveText("Users");
   await expect(sidebarLinks).toHaveText([
     "Users",
@@ -234,7 +234,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="site-user-list-sidebar-link"]')
+      .locator('[data-owner="site-user-list-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/sites/userList`,
@@ -248,25 +248,25 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ]);
   await expect(selectedSidebarItem).toHaveCount(1);
   await expect(
-    selectedSidebarItem.locator('[data-stylex-owner="site-user-list-sidebar-link"]'),
+    selectedSidebarItem.locator('[data-owner="site-user-list-sidebar-link"]'),
   ).toHaveAttribute("href", `${basePath}/sites/userList`);
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   await expect(sidebarLinks.locator('[href$="/sites/setting"]')).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
-  const actionOwner = page.locator('[data-stylex-owner="site-user-list-row-action"]');
+  const actionOwner = page.locator('[data-owner="site-user-list-row-action"]');
   await expect(actionOwner.locator("a[data-request-method]")).toHaveCount(0);
   await expect(actionOwner.locator("button")).toHaveCount(5);
   await expect(
     actionOwner.locator("[data-request-method], [data-request-uri], [data-toggle], [data-href]"),
   ).toHaveCount(0);
   const shellBoxes = await page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
     const listAllLink = document.querySelector(
-      '[data-stylex-owner="global-gnb-nav"] a[href$="/projects"]',
+      '[data-owner="global-gnb-nav"] a[href$="/projects"]',
     );
     const feedbackLink = document.querySelector(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     );
     if (
       !(navbar instanceof HTMLElement) ||
@@ -314,10 +314,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(shellBoxes!.feedback.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
   const guestToggleButton = page.getByRole("button", { exact: true, name: "Make Guest" });
   await expect(guestToggleButton).toHaveAttribute("type", "button");
-  await expect(guestToggleButton).toHaveAttribute(
-    "data-stylex-owner",
-    "site-user-list-row-action-button",
-  );
+  await expect(guestToggleButton).toHaveAttribute("data-owner", "site-user-list-row-action-button");
   await expect(guestToggleButton).toHaveAttribute("data-action", "guest");
   await expect(guestToggleButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small)(?:\s|$)/u);
   await expect(guestToggleButton).not.toHaveAttribute("data-request-method", /./u);
@@ -338,10 +335,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     exact: true,
     name: "Upgrade to Site admin",
   });
-  await expect(siteAdminButton).toHaveAttribute(
-    "data-stylex-owner",
-    "site-user-list-row-action-button",
-  );
+  await expect(siteAdminButton).toHaveAttribute("data-owner", "site-user-list-row-action-button");
   await expect(siteAdminButton).toHaveAttribute("data-action", "site-admin");
   await expect(siteAdminButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small|label-info)(?:\s|$)/u);
   const accountDeleteButton = page.getByRole("button", { exact: true, name: "Delete" });
@@ -353,26 +347,24 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
   await expect(page.locator("#accountToggleBtn")).toHaveAttribute("type", "button");
   await expect(page.locator("#accountToggleBtn")).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "site-user-list-delete-modal-button",
   );
   await expect(page.locator("#accountToggleBtn")).not.toHaveClass(/\bybtn(?:-danger)?\b/u);
   await expect(page.locator('#alertDeletionWrap [data-dismiss="modal"]')).toHaveCount(0);
-  const avatarImage = page.locator('[data-stylex-owner="site-user-list-row-avatar"] img');
+  const avatarImage = page.locator('[data-owner="site-user-list-row-avatar"] img');
   await expect(avatarImage).toHaveAttribute("alt", "Door TTS");
   await expect(avatarImage).toHaveAttribute("width", "32");
   await expect(avatarImage).toHaveAttribute("height", "32");
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
-    ),
+    page.locator('[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]'),
   ).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="site-user-list-pagination"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-user-list-pagination"]')).not.toHaveClass(
     /page-navigation-wrap/u,
   );
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-pagination-list"] > [data-stylex-owner="site-user-list-pagination-item"]',
+      '[data-owner="site-user-list-pagination-list"] > [data-owner="site-user-list-pagination-item"]',
     ),
   ).toHaveCount(5);
   await expect(page.locator("#pagination .page-nums, #pagination .page-num")).toHaveCount(0);
@@ -396,10 +388,8 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(lockedTab).not.toHaveAttribute("class", "");
   await expect(lockedTab).not.toHaveAttribute("title", "");
   expect(await linkActiveMarkerLeaks(lockedTab)).toEqual([]);
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-state-tabs"] .num-badge'),
-  ).toHaveText("2");
-  const userNameAnchor = page.locator('[data-stylex-owner="site-user-list-row-user-name"]');
+  await expect(page.locator('[data-owner="site-user-list-state-tabs"] .num-badge')).toHaveText("2");
+  const userNameAnchor = page.locator('[data-owner="site-user-list-row-user-name"]');
   await expect(userNameAnchor).toHaveAttribute("href", `${basePath}/doortts`);
   await expect(userNameAnchor).toHaveText("Door TTS");
   await expect(userNameAnchor).not.toHaveClass(/user-name/u);
@@ -440,12 +430,12 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).not.toContain("data-user-name");
   expect(routeSource).toMatch(/<button\s+type="button"\s+id=\{user\.loginId\}/u);
   expect(routeSource).toMatch(/className="ybtn ybtn-small ybtn-danger"/u);
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-avatar"');
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-avatar-image"');
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-user-name"');
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-user-id"');
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-pagination-icon"');
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-title-search-icon"');
+  expect(routeSource).toContain('data-owner="site-user-list-row-avatar"');
+  expect(routeSource).toContain('data-owner="site-user-list-row-avatar-image"');
+  expect(routeSource).toContain('data-owner="site-user-list-row-user-name"');
+  expect(routeSource).toContain('data-owner="site-user-list-row-user-id"');
+  expect(routeSource).toContain('data-owner="site-user-list-pagination-icon"');
+  expect(routeSource).toContain('data-owner="site-user-list-title-search-icon"');
   expect(routeSource).not.toContain('className="yobicon-search"');
   expect(routeSource).not.toContain("site-setting-wrap");
   expect(routeSource).not.toContain('className="ico btn-pg-');
@@ -508,7 +498,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("ACTIVE");
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+    page.locator('[data-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
   ).toHaveText("Unlocked user");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -520,7 +510,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await lockedTab.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("LOCKED");
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+    page.locator('[data-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
   ).toHaveText("Locked user");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -529,9 +519,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-search";
   });
-  const titleSearchForm = page.locator('[data-stylex-owner="site-user-list-title-search-form"]');
+  const titleSearchForm = page.locator('[data-owner="site-user-list-title-search-form"]');
   await expect(titleSearchForm).not.toHaveClass(/\bform-search\b/u);
-  await page.locator('[data-stylex-owner="site-user-list-title-search-input"]').fill("door");
+  await page.locator('[data-owner="site-user-list-title-search-input"]').fill("door");
   await titleSearchForm.evaluate((form) => {
     if (!(form instanceof HTMLFormElement)) {
       throw new Error("Expected user search form");
@@ -569,7 +559,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ).toBe("site-users-pagination-query");
 
   await mockPosts(page);
-  const postsLink = page.locator('[data-stylex-owner="site-user-list-sidebar-link"]', {
+  const postsLink = page.locator('[data-owner="site-user-list-sidebar-link"]', {
     hasText: "Posts",
   });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
@@ -601,14 +591,12 @@ test("site admin user profile links preserve legacy hrefs and use SPA navigation
 
   await page.goto(`${basePath}/sites/userList`);
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
-    ),
+    page.locator('[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]'),
   ).toHaveCount(1);
 
-  const avatarLink = page.locator('[data-stylex-owner="site-user-list-row-avatar"]');
-  const userNameLink = page.locator('[data-stylex-owner="site-user-list-row-user-name"]');
-  const userIdLink = page.locator('[data-stylex-owner="site-user-list-row-user-id"]');
+  const avatarLink = page.locator('[data-owner="site-user-list-row-avatar"]');
+  const userNameLink = page.locator('[data-owner="site-user-list-row-user-name"]');
+  const userIdLink = page.locator('[data-owner="site-user-list-row-user-id"]');
   await expect(avatarLink).toHaveAttribute("href", `${basePath}/doortts`);
   await expect(avatarLink).not.toHaveClass(/avatar-wrap/u);
   await expect(avatarLink).not.toHaveClass(/list-avatar/u);
@@ -643,7 +631,7 @@ test("site admin user default avatar branch renders legacy bare image", async ({
 
   await page.goto(`${basePath}/sites/userList`);
 
-  const defaultAvatar = page.locator('[data-stylex-owner="site-user-list-row-avatar"] img');
+  const defaultAvatar = page.locator('[data-owner="site-user-list-row-avatar"] img');
   await expect(defaultAvatar).toHaveAttribute("src", "/assets/images/default-avatar-32.png");
   await expect(defaultAvatar).not.toHaveAttribute("alt");
   await expect(defaultAvatar).not.toHaveAttribute("width");
@@ -667,7 +655,7 @@ test("site admin user pagination input selects and clamps like legacy yobi.Pagin
   await page.goto(`${basePath}/sites/userList?state=ACTIVE&pageNum=2`);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+      '[data-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-owner="site-user-list-sidebar-link"]',
     ),
   ).toHaveText("Users");
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
@@ -718,32 +706,30 @@ test("site admin deleted user tab renders legacy leave column without action but
   await page.goto(`${basePath}/sites/userList?state=DELETED`);
 
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+    page.locator('[data-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
   ).toHaveText("Deleted user");
-  const deletedSearchForm = page.locator('[data-stylex-owner="site-user-list-title-search-form"]');
+  const deletedSearchForm = page.locator('[data-owner="site-user-list-title-search-form"]');
   await expect(deletedSearchForm).not.toHaveClass(/\bform-search\b/u);
   await expect(
     deletedSearchForm.locator(':scope > input[type="hidden"][name="state"]'),
   ).toHaveValue("DELETED");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-listhead"] > [data-stylex-owner="site-user-list-listhead-column"] > strong',
+      '[data-owner="site-user-list-listhead"] > [data-owner="site-user-list-listhead-column"] > strong',
     ),
   ).toHaveText(["Name", "Email address", "Member since", "Date of leaving"]);
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
-    ),
+    page.locator('[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]'),
   ).toHaveCount(1);
   const leaveDate = page.locator(
-    '[data-stylex-owner="site-user-list-row"] > [data-stylex-owner="site-user-list-row-leave-date"]',
+    '[data-owner="site-user-list-row"] > [data-owner="site-user-list-row-leave-date"]',
   );
   await expect(leaveDate).toHaveText("2026-07-01 10:30:00");
   await expect(leaveDate).not.toHaveClass(/\b(?:span4|listitem-col)\b/u);
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-action"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-row-action"]')).toHaveCount(0);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-row-list"] [data-request-method], [data-stylex-owner="site-user-list-row-list"] [data-toggle]',
+      '[data-owner="site-user-list-row-list"] [data-request-method], [data-owner="site-user-list-row-list"] [data-toggle]',
     ),
   ).toHaveCount(0);
   await expect(page.getByRole("link", { exact: true, name: "Unlocked user" })).toHaveAttribute(
@@ -789,52 +775,41 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
       state: "SITE_ADMIN",
     });
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+    page.locator('[data-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
   ).toHaveText("Site admin2");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-user-list-state-tab-numeric-badge"]',
+      '[data-owner="site-user-list-state-tab-item"][data-selected="true"] [data-owner="site-user-list-state-tab-numeric-badge"]',
     ),
   ).toHaveText("2");
-  const siteAdminSearchForm = page.locator(
-    '[data-stylex-owner="site-user-list-title-search-form"]',
-  );
+  const siteAdminSearchForm = page.locator('[data-owner="site-user-list-title-search-form"]');
   await expect(siteAdminSearchForm).not.toHaveClass(/\bform-search\b/u);
   await expect(
     siteAdminSearchForm.locator(':scope > input[type="hidden"][name="state"]'),
   ).toHaveValue("SITE_ADMIN");
-  await expect(page.locator('[data-stylex-owner="site-user-list-title-search-input"]')).toHaveValue(
+  await expect(page.locator('[data-owner="site-user-list-title-search-input"]')).toHaveValue(
     "siteboss",
   );
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
-    ),
+    page.locator('[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]'),
   ).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-user-name"]')).toHaveText(
-    "Site Boss",
-  );
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-user-id"]')).toHaveText(
-    "@siteboss",
-  );
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-email"]')).toHaveText(
+  await expect(page.locator('[data-owner="site-user-list-row-user-name"]')).toHaveText("Site Boss");
+  await expect(page.locator('[data-owner="site-user-list-row-user-id"]')).toHaveText("@siteboss");
+  await expect(page.locator('[data-owner="site-user-list-row-email"]')).toHaveText(
     "siteboss@example.com",
   );
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-avatar"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-user-list-row-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/siteboss`,
   );
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-avatar"] img')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-user-list-row-avatar"] img')).toHaveAttribute(
     "alt",
     "Site Boss",
   );
 
   const guestButton = page.getByRole("button", { exact: true, name: "Make Guest" });
   await expect(guestButton).toHaveText("Make Guest");
-  await expect(guestButton).toHaveAttribute(
-    "data-stylex-owner",
-    "site-user-list-row-action-button",
-  );
+  await expect(guestButton).toHaveAttribute("data-owner", "site-user-list-row-action-button");
   await expect(guestButton).toHaveAttribute("data-action", "guest");
   await expect(guestButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small)(?:\s|$)/u);
   await expect(guestButton).not.toHaveAttribute("data-request-method", /./u);
@@ -842,10 +817,7 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
   await expect(guestButton).toHaveCSS("margin", "2px");
   const accountLockButton = page.getByRole("button", { exact: true, name: "Lock account" });
   await expect(accountLockButton).toHaveText("Lock account");
-  await expect(accountLockButton).toHaveAttribute(
-    "data-stylex-owner",
-    "site-user-list-row-action-button",
-  );
+  await expect(accountLockButton).toHaveAttribute("data-owner", "site-user-list-row-action-button");
   await expect(accountLockButton).toHaveAttribute("data-action", "account-lock");
   await expect(accountLockButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small)(?:\s|$)/u);
   await expect(accountLockButton).not.toHaveAttribute("data-request-method", /./u);
@@ -856,16 +828,13 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
     name: "Revoke site admin role",
   });
   await expect(revokeButton).toHaveText("Revoke site admin role");
-  await expect(revokeButton).toHaveAttribute(
-    "data-stylex-owner",
-    "site-user-list-row-action-button",
-  );
+  await expect(revokeButton).toHaveAttribute("data-owner", "site-user-list-row-action-button");
   await expect(revokeButton).toHaveAttribute("data-action", "site-admin");
   await expect(revokeButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small|ybtn-info)(?:\s|$)/u);
   await expect(revokeButton).not.toHaveAttribute("data-request-method", /./u);
   await expect(revokeButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(revokeButton).toHaveCSS("margin", "2px");
-  await expect(page.locator('[data-stylex-owner="site-user-list-row-action"]')).not.toContainText(
+  await expect(page.locator('[data-owner="site-user-list-row-action"]')).not.toContainText(
     "Upgrade to Site admin",
   );
   await expect(page.getByRole("button", { exact: true, name: "Delete" })).not.toHaveAttribute(
@@ -901,7 +870,7 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
 
   const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
   expect(routeSource).not.toContain("LEGACY_ACTION_ANCHOR_BUTTON_STYLE");
-  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-action-button"');
+  expect(routeSource).toContain('data-owner="site-user-list-row-action-button"');
   expect(routeSource).toContain('data-action="site-admin"');
   expect(routeSource).toContain('t("button.user.revoke.site.admin.role")');
   expect(routeSource).toContain("state: search.state");
@@ -929,8 +898,8 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   const userListUrl = page.url();
   const deleteButton = page.getByRole("button", { exact: true, name: "Delete" });
   const deleteModal = page.locator("#alertDeletionWrap");
-  const closeButton = page.locator('[data-stylex-owner="site-user-list-delete-modal-close"]');
-  const noButton = page.locator('[data-stylex-owner="site-user-list-delete-modal-button"]').filter({
+  const closeButton = page.locator('[data-owner="site-user-list-delete-modal-close"]');
+  const noButton = page.locator('[data-owner="site-user-list-delete-modal-button"]').filter({
     hasText: "No",
   });
   const confirmButton = page.locator("#accountToggleBtn");
@@ -940,9 +909,7 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).not.toHaveAttribute("aria-hidden");
   await expect(deleteModal).not.toHaveAttribute("style");
   await expect(deleteModal).toHaveCSS("display", "block");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
 
@@ -952,9 +919,7 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(deleteModal).not.toHaveAttribute("style");
   await expect(deleteModal).toHaveCSS("display", "block");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(1);
   await expect(closeButton).not.toHaveAttribute("data-dismiss", "modal");
   await expect(noButton).not.toHaveAttribute("data-dismiss", "modal");
   await expect(deleteModal.locator('[data-dismiss="modal"]')).toHaveCount(0);
@@ -1034,9 +999,7 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -1051,9 +1014,7 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -1063,20 +1024,16 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(deleteModal).toHaveAttribute("data-state", "open");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(1);
   expect(
     await dispatchCancelableClick(
-      page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+      page.locator('[data-owner="site-user-list-delete-modal-backdrop"]'),
     ),
   ).toBe(false);
   await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).not.toHaveAttribute("style");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -1097,13 +1054,9 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator('[data-owner="site-user-list-delete-modal-backdrop"]')).toHaveCount(0);
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
-    ),
+    page.locator('[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]'),
   ).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("kept");
@@ -1128,11 +1081,11 @@ test("site admin user actions follow legacy reset-password alert flow", async ({
 
   await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-password-reset-alert-heading"]'),
+    page.locator('[data-owner="site-user-list-password-reset-alert-heading"]'),
   ).toHaveText("New password: reset-1234");
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] > *').last(),
-  ).not.toHaveClass(/\balert(?:-success)?\b/u);
+  await expect(page.locator('[data-owner="site-user-list-row-action"] > *').last()).not.toHaveClass(
+    /\balert(?:-success)?\b/u,
+  );
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 
@@ -1156,10 +1109,10 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
 
   await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   const waitingAlert = page.locator(
-    '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
+    '[data-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
   );
   const alertClose = waitingAlert.locator(
-    '[data-stylex-owner="site-user-list-password-reset-alert-close"]',
+    '[data-owner="site-user-list-password-reset-alert-close"]',
   );
   await expect(waitingAlert).toHaveText("×sending requestHeader...");
   await expect(waitingAlert).toHaveCSS("background-color", "rgb(252, 248, 227)");
@@ -1180,9 +1133,7 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
   await expect(alertClose).toHaveCSS("opacity", "0.4");
   await expect(alertClose).not.toHaveAttribute("data-dismiss", /./u);
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-password-reset-alert"] [data-dismiss="alert"]',
-    ),
+    page.locator('[data-owner="site-user-list-password-reset-alert"] [data-dismiss="alert"]'),
   ).toHaveCount(0);
   expect(await dispatchCancelableClick(alertClose)).toBe(false);
   await expect(waitingAlert).toHaveCount(0);
@@ -1190,23 +1141,21 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
   expect(await spaMarker(page)).toBe("site-user-reset-alert-dismiss");
 
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-password-reset-alert-heading"]'),
+    page.locator('[data-owner="site-user-list-password-reset-alert-heading"]'),
   ).toHaveText("New password: reset-1234");
   const successAlert = page.locator(
-    '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="success"]',
+    '[data-owner="site-user-list-password-reset-alert"][data-variant="success"]',
   );
   await expect(successAlert).toHaveCSS("background-color", "rgb(223, 240, 216)");
   await expect(successAlert).toHaveCSS("border-color", "rgb(214, 233, 198)");
   await expect(successAlert).toHaveCSS("color", "rgb(70, 136, 71)");
   await expect(successAlert).not.toHaveClass(/\balert(?:-success)?\b/u);
   const successClose = successAlert.locator(
-    '[data-stylex-owner="site-user-list-password-reset-alert-close"]',
+    '[data-owner="site-user-list-password-reset-alert-close"]',
   );
   await expect(successClose).not.toHaveAttribute("data-dismiss", /./u);
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-password-reset-alert"] [data-dismiss="alert"]',
-    ),
+    page.locator('[data-owner="site-user-list-password-reset-alert"] [data-dismiss="alert"]'),
   ).toHaveCount(0);
   expect(await dispatchCancelableClick(successClose)).toBe(false);
   await expect(successAlert).toHaveCount(0);
@@ -1241,7 +1190,7 @@ test("site admin user delete forbidden reloads legacy page", async ({ page }) =>
 
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+      '[data-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-owner="site-user-list-sidebar-link"]',
     ),
   ).toHaveText("Users");
   expect(
@@ -1340,14 +1289,10 @@ test("site admin user reset password failure uses legacy alert text", async ({ p
   expect(alert.message()).toBe("password change failed: reset service unavailable");
   await alert.accept();
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
-    ),
+    page.locator('[data-owner="site-user-list-password-reset-alert"][data-variant="pending"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="success"]',
-    ),
+    page.locator('[data-owner="site-user-list-password-reset-alert"][data-variant="success"]'),
   ).toHaveCount(0);
 });
 
@@ -1371,14 +1316,10 @@ test("site admin user reset password logical failure uses legacy alert text", as
   expect(alert.message()).toBe("password change failed: password policy rejected");
   await alert.accept();
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
-    ),
+    page.locator('[data-owner="site-user-list-password-reset-alert"][data-variant="pending"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator(
-      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="success"]',
-    ),
+    page.locator('[data-owner="site-user-list-password-reset-alert"][data-variant="success"]'),
   ).toHaveCount(0);
 });
 
@@ -1406,7 +1347,7 @@ test("site admin user role toggle success reloads like legacy requestAs", async 
   await expect.poll(() => requests.toggledActions).toEqual(["doortts:guest"]);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+      '[data-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-owner="site-user-list-sidebar-link"]',
     ),
   ).toHaveText("Users");
   expect(
@@ -1428,13 +1369,13 @@ test("site admin user list renders legacy update notification badge", async ({ p
 
   await page.goto(`${basePath}/sites/userList`);
 
-  const updateLink = page.locator('[data-stylex-owner="site-user-list-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-user-list-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
   await expect(
-    updateLink.locator('[data-stylex-owner="site-user-list-sidebar-notification-badge"]'),
+    updateLink.locator('[data-owner="site-user-list-sidebar-notification-badge"]'),
   ).toHaveText("1");
 });
 
@@ -1728,7 +1669,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-user-list-breadcrumb-outer"], [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="site-user-list-breadcrumb-outer"], [data-owner="site-user-list-page-wrap-outer"], [data-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1736,17 +1677,17 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       const value = current.getAttribute(name) ?? "";
       if (name === "class") {
-        const owner = current.getAttribute("data-stylex-owner") ?? "";
+        const owner = current.getAttribute("data-owner") ?? "";
         if (owner === "site-user-list-row-action" || owner === "site-user-list-row-action-button")
           return "";
         if (owner === "site-user-list-state-tabs") return "nav nav-tabs";
@@ -1765,9 +1706,9 @@ async function canonicalizeScreenRoots(page: Page) {
           ["site-user-list-setting-grid", "row-fluid"],
           ["site-user-list-setting-sidebar-column", "span2"],
           ["site-user-list-setting-content-column", "span10"],
-        ]).get(current.getAttribute("data-stylex-owner") ?? "");
+        ]).get(current.getAttribute("data-owner") ?? "");
         if (legacyShellClass) return legacyShellClass;
-        if (current.matches('[data-stylex-owner="site-user-list-setting-wrap"]')) {
+        if (current.matches('[data-owner="site-user-list-setting-wrap"]')) {
           return value
             .split(/\s+/u)
             .filter((token) => !token.startsWith("x"))
@@ -1784,7 +1725,7 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-user-list-state-tabs",
           "site-user-list-state-tab-item",
           "site-user-list-state-tab-link",
-        ]).has(current.getAttribute("data-stylex-owner") ?? "")
+        ]).has(current.getAttribute("data-owner") ?? "")
       ) {
         return value
           .split(/\s+/u)
@@ -1794,7 +1735,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)
@@ -1883,15 +1824,15 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-user-list-breadcrumb-outer"], [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="site-user-list-breadcrumb-outer"], [data-owner="site-user-list-page-wrap-outer"], [data-owner=site-footer]',
       ),
       (element) =>
-        element.getAttribute("data-stylex-owner") === "site-footer" &&
+        element.getAttribute("data-owner") === "site-footer" &&
         !element.classList.contains("page-footer-outer")
           ? "site-footer"
-          : element.getAttribute("data-stylex-owner") === "site-user-list-breadcrumb-outer"
+          : element.getAttribute("data-owner") === "site-user-list-breadcrumb-outer"
             ? "site-user-list-breadcrumb-outer"
-            : element.getAttribute("data-stylex-owner") === "site-user-list-page-wrap-outer"
+            : element.getAttribute("data-owner") === "site-user-list-page-wrap-outer"
               ? "site-user-list-page-wrap-outer"
               : element.getAttribute("class"),
     ),
@@ -1899,7 +1840,7 @@ async function siteLayoutRootOrder(page: Page) {
 }
 
 async function siteSettingNavActiveMarkerLeaks(page: Page) {
-  return page.locator('[data-stylex-owner="site-user-list-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-user-list-sidebar-link"]').evaluateAll((links) =>
     links.flatMap((link) => {
       const leaked = ["class", "aria-current", "data-status"].filter((name) => {
         if (name === "class") {
@@ -1920,28 +1861,26 @@ async function linkActiveMarkerLeaks(locator: Locator) {
 
 async function userListMetrics(page: Page) {
   return page.evaluate(() => {
-    const titleArea = requireElement('[data-stylex-owner="site-user-list-title-strip"]');
-    const title = requireElement('[data-stylex-owner="site-user-list-title-heading"]');
-    const searchForm = requireElement('[data-stylex-owner="site-user-list-title-search-form"]');
+    const titleArea = requireElement('[data-owner="site-user-list-title-strip"]');
+    const title = requireElement('[data-owner="site-user-list-title-heading"]');
+    const searchForm = requireElement('[data-owner="site-user-list-title-search-form"]');
     const searchInput = requireElement(
-      '[data-stylex-owner="site-user-list-title-search-form"] input[name="query"]',
+      '[data-owner="site-user-list-title-search-form"] input[name="query"]',
     );
-    const row = requireElement('[data-stylex-owner="site-user-list-setting-grid"]');
-    const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
-    const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
-    const tabs = requireElement('[data-stylex-owner="site-user-list-state-tabs"]');
-    const listHead = requireElement('[data-stylex-owner="site-user-list-listhead"]');
-    const firstHeaderColumn = requireElement(
-      '[data-stylex-owner="site-user-list-listhead-column"]',
-    );
-    const firstRow = requireElement('[data-stylex-owner="site-user-list-row"]');
-    const firstRowColumn = requireElement('[data-stylex-owner="site-user-list-row-column"]');
-    const actionColumn = requireElement('[data-stylex-owner="site-user-list-row-action"]');
-    const avatarWrap = requireElement('[data-stylex-owner="site-user-list-row-avatar"]');
-    const avatar = requireElement('[data-stylex-owner="site-user-list-row-avatar"] img');
-    const userName = requireElement('[data-stylex-owner="site-user-list-row-user-name"]');
-    const userId = requireElement('[data-stylex-owner="site-user-list-row-user-id"]');
-    const email = requireElement('[data-stylex-owner="site-user-list-row-email"]');
+    const row = requireElement('[data-owner="site-user-list-setting-grid"]');
+    const sidebar = requireElement('[data-owner="site-user-list-setting-sidebar-column"]');
+    const content = requireElement('[data-owner="site-user-list-setting-content-column"]');
+    const tabs = requireElement('[data-owner="site-user-list-state-tabs"]');
+    const listHead = requireElement('[data-owner="site-user-list-listhead"]');
+    const firstHeaderColumn = requireElement('[data-owner="site-user-list-listhead-column"]');
+    const firstRow = requireElement('[data-owner="site-user-list-row"]');
+    const firstRowColumn = requireElement('[data-owner="site-user-list-row-column"]');
+    const actionColumn = requireElement('[data-owner="site-user-list-row-action"]');
+    const avatarWrap = requireElement('[data-owner="site-user-list-row-avatar"]');
+    const avatar = requireElement('[data-owner="site-user-list-row-avatar"] img');
+    const userName = requireElement('[data-owner="site-user-list-row-user-name"]');
+    const userId = requireElement('[data-owner="site-user-list-row-user-id"]');
+    const email = requireElement('[data-owner="site-user-list-row-email"]');
     const pagination = requireElement("#pagination");
     const modal = requireElement("#alertDeletionWrap");
     const titleAreaRect = titleArea.getBoundingClientRect();
@@ -1984,7 +1923,7 @@ async function userListMetrics(page: Page) {
     return {
       actionColumnRatio: Number((actionColumnRect.width / firstRowRect.width).toFixed(2)),
       actionRowButtonCount: actionColumn.querySelectorAll(
-        ':scope > [data-stylex-owner="site-user-list-row-action-button"]',
+        ':scope > [data-owner="site-user-list-row-action-button"]',
       ).length,
       avatarHeight: Math.round(avatarRect.height),
       avatarWrapHeight: Math.round(avatarWrapRect.height),
@@ -2033,21 +1972,21 @@ async function userListMetrics(page: Page) {
 
 async function siteAdminStateLayoutFlags(page: Page) {
   return page.evaluate(() => {
-    const title = requireElement('[data-stylex-owner="site-user-list-title-heading"]');
-    const titleArea = requireElement('[data-stylex-owner="site-user-list-title-strip"]');
-    const searchForm = requireElement('[data-stylex-owner="site-user-list-title-search-form"]');
-    const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
-    const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
+    const title = requireElement('[data-owner="site-user-list-title-heading"]');
+    const titleArea = requireElement('[data-owner="site-user-list-title-strip"]');
+    const searchForm = requireElement('[data-owner="site-user-list-title-search-form"]');
+    const sidebar = requireElement('[data-owner="site-user-list-setting-sidebar-column"]');
+    const content = requireElement('[data-owner="site-user-list-setting-content-column"]');
     const activeTab = requireElement(
-      '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a',
+      '[data-owner="site-user-list-state-tab-item"][data-selected="true"] a',
     );
     const badge = requireElement(
-      '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-user-list-state-tab-numeric-badge"]',
+      '[data-owner="site-user-list-state-tab-item"][data-selected="true"] [data-owner="site-user-list-state-tab-numeric-badge"]',
     );
-    const tabs = requireElement('[data-stylex-owner="site-user-list-state-tabs"]');
-    const listHead = requireElement('[data-stylex-owner="site-user-list-listhead"]');
-    const row = requireElement('[data-stylex-owner="site-user-list-row"]');
-    const actionColumn = requireElement('[data-stylex-owner="site-user-list-row-action"]');
+    const tabs = requireElement('[data-owner="site-user-list-state-tabs"]');
+    const listHead = requireElement('[data-owner="site-user-list-listhead"]');
+    const row = requireElement('[data-owner="site-user-list-row"]');
+    const actionColumn = requireElement('[data-owner="site-user-list-row-action"]');
     const titleRect = title.getBoundingClientRect();
     const titleAreaRect = titleArea.getBoundingClientRect();
     const searchRect = searchForm.getBoundingClientRect();
@@ -2061,7 +2000,7 @@ async function siteAdminStateLayoutFlags(page: Page) {
     const actionRect = actionColumn.getBoundingClientRect();
     const actionButtonRects = Array.from(
       actionColumn.querySelectorAll<HTMLElement>(
-        ':scope > [data-stylex-owner="site-user-list-row-action-button"]',
+        ':scope > [data-owner="site-user-list-row-action-button"]',
       ),
     ).map((button) => {
       const rect = button.getBoundingClientRect();

@@ -252,7 +252,7 @@ impl AppRepositoryImpl<'_> {
             state: if model.is_draft.unwrap_or_default() != 0 {
                 "draft".to_string()
             } else {
-                issue_state_from_raw(model.state)
+                issue_state_from_raw(self.db.get_database_backend(), model.state)
             },
             title: model.title.unwrap_or_default(),
             updated_label: format_workspace_date_label(model.updated_date),
@@ -272,7 +272,10 @@ impl AppRepositoryImpl<'_> {
         let rows = issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
             .filter(issue::Column::MilestoneId.eq(Some(milestone_id)))
-            .filter(issue::Column::State.eq(Some(issue_state_to_raw(state))))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                state,
+            ))))
             .order_by_desc(issue::Column::Number)
             .all(&self.db)
             .await?;
@@ -290,12 +293,18 @@ impl AppRepositoryImpl<'_> {
     ) -> Result<IssueMilestoneRecord, DbErr> {
         let open_issue_count = issue::Entity::find()
             .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-            .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "open",
+            ))))
             .count(&self.db)
             .await? as u32;
         let closed_issue_count = issue::Entity::find()
             .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-            .filter(issue::Column::State.eq(Some(issue_state_to_raw("closed"))))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "closed",
+            ))))
             .count(&self.db)
             .await? as u32;
         let total = open_issue_count + closed_issue_count;
@@ -323,7 +332,7 @@ impl AppRepositoryImpl<'_> {
             id: row.id,
             open_issue_count,
             open_issues,
-            state: issue_state_from_raw(row.state),
+            state: issue_state_from_raw(self.db.get_database_backend(), row.state),
             title: row.title.unwrap_or_default(),
         })
     }

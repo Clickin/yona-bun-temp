@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { use, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
@@ -16,32 +15,6 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { LastOutletTransition } from "../../-last-outlet-transition";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectNestedShellContext } from "../$projectName";
-import { styles } from "./-newFork.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  form: stylex.props(styles.form),
-  heading: stylex.props(styles.heading),
-  help: stylex.props(styles.help),
-  helpImage: stylex.props(styles.helpImage),
-  helpMessages: stylex.props(styles.helpMessages),
-  existing: stylex.props(styles.existing),
-  existingMessage: stylex.props(styles.existingMessage),
-  existingRow: stylex.props(styles.existingRow),
-  existingIcon: stylex.props(styles.existingIcon),
-  existingSource: stylex.props(styles.existingSource),
-  existingArrow: stylex.props(styles.existingArrow),
-  existingLink: stylex.props(styles.existingLink),
-  group: stylex.props(styles.group),
-  label: stylex.props(styles.label),
-  controls: stylex.props(styles.controls),
-  input: stylex.props(styles.input),
-  action: stylex.props(styles.action),
-  cancel: stylex.props(styles.action, styles.cancel),
-  clonePage: stylex.props(styles.clonePage),
-  cloneProjectPage: stylex.props(styles.cloneProjectPage),
-  cloneLegend: stylex.props(styles.cloneLegend),
-} as const;
 
 type ForkCloneProgress = {
   originalOwnerName: string;
@@ -173,8 +146,8 @@ function ProjectForkLoadingShell() {
   return (
     <div
       className="page-wrap-outer"
-      data-stylex-owner="project-fork-loading-shell"
-      data-stylex-content-ready="false"
+      data-owner="project-fork-loading-shell"
+      data-content-ready="false"
     >
       <div className="project-page-wrap">
         <div className="content-wrap frm-wrap"></div>
@@ -300,42 +273,30 @@ function ProjectForkBody({
   }
 
   return (
-    <div
-      {...sx.page}
-      className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
-      data-stylex-owner="project-fork-page"
-      data-stylex-content-ready="true"
-    >
-      <div className="project-page-wrap" data-stylex-owner="project-fork-shell">
-        <div className="content-wrap frm-wrap" data-stylex-owner="project-fork-form-wrap">
+    <div className="page-wrap-outer" data-owner="project-fork-page" data-content-ready="true">
+      <div className="project-page-wrap" data-owner="project-fork-shell">
+        <div className="content-wrap frm-wrap" data-owner="project-fork-form-wrap">
           <form
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/fork`)}
             method="post"
-            {...sx.form}
-            className={`form-horizontal nm ${sx.form.className ?? ""}`.trim()}
-            data-stylex-owner="project-fork-form"
+            className="form-horizontal nm"
+            data-owner="project-fork-form"
             onSubmit={onSubmit}
           >
             <input type="hidden" name="owner" value={selectedOwner} />
             <fieldset>
               <legend>
-                <h4 {...sx.heading} data-stylex-owner="project-fork-heading">
+                <h4 data-owner="project-fork-heading">
                   {`${ownerName} / ${projectName} ${t("fork")}`}
                 </h4>
               </legend>
-              <div
-                {...sx.help}
-                className={`well ${sx.help.className ?? ""}`.trim()}
-                data-stylex-owner="project-fork-help"
-                id="helpMessage"
-              >
-                <div className="row-fluid" data-stylex-owner="project-fork-help-row">
+              <div className="well" data-owner="project-fork-help" id="helpMessage">
+                <div className="row-fluid" data-owner="project-fork-help-row">
                   {options.existingForks.length === 0 ? (
                     <>
                       <div className="pull-left">
                         <img
-                          {...sx.helpImage}
-                          data-stylex-owner="project-fork-help-image"
+                          data-owner="project-fork-help-image"
                           src={prefixBasePath(
                             runtimeConfig.basePath,
                             "/legacy-assets/images/fork-pull/fork.jpg",
@@ -344,52 +305,35 @@ function ProjectForkBody({
                         />
                         <br />
                       </div>
-                      <div {...sx.helpMessages} data-stylex-owner="project-fork-help-copy">
+                      <div data-owner="project-fork-help-copy">
                         <p className="lead">{t("fork.help.title")}</p>
                         <p>{t("fork.help.message.1")}</p>
                         <p>{t("fork.help.message.2")}</p>
                       </div>
                     </>
                   ) : (
-                    <div
-                      {...sx.existing}
-                      className={`${sx.existing.className} help-messages center-txt`}
-                      data-stylex-owner="project-fork-existing"
-                    >
-                      <i
-                        {...sx.existingIcon}
-                        className={`${sx.existingIcon.className} ico ico-err2`}
-                        data-stylex-owner="project-fork-existing-icon"
-                      ></i>
-                      <p {...sx.existingMessage} data-stylex-owner="project-fork-existing-message">
-                        {t("fork.already.exist")}
-                      </p>
+                    <div className="help-messages center-txt" data-owner="project-fork-existing">
+                      <i className="ico ico-err2" data-owner="project-fork-existing-icon"></i>
+                      <p data-owner="project-fork-existing-message">{t("fork.already.exist")}</p>
                       {options.existingForks.map((forkedProject) => {
                         const forkOwnerName = stringField(forkedProject.ownerName, "");
                         const forkProjectName = stringField(forkedProject.projectName, "");
                         return (
                           <p
-                            {...sx.existingRow}
                             key={`${forkOwnerName}/${forkProjectName}`}
-                            data-stylex-owner="project-fork-existing-row"
+                            data-owner="project-fork-existing-row"
                           >
-                            <strong
-                              {...sx.existingSource}
-                              className={`${sx.existingSource.className} vmiddle`}
-                              data-stylex-owner="project-fork-existing-source"
-                            >
+                            <strong className="vmiddle" data-owner="project-fork-existing-source">
                               {`${ownerName} / ${projectName}`}
                             </strong>
                             <i
-                              {...sx.existingArrow}
-                              className={`${sx.existingArrow.className} yobicon-right vmiddle`}
-                              data-stylex-owner="project-fork-existing-arrow"
+                              className="yobicon-right vmiddle"
+                              data-owner="project-fork-existing-arrow"
                             ></i>
                             <Link
                               to={projectPath(forkOwnerName, forkProjectName)}
-                              {...sx.existingLink}
-                              className={`${sx.existingLink.className} vmiddle`}
-                              data-stylex-owner="project-fork-existing-link"
+                              className="vmiddle"
+                              data-owner="project-fork-existing-link"
                               activeOptions={legacyProjectShellLinkActiveOptions}
                               activeProps={legacyProjectShellLinkActiveProps}
                             >
@@ -402,24 +346,15 @@ function ProjectForkBody({
                   )}
                 </div>
               </div>
-              <div
-                {...sx.group}
-                className={`control-group ${sx.group.className ?? ""}`.trim()}
-                data-stylex-owner="project-fork-owner-group"
-              >
+              <div className="control-group" data-owner="project-fork-owner-group">
                 <label
-                  {...sx.label}
-                  className={`control-label ${sx.label.className ?? ""}`.trim()}
-                  data-stylex-owner="project-fork-owner-label"
+                  className="control-label"
+                  data-owner="project-fork-owner-label"
                   htmlFor="inputOwner"
                 >
                   {t("project.owner")}
                 </label>
-                <div
-                  {...sx.controls}
-                  className={`controls ${sx.controls.className ?? ""}`.trim()}
-                  data-stylex-owner="project-fork-owner-controls"
-                >
+                <div className="controls" data-owner="project-fork-owner-controls">
                   <select
                     id="project-owner"
                     name="owner"
@@ -437,73 +372,45 @@ function ProjectForkBody({
                   </select>
                 </div>
               </div>
-              <div
-                {...sx.group}
-                className={`control-group ${sx.group.className ?? ""}`.trim()}
-                data-stylex-owner="project-fork-name-group"
-              >
+              <div className="control-group" data-owner="project-fork-name-group">
                 <label
-                  {...sx.label}
-                  className={`control-label ${sx.label.className ?? ""}`.trim()}
-                  data-stylex-owner="project-fork-name-label"
+                  className="control-label"
+                  data-owner="project-fork-name-label"
                   htmlFor="inputName"
                 >
                   {t("project.name")}
                 </label>
-                <div
-                  {...sx.controls}
-                  className={`controls ${sx.controls.className ?? ""}`.trim()}
-                  data-stylex-owner="project-fork-name-controls"
-                >
+                <div className="controls" data-owner="project-fork-name-controls">
                   <input
-                    {...sx.input}
-                    data-stylex-owner="project-fork-name-input"
+                    data-owner="project-fork-name-input"
                     type="text"
                     id="inputName"
                     name="name"
                     defaultValue={selectedName}
                   />
-                  <span
-                    {...stylex.props(styles.helpInline)}
-                    className={`${stylex.props(styles.helpInline).className} help-inline`}
-                    data-stylex-owner="project-fork-name-help"
-                  >
+                  <span className="help-inline" data-owner="project-fork-name-help">
                     {t("project.name.alert")}{" "}
                   </span>
                 </div>
               </div>
-              <div
-                {...sx.group}
-                className={`control-group ${sx.group.className ?? ""}`.trim()}
-                data-stylex-owner="project-fork-scope-group"
-              >
-                <label
-                  {...sx.label}
-                  className={`control-label ${sx.label.className ?? ""}`.trim()}
-                  data-stylex-owner="project-fork-scope-label"
-                >
+              <div className="control-group" data-owner="project-fork-scope-group">
+                <label className="control-label" data-owner="project-fork-scope-label">
                   {t("project.shareOption")}
                 </label>
-                <div
-                  {...sx.controls}
-                  className={`controls ${sx.controls.className ?? ""}`.trim()}
-                  data-stylex-owner="project-fork-scope-controls"
-                >
+                <div className="controls" data-owner="project-fork-scope-controls">
                   <input
                     name="projectScope"
                     type="radio"
                     id="public"
                     value="PUBLIC"
-                    {...stylex.props(styles.radio)}
-                    className={`${stylex.props(styles.radio).className} radio-btn`}
-                    data-stylex-owner="project-fork-public-radio"
+                    className="radio-btn"
+                    data-owner="project-fork-public-radio"
                     defaultChecked
                   />{" "}
                   <label
-                    {...stylex.props(styles.radioLabel)}
                     htmlFor="public"
-                    className={`${stylex.props(styles.radioLabel).className} bg-radiobtn label-public`}
-                    data-stylex-owner="project-fork-public-label"
+                    className="bg-radiobtn label-public"
+                    data-owner="project-fork-public-label"
                   >
                     {t("project.public")}
                   </label>
@@ -519,15 +426,13 @@ function ProjectForkBody({
                         type="radio"
                         id="protected"
                         value="PROTECTED"
-                        {...stylex.props(styles.radio)}
-                        className={`${stylex.props(styles.radio).className} radio-btn`}
-                        data-stylex-owner="project-fork-protected-radio"
+                        className="radio-btn"
+                        data-owner="project-fork-protected-radio"
                       />{" "}
                       <label
-                        {...stylex.props(styles.radioLabel)}
                         htmlFor="protected"
-                        className={`${stylex.props(styles.radioLabel).className} bg-radiobtn label-protected`}
-                        data-stylex-owner="project-fork-protected-label"
+                        className="bg-radiobtn label-protected"
+                        data-owner="project-fork-protected-label"
                       >
                         {t("project.protected")}
                       </label>
@@ -538,34 +443,27 @@ function ProjectForkBody({
                     type="radio"
                     id="private"
                     value="PRIVATE"
-                    {...stylex.props(styles.radio)}
-                    className={`${stylex.props(styles.radio).className} radio-btn`}
-                    data-stylex-owner="project-fork-private-radio"
+                    className="radio-btn"
+                    data-owner="project-fork-private-radio"
                   />{" "}
                   <label
-                    {...stylex.props(styles.radioLabel)}
                     htmlFor="private"
-                    className={`${stylex.props(styles.radioLabel).className} bg-radiobtn label-private`}
-                    data-stylex-owner="project-fork-private-label"
+                    className="bg-radiobtn label-private"
+                    data-owner="project-fork-private-label"
                   >
                     {t("project.private")}
                   </label>
                 </div>
               </div>
-              <div
-                {...sx.group}
-                className={`control-group ${sx.group.className ?? ""}`.trim()}
-                data-stylex-owner="project-fork-actions"
-              >
-                <div {...sx.controls} className={`controls ${sx.controls.className ?? ""}`.trim()}>
-                  <button {...sx.action} data-stylex-owner="project-fork-submit" type="submit">
+              <div className="control-group" data-owner="project-fork-actions">
+                <div className="controls pr-fork-controls">
+                  <button data-owner="project-fork-submit" type="submit">
                     {t("fork")}
                   </button>{" "}
                   <Link
                     to={pullRequestsPath(ownerName, projectName)}
-                    {...sx.cancel}
-                    className={`${sx.cancel.className ?? ""} ybtn`.trim()}
-                    data-stylex-owner="project-fork-cancel"
+                    className="ybtn"
+                    data-owner="project-fork-cancel"
                     activeOptions={legacyProjectShellLinkActiveOptions}
                     activeProps={legacyProjectShellLinkActiveProps}
                   >
@@ -585,16 +483,10 @@ function ProjectForkCloneProgress({ progress }: { progress: ForkCloneProgress })
   const { t } = useLegacyMessages();
 
   return (
-    <div
-      {...sx.clonePage}
-      className={`${sx.clonePage.className ?? ""} page-wrap-outer`.trim()}
-    >
-      <div
-        {...sx.cloneProjectPage}
-        className={`${sx.cloneProjectPage.className ?? ""} project-page-wrap`.trim()}
-      >
+    <div className="pr-fork-clone-page page-wrap-outer">
+      <div className="pr-fork-clone-project-page project-page-wrap">
         <div className="content-wrap frm-wrap">
-          <legend {...sx.cloneLegend} className={sx.cloneLegend.className}>
+          <legend>
             {t("fork.forking", {
               args: [
                 progress.originalOwnerName,

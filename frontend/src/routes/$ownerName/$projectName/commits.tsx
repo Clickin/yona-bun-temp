@@ -1,5 +1,4 @@
 import { useState } from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../api/code-commits";
@@ -7,7 +6,6 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { styles } from "./-commits.stylex";
 
 type ProjectCodeHistorySearch = {
   page?: number;
@@ -171,17 +169,17 @@ export function ProjectCodeHistoryBody({
     : undefined;
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-commits-page">
+    <div className="page-wrap-outer" data-owner="project-commits-page">
       <div className="project-page-wrap">
-        <div className="bubble-wrap dark-gray repo-wrap" data-stylex-owner="project-commits-shell">
+        <div className="bubble-wrap dark-gray repo-wrap" data-owner="project-commits-shell">
           <div className="code-browse-wrap">
             <div
-              className={`${stylex.props(styles.branchPicker).className} select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
-              data-stylex-owner="project-commits-branch-picker"
+              className={`select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              data-owner="project-commits-branch-picker"
             >
               <button
                 type="button"
-                className={`${stylex.props(styles.branchButton).className} select2-choice`}
+                className="project-commits-branch-button select2-choice"
                 aria-expanded={branchMenuOpen}
                 onClick={() => setBranchMenuOpen((open) => !open)}
               >
@@ -201,7 +199,7 @@ export function ProjectCodeHistoryBody({
                 aria-label={t("title.branches")}
               />
               <div
-                className={`${branchMenuOpen ? (stylex.props(styles.branchDropdown).className ?? "") : ""} select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
+                className={`project-commits-branch-dropdown select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active is-open" : ""}`}
               >
                 <div className="select2-search">
                   <input
@@ -218,7 +216,7 @@ export function ProjectCodeHistoryBody({
                     >
                       <button
                         type="button"
-                        className={`${stylex.props(styles.branchButton).className} select2-result-label`}
+                        className="project-commits-branch-button select2-result-label"
                         onClick={() => {
                           setBranchMenuOpen(false);
                           router.history.push(
@@ -267,10 +265,7 @@ export function ProjectCodeHistoryBody({
               ))}
             </select>
 
-            <ul
-              className={`${stylex.props(styles.tabs).className} nav nav-tabs`}
-              data-stylex-owner="project-commits-tabs"
-            >
+            <ul className="nav nav-tabs" data-owner="project-commits-tabs">
               <li>
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
@@ -318,15 +313,8 @@ export function ProjectCodeHistoryBody({
               ) : null}
             </ul>
 
-            <div
-              id="history"
-              className={`${stylex.props(styles.history).className} commit-wrap`}
-              data-stylex-owner="project-commits-history"
-            >
-              <table
-                className={`${stylex.props(styles.table).className} code-table commits`}
-                data-stylex-owner="project-commits-table"
-              >
+            <div id="history" className="commit-wrap" data-owner="project-commits-history">
+              <table className="code-table commits" data-owner="project-commits-table">
                 <thead className="thead">
                   <tr>
                     <td className="commit-id">
@@ -346,11 +334,7 @@ export function ProjectCodeHistoryBody({
                 <tbody className="tbody">
                   {history.commits.length === 0 ? (
                     <tr>
-                      <td
-                        className={stylex.props(styles.emptyWarning).className}
-                        colSpan={5}
-                        data-stylex-owner="project-commits-empty-warning"
-                      >
+                      <td colSpan={5} data-owner="project-commits-empty-warning">
                         {t("code.nocommits")}
                       </td>
                     </tr>
@@ -364,10 +348,7 @@ export function ProjectCodeHistoryBody({
                       );
                       return (
                         <tr key={commit.commitId}>
-                          <td
-                            className={`${stylex.props(styles.commitIdCell).className} commit-id`}
-                            data-stylex-owner="project-commits-commit-id"
-                          >
+                          <td className="commit-id" data-owner="project-commits-commit-id">
                             <button
                               type="button"
                               className="ybtn ybtn-mini btn-copy-commitId"
@@ -382,20 +363,13 @@ export function ProjectCodeHistoryBody({
                               activeOptions={legacyCodeHistoryLinkActiveOptions}
                               activeProps={legacyCodeHistoryLinkActiveProps}
                               title={t("code.showCommit")}
-                              className={stylex.props(styles.commitIdLink).className}
                             >
                               {commit.commitShortId}
                             </Link>
                           </td>
-                          <td
-                            className={`${stylex.props(styles.messagesCell).className} messages`}
-                            data-stylex-owner="project-commits-messages"
-                          >
+                          <td className="messages" data-owner="project-commits-messages">
                             {commit.commentCount > 0 ? (
-                              <span
-                                className={stylex.props(styles.commentCount).className}
-                                data-stylex-owner="project-commits-comment-count"
-                              >
+                              <span data-owner="project-commits-comment-count">
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}
@@ -406,16 +380,10 @@ export function ProjectCodeHistoryBody({
                               to={showCommitPath}
                             />
                           </td>
-                          <td
-                            className={`${stylex.props(styles.dateCell).className} date`}
-                            data-stylex-owner="project-commits-date"
-                          >
+                          <td className="date" data-owner="project-commits-date">
                             {commit.authorDate}
                           </td>
-                          <td
-                            className={`${stylex.props(styles.authorCell).className} author`}
-                            data-stylex-owner="project-commits-author"
-                          >
+                          <td className="author" data-owner="project-commits-author">
                             <CommitAuthor basePath={runtimeConfig.basePath} commit={commit} />
                           </td>
                         </tr>
@@ -427,7 +395,7 @@ export function ProjectCodeHistoryBody({
             </div>
           </div>
 
-          <div className="actrow margin-top-20" data-stylex-owner="project-commits-pagination">
+          <div className="actrow margin-top-20" data-owner="project-commits-pagination">
             {history.hasNewer ? (
               requestedBranch ? (
                 <Link
@@ -436,8 +404,8 @@ export function ProjectCodeHistoryBody({
                   search={{ page: Math.max(0, history.page - 1) }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
-                  data-stylex-owner="project-commits-newer"
+                  className="ybtn"
+                  data-owner="project-commits-newer"
                 >
                   {t("code.newer")}
                 </Link>
@@ -448,8 +416,8 @@ export function ProjectCodeHistoryBody({
                   search={{ page: Math.max(0, history.page - 1) }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
-                  data-stylex-owner="project-commits-newer"
+                  className="ybtn"
+                  data-owner="project-commits-newer"
                 >
                   {t("code.newer")}
                 </Link>
@@ -463,8 +431,8 @@ export function ProjectCodeHistoryBody({
                   search={{ page: history.page + 1 }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
-                  data-stylex-owner="project-commits-older"
+                  className="ybtn"
+                  data-owner="project-commits-older"
                 >
                   {t("code.older")}
                 </Link>
@@ -475,8 +443,8 @@ export function ProjectCodeHistoryBody({
                   search={{ page: history.page + 1 }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className={`${stylex.props(styles.paginationLink).className} ybtn`}
-                  data-stylex-owner="project-commits-older"
+                  className="ybtn"
+                  data-owner="project-commits-older"
                 >
                   {t("code.older")}
                 </Link>
@@ -512,8 +480,8 @@ function CommitMessage({
         search={search}
         activeOptions={legacyCodeHistoryLinkActiveOptions}
         activeProps={legacyCodeHistoryLinkActiveProps}
-        className={`${stylex.props(styles.commitMessage).className} commitMsg short`}
-        data-stylex-owner="project-commits-message-summary"
+        className="commitMsg short"
+        data-owner="project-commits-message-summary"
       >
         {summary}
       </Link>

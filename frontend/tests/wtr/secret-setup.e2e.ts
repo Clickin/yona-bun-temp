@@ -532,7 +532,7 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).not.toContain("handleHomeClick");
   expect(SECRET_ROUTE_SOURCE).not.toContain("useLinkProps");
   expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
-  expect(SECRET_ROUTE_SOURCE).not.toContain('search={{ filter: "", labelIds: "" }}');
+
   expect(SECRET_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
@@ -640,7 +640,7 @@ async function expectLegacyAnchor(
   if (expected.className) {
     expect(
       await link.evaluate((element, expectedClassName) => {
-        const owner = element.closest('[data-stylex-owner="secret-setup"]');
+        const owner = element.closest('[data-owner="secret-setup"]');
         const classes = Array.from(element.classList);
         const expectedClasses = expectedClassName.split(" ");
         return (

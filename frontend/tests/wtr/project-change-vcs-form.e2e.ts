@@ -43,9 +43,11 @@ test("protected weblabs portal change-VCS keeps the legacy group shell from its 
 
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await page.locator("#gnb-search-scope-title").click();
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("2");
   await expect(page.locator(".project-util-wrap .down-arrow")).toHaveText("Unwatch");
@@ -257,7 +259,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   await expect(page).toHaveTitle("Repository Change - admin/sample");
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveClass(/hide/);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
@@ -267,17 +269,18 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   );
   await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
   await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
 
   expect(
     await readLegacyAnchorStates(
       page,
-      // F6 copy-fix-current-dom: the GNB nav ul is stylex-owned (no literal
+      // F6 copy-fix-current-dom: the GNB nav ul is style-owned (no literal
       // gnb-nav class; canonicalize maps the owner); sibling specs select via
-      // [data-stylex-owner=global-gnb-nav].
-      "[data-stylex-owner=global-gnb-nav] > li > a",
+      // [data-owner=global-gnb-nav].
+      "[data-owner=global-gnb-nav] > li > a",
     ),
   ).toEqual([
     {
@@ -418,7 +421,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     ],
   });
   const shellMetrics = await readProjectChangeVcsShellMetrics(page);
-  expect(shellMetrics.gnbClass).toBe(""); // F6: stylex-owned GNB outer (filtered)
+  expect(shellMetrics.gnbClass).toBe(""); // F6: style-owned GNB outer (filtered)
   expect(shellMetrics.searchScopeText).toBe("This Project");
   expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
   expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
@@ -510,7 +513,7 @@ test("project change-VCS protected project shell exposes legacy group search sco
 
   await page.goto(changeVcsUrl);
   await expect(page).toHaveTitle("Repository Change - admin/sample");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -522,7 +525,7 @@ test("project change-VCS protected project shell exposes legacy group search sco
   await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass("active");
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
 
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   expect(
     await scopeButtons.evaluateAll((buttons) =>
@@ -553,7 +556,7 @@ test("project change-VCS protected project shell exposes legacy group search sco
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
   const shellMetrics = await readProjectChangeVcsShellMetrics(page);
-  expect(shellMetrics.gnbClass).toBe(""); // F6: stylex-owned GNB outer (filtered)
+  expect(shellMetrics.gnbClass).toBe(""); // F6: style-owned GNB outer (filtered)
   expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
   expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
   expect(shellMetrics.searchBoxTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
@@ -1112,9 +1115,9 @@ test("project change-VCS header favorite star has no route-local native listener
 
 async function readProjectChangeVcsShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
+    const navbar = requireElement("[data-owner=global-gnb-outer]");
     const projectMenu = requireElement(".project-menu-outer");
-    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = requireElement('[data-owner="global-gnb-search-box"]');
     const searchScope = requireElement("#gnb-search-scope-title");
     const navbarBox = navbar.getBoundingClientRect();
     const projectMenuBox = projectMenu.getBoundingClientRect();
@@ -1122,14 +1125,12 @@ async function readProjectChangeVcsShellMetrics(page: Page) {
     const searchScopeRect = searchScope.getBoundingClientRect();
 
     return {
-      // F6 copy-fix-current-dom: the GNB outer is stylex-owned (the same spec
+      // F6 copy-fix-current-dom: the GNB outer is style-owned (the same spec
       // asserts not.toHaveClass(gnb-outer|project-header) on it); sibling
       // specs filter the paint tokens and pin "" (project-posts.e2e.ts:740).
       gnbClass: navbar.className
         .split(/\s+/u)
-        .filter(
-          (token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"),
-        )
+        .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
         .join(" "),
       navbarBottom: Math.round(navbarBox.bottom),
       navbarTop: Math.round(navbarBox.top),
@@ -1233,7 +1234,7 @@ async function readLegacyAnchorStates(page: Page, selector: string) {
     (input) =>
       Array.from(document.querySelectorAll<HTMLAnchorElement>(input)).map((anchor) => ({
         ariaCurrent: anchor.getAttribute("aria-current"),
-        // retain legacy classes only; stylex token classes (e.g. xfungia x1iih0q2)
+        // retain legacy classes only; style token classes (e.g. xfungia x1iih0q2)
         // are app-owned and not part of the legacy class contract
         className: (anchor.getAttribute("class") ?? "")
           .split(/\s+/u)

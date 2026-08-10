@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { importProjectRest, projectCreateFormOptionsQueryOptions } from "../api/org-project";
@@ -9,8 +8,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { styles } from "./-project-import.stylex";
-
 type ProjectImportSearch = {
   owner?: string;
 };
@@ -92,11 +89,6 @@ function ProjectImportScreen({
     false;
   const initiallyUsesRepoAuth = initialAuthId !== "" || repoAuthError !== undefined;
   const [usesRepoAuth, setUsesRepoAuth] = React.useState(initiallyUsesRepoAuth);
-  const repoAuthStyleProps = usesRepoAuth ? stylex.props(styles.repoAuthVisible) : undefined;
-  const protectedScopeStyleProps = stylex.props(
-    styles.scopeOptionWithMargin,
-    !isSelectedOwnerGroup && styles.protectedScopeHidden,
-  );
   const [repoAuthChanged, setRepoAuthChanged] = React.useState(false);
   const [projectScope, setProjectScope] = React.useState(initialProjectScope);
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
@@ -194,15 +186,9 @@ function ProjectImportScreen({
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{t("title.newProject")}</title>
-      <div
-        className={`${stylex.props(styles.page).className} page-wrap-outer`}
-        data-stylex-owner="project-import-page"
-      >
+      <div className={"page-wrap-outer"} data-owner="project-import-page">
         <div className="project-page-wrap">
-          <div
-            className={`${stylex.props(styles.form).className} form-wrap new-project`}
-            data-stylex-owner="project-import-form-wrap"
-          >
+          <div className={"form-wrap new-project"} data-owner="project-import-form-wrap">
             <form
               id="importGit"
               action={prefixBasePath(runtimeConfig.basePath, "/_import")}
@@ -210,7 +196,7 @@ function ProjectImportScreen({
               className="frm-wrap"
               onSubmit={handleSubmit}
             >
-              <legend data-stylex-owner="project-import-heading">
+              <legend data-owner="project-import-heading">
                 {t("project.import.from.git")}
                 <span>
                   <small>{t("project.import.or")} &nbsp; </small>
@@ -226,16 +212,11 @@ function ProjectImportScreen({
                 </span>
               </legend>
 
-              <dl data-stylex-owner="project-import-fields">
+              <dl data-owner="project-import-fields">
                 <dt>
                   <label htmlFor="url">
                     {t("project.git.repository.url")}
-                    <strong
-                      {...stylex.props(styles.requiredMarker)}
-                      data-stylex-owner="project-import-required-marker-url"
-                    >
-                      *
-                    </strong>
+                    <strong data-owner="project-import-required-marker-url">*</strong>
                   </label>
                 </dt>
                 <dd>
@@ -279,10 +260,9 @@ function ProjectImportScreen({
                   </label>
 
                   <div
-                    {...repoAuthStyleProps}
                     id="repoAuth"
-                    className={`repo-auth-wrap ${repoAuthStyleProps?.className ?? ""}`.trim()}
-                    data-stylex-owner="project-import-repo-auth"
+                    className={usesRepoAuth ? "repo-auth-wrap xrepoauth" : "repo-auth-wrap"}
+                    data-owner="project-import-repo-auth"
                   >
                     <div className="row-fluid">
                       <dl className="span6">
@@ -318,24 +298,17 @@ function ProjectImportScreen({
                 <dt className="bordertop">
                   <label htmlFor="project-owner">
                     {t("project.owner")}
-                    <strong
-                      {...stylex.props(styles.requiredMarker)}
-                      data-stylex-owner="project-import-required-marker-owner"
-                    >
-                      *
-                    </strong>
+                    <strong data-owner="project-import-required-marker-owner">*</strong>
                   </label>
                 </dt>
                 <dd>
                   <div
-                    {...stylex.props(styles.selectContainer)}
-                    className={`${stylex.props(styles.selectContainer).className} select2-container mb10${ownerMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
-                    data-stylex-owner="project-import-owner-select"
+                    className={`select2-container mb10${ownerMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+                    data-owner="project-import-owner-select"
                   >
                     <button
                       type="button"
-                      {...stylex.props(styles.selectButton)}
-                      className={`${stylex.props(styles.selectButton).className} select2-choice`}
+                      className={"select2-choice"}
                       aria-expanded={ownerMenuOpen}
                       onClick={() => setOwnerMenuOpen((open) => !open)}
                     >
@@ -370,8 +343,7 @@ function ProjectImportScreen({
                       aria-label={t("project.owner")}
                     />
                     <div
-                      {...(ownerMenuOpen ? stylex.props(styles.selectDropOpen) : {})}
-                      className={`${ownerMenuOpen ? `${stylex.props(styles.selectDropOpen).className} ` : ""}select2-drop select2-display-none select2-with-searchbox${ownerMenuOpen ? " select2-drop-active" : ""}`}
+                      className={`select2-drop select2-display-none select2-with-searchbox${ownerMenuOpen ? " select2-drop-active" : ""}`}
                     >
                       <div className="select2-search">
                         <input
@@ -388,8 +360,7 @@ function ProjectImportScreen({
                           >
                             <button
                               type="button"
-                              {...stylex.props(styles.selectButton)}
-                              className={`${stylex.props(styles.selectButton).className} select2-result-label`}
+                              className={"select2-result-label"}
                               onClick={() => {
                                 setOwnerName(option.ownerName);
                                 setOwnerMenuOpen(false);
@@ -454,12 +425,7 @@ function ProjectImportScreen({
                 <dt>
                   <label htmlFor="project-name">
                     {t("project.name")}
-                    <strong
-                      {...stylex.props(styles.requiredMarker)}
-                      data-stylex-owner="project-import-required-marker-name"
-                    >
-                      *
-                    </strong>
+                    <strong data-owner="project-import-required-marker-name">*</strong>
                   </label>
                 </dt>
                 <dd>
@@ -506,23 +472,15 @@ function ProjectImportScreen({
                 </dd>
               </dl>
 
-              <div
-                className={`${stylex.props(styles.advanced).className} advanced-options`}
-                data-stylex-owner="project-import-advanced"
-              >
+              <div className={"advanced-options"} data-owner="project-import-advanced">
                 <div className="row-fluid">
-                  <div
-                    {...stylex.props(styles.rightLabelWithMargin)}
-                    className={`${stylex.props(styles.rightLabelWithMargin).className} span2 mt10`}
-                    data-stylex-owner="project-import-right-label"
-                  >
+                  <div className={"span2 mt10"} data-owner="project-import-right-label">
                     {t("project.shareOption")}
                   </div>
                   <div className="span10">
                     <ul
-                      {...stylex.props(styles.scopeList)}
-                      className={`${stylex.props(styles.scopeList).className} unstyled project-scopes mt10`}
-                      data-stylex-owner="project-import-scope-list"
+                      className={"unstyled project-scopes mt10"}
+                      data-owner="project-import-scope-list"
                     >
                       <li>
                         <input
@@ -535,11 +493,7 @@ function ProjectImportScreen({
                           onChange={() => setProjectScope("PUBLIC")}
                         />
                         <label htmlFor="public">
-                          <strong
-                            {...stylex.props(styles.visibilityLabel)}
-                            className={`ml5 ${stylex.props(styles.visibilityLabel).className}`}
-                            data-stylex-owner="project-import-public-scope-label"
-                          >
+                          <strong className={"ml5"} data-owner="project-import-public-scope-label">
                             {t("project.public")}
                           </strong>
                           <p className="note">{t("project.public.notice")}</p>
@@ -548,9 +502,9 @@ function ProjectImportScreen({
 
                       <li
                         id="opt-protected"
-                        {...protectedScopeStyleProps}
-                        className={`${protectedScopeStyleProps.className ?? ""} mt10`.trim()}
-                        data-stylex-owner="project-import-protected-scope-row"
+                        hidden={!isSelectedOwnerGroup}
+                        className={"mt10"}
+                        data-owner="project-import-protected-scope-row"
                       >
                         <input
                           type="radio"
@@ -563,9 +517,8 @@ function ProjectImportScreen({
                         />
                         <label htmlFor="protected">
                           <strong
-                            {...stylex.props(styles.visibilityLabel)}
-                            className={`ml5 ${stylex.props(styles.visibilityLabel).className}`}
-                            data-stylex-owner="project-import-protected-scope-label"
+                            className={"ml5"}
+                            data-owner="project-import-protected-scope-label"
                           >
                             {t("project.protected")}
                           </strong>
@@ -573,11 +526,7 @@ function ProjectImportScreen({
                         </label>
                       </li>
 
-                      <li
-                        {...stylex.props(styles.scopeOptionWithMargin)}
-                        className={`${stylex.props(styles.scopeOptionWithMargin).className} mt10`}
-                        data-stylex-owner="project-import-private-scope-row"
-                      >
+                      <li className={"mt10"} data-owner="project-import-private-scope-row">
                         <input
                           type="radio"
                           id="private"
@@ -588,11 +537,7 @@ function ProjectImportScreen({
                           onChange={() => setProjectScope("PRIVATE")}
                         />
                         <label htmlFor="private">
-                          <strong
-                            {...stylex.props(styles.visibilityLabel)}
-                            className={`ml5 ${stylex.props(styles.visibilityLabel).className}`}
-                            data-stylex-owner="project-import-private-scope-label"
-                          >
+                          <strong className={"ml5"} data-owner="project-import-private-scope-label">
                             {t("project.private")}
                           </strong>
                           <p className="note">{t("project.private.notice")}</p>
@@ -605,25 +550,15 @@ function ProjectImportScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div
-                    {...stylex.props(styles.rightLabelWithMargin)}
-                    className={`${stylex.props(styles.rightLabelWithMargin).className} span2 mt10`}
-                    data-stylex-owner="project-import-right-label"
-                  >
+                  <div className={"span2 mt10"} data-owner="project-import-right-label">
                     <label htmlFor="vcs">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
                     <div
-                      {...stylex.props(styles.selectContainer)}
-                      className={`${stylex.props(styles.selectContainer).className} select2-container select2-container-disabled mb10 mt5`}
-                      data-stylex-owner="project-import-vcs-select"
+                      className={"select2-container select2-container-disabled mb10 mt5"}
+                      data-owner="project-import-vcs-select"
                     >
-                      <button
-                        type="button"
-                        {...stylex.props(styles.selectButton)}
-                        className={`${stylex.props(styles.selectButton).className} select2-choice`}
-                        disabled
-                      >
+                      <button type="button" className={"select2-choice"} disabled>
                         <span className="select2-chosen">{t("project.new.vcsType.git")}</span>
                         <span className="select2-arrow" aria-hidden="true">
                           <b></b>
@@ -652,11 +587,7 @@ function ProjectImportScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div
-                    {...stylex.props(styles.rightLabel)}
-                    className={`${stylex.props(styles.rightLabel).className} span2`}
-                    data-stylex-owner="project-import-right-label"
-                  >
+                  <div className={"span2"} data-owner="project-import-right-label">
                     {t("project.menu.setting")}
                   </div>
                   <div className="span10 cu-desc">

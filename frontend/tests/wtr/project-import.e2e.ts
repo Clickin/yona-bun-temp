@@ -499,7 +499,7 @@ test("project import form renders legacy server auth and owner validation state"
   await expect(page.locator("#useRepoAuth")).toBeChecked();
   await expect(page.locator("#repoAuth input[name='authId']")).toBeFocused();
   await expect(page.locator("#repoAuth")).toBeVisible();
-  // F6 copy-fix: compile-mode stylex emits className only (styles.repoAuthVisible, [_]import.tsx:95,282-285) —
+  // F6 copy-fix: compile-mode style emits className only (styles.repoAuthVisible, [_]import.tsx:95,282-285) —
   // no inline --x-display var; computed display:block parity holds vs legacy importing.scala.html:44.
   const repoAuthDisplay = await page.evaluate(() => {
     const el = document.querySelector("#repoAuth");

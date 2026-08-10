@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import {
   Children,
   cloneElement,
   Fragment,
   isValidElement,
+  type CSSProperties,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -44,131 +44,6 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectNestedShellContext } from "../../$projectName";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
-import { styles } from "./-post-detail.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  header: stylex.props(styles.header),
-  title: stylex.props(styles.title),
-  boardId: stylex.props(styles.boardId),
-  date: stylex.props(styles.date),
-  body: stylex.props(styles.body),
-  author: stylex.props(styles.author),
-  content: stylex.props(styles.content),
-  actions: stylex.props(styles.actions),
-  postEditAction: stylex.props(styles.postEditAction),
-  postDeleteAction: stylex.props(styles.postDeleteAction),
-  commentEditAction: stylex.props(styles.commentActionButton, styles.commentEditAction),
-  commentDeleteAction: stylex.props(styles.commentActionButton, styles.commentDeleteAction),
-  commentAuthor: stylex.props(styles.commentAuthor),
-  commentResponsiveAvatar: stylex.props(styles.commentResponsiveAvatar),
-  commentResponsiveAvatarWrap: stylex.props(styles.commentResponsiveAvatarWrap),
-  commentAgo: stylex.props(styles.commentAgo),
-  commentEditIcon: stylex.props(styles.commentActionIcon, styles.commentEditIcon),
-  commentDeleteIcon: stylex.props(styles.commentActionIcon, styles.commentDeleteIcon),
-  childCommentNotificationReceiver: stylex.props(
-    styles.commentCreateNotificationReceiver,
-    styles.childCommentNotificationReceiver,
-  ),
-  childCommentNotificationReceiverTitle: stylex.props(
-    styles.commentCreateNotificationReceiverTitle,
-  ),
-  childCommentMediaBody: stylex.props(styles.childCommentMediaBody),
-  childCommentContents: stylex.props(styles.childCommentContents),
-  childCommentDeleteButton: stylex.props(styles.childCommentDeleteButton),
-  childCommentOneLineBox: stylex.props(styles.childCommentOneLineBox),
-  childCommentTextarea: stylex.props(styles.childCommentTextarea),
-  childCommentSubmitButton: stylex.props(styles.childCommentSubmitButton),
-  childCommentForm: stylex.props(styles.childCommentForm),
-  childCommentParagraph: stylex.props(styles.childCommentParagraph),
-  childCommentStrong: stylex.props(styles.childCommentStrong),
-  childCommentAuthorLink: stylex.props(styles.childCommentAuthorLink),
-  childCommentAuthorStrong: stylex.props(styles.childCommentAuthorStrong),
-  childCommentAgoLink: stylex.props(styles.childCommentAgoLink),
-  childCommentNoTextDecoration: stylex.props(styles.childCommentNoTextDecoration),
-  childCommentIssueLink: stylex.props(styles.childCommentIssueLink),
-  childCommentIssueStateOpen: stylex.props(styles.childCommentIssueStateOpen),
-  childCommentIssueStateClosed: stylex.props(styles.childCommentIssueStateClosed),
-  childCommentProjectLink: stylex.props(styles.childCommentProjectLink),
-  childCommentOrganizationLink: stylex.props(styles.childCommentOrganizationLink),
-  childCommentBlockquote: stylex.props(styles.childCommentBlockquote),
-  childCommentBlockquoteParagraph: stylex.props(styles.childCommentBlockquoteParagraph),
-  parentCommentNoTextDecoration: stylex.props(styles.parentCommentNoTextDecoration),
-  parentCommentUserLink: stylex.props(styles.parentCommentUserLink),
-  parentCommentUserAnchor: stylex.props(
-    styles.parentCommentUserLink,
-    styles.parentCommentNoTextDecoration,
-  ),
-  parentCommentProjectLink: stylex.props(styles.parentCommentProjectLink),
-  parentCommentOrganizationLink: stylex.props(styles.parentCommentOrganizationLink),
-  parentCommentIssueStateOpen: stylex.props(styles.parentCommentIssueStateOpen),
-  parentCommentIssueStateClosed: stylex.props(styles.parentCommentIssueStateClosed),
-  commentBody: stylex.props(styles.commentBody),
-  commentActionRow: stylex.props(styles.commentActionRow),
-  commentList: stylex.props(styles.commentList),
-  commentRow: stylex.props(styles.commentRow),
-  commentAvatar: stylex.props(styles.commentAvatar),
-  commentAvatarWrap: stylex.props(styles.commentAvatarWrap),
-  commentMeta: stylex.props(styles.commentMeta),
-  disabledCommentBox: stylex.props(styles.commentCreateWriteBox, styles.disabledCommentBox),
-  disabledCommentWrap: stylex.props(styles.commentCreateWriteWrap),
-  disabledCommentTextareaBox: stylex.props(styles.commentCreateTextareaBox),
-  disabledComment: stylex.props(
-    styles.commentCreateTextareaControl,
-    styles.disabledCommentControl,
-    styles.disabledComment,
-  ),
-  disabledCommentActions: stylex.props(
-    styles.commentActions,
-    styles.disabledCommentActions,
-    styles.disabledCommentActionsMargin,
-  ),
-  disabledCommentButton: stylex.props(
-    styles.commentUpdateActionButton,
-    styles.disabledCommentButton,
-  ),
-  commentCreateForm: stylex.props(styles.commentCreateForm),
-  commentCreateWriteBox: stylex.props(styles.commentCreateWriteBox),
-  commentUploadWrap: stylex.props(styles.commentUploadWrap),
-  commentUploadAttachWrap: stylex.props(styles.commentUploadAttachWrap),
-  commentUploadButtonWrap: stylex.props(styles.commentUploadButtonWrap),
-  commentUploadFileButton: stylex.props(styles.commentUploadFileButton),
-  commentUploadFileInput: stylex.props(styles.commentUploadFileInput),
-  commentUploadDroppable: stylex.props(styles.commentUploadDroppable),
-  commentUploadPlain: stylex.props(styles.commentUploadPlain),
-  commentUploadPastable: stylex.props(styles.commentUploadPastable),
-  commentUploadAttachedFiles: stylex.props(styles.commentUploadAttachedFiles),
-  commentUploadHelp: stylex.props(styles.commentUploadHelp),
-  commentCreateWriteWrap: stylex.props(styles.commentCreateWriteWrap),
-  commentActions: stylex.props(styles.commentActions),
-  commentCreateDynamicButton: stylex.props(
-    styles.commentUpdateActionButton,
-    styles.commentCreateDynamicButton,
-  ),
-  commentCreateSubmitButton: stylex.props(
-    styles.commentUpdateActionButton,
-    styles.commentCreateSubmitButton,
-  ),
-  comments: stylex.props(styles.comments),
-  commentHeader: stylex.props(styles.commentHeader),
-  commentHeaderIcon: stylex.props(styles.commentHeaderIcon),
-  commentDivider: stylex.props(styles.commentDivider),
-  sidebar: stylex.props(styles.sidebar),
-  footer: stylex.props(styles.footer),
-  watchWrapper: stylex.props(styles.watchWrapper),
-  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
-  editorTabContent: stylex.props(styles.editorTabContent),
-  originalMessageToggle: stylex.props(styles.originalMessageToggle),
-  tasklist: stylex.props(styles.tasklist),
-  tasklistProgress: stylex.props(styles.tasklistProgress),
-  keymapWrapper: stylex.props(styles.keymapWrapper),
-  desktopMetadata: stylex.props(styles.desktopMetadata),
-  mobileMetadata: stylex.props(styles.mobileMetadata),
-  errorWrap: stylex.props(styles.errorWrap),
-  errorIcon: stylex.props(styles.errorIcon(legacySpriteUrl)),
-  errorMessage: stylex.props(styles.errorMessage),
-} as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
 
@@ -328,26 +203,16 @@ function ProjectPostNotFoundBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div {...sx.page} data-stylex-owner="post-detail-page">
+    <div data-owner="post-detail-page">
       <div className="project-page-wrap">
-        <div
-          {...sx.errorWrap}
-          className={`${sx.errorWrap.className} error-wrap`}
-          data-stylex-owner="post-detail-error-wrap"
-        >
-          <i
-            {...sx.errorIcon}
-            className={`${sx.errorIcon.className} ico ico-err2`}
-            data-stylex-owner="post-detail-error-icon"
-          ></i>
-          <p {...sx.errorMessage} data-stylex-owner="post-detail-error-message">
-            {t("error.notfound.board_post")}
-          </p>
+        <div className="error-wrap" data-owner="post-detail-error-wrap">
+          <i className="ico ico-err2" data-owner="post-detail-error-icon"></i>
+          <p data-owner="post-detail-error-message">{t("error.notfound.board_post")}</p>
           <Link
             to="/$ownerName/$projectName/posts"
             params={{ ownerName, projectName }}
             className="ybtn ybtn-primary"
-            data-stylex-owner="post-detail-error-list"
+            data-owner="post-detail-error-list"
           >
             {t("button.list")}
           </Link>
@@ -357,13 +222,13 @@ function ProjectPostNotFoundBody({
   );
 }
 
-function ProjectPostEditNotFoundTitle() {
+export function ProjectPostEditNotFoundTitle() {
   const { t } = useLegacyMessages();
 
   return <title>{t("error.internalServerError")}</title>;
 }
 
-function ProjectPostEditNotFoundBody() {
+export function ProjectPostEditNotFoundBody() {
   const { t } = useLegacyMessages();
 
   return (
@@ -411,7 +276,6 @@ function ProjectPostDetailBody({
   const canUpdate = booleanField(post.permissions.canUpdate);
   const canDelete = booleanField(post.permissions.canDelete);
   const canWatch = booleanField(post.permissions.canWatch);
-  const watchButtonStyle = stylex.props(styles.watch, post.isWatching && styles.watchWatching);
   // board/view.scala.html keys this rail entry off the enabled board menu;
   // creation authorization is enforced after navigation, not by hiding it.
   const boardMenuEnabled = projectMenuEnabled(project, "board");
@@ -528,66 +392,29 @@ function ProjectPostDetailBody({
           "/legacy-assets/javascripts/lib/elevator/jquery.elevator.css",
         )}
       />
-      <div className="project-page-wrap board-view" data-stylex-owner="post-detail-shell">
-        <div
-          {...sx.header}
-          className={`${sx.header.className} board-header issue`}
-          data-stylex-owner="post-detail-header"
-        >
-          <div
-            {...sx.desktopMetadata}
-            className={sx.desktopMetadata.className}
-            data-stylex-owner="post-detail-desktop-metadata"
-          >
-            <div
-              {...sx.date}
-              className={`${sx.date.className} date`}
-              data-stylex-owner="post-detail-date"
-              title={post.createdLabel}
-            >
+      <div className="project-page-wrap board-view" data-owner="post-detail-shell">
+        <div className="board-header issue" data-owner="post-detail-header">
+          <div data-owner="post-detail-desktop-metadata">
+            <div className="date" data-owner="post-detail-date" title={post.createdLabel}>
               {legacyRelativeDateLabel(post.createdLabel, language)}
             </div>
           </div>
-          <div
-            {...sx.title}
-            className={`${sx.title.className} title`}
-            data-stylex-owner="post-detail-title"
-          >
-            <strong
-              {...sx.boardId}
-              className={`${sx.boardId.className} board-id`}
-              data-stylex-owner="post-detail-board-id"
-            >
+          <div className="title" data-owner="post-detail-title">
+            <strong className="board-id" data-owner="post-detail-board-id">
               #{postNumber}
             </strong>{" "}
             {post.title}
-            <div
-              {...sx.mobileMetadata}
-              className={sx.mobileMetadata.className}
-              data-stylex-owner="post-detail-mobile-metadata"
-            >
-              <span
-                {...sx.date}
-                className={`${sx.date.className} date`}
-                data-stylex-owner="post-detail-date"
-                title={post.createdLabel}
-              >
+            <div data-owner="post-detail-mobile-metadata">
+              <span className="date" data-owner="post-detail-date" title={post.createdLabel}>
                 {legacyRelativeDateLabel(post.createdLabel, language)}
               </span>
             </div>
           </div>
         </div>
 
-        <div
-          {...sx.body}
-          className={`${sx.body.className} board-body row-fluid`}
-          data-stylex-owner="post-detail-body"
-        >
+        <div className="board-body row-fluid" data-owner="post-detail-body">
           <div className="span9 span-left-pane">
-            <div
-              className={`${sx.author.className} author-info`}
-              data-stylex-owner="post-detail-author"
-            >
+            <div className="author-info" data-owner="post-detail-author">
               <Link
                 to="/$user"
                 params={{ user: stringField(post.authorLoginId) }}
@@ -641,9 +468,8 @@ function ProjectPostDetailBody({
                 <div id={`post-body-${postNumber}`}>
                   <TasklistBar />
                   <div
-                    {...sx.content}
-                    className={`${sx.content.className} content markdown-wrap`}
-                    data-stylex-owner="post-detail-content"
+                    className="content markdown-wrap"
+                    data-owner="post-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.bodyMarkdown}</ReactMarkdown>
@@ -660,24 +486,15 @@ function ProjectPostDetailBody({
             >
               <AttachedFiles attachments={post.attachments} />
             </div>
-            <div
-              {...sx.actions}
-              className={`${sx.actions.className} board-actrow`}
-              data-stylex-owner="post-detail-actions"
-            >
-              <div
-                {...sx.watchWrapper}
-                className={sx.watchWrapper.className}
-                data-stylex-owner="post-detail-watch-wrapper"
-              >
+            <div className="board-actrow" data-owner="post-detail-actions">
+              <div data-owner="post-detail-watch-wrapper">
                 <div>
                   {canWatch ? (
                     <button
                       id="watch-button"
                       type="button"
-                      {...watchButtonStyle}
-                      className={`${watchButtonStyle.className} ybtn${post.isWatching ? " ybtn-watching" : ""}`}
-                      data-stylex-owner="post-detail-watch"
+                      className={`ybtn${post.isWatching ? " ybtn-watching" : ""}`}
+                      data-owner="post-detail-watch"
                       data-placement="top"
                       title={t("issue.watch.description")}
                       data-watching={String(post.isWatching)}
@@ -716,10 +533,7 @@ function ProjectPostDetailBody({
           </div>
 
           <div className="span3 span-right-pane mb20">
-            <div
-              className={`${sx.sidebar.className} issue-info board-labels`}
-              data-stylex-owner="post-detail-sidebar"
-            >
+            <div className="issue-info board-labels" data-owner="post-detail-sidebar">
               <dl>
                 {boardMenuEnabled ? (
                   <dd className="project-btn-item">
@@ -750,10 +564,7 @@ function ProjectPostDetailBody({
                   projectName={projectName}
                 />
               )}
-              <div
-                className="act-row right-menu-icons"
-                data-stylex-owner="post-detail-sidebar-actions"
-              >
+              <div className="act-row right-menu-icons" data-owner="post-detail-sidebar-actions">
                 <PostActionButtons
                   canDelete={canDelete}
                   canUpdate={canUpdate}
@@ -767,10 +578,7 @@ function ProjectPostDetailBody({
           </div>
         </div>
 
-        <div
-          className={`${sx.footer.className} board-footer`}
-          data-stylex-owner="post-detail-footer"
-        >
+        <div className="board-footer" data-owner="post-detail-footer">
           <BoardDetailKeymap
             onClose={() => setOpenPostModal(null)}
             onOpen={() => setOpenPostModal("helpKeys")}
@@ -781,10 +589,8 @@ function ProjectPostDetailBody({
 
       <div
         id="deleteConfirm"
-        className={`modal ${deleteModalOpen ? "in " : "hide "}fade ${
-          deleteModalOpen ? (stylex.props(styles.deleteModalVisible).className ?? "") : ""
-        }`.trim()}
-        data-stylex-owner="post-detail-delete-modal"
+        className={`modal ${deleteModalOpen ? "in " : "hide "}fade`.trim()}
+        data-owner="post-detail-delete-modal"
         aria-hidden={deleteModalOpen ? "false" : undefined}
       >
         <div className="modal-header">
@@ -902,7 +708,6 @@ function PostingHistory({
   open: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const historyModalStyleProps = open ? stylex.props(styles.historyModalVisible) : undefined;
 
   if (!historyMarkdown) {
     return null;
@@ -922,9 +727,8 @@ function PostingHistory({
       </button>
       <div
         id="-yona-posting-history"
-        {...historyModalStyleProps}
-        className={`modal ${open ? "in" : "hide"} ${historyModalStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="post-detail-history-modal"
+        className={`modal ${open ? "in" : "hide"}`.trim()}
+        data-owner="post-detail-history-modal"
         aria-hidden={open ? "false" : undefined}
       >
         <div className="modal-header">
@@ -980,15 +784,12 @@ function CommentDeleteConfirm({
   open: boolean;
   title: string;
 }) {
-  const commentDeleteStyleProps = open ? stylex.props(styles.commentDeleteVisible) : undefined;
-
   return (
     <>
       <div
         id="comment-delete-modal"
-        {...commentDeleteStyleProps}
-        className={`modal ${open ? "in " : "hide "}fade ${commentDeleteStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="post-detail-comment-delete-modal"
+        className={`modal ${open ? "in " : "hide "}fade`.trim()}
+        data-owner="post-detail-comment-delete-modal"
         aria-hidden={open ? "false" : undefined}
       >
         <div className="modal-header">
@@ -1201,14 +1002,13 @@ function PostSelectedLabels({
       <dt>{t("label")}</dt>
       <dd>
         {labels.map((label) => {
-          const labelStyle = stylex.props(styles.labelBackground(label.color));
           return (
             <Link
               to={postsLabelFilterRoutePath(ownerName, projectName, label.id)}
               activeProps={legacyRouteLocalActiveProps}
-              {...labelStyle}
-              className={`${labelStyle.className} label issue-label active static`}
-              data-stylex-owner="post-detail-label-background"
+              style={{ "--x-backgroundColor": label.color } as CSSProperties}
+              className="label issue-label active static"
+              data-owner="post-detail-label-background"
               key={label.id}
             >
               {label.name}
@@ -1241,8 +1041,8 @@ function PostActionButtons({
       {canUpdate ? (
         <button
           type="button"
-          className={`${sx.postEditAction.className} icon btn-transparent-with-fontsize-lineheight`}
-          data-stylex-owner="post-detail-post-edit-action"
+          className="icon btn-transparent-with-fontsize-lineheight"
+          data-owner="post-detail-post-edit-action"
           title={t("button.edit")}
           onClick={(event) => {
             event.preventDefault();
@@ -1256,8 +1056,8 @@ function PostActionButtons({
         <Link to={editRoutePath} activeProps={legacyRouteLocalActiveProps}>
           <button
             type="button"
-            className={`${sx.postEditAction.className} icon btn-transparent-with-fontsize-lineheight`}
-            data-stylex-owner="post-detail-post-edit-action"
+            className="icon btn-transparent-with-fontsize-lineheight"
+            data-owner="post-detail-post-edit-action"
             title={t("button.show.original")}
           >
             <i className="yobicon-edit-2"></i>
@@ -1267,8 +1067,8 @@ function PostActionButtons({
       {canDelete ? (
         <button
           type="button"
-          className={`${sx.postDeleteAction.className} icon btn-transparent-with-fontsize-lineheight`}
-          data-stylex-owner="post-detail-post-delete-action"
+          className="icon btn-transparent-with-fontsize-lineheight"
+          data-owner="post-detail-post-delete-action"
           title={t("button.delete")}
           onClick={(event) => {
             event.preventDefault();
@@ -1312,36 +1112,16 @@ function PostComments({
   const canComment = booleanField(post.permissions.canComment);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   return (
-    <div
-      id="comments"
-      className={`${sx.comments.className} board-comment-wrap`}
-      data-stylex-owner="post-detail-comments"
-    >
+    <div id="comments" className="board-comment-wrap" data-owner="post-detail-comments">
       <div id="timeline">
         <div className="timeline-list">
-          <div
-            {...sx.commentHeader}
-            className={`${sx.commentHeader.className} comment-header`}
-            data-stylex-owner="post-detail-comment-header"
-          >
-            <i
-              {...sx.commentHeaderIcon}
-              className={`${sx.commentHeaderIcon.className} yobicon-comments`}
-              data-stylex-owner="post-detail-comment-header-icon"
-            ></i>{" "}
+          <div className="comment-header" data-owner="post-detail-comment-header">
+            <i className="yobicon-comments" data-owner="post-detail-comment-header-icon"></i>{" "}
             <strong>{t("common.comment")}</strong>{" "}
             <strong className="num">{post.comments.length}</strong>
           </div>
-          <hr
-            {...sx.commentDivider}
-            className={`${sx.commentDivider.className} nm`}
-            data-stylex-owner="post-detail-comment-divider"
-          />
-          <ul
-            {...sx.commentList}
-            className={`${sx.commentList.className} comments`}
-            data-stylex-owner="post-detail-comment-list"
-          >
+          <hr className="nm" data-owner="post-detail-comment-divider" />
+          <ul className="comments" data-owner="post-detail-comment-list">
             {comments.map((comment) => (
               <PostCommentRow
                 basePath={basePath}
@@ -1405,33 +1185,21 @@ function PostCommentForm({
   if (!canComment) {
     return (
       <div
-        className={`${sx.disabledCommentBox.className} write-comment-box mt20`}
-        data-stylex-owner="post-detail-disabled-comment-box"
+        className="write-comment-box mt20"
+        data-owner="post-detail-disabled-comment-box"
         title={t("error.auth.unauthorized.comment")}
         data-login="required"
       >
-        <div
-          className={`${sx.disabledCommentWrap.className} write-comment-wrap`}
-          data-stylex-owner="post-detail-disabled-comment-wrap"
-        >
-          <div
-            className={`${sx.disabledCommentTextareaBox.className} textarea-box`}
-            data-stylex-owner="post-detail-disabled-comment-textarea-box"
-          >
+        <div className="write-comment-wrap" data-owner="post-detail-disabled-comment-wrap">
+          <div className="textarea-box" data-owner="post-detail-disabled-comment-textarea-box">
             <textarea
-              className={`${sx.disabledComment.className} comment disabled`}
-              data-stylex-owner="post-detail-disabled-comment"
+              className="comment disabled"
+              data-owner="post-detail-disabled-comment"
               disabled
             />
           </div>
-          <div
-            className={`${sx.disabledCommentActions.className} mt10`}
-            data-stylex-owner="post-detail-disabled-comment-actions"
-          >
-            <span
-              className={`${sx.disabledCommentButton.className} ybtn ybtn-disabled`}
-              data-stylex-owner="post-detail-disabled-comment-button"
-            >
+          <div className="mt10" data-owner="post-detail-disabled-comment-actions">
+            <span className="ybtn ybtn-disabled" data-owner="post-detail-disabled-comment-button">
               {t("button.comment.new")}
             </span>
           </div>
@@ -1451,98 +1219,73 @@ function PostCommentForm({
 
   return (
     <form
-      className={sx.commentCreateForm.className}
-      data-stylex-owner="post-detail-comment-create-form"
+      data-owner="post-detail-comment-create-form"
       id="comment-form"
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/post/${postNumber}/comments`)}
       method="post"
       encType="multipart/form-data"
       onSubmit={handleSubmit}
     >
-      <div
-        className={`${sx.commentCreateWriteBox.className} write-comment-box`}
-        data-stylex-owner="post-detail-comment-create-write-box"
-      >
-        <div
-          className={`${sx.commentCreateWriteWrap.className} write-comment-wrap`}
-          data-stylex-owner="post-detail-comment-create-write-wrap"
-        >
+      <div className="write-comment-box" data-owner="post-detail-comment-create-write-box">
+        <div className="write-comment-wrap" data-owner="post-detail-comment-create-write-wrap">
           <MarkdownEditor
             key={editorResetKey}
             {...postDetailMarkdownEditorProps("comment-body", "contents", "", "contents")}
           />
           <div
-            className={`${sx.commentUploadWrap.className} upload-wrap content-footer`}
+            className="upload-wrap content-footer"
             data-resource-type="NONISSUE_COMMENT"
-            data-stylex-owner="post-detail-comment-upload-wrap"
+            data-owner="post-detail-comment-upload-wrap"
             id="upload"
           >
-            <div
-              className={`${sx.commentUploadAttachWrap.className} attach-wrap`}
-              data-stylex-owner="post-detail-comment-upload-attach-wrap"
-            >
+            <div className="attach-wrap" data-owner="post-detail-comment-upload-attach-wrap">
               <span
-                className={`${sx.commentUploadDroppable.className} help help-droppable`}
-                data-stylex-owner="post-detail-comment-upload-droppable"
+                className="help help-droppable"
+                data-owner="post-detail-comment-upload-droppable"
               >
                 {t("common.attach.drophere")}
               </span>
-              <div
-                className={`${sx.commentUploadButtonWrap.className} btn-wrap`}
-                data-stylex-owner="post-detail-comment-upload-button-wrap"
-              >
+              <div className="btn-wrap" data-owner="post-detail-comment-upload-button-wrap">
                 <div
-                  className={`${sx.commentUploadFileButton.className} nbtn medium white fake-file-wrap`}
-                  data-stylex-owner="post-detail-comment-upload-file-button"
+                  className="nbtn medium white fake-file-wrap"
+                  data-owner="post-detail-comment-upload-file-button"
                 >
                   <i className="yobicon-upload"></i> {t("button.upload")}
                   <input
                     type="file"
-                    className={`${sx.commentUploadFileInput.className} file`}
-                    data-stylex-owner="post-detail-comment-upload-file-input"
+                    className="file"
+                    data-owner="post-detail-comment-upload-file-input"
                     name="filePath"
                     multiple
                   />
                 </div>
               </div>
-              <span
-                className={`${sx.commentUploadPlain.className} plain`}
-                data-stylex-owner="post-detail-comment-upload-plain"
-              >
+              <span className="plain" data-owner="post-detail-comment-upload-plain">
                 {t("common.attach.clickbutton")}
               </span>
-              <span
-                className={`${sx.commentUploadPastable.className} help help-pastable`}
-                data-stylex-owner="post-detail-comment-upload-pastable"
-              >
+              <span className="help help-pastable" data-owner="post-detail-comment-upload-pastable">
                 {t("common.attach.pastehere")}
               </span>
             </div>
             <ul
-              className={`${sx.commentUploadAttachedFiles.className} attached-files unstyled`}
-              data-stylex-owner="post-detail-comment-upload-attached-files"
+              className="attached-files unstyled"
+              data-owner="post-detail-comment-upload-attached-files"
             ></ul>
-            <p
-              className={`${sx.commentUploadHelp.className} help`}
-              data-stylex-owner="post-detail-comment-upload-help"
-            >
+            <p className="help" data-owner="post-detail-comment-upload-help">
               <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
             </p>
           </div>
-          <div
-            className={`${sx.commentActions.className} right-txt`.trim()}
-            data-stylex-owner="post-detail-comment-actions"
-          >
+          <div className="right-txt" data-owner="post-detail-comment-actions">
             <button
               type="button"
-              className={`${sx.commentCreateDynamicButton.className} ybtn hidden`}
-              data-stylex-owner="post-detail-comment-create-dynamic-button"
+              className="ybtn hidden"
+              data-owner="post-detail-comment-create-dynamic-button"
               id="dynamic-comment-btn"
             ></button>
             <button
               type="submit"
-              className={`${sx.commentCreateSubmitButton.className} ybtn ybtn-success`}
-              data-stylex-owner="post-detail-comment-create-submit"
+              className="ybtn ybtn-success"
+              data-owner="post-detail-comment-create-submit"
             >
               {t("button.comment.new")}
             </button>
@@ -1595,10 +1338,6 @@ function PostCommentRow({
     viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown) !== null;
   const [replyVisible, setReplyVisible] = useState(false);
   const [childFormOpen, setChildFormOpen] = useState(false);
-  const commentMediaStyle = stylex.props(
-    styles.commentMedia,
-    hash === `comment-${commentId}` && styles.commentMediaTarget,
-  );
 
   useEffect(() => {
     if (hash !== `comment-${commentId}`) {
@@ -1613,9 +1352,8 @@ function PostCommentRow({
 
   return (
     <li
-      {...sx.commentRow}
-      className={`${sx.commentRow.className} comment`}
-      data-stylex-owner="post-detail-comment-row"
+      className="comment"
+      data-owner="post-detail-comment-row"
       id={`comment-${commentId}`}
       ref={commentRef}
       onMouseEnter={() => setReplyVisible(true)}
@@ -1631,51 +1369,32 @@ function PostCommentRow({
           key={stringField(childComment.id)}
         ></div>
       ))}
-      <div
-        {...sx.commentAvatar}
-        className={`${sx.commentAvatar.className} comment-avatar`}
-        data-stylex-owner="post-detail-comment-avatar"
-      >
+      <div className="comment-avatar" data-owner="post-detail-comment-avatar">
         <Link
           to="/$user"
           params={{ user: authorLoginId }}
           search={LEGACY_EMPTY_PROFILE_SEARCH}
           activeProps={legacyRouteLocalActiveProps}
-          {...sx.commentAvatarWrap}
-          className={`${sx.commentAvatarWrap.className} avatar-wrap`}
-          data-stylex-owner="post-detail-comment-avatar-wrap"
+          className="avatar-wrap"
+          data-owner="post-detail-comment-avatar-wrap"
         >
           <img src={avatarUrl} width="32" height="32" alt={authorLoginId} />
         </Link>
       </div>
-      <div
-        {...commentMediaStyle}
-        className={`${commentMediaStyle.className} media-body`}
-        data-stylex-owner="post-detail-comment-media"
-      >
-        <div
-          {...sx.commentMeta}
-          className={`${sx.commentMeta.className} meta-info`}
-          data-stylex-owner="post-detail-comment-meta"
-        >
-          <span
-            {...sx.commentAuthor}
-            className={`${sx.commentAuthor.className} comment_author`}
-            data-stylex-owner="post-detail-comment-author"
-          >
+      <div className="media-body" data-owner="post-detail-comment-media">
+        <div className="meta-info" data-owner="post-detail-comment-meta">
+          <span className="comment_author" data-owner="post-detail-comment-author">
             <span
-              {...sx.commentResponsiveAvatar}
-              className={`${sx.commentResponsiveAvatar.className} resp-comment-avatar`}
-              data-stylex-owner="post-detail-comment-responsive-avatar"
+              className="resp-comment-avatar"
+              data-owner="post-detail-comment-responsive-avatar"
             >
               <Link
                 to="/$user"
                 params={{ user: authorLoginId }}
                 search={LEGACY_EMPTY_PROFILE_SEARCH}
                 activeProps={legacyRouteLocalActiveProps}
-                {...sx.commentResponsiveAvatarWrap}
-                className={`${sx.commentResponsiveAvatarWrap.className} avatar-wrap`}
-                data-stylex-owner="post-detail-comment-responsive-avatar-wrap"
+                className="avatar-wrap"
+                data-owner="post-detail-comment-responsive-avatar-wrap"
               >
                 <img src={avatarUrl} width="32" height="32" alt={authorLabel} />
               </Link>
@@ -1695,9 +1414,8 @@ function PostCommentRow({
               hash={`comment-${commentId}`}
               activeOptions={{ includeHash: true }}
               activeProps={legacyRouteLocalActiveProps}
-              {...sx.commentAgo}
-              className={`${sx.commentAgo.className} ago`}
-              data-stylex-owner="post-detail-comment-ago"
+              className="ago"
+              data-owner="post-detail-comment-ago"
               title={comment.createdLabel}
             >
               {legacyRelativeDateLabel(comment.createdLabel, language)}
@@ -1707,22 +1425,19 @@ function PostCommentRow({
               hash={`comment-${commentId}`}
               activeOptions={{ includeHash: true }}
               activeProps={legacyRouteLocalActiveProps}
-              className={`share-link ${stylex.props(styles.shareLinkHidden).className ?? ""}`.trim()}
-              data-stylex-owner="post-detail-share-link"
+              className="share-link"
+              data-owner="post-detail-share-link"
             >
               [Link]
             </Link>
           </span>
-          <span
-            className={`${sx.commentActionRow.className} act-row`}
-            data-stylex-owner="post-detail-comment-action-row"
-          >
+          <span className="act-row" data-owner="post-detail-comment-action-row">
             {canUpdate ? (
               <button
                 type="button"
-                className={`${sx.commentEditAction.className} btn-transparent`}
+                className="btn-transparent"
                 data-comment-id={commentId}
-                data-stylex-owner="post-detail-comment-edit-action"
+                data-owner="post-detail-comment-edit-action"
                 title={t("common.comment.edit")}
                 onClick={(event) => {
                   event.preventDefault();
@@ -1730,18 +1445,14 @@ function PostCommentRow({
                   onCommentEditRequest(commentId);
                 }}
               >
-                <i
-                  {...sx.commentEditIcon}
-                  className={`${sx.commentEditIcon.className} yobicon-edit-2`}
-                  data-stylex-owner="post-detail-comment-edit-icon"
-                ></i>
+                <i className="yobicon-edit-2" data-owner="post-detail-comment-edit-icon"></i>
               </button>
             ) : null}
             {canDelete ? (
               <button
                 type="button"
-                className={`${sx.commentDeleteAction.className} btn-transparent`}
-                data-stylex-owner="post-detail-comment-delete-action"
+                className="btn-transparent"
+                data-owner="post-detail-comment-delete-action"
                 title={t("common.comment.delete")}
                 onClick={(event) => {
                   event.preventDefault();
@@ -1749,11 +1460,7 @@ function PostCommentRow({
                   onCommentDeleteRequest(commentId);
                 }}
               >
-                <i
-                  {...sx.commentDeleteIcon}
-                  className={`${sx.commentDeleteIcon.className} yobicon-trash`}
-                  data-stylex-owner="post-detail-comment-delete-icon"
-                ></i>
+                <i className="yobicon-trash" data-owner="post-detail-comment-delete-icon"></i>
               </button>
             ) : null}
           </span>
@@ -1772,14 +1479,13 @@ function PostCommentRow({
         />
         <div
           id={`comment-body-${commentId}`}
-          {...(isEditing ? stylex.props(styles.commentBodyHidden) : {})}
-          data-stylex-owner="post-detail-comment-body"
+          className={isEditing ? "is-editing" : undefined}
+          data-owner="post-detail-comment-body"
         >
           <TasklistBar />
           <div
-            {...sx.commentBody}
-            className={`${sx.commentBody.className} comment-body markdown-wrap`}
-            data-stylex-owner="post-detail-comment-body-content"
+            className="comment-body markdown-wrap"
+            data-owner="post-detail-comment-body-content"
             data-via-email={String(viaEmail)}
             data-allowed-update={String(canUpdate)}
             data-yobi-original-message-processed={hasRouteOwnedOriginalMessage ? "true" : undefined}
@@ -1846,8 +1552,7 @@ function OriginalMessageMarkdown({
       </ReactMarkdown>
       <button
         type="button"
-        {...sx.originalMessageToggle}
-        data-stylex-owner="post-detail-original-message-toggle"
+        data-owner="post-detail-original-message-toggle"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1892,9 +1597,8 @@ function createParentCommentMarkdownComponents(): Components {
         return (
           <span
             {...props}
-            {...sx.parentCommentIssueStateOpen}
-            className={`${sx.parentCommentIssueStateOpen.className} ${className}`}
-            data-stylex-owner="post-detail-parent-comment-issue-state-open"
+            className={className}
+            data-owner="post-detail-parent-comment-issue-state-open"
           >
             {children}
           </span>
@@ -1904,9 +1608,8 @@ function createParentCommentMarkdownComponents(): Components {
         return (
           <span
             {...props}
-            {...sx.parentCommentIssueStateClosed}
-            className={`${sx.parentCommentIssueStateClosed.className} ${className}`}
-            data-stylex-owner="post-detail-parent-comment-issue-state-closed"
+            className={className}
+            data-owner="post-detail-parent-comment-issue-state-closed"
           >
             {children}
           </span>
@@ -1916,9 +1619,8 @@ function createParentCommentMarkdownComponents(): Components {
         return (
           <span
             {...props}
-            {...sx.parentCommentProjectLink}
-            className={`${sx.parentCommentProjectLink.className} ${className}`}
-            data-stylex-owner="post-detail-parent-comment-project-link"
+            className={className}
+            data-owner="post-detail-parent-comment-project-link"
           >
             {children}
           </span>
@@ -1928,9 +1630,8 @@ function createParentCommentMarkdownComponents(): Components {
         return (
           <span
             {...props}
-            {...sx.parentCommentOrganizationLink}
-            className={`${sx.parentCommentOrganizationLink.className} ${className}`}
-            data-stylex-owner="post-detail-parent-comment-organization-link"
+            className={className}
+            data-owner="post-detail-parent-comment-organization-link"
           >
             {children}
           </span>
@@ -1949,15 +1650,12 @@ function createParentCommentMarkdownComponents(): Components {
         return (
           <Link
             {...props}
-            {...sx.parentCommentUserAnchor}
             to={href as "/"}
-            className={`${sx.parentCommentUserAnchor.className} ${className} user-link`}
-            data-stylex-owner="post-detail-parent-comment-user-link"
+            className={`${className} user-link`}
+            data-owner="post-detail-parent-comment-user-link"
             activeProps={legacyRouteLocalActiveProps}
           >
-            <span data-stylex-owner="post-detail-parent-comment-no-text-decoration">
-              {children}
-            </span>
+            <span data-owner="post-detail-parent-comment-no-text-decoration">{children}</span>
           </Link>
         );
       }
@@ -2005,33 +1703,11 @@ function PostCommentUpdateForm({
     await onUpdateComment(commentId, typeof contents === "string" ? contents : "");
   }
 
-  const updateFormStyle = stylex.props(
-    styles.commentUpdateForm,
-    isEditing && styles.commentUpdateFormVisible,
-  );
-  const updateWriteBoxStyle = stylex.props(styles.commentUpdateWriteBox);
-  const updateActionsStyle = stylex.props(styles.commentUpdateActions);
-  const updateFileUploadStyle = stylex.props(styles.commentUpdateFileUpload);
-  const updateFileUploadLabelStyle = stylex.props(
-    styles.commentUpdateActionButton,
-    styles.commentUpdateFileUploadLabel,
-  );
-  const updateFileUploadInputStyle = stylex.props(styles.commentUpdateFileUploadInput);
-  const updateCancelButtonStyle = stylex.props(styles.commentUpdateActionButton);
-  const updateSaveButtonStyle = stylex.props(
-    styles.commentUpdateActionButton,
-    styles.commentUpdateSaveButton,
-  );
-  const updateDropOverlayStyle = stylex.props(styles.commentUpdateDropOverlay);
-  const updateDropMessageWrapStyle = stylex.props(styles.commentUpdateDropMessageWrap);
-  const updateDropMessageStyle = stylex.props(styles.commentUpdateDropMessage);
-
   return (
     <div
       id={`comment-editform-${commentId}`}
-      {...updateFormStyle}
-      className={`${updateFormStyle.className} comment-update-form`}
-      data-stylex-owner="post-detail-comment-editor"
+      className={`comment-update-form${isEditing ? " is-editing" : ""}`}
+      data-owner="post-detail-comment-editor"
     >
       <form
         action={prefixBasePath(
@@ -2043,11 +1719,7 @@ function PostCommentUpdateForm({
         onSubmit={handleSubmit}
       >
         <input type="hidden" name="id" value={commentId} />
-        <div
-          {...updateWriteBoxStyle}
-          className={`${updateWriteBoxStyle.className} write-comment-box`}
-          data-stylex-owner="post-detail-comment-update-write-box"
-        >
+        <div className="write-comment-box" data-owner="post-detail-comment-update-write-box">
           <div className="write-comment-wrap">
             <MarkdownEditor
               {...postDetailMarkdownEditorProps(
@@ -2057,58 +1729,38 @@ function PostCommentUpdateForm({
                 commentId,
               )}
             />
-            <div
-              {...updateDropOverlayStyle}
-              className={`${updateDropOverlayStyle.className} upload-drop-here`}
-              data-stylex-owner="post-detail-comment-update-drop-overlay"
-            >
-              <div
-                {...updateDropMessageWrapStyle}
-                className={`${updateDropMessageWrapStyle.className} msg-wrap`}
-                data-stylex-owner="post-detail-comment-update-drop-message-wrap"
-              >
-                <div
-                  {...updateDropMessageStyle}
-                  className={`${updateDropMessageStyle.className} msg`}
-                  data-stylex-owner="post-detail-comment-update-drop-message"
-                >
+            <div className="upload-drop-here" data-owner="post-detail-comment-update-drop-overlay">
+              <div className="msg-wrap" data-owner="post-detail-comment-update-drop-message-wrap">
+                <div className="msg" data-owner="post-detail-comment-update-drop-message">
                   {t("common.attach.dropFilesHere")}
                 </div>
               </div>
             </div>
             <div
-              {...updateActionsStyle}
-              className={`${updateActionsStyle.className} comment-update-button upload-button-line`}
-              data-stylex-owner="post-detail-comment-update-actions"
+              className="comment-update-button upload-button-line"
+              data-owner="post-detail-comment-update-actions"
             >
-              <span
-                {...updateFileUploadStyle}
-                className={`${updateFileUploadStyle.className} file-upload`}
-                data-stylex-owner="post-detail-comment-update-file-upload"
-              >
+              <span className="file-upload" data-owner="post-detail-comment-update-file-upload">
                 <label
-                  {...updateFileUploadLabelStyle}
                   htmlFor={`upload-${commentId}`}
-                  className={`${updateFileUploadLabelStyle.className} file-upload__label ybtn`}
-                  data-stylex-owner="post-detail-comment-update-file-upload-label"
+                  className="file-upload__label ybtn"
+                  data-owner="post-detail-comment-update-file-upload-label"
                 >
                   {t("button.upload")}
                 </label>
                 <input
-                  {...updateFileUploadInputStyle}
                   id={`upload-${commentId}`}
-                  className={`${updateFileUploadInputStyle.className} file-upload__input`}
-                  data-stylex-owner="post-detail-comment-update-file-upload-input"
+                  className="file-upload__input"
+                  data-owner="post-detail-comment-update-file-upload-input"
                   type="file"
                   name="filePath"
                   multiple
                 />
               </span>
               <button
-                {...updateCancelButtonStyle}
                 type="button"
-                className={`${updateCancelButtonStyle.className} ybtn ybtn-cancel`}
-                data-stylex-owner="post-detail-comment-update-cancel"
+                className="ybtn ybtn-cancel"
+                data-owner="post-detail-comment-update-cancel"
                 data-comment-id={commentId}
                 onClick={(event) => {
                   event.preventDefault();
@@ -2120,10 +1772,9 @@ function PostCommentUpdateForm({
               </button>
               {canUpdate ? (
                 <button
-                  {...updateSaveButtonStyle}
                   type="submit"
-                  className={`${updateSaveButtonStyle.className} ybtn ybtn-info`}
-                  data-stylex-owner="post-detail-comment-update-save"
+                  className="ybtn ybtn-info"
+                  data-owner="post-detail-comment-update-save"
                 >
                   {t("button.save")}
                 </button>
@@ -2191,15 +1842,10 @@ function PostChildComments({
     <>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
-        className={`${
-          stylex.props(
-            styles.childCommentReply,
-            replyVisible && !hideReplyPrompt
-              ? styles.childCommentReplyVisible
-              : styles.childCommentReplyHidden,
-          ).className
-        } add-a-comment`}
-        data-stylex-owner="post-detail-child-comment-reply"
+        className={`add-a-comment${
+          replyVisible && !hideReplyPrompt ? " is-visible" : " is-hidden"
+        }`}
+        data-owner="post-detail-child-comment-reply"
         onClick={() => {
           toggleForm();
           if (!formOpen) {
@@ -2209,11 +1855,7 @@ function PostChildComments({
       >
         {t("comment.oneline.comment.placeholder")}
       </div>
-      <div
-        {...sx.childCommentMediaBody}
-        className={`${sx.childCommentMediaBody.className} subcomment-media-body`}
-        data-stylex-owner="post-detail-child-comment-media-body"
-      >
+      <div className="subcomment-media-body" data-owner="post-detail-child-comment-media-body">
         <div className="child-comments">
           {childComments.map((comment) => (
             <PostChildComment
@@ -2226,12 +1868,8 @@ function PostChildComments({
         </div>
         {canComment ? (
           <div
-            {...sx.childCommentForm}
-            className={`${
-              stylex.props(styles.childCommentForm, formOpen && styles.childCommentFormVisible)
-                .className
-            } child-comment-input-form`}
-            data-stylex-owner="post-detail-child-comment-form"
+            className={`child-comment-input-form${formOpen ? " is-open" : ""}`}
+            data-owner="post-detail-child-comment-form"
           >
             <form
               action={prefixBasePath(
@@ -2248,36 +1886,33 @@ function PostChildComments({
                 value={parentCommentId}
               />
               <div
-                {...sx.childCommentOneLineBox}
-                className={`${sx.childCommentOneLineBox.className} oneline-comment-box`}
-                data-stylex-owner="post-detail-child-comment-oneline-box"
+                className="oneline-comment-box"
+                data-owner="post-detail-child-comment-oneline-box"
               >
                 <textarea
-                  {...sx.childCommentTextarea}
                   ref={textareaRef}
-                  className={`${sx.childCommentTextarea.className} editorSeries`}
-                  data-stylex-owner="post-detail-child-comment-textarea"
+                  className="editorSeries"
+                  data-owner="post-detail-child-comment-textarea"
                   name="contents"
                   {...{ markdown: "true" }}
                   rows={1}
                   placeholder={`${t("comment.oneline.comment.placeholder")} (${ctrlKey()} + ENTER)`}
                 ></textarea>
                 <button
-                  {...sx.childCommentSubmitButton}
                   type="submit"
-                  className={`${sx.childCommentSubmitButton.className} ybtn ybtn-success`}
-                  data-stylex-owner="post-detail-child-comment-submit"
+                  className="ybtn ybtn-success"
+                  data-owner="post-detail-child-comment-submit"
                 >
                   OK
                 </button>
               </div>
               <div
-                className={`${sx.childCommentNotificationReceiver.className} notification-receiver`}
-                data-stylex-owner="post-detail-child-comment-notification-receiver"
+                className="notification-receiver"
+                data-owner="post-detail-child-comment-notification-receiver"
               >
                 <span
-                  className={`${sx.childCommentNotificationReceiverTitle.className} notification-receiver-title`}
-                  data-stylex-owner="post-detail-child-comment-notification-receiver-title"
+                  className="notification-receiver-title"
+                  data-owner="post-detail-child-comment-notification-receiver-title"
                 >
                   {t("notification.receiver.list.title")}{" "}
                 </span>
@@ -2309,40 +1944,32 @@ function PostChildComment({
     <>
       -{" "}
       <Link
-        {...sx.childCommentAuthorLink}
         to="/$user"
         params={{ user: authorLoginId }}
         search={LEGACY_EMPTY_PROFILE_SEARCH}
-        className={`${sx.childCommentAuthorLink.className} usf-group`}
-        data-stylex-owner="post-detail-child-comment-author-link"
+        className="usf-group"
+        data-owner="post-detail-child-comment-author-link"
         activeOptions={{ exact: true }}
         activeProps={legacyRouteLocalActiveProps}
       >
-        <strong
-          {...sx.childCommentAuthorStrong}
-          data-stylex-owner="post-detail-child-comment-author-strong"
-        >
-          {authorLabel}
-        </strong>
+        <strong data-owner="post-detail-child-comment-author-strong">{authorLabel}</strong>
       </Link>{" "}
       <Link
-        {...sx.childCommentAgoLink}
         to="."
         hash={`comment-${commentId}`}
         activeOptions={{ includeHash: true }}
         activeProps={legacyRouteLocalActiveProps}
-        className={`${sx.childCommentAgoLink.className} ago`}
-        data-stylex-owner="post-detail-child-comment-ago-link"
+        className="ago"
+        data-owner="post-detail-child-comment-ago-link"
         title={comment.createdLabel}
       >
         {comment.createdLabel}
       </Link>
       {canDelete ? (
         <button
-          {...sx.childCommentDeleteButton}
           type="button"
-          className={`${sx.childCommentDeleteButton.className} btn-transparent deleteButtonX`}
-          data-stylex-owner="post-detail-child-comment-delete"
+          className="btn-transparent deleteButtonX"
+          data-owner="post-detail-child-comment-delete"
           title={t("common.comment.delete")}
           onClick={(event) => {
             event.preventDefault();
@@ -2367,33 +1994,21 @@ function PostChildComment({
       }
       if (blockquoteParagraph === "true") {
         return (
-          <p
-            {...paragraphProps}
-            {...sx.childCommentBlockquoteParagraph}
-            data-stylex-owner="post-detail-child-comment-blockquote-paragraph"
-          >
+          <p {...paragraphProps} data-owner="post-detail-child-comment-blockquote-paragraph">
             {children}
             {metadataPlacement === "paragraph" ? metadata : null}
           </p>
         );
       }
       return (
-        <p
-          {...paragraphProps}
-          {...sx.childCommentParagraph}
-          data-stylex-owner="post-detail-child-comment-paragraph"
-        >
+        <p {...paragraphProps} data-owner="post-detail-child-comment-paragraph">
           {children}
           {metadataPlacement === "paragraph" ? metadata : null}
         </p>
       );
     },
     strong: ({ children, node: _node, ...props }) => (
-      <strong
-        {...props}
-        {...sx.childCommentStrong}
-        data-stylex-owner="post-detail-child-comment-strong"
-      >
+      <strong {...props} data-owner="post-detail-child-comment-strong">
         {children}
       </strong>
     ),
@@ -2402,9 +2017,8 @@ function PostChildComment({
         return (
           <span
             {...props}
-            {...sx.childCommentIssueStateOpen}
-            className={`${sx.childCommentIssueStateOpen.className} ${className}`}
-            data-stylex-owner="post-detail-child-comment-issue-state-open"
+            className={className}
+            data-owner="post-detail-child-comment-issue-state-open"
           >
             {children}
           </span>
@@ -2414,9 +2028,8 @@ function PostChildComment({
         return (
           <span
             {...props}
-            {...sx.childCommentIssueStateClosed}
-            className={`${sx.childCommentIssueStateClosed.className} ${className}`}
-            data-stylex-owner="post-detail-child-comment-issue-state-closed"
+            className={className}
+            data-owner="post-detail-child-comment-issue-state-closed"
           >
             {children}
           </span>
@@ -2426,9 +2039,8 @@ function PostChildComment({
         return (
           <span
             {...props}
-            {...sx.childCommentOrganizationLink}
-            className={`${sx.childCommentOrganizationLink.className} ${className}`}
-            data-stylex-owner="post-detail-child-comment-organization-link"
+            className={className}
+            data-owner="post-detail-child-comment-organization-link"
           >
             {children}
           </span>
@@ -2438,9 +2050,8 @@ function PostChildComment({
         return (
           <span
             {...props}
-            {...sx.childCommentProjectLink}
-            className={`${sx.childCommentProjectLink.className} ${className}`}
-            data-stylex-owner="post-detail-child-comment-project-link"
+            className={className}
+            data-owner="post-detail-child-comment-project-link"
           >
             {children}
           </span>
@@ -2460,10 +2071,9 @@ function PostChildComment({
         return (
           <Link
             {...props}
-            {...sx.childCommentIssueLink}
             to={href as "/"}
-            className={`${sx.childCommentIssueLink.className} ${className}`}
-            data-stylex-owner="post-detail-child-comment-issue-link"
+            className={className}
+            data-owner="post-detail-child-comment-issue-link"
             activeProps={legacyRouteLocalActiveProps}
           >
             {children}
@@ -2474,10 +2084,9 @@ function PostChildComment({
         return (
           <Link
             {...props}
-            {...sx.childCommentNoTextDecoration}
             to={href as "/"}
-            className={`${sx.childCommentNoTextDecoration.className} ${className}`}
-            data-stylex-owner="post-detail-child-comment-no-text-decoration"
+            className={className}
+            data-owner="post-detail-child-comment-no-text-decoration"
             activeProps={legacyRouteLocalActiveProps}
           >
             {children}
@@ -2496,22 +2105,14 @@ function PostChildComment({
       );
     },
     blockquote: ({ children, node: _node, ...props }) => (
-      <blockquote
-        {...props}
-        {...sx.childCommentBlockquote}
-        data-stylex-owner="post-detail-child-comment-blockquote"
-      >
+      <blockquote {...props} data-owner="post-detail-child-comment-blockquote">
         {children}
       </blockquote>
     ),
   };
   return (
     <div className="one-line-comment">
-      <div
-        {...sx.childCommentContents}
-        className={`${sx.childCommentContents.className} contents`}
-        data-stylex-owner="post-detail-child-comment-contents"
-      >
+      <div className="contents" data-owner="post-detail-child-comment-contents">
         <ReactMarkdown
           components={components}
           remarkPlugins={[remarkGfm, markdownAutoLinkPlugin, remarkChildCommentMetadata]}
@@ -2751,53 +2352,10 @@ function postDetailMarkdownEditorProps(
 ): MarkdownEditorProps {
   const isCommentUpdateEditor = editorMode === "update-comment-body";
   const isCommentCreateEditor = editorMode === "comment-body";
-  const hasCommentStyles = isCommentUpdateEditor || isCommentCreateEditor;
-  const updateTextareaBoxStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateTextareaBox)
-    : undefined;
-  const createTextareaBoxStyle = isCommentCreateEditor
-    ? stylex.props(styles.commentCreateTextareaBox)
-    : undefined;
-  const updateTextareaStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateTextareaControl)
-    : undefined;
-  const createTextareaStyle = isCommentCreateEditor
-    ? stylex.props(styles.commentCreateTextareaControl)
-    : undefined;
-  const editorNavStyle = hasCommentStyles ? stylex.props(styles.commentUpdateEditorNav) : undefined;
-  const editorNavItemStyle = hasCommentStyles
-    ? stylex.props(styles.commentUpdateEditorNavItem)
-    : undefined;
-  const checklistWrapStyle = hasCommentStyles
-    ? stylex.props(styles.commentUpdateChecklistWrap)
-    : undefined;
-  const checklistButtonStyle = hasCommentStyles
-    ? stylex.props(styles.commentUpdateActionButton, styles.commentUpdateChecklistButton)
-    : undefined;
-  const checklistIconStyle = hasCommentStyles
-    ? stylex.props(styles.commentUpdateChecklistIcon)
-    : undefined;
-  const clearTemporaryStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateClearTemporary)
-    : isCommentCreateEditor
-      ? stylex.props(styles.commentCreateClearTemporary)
-      : undefined;
-  const createEditorNoticeLabelStyle = isCommentCreateEditor
-    ? stylex.props(styles.commentCreateEditorNoticeLabel)
-    : undefined;
-  const notificationReceiverStyle = hasCommentStyles
-    ? stylex.props(styles.commentCreateNotificationReceiver)
-    : undefined;
-  const notificationReceiverTitleStyle = hasCommentStyles
-    ? stylex.props(styles.commentCreateNotificationReceiverTitle)
-    : undefined;
-  const editorPaneStyleProps = (_tab: "edit" | "preview", active: boolean) =>
-    stylex.props(styles.editorPane, active && styles.editorPaneActive);
   return {
     value,
     internalValue: true,
-    wrapperClassName: `mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim(),
-    wrapperStyleProps: sx.markdownEditorWrapper,
+    wrapperClassName: "mt10",
     wrapperOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-editor-wrapper"
       : isCommentCreateEditor
@@ -2806,25 +2364,16 @@ function postDetailMarkdownEditorProps(
     wrapperInstance: wrapId,
     tabAs: "link",
     tabClickPreventDefault: true,
-    tabListClassName: `${editorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim(),
-    tabListStyleProps: editorNavStyle,
+    tabListClassName: "nav nav-tabs nm small",
     tabListOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-editor-nav"
       : isCommentCreateEditor
         ? "post-detail-comment-create-editor-nav"
         : undefined,
-    tabLiStyleProps: editorNavItemStyle,
     tabLiOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-editor-nav-item"
       : isCommentCreateEditor
         ? "post-detail-comment-create-editor-nav-item"
-        : undefined,
-    tabContentStyleProps: (_tab, active) =>
-      hasCommentStyles
-        ? stylex.props(
-            styles.commentUpdateEditorTabLink,
-            active && styles.commentUpdateEditorTabLinkActive,
-          )
         : undefined,
     tabContentOwner: (tab, active) => {
       if (isCommentUpdateEditor) {
@@ -2843,50 +2392,39 @@ function postDetailMarkdownEditorProps(
       edit: { hash: `edit-${wrapId}` },
       preview: { hash: `preview-${wrapId}` },
     },
-    checklistClassName: `${checklistWrapStyle?.className ?? ""} task-list-button`.trim(),
-    checklistStyleProps: checklistWrapStyle,
+    checklistClassName: "task-list-button",
     checklistOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-checklist-wrap"
       : isCommentCreateEditor
         ? "post-detail-comment-create-checklist-wrap"
         : undefined,
-    checklistButtonClassName:
-      `${checklistButtonStyle?.className ?? ""} add-task-list-button ybtn ybtn-small ybtn-danger-no-outline`.trim(),
-    checklistButtonStyleProps: checklistButtonStyle,
+    checklistButtonClassName: "add-task-list-button ybtn ybtn-small ybtn-danger-no-outline",
     checklistButtonOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-checklist-button"
       : isCommentCreateEditor
         ? "post-detail-comment-create-checklist-button"
         : undefined,
-    checklistIconClassName:
-      `${checklistIconStyle?.className ?? ""} yobicon-list task-list-icon`.trim(),
-    checklistIconStyleProps: checklistIconStyle,
+    checklistIconClassName: "yobicon-list task-list-icon",
     checklistIconOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-checklist-icon"
       : isCommentCreateEditor
         ? "post-detail-comment-create-checklist-icon"
         : undefined,
-    clearTemporaryClassName:
-      `${clearTemporaryStyle?.className ?? ""} editor-clear-temporary`.trim(),
-    clearTemporaryStyleProps: clearTemporaryStyle,
+    clearTemporaryClassName: "editor-clear-temporary",
     clearTemporaryOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-clear-temporary"
       : isCommentCreateEditor
         ? "post-detail-comment-create-clear-temporary"
         : undefined,
-    noticeLabelClassName:
-      `${createEditorNoticeLabelStyle?.className ?? ""} editor-notice-label`.trim(),
-    noticeLabelStyleProps: createEditorNoticeLabelStyle,
+    noticeLabelClassName: "editor-notice-label",
     noticeLabelOwner: isCommentCreateEditor
       ? "post-detail-comment-create-editor-notice-label"
       : undefined,
-    tabContentClassName: `${sx.editorTabContent.className} tab-content`,
+    tabContentClassName: "tab-content",
     tabContentPaneOwner: "post-detail-editor-tab-content",
     help: <PostDetailMarkdownHelp />,
     editPaneId: `edit-${wrapId}`,
-    editPaneStyleProps: editorPaneStyleProps,
     editPaneOwner: "post-detail-editor-pane",
-    textareaBoxStyleProps: updateTextareaBoxStyle ?? createTextareaBoxStyle,
     textareaBoxOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-textarea-box"
       : isCommentCreateEditor
@@ -2894,7 +2432,6 @@ function postDetailMarkdownEditorProps(
         : undefined,
     textareaName: name,
     textareaId: `editor-${name}-${wrapId}`,
-    textareaStyleProps: updateTextareaStyle ?? createTextareaStyle,
     textareaOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-textarea"
       : isCommentCreateEditor
@@ -2902,22 +2439,17 @@ function postDetailMarkdownEditorProps(
         : undefined,
     textareaMode: editorMode,
     previewPaneId: `preview-${wrapId}`,
-    previewPaneStyleProps: editorPaneStyleProps,
     previewPaneOwner: "post-detail-editor-pane",
     previewClassName: `markdown-preview markdown-wrap ${editorMode}`,
     previewChildren: (active, editorValue) =>
       active ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{editorValue}</ReactMarkdown> : null,
-    notificationClassName:
-      `${notificationReceiverStyle?.className ?? ""} notification-receiver`.trim(),
-    notificationStyleProps: notificationReceiverStyle,
+    notificationClassName: "notification-receiver",
     notificationOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-notification-receiver"
       : isCommentCreateEditor
         ? "post-detail-comment-create-notification-receiver"
         : undefined,
-    notificationTitleClassName:
-      `${notificationReceiverTitleStyle?.className ?? ""} notification-receiver-title`.trim(),
-    notificationTitleStyleProps: notificationReceiverTitleStyle,
+    notificationTitleClassName: "notification-receiver-title",
     notificationTitleOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-notification-receiver-title"
       : isCommentCreateEditor
@@ -3008,27 +2540,13 @@ function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachm
 
 function TasklistBar() {
   return (
-    <div className={`${sx.tasklist.className} tasklist`} data-stylex-owner="post-detail-tasklist">
-      <div
-        className={`${stylex.props(styles.taskTitle).className} task-title`}
-        data-stylex-owner="post-detail-task-title"
-      >
+    <div className="tasklist" data-owner="post-detail-tasklist">
+      <div className="task-title" data-owner="post-detail-task-title">
         Tasks
-        <span
-          className={`${stylex.props(styles.taskDoneCounter).className} done-counter`}
-          data-stylex-owner="post-detail-task-done-counter"
-        ></span>
+        <span className="done-counter" data-owner="post-detail-task-done-counter"></span>
       </div>
-      <div
-        className={`${stylex.props(styles.taskProgress).className} task-progress`}
-        data-stylex-owner="post-detail-task-progress"
-      >
-        <div
-          className={`${stylex.props(styles.taskProgressBar).className} ${sx.tasklistProgress.className} bar red`}
-          data-stylex-owner="post-detail-tasklist-progress"
-          style={{ width: 0 }}
-          title="Tasklist"
-        ></div>
+      <div className="task-progress" data-owner="post-detail-task-progress">
+        <div className="bar red" data-owner="post-detail-tasklist-progress" title="Tasklist"></div>
       </div>
     </div>
   );
@@ -3045,11 +2563,7 @@ function BoardDetailKeymap({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div
-      {...sx.keymapWrapper}
-      className={sx.keymapWrapper.className}
-      data-stylex-owner="post-detail-keymap-wrapper"
-    >
+    <div data-owner="post-detail-keymap-wrapper">
       <button
         type="button"
         className="ybtn ybtn-inverse ybtn-mini"
@@ -3063,10 +2577,8 @@ function BoardDetailKeymap({
       </button>
       <div
         id="helpKeys"
-        className={`modal ${open ? "in " : "hide "}fade keymap-help ${
-          open ? (stylex.props(styles.keymapModalVisible).className ?? "") : ""
-        }`.trim()}
-        data-stylex-owner="post-detail-keymap-modal"
+        className={`modal ${open ? "in " : "hide "}fade keymap-help`.trim()}
+        data-owner="post-detail-keymap-modal"
         tabIndex={-1}
         role="dialog"
         aria-hidden={open ? "false" : undefined}

@@ -41,10 +41,7 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
 }) => {
   expect(EDITFORM_ROUTE_SOURCE).toContain('window.alert(t("post.error.emptyTitle"))');
   expect(EDITFORM_ROUTE_SOURCE).not.toContain('t("validation.required")');
-  expect(EDITFORM_ROUTE_SOURCE).toContain(
-    "className={`${stylex.props(styles.options).className} mt10 mb10`}",
-  );
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("styles.options).className} right-txt");
+
   expect(EDITFORM_ROUTE_SOURCE).toContain(
     'import { BoardPostMarkdownEditor } from "../../../../../components/markdown-editor";',
   );
@@ -418,7 +415,7 @@ async function readBoardEditFormMetrics(page: Page) {
     const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
     const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
     const noticeRow = contentWrap.querySelector<HTMLElement>(
-      '[data-stylex-owner="post-edit-form-options"]',
+      '[data-owner="post-edit-form-options"]',
     );
     const actions = contentWrap.querySelector<HTMLElement>(".actions");
     const notificationCheckbox = actions?.querySelector<HTMLElement>(".checkbox.inline");
@@ -503,7 +500,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -567,7 +564,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)

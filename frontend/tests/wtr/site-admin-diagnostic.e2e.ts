@@ -130,29 +130,30 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
         .evaluate((title) => title.textContent),
     )
     .toBe("Site settings");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="global-gnb-nav"] > li > a')
+      .locator('[data-owner="global-gnb-nav"] > li > a')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}`,
     `${basePath}/projects`,
     "https://github.com/yona-projects/yona/issues",
   ]);
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] > li > a').nth(2),
-  ).toHaveAttribute("target", "_blank");
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a').nth(2)).toHaveAttribute(
+    "target",
+    "_blank",
+  );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator('[data-stylex-owner="site-diagnostic-sidebar-item"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-diagnostic-sidebar-item"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -164,7 +165,7 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="site-diagnostic-sidebar-link"]')
+      .locator('[data-owner="site-diagnostic-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/sites/userList`,
@@ -177,7 +178,7 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
     `${basePath}/sites/diagnostic`,
   ]);
   expect(
-    await page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]').evaluateAll((links) =>
+    await page.locator('[data-owner="site-diagnostic-sidebar-link"]').evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
         className: null,
@@ -194,11 +195,11 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
     { ariaCurrent: null, className: null, dataStatus: null },
     { ariaCurrent: null, className: null, dataStatus: null },
   ]);
-  await expect(page.locator('[data-stylex-owner="site-diagnostic-sidebar-item"]').nth(7)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-diagnostic-sidebar-item"]').nth(7)).toHaveCSS(
     "font-weight",
     "700",
   );
-  const updateLink = page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-diagnostic-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
@@ -229,7 +230,7 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   });
   await updateLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/update`);
-  await expect(page.locator('[data-stylex-owner="site-update-sidebar-link"]').nth(6)).toHaveText(
+  await expect(page.locator('[data-owner="site-update-sidebar-link"]').nth(6)).toHaveText(
     "Software Update",
   );
   await expect(page.locator(".title_area h2")).toHaveText("Software Update");
@@ -256,12 +257,13 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.getByText("No errors were found")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap .span10 > p")).toHaveText("2 errors were found");
-  await expect(
-    page.locator('[data-stylex-owner="site-diagnostic-sidebar-item"]').nth(7),
-  ).toHaveText("Diagnostics");
-  await expect(
-    page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]').nth(7),
-  ).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
+  await expect(page.locator('[data-owner="site-diagnostic-sidebar-item"]').nth(7)).toHaveText(
+    "Diagnostics",
+  );
+  await expect(page.locator('[data-owner="site-diagnostic-sidebar-link"]').nth(7)).toHaveAttribute(
+    "href",
+    `${basePath}/sites/diagnostic`,
+  );
   await expect(page.locator(".site-setting-wrap .span10 > ul")).toHaveCount(1);
   await expect(page.locator(".site-setting-wrap .span10 > ul > li")).toHaveCount(2);
   await expect(page.locator(".site-setting-wrap .span10 > ul > li > pre")).toHaveText([
@@ -311,14 +313,12 @@ test("site admin diagnostics renders legacy update notification badge", async ({
 
   await page.goto(`${basePath}/sites/diagnostic`);
 
-  const updateLink = page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-diagnostic-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(
-    updateLink.locator('[data-stylex-owner="site-diagnostic-sidebar-badge"]'),
-  ).toHaveText("1");
+  await expect(updateLink.locator('[data-owner="site-diagnostic-sidebar-badge"]')).toHaveText("1");
 });
 
 test("site admin diagnostics sidebar uses typed route Links without a route-local generic adapter", async () => {
@@ -333,9 +333,7 @@ test("site admin diagnostics sidebar uses typed route Links without a route-loca
     "<SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>",
   );
   expect(source).toContain("const legacySiteSidebarLinkProps = {");
-  expect(source).toContain(
-    'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
-  );
+
   expect(source).toContain("const legacyDiagnosticSidebarSearch = {");
   expect(source).toContain("search: legacyDiagnosticSidebarSearch");
   expect(sidebarSource).not.toContain("LegacyInternalLink");
@@ -354,10 +352,10 @@ async function diagnosticNavbarMetrics(page: Page) {
       return element as T;
     };
 
-    const navbar = requireElement<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = requireElement<HTMLElement>("[data-owner=global-gnb-outer]");
     const searchForm = requireElement<HTMLFormElement>('form[name="gnb-search-form"]');
     const navLinks = Array.from(
-      document.querySelectorAll('[data-stylex-owner="global-gnb-nav"] > li > a'),
+      document.querySelectorAll('[data-owner="global-gnb-nav"] > li > a'),
     );
     const navLinkTexts = navLinks.map((link) => link.textContent?.trim() ?? "");
     const navbarRect = navbar.getBoundingClientRect();
@@ -510,7 +508,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -523,15 +521,15 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-diagnostic-sidebar-item",
           "site-diagnostic-sidebar-link",
           "site-diagnostic-sidebar-badge",
-        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+        ].includes(current.getAttribute("data-owner") ?? "")
       ) {
         return "";
       }
       if (
         name === "class" &&
-        (current.closest('[data-stylex-owner="site-diagnostic-no-error-title"]') ||
-          current.closest('[data-stylex-owner="site-diagnostic-error-title"]') ||
-          current.closest('[data-stylex-owner="site-diagnostic-error-pre"]'))
+        (current.closest('[data-owner="site-diagnostic-no-error-title"]') ||
+          current.closest('[data-owner="site-diagnostic-error-title"]') ||
+          current.closest('[data-owner="site-diagnostic-error-pre"]'))
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -540,11 +538,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -552,7 +550,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)

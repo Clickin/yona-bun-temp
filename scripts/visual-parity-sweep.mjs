@@ -340,10 +340,10 @@ function localSettledSelectorForPath(path) {
     return null;
   }
   if (/\/milestone\/\d+$/u.test(pathname)) {
-    return '[data-stylex-content-ready="true"]';
+    return '[data-content-ready="true"]';
   }
   if (pathname.endsWith("/milestones")) {
-    return '[data-stylex-content-ready="true"]';
+    return '[data-content-ready="true"]';
   }
   if (
     pathname.endsWith("/newFork") ||
@@ -352,7 +352,7 @@ function localSettledSelectorForPath(path) {
     pathname.endsWith("/closedPullRequests") ||
     pathname.endsWith("/sentPullRequests")
   ) {
-    return '[data-stylex-content-ready="true"]';
+    return '[data-content-ready="true"]';
   }
   if (pathname === "/user/issues/new" || pathname === "/user/issues/new/mine") {
     return ".content-wrap.frm-wrap";
@@ -368,7 +368,7 @@ function localSettledSelectorForPath(path) {
     return ".content-wrap.frm-wrap";
   }
   if (pathname.endsWith("/newPullRequestForm")) {
-    return '[data-stylex-content-ready="true"]';
+    return '[data-content-ready="true"]';
   }
   if (/\/post\/\d+$/u.test(pathname)) {
     return "#comment-form .upload-wrap";
@@ -387,10 +387,10 @@ function localSettledSelectorForPath(path) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
   }
   if (pathname.endsWith("/issues")) {
-    return '[data-stylex-content-ready="true"]';
+    return '[data-content-ready="true"]';
   }
   if (pathname.endsWith("/posts")) {
-    return '[data-stylex-content-ready="true"]';
+    return '[data-content-ready="true"]';
   }
   if (pathname === "/user/issues") {
     return ".row-fluid.issue-list-wrap";
@@ -1468,7 +1468,7 @@ async function inspectPage(page, baseUrl, path, label) {
   // before either implementation has reached the comparable DOM state.
   if (path === "/admin") {
     await page
-      .waitForSelector(".user-box, .user-profile-page, [data-stylex-owner='user-profile-page']", {
+      .waitForSelector(".user-box, .user-profile-page, [data-owner='user-profile-page']", {
         state: "visible",
         timeout: 10_000,
       })
@@ -1644,10 +1644,10 @@ async function inspectPage(page, baseUrl, path, label) {
       stylesheetCount: stylesheets.length,
       stylesheetRules: stylesheets.reduce((sum, sheet) => sum + Math.max(0, sheet.rules), 0),
       hasStylesheetError: stylesheets.some((sheet) => sheet.rules === -1),
-      gnb: selectorState(".gnb-outer, [data-stylex-owner='global-gnb-outer']"),
-      gnbInner: selectorState(".gnb-inner, [data-stylex-owner='global-gnb-inner']"),
-      gnbPin: selectorState(".gnb-inner > .pin, [data-stylex-owner='global-sidebar-open-pin']"),
-      gnbLogoLetter: selectorState(".logo-letter, [data-stylex-owner='global-gnb-brand-link']"),
+      gnb: selectorState(".gnb-outer, [data-owner='global-gnb-outer']"),
+      gnbInner: selectorState(".gnb-inner, [data-owner='global-gnb-inner']"),
+      gnbPin: selectorState(".gnb-inner > .pin, [data-owner='global-sidebar-open-pin']"),
+      gnbLogoLetter: selectorState(".logo-letter, [data-owner='global-gnb-brand-link']"),
       gnbSearchForm: selectorState(".gnb-search-form"),
       gnbFeedback: selectorState(gnbFeedbackLink),
       gnbUsermenu: selectorState(".gnb-usermenu"),
@@ -1661,10 +1661,10 @@ async function inspectPage(page, baseUrl, path, label) {
       projectMenu: selectorState(".project-menu-outer"),
       projectMenuNav: selectorState(".project-menu-nav"),
       pageWrap: selectorState(
-        ".page-wrap-outer, .project-page-wrap, [data-stylex-owner='project-pullrequests-page'], [data-stylex-owner='projects-directory-page-wrap'], [data-stylex-owner='organization-directory-page-wrap'], [data-stylex-owner='site-user-list-page-wrap-outer'], [data-stylex-owner='site-post-list-page-wrap-outer'], [data-stylex-owner='site-issue-list-page-wrap-outer'], [data-stylex-owner='site-project-list-page-wrap-outer'], [data-stylex-owner='site-mail-page'], [data-stylex-owner='site-massmail-page'], [data-stylex-owner='site-update-page'], [data-stylex-owner='site-diagnostic-page'], [data-stylex-owner='user-settings-page-wrap-outer'], [data-stylex-owner='help-shell-page-wrap-outer']",
+        ".page-wrap-outer, .project-page-wrap, [data-owner='project-pullrequests-page'], [data-owner='projects-directory-page-wrap'], [data-owner='organization-directory-page-wrap'], [data-owner='site-user-list-page-wrap-outer'], [data-owner='site-post-list-page-wrap-outer'], [data-owner='site-issue-list-page-wrap-outer'], [data-owner='site-project-list-page-wrap-outer'], [data-owner='site-mail-page'], [data-owner='site-massmail-page'], [data-owner='site-update-page'], [data-owner='site-diagnostic-page'], [data-owner='user-settings-page-wrap-outer'], [data-owner='help-shell-page-wrap-outer']",
       ),
       projectPageWrap: selectorState(
-        ".project-page-wrap, [data-stylex-owner='project-pullrequests-shell'], [data-stylex-owner='projects-directory-page'], [data-stylex-owner='organization-directory-page'], [data-stylex-owner='project-milestones-shell'], [data-stylex-owner='milestone-detail-shell']",
+        ".project-page-wrap, [data-owner='project-pullrequests-shell'], [data-owner='projects-directory-page'], [data-owner='organization-directory-page'], [data-owner='project-milestones-shell'], [data-owner='milestone-detail-shell']",
       ),
       issueBodyRow: selectorState(".board-body.row-fluid"),
       issueLeftPane: selectorState(".board-body.row-fluid > .span9"),
@@ -1678,18 +1678,18 @@ async function inspectPage(page, baseUrl, path, label) {
       projectDescription: selectorState("#project-desc"),
       issueListWrap: selectorState(".row-fluid.issue-list-wrap"),
       leftMenu: selectorState(
-        ".left-menu, [data-stylex-owner='project-pullrequests-search-column']",
+        ".left-menu, [data-owner='project-pullrequests-search-column']",
       ),
       // The populated profile Issues pane intentionally retires the legacy
-      // list/row classes after their frozen declarations move to StyleX.
+      // list/row classes after their frozen declarations move to Style.
       // Keep the legacy selectors for the reference target and accept the
       // exact React owners for the local target so class retirement does not
       // become a false visual-parity failure.
       postListWrap: selectorState(
-        ".post-list-wrap, [data-stylex-owner='user-profile-open-issue-list'], [data-stylex-owner='user-profile-closed-issue-list'], [data-stylex-owner='site-post-list-container'], [data-stylex-owner='site-issue-list-container']",
+        ".post-list-wrap, [data-owner='user-profile-open-issue-list'], [data-owner='user-profile-closed-issue-list'], [data-owner='site-post-list-container'], [data-owner='site-issue-list-container']",
       ),
       postItemTitle: selectorState(
-        ".post-item.title, [data-stylex-owner='user-profile-issue-row'], [data-stylex-owner='site-post-list-title-link'], [data-stylex-owner='site-issue-list-title-link']",
+        ".post-item.title, [data-owner='user-profile-issue-row'], [data-owner='site-post-list-title-link'], [data-owner='site-issue-list-title-link']",
       ),
       selectedFilterLabel: selectorState(".labels-wrap .select2-search-choice .issue-label"),
       contentFormWrap: selectorState(".content-wrap.frm-wrap"),
@@ -1707,12 +1707,12 @@ async function inspectPage(page, baseUrl, path, label) {
       siteintroCover: selectorState(".siteintro-cover"),
       siteHeading: selectorState(".site-heading"),
       signupButton: selectorState(".signup-btn"),
-      footer: selectorState("footer.page-footer-outer, [data-stylex-owner='site-footer']"),
-      // The local route retires the legacy wrapper class after its StyleX
+      footer: selectorState("footer.page-footer-outer, [data-owner='site-footer']"),
+      // The local route retires the legacy wrapper class after its Style
       // boundary is complete; keep the legacy selector for the live target
       // and accept the stable owner marker for the React target.
       userProfile: selectorState(
-        ".user-box, .user-profile-page, [data-stylex-owner='user-profile-page']",
+        ".user-box, .user-profile-page, [data-owner='user-profile-page']",
       ),
       isErrorPage: [document.title, body.innerText].some(
         (text) =>

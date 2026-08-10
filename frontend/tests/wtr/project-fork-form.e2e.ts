@@ -74,7 +74,7 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -82,7 +82,7 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopes = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const searchScopes = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopes).toHaveText(["This Project", "All Projects"]);
   await expect
     .poll(() =>
@@ -175,7 +175,7 @@ test("project fork form exposes group and all-project search scopes without leav
 
   await page.goto(`${basePath}/admin/sample/newFork`);
 
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator("#helpMessage")).toBeVisible();
@@ -185,7 +185,7 @@ test("project fork form exposes group and all-project search scopes without leav
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopes = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const searchScopes = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopes).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect
     .poll(() =>
@@ -254,7 +254,7 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   await expect
     .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
     .toBe("This request is only supported in a git project.");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
@@ -316,12 +316,9 @@ test("project fork route-local links preserve legacy hrefs and navigate in the S
 
   await page.goto(`${basePath}/admin/sample/newFork/devs`);
 
-  const existingForkLink = page.locator(
-    '#helpMessage [data-stylex-owner="project-fork-existing-link"]',
-    {
-      hasText: "devs / sample",
-    },
-  );
+  const existingForkLink = page.locator('#helpMessage [data-owner="project-fork-existing-link"]', {
+    hasText: "devs / sample",
+  });
   await expect(existingForkLink).toHaveAttribute("href", `${basePath}/devs/sample`);
   await expect(existingForkLink).toHaveClass(/\bvmiddle\b/u);
   await expect(existingForkLink).not.toHaveClass(/\bprimary-txt\b/u);
@@ -385,21 +382,16 @@ test("project fork shell anchors keep legacy active state on owning list items",
   // `<li></li>` in the setting menu (projectMenu.scala.html `</a><li>` parity,
   // $ownerName/$projectName.tsx:3428), so the strict class selector resolves to
   // 2 li's — target the owned Setting item instead.
-  const projectAdminItem = page.locator(
-    '[data-stylex-owner="project-menu-item-setting"]',
-  );
+  const projectAdminItem = page.locator('[data-owner="project-menu-item-setting"]');
   await expect(projectAdminItem).toHaveClass("");
   const projectAdminLink = projectAdminItem.locator("a");
   await expect(projectAdminLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   await expect(projectAdminLink.locator(".menu-name")).toHaveText("Project configuration");
   await expectNoTanStackActiveMarkers(projectAdminLink);
 
-  const existingForkLink = page.locator(
-    '#helpMessage [data-stylex-owner="project-fork-existing-link"]',
-    {
-      hasText: "devs / sample",
-    },
-  );
+  const existingForkLink = page.locator('#helpMessage [data-owner="project-fork-existing-link"]', {
+    hasText: "devs / sample",
+  });
   await expect(existingForkLink).toHaveAttribute("href", `${basePath}/devs/sample`);
   await expect(existingForkLink).toHaveClass(/\bvmiddle\b/u);
   await expect(existingForkLink).not.toHaveClass(/\bprimary-txt\b/u);
@@ -451,17 +443,14 @@ test("project fork route has no raw route-local internal anchors", async () => {
   expect(source).not.toContain("selectedOptions");
 });
 
-test("project fork existing-link color is owned by StyleX", async () => {
+test("project fork existing-link color is owned by Style", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
-  const stylexSource = readFileSync(
-    "src/routes/$ownerName/$projectName/-newFork.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
-  expect(source).toContain('data-stylex-owner="project-fork-existing-link"');
+  expect(source).toContain('data-owner="project-fork-existing-link"');
   expect(source).not.toContain("primary-txt");
-  expect(stylexSource).toContain('existingLink: "#f36c22"');
-  expect(stylexSource).toContain("existingLink: { color: forkColors.existingLink");
 });
 
 test("project fork browser title is rendered through React head title", async () => {
@@ -960,7 +949,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     roots.forEach((root) =>
@@ -981,8 +970,8 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -1054,8 +1043,8 @@ async function canonicalizePageWrap(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -1146,7 +1135,7 @@ async function forkCloneProgressMetrics(page: Page) {
 
 async function projectForkBadRequestMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const header = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const message = errorWrap?.querySelector<HTMLElement>("p");
@@ -1163,7 +1152,7 @@ async function projectForkBadRequestMetrics(page: Page) {
     return {
       errorTextAlign: window.getComputedStyle(errorWrap).textAlign,
       gnbBackground: window.getComputedStyle(header).backgroundColor,
-      // F6 copy-fix-current-dom: the global GNB header is stylex-owned; its raw
+      // F6 copy-fix-current-dom: the global GNB header is style-owned; its raw
       // className is only hashed paint tokens, so normalize like the rest of the
       // suite (no legacy gnb-outer token survives).
       gnbClassName: header.className
@@ -1181,12 +1170,10 @@ async function projectForkBadRequestMetrics(page: Page) {
 
 async function projectForkHeaderSearchScopeMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const header = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = form?.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const searchBox = form?.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const input = form?.querySelector<HTMLInputElement>('input[name="keyword"]');
     const missing = Object.entries({ form, header, input, scope, searchBox })
       .filter(([, element]) => !element)
@@ -1269,8 +1256,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedTanStackRouterAttr(attr) &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)

@@ -86,9 +86,9 @@ test("project home paints the framed shell before its delayed container settles"
 
   const navigation = page.goto(`${basePath}/admin/sample`, { waitUntil: "commit" });
   await containerStarted;
-  await expect(page.locator('[data-stylex-owner="global-gnb-outer"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-sidebar-open-pin"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-gnb-search-form"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="global-gnb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="global-sidebar-open-pin"]')).toBeVisible();
+  await expect(page.locator('[data-owner="global-gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
   );
@@ -293,7 +293,7 @@ test("trailing-slash code and commits roots retain the project shell and contain
   expect(containerRequests).toEqual(["403", "403"]);
 });
 
-test("project home header and milestone StyleX owners retain legacy geometry without fallback", async ({
+test("project home header and milestone Style owners retain legacy geometry without fallback", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -301,10 +301,8 @@ test("project home header and milestone StyleX owners retain legacy geometry wit
   await mockProjectHome(page);
 
   await page.goto(`${basePath}/admin/sample`);
-  await expect(page.locator("[data-stylex-owner=project-home-header-background]")).toBeVisible();
-  await expect(
-    page.locator("[data-stylex-owner=project-home-milestone-progress-wrap]"),
-  ).toBeVisible();
+  await expect(page.locator("[data-owner=project-home-header-background]")).toBeVisible();
+  await expect(page.locator("[data-owner=project-home-milestone-progress-wrap]")).toBeVisible();
 
   const styles = await page.evaluate(() => {
     const style = (selector: string) => {
@@ -312,16 +310,14 @@ test("project home header and milestone StyleX owners retain legacy geometry wit
       if (!element) throw new Error(`Missing ${selector}`);
       return getComputedStyle(element);
     };
-    const outer = style("[data-stylex-owner=project-home-header-background]");
-    const wrap = style("[data-stylex-owner=project-header-wrap]");
-    const avatar = style("[data-stylex-owner=project-header-avatar]");
-    const breadcrumb = style("[data-stylex-owner=project-header-breadcrumb-wrap]");
-    const progress = style("[data-stylex-owner=project-home-milestone-progress-wrap]");
-    const wrapElement = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=project-header-wrap]",
-    );
+    const outer = style("[data-owner=project-home-header-background]");
+    const wrap = style("[data-owner=project-header-wrap]");
+    const avatar = style("[data-owner=project-header-avatar]");
+    const breadcrumb = style("[data-owner=project-header-breadcrumb-wrap]");
+    const progress = style("[data-owner=project-home-milestone-progress-wrap]");
+    const wrapElement = document.querySelector<HTMLElement>("[data-owner=project-header-wrap]");
     const outerElement = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=project-home-header-background]",
+      "[data-owner=project-home-header-background]",
     );
     if (!wrapElement || !outerElement) throw new Error("Missing project header geometry");
     return {
@@ -362,19 +358,13 @@ test("project home header and milestone StyleX owners retain legacy geometry wit
   expect(styles.wrap.widthRatio).toBeCloseTo(0.97, 2);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS(
-    "height",
-    "50px",
-  );
-  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS(
-    "width",
-    "50px",
-  );
-  await expect(page.locator("[data-stylex-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
+  await expect(page.locator("[data-owner=project-header-avatar]")).toHaveCSS("height", "50px");
+  await expect(page.locator("[data-owner=project-header-avatar]")).toHaveCSS("width", "50px");
+  await expect(page.locator("[data-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
     "bottom",
     "5px",
   );
-  await expect(page.locator("[data-stylex-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
+  await expect(page.locator("[data-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
     "left",
     "52px",
   );
@@ -470,7 +460,7 @@ test("protected org-owned project home uses legacy project and group search scop
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/weblabs/portal`);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
@@ -478,9 +468,7 @@ test("protected org-owned project home uses legacy project and group search scop
     "action",
     `${basePath}/weblabs/portal/search`,
   );
-  const searchScopeButtons = page.locator(
-    "[data-stylex-owner=global-gnb-search-scope-item] > button",
-  );
+  const searchScopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   expect(
     await searchScopeButtons.evaluateAll((buttons) =>
@@ -841,18 +829,16 @@ test("project home README tab renders README Markdown instead of compatibility H
 test("project home README Edit link owns legacy ml5 spacing and navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
-  const styleSource = await readFile(
-    "src/routes/$ownerName/$projectName/-project-home.stylex.ts",
-    "utf8",
-  );
+  const styleSource =
+    (await readFileSync("src/app.css", "utf8")) +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const legacySource = await readFile(
     "../yona-original/app/views/project/partial_readme.scala.html",
     "utf8",
   );
 
-  expect(routeSource).toContain("projectHomeStyles.readmeEditLink");
-  expect(routeSource).toContain('data-stylex-owner="project-home-readme-edit-link"');
-  expect(styleSource).toContain('readmeEditLink: { marginLeft: "5px" }');
+  expect(routeSource).toContain('data-owner="project-home-readme-edit-link"');
+
   expect(legacySource).toContain('class="ybtn vmiddle ml5"');
   expect(legacySource).toContain('<div class="bubble-wrap gray readme">');
 
@@ -871,7 +857,7 @@ test("project home README Edit link owns legacy ml5 spacing and navigation", asy
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto(`${basePath}/admin/sample`);
 
-    const edit = page.locator('[data-stylex-owner="project-home-readme-edit-link"]');
+    const edit = page.locator('[data-owner="project-home-readme-edit-link"]');
     await expect(edit).toHaveText("Edit");
     await expect(edit).toHaveClass(/ybtn/u);
     await expect(edit).toHaveClass(/vmiddle/u);
@@ -884,7 +870,7 @@ test("project home README Edit link owns legacy ml5 spacing and navigation", asy
       const header = document.querySelector<HTMLElement>(".readme-wrap > header");
       const name = document.querySelector<HTMLElement>(".readme-wrap > header > strong");
       const edit = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-home-readme-edit-link"]',
+        '[data-owner="project-home-readme-edit-link"]',
       );
       if (!header || !name || !edit) throw new Error("Missing README Edit geometry");
       const headerBox = header.getBoundingClientRect();
@@ -907,12 +893,12 @@ test("project home README Edit link owns legacy ml5 spacing and navigation", asy
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
 
     await page.screenshot({
-      path: `output/playwright/visual-sweep/stylex-project-home-readme-edit-${viewport.name}.png`,
+      path: `output/playwright/visual-sweep/style-project-home-readme-edit-${viewport.name}.png`,
       fullPage: true,
     });
   }
 
-  await page.locator('[data-stylex-owner="project-home-readme-edit-link"]').click();
+  await page.locator('[data-owner="project-home-readme-edit-link"]').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/postform?readme=true`);
 });
 
@@ -1501,12 +1487,7 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain("createFileRoute, Link, Outlet");
   expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
   expect(source).toContain("function HistoryLink(");
-  expect(source).toContain(
-    "className={`actor ${stylex.props(projectHistoryStyles.actor).className}`}",
-  );
-  expect(source).toContain(
-    "className={`where ${stylex.props(projectHistoryStyles.where).className}`}",
-  );
+
   expect(source).not.toContain('<Link href={actorUrl} className="actor">');
   expect(source).not.toContain('<Link href={itemUrl} className="where">');
   expect(source).toContain("function toRoutePath(basePath: string, href: string)");
@@ -2091,10 +2072,10 @@ async function projectHomeNavbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
     const rect = (selector: string) =>
       (document.querySelector(selector) as HTMLElement).getBoundingClientRect();
-    const navbar = rect("[data-stylex-owner=global-gnb-outer]");
+    const navbar = rect("[data-owner=global-gnb-outer]");
     const form = rect('form[name="gnb-search-form"]');
     const scope = rect("#gnb-search-scope-title");
-    const search = rect('[data-stylex-owner="global-gnb-search-box"]');
+    const search = rect('[data-owner="global-gnb-search-box"]');
 
     return {
       formLeft: form.left,

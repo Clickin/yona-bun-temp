@@ -1,12 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
-import type { HTMLAttributes } from "react";
+import type { CSSProperties, HTMLAttributes } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
-import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
@@ -27,47 +25,6 @@ import {
 import { useLegacyMessages } from "../../../../i18n";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { styles } from "./-milestone-detail.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  wrap: stylex.props(styles.wrap),
-  progress: stylex.props(styles.progress),
-  progressBar: (width: string) => stylex.props(styles.progressBar(width)),
-  description: stylex.props(styles.description),
-  actions: stylex.props(styles.actions),
-  listAction: stylex.props(styles.listAction),
-  tabs: stylex.props(styles.tabs),
-  tabItem: stylex.props(styles.tabItem),
-  tabLink: stylex.props(styles.tabLink, styles.tabLinkMobile),
-  tabLinkActive: stylex.props(styles.tabLink, styles.tabLinkActive, styles.tabLinkMobile),
-  tabBadge: stylex.props(styles.tabBadge),
-  issueList: stylex.props(styles.issueList),
-  issueRow: stylex.props(styles.issueRow),
-  issueTitleWrap: stylex.props(styles.titleWrap),
-  issuePostId: stylex.props(styles.postId),
-  issueTitle: stylex.props(styles.issueTitle),
-  issueInfos: stylex.props(styles.infos),
-  issueInfosItem: stylex.props(styles.infosItem),
-  issueCountGroups: stylex.props(styles.infosItem, styles.itemCountGroups),
-  issueCommentsCount: stylex.props(styles.commentsCount),
-  issueVoteCount: stylex.props(styles.voteCount),
-  issueSharerCount: stylex.props(styles.sharerCount),
-  issueCountLinkOffset: stylex.props(styles.countLinkOffset),
-  issueCountIcon: stylex.props(styles.countGroups, styles.countIcon),
-  issueCountValue: stylex.props(styles.countGroups, styles.countValue),
-  issueMeta: stylex.props(styles.issueMeta),
-  issueAssigneeRail: stylex.props(styles.issueAssigneeRail),
-  issueDueDateRail: stylex.props(styles.issueDueDateRail),
-  dueDateIcon: stylex.props(styles.dueDateIcon),
-  dueDateClosed: stylex.props(styles.dueDateClosed),
-  titleMeta: stylex.props(styles.titleMeta),
-  massUpdate: stylex.props(styles.massUpdate),
-  massUpdateForm: stylex.props(styles.massUpdateForm),
-  search: stylex.props(styles.search),
-  deleteModalVisible: stylex.props(styles.deleteModalVisible),
-  deleteModalHidden: stylex.props(styles.deleteModalHidden),
-} as const;
 
 type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyIssueItemRowAttrs = {
@@ -184,17 +141,10 @@ export function ProjectMilestoneDetailIndexScreen({
 
 function ProjectMilestoneDetailLoading() {
   return (
-    <div
-      className={`${sx.page.className} page-wrap-outer`}
-      data-stylex-owner="milestone-detail-page"
-      aria-busy="true"
-    >
-      <div className="project-page-wrap" data-stylex-owner="milestone-detail-shell">
-        <div className="milesion-wrap" data-stylex-owner="milestone-detail-wrap">
-          <ul
-            className="post-list-wrap row-fluid"
-            data-stylex-owner="milestone-detail-issue-list"
-          />
+    <div className="page-wrap-outer" data-owner="milestone-detail-page" aria-busy="true">
+      <div className="project-page-wrap" data-owner="milestone-detail-shell">
+        <div className="milesion-wrap" data-owner="milestone-detail-wrap">
+          <ul className="post-list-wrap row-fluid" data-owner="milestone-detail-issue-list" />
         </div>
       </div>
     </div>
@@ -230,22 +180,11 @@ export function ProjectMilestoneNotFoundBody() {
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-milestone-detail-error-page">
+    <div className="page-wrap-outer" data-owner="project-milestone-detail-error-page">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(styles.errorWrap)}
-          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-          data-stylex-owner="project-milestone-detail-error-wrap"
-        >
-          <i
-            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
-            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-            data-stylex-owner="project-milestone-detail-error-icon"
-          ></i>
-          <p
-            {...stylex.props(styles.errorMessage)}
-            data-stylex-owner="project-milestone-detail-error-message"
-          >
+        <div className="error-wrap" data-owner="project-milestone-detail-error-wrap">
+          <i className="ico ico-err2" data-owner="project-milestone-detail-error-icon"></i>
+          <p className="" data-owner="project-milestone-detail-error-message">
             {t("error.notfound.milestone")}
           </p>
           <Link
@@ -332,30 +271,16 @@ function ProjectMilestoneDetailBody({
       router.navigate({ to: `/${ownerName}/${projectName}/milestones` });
     },
   });
-  const deleteModalStyleProps = deleteConfirmOpen
-    ? sx.deleteModalVisible
+  const deleteModalClass = deleteConfirmOpen
+    ? "is-visible"
     : deleteConfirmWasShown
-      ? sx.deleteModalHidden
-      : undefined;
-  const milestoneBadgeProps = stylex.props(
-    styles.badge,
-    isClosed ? styles.badgeClosed : styles.badgeOpen,
-    styles.stateBadge,
-  );
+      ? "is-hidden"
+      : "";
 
   return (
-    <div
-      {...sx.page}
-      className={`${sx.page.className} page-wrap-outer`}
-      data-stylex-owner="milestone-detail-page"
-      data-stylex-content-ready="true"
-    >
-      <div className="project-page-wrap" data-stylex-owner="milestone-detail-shell">
-        <div
-          {...sx.wrap}
-          className={`${sx.wrap.className} milesion-wrap`}
-          data-stylex-owner="milestone-detail-wrap"
-        >
+    <div className="page-wrap-outer" data-owner="milestone-detail-page" data-content-ready="true">
+      <div className="project-page-wrap" data-owner="milestone-detail-shell">
+        <div className="milesion-wrap" data-owner="milestone-detail-wrap">
           <h4>
             <Link
               to="/$ownerName/$projectName/milestone/$milestoneId"
@@ -366,11 +291,7 @@ function ProjectMilestoneDetailBody({
             >
               {stringField(milestone.title)}
             </Link>{" "}
-            <small
-              {...sx.titleMeta}
-              className={`${sx.titleMeta.className} ml10`}
-              data-stylex-owner="milestone-detail-title-meta"
-            >
+            <small className="ml10" data-owner="milestone-detail-title-meta">
               {stringField(milestone.dueDateLabel) ? (
                 <>
                   <span className="due-date">
@@ -384,32 +305,26 @@ function ProjectMilestoneDetailBody({
                 </>
               ) : null}
               <span
-                {...milestoneBadgeProps}
-                className={`${milestoneBadgeProps.className} badge badge-issue-${isClosed ? "closed" : "open"} margin-left-5`}
-                data-stylex-owner="milestone-detail-state-badge"
+                className={`badge badge-issue-${isClosed ? "closed" : "open"} margin-left-5`}
+                data-owner="milestone-detail-state-badge"
               >
                 {t(`milestone.state.${isClosed ? "closed" : "open"}`)}
               </span>
             </small>
           </h4>
 
-          <div
-            {...sx.progress}
-            className={`progress progress-success ${sx.progress.className}`}
-            data-stylex-owner="milestone-detail-progress"
-          >
+          <div className="progress progress-success" data-owner="milestone-detail-progress">
             <div
-              {...sx.progressBar(`${completionPercent}%`)}
-              className={`bar ${sx.progressBar(`${completionPercent}%`).className}`}
-              data-stylex-owner="milestone-detail-progress-bar"
+              className="bar"
+              style={
+                { "--x-milestone-progress-width": `${completionPercent}%` } as React.CSSProperties
+              }
+              data-owner="milestone-detail-progress-bar"
             ></div>
           </div>
 
           {stringField(milestone.contentsMarkdown) ? (
-            <div
-              className={`${sx.description.className} milestone-desc`}
-              data-stylex-owner="milestone-detail-description"
-            >
+            <div className="milestone-desc" data-owner="milestone-detail-description">
               <div className="markdown-wrap">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {stringField(milestone.contentsMarkdown)}
@@ -421,15 +336,12 @@ function ProjectMilestoneDetailBody({
             <div className="content empty-content"></div>
           )}
 
-          <div
-            className={`${sx.actions.className} actrow row-fluid`}
-            data-stylex-owner="milestone-detail-actions"
-          >
+          <div className="actrow row-fluid" data-owner="milestone-detail-actions">
             <Link
               to="/$ownerName/$projectName/milestones"
               params={{ ownerName, projectName }}
-              className={`${sx.listAction.className} ybtn`}
-              data-stylex-owner="milestone-detail-list-action"
+              className="ybtn"
+              data-owner="milestone-detail-list-action"
             >
               {t("button.list")}
             </Link>
@@ -478,29 +390,19 @@ function ProjectMilestoneDetailBody({
           </div>
 
           <div id="issues">
-            <ul
-              {...sx.tabs}
-              className={`${sx.tabs.className} nav nav-tabs`}
-              data-stylex-owner="milestone-detail-tabs"
-            >
+            <ul className="nav nav-tabs" data-owner="milestone-detail-tabs">
               {(["open", "closed", "all"] as const).map((tabState) => (
-                <li
-                  key={tabState}
-                  {...sx.tabItem}
-                  className={`${sx.tabItem.className} ${selectedState === tabState ? "active" : ""}`.trim()}
-                >
+                <li key={tabState} className={selectedState === tabState ? "active" : ""}>
                   <Link
                     to="/$ownerName/$projectName/milestone/$milestoneId"
                     params={{ ownerName, projectName, milestoneId }}
                     search={{ state: tabState }}
                     hash="issues"
                     {...LEGACY_MILESTONE_LINK_PROPS}
-                    className={
-                      selectedState === tabState ? sx.tabLinkActive.className : sx.tabLink.className
-                    }
+                    className={""}
                   >
                     {t(`issue.state.${tabState}`)}
-                    <span {...sx.tabBadge} className={`num-badge ${sx.tabBadge.className}`}>
+                    <span className="num-badge">
                       {tabState === "open"
                         ? openIssueCount
                         : tabState === "closed"
@@ -512,8 +414,8 @@ function ProjectMilestoneDetailBody({
               ))}
             </ul>
 
-            <div className="issues" data-stylex-owner="milestone-detail-issues">
-              <div className="filter-wrap" data-stylex-owner="milestone-detail-filter">
+            <div className="issues" data-owner="milestone-detail-issues">
+              <div className="filter-wrap" data-owner="milestone-detail-filter">
                 <MassUpdateShell
                   allIssues={visibleIssues}
                   checkedIssueIds={checkedIssueIds}
@@ -524,11 +426,7 @@ function ProjectMilestoneDetailBody({
                   runtimeConfig={runtimeConfig}
                   viewerIsProjectMember={viewerIsProjectMember}
                 />
-                <div
-                  {...sx.search}
-                  className={`${sx.search.className} search search-bar`}
-                  data-stylex-owner="milestone-detail-search"
-                >
+                <div className="search search-bar" data-owner="milestone-detail-search">
                   <input
                     ref={searchInputRef}
                     name="filter"
@@ -545,10 +443,7 @@ function ProjectMilestoneDetailBody({
                   </button>
                 </div>
               </div>
-              <ul
-                className={`${sx.issueList.className} post-list-wrap row-fluid`}
-                data-stylex-owner="milestone-detail-issue-list"
-              >
+              <ul className="post-list-wrap row-fluid" data-owner="milestone-detail-issue-list">
                 {visibleIssues.map((issue) => (
                   <MilestoneIssueRow
                     key={stringField(issue.id, stringField(issue.issueNumber))}
@@ -582,9 +477,8 @@ function ProjectMilestoneDetailBody({
 
       <div
         id="deleteConfirm"
-        {...deleteModalStyleProps}
-        className={`${deleteConfirmOpen ? "modal hide fade in" : "modal hide fade"} ${deleteModalStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="milestone-detail-delete-modal"
+        className={`${deleteConfirmOpen ? "modal hide fade in" : "modal hide fade"} ${deleteModalClass}`.trim()}
+        data-owner="milestone-detail-delete-modal"
         aria-hidden={deleteConfirmOpen ? false : deleteConfirmWasShown ? true : undefined}
       >
         <div className="modal-header">
@@ -745,17 +639,13 @@ function MassUpdateShell({
     });
   };
   return (
-    <div
-      className={`${sx.massUpdate.className} mass-update-wrap hide-in-mobile`}
-      data-stylex-owner="milestone-detail-mass-update"
-    >
+    <div className="mass-update-wrap hide-in-mobile" data-owner="milestone-detail-mass-update">
       <form
         id="mass-update-form"
-        {...sx.massUpdateForm}
-        className={`${sx.massUpdateForm.className} mass-update-form`}
+        className="mass-update-form"
         action={prefixBasePath(runtimeConfig.basePath, `${projectPath}/issues`)}
         method="post"
-        data-stylex-owner="milestone-detail-mass-update-form"
+        data-owner="milestone-detail-mass-update-form"
       >
         <div className="btn-group check-all">
           <label htmlFor="check-all" aria-label="check-all">
@@ -960,8 +850,8 @@ function MassUpdateDropdown({
             <li data-value={option.value} key={option.value}>
               <button
                 type="button"
-                {...stylex.props(styles.massUpdateButton)}
-                data-stylex-owner="milestone-detail-mass-update-item"
+                className=""
+                data-owner="milestone-detail-mass-update-item"
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -1055,8 +945,8 @@ function LabelMassUpdateGroup({
         <li data-value={label.id} data-category={group.categoryId} key={label.id}>
           <button
             type="button"
-            {...stylex.props(styles.massUpdateButton)}
-            data-stylex-owner="milestone-detail-mass-update-item"
+            className=""
+            data-owner="milestone-detail-mass-update-item"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -1131,13 +1021,12 @@ function MilestoneIssueRow({
           title: stringField(issue.dueDateLabel),
         }
       : {};
-  const issueRowHiddenProps = hidden ? stylex.props(styles.issueRowHidden) : undefined;
+  const issueRowHiddenClass = hidden ? "is-hidden" : "";
 
   return (
     <li
-      {...issueRowHiddenProps}
-      className={`${sx.issueRow.className} post-item title ${issueRowHiddenProps?.className ?? ""}`.trim()}
-      data-stylex-owner="milestone-detail-issue-row"
+      className={`post-item title ${issueRowHiddenClass}`.trim()}
+      data-owner="milestone-detail-issue-row"
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
@@ -1165,26 +1054,17 @@ function MilestoneIssueRow({
         ) : null}
         <div
           {...issueItemRowAttrs}
-          className={`${sx.issueMeta.className} issue-item-row`}
-          data-stylex-owner="milestone-detail-issue-meta"
+          className="issue-item-row"
+          data-owner="milestone-detail-issue-meta"
         >
-          <div
-            {...sx.issueTitleWrap}
-            className={`${sx.issueTitleWrap.className} title-wrap`}
-            data-stylex-owner="milestone-detail-issue-title-wrap"
-          >
+          <div className="title-wrap" data-owner="milestone-detail-issue-title-wrap">
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={{ ownerName, projectName, issueNumber }}
-              {...sx.issueTitle}
-              className={`${sx.issueTitle.className} title`}
-              data-stylex-owner="milestone-detail-issue-title-link"
+              className="title"
+              data-owner="milestone-detail-issue-title-link"
             >
-              <span
-                {...sx.issuePostId}
-                className={`${sx.issuePostId.className} post-id`}
-                data-stylex-owner="milestone-detail-issue-post-id"
-              >
+              <span className="post-id" data-owner="milestone-detail-issue-post-id">
                 #{issueNumber}
               </span>
             </Link>
@@ -1215,42 +1095,31 @@ function MilestoneIssueRow({
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={{ ownerName, projectName, issueNumber }}
-              {...sx.issueTitle}
-              className={`${sx.issueTitle.className} title`}
-              data-stylex-owner="milestone-detail-issue-title-link"
+              className="title"
+              data-owner="milestone-detail-issue-title-link"
             >
               {titleParts.title}
             </Link>
           </div>
-          <div
-            {...sx.issueInfos}
-            className={`${sx.issueInfos.className} infos`}
-            data-stylex-owner="milestone-detail-issue-infos"
-          >
+          <div className="infos" data-owner="milestone-detail-issue-infos">
             {authorLabel && authorLoginId ? (
               <Link
                 to="/$user"
                 params={{ user: authorLoginId }}
-                {...sx.issueInfosItem}
-                className={`${sx.issueInfosItem.className} infos-item infos-link-item`}
-                data-stylex-owner="milestone-detail-issue-infos-item"
+                className="infos-item infos-link-item"
+                data-owner="milestone-detail-issue-infos-item"
                 title={authorLoginId}
               >
                 {authorLabel}
               </Link>
             ) : (
-              <span
-                {...sx.issueInfosItem}
-                className={`${sx.issueInfosItem.className} infos-item`}
-                data-stylex-owner="milestone-detail-issue-infos-item"
-              >
+              <span className="infos-item" data-owner="milestone-detail-issue-infos-item">
                 {t("issue.noAuthor")}
               </span>
             )}
             <span
-              {...sx.issueInfosItem}
-              className={`${sx.issueInfosItem.className} infos-item`}
-              data-stylex-owner="milestone-detail-issue-infos-item"
+              className="infos-item"
+              data-owner="milestone-detail-issue-infos-item"
               title={createdTitle}
             >
               {createdDisplayLabel}
@@ -1262,7 +1131,7 @@ function MilestoneIssueRow({
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ ownerName, projectName, milestoneId: stringField(issue.milestoneId) }}
                   {...LEGACY_MILESTONE_LINK_PROPS}
-                  data-stylex-owner="milestone-detail-issue-milestone-link"
+                  data-owner="milestone-detail-issue-milestone-link"
                   title={t("milestone")}
                 >
                   {stringField(issue.milestoneTitle)}
@@ -1273,30 +1142,26 @@ function MilestoneIssueRow({
             numberField(issue.voterCount) ||
             numberField(issue.sharerCount) ? (
               <span
-                {...sx.issueCountGroups}
-                className={`${sx.issueCountGroups.className} infos-item item-count-groups`}
-                data-stylex-owner="milestone-detail-issue-count-groups"
+                className="infos-item item-count-groups"
+                data-owner="milestone-detail-issue-count-groups"
               >
                 {numberField(issue.commentCount) ? (
                   <Link
                     to="/$ownerName/$projectName/issue/$issueNumber"
                     params={{ ownerName, projectName, issueNumber }}
                     hash="comments"
-                    {...sx.issueCommentsCount}
-                    className={`${sx.issueCommentsCount.className} comments-count comments-count-color`}
-                    data-stylex-owner="milestone-detail-issue-comments-count"
+                    className="comments-count comments-count-color"
+                    data-owner="milestone-detail-issue-comments-count"
                   >
                     <span
-                      {...sx.issueCountIcon}
-                      className={`${sx.issueCountIcon.className} count-groups item-icon`}
-                      data-stylex-owner="milestone-detail-issue-count-icon"
+                      className="count-groups item-icon"
+                      data-owner="milestone-detail-issue-count-icon"
                     >
                       <i className="yobicon-comment2"></i>
                     </span>
                     <span
-                      {...sx.issueCountValue}
-                      className={`${sx.issueCountValue.className} count-groups item-count`}
-                      data-stylex-owner="milestone-detail-issue-count-value"
+                      className="count-groups item-count"
+                      data-owner="milestone-detail-issue-count-value"
                     >
                       {numberField(issue.commentCount)}
                     </span>
@@ -1307,21 +1172,18 @@ function MilestoneIssueRow({
                     to="/$ownerName/$projectName/issue/$issueNumber"
                     params={{ ownerName, projectName, issueNumber }}
                     hash="vote"
-                    {...sx.issueVoteCount}
-                    className={`${sx.issueVoteCount.className} ${numberField(issue.commentCount) ? sx.issueCountLinkOffset.className : ""} vote-count vote-color`}
-                    data-stylex-owner="milestone-detail-issue-vote-count"
+                    className="vote-count vote-color"
+                    data-owner="milestone-detail-issue-vote-count"
                   >
                     <span
-                      {...sx.issueCountIcon}
-                      className={`${sx.issueCountIcon.className} count-groups item-icon`}
-                      data-stylex-owner="milestone-detail-issue-count-icon"
+                      className="count-groups item-icon"
+                      data-owner="milestone-detail-issue-count-icon"
                     >
                       <i className="yobicon-hearts"></i>
                     </span>
                     <span
-                      {...sx.issueCountValue}
-                      className={`${sx.issueCountValue.className} count-groups item-count strong`}
-                      data-stylex-owner="milestone-detail-issue-count-value"
+                      className="count-groups item-count strong"
+                      data-owner="milestone-detail-issue-count-value"
                     >
                       {numberField(issue.voterCount)}
                     </span>
@@ -1330,22 +1192,19 @@ function MilestoneIssueRow({
                 {numberField(issue.sharerCount) ? (
                   <button
                     type="button"
-                    {...sx.issueSharerCount}
-                    className={`${sx.issueSharerCount.className} ${numberField(issue.commentCount) || numberField(issue.voterCount) ? sx.issueCountLinkOffset.className : ""} sharer-color`}
-                    data-stylex-owner="milestone-detail-issue-sharer-count"
+                    className="sharer-color"
+                    data-owner="milestone-detail-issue-sharer-count"
                     title={t("issue.sharer")}
                   >
                     <span
-                      {...sx.issueCountIcon}
-                      className={`${sx.issueCountIcon.className} count-groups item-icon`}
-                      data-stylex-owner="milestone-detail-issue-count-icon"
+                      className="count-groups item-icon"
+                      data-owner="milestone-detail-issue-count-icon"
                     >
                       <i className="yobicon-friends"></i>
                     </span>
                     <span
-                      {...sx.issueCountValue}
-                      className={`${sx.issueCountValue.className} count-groups item-count strong`}
-                      data-stylex-owner="milestone-detail-issue-count-value"
+                      className="count-groups item-count strong"
+                      data-owner="milestone-detail-issue-count-value"
                     >
                       {numberField(issue.sharerCount)}
                     </span>
@@ -1353,34 +1212,31 @@ function MilestoneIssueRow({
                 ) : null}
               </span>
             ) : null}
-            {labels.map((label) =>
-              (() => {
-                const labelColor = stylex.props(
-                  styles.labelColor(cssBackgroundColor(stringField(label.color))),
-                );
-                return (
-                  <button
-                    type="button"
-                    key={stringField(label.id)}
-                    {...labelColor}
-                    className={`${labelColor.className} label issue-label list-label active`}
-                    data-stylex-owner="milestone-detail-issue-label"
-                    data-category-id={stringField(label.categoryId)}
-                    data-label-id={stringField(label.id)}
-                    onClick={() => {
-                      void router.navigate({
-                        to: legacyProjectIssuesHref(ownerName, projectName, {
-                          labelIds: [stringField(label.id)],
-                          milestoneId,
-                        }),
-                      });
-                    }}
-                  >
-                    {stringField(label.name)}
-                  </button>
-                );
-              })(),
-            )}
+            {labels.map((label) => (
+              <button
+                type="button"
+                key={stringField(label.id)}
+                className="label issue-label list-label active"
+                style={
+                  {
+                    "--x-backgroundColor": cssBackgroundColor(stringField(label.color)),
+                  } as CSSProperties
+                }
+                data-owner="milestone-detail-issue-label"
+                data-category-id={stringField(label.categoryId)}
+                data-label-id={stringField(label.id)}
+                onClick={() => {
+                  void router.navigate({
+                    to: legacyProjectIssuesHref(ownerName, projectName, {
+                      labelIds: [stringField(label.id)],
+                      milestoneId,
+                    }),
+                  });
+                }}
+              >
+                {stringField(label.name)}
+              </button>
+            ))}
             <div className="child-issue-list hide">
               <MilestoneIssueChildRows
                 childIssues={issue.childIssues}
@@ -1394,11 +1250,7 @@ function MilestoneIssueRow({
         </div>
       </div>
       <div className="span3 hide-in-mobile">
-        <div
-          {...sx.issueAssigneeRail}
-          className={`${sx.issueAssigneeRail.className} mt5`}
-          data-stylex-owner="milestone-detail-issue-assignee-rail"
-        >
+        <div className="mt5" data-owner="milestone-detail-issue-assignee-rail">
           {assigneeLoginId ? (
             <Link
               to="/$user"
@@ -1422,16 +1274,15 @@ function MilestoneIssueRow({
         </div>
         {stringField(issue.dueDateLabel) ? (
           <div
-            {...sx.issueDueDateRail}
-            className={`${sx.issueDueDateRail.className} mr20 mt10${
+            className={`mr20 mt10${
               booleanField(issue.dueDateOverdue) ? " overdue" : ""
-            } ${state === "closed" ? sx.dueDateClosed.className : ""}`}
-            data-stylex-owner="milestone-detail-issue-due-date-rail"
+            }${state === "closed" ? " is-closed" : ""}`}
+            data-owner="milestone-detail-issue-due-date-rail"
             {...dueDateAttrs}
           >
             <i
-              className={`${sx.dueDateIcon.className} yobicon-clock2 vmiddle`}
-              data-stylex-owner="milestone-detail-issue-due-date-icon"
+              className="yobicon-clock2 vmiddle"
+              data-owner="milestone-detail-issue-due-date-icon"
             ></i>
             <span className="vmiddle">
               {state === "open" && booleanField(issue.dueDateOverdue)
@@ -1473,7 +1324,6 @@ function IssueSubtaskSummary({
   const childOpenCount = numberField(issue.childOpenCount);
   const childTotalCount = childClosedCount + childOpenCount;
   const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
-  const progressStyle = stylex.props(styles.progressBar(`${percentage}%`));
   const parentIssueNumber = stringField(issue.parentIssueNumber);
   const parentIssueTitle = stringField(issue.parentIssueTitle);
 
@@ -1487,9 +1337,11 @@ function IssueSubtaskSummary({
             }`}
           >
             <div
-              {...progressStyle}
-              className={`${progressStyle.className} bar ${percentage === 100 ? "done" : "red"}`}
-              data-stylex-owner="milestone-detail-subtask-progress-bar"
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
+              style={
+                { "--x-milestone-subtask-progress-width": `${percentage}%` } as React.CSSProperties
+              }
+              data-owner="milestone-detail-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>
@@ -1620,28 +1472,21 @@ function MilestoneIssueChildRow({
           voterCount={numberField(childIssue.voterCount)}
         />
       </span>
-      {childIssueLabels.map((label) =>
-        (() => {
-          const labelColor = label.color
-            ? stylex.props(styles.labelColor(cssBackgroundColor(label.color)))
-            : undefined;
-          return (
-            <Link
-              to={legacyProjectIssuesHref(ownerName, projectName, {
-                labelIds: [label.id],
-                state: "open",
-              })}
-              {...labelColor}
-              className={`${labelColor?.className ?? ""} label issue-label list-label active twoColumeModeTarget`}
-              data-category-id={label.categoryId}
-              data-label-id={label.id}
-              key={label.id}
-            >
-              {label.name}
-            </Link>
-          );
-        })(),
-      )}
+      {childIssueLabels.map((label) => (
+        <Link
+          to={legacyProjectIssuesHref(ownerName, projectName, {
+            labelIds: [label.id],
+            state: "open",
+          })}
+          style={{ "--x-backgroundColor": cssBackgroundColor(label.color) } as CSSProperties}
+          className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={label.categoryId}
+          data-label-id={label.id}
+          key={label.id}
+        >
+          {label.name}
+        </Link>
+      ))}
       <span className="child-issue-date" title={stringField(childIssue.createdLabel)}>
         {stringField(childIssue.createdLabel)}
       </span>

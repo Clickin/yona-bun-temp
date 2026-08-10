@@ -31,8 +31,12 @@ impl AppRepositoryImpl<'_> {
         let truncated = models.len() > limit;
         models.truncate(limit);
 
+        let backend = self.db.get_database_backend();
         Ok(ProjectIssueReferenceSearchRecord {
-            items: models.iter().map(project_issue_reference_record).collect(),
+            items: models
+                .iter()
+                .map(|model| project_issue_reference_record(model, backend))
+                .collect(),
             total,
             truncated,
         })
@@ -72,6 +76,10 @@ impl AppRepositoryImpl<'_> {
                 .cmp(&right.number.unwrap_or_default())
         });
 
-        Ok(models.iter().map(project_issue_reference_record).collect())
+        let backend = self.db.get_database_backend();
+        Ok(models
+            .iter()
+            .map(|model| project_issue_reference_record(model, backend))
+            .collect())
     }
 }

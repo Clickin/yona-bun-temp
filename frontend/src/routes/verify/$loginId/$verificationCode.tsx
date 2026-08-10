@@ -1,38 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { verifyUser } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { verificationTheme } from "./-verification.stylex";
-
-const styles = stylex.create({
-  taglineWrap: {
-    textAlign: "center",
-    marginTop: "0px",
-    marginBottom: "26px",
-    paddingTop: "80px",
-  },
-  title: {
-    display: "inline-block",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-    fontSize: "3.3em",
-    lineHeight: "42px",
-    fontWeight: "400",
-  },
-  tagline: {
-    marginTop: "10px",
-    fontSize: "1.2em",
-    color: verificationTheme.taglineText,
-  },
-});
-
-const taglineWrapStyleProps = stylex.props(styles.taglineWrap);
-const titleStyleProps = stylex.props(styles.title);
-const taglineStyleProps = stylex.props(styles.tagline);
 
 export const Route = createFileRoute("/verify/$loginId/$verificationCode")({
   component: VerifyUserRoute,
@@ -92,18 +64,13 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div className="page full">
           <div
-            {...taglineWrapStyleProps}
-            className={`center-wrap tag-line-wrap reset-password ${taglineWrapStyleProps.className ?? ""}`}
-            data-stylex-owner="verified-user-success"
+            className="center-wrap tag-line-wrap reset-password"
+            data-owner="verified-user-success"
           >
-            <h1 {...titleStyleProps} className={`title ${titleStyleProps.className ?? ""}`}>
-              {t("user.verified")}
-            </h1>
+            <h1 className="title">{t("user.verified")}</h1>
             <p>{verifiedLoginId}</p>
             <hr />
-            <p {...taglineStyleProps} className={`tag-line ${taglineStyleProps.className ?? ""}`}>
-              {t("user.verified.detail")}
-            </p>
+            <p className="tag-line">{t("user.verified.detail")}</p>
           </div>
         </div>
       </SiteLayoutShell>

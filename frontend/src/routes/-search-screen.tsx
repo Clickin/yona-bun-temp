@@ -1,12 +1,10 @@
-import * as stylex from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { useLegacyMessages } from "../i18n";
 import { type RuntimeConfig } from "../runtime-config";
-import { styles } from "./-search-screen.stylex";
-
 const legacySearchPaginationLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
@@ -41,32 +39,22 @@ export function DefaultSearchErrorBody({
   ybtnClassName?: string;
 }) {
   const { t } = useLegacyMessages();
-  const errorWrap = stylex.props(styles.errorWrap);
-  const errorIcon = stylex.props(styles.errorIcon(legacySpriteUrl, iconClassName));
-  const errorMessage = stylex.props(styles.errorMessage);
-
   return (
-    <div className="page-wrap-outer" data-stylex-owner="search-error-page">
+    <div className="page-wrap-outer" data-owner="search-error-page">
       <div className="project-page-wrap">
-        <div
-          {...errorWrap}
-          className={`${errorWrap.className} error-wrap`}
-          data-stylex-owner="search-error-wrap"
-        >
+        <div className={"error-wrap"} data-owner="search-error-wrap">
           <i
-            {...errorIcon}
-            className={`${errorIcon.className} ${iconClassName}`}
-            data-stylex-owner="search-error-icon"
+            style={{ "--search-error-icon-sprite": `url(${legacySpriteUrl})` } as CSSProperties}
+            className={`${iconClassName}`}
+            data-owner="search-error-icon"
           ></i>
-          <p {...errorMessage} data-stylex-owner="search-error-message">
-            {t(messageKey)}
-          </p>
+          <p data-owner="search-error-message">{t(messageKey)}</p>
           <Link
             activeOptions={legacySearchPaginationLinkActiveOptions}
             activeProps={legacySearchPaginationLinkActiveProps}
             className={ybtnClassName}
             to="/"
-            data-stylex-owner="search-error-home"
+            data-owner="search-error-home"
           >
             {t("menu.home")}
           </Link>
@@ -78,29 +66,17 @@ export function DefaultSearchErrorBody({
 
 export function RequestTextTooLargeErrorBody() {
   const { t } = useLegacyMessages();
-  const errorWrap = stylex.props(styles.errorWrap);
-  const errorIcon = stylex.props(styles.errorIcon(legacySpriteUrl, "ico ico-err2"));
-  const errorMessage = stylex.props(styles.errorMessage);
-
   return (
-    <div className="page-wrap-outer" data-stylex-owner="search-error-page">
+    <div className="page-wrap-outer" data-owner="search-error-page">
       <div className="project-page-wrap">
-        <div
-          {...errorWrap}
-          className={`${errorWrap.className} error-wrap`}
-          data-stylex-owner="search-error-wrap"
-        >
+        <div className={"error-wrap"} data-owner="search-error-wrap">
           <i
-            {...errorIcon}
-            className={`${errorIcon.className} ico ico-err2`}
-            data-stylex-owner="search-error-icon"
+            style={{ "--search-error-icon-sprite": `url(${legacySpriteUrl})` } as CSSProperties}
+            className={"ico ico-err2"}
+            data-owner="search-error-icon"
           ></i>
-          <p {...errorMessage} data-stylex-owner="search-error-message">
-            {t("error.tooLargeText.title")}
-          </p>
-          <p {...errorMessage} data-stylex-owner="search-error-limit">
-            {t("error.tooLargeText.limit", { args: [102400] })}
-          </p>
+          <p data-owner="search-error-message">{t("error.tooLargeText.title")}</p>
+          <p data-owner="search-error-limit">{t("error.tooLargeText.limit", { args: [102400] })}</p>
         </div>
       </div>
     </div>

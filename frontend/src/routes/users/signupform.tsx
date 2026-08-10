@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, useNavigate, useRouter } from "@tanstack/react-router";
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { readAuthUiCapabilitiesRest, registerWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
@@ -11,7 +10,6 @@ import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../.
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { signupFormColors, signupFormDynamicStyles } from "./-signupform.stylex";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   defaultAdminContact?: string;
@@ -19,180 +17,6 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   signupRequireConfirm?: boolean;
   socialLoginOnly?: boolean;
 };
-
-const styles = stylex.create({
-  standaloneSignup: {
-    "--yoram-stylex-standalone-signup": "stylex",
-  },
-  taglineWrap: {
-    textAlign: "center",
-    marginTop: "0px",
-    marginBottom: "26px",
-    paddingTop: "40px",
-  },
-  title: {
-    display: "inline-block",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-    fontSize: "3.3em",
-    lineHeight: "42px",
-    fontWeight: "400",
-  },
-  tagline: {
-    marginTop: "10px",
-    fontSize: "14px",
-    color: signupFormColors.taglineText,
-  },
-  formWrap: {
-    position: "relative",
-    width: {
-      default: "400px",
-      "@media (max-width: 767px)": "95%",
-    },
-    margin: "14px auto 0px",
-  },
-  definitionList: {
-    margin: "0px",
-    padding: "0px",
-  },
-  labelTerm: {
-    margin: "3px 0px 1px",
-    padding: "0px",
-  },
-  labelDefinition: {
-    margin: "0px",
-    padding: "0px",
-  },
-  label: {
-    fontWeight: "700",
-    marginRight: "5px",
-  },
-  textInput: {
-    width: {
-      default: "386px",
-      "@media (max-width: 767px)": "40%",
-    },
-    height: "27px",
-    marginBottom: "10px",
-    fontSize: "12px",
-    fontWeight: "700",
-    borderStyle: "none",
-    borderBottomColor: signupFormColors.inputBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderRadius: "0px",
-    ":focus": {
-      borderBottomColor: signupFormColors.accent,
-      outline: "none",
-      boxShadow: "none",
-    },
-  },
-  passwordInput: {
-    marginBottom: "15px",
-  },
-  buttonRow: {
-    display: "block",
-    textAlign: "center",
-    margin: "0px auto 20px",
-  },
-  submit: {
-    display: "block",
-    boxSizing: "border-box",
-    width: "100%",
-  },
-  actionRow: {
-    textAlign: "right",
-    color: signupFormColors.popoverArrowBorder,
-  },
-  loginLink: {
-    color: signupFormColors.actionText,
-    fontWeight: "700",
-  },
-  confirmationNotice: {
-    textAlign: "center",
-  },
-  socialOnlyNotice: {
-    display: "block",
-    margin: "0px",
-    textAlign: "center",
-  },
-  validationPopover: {
-    position: "absolute",
-    top: "var(--yoram-stylex-validation-popover-top)",
-    left: {
-      default: "var(--yoram-stylex-validation-popover-left)",
-      "@media (max-width: 767px)": "24.375px",
-    },
-    zIndex: "1010",
-    display: "block",
-    maxWidth: "276px",
-    padding: "1px",
-    textAlign: "left",
-    whiteSpace: "normal",
-    backgroundColor: signupFormColors.popoverSurface,
-    borderColor: signupFormColors.popoverBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    borderRadius: "2px",
-    boxShadow: signupFormColors.popoverShadow,
-    backgroundClip: "padding-box",
-    lineHeight: "1",
-    marginLeft: "-10px",
-  },
-  validationPopoverArrow: {
-    position: "absolute",
-    display: "block",
-    width: "0px",
-    height: "0px",
-    borderColor: "transparent",
-    borderStyle: "solid",
-    borderWidth: "11px",
-    top: "50%",
-    right: "-11px",
-    marginTop: "-11px",
-    borderLeftColor: signupFormColors.popoverArrowShadow,
-    borderRightWidth: "0px",
-    "::after": {
-      position: "absolute",
-      display: "block",
-      width: "0px",
-      height: "0px",
-      borderColor: "transparent",
-      borderStyle: "solid",
-      borderWidth: "10px",
-      content: '""',
-      right: "1px",
-      bottom: "-10px",
-      borderLeftColor: signupFormColors.popoverSurface,
-      borderRightWidth: "0px",
-    },
-  },
-  validationPopoverContent: {
-    padding: "9px 10px",
-    lineHeight: "120%",
-    width: {
-      "@media (max-width: 767px)": "150px",
-    },
-  },
-});
-
-const standaloneSignupClassName = stylex.props(styles.standaloneSignup).className;
-const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
-const titleClassName = stylex.props(styles.title).className;
-const taglineClassName = stylex.props(styles.tagline).className;
-const formWrapClassName = stylex.props(styles.formWrap).className;
-const definitionListClassName = stylex.props(styles.definitionList).className;
-const labelTermClassName = stylex.props(styles.labelTerm).className;
-const labelDefinitionClassName = stylex.props(styles.labelDefinition).className;
-const labelClassName = stylex.props(styles.label).className;
-const textInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
-const passwordTextInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
-const buttonRowClassName = stylex.props(styles.buttonRow).className;
-const submitClassName = stylex.props(styles.submit).className;
-const actionRowClassName = stylex.props(styles.actionRow).className;
-const loginLinkClassName = stylex.props(styles.loginLink).className;
-const confirmationNoticeClassName = stylex.props(styles.confirmationNotice).className;
-const socialOnlyNoticeClassName = stylex.props(styles.socialOnlyNotice).className;
 
 export const Route = createFileRoute("/users/signupform")({
   component: SignupFormRoute,
@@ -282,35 +106,31 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <title>{t("title.signup")}</title>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <div
-          className={`page full ${standaloneSignupClassName}`}
-          data-stylex-owner="standalone-signup-form"
-        >
+        <div className="page full" data-owner="standalone-signup-form">
           <div
-            className={`center-wrap tag-line-wrap signup ${taglineWrapClassName}`}
-            data-stylex-part="standalone-signup-tagline"
-            data-stylex-owner="standalone-signup-tagline"
+            className="center-wrap tag-line-wrap signup"
+            data-part="standalone-signup-tagline"
+            data-owner="standalone-signup-tagline"
           >
             <h1
-              className={`title ${titleClassName}`}
-              data-stylex-part="standalone-signup-title"
-              data-stylex-owner="standalone-signup-title"
+              className="title"
+              data-part="standalone-signup-title"
+              data-owner="standalone-signup-title"
             >
               <HighlightedLegacyMessage message={title} />
             </h1>
-            <p className={`tag-line ${taglineClassName}`} data-stylex-part="standalone-signup-copy">
+            <p className="tag-line" data-part="standalone-signup-copy">
               {t("app.description")}
             </p>
           </div>
 
           {signupRequireConfirm ? (
             <div
-              className={confirmationNoticeClassName}
-              data-stylex-owner="standalone-signup-confirmation-notice"
-              data-stylex-part="signup-confirmation-notice"
+              data-owner="standalone-signup-confirmation-notice"
+              data-part="signup-confirmation-notice"
             >
-              <p data-stylex-part="signup-confirmation-primary">{t("title.signupConfirmDesc")}</p>
-              <p data-stylex-part="signup-confirmation-contact">
+              <p data-part="signup-confirmation-primary">{t("title.signupConfirmDesc")}</p>
+              <p data-part="signup-confirmation-contact">
                 <ObfuscatedContactMessage
                   message={lookupLegacyMessage(language, "title.signupConfirmDesc2", {
                     args: [String(capabilities?.defaultAdminContact ?? "")],
@@ -322,9 +142,9 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
           <div
             ref={formWrapRef}
-            className={`signup-form-wrap frm-wrap ${formWrapClassName}`}
-            data-stylex-part="standalone-signup-form-wrap"
-            data-stylex-owner="standalone-signup-form-wrap"
+            className="signup-form-wrap frm-wrap"
+            data-part="standalone-signup-form-wrap"
+            data-owner="standalone-signup-form-wrap"
           >
             <form
               action={prefixBasePath(runtimeConfig.basePath, "/users/signup")}
@@ -333,31 +153,22 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               onSubmit={handleSubmit}
             >
               {socialLoginOnly ? (
-                <div
-                  className={`btns-row nm ${socialOnlyNoticeClassName}`}
-                  data-stylex-owner="standalone-signup-social-only-notice"
-                >
+                <div className="btns-row nm" data-owner="standalone-signup-social-only-notice">
                   {t("app.warn.support.social.login.only")}
                 </div>
               ) : (
                 <>
-                  <dl
-                    className={definitionListClassName}
-                    data-stylex-part="standalone-signup-fields"
-                  >
-                    <dt className={labelTermClassName}>
-                      <label className={labelClassName} htmlFor="loginId">
-                        {t("user.signupId")}
-                      </label>
+                  <dl data-part="standalone-signup-fields">
+                    <dt>
+                      <label htmlFor="loginId">{t("user.signupId")}</label>
                     </dt>
-                    <dd className={labelDefinitionClassName}>
+                    <dd>
                       <input
                         id="loginId"
                         ref={loginIdRef}
                         type="text"
                         name="loginId"
-                        className={textInputClassName}
-                        data-stylex-part="standalone-signup-login-id"
+                        data-part="standalone-signup-login-id"
                         placeholder=""
                         autoComplete="off"
                         onBlur={handleLoginIdBlur}
@@ -370,36 +181,30 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       />
                     </dd>
 
-                    <dt className={labelTermClassName}>
-                      <label className={labelClassName} htmlFor="uname">
-                        {t("user.name")}
-                      </label>
+                    <dt>
+                      <label htmlFor="uname">{t("user.name")}</label>
                     </dt>
-                    <dd className={labelDefinitionClassName}>
+                    <dd>
                       <input
                         id="uname"
                         type="text"
                         name="name"
-                        className={textInputClassName}
-                        data-stylex-part="standalone-signup-name"
+                        data-part="standalone-signup-name"
                         placeholder=""
                         autoComplete="off"
                       />
                     </dd>
 
-                    <dt className={labelTermClassName}>
-                      <label className={labelClassName} htmlFor="email">
-                        {t("user.email")}
-                      </label>
+                    <dt>
+                      <label htmlFor="email">{t("user.email")}</label>
                     </dt>
-                    <dd className={labelDefinitionClassName}>
+                    <dd>
                       <input
                         id="email"
                         ref={emailRef}
                         type="text"
                         name="email"
-                        className={textInputClassName}
-                        data-stylex-part="standalone-signup-email"
+                        data-part="standalone-signup-email"
                         placeholder=""
                         autoComplete="off"
                         onBlur={handleEmailBlur}
@@ -412,19 +217,16 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       />
                     </dd>
 
-                    <dt className={labelTermClassName}>
-                      <label className={labelClassName} htmlFor="password">
-                        {t("user.password")}
-                      </label>
+                    <dt>
+                      <label htmlFor="password">{t("user.password")}</label>
                     </dt>
-                    <dd className={labelDefinitionClassName}>
+                    <dd>
                       <input
                         id="password"
                         ref={passwordRef}
                         type="password"
                         name="password"
-                        className={passwordTextInputClassName}
-                        data-stylex-part="standalone-signup-password"
+                        data-part="standalone-signup-password"
                         placeholder=""
                         autoComplete="off"
                         onKeyUp={handlePasswordKeyUp}
@@ -437,19 +239,16 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       />
                     </dd>
 
-                    <dt className={labelTermClassName}>
-                      <label className={labelClassName} htmlFor="retypedPassword">
-                        {t("validation.retypePassword")}
-                      </label>
+                    <dt>
+                      <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
                     </dt>
-                    <dd className={labelDefinitionClassName}>
+                    <dd>
                       <input
                         id="retypedPassword"
                         ref={retypedPasswordRef}
                         type="password"
                         name="retypedPassword"
-                        className={passwordTextInputClassName}
-                        data-stylex-part="standalone-signup-retyped-password"
+                        data-part="standalone-signup-retyped-password"
                         placeholder=""
                         autoComplete="off"
                         onKeyUp={handleRetypedPasswordKeyUp}
@@ -464,26 +263,20 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   </dl>
 
                   {submitError ? <div className="error-message">{submitError}</div> : null}
-                  <div
-                    className={`btns-row ${buttonRowClassName}`}
-                    data-stylex-part="standalone-signup-submit-row"
-                  >
+                  <div className="btns-row" data-part="standalone-signup-submit-row">
                     <button
                       type="submit"
-                      className={`ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`}
-                      data-stylex-part="standalone-signup-submit"
+                      className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                      data-part="standalone-signup-submit"
                       disabled={registerMutation.isPending}
                     >
                       {t("user.signupBtn")}
                     </button>
                   </div>
 
-                  <div
-                    className={`act-row ${actionRowClassName}`}
-                    data-stylex-part="standalone-signup-actions"
-                  >
+                  <div className="act-row" data-part="standalone-signup-actions">
                     {t("user.isAlreadySignupUser")}{" "}
-                    <Link to="/users/loginform" className={`go-login ${loginLinkClassName}`}>
+                    <Link to="/users/loginform" className="go-login">
                       {t("title.login")}
                     </Link>
                   </div>
@@ -690,25 +483,19 @@ function FieldPopover({
 
   return (
     <div
-      {...stylex.props(
-        styles.validationPopover,
-        signupFormDynamicStyles.validationPopoverPosition(position.left, position.top),
-      )}
+      style={
+        {
+          "--user-signup-validation-popover-left": position.left,
+          "--user-signup-validation-popover-top": position.top,
+        } as React.CSSProperties
+      }
       ref={popoverRef}
-      data-stylex-owner="standalone-signup-validation-popover"
-      data-stylex-part="validation-popover-surface"
-      data-stylex-validation-for={validationFor}
+      data-owner="standalone-signup-validation-popover"
+      data-part="validation-popover-surface"
+      data-validation-for={validationFor}
     >
-      <div
-        {...stylex.props(styles.validationPopoverArrow)}
-        data-stylex-part="validation-popover-arrow"
-      />
-      <div
-        {...stylex.props(styles.validationPopoverContent)}
-        data-stylex-part="validation-popover-content"
-      >
-        {message}
-      </div>
+      <div data-part="validation-popover-arrow" />
+      <div data-part="validation-popover-content">{message}</div>
     </div>
   );
 }

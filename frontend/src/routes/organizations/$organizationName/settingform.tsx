@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -10,9 +9,6 @@ import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-// Batch 1111: topBox padding uses mobile breakpoint (10px) matching legacy _responsive.less.
-import { organizationSettingFormStyles } from "./-organization-settingform.stylex";
-import { organizationSettingColors, organizationSettingStyles } from "./-settingform.stylex";
 
 // Legacy output source: yona-original/app/views/organization/setting.scala.html.
 
@@ -68,41 +64,7 @@ function OrganizationSettingsBody({
   const organizationName = stringField(organization.organizationName, "organization");
   const organizationId = stringField(organization.id, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-  const logoStyleProps = stylex.props(organizationSettingStyles.logo(`url('${logoUrl}')`));
-  const settingBoxStyleProps = stylex.props(organizationSettingStyles.settingBox);
-  const settingBoxLeftStyleProps = stylex.props(organizationSettingStyles.settingBoxLeft);
-  const settingBoxRightStyleProps = stylex.props(organizationSettingStyles.settingBoxRight);
-  const logoDescStyleProps = stylex.props(organizationSettingStyles.logoDesc);
-  const pointStyleProps = stylex.props(organizationSettingStyles.point);
-  const descsItemStyleProps = stylex.props(organizationSettingStyles.descsItem);
-  const descsLastStyleProps = stylex.props(organizationSettingStyles.descsLast);
-  const fieldGeometryStyleProps = stylex.props(organizationSettingStyles.fieldGeometry);
-  const textareaGeometryStyleProps = stylex.props(organizationSettingStyles.textareaGeometry);
-  const saveFooterStyleProps = stylex.props(organizationSettingStyles.saveFooter);
-  const wrongNameStyleProps = wrongNameMessage
-    ? undefined
-    : stylex.props(organizationSettingFormStyles.wrongNameHidden);
-  const styles = stylex.create({
-    bubble: { backgroundColor: organizationSettingColors.bubbleSurface },
-    field: {
-      borderColor: organizationSettingColors.fieldBorder,
-      borderStyle: "solid",
-      borderWidth: "1px",
-    },
-    logoPoint: { color: organizationSettingColors.logoPoint },
-    save: {
-      backgroundColor: {
-        default: organizationSettingColors.saveSurface,
-        ":hover": organizationSettingColors.saveSurface,
-        ":focus": organizationSettingColors.saveSurface,
-        ":active": organizationSettingColors.saveSurface,
-      },
-      borderColor: organizationSettingColors.saveBorder,
-      color: organizationSettingColors.saveText,
-    },
-    warning: { color: organizationSettingColors.warningText },
-    validationMessage: { color: organizationSettingColors.warningText },
-  });
+  const logoStyle = { "--x-backgroundImage": `url('${logoUrl}')` } as CSSProperties;
 
   const updateMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -162,11 +124,11 @@ function OrganizationSettingsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer" data-stylex-owner="organization-setting-page">
-        <div className="project-page-wrap" data-stylex-owner="organization-setting-shell">
+      <div className="page-wrap-outer" data-owner="organization-setting-page">
+        <div className="project-page-wrap" data-owner="organization-setting-shell">
           <OrganizationSettingMenu active="setting" organizationName={organizationName} />
           <form
-            data-stylex-owner="organization-setting-form"
+            data-owner="organization-setting-form"
             id="saveSetting"
             method="post"
             action={organizationSettingHref(runtimeConfig.basePath, organizationName)}
@@ -176,69 +138,38 @@ function OrganizationSettingsBody({
             onSubmit={onSubmit}
           >
             <input type="hidden" name="id" value={organizationId} />
-            <div
-              className={`bubble-wrap gray ${stylex.props(styles.bubble).className}`}
-              data-stylex-owner="organization-setting-bubble"
-            >
+            <div className="bubble-wrap gray" data-owner="organization-setting-bubble">
               <div
-                className={`box-wrap top clearfix frm-wrap ${stylex.props(organizationSettingStyles.topBox).className}`}
-                data-stylex-owner="organization-setting-top-box"
+                className="box-wrap top clearfix frm-wrap"
+                style={{ paddingTop: 20 }}
+                data-owner="organization-setting-top-box"
               >
-                <div
-                  {...settingBoxStyleProps}
-                  {...settingBoxLeftStyleProps}
-                  className={`${settingBoxStyleProps.className} ${settingBoxLeftStyleProps.className} setting-box left`}
-                  data-stylex-owner="organization-setting-box-left"
-                >
+                <div className="setting-box left" data-owner="organization-setting-box-left">
                   <div
-                    {...logoStyleProps}
-                    className={`logo-wrap ${logoStyleProps.className ?? ""}`.trim()}
-                    data-stylex-owner="organization-setting-logo"
+                    style={logoStyle}
+                    className="logo-wrap"
+                    data-owner="organization-setting-logo"
                   ></div>
-                  <div
-                    {...logoDescStyleProps}
-                    className={`${logoDescStyleProps.className} logo-desc`}
-                    data-stylex-owner="organization-setting-logo-desc"
-                  >
-                    <ul className="unstyled descs" data-stylex-owner="organization-setting-descs">
-                      <li
-                        {...descsItemStyleProps}
-                        data-stylex-owner="organization-setting-descs-item"
-                      >
+                  <div className="logo-desc" data-owner="organization-setting-logo-desc">
+                    <ul className="unstyled descs" data-owner="organization-setting-descs">
+                      <li data-owner="organization-setting-descs-item">
                         <strong>{t("organization.logo")}</strong>
                       </li>
-                      <li
-                        {...descsItemStyleProps}
-                        data-stylex-owner="organization-setting-descs-item"
-                      >
+                      <li data-owner="organization-setting-descs-item">
                         {t("organization.logo.type")}{" "}
-                        <span
-                          className={`point ${pointStyleProps.className}`}
-                          data-stylex-owner="organization-setting-logo-point"
-                        >
+                        <span className="point" data-owner="organization-setting-logo-point">
                           bmp, jpg, gif, png
                         </span>
                       </li>
-                      <li
-                        {...descsItemStyleProps}
-                        data-stylex-owner="organization-setting-descs-item"
-                      >
-                        {t("organization.logo.maxFileSize")}{" "}
-                        <span {...pointStyleProps} className={`point ${pointStyleProps.className}`}>
-                          5MB
-                        </span>
+                      <li data-owner="organization-setting-descs-item">
+                        {t("organization.logo.maxFileSize")} <span className="point">5MB</span>
                       </li>
-                      <li
-                        {...descsItemStyleProps}
-                        {...descsLastStyleProps}
-                        className={`${descsItemStyleProps.className} ${descsLastStyleProps.className}`}
-                        data-stylex-owner="organization-setting-descs-last"
-                      >
+                      <li data-owner="organization-setting-descs-last">
                         <div className="btn-wrap">
                           <div className="nbtn medium white fake-file-wrap">
                             <i className="yobicon-upload"></i> {t("button.upload")}
                             <input
-                              data-stylex-owner="organization-setting-name-input"
+                              data-owner="organization-setting-name-input"
                               id="logoPath"
                               key={logoInputKey}
                               type="file"
@@ -253,25 +184,13 @@ function OrganizationSettingsBody({
                     </ul>
                   </div>
                 </div>
-                <dl
-                  {...settingBoxStyleProps}
-                  {...settingBoxRightStyleProps}
-                  className={`${settingBoxStyleProps.className} ${settingBoxRightStyleProps.className} setting-box right`}
-                  data-stylex-owner="organization-setting-box-right"
-                >
-                  <dt className={stylex.props(organizationSettingStyles.fieldTerm).className}>
-                    <label
-                      {...stylex.props(organizationSettingStyles.fieldTermLabel)}
-                      className={stylex.props(organizationSettingStyles.fieldTermLabel).className}
-                      htmlFor="project-name"
-                    >
-                      {t("organization.name.placeholder")}
-                    </label>
+                <dl className="setting-box right" data-owner="organization-setting-box-right">
+                  <dt>
+                    <label htmlFor="project-name">{t("organization.name.placeholder")}</label>
                   </dt>
                   <dd>
                     <input
-                      className={`${fieldGeometryStyleProps.className} ${stylex.props(styles.field).className}`}
-                      data-stylex-owner="organization-setting-name-field"
+                      data-owner="organization-setting-name-field"
                       id="project-name"
                       type="text"
                       name="name"
@@ -279,34 +198,25 @@ function OrganizationSettingsBody({
                       defaultValue={organizationName}
                     />
                     <div
-                      {...stylex.props(styles.validationMessage)}
-                      className={`orange-txt ${stylex.props(styles.validationMessage).className ?? ""}`.trim()}
-                      data-stylex-owner="organization-setting-validation-message"
+                      className="orange-txt"
+                      data-owner="organization-setting-validation-message"
                     >
                       {serverNameError ? (
-                        <span
-                          className={`warning ${stylex.props(styles.warning).className}`}
-                          data-stylex-owner="organization-setting-warning"
-                        >
+                        <span className="warning" data-owner="organization-setting-warning">
                           {serverNameError}
                         </span>
                       ) : null}
                       <span
-                        {...wrongNameStyleProps}
                         style={wrongNameMessage ? undefined : { display: "none" }}
-                        className={`msg wrongName ${wrongNameStyleProps?.className ?? ""}`.trim()}
-                        data-stylex-owner="organization-setting-wrong-name"
+                        className="msg wrongName"
+                        data-owner="organization-setting-wrong-name"
                       >
                         {wrongNameMessage}
                       </span>
                     </div>
                   </dd>
-                  <dt className={stylex.props(organizationSettingStyles.fieldTerm).className}>
-                    <label
-                      {...stylex.props(organizationSettingStyles.fieldTermLabel)}
-                      className={stylex.props(organizationSettingStyles.fieldTermLabel).className}
-                      htmlFor="project-desc"
-                    >
+                  <dt>
+                    <label htmlFor="project-desc">
                       {t("organization.description.placeholder")}
                     </label>
                   </dt>
@@ -315,22 +225,19 @@ function OrganizationSettingsBody({
                       id="project-desc"
                       name="descr"
                       maxLength={250}
-                      className={`textarea ${textareaGeometryStyleProps.className} ${stylex.props(styles.field).className}`}
-                      data-stylex-owner="organization-setting-description"
+                      className="textarea"
+                      data-owner="organization-setting-description"
                       defaultValue={stringField(organization.description, "")}
                     ></textarea>
                   </dd>
                 </dl>
               </div>
             </div>
-            <div
-              className={`box-wrap bottom ${saveFooterStyleProps.className ?? ""}`.trim()}
-              data-stylex-owner="organization-setting-save-footer"
-            >
+            <div className="box-wrap bottom" data-owner="organization-setting-save-footer">
               <button
                 id="save"
-                className={`ybtn ybtn-success ${stylex.props(styles.save).className}`}
-                data-stylex-owner="organization-setting-save"
+                className="ybtn ybtn-success"
+                data-owner="organization-setting-save"
               >
                 {t("button.save")}
               </button>
@@ -352,7 +259,7 @@ function OrganizationSettingMenu({
   const { t } = useLegacyMessages();
 
   return (
-    <ul className="nav nav-tabs" data-stylex-owner="organization-setting-menu">
+    <ul className="nav nav-tabs" data-owner="organization-setting-menu">
       <li className={active === "setting" ? "active" : ""}>
         <Link
           activeOptions={legacyOrganizationSettingMenuActiveOptions}

@@ -35,7 +35,7 @@ test("organization project search keeps the legacy organization shell with butto
   expect(titleState).toEqual({ documentTitle: "Search", headTitle: "Search" });
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Search");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   expect(await screenRootClassNames(page)).toEqual(ROOT_CLASS_NAMES);
 
@@ -184,8 +184,8 @@ test("organization project search exact missing state pins the live localhost gu
   await page.goto(`${basePath}/organizations/weblabs/search?keyword=missing&searchType=project`);
 
   await expect(page).toHaveTitle("Search");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -214,11 +214,11 @@ test("organization project search exact missing state pins the live localhost gu
   );
 
   const metrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("header[data-owner=global-gnb-outer]");
     const projectHeader = document.querySelector(".project-header-outer");
     const projectHeaderAvatar = document.querySelector(".project-header-avatar img");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     const category = document.querySelector(".search-category-wrap");
     const resultTitle = document.querySelector(".search-result-title");
     if (!(navbar instanceof HTMLElement)) {
@@ -263,9 +263,9 @@ test("organization project search exact missing state pins the live localhost gu
   expect(metrics.category.right).toBeLessThanOrEqual(metrics.resultTitle.left + 1);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "All Projects",
+  ]);
 });
 
 test("organization project search preserves the legacy two-column layout geometry", async ({
@@ -377,7 +377,7 @@ test("organization search forbidden keeps the legacy organization shell without 
 
   await page.goto(`${basePath}/organizations/weblabs/search?keyword=blocked&searchType=project`);
 
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
@@ -640,18 +640,18 @@ async function mockOrganizationSearch(
 async function screenRootClassNames(page: Page) {
   return page
     .locator(
-      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+      ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
     )
     .evaluateAll((roots) =>
       roots.map((root) => {
-        if (root.getAttribute("data-stylex-owner") === "global-gnb-outer") {
+        if (root.getAttribute("data-owner") === "global-gnb-outer") {
           const hasProjectVariant =
             Array.from(root.classList).some((token) =>
               token.endsWith("globalGnbOuterStyles.project"),
             ) || getComputedStyle(root).position === "absolute";
           return hasProjectVariant ? "gnb-outer project-header" : "gnb-outer";
         }
-        return root.getAttribute("data-stylex-owner") === "site-footer" &&
+        return root.getAttribute("data-owner") === "site-footer" &&
           !root.classList.contains("page-footer-outer")
           ? "site-footer"
           : Array.from(root.classList)

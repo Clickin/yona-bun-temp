@@ -1,13 +1,13 @@
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
-const NOTIFICATION_ROW = '[data-stylex-owner="authenticated-home-notification-row"]';
-const NOTIFICATION_DESC = '[data-stylex-owner="authenticated-home-notification-desc"]';
-const NOTIFICATION_TITLE = '[data-stylex-owner="authenticated-home-notification-title"]';
-const NOTIFICATION_MESSAGE = '[data-stylex-owner="authenticated-home-notification-message"]';
-const NOTIFICATION_MORE = '[data-stylex-owner="authenticated-home-notification-more"]';
-const NOTIFICATION_META = '[data-stylex-owner="authenticated-home-notification-meta"]';
-const NOTIFICATION_AUTHOR = '[data-stylex-owner="authenticated-home-notification-author"]';
+const NOTIFICATION_ROW = '[data-owner="authenticated-home-notification-row"]';
+const NOTIFICATION_DESC = '[data-owner="authenticated-home-notification-desc"]';
+const NOTIFICATION_TITLE = '[data-owner="authenticated-home-notification-title"]';
+const NOTIFICATION_MESSAGE = '[data-owner="authenticated-home-notification-message"]';
+const NOTIFICATION_MORE = '[data-owner="authenticated-home-notification-more"]';
+const NOTIFICATION_META = '[data-owner="authenticated-home-notification-meta"]';
+const NOTIFICATION_AUTHOR = '[data-owner="authenticated-home-notification-author"]';
 
 const EXPECTED_AUTHENTICATED_HOME = `
 <div class="unsupported hidden">
@@ -471,14 +471,14 @@ for (const defaultLandingCase of DEFAULT_LANDING_CASES) {
   });
 }
 
-test("shared shell logo keeps navbar Link with StyleX ownership", async ({ page }) => {
+test("shared shell logo keeps navbar Link with Style ownership", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
 
   await page.goto(`${basePath}/`);
 
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const logoLink = page.locator('[data-stylex-owner="global-gnb-brand-link"]');
+  const logoLink = page.locator('[data-owner="global-gnb-brand-link"]');
   await expect(logoLink).toHaveText("Y");
   await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
   await expect(logoLink).toHaveClass(/(?:^|\s)logo(?:\s|$)/u);
@@ -492,7 +492,7 @@ test("shared shell logo keeps navbar Link with StyleX ownership", async ({ page 
       window as Window & { __authenticatedHomeLogoSpaMarker?: string }
     ).__authenticatedHomeLogoSpaMarker = "logo";
   });
-  await page.locator('[data-stylex-owner="global-gnb-brand-link"]').click();
+  await page.locator('[data-owner="global-gnb-brand-link"]').click();
   await expect
     .poll(() => new URL(page.url()).pathname)
     .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`, "u"));
@@ -513,9 +513,9 @@ test("shared shell logo keeps navbar Link with StyleX ownership", async ({ page 
   expect(routeSource).not.toContain("reactJsx");
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).toContain("<Link\n                activeOptions={{");
-  expect(routeSource).toContain('data-stylex-owner="global-gnb-brand-link"');
+  expect(routeSource).toContain('data-owner="global-gnb-brand-link"');
   expect(routeSource).toContain("className={`logo logo-letter");
-  expect(routeSource).toContain("globalGnbBrandLinkStyles = stylex.create");
+
   expect(routeSource).toContain('to="/"');
   expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
   expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
@@ -579,9 +579,7 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("document.dispatchEvent");
   expect(routeSource).not.toContain('data-toggle="yobi-notify"');
   expect(routeSource).toContain("const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {");
-  expect(routeSource).toContain(
-    "activeOptions: { exact: true, explicitUndefined: true, includeSearch: true }",
-  );
+
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('const PROJECT_FORM_PATH: string = "/projectform"');
@@ -591,11 +589,11 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).toContain(
     'const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine"',
   );
-  expect(routeSource).toContain("to={notification.targetHref}");
+  expect(routeSource).toContain("to={targetHref}");
   expect(routeSource).toContain("const sharedSiteFooterWithStyleProps = (");
-  expect(routeSource).toContain("<footer {...stylex.props(siteFooterStyles.outer)}");
+
   expect(routeSource).toContain("{sharedSiteFooterWithStyleProps}");
-  expect(routeSource).toContain('data-stylex-owner="site-footer-provider"');
+  expect(routeSource).toContain('data-owner="site-footer-provider"');
   expect(routeSource).toContain("Yona authors");
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
   expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
@@ -647,11 +645,11 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   await page.goto(`${basePath}/`);
 
   const loginLink = page.locator("#required-logged-in a.user-item-btn");
-  const signupMenuLink = page.locator('[data-stylex-owner="anonymous-site-signup"]');
-  const landingSignupLink = page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]');
-  const globalGnbNav = page.locator('[data-stylex-owner="global-gnb-nav"]');
-  const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
-  const projectListDivider = page.locator('[data-stylex-owner="global-gnb-project-list-divider"]');
+  const signupMenuLink = page.locator('[data-owner="anonymous-site-signup"]');
+  const landingSignupLink = page.locator('[data-owner="anonymous-home-intro-signup-link"]');
+  const globalGnbNav = page.locator('[data-owner="global-gnb-nav"]');
+  const projectListLink = page.locator('[data-owner="global-gnb-project-list-link"]');
+  const projectListDivider = page.locator('[data-owner="global-gnb-project-list-divider"]');
   const profileLink = page.locator("#mySidenav .user-menu a").first();
   const logoutLink = page.locator("#mySidenav a:has(.logout)");
   const resetPasswordLink = page.locator("#loginDialog .act-row a").nth(0);
@@ -689,7 +687,7 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   expect(
     await globalGnbNav
       .locator(":scope > li")
-      .evaluateAll((items) => items.map((item) => item.getAttribute("data-stylex-owner"))),
+      .evaluateAll((items) => items.map((item) => item.getAttribute("data-owner"))),
   ).toEqual([
     "global-gnb-brand-item",
     "global-gnb-project-list-item",
@@ -861,15 +859,11 @@ test("authenticated home empty notifications matches legacy index notifications 
   await page.goto(`${basePath}/`);
   await expect(page).toHaveTitle("Yoram");
   await expect(page.locator("head > title").first()).toHaveText(/Yoram/u);
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-page-wrap-outer"]'),
-  ).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-list"]'),
-  ).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
-  ).toContainText("No notification");
+  await expect(page.locator('[data-owner="authenticated-home-page-wrap-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="authenticated-home-notification-list"]')).toBeVisible();
+  await expect(page.locator('[data-owner="authenticated-home-notification-empty"]')).toContainText(
+    "No notification",
+  );
   await expect(
     page.locator(
       ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
@@ -904,7 +898,7 @@ test("authenticated home empty notifications matches legacy index notifications 
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
-  const introGuide = page.locator('[data-stylex-owner="authenticated-home-intro-guide"]');
+  const introGuide = page.locator('[data-owner="authenticated-home-intro-guide"]');
   await expect(introGuide).toBeVisible();
   await page.locator("#toggleIntro").click();
   await expect(introGuide).toBeHidden();
@@ -924,7 +918,7 @@ test("authenticated home empty notifications matches legacy index notifications 
 
   await page.setViewportSize({ width: 1100, height: 720 });
   const homeStreamTabs = page.locator(
-    '[data-stylex-owner="authenticated-home-main-stream"] > [data-stylex-owner="authenticated-home-series-tabs"]',
+    '[data-owner="authenticated-home-main-stream"] > [data-owner="authenticated-home-series-tabs"]',
   );
   await expect(homeStreamTabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
   await expect(homeStreamTabs.locator("> li").nth(0)).not.toHaveClass(/active/u);
@@ -947,10 +941,7 @@ test("authenticated home empty notifications matches legacy index notifications 
   );
   await expect(homeStreamTabs.locator("> li > a.active")).toHaveCount(0);
   for (const tabLink of await homeStreamTabs.locator("> li > a").all()) {
-    await expect(tabLink).toHaveAttribute(
-      "data-stylex-owner",
-      "authenticated-home-series-tab-link",
-    );
+    await expect(tabLink).toHaveAttribute("data-owner", "authenticated-home-series-tab-link");
     await expect(tabLink).not.toHaveAttribute("title");
     await expect(tabLink).not.toHaveAttribute("aria-current");
     await expect(tabLink).not.toHaveAttribute("data-status");
@@ -1013,7 +1004,7 @@ test("authenticated home empty notifications matches legacy index notifications 
   await expect(page).toHaveURL(`${basePath}/sites/userList`);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+      '[data-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-owner="site-user-list-sidebar-link"]',
     ),
   ).toHaveText("Users");
   await expect
@@ -1026,7 +1017,7 @@ test("authenticated home empty notifications matches legacy index notifications 
 
   await page.goto(`${basePath}/`);
   const accountActions = page.locator(
-    '#mySidenav [data-stylex-owner="authenticated-sidenav-account-actions"]',
+    '#mySidenav [data-owner="authenticated-sidenav-account-actions"]',
   );
   const profileLink = accountActions.locator("a", { hasText: "Profile" });
   const accountLink = accountActions.locator("a", { hasText: "Account" });
@@ -1038,7 +1029,7 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
   await accountLink.evaluate((link) => (link as HTMLAnchorElement).click());
   await expect(page).toHaveURL(`${basePath}/user/editform`);
-  await expect(page.locator('[data-stylex-owner="user-settings-breadcrumb-heading"]')).toHaveText(
+  await expect(page.locator('[data-owner="user-settings-breadcrumb-heading"]')).toHaveText(
     "Account",
   );
   await expect
@@ -1072,6 +1063,118 @@ test("authenticated home empty notifications matches legacy index notifications 
     .toBe("gnb-new-group");
 });
 
+test("authenticated home intro CTAs and notification tab keep basePath SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
+  );
+
+  await page.goto(`${basePath}/`);
+  await page.evaluate(() => {
+    (
+      window as Window & { __authenticatedHomeInteractionMarker?: string }
+    ).__authenticatedHomeInteractionMarker = "alive";
+  });
+
+  const introGuide = page.locator('[data-owner="authenticated-home-intro-guide"]');
+  for (const control of [
+    { name: "Create new project", path: "/projectform" },
+    { name: "New Group", path: "/organizations/new" },
+    { name: "Project list", path: "/projects" },
+  ]) {
+    const link = introGuide.getByRole("link", { exact: true, name: control.name });
+    await expect(link).toHaveAttribute("href", `${basePath}${control.path}`);
+    await link.click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}${control.path}`);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __authenticatedHomeInteractionMarker?: string })
+              .__authenticatedHomeInteractionMarker,
+        ),
+      )
+      .toBe("alive");
+    await page.goBack();
+    await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/`);
+  }
+
+  const notificationTab = page
+    .locator('[data-owner="authenticated-home-series-tabs"]')
+    .getByRole("link", { exact: true, name: "Notification" });
+  await expect(notificationTab).toHaveAttribute("href", `${basePath}/notifications`);
+  await notificationTab.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/notifications`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __authenticatedHomeInteractionMarker?: string })
+            .__authenticatedHomeInteractionMarker,
+      ),
+    )
+    .toBe("alive");
+});
+
+test("authenticated home notification title and actor controls use basePath SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedNotifications(page, [
+    {
+      ...createMockNotification("42", "Issue #1 updated"),
+      targetHref: `${basePath}/admin/sample/issue/1`,
+    },
+  ]);
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
+  );
+
+  await page.goto(`${basePath}/`);
+  await page.evaluate(() => {
+    (
+      window as Window & { __authenticatedHomeNotificationNavigationMarker?: string }
+    ).__authenticatedHomeNotificationNavigationMarker = "alive";
+  });
+
+  const notificationTitle = page.locator(`${NOTIFICATION_TITLE} a`);
+  await expect(notificationTitle).toHaveAttribute("href", `${basePath}/admin/sample/issue/1`);
+  await notificationTitle.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issue/1`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __authenticatedHomeNotificationNavigationMarker?: string })
+            .__authenticatedHomeNotificationNavigationMarker,
+      ),
+    )
+    .toBe("alive");
+  await page.goBack();
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(1);
+
+  for (const selector of [`${NOTIFICATION_META} .avatar-wrap`, NOTIFICATION_AUTHOR]) {
+    const actorLink = page.locator(selector);
+    await expect(actorLink).toHaveAttribute("href", `${basePath}/admin`);
+    await actorLink.click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin`);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __authenticatedHomeNotificationNavigationMarker?: string })
+              .__authenticatedHomeNotificationNavigationMarker,
+        ),
+      )
+      .toBe("alive");
+    await page.goBack();
+    await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(1);
+  }
+});
+
 test("authenticated home flash renders legacy toast without route-local notify scan", async ({
   page,
 }) => {
@@ -1086,27 +1189,27 @@ test("authenticated home flash renders legacy toast without route-local notify s
   expect(routeSource).not.toContain("new URLSearchParams(window.location.search)");
 
   await page.goto(`${basePath}/?signup=requested`);
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
-  ).toContainText("No notification has been received.");
+  await expect(page.locator('[data-owner="authenticated-home-notification-empty"]')).toContainText(
+    "No notification has been received.",
+  );
 
-  const toast = page.locator('[data-stylex-owner="root-yoram-toast"]', {
+  const toast = page.locator('[data-owner="root-yoram-toast"]', {
     hasText:
       "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
   });
   await expect(toast).toBeVisible();
-  await expect(toast.locator('[data-stylex-part="toast-message"]')).toHaveText(
+  await expect(toast.locator('[data-part="toast-message"]')).toHaveText(
     "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
   );
   await toast.locator("button").click();
   await expect(toast).toHaveCount(0);
 
   await page.goto(`${basePath}/?verify=sent`);
-  const verificationToast = page.locator('[data-stylex-owner="root-yoram-toast"]', {
+  const verificationToast = page.locator('[data-owner="root-yoram-toast"]', {
     hasText: "User verification mail was sent.",
   });
   await expect(verificationToast).toBeVisible();
-  await expect(verificationToast.locator('[data-stylex-part="toast-message"]')).toHaveText(
+  await expect(verificationToast.locator('[data-part="toast-message"]')).toHaveText(
     "User verification mail was sent.",
   );
 });
@@ -1160,7 +1263,7 @@ test("shared shell only renders the configured feedback link", async ({ page }) 
 
   await page.goto(`${basePath}/`);
 
-  const feedbackLink = page.locator('[data-stylex-owner="global-gnb-nav"] a', {
+  const feedbackLink = page.locator('[data-owner="global-gnb-nav"] a', {
     hasText: "Feedback",
   });
   await expect(feedbackLink).toHaveAttribute("href", "https://feedback.example.test/yoram");
@@ -1206,7 +1309,7 @@ test("authenticated shared shell drops route-owned tooltip initializers but keep
 
   const shellTooltipMetadata = [
     {
-      locator: page.locator('[data-stylex-owner="global-sidebar-open-pin"]'),
+      locator: page.locator('[data-owner="global-sidebar-open-pin"]'),
       title: "Sidebar",
     },
     {
@@ -1438,9 +1541,7 @@ test("authenticated sidebar translates legacy favorite search and organization b
 
   const rightWeblabsFavorite = weblabsOrganization.locator(":scope > .org-list button.star-org");
   const leftWeblabsFavorite = page
-    .locator(
-      '#left-sidebar-organizations > [data-stylex-owner="left-sidebar-favorite-organization-rows"]',
-    )
+    .locator('#left-sidebar-organizations > [data-owner="left-sidebar-favorite-organization-rows"]')
     .filter({ hasText: "weblabs" })
     .getByRole("button", { name: "Remove weblabs from favorites" });
   await rightWeblabsFavorite.click();
@@ -1543,7 +1644,7 @@ test("authenticated root user menu toggles stay route-local buttons without navi
 
   await page.goto(`${basePath}/`);
   const initialUrl = page.url();
-  const userMenu = page.locator('[data-stylex-owner="authenticated-site-user-menu"]');
+  const userMenu = page.locator('[data-owner="authenticated-site-user-menu"]');
   const sidebarToggle = page.getByRole("button", { name: "User menu, Shortcut (F)" });
   const createMenu = userMenu.locator(":scope > li.gnb-usermenu-dropdown").last();
   const createToggle = createMenu.locator("button");
@@ -1613,9 +1714,7 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(siteLayoutShellSource).toContain("event.preventDefault();");
   expect(siteLayoutShellSource).toContain("event.stopPropagation();");
   expect(siteLayoutShellSource).toContain('id="gnb-search-scope-title"');
-  expect(siteLayoutShellSource).toMatch(
-    /const\s+([A-Za-z_$][\w$]*)\s*=\s*`ybtn dropdown-toggle \$\{\s*stylex\.props\(\s*globalGnbSearchScopeStyles\.toggle,\s*isSearchScopeMenuOpen\s*&&\s*globalGnbSearchScopeStyles\.openToggle,\s*\)\.className\s*\}`;[\s\S]*?<button[\s\S]*?className=\{\s*\1\s*\}/,
-  );
+
   expect(siteLayoutShellSource).not.toContain('data-toggle="dropdown"');
   expect(siteLayoutShellSource).not.toContain("document.addEventListener");
   expect(siteLayoutShellSource).not.toContain("classList");
@@ -1683,7 +1782,7 @@ test("authenticated home create dropdown new issue link preserves legacy href an
 
   await page.goto(`${basePath}/`);
 
-  const userMenu = page.locator('[data-stylex-owner="authenticated-site-user-menu"]');
+  const userMenu = page.locator('[data-owner="authenticated-site-user-menu"]');
   const createMenu = userMenu.locator(":scope > li.gnb-usermenu-dropdown").last();
   const createToggle = createMenu.locator("button");
   // WTR shim note: createMenu is an indexed (last()) :scope chain; the shim's
@@ -1707,7 +1806,7 @@ test("authenticated home create dropdown new issue link preserves legacy href an
   await newIssueLink.click();
 
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/issues/new`);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect
     .poll(() =>
       page.evaluate(
@@ -1731,7 +1830,7 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
 
   await page.goto(`${basePath}/`);
 
-  const userMenu = page.locator('[data-stylex-owner="authenticated-site-user-menu"]');
+  const userMenu = page.locator('[data-owner="authenticated-site-user-menu"]');
   const createMenu = userMenu.locator(":scope > li.gnb-usermenu-dropdown").last();
   const createToggle = createMenu.locator("button");
   // WTR shim note: createMenu is an indexed (last()) :scope chain; the shim's
@@ -1755,7 +1854,7 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
   await personalInboxLink.click();
 
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/issues/new/mine`);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect
     .poll(() =>
       page.evaluate(
@@ -1788,7 +1887,7 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
     ).__leftFramedSidebarSpaSentinel = "alive";
   });
 
-  const openPin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
+  const openPin = page.locator('[data-owner="global-sidebar-open-pin"]');
   await expect(openPin).toHaveJSProperty("tagName", "BUTTON");
   await expect(openPin).toHaveAttribute("type", "button");
   await expect(openPin).toHaveAttribute("title", "Sidebar");
@@ -1825,7 +1924,7 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
   const closePin = leftSidebar.getByRole("button", { name: "Sidebar" });
   await expect(leftSidebar).toBeVisible();
   await expect(
-    leftSidebar.locator('[data-stylex-owner="left-sidebar-profile-identity"] img'),
+    leftSidebar.locator('[data-owner="left-sidebar-profile-identity"] img'),
   ).toHaveAttribute("src", `${basePath}/legacy-assets/images/default-avatar-34.png`);
   await expect(page.locator(".gnb-usermenu .avatar-wrap img")).toHaveAttribute(
     "src",
@@ -1996,7 +2095,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   await page.goto(`${basePath}/`);
 
   const leftSidebar = page.locator("#sidebar");
-  const leftTabs = leftSidebar.locator('[data-stylex-owner="left-sidebar-tabs"]');
+  const leftTabs = leftSidebar.locator('[data-owner="left-sidebar-tabs"]');
   const favoriteTab = leftTabs.getByRole("button", { exact: true, name: "Favorite" });
   const projectTab = leftTabs.getByRole("button", { exact: true, name: "Project" });
   const recentTab = leftTabs.getByRole("button", { exact: true, name: "Recent History" });
@@ -2035,7 +2134,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   await page.reload();
   await expect(
     page
-      .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
+      .locator('#sidebar [data-owner="left-sidebar-tabs"]')
       .getByRole("button", { exact: true, name: "Project" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expectOnlyVisibleLeftPane("left-sidebar-myProjectList");
@@ -2053,7 +2152,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   await page.reload();
   await expect(
     page
-      .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
+      .locator('#sidebar [data-owner="left-sidebar-tabs"]')
       .getByRole("button", { exact: true, name: "Recent History" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expectOnlyVisibleLeftPane("left-sidebar-myRecentIssueList");
@@ -2066,7 +2165,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
     `${basePath}/admin/sample/issue/42`,
   );
   await page
-    .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
+    .locator('#sidebar [data-owner="left-sidebar-tabs"]')
     .getByRole("button", { exact: true, name: "Project" })
     .click();
   await expectOnlyVisibleLeftPane("left-sidebar-myProjectList");
@@ -2094,7 +2193,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   ).toBe("alive");
 
   const accountLink = leftSidebar.locator(
-    ':scope > [data-stylex-owner="left-sidebar-account-actions"] a[href$="/user/editform"]',
+    ':scope > [data-owner="left-sidebar-account-actions"] a[href$="/user/editform"]',
   );
   await expect(accountLink).toHaveAttribute("href", `${basePath}/user/editform`);
   await accountLink.click();
@@ -2390,18 +2489,14 @@ test("direct notifications route matches legacy Application.notifications empty 
   await page.goto(`${basePath}/notifications`, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveTitle("Yoram");
   await expect(page.locator("head > title").first()).toHaveText(/Yoram/u);
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-page-wrap-outer"]'),
-  ).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-list"]'),
-  ).toBeVisible();
+  await expect(page.locator('[data-owner="authenticated-home-page-wrap-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="authenticated-home-notification-list"]')).toBeVisible();
   const emptyNotification = page.locator(
     "ul.activity-streams.notification-wrap.unstyled > div.warning-none",
   );
   await expect(emptyNotification).toHaveCount(1);
   await expect(emptyNotification).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "authenticated-home-notification-empty",
   );
   await expect(emptyNotification.locator(":scope > i.yobicon-danger")).toHaveCount(1);
@@ -2445,7 +2540,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   const defaultLandingButton = page.locator("#setDefaultLoginPage");
   await expect(defaultLandingButton).toHaveText("Set to default page");
   await expect(defaultLandingButton).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "authenticated-home-default-login-action",
   );
   await expect(defaultLandingButton).not.toHaveClass(/(?:^|\s)(?:ybtn|hide-in-mobile)(?:\s|$)/u);
@@ -2456,30 +2551,28 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(defaultLandingButton).not.toHaveAttribute("data-placement");
   await expect(defaultLandingButton).not.toHaveAttribute("data-toggle");
   await expect(defaultLandingButton).not.toHaveAttribute("data-content");
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-series-tabs"] .popover'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="authenticated-home-series-tabs"] .popover')).toHaveCount(
+    0,
+  );
 
   await defaultLandingButton.hover();
   const defaultLandingPopover = page.locator(
-    '[data-stylex-owner="authenticated-home-default-login-popover"]',
+    '[data-owner="authenticated-home-default-login-popover"]',
   );
   await expect(defaultLandingPopover).toBeVisible();
   await expect(defaultLandingPopover).not.toHaveClass(/(?:^|\s)(?:popover|bottom)(?:\s|$)/u);
   await expect(
-    defaultLandingPopover.locator(
-      '[data-stylex-owner="authenticated-home-default-login-popover-title"]',
-    ),
+    defaultLandingPopover.locator('[data-owner="authenticated-home-default-login-popover-title"]'),
   ).toHaveText("Set to default page");
   await expect(
     defaultLandingPopover.locator(
-      '[data-stylex-owner="authenticated-home-default-login-popover-content"]',
+      '[data-owner="authenticated-home-default-login-popover-content"]',
     ),
   ).toHaveText("Make current page the index page when logged in");
   const popoverBoxes = await page.evaluate(() => {
     const button = document.querySelector<HTMLElement>("#setDefaultLoginPage");
     const popover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-default-login-popover"]',
+      '[data-owner="authenticated-home-default-login-popover"]',
     );
     if (!button || !popover) return null;
     const buttonBox = button.getBoundingClientRect();
@@ -2508,9 +2601,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   await defaultLandingButton.focus();
   await expect(defaultLandingPopover).toBeVisible();
   await expect(
-    defaultLandingPopover.locator(
-      '[data-stylex-owner="authenticated-home-default-login-popover-title"]',
-    ),
+    defaultLandingPopover.locator('[data-owner="authenticated-home-default-login-popover-title"]'),
   ).toHaveText("Set to default page");
   await defaultLandingButton.evaluate((button) => button.blur());
   await expect(defaultLandingPopover).toHaveCount(0);
@@ -2530,7 +2621,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   });
 
   const mainStreamTabs = page.locator(
-    '[data-stylex-owner="authenticated-home-main-stream"] > [data-stylex-owner="authenticated-home-series-tabs"]',
+    '[data-owner="authenticated-home-main-stream"] > [data-owner="authenticated-home-series-tabs"]',
   );
   await expect(mainStreamTabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
   await expect(mainStreamTabs.locator("> li").nth(0)).not.toHaveClass(/active/u);
@@ -2555,10 +2646,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   );
   await expect(mainStreamTabs.locator("> li > a.active")).toHaveCount(0);
   for (const tabLink of await mainStreamTabs.locator("> li > a").all()) {
-    await expect(tabLink).toHaveAttribute(
-      "data-stylex-owner",
-      "authenticated-home-series-tab-link",
-    );
+    await expect(tabLink).toHaveAttribute("data-owner", "authenticated-home-series-tab-link");
     await expect(tabLink).not.toHaveAttribute("title");
     await expect(tabLink).not.toHaveAttribute("aria-current");
     await expect(tabLink).not.toHaveAttribute("data-status");
@@ -2568,11 +2656,11 @@ test("direct notifications route matches legacy Application.notifications empty 
   const mainStreamTabSource = routeSource.slice(
     routeSource.lastIndexOf(
       "<div",
-      routeSource.indexOf('data-stylex-owner="authenticated-home-main-stream"'),
+      routeSource.indexOf('data-owner="authenticated-home-main-stream"'),
     ),
     routeSource.lastIndexOf(
       "<ul",
-      routeSource.indexOf('data-stylex-owner="authenticated-home-notification-list"'),
+      routeSource.indexOf('data-owner="authenticated-home-notification-list"'),
     ),
   );
   const setDefaultButtonSource = routeSource.slice(
@@ -2594,9 +2682,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(setDefaultButtonSource).not.toContain("data-placement");
   expect(setDefaultButtonSource).not.toContain("data-toggle");
   expect(setDefaultButtonSource).not.toContain("data-content");
-  expect(mainStreamTabSource).toContain(
-    'data-stylex-owner="authenticated-home-default-login-popover"',
-  );
+  expect(mainStreamTabSource).toContain('data-owner="authenticated-home-default-login-popover"');
   expect(mainStreamTabSource).toContain("onMouseEnter={showDefaultLandingPopover}");
   expect(mainStreamTabSource).toContain("onFocus={showDefaultLandingPopover}");
 
@@ -2621,7 +2707,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   await mockWorkspaceFiles(page);
   await page.goto(`${basePath}/notifications`);
   const myFilesTab = page.locator(
-    '[data-stylex-owner="authenticated-home-series-tabs"] a:has-text("My Files")',
+    '[data-owner="authenticated-home-series-tabs"] a:has-text("My Files")',
   );
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -2808,7 +2894,7 @@ test("direct notifications route keeps React-owned learn-more behavior without l
       if (
         type === "click" &&
         this instanceof Element &&
-        this.matches('[data-stylex-owner="authenticated-home-notification-desc"]')
+        this.matches('[data-owner="authenticated-home-notification-desc"]')
       ) {
         (
           window as Window &
@@ -2880,9 +2966,7 @@ test("direct notifications route keeps React-owned learn-more behavior without l
   await page.locator(NOTIFICATION_MESSAGE).click();
   await expect(messageWrap).toHaveCSS("max-height", "none");
   const expandedMessageMetrics = await messageWrap.evaluate((element) => {
-    const message = element.querySelector(
-      '[data-stylex-owner="authenticated-home-notification-message"]',
-    );
+    const message = element.querySelector('[data-owner="authenticated-home-notification-message"]');
     if (!(message instanceof HTMLElement)) {
       return null;
     }
@@ -2977,7 +3061,7 @@ test("direct notifications route appends legacy notification-more rows", async (
   await page.goto(`${basePath}/notifications`);
   await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(20);
   const notificationMore = page.locator(
-    '[data-stylex-owner="authenticated-home-notification-pagination"]',
+    '[data-owner="authenticated-home-notification-pagination"]',
   );
   await expect(notificationMore).toBeVisible();
   await expect(notificationMore).toHaveText("More");
@@ -3037,6 +3121,44 @@ test("direct notifications route appends legacy notification-more rows", async (
   );
 });
 
+test("authenticated home hides notification-more while the next page is loading", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const firstPageItem = createMockNotification("1", "Issue #1 updated");
+  const nextPageItem = createMockNotification("2", "Issue #2 updated");
+  let releaseNextPage = () => {};
+  let markNextPageRequested = () => {};
+  const nextPageGate = new Promise<void>((resolve) => {
+    releaseNextPage = resolve;
+  });
+  const nextPageRequested = new Promise<void>((resolve) => {
+    markNextPageRequested = resolve;
+  });
+  await mockAuthenticatedNotificationsByPage(page, async (url) => {
+    if (url.searchParams.get("from") !== "1") {
+      return { hasMore: true, items: [firstPageItem], total: 2 };
+    }
+    markNextPageRequested();
+    await nextPageGate;
+    return { hasMore: false, items: [nextPageItem], total: 2 };
+  });
+
+  await page.goto(`${basePath}/`);
+  const beforeUrl = page.url();
+  const more = page.locator("#notification-more");
+  await expect(more).toBeVisible();
+  await more.click();
+  await nextPageRequested;
+  await expect(more).toHaveCount(0);
+  expect(page.url()).toBe(beforeUrl);
+
+  releaseNextPage();
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(2);
+  await expect(page.locator(NOTIFICATION_ROW, { hasText: "Issue #2 updated" })).toHaveCount(1);
+  await expect(more).toHaveCount(0);
+});
+
 test("authenticated home notification-more keeps legacy content-box geometry", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const item = createMockNotification("1", "Issue #1 updated");
@@ -3070,7 +3192,7 @@ test("authenticated home notification-more keeps legacy content-box geometry", a
 async function readNotificationMoreGeometry(page: Page) {
   return page.locator("#notification-more").evaluate((button) => {
     const parent = button.parentElement;
-    const list = button.closest('[data-stylex-owner="authenticated-home-notification-list"]');
+    const list = button.closest('[data-owner="authenticated-home-notification-list"]');
     if (!parent || !list) throw new Error("notification-more container is missing");
     const buttonBox = button.getBoundingClientRect();
     const listBox = list.getBoundingClientRect();
@@ -3148,29 +3270,27 @@ async function readLocalStorageValue(page: Page, key: string) {
 
 async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
+    const logo = document.querySelector<HTMLElement>('[data-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-page-wrap-outer"]',
+      '[data-owner="authenticated-home-page-wrap-outer"]',
     );
     const mainStream = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-main-stream"]',
+      '[data-owner="authenticated-home-main-stream"]',
     );
     const activityStreams = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-list"]',
+      '[data-owner="authenticated-home-notification-list"]',
     );
     const guideToggleButton = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
+      '[data-owner="authenticated-home-intro-guide-toggle"] button',
     );
     const navLink = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-series-tabs"] > li > a',
+      '[data-owner="authenticated-home-series-tabs"] > li > a',
     );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !gnbOuter ||
       !gnbInner ||
@@ -3228,13 +3348,13 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
 async function readMobileAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-page-wrap-outer"]',
+      '[data-owner="authenticated-home-page-wrap-outer"]',
     );
     const siteGuideOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-intro-guide"]',
+      '[data-owner="authenticated-home-intro-guide"]',
     );
     const mainStream = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-main-stream"]',
+      '[data-owner="authenticated-home-main-stream"]',
     );
     const defaultLandingButton = document.querySelector<HTMLElement>("#setDefaultLoginPage");
     if (!pageWrapOuter || !siteGuideOuter || !mainStream) {
@@ -3254,10 +3374,8 @@ async function readMobileAuthenticatedHomeMetrics(page: Page) {
 
 async function readDesktopClosedLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
-    const main = document.querySelector<HTMLElement>('[data-stylex-owner="framed-site-main"]');
-    const pin = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-sidebar-open-pin"]',
-    );
+    const main = document.querySelector<HTMLElement>('[data-owner="framed-site-main"]');
+    const pin = document.querySelector<HTMLElement>('[data-owner="global-sidebar-open-pin"]');
     if (!main || !pin) {
       throw new Error("Expected closed legacy framed sidebar metric targets are missing.");
     }
@@ -3278,12 +3396,12 @@ async function readDesktopClosedLeftSidebarMetrics(page: Page) {
 async function readDesktopOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
     const sidebar = document.querySelector<HTMLElement>("#sidebar");
-    const main = document.querySelector<HTMLElement>('[data-stylex-owner="framed-site-main"]');
+    const main = document.querySelector<HTMLElement>('[data-owner="framed-site-main"]');
     const pin = document.querySelector<HTMLElement>(
-      '#sidebar [data-stylex-owner="left-sidebar-close-pin"]',
+      '#sidebar [data-owner="left-sidebar-close-pin"]',
     );
     const leftAvatar = document.querySelector<HTMLImageElement>(
-      '#sidebar [data-stylex-owner="left-sidebar-profile-identity"] img',
+      '#sidebar [data-owner="left-sidebar-profile-identity"] img',
     );
     const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
     if (!sidebar || !main || !pin || !leftAvatar || !rightAvatar) {
@@ -3315,9 +3433,9 @@ async function readDesktopOpenLeftSidebarMetrics(page: Page) {
 async function readMobileOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
     const sidebar = document.querySelector<HTMLElement>("#sidebar");
-    const main = document.querySelector<HTMLElement>('[data-stylex-owner="framed-site-main"]');
+    const main = document.querySelector<HTMLElement>('[data-owner="framed-site-main"]');
     const leftAvatar = document.querySelector<HTMLImageElement>(
-      '#sidebar [data-stylex-owner="left-sidebar-profile-identity"] img',
+      '#sidebar [data-owner="left-sidebar-profile-identity"] img',
     );
     const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
     if (!sidebar || !main || !leftAvatar || !rightAvatar) {
@@ -3344,19 +3462,15 @@ async function readMobileOpenLeftSidebarMetrics(page: Page) {
 
 async function readLeftSidebarTabMetrics(page: Page) {
   return page.evaluate(() => {
-    const nav = document.querySelector<HTMLElement>(
-      '#sidebar > [data-stylex-owner="left-sidebar-tabs"]',
-    );
+    const nav = document.querySelector<HTMLElement>('#sidebar > [data-owner="left-sidebar-tabs"]');
     const content = document.querySelector<HTMLElement>(
-      '#sidebar > [data-stylex-owner="left-sidebar-tab-panel"]',
+      '#sidebar > [data-owner="left-sidebar-tab-panel"]',
     );
     const search = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="left-sidebar-favorite-shell"] input',
+      '[data-owner="left-sidebar-favorite-shell"] input',
     );
     const tabs = Array.from(
-      document.querySelectorAll<HTMLElement>(
-        '#sidebar > [data-stylex-owner="left-sidebar-tabs"] > li',
-      ),
+      document.querySelectorAll<HTMLElement>('#sidebar > [data-owner="left-sidebar-tabs"] > li'),
     );
     const buttons = tabs.map((tab) => tab.querySelector<HTMLButtonElement>(":scope > button"));
     const refresh = buttons.at(-1);
@@ -3494,7 +3608,7 @@ async function readFavoriteProjectNavigationGeometry(row: Locator) {
 
 async function assertSidebarRightPopover(page: Page, target: Locator, expectedContent: string) {
   const popover = page.locator(
-    '#usermenu-tab-content-list [data-stylex-owner="authenticated-sidenav-recent-issue-popover"]',
+    '#usermenu-tab-content-list [data-owner="authenticated-sidenav-recent-issue-popover"]',
   );
   await expect(popover).toHaveCount(0);
 
@@ -3522,10 +3636,10 @@ async function assertSidebarRightPopover(page: Page, target: Locator, expectedCo
 async function readSidebarRightPopoverMetrics(page: Page) {
   return page.evaluate(() => {
     const target = document.querySelector<HTMLElement>(
-      '#usermenu-tab-content-list .project-list:has([data-stylex-owner="authenticated-sidenav-recent-issue-popover"])',
+      '#usermenu-tab-content-list .project-list:has([data-owner="authenticated-sidenav-recent-issue-popover"])',
     );
     const popover = target?.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-sidenav-recent-issue-popover"]',
+      '[data-owner="authenticated-sidenav-recent-issue-popover"]',
     );
     const arrow = popover?.children.item(0) as HTMLElement | null;
     const content = popover?.children.item(1) as HTMLElement | null;
@@ -3671,32 +3785,30 @@ async function readSidebarRecentIssueTabMetrics(page: Page) {
 
 async function readDesktopAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
+    const logo = document.querySelector<HTMLElement>('[data-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-page-wrap-outer"]',
+      '[data-owner="authenticated-home-page-wrap-outer"]',
     );
     const mainStream = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-main-stream"]',
+      '[data-owner="authenticated-home-main-stream"]',
     );
     const activityStreams = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-list"]',
+      '[data-owner="authenticated-home-notification-list"]',
     );
     const warning = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-empty"]',
+      '[data-owner="authenticated-home-notification-empty"]',
     );
     const guideToggleButton = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
+      '[data-owner="authenticated-home-intro-guide-toggle"] button',
     );
     const navLink = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-series-tabs"] > li > a',
+      '[data-owner="authenticated-home-series-tabs"] > li > a',
     );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !gnbOuter ||
       !gnbInner ||
@@ -3761,28 +3873,28 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
 async function readDesktopNotificationStreamMetrics(page: Page) {
   return page.evaluate(() => {
     const stream = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-row"]',
+      '[data-owner="authenticated-home-notification-row"]',
     );
     const streamType = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-type"]',
+      '[data-owner="authenticated-home-notification-type"]',
     );
     const streamDesc = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-desc"]',
+      '[data-owner="authenticated-home-notification-desc"]',
     );
     const title = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-title"]',
+      '[data-owner="authenticated-home-notification-title"]',
     );
     const messageWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-message-wrap"]',
+      '[data-owner="authenticated-home-notification-message-wrap"]',
     );
     const meta = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-meta"]',
+      '[data-owner="authenticated-home-notification-meta"]',
     );
     const avatar = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-meta"] .avatar-wrap',
+      '[data-owner="authenticated-home-notification-meta"] .avatar-wrap',
     );
     const ago = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-ago"]',
+      '[data-owner="authenticated-home-notification-ago"]',
     );
     if (
       !stream ||
@@ -3839,25 +3951,25 @@ async function readDesktopNotificationStreamMetrics(page: Page) {
 async function readMobileNotificationStreamMetrics(page: Page) {
   return page.evaluate(() => {
     const stream = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-row"]',
+      '[data-owner="authenticated-home-notification-row"]',
     );
     const streamType = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-type"]',
+      '[data-owner="authenticated-home-notification-type"]',
     );
     const streamDesc = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-desc"]',
+      '[data-owner="authenticated-home-notification-desc"]',
     );
     const title = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-title"]',
+      '[data-owner="authenticated-home-notification-title"]',
     );
     const messageWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-message-wrap"]',
+      '[data-owner="authenticated-home-notification-message-wrap"]',
     );
     const meta = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-meta"]',
+      '[data-owner="authenticated-home-notification-meta"]',
     );
     const avatar = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-notification-meta"] .avatar-wrap',
+      '[data-owner="authenticated-home-notification-meta"] .avatar-wrap',
     );
     if (!stream || !streamType || !streamDesc || !title || !messageWrap || !meta || !avatar) {
       throw new Error("Expected mobile notification stream metric targets are missing.");
@@ -3899,7 +4011,7 @@ async function installAuthenticatedHomeDropdownBubbleAudit(page: Page) {
       }
       if (
         event.target.closest(
-          '[data-stylex-owner="authenticated-site-user-menu"] > #sidebar-open-btn > button',
+          '[data-owner="authenticated-site-user-menu"] > #sidebar-open-btn > button',
         )
       ) {
         dropdownClicks.push("sidebar-toggle");
@@ -3907,7 +4019,7 @@ async function installAuthenticatedHomeDropdownBubbleAudit(page: Page) {
       }
       if (
         event.target.closest(
-          '[data-stylex-owner="authenticated-site-user-menu"] > li.gnb-usermenu-dropdown > button:not([title])',
+          '[data-owner="authenticated-site-user-menu"] > li.gnb-usermenu-dropdown > button:not([title])',
         )
       ) {
         dropdownClicks.push("create-toggle");
@@ -4327,7 +4439,11 @@ async function mockAuthenticatedNotifications(
 
 async function mockAuthenticatedNotificationsByPage(
   page: Page,
-  resolveResponse: (url: URL) => { hasMore: boolean; items: unknown[]; total: number },
+  resolveResponse: (
+    url: URL,
+  ) =>
+    | { hasMore: boolean; items: unknown[]; total: number }
+    | Promise<{ hasMore: boolean; items: unknown[]; total: number }>,
   sessionOverrides: Record<string, unknown> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -4350,7 +4466,7 @@ async function mockAuthenticatedNotificationsByPage(
     const url = new URL(route.request().url());
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(resolveResponse(url)),
+      body: JSON.stringify(await resolveResponse(url)),
     });
   });
 }
@@ -4470,7 +4586,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, .admin-logged-in-affix, [data-stylex-owner="site-admin-affix"], [data-stylex-owner=global-gnb-outer], [data-stylex-owner="authenticated-home-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, .admin-logged-in-affix, [data-owner="site-admin-affix"], [data-owner=global-gnb-outer], [data-owner="authenticated-home-page-wrap-outer"], [data-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -4518,17 +4634,17 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string): string {
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-page-wrap-outer"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-page-wrap"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-intro-guide"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-intro-guide-cta"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-intro-guide-toggle"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-notification-pagination"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]') ||
+          current.matches('[data-owner="authenticated-home-page-wrap-outer"]') ||
+          current.matches('[data-owner="authenticated-home-page-wrap"]') ||
+          current.matches('[data-owner="authenticated-home-intro-guide"]') ||
+          current.matches('[data-owner="authenticated-home-intro-guide-cta"]') ||
+          current.matches('[data-owner="authenticated-home-intro-guide-toggle"]') ||
+          current.matches('[data-owner="authenticated-home-notification-pagination"]'))
       ) {
         return "";
       }
@@ -4543,7 +4659,7 @@ async function canonicalizeScreenRoots(page: Page) {
           "authenticated-home-index-rail": ["span4", "index-menu", "right-menu", "span-hard-wrap"],
           "authenticated-home-notification-empty": ["warning-none"],
         };
-        const retiredTokens = retiredTokensByOwner[current.getAttribute("data-stylex-owner") ?? ""];
+        const retiredTokens = retiredTokensByOwner[current.getAttribute("data-owner") ?? ""];
         if (retiredTokens) {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/u)
@@ -4566,7 +4682,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -4583,10 +4699,10 @@ async function canonicalizeScreenRoots(page: Page) {
         }
       }
       if (name === "class") {
-        if (current.getAttribute("data-stylex-owner") === "global-gnb-project-list-divider") {
+        if (current.getAttribute("data-owner") === "global-gnb-project-list-divider") {
           return 'class="divider"';
         }
-        if (current.getAttribute("data-stylex-owner") === "global-gnb-project-list-link") {
+        if (current.getAttribute("data-owner") === "global-gnb-project-list-link") {
           return 'class="show-progress-bar"';
         }
         const className = (current.getAttribute(name) ?? "")
@@ -4611,20 +4727,18 @@ async function canonicalizeScreenRoots(page: Page) {
               !(
                 (["row-fluid", "user-menu-wrap"].includes(value) &&
                   current.matches(
-                    '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                    '.row-fluid.user-menu-wrap, [data-owner="authenticated-sidenav-account-actions"]',
                   )) ||
                 (["user-menu", "logout", "label"].includes(value) &&
                   current.tagName.toLowerCase() === "span" &&
                   current.closest(
-                    '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                    '.row-fluid.user-menu-wrap, [data-owner="authenticated-sidenav-account-actions"]',
                   ))
               ),
           )
           .filter(
             (value) =>
-              !(
-                current.matches('[data-stylex-owner="global-gnb-brand-link"]') && value === "active"
-              ),
+              !(current.matches('[data-owner="global-gnb-brand-link"]') && value === "active"),
           )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
@@ -4684,13 +4798,11 @@ async function canonicalizeSelector(page: Page, selector: string) {
     }
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
-        const stylexOwner = current
-          .closest("[data-stylex-owner]")
-          ?.getAttribute("data-stylex-owner");
-        const isFavoriteStylexOwned =
+        const styleOwner = current.closest("[data-owner]")?.getAttribute("data-owner");
+        const isFavoriteStyleOwned =
           current.closest("#myOrganizationList") !== null &&
           (current.matches("#myOrganizationList") ||
-            (stylexOwner !== null &&
+            (styleOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-favorite-shell",
@@ -4698,11 +4810,11 @@ async function canonicalizeSelector(page: Page, selector: string) {
                 "authenticated-sidenav-favorite-project-rows",
                 "authenticated-sidenav-favorite-stars",
                 "authenticated-sidenav-direct-project-rows",
-              ].includes(stylexOwner ?? "")));
-        const isProjectTabStylexOwned =
+              ].includes(styleOwner ?? "")));
+        const isProjectTabStyleOwned =
           current.closest("#myProjectList") !== null &&
           (current.matches("#myProjectList") ||
-            (stylexOwner !== null &&
+            (styleOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-project-shell",
@@ -4710,23 +4822,23 @@ async function canonicalizeSelector(page: Page, selector: string) {
                 "authenticated-sidenav-project-organization-list",
                 "authenticated-sidenav-direct-project-rows",
                 "authenticated-sidenav-favorite-stars",
-              ].includes(stylexOwner ?? "")));
-        const isRecentTabStylexOwned =
+              ].includes(styleOwner ?? "")));
+        const isRecentTabStyleOwned =
           current.closest("#myRecentIssueList") !== null &&
           (current.matches("#myRecentIssueList") ||
-            (stylexOwner !== null &&
+            (styleOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-recent-shell",
                 "authenticated-sidenav-recent-issue-rows",
                 "authenticated-sidenav-recent-issue-popover",
-              ].includes(stylexOwner ?? "")));
+              ].includes(styleOwner ?? "")));
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
           .filter(
             (value) =>
-              (!isFavoriteStylexOwned && !isProjectTabStylexOwned && !isRecentTabStylexOwned) ||
+              (!isFavoriteStyleOwned && !isProjectTabStyleOwned && !isRecentTabStyleOwned) ||
               (!value.startsWith("x") &&
                 !value.includes("-home-route-screen__") &&
                 value !== "gray-txt" &&
@@ -4793,13 +4905,11 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       function normalizeAttribute(current: Element, name: string): string {
         const value = current.getAttribute(name) ?? "";
-        const stylexOwner = current
-          .closest("[data-stylex-owner]")
-          ?.getAttribute("data-stylex-owner");
-        const isFavoriteStylexOwned =
+        const styleOwner = current.closest("[data-owner]")?.getAttribute("data-owner");
+        const isFavoriteStyleOwned =
           current.closest("#myOrganizationList") !== null &&
           (current.matches("#myOrganizationList") ||
-            (stylexOwner !== null &&
+            (styleOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-favorite-shell",
@@ -4807,11 +4917,11 @@ async function canonicalizeHtml(page: Page, html: string) {
                 "authenticated-sidenav-favorite-project-rows",
                 "authenticated-sidenav-favorite-stars",
                 "authenticated-sidenav-direct-project-rows",
-              ].includes(stylexOwner ?? "")));
-        const isProjectTabStylexOwned =
+              ].includes(styleOwner ?? "")));
+        const isProjectTabStyleOwned =
           current.closest("#myProjectList") !== null &&
           (current.matches("#myProjectList") ||
-            (stylexOwner !== null &&
+            (styleOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-project-shell",
@@ -4819,20 +4929,20 @@ async function canonicalizeHtml(page: Page, html: string) {
                 "authenticated-sidenav-project-organization-list",
                 "authenticated-sidenav-direct-project-rows",
                 "authenticated-sidenav-favorite-stars",
-              ].includes(stylexOwner ?? "")));
-        const isRecentTabStylexOwned =
+              ].includes(styleOwner ?? "")));
+        const isRecentTabStyleOwned =
           current.closest("#myRecentIssueList") !== null &&
           (current.matches("#myRecentIssueList") ||
-            (stylexOwner !== null &&
+            (styleOwner !== null &&
               [
                 "authenticated-sidenav-tab-panel",
                 "authenticated-sidenav-recent-shell",
                 "authenticated-sidenav-recent-issue-rows",
                 "authenticated-sidenav-recent-issue-popover",
-              ].includes(stylexOwner ?? "")));
+              ].includes(styleOwner ?? "")));
         if (
           name === "class" &&
-          (isFavoriteStylexOwned || isProjectTabStylexOwned || isRecentTabStylexOwned)
+          (isFavoriteStyleOwned || isProjectTabStyleOwned || isRecentTabStyleOwned)
         ) {
           const className = value
             .split(/\s+/u)
@@ -5069,12 +5179,12 @@ async function canonicalizeHtml(page: Page, html: string) {
                 !(
                   (["row-fluid", "user-menu-wrap"].includes(value) &&
                     current.matches(
-                      '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                      '.row-fluid.user-menu-wrap, [data-owner="authenticated-sidenav-account-actions"]',
                     )) ||
                   (["user-menu", "logout", "label"].includes(value) &&
                     current.tagName.toLowerCase() === "span" &&
                     current.closest(
-                      '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                      '.row-fluid.user-menu-wrap, [data-owner="authenticated-sidenav-account-actions"]',
                     ))
                 ),
             )

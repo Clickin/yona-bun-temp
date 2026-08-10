@@ -130,14 +130,14 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   await expect(page).toHaveTitle("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/data`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
     "Feedback",
   ]);
   expect(
     await page
-      .locator('[data-stylex-owner="global-gnb-nav"] a[href]')
+      .locator('[data-owner="global-gnb-nav"] a[href]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/`,
@@ -150,23 +150,23 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-data-breadcrumb-outer"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-data-breadcrumb-outer"]')).not.toHaveClass(
     /\bsite-breadcrumb-outer\b/u,
   );
-  await expect(page.locator('[data-stylex-owner="site-data-breadcrumb-inner"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-data-breadcrumb-inner"]')).not.toHaveClass(
     /\bsite-breadcrumb-inner\b/u,
   );
   await expect(page.locator(".span10 h2")).toHaveText("Data");
   await expectSiteAdminSidebar(page, basePath);
-  await expect(page.locator('[data-stylex-owner="site-data-sidebar"]')).not.toContainText("Data");
-  const mailLink = page.locator('[data-stylex-owner="site-data-sidebar-link"]', {
+  await expect(page.locator('[data-owner="site-data-sidebar"]')).not.toContainText("Data");
+  const mailLink = page.locator('[data-owner="site-data-sidebar-link"]', {
     hasText: "Send email",
   });
   await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
   await expect(
-    page.locator('[data-stylex-owner="site-data-sidebar-link"]', { hasText: "Send mass emails" }),
+    page.locator('[data-owner="site-data-sidebar-link"]', { hasText: "Send mass emails" }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  const exportLink = page.locator('[data-stylex-owner="site-data-export-action"]');
+  const exportLink = page.locator('[data-owner="site-data-export-action"]');
   await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
   await expect(exportLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
   await expect(exportLink).toHaveText("Export");
@@ -249,12 +249,12 @@ test("site admin data renders legacy update notification badge", async ({ page }
   await mockAvailableUpdate(page);
 
   await page.goto(`${basePath}/sites/data`);
-  const updateLink = page.locator('[data-stylex-owner="site-data-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-data-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator('[data-stylex-owner="site-data-sidebar-badge"]')).toHaveText("1");
+  await expect(updateLink.locator('[data-owner="site-data-sidebar-badge"]')).toHaveText("1");
 });
 
 test("site admin data export link preserves legacy download href", async ({ page }) => {
@@ -263,7 +263,7 @@ test("site admin data export link preserves legacy download href", async ({ page
   await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/data`);
-  const exportLink = page.locator('[data-stylex-owner="site-data-export-action"]');
+  const exportLink = page.locator('[data-owner="site-data-export-action"]');
 
   await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
   await expect(exportLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
@@ -298,7 +298,7 @@ test("site admin data source keeps export as legacy href without route escape", 
 });
 
 async function expectSiteAdminSidebar(page: Page, basePath: string) {
-  const links = page.locator('[data-stylex-owner="site-data-sidebar-link"]');
+  const links = page.locator('[data-owner="site-data-sidebar-link"]');
   await expect(links).toHaveText([
     "Users",
     "Posts",
@@ -323,12 +323,8 @@ async function expectSiteAdminSidebar(page: Page, basePath: string) {
       `${basePath}/sites/update`,
       `${basePath}/sites/diagnostic`,
     ]);
-  await expect(
-    page.locator('[data-stylex-owner="site-data-sidebar-link"][aria-current]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('[data-stylex-owner="site-data-sidebar-link"][data-status]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-data-sidebar-link"][aria-current]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-data-sidebar-link"][data-status]')).toHaveCount(0);
 }
 
 async function mockSiteAdminSession(page: Page) {
@@ -398,14 +394,14 @@ async function readSiteDataMetrics(page: Page) {
     const row = requireElement(".site-setting-wrap > .row-fluid");
     const sidebar = requireElement(".site-setting-wrap .span2");
     const content = requireElement(".site-setting-wrap .span10");
-    const breadcrumbHeading = requireElement('[data-stylex-owner="site-data-breadcrumb-heading"]');
-    const cuDesc = requireElement('[data-stylex-owner="site-data-warning-surface"]');
-    const navItem = requireElement('[data-stylex-owner="site-data-sidebar-item"]');
-    const navAnchor = requireElement('[data-stylex-owner="site-data-sidebar-link"]');
-    const notice = requireElement('[data-stylex-owner="site-data-warning-item"]');
-    const titleArea = requireElement('[data-stylex-owner="site-data-title-strip"]');
-    const title = requireElement('[data-stylex-owner="site-data-title-heading"]');
-    const exportButton = requireElement('[data-stylex-owner="site-data-export-action"]');
+    const breadcrumbHeading = requireElement('[data-owner="site-data-breadcrumb-heading"]');
+    const cuDesc = requireElement('[data-owner="site-data-warning-surface"]');
+    const navItem = requireElement('[data-owner="site-data-sidebar-item"]');
+    const navAnchor = requireElement('[data-owner="site-data-sidebar-link"]');
+    const notice = requireElement('[data-owner="site-data-warning-item"]');
+    const titleArea = requireElement('[data-owner="site-data-title-strip"]');
+    const title = requireElement('[data-owner="site-data-title-heading"]');
+    const exportButton = requireElement('[data-owner="site-data-export-action"]');
     const rowRect = row.getBoundingClientRect();
     const breadcrumbHeadingStyle = getComputedStyle(breadcrumbHeading);
     const navItemStyle = getComputedStyle(navItem);
@@ -469,14 +465,14 @@ async function readSiteDataContainmentMetrics(page: Page) {
   return page.evaluate(() => {
     const wrap = requireElement(".site-setting-wrap");
     const sidebar = requireElement(".site-setting-wrap .span2");
-    const nav = requireElement('[data-stylex-owner="site-data-sidebar"]');
+    const nav = requireElement('[data-owner="site-data-sidebar"]');
     const content = requireElement(".site-setting-wrap .span10");
-    const titleArea = requireElement('[data-stylex-owner="site-data-title-strip"]');
-    const title = requireElement('[data-stylex-owner="site-data-title-heading"]');
-    const cuDesc = requireElement('[data-stylex-owner="site-data-warning-surface"]');
+    const titleArea = requireElement('[data-owner="site-data-title-strip"]');
+    const title = requireElement('[data-owner="site-data-title-heading"]');
+    const cuDesc = requireElement('[data-owner="site-data-warning-surface"]');
     const exportTitle = requireElement(".span10 > h3:nth-of-type(1)");
     const exportCopy = requireElement(".span10 > p:nth-of-type(1)");
-    const exportButton = requireElement('[data-stylex-owner="site-data-export-action"]');
+    const exportButton = requireElement('[data-owner="site-data-export-action"]');
     const importTitle = requireElement(".span10 > h3:nth-of-type(2)");
     const importCopy = requireElement(".span10 > p:nth-of-type(2)");
     const importForm = requireElement('form[action$="/sites/import"]');
@@ -550,7 +546,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-data-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="site-data-breadcrumb-outer"], .page-wrap-outer, [data-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -558,7 +554,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
-        (current.getAttribute("data-stylex-owner") ?? "").startsWith("site-data-breadcrumb-")
+        (current.getAttribute("data-owner") ?? "").startsWith("site-data-breadcrumb-")
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -572,17 +568,17 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-data-sidebar-item",
           "site-data-sidebar-link",
           "site-data-sidebar-badge",
-        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+        ].includes(current.getAttribute("data-owner") ?? "")
       ) {
         return "";
       }
       if (
         name === "class" &&
-        (current.closest('[data-stylex-owner="site-data-warning-surface"]') ||
-          current.closest('[data-stylex-owner="site-data-warning-item"]') ||
-          current.closest('[data-stylex-owner="site-data-title-strip"]') ||
-          current.closest('[data-stylex-owner="site-data-title-heading"]') ||
-          current.closest('[data-stylex-owner="site-data-export-action"]'))
+        (current.closest('[data-owner="site-data-warning-surface"]') ||
+          current.closest('[data-owner="site-data-warning-item"]') ||
+          current.closest('[data-owner="site-data-title-strip"]') ||
+          current.closest('[data-owner="site-data-title-heading"]') ||
+          current.closest('[data-owner="site-data-export-action"]'))
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -591,11 +587,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -603,7 +599,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)

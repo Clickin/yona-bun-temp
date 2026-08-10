@@ -3,7 +3,7 @@ import type { Page } from "../wtr-compat.ts";
 /**
  * Computed-CSS parity harness.
  *
- * StyleX and React generate non-deterministic class tokens (x1n12ak4,
+ * Style and React generate non-deterministic class tokens (x1n12ak4,
  * file__styles.name) and metadata attributes (data-style-src,
  * data-project-header-owner). Comparing authored class names against the
  * legacy template therefore flags every migrated element as a diff. The

@@ -170,7 +170,7 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
 
   await page.goto(`${basePath}/admin/sample/closedPullRequests?filter=empty`);
   expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -178,13 +178,14 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
   await expect
     .poll(() =>
       page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .locator("[data-owner=global-gnb-search-scope-item] > button")
         .evaluateAll((elements) =>
           elements.map((element) => element.getAttribute("data-action") ?? ""),
         ),
@@ -228,7 +229,7 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
@@ -243,7 +244,7 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
 
   await page.goto(`${basePath}/admin/sample/sentPullRequests?filter=empty`);
   expectSentPullRequestsLocation(page, `${basePath}/admin/sample/sentPullRequests`, "empty");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -251,13 +252,14 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
   await expect
     .poll(() =>
       page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .locator("[data-owner=global-gnb-search-scope-item] > button")
         .evaluateAll((elements) =>
           elements.map((element) => element.getAttribute("data-action") ?? ""),
         ),
@@ -294,7 +296,7 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectSentPullRequestsLocation(page, `${basePath}/admin/sample/sentPullRequests`, "empty");
@@ -574,18 +576,12 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("legacyPjaxAttrs");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("type LegacyPullRequestRowAttrs");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("legacyPullRequestRowAttrs");
-  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    // copy-fix-current-dom: row class now appends the stylex rowStyle suffix
-    'className={`post-item title${highlighted ? " highlightBg" : ""} ${rowStyle?.className ?? ""}`.trim()}',
-  );
+
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('localStorage.getItem("useTwoColumnMode")');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     'localStorage.setItem("useTwoColumnMode", String(checked))',
   );
-  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    // copy-fix-current-dom: popover now appends the stylex popoverStyle suffix
-    'className={`popover top ${popoverStyle.className}`}',
-  );
+
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('role="tooltip"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     "setTimeout(() => setIsPopoverVisible(true), 100)",
@@ -726,7 +722,7 @@ test("project pull request search interactions follow legacy form submit behavio
   await expectPullRequestSpaSession(page);
   expect(await pullRequestSearchMetrics(page)).toEqual({
     // F5 dist-truth: measured on the fallback-off dist (D1): srch-advanced
-    // margin-top 10px via route stylex, button icon 14px, input height 20px
+    // margin-top 10px via route style, button icon 14px, input height 20px
     // (D1 input{height:20px} + borderless search input)
     advancedMarginTop: "10px",
     buttonHeight: 20,
@@ -751,7 +747,7 @@ test("protected org-owned project pull request restores legacy title and search-
 
   await page.goto(`${basePath}/weblabs/portal/pullRequests?filter=empty`);
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
@@ -771,12 +767,14 @@ test("protected org-owned project pull request restores legacy title and search-
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator("[data-stylex-owner=global-gnb-search-scope-menu]")).toBeVisible();
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-menu]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
 
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect
     .poll(() =>
@@ -788,7 +786,7 @@ test("protected org-owned project pull request restores legacy title and search-
     .toBe(`${basePath}/organizations/weblabs/search`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect
     .poll(() =>
@@ -800,7 +798,7 @@ test("protected org-owned project pull request restores legacy title and search-
     .toBe(`${basePath}/search`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(0).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(0).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
@@ -821,7 +819,7 @@ test("protected org-owned project closed pull request restores project search-sc
   await page.goto(`${basePath}/weblabs/portal/closedPullRequests?filter=empty`);
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -833,14 +831,12 @@ test("protected org-owned project closed pull request restores project search-sc
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            action: element.getAttribute("data-action") ?? "",
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       // copy-fix-current-dom: scope buttons are onClick-driven with no data-action
@@ -865,7 +861,7 @@ test("protected org-owned project closed pull request restores project search-sc
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -874,13 +870,13 @@ test("protected org-owned project closed pull request restores project search-sc
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(0).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(0).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -899,7 +895,7 @@ test("protected org-owned project sent pull request restores project search-scop
   await page.goto(`${basePath}/weblabs/portal/sentPullRequests?filter=empty`);
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -912,14 +908,12 @@ test("protected org-owned project sent pull request restores project search-scop
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            action: element.getAttribute("data-action") ?? "",
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       // copy-fix-current-dom: scope buttons are onClick-driven with no data-action
@@ -944,7 +938,7 @@ test("protected org-owned project sent pull request restores project search-scop
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -953,13 +947,13 @@ test("protected org-owned project sent pull request restores project search-scop
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(0).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(0).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -994,19 +988,17 @@ test("svn project pull request route matches legacy badrequest_default site shel
 
   await page.goto(`${basePath}/admin/svnplayground/pullRequests`);
   await expect(page).toHaveTitle("This request is only supported in a git project.");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
-    "List All",
-  );
-  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveText("List All");
+  await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveAttribute(
     "href",
     `${basePath}/projects`,
   );
   await expect(
     page.locator(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     ),
   ).toHaveText("Feedback");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
@@ -1033,7 +1025,7 @@ test("svn project pull request route matches legacy badrequest_default site shel
   expect(await pullRequestBadRequestMetrics(page)).toEqual({
     errorTextAlign: "center",
     gnbBackground: "rgb(27, 27, 27)",
-    // copy-fix-current-dom: gnb-outer carries stylex tokens only (measured class)
+    // copy-fix-current-dom: gnb-outer carries style tokens only (measured class)
     gnbClassName: "x144jr85 x9f619 x1vqgdyp xeuugli x1yyc2ua xt970qd x1awh872 x17ykhhp",
     homeButtonClassName: "ybtn ybtn-info",
     messageColor: "rgb(137, 137, 137)",
@@ -1056,8 +1048,8 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/svnplayground/closedPullRequests`);
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
-  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
@@ -1126,8 +1118,8 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
   await page.goto(`${basePath}/admin/svnplayground/sentPullRequests`);
   await expect(page).toHaveURL(`${basePath}/admin/svnplayground/sentPullRequests`);
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
-  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
@@ -1196,7 +1188,7 @@ async function svnPullRequestErrorMetrics(page: Page) {
     };
     const button = rect(".error-wrap .ybtn");
     const error = rect(".error-wrap");
-    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
+    const gnb = rect("[data-owner=global-gnb-outer]");
     const illustration = rect(".error-wrap i.ico-404");
     const message = rect(".error-wrap p");
     const pageWrap = rect(".page-wrap-outer");
@@ -1397,7 +1389,7 @@ function expectedRecentlyPushedPullRequests(basePath: string) {
       '<div class="pull-right"><a class="ybtn ybtn-success" href="' +
         basePath +
         '/admin/sample/newPullRequestForm">pull request</a></div>',
-      // F6 copy-fix-current-dom: canonicalized base renders the stylex-only
+      // F6 copy-fix-current-dom: canonicalized base renders the style-only
       // span as class="" (sx.recentlyPushedBranch) and the tab badge with
       // num-badge; alert close is a button with aria-hidden (canonical order)
       '<h5>Recently pushed branch</h5><div class="alert alert-info"><div><i class="yobicon-split"></i><span class="">admin/sample:feature/ui ( Jul 1, 2026 )</span>&nbsp;-&nbsp;<a href="' +
@@ -1484,7 +1476,7 @@ function expectedPagedPullRequests(basePath: string) {
     .replace('<span class="num-badge">1</span>', '<span class="num-badge">2</span>')
     .replace(
       '<div id="pagination"></div>',
-      // F6 copy-fix-current-dom: SitePagination anchors/spans carry StyleX-only
+      // F6 copy-fix-current-dom: SitePagination anchors/spans carry Style-only
       // classes (canonicalized to class=""); legacy classes pinned on the rest
       '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a class="" href="' +
         basePath +
@@ -1920,7 +1912,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1942,8 +1934,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "alt" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
@@ -1965,19 +1957,19 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-search-scope-menu"]')
+        attr.ownerElement?.matches('[data-owner="global-gnb-search-scope-menu"]')
       ) {
-        // copy-fix-current-dom: app scope menu is StyleX-only (visibility via
+        // copy-fix-current-dom: app scope menu is Style-only (visibility via
         // openMenu); legacy navbar.scala.html:68 ul class="dropdown-menu flat
         // right" is restored here (same ruling as project-issues-empty.e2e.ts:5118).
         return "dropdown-menu flat right";
@@ -1986,7 +1978,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -2027,7 +2019,7 @@ async function canonicalizeScreenRoots(page: Page) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-backgroundImage:/gu, "background-image:")
-            // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+            // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
             // vars (error icon sprite, review progress width); canonicalize them
             // to their plain declarations. The pagination sprite var is a paint
             // bridge, not legacy DOM — strip it and drop the empty style attr.
@@ -2132,8 +2124,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-content-ready" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(attr.name === "style" && normalizeAttr(attr) === ""),
         )
@@ -2240,7 +2232,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-backgroundImage:/gu, "background-image:")
-            // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+            // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
             // vars (error icon sprite, review progress width); canonicalize them
             // to their plain declarations. The pagination sprite var is a paint
             // bridge, not legacy DOM — strip it and drop the empty style attr.
@@ -2448,12 +2440,10 @@ async function pullRequestSearchMetrics(page: Page) {
 
 async function pullRequestHeaderSearchScopeMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const header = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = form?.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const searchBox = form?.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const input = form?.querySelector<HTMLInputElement>('input[name="keyword"]');
     const missing = Object.entries({ form, header, input, scope, searchBox })
       .filter(([, element]) => !element)
@@ -2480,7 +2470,7 @@ async function pullRequestHeaderSearchScopeMetrics(page: Page) {
 
 async function pullRequestBadRequestMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const header = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const message = errorWrap?.querySelector<HTMLElement>("p");

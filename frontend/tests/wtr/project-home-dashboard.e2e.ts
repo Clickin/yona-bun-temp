@@ -100,8 +100,8 @@ test("project dashboard pull-request metadata keeps right alignment on desktop a
     await page.goto(`${basePath}/admin/sample?tabId=dashboard`);
     await expect(page.locator(".project-overview-home")).toBeVisible();
 
-    const pullRequestDate = page.locator('[data-stylex-owner="project-history-pull-request-date"]');
-    const pullRequestLink = page.locator('[data-stylex-owner="project-history-pull-request-link"]');
+    const pullRequestDate = page.locator('[data-owner="project-history-pull-request-date"]');
+    const pullRequestLink = page.locator('[data-owner="project-history-pull-request-link"]');
     await expect(pullRequestDate).toHaveCSS("text-align", "right");
     await expect(pullRequestLink).toHaveCSS("text-align", "right");
     await expect(pullRequestDate).not.toHaveClass(/(?:^|\s)right-txt(?:\s|$)/);

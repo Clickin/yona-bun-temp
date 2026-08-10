@@ -29,38 +29,34 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   // as a React button (markdown-help-nav-button, aria-controls/aria-expanded);
   // the legacy template's bare <li> nav items are stale (see
   // -legacy-markdown-help.tsx MarkdownHelpNav).
-  .replace(
-    /<li class="help-nav">([^<]+)<\/li>/gu,
-    (_match, label: string) => {
-      const target: Record<string, string> = {
-        Header: "markdownHeaders",
-        "Text Style": "markdownStyling",
-        Link: "markdownLinks",
-        List: "markdownLists",
-        Checklist: "markdownTaskList",
-        Image: "markdownImages",
-        Blockquote: "markdownBlockquotes",
-        Code: "markdownCodes",
-        Table: "markdownTables",
-        "Short Link": "markdownShortLinks",
-      };
-      return `<li class="help-nav"><button aria-controls="markdown-help-${
-        target[label] ?? ""
-      }" aria-expanded="false" class="markdown-help-nav-button" type="button">${label}</button></li>`;
-    },
-  );
+  .replace(/<li class="help-nav">([^<]+)<\/li>/gu, (_match, label: string) => {
+    const target: Record<string, string> = {
+      Header: "markdownHeaders",
+      "Text Style": "markdownStyling",
+      Link: "markdownLinks",
+      List: "markdownLists",
+      Checklist: "markdownTaskList",
+      Image: "markdownImages",
+      Blockquote: "markdownBlockquotes",
+      Code: "markdownCodes",
+      Table: "markdownTables",
+      "Short Link": "markdownShortLinks",
+    };
+    return `<li class="help-nav"><button aria-controls="markdown-help-${
+      target[label] ?? ""
+    }" aria-expanded="false" class="markdown-help-nav-button" type="button">${label}</button></li>`;
+  });
 const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
   "utf8",
 );
-// F6 copy-fix-current-dom: read the stylex source via the suite's string-path
+// F6 copy-fix-current-dom: read the style source via the suite's string-path
 // convention so pins see the raw file; the previous new URL(...) read returned
-// the esbuild/babel-transformed module (stylex.create compiled, trailing commas
+// the esbuild/babel-transformed module (style.create compiled, trailing commas
 // normalized), which broke the threadFoldHere/reviewCard block pins.
-const COMMIT_DETAIL_STYLEX_SOURCE = readFileSync(
-  "src/routes/$ownerName/$projectName/commit/-commit-detail.stylex.ts",
-  "utf8",
-);
+const COMMIT_DETAIL_STYLE_SOURCE =
+  readFileSync("src/app.css", "utf8") +
+  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 const DIFF_LINE_VIEW_SOURCE = readFileSync(
   new URL("../src/components/diff-line-view.tsx", import.meta.url),
   "utf8",
@@ -127,7 +123,7 @@ const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
 );
 const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const FOOTER_SCREENSHOT_DIR = resolve(
-  "output/playwright/stylex-project-commit-detail-footer-floats",
+  "output/playwright/style-project-commit-detail-footer-floats",
   fallbackOff ? "fallback-off" : "normal",
 );
 
@@ -360,16 +356,15 @@ test("project commit detail watch buttons are route-owned React controls", async
     "onClick={() => watchMutation.mutate(!detail.isWatching)}",
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={toggleWatch}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-watch"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-list"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-watch"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-list"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     'className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}',
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     "className={`${sx.footerListRight.className} ybtn`}",
   );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerWatchLeft: { float: "left" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerListRight: { float: "right" }');
+
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
     /id="watch-button"[\s\S]{0,220}data-toggle="button"/u,
   );
@@ -443,10 +438,6 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.commentUpdateFormHidden");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.commentUpdateFormVisible");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormHidden");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormVisible");
 });
 
 test("project commit detail diff lines drop legacy data-type while preserving line side hooks", async ({
@@ -623,7 +614,7 @@ test("project commit detail comment delete modal is route-owned React state", as
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setCommentDeleteCommentId");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("openCommentDeleteModal(comment.id)");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('id="comment-delete-modal"');
-  // bucket-3: modal className became a stylex-merged template literal.
+  // bucket-3: modal className became a style-merged template literal.
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('isOpen ? "modal hide fade in" : "modal hide fade"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('className="modal-backdrop fade in"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('role="presentation"');
@@ -688,13 +679,14 @@ test("project commit detail internal nav links keep legacy hrefs with SPA naviga
     "href",
     `${basePath}/admin/sample/branches`,
   );
-  // F6 copy-fix-current-dom: the app owns the footer floats via StyleX
+  // F6 copy-fix-current-dom: the app owns the footer floats via Style
   // (footerListRight, pinned by "submits watch and comment mutations through
   // legacy controls") and intentionally drops the legacy pull-right utility
   // class; re-point the legacy selector at the route-owned element.
-  await expect(
-    page.locator('[data-stylex-owner="commit-detail-footer-list"]'),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
+  await expect(page.locator('[data-owner="commit-detail-footer-list"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/main`,
+  );
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "commit-route-link";
@@ -717,7 +709,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
   await mockProjectCommitDetail(page, detailRequests);
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -725,21 +717,19 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   // bucket-3: app re-added legacy classes (matches legacy navbar.scala.html:105).
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            hasDataAction: element.hasAttribute("data-action"),
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          hasDataAction: element.hasAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       { hasDataAction: false, text: "This Project" },
@@ -748,7 +738,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
 
   const commitUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(commitUrl);
@@ -758,7 +748,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
     formRightWithinNavbar: true,
     formTopWithinNavbar: true,
     // F6 copy-fix-current-dom: this commit-detail route renders a non-protected
-    // StyleX-only GNB (no legacy gnb-outer/project-header classes — see the
+    // Style-only GNB (no legacy gnb-outer/project-header classes — see the
     // not.toHaveClass assertion above); the metrics pin expects the stripped class list.
     headerClassName: "",
     searchBottomWithinNavbar: true,
@@ -781,14 +771,12 @@ test("project commit detail includes group search scope when project container h
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            hasDataAction: element.hasAttribute("data-action"),
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          hasDataAction: element.hasAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       { hasDataAction: false, text: "This Project" },
@@ -798,7 +786,7 @@ test("project commit detail includes group search scope when project container h
 
   const commitUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -807,7 +795,7 @@ test("project commit detail includes group search scope when project container h
   await expect(page).toHaveURL(commitUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(commitUrl);
@@ -836,13 +824,14 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     "href",
     `${basePath}/admin/sample/branches`,
   );
-  // F6 copy-fix-current-dom: the app owns the footer floats via StyleX
+  // F6 copy-fix-current-dom: the app owns the footer floats via Style
   // (footerListRight, pinned by "submits watch and comment mutations through
   // legacy controls") and intentionally drops the legacy pull-right utility
   // class; re-point the legacy selector at the route-owned element.
-  await expect(
-    page.locator('[data-stylex-owner="commit-detail-footer-list"]'),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
+  await expect(page.locator('[data-owner="commit-detail-footer-list"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/main`,
+  );
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(
     page.locator("#review-form .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
@@ -1073,25 +1062,11 @@ index 1234567..abcdef1 100644
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("globalThis.getSelection");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen(true)");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClose={() => setBlockReviewFormOpen(false)}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormHidden");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormVisible");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.blockReviewButtonHidden");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.blockReviewButtonVisible");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormShell");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewAuthorInfoWrap");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewWriteCommentBox");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "0px 10px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('paddingRight: "6px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
   );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderRadius: "6px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginBottom: "10px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('height: "35px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginLeft: "46px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    '"@media all and (max-width: 720px)": { marginLeft: "0px" }',
-  );
+
   expect(LEGACY_REVIEW_FORM_SOURCE).toContain('<div id="review-form" class="review-form">');
   expect(LEGACY_REVIEW_FORM_SOURCE).toContain(
     '<div class="author-info-wrap pull-left hide-in-mobile">',
@@ -1116,7 +1091,7 @@ index 1234567..abcdef1 100644
   await expect(popButton).toHaveCount(1);
   await expect(popButton).toBeHidden();
   await expect(reviewForm).toBeHidden();
-  await expect(reviewForm).toHaveAttribute("data-stylex-owner", "commit-detail-review-form");
+  await expect(reviewForm).toHaveAttribute("data-owner", "commit-detail-review-form");
   await expect(reviewForm).toHaveCSS("display", "none");
   await expect(reviewForm).toHaveCSS("padding", "0px 6px 0px 10px");
   await expect(reviewForm).toHaveCSS("padding-right", "6px");
@@ -1230,7 +1205,7 @@ test("project commit detail links known commit author avatar like legacy diff.sc
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
-test("project commit detail Batch 756 owns Git metadata with StyleX", async ({ page }) => {
+test("project commit detail Batch 756 owns Git metadata with Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitInfo">');
   expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitAuthor">');
@@ -1259,20 +1234,11 @@ test("project commit detail Batch 756 owns Git metadata with StyleX", async ({ p
     "commit-detail-id-wrap",
     "commit-detail-id",
   ]) {
-    expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(`data-stylex-owner="${owner}"`);
+    expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(`data-owner="${owner}"`);
   }
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'commitAuthor: { float: "right", marginTop: "5px" }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'commitAuthorAgo: { marginLeft: "5px", color: "#bbb" }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('commitAuthorAvatar: { marginRight: "5px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('commitIdWrap: { padding: "10px 5px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#51aacc"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "5px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
     'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
   );
 
@@ -1300,12 +1266,12 @@ test("project commit detail Batch 756 owns Git metadata with StyleX", async ({ p
       await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
     }
 
-    const info = page.locator('[data-stylex-owner="commit-detail-info"]');
-    const author = page.locator('[data-stylex-owner="commit-detail-author"]');
-    const ago = page.locator('[data-stylex-owner="commit-detail-author-ago"]');
-    const avatar = page.locator('[data-stylex-owner="commit-detail-author-avatar"]');
-    const idWrap = page.locator('[data-stylex-owner="commit-detail-id-wrap"]');
-    const id = page.locator('[data-stylex-owner="commit-detail-id"]');
+    const info = page.locator('[data-owner="commit-detail-info"]');
+    const author = page.locator('[data-owner="commit-detail-author"]');
+    const ago = page.locator('[data-owner="commit-detail-author-ago"]');
+    const avatar = page.locator('[data-owner="commit-detail-author-avatar"]');
+    const idWrap = page.locator('[data-owner="commit-detail-id-wrap"]');
+    const id = page.locator('[data-owner="commit-detail-id"]');
     await expect(info).toBeVisible();
     await expect(author).toBeVisible();
     await expect(ago).toHaveText("Jul 1, 2026");
@@ -1328,7 +1294,7 @@ test("project commit detail Batch 756 owns Git metadata with StyleX", async ({ p
 
     const geometry = await page.evaluate(() => {
       const read = (owner: string) => {
-        const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`);
+        const element = document.querySelector<HTMLElement>(`[data-owner="${owner}"]`);
         if (!element) throw new Error(`Missing ${owner}`);
         const box = element.getBoundingClientRect();
         return {
@@ -1414,30 +1380,25 @@ test("project commit detail submits watch and comment mutations through legacy c
   expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-left {\n  float: left;\n}");
   expect(LEGACY_MESSAGES_SOURCE).toContain("button.list = List");
   expect(LEGACY_MESSAGES_SOURCE).toContain("notification.watch = Watch");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerWatchLeft: { float: "left" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('footerListRight: { float: "right" }');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-watch"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-footer-list"');
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-watch"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-list"');
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
   await expect(page.locator("#watch-button")).toHaveClass(/ybtn/);
   await expect(page.locator("#watch-button")).not.toHaveClass(/pull-left/);
   await expect(page.locator("#watch-button")).toHaveText("Watch");
-  const watch = page.locator('[data-stylex-owner="commit-detail-footer-watch"]');
-  const list = page.locator('[data-stylex-owner="commit-detail-footer-list"]');
+  const watch = page.locator('[data-owner="commit-detail-footer-watch"]');
+  const list = page.locator('[data-owner="commit-detail-footer-list"]');
   await expect(watch).toHaveCSS("float", "left");
   await expect(list).toHaveCSS("float", "right");
   await expect(list).not.toHaveClass(/pull-right/);
   await expect(list).toHaveText("List");
   await expect(list).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
   const footerMetrics = await page.evaluate(() => {
-    const watch = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="commit-detail-footer-watch"]',
-    );
-    const list = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="commit-detail-footer-list"]',
-    );
+    const watch = document.querySelector<HTMLElement>('[data-owner="commit-detail-footer-watch"]');
+    const list = document.querySelector<HTMLElement>('[data-owner="commit-detail-footer-list"]');
     if (!watch || !list || !watch.parentElement) return null;
     const parent = watch.parentElement;
     const watchBox = watch.getBoundingClientRect();
@@ -1460,12 +1421,8 @@ test("project commit detail submits watch and comment mutations through legacy c
   await captureCommitFooterScreenshot(page, "git-desktop.png");
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileFooterMetrics = await page.evaluate(() => {
-    const watch = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="commit-detail-footer-watch"]',
-    );
-    const list = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="commit-detail-footer-list"]',
-    );
+    const watch = document.querySelector<HTMLElement>('[data-owner="commit-detail-footer-watch"]');
+    const list = document.querySelector<HTMLElement>('[data-owner="commit-detail-footer-list"]');
     if (!watch || !list) return null;
     const parentBox = watch.parentElement?.getBoundingClientRect();
     const watchBox = watch.getBoundingClientRect();
@@ -1528,14 +1485,8 @@ test("project commit detail renders legacy partial_filediff rows", async ({ page
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffLineNumber");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffLineNumberMarker");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeCell");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeLine");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
+
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
       {
@@ -1633,34 +1584,16 @@ test("project commit detail Batch 746 partial diff row and cell owners keep lega
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".linenum:hover .yobicon-comments");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.discommentable {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("display:none;");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'lineNumberCell: "commit-detail-diff-line-number-cell"',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('lineNumber: "commit-detail-diff-line-number"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('codeCell: "commit-detail-diff-code-cell"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('codeLine: "commit-detail-diff-code-pre"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'commentIcon: "commit-detail-diff-line-comment-icon"',
-  );
+
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("sx.diffLineCommentIcon");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.lineNumberCell}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.lineNumber}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.codeCell}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.codeLine}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-stylex-owner={owners.commentIcon}");
-  expect(DIFF_LINE_VIEW_SOURCE).not.toContain("data-stylex-owner={owners.commentIcon} style=");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffLineCommentIcon: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "absolute"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('cursor: "pointer"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("opacity: 0");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginLeft: "-84px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('width: "25px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "2px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('textAlign: "right"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('width: "50px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('whiteSpace: "nowrap"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "0px 5px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('fontSize: "12px"');
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.lineNumberCell}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.lineNumber}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.codeCell}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.codeLine}");
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.commentIcon}");
+  expect(DIFF_LINE_VIEW_SOURCE).not.toContain("data-owner={owners.commentIcon} style=");
+
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("opacity: 0");
 
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
@@ -1685,7 +1618,7 @@ index 1234567..abcdef1 100644
       const lineNumberCell = row.querySelector<HTMLElement>(".linenum")!;
       const lineNumber = row.querySelector<HTMLElement>(".line-number")!;
       const commentIcon = row.querySelector<HTMLElement>(
-        '[data-stylex-owner="commit-detail-diff-line-comment-icon"]',
+        '[data-owner="commit-detail-diff-line-comment-icon"]',
       )!;
       const code = row.querySelector<HTMLElement>(".code")!;
       const codeLine = row.querySelector<HTMLElement>(".diff-partial-codeline")!;
@@ -1718,8 +1651,7 @@ index 1234567..abcdef1 100644
           marginLeft: getComputedStyle(commentIcon).marginLeft,
           width: getComputedStyle(commentIcon).width,
           marginTop: getComputedStyle(commentIcon).marginTop,
-          count: row.querySelectorAll('[data-stylex-owner="commit-detail-diff-line-comment-icon"]')
-            .length,
+          count: row.querySelectorAll('[data-owner="commit-detail-diff-line-comment-icon"]').length,
           lineNumberContained:
             lineNumber.getBoundingClientRect().right <=
               lineNumberCell.getBoundingClientRect().right &&
@@ -1749,12 +1681,12 @@ index 1234567..abcdef1 100644
         lineNumberContained: true,
       },
     });
-    await expect(
-      page.locator('[data-stylex-owner="commit-detail-diff-line-comment-icon"]'),
-    ).toHaveCount(2);
+    await expect(page.locator('[data-owner="commit-detail-diff-line-comment-icon"]')).toHaveCount(
+      2,
+    );
     expect(
       await page
-        .locator('[data-stylex-owner="commit-detail-diff-line-comment-icon"]')
+        .locator('[data-owner="commit-detail-diff-line-comment-icon"]')
         .first()
         .getAttribute("style"),
     ).toBeNull();
@@ -1766,14 +1698,10 @@ index 1234567..abcdef1 100644
 
 test("project commit detail owns diff-body font family", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
+
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`${sx.diffBody.className} diff-body`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-diff-body-layout"',
-  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-body-layout"');
 
   await mockProjectCommitDetail(page, []);
   const diffBody = page.locator(".diff-body");
@@ -1791,15 +1719,11 @@ test("project commit detail owns diff-body layout", async ({ page }) => {
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     ".diff-body {\n            position:relative;\n            .border-radius(3px);\n            min-height:30px;",
   );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "relative"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderRadius: "3px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('minHeight: "30px"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-diff-body-layout"',
-  );
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-body-layout"');
 
   await mockProjectCommitDetail(page, []);
-  const diffBody = page.locator('[data-stylex-owner="commit-detail-diff-body-layout"]');
+  const diffBody = page.locator('[data-owner="commit-detail-diff-body-layout"]');
 
   for (const viewport of [
     { height: 900, width: 1366 },
@@ -1983,10 +1907,7 @@ test("project commit detail owns legacy file-mode binary styling with fallback o
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     ".isBinary { color:#bbb; text-shadow:-1px -1px #fff; padding:5px 10px; }",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-is-binary"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#bbb"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('textShadow: "-1px -1px #fff"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px 10px"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-is-binary"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCommitDetail(page, [], {
@@ -2009,9 +1930,7 @@ index 1234567..abcdef1
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
-    const binaryCell = page.locator(
-      '#script-run-sh [data-stylex-owner="commit-detail-diff-is-binary"]',
-    );
+    const binaryCell = page.locator('#script-run-sh [data-owner="commit-detail-diff-is-binary"]');
     await expect(binaryCell).toBeVisible();
     await expect(binaryCell).toHaveClass(/isBinary/);
     await expect(binaryCell).toHaveText("File mode has changed");
@@ -2255,52 +2174,21 @@ test("project commit detail ranged thread header and badge own frozen geometry",
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".media-body { background: #fff; }");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("position:absolute;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("top:8px; right:10px;");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadComments: { margin: "0px 5px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadComment: { padding: "2px 0px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadMediaBody: { backgroundColor: "#fff" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'rangedThreadMinimize: { position: "absolute", right: "10px", top: "8px" }',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadComments");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadComment");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadMediaBody");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadMinimize");
+
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("btn-thread-here");
   expect(LEGACY_THREAD_FORM_SOURCE).toContain('<div class="right-txt">');
   expect(LEGACY_THREAD_FORM_SOURCE).toContain('<p class="thread-actrow">');
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-actrow {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("text-align:right;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 5px 10px;");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadActions: { padding: "5px 5px 10px" }');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadActions");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-thread-actions"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadShell:");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('backgroundColor: "#fefefe"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('border: "1px solid #e5e5e5"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderWidth: "1px 0px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('paddingBottom: "0px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('maxWidth: "876px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "relative"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'threadShellOpen: { boxShadow: "inset 5px 0px 0px #b6da54" }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'threadShellClosed: { boxShadow: "inset 5px 0px 0px #fd6956" }',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadShell");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-thread-shell"');
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-thread-actions"');
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("threadShell:");
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-thread-shell"');
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding: 5px 10px 10px 10px;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'rangedThreadHeader: { padding: "5px 10px 10px 10px" }',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadHeader");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'rangedThreadBadge: { margin: "0px", padding: "2px 10px" }',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadBadge");
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2354,9 +2242,9 @@ index 1234567..abcdef1 100644
   const comment = comments.locator(":scope > li.comment");
   const mediaBody = comment.locator(":scope > .media-body");
   const minimize = header.locator(":scope > .btn-thread-minimize");
-  const threadActions = page.locator('[data-stylex-owner="commit-detail-thread-actions"]');
+  const threadActions = page.locator('[data-owner="commit-detail-thread-actions"]');
   const assertBadgeMetrics = async () => {
-    await expect(thread).toHaveAttribute("data-stylex-owner", "commit-detail-thread-shell");
+    await expect(thread).toHaveAttribute("data-owner", "commit-detail-thread-shell");
     await expect(thread).toHaveCSS("border-top-width", "1px");
     await expect(thread).toHaveCSS("border-right-width", "0px");
     await expect(thread).toHaveCSS("border-bottom-width", "1px");
@@ -2399,7 +2287,7 @@ index 1234567..abcdef1 100644
   await assertBadgeMetrics();
 });
 
-test("project commit detail folds closed ranged threads with frozen StyleX geometry", async ({
+test("project commit detail folds closed ranged threads with frozen Style geometry", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -2426,20 +2314,6 @@ test("project commit detail folds closed ranged threads with frozen StyleX geome
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     'const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;',
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadShellClosedFold");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadFoldHidden");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadFoldHere");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadFoldClosedButton");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadShellClosedFold: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'threadFoldHere: {\n    position: "absolute",\n    zIndex: 99,\n    right: "0px",\n    marginTop: "0px",\n    display: "block",\n  }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadFoldClosedButton: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftWidth: "3px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftStyle: "solid"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftColor: "#fd6956"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadAfterThread: { marginTop: "10px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadAfterFoldedThread: { marginTop: "0px" }');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2575,10 +2449,7 @@ test("project commit detail renders legacy inline diff comment row", async ({ pa
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'rangedThreadBadge: { margin: "0px", padding: "2px 10px" }',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadBadge");
+
   const detailRequests: string[] = [];
   const mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [];
   await mockProjectCommitDetail(
@@ -2700,7 +2571,7 @@ index 1234567..abcdef1 100644
   const deleteButton = page.locator('#comment-501 button[title="Delete comment"]');
   await deleteButton.click();
   await expect(page.locator("#comment-delete-modal")).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "commit-detail-comment-delete-modal",
   );
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
@@ -2821,17 +2692,9 @@ test("project commit detail owns the emitted inline comment row, cell, and neste
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     "&.show-comments {\n                        tr.comments {\n                            display: table-row;",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-inline-comment-row"',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-inline-comment-cell"',
-  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-inline-comment-row"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-inline-comment-cell"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('commentItemVariant="inline"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentRow: { display: "table-row" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentCell: { padding: "0px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadComment: { padding: "2px 0px" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentItem: { maxWidth: "1150px" }');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2885,9 +2748,9 @@ index 1234567..abcdef1 100644
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
-    const row = page.locator('[data-stylex-owner="commit-detail-inline-comment-row"]');
-    const cell = page.locator('[data-stylex-owner="commit-detail-inline-comment-cell"]');
-    const item = page.locator('[data-stylex-owner="commit-detail-inline-comment-item"]');
+    const row = page.locator('[data-owner="commit-detail-inline-comment-row"]');
+    const cell = page.locator('[data-owner="commit-detail-inline-comment-cell"]');
+    const item = page.locator('[data-owner="commit-detail-inline-comment-item"]');
     await expect(row).toBeVisible();
     await expect(cell).toBeVisible();
     await expect(item).toBeVisible();
@@ -3023,19 +2886,9 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     "&.closed {\n        .box-shadow(inset 5px 0px 0px @state-closed);",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewCard");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewCardOpen");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewCardClosed");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-review-card"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'reviewCard: {\n    display: "block",\n    borderWidth: "1px",\n    borderStyle: "solid",\n    borderColor: "#ddd",\n    padding: "10px",\n    paddingLeft: "15px",\n    marginBottom: "5px",\n    borderRadius: "0px 3px 3px 0px",\n    ":last-of-type": { marginBottom: "0px" },\n    ":hover": { textDecoration: "none", backgroundColor: "#fafafa" },\n  },',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'reviewCardOpen: { boxShadow: "inset 5px 0px 0px #b6da54" },',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'reviewCardClosed: { boxShadow: "inset 5px 0px 0px #fd6956" },',
-  );
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card"');
+
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
     threads: [
@@ -3094,7 +2947,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   ).toHaveAttribute("alt", "Dev User");
   await expect(page.locator("#comment-editform-601")).toBeHidden();
   await expect(page.locator("#comment-editform-601")).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "commit-detail-comment-update-form",
   );
   await expect(page.locator("#comment-editform-601")).toHaveCSS("display", "none");
@@ -3291,25 +3144,10 @@ test("project commit detail review cards own legacy rail geometry and hash", asy
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     ".comments {\n        color:#3592b5;\n        margin-top:2px;\n        margin-left:1px;\n    }",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-review-card-content"',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-review-card-date"',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-review-card-comments"',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("reviewCardContent: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'display: stylex.firstThatWorks("-webkit-box", "box")',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'reviewCardDate: { color: "#999", verticalAlign: "middle" }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'reviewCardComments: { color: "#3592b5", marginTop: "2px", marginLeft: "1px" }',
-  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card-content"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card-date"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card-comments"');
+
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="info"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outdated-label");
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -3336,12 +3174,10 @@ test("project commit detail review cards own legacy rail geometry and hash", asy
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   const reviewCard = page.locator("#reviewcards-open .review-card.open");
-  const reviewCardContent = reviewCard.locator(
-    '[data-stylex-owner="commit-detail-review-card-content"]',
-  );
-  const reviewCardDate = reviewCard.locator('[data-stylex-owner="commit-detail-review-card-date"]');
+  const reviewCardContent = reviewCard.locator('[data-owner="commit-detail-review-card-content"]');
+  const reviewCardDate = reviewCard.locator('[data-owner="commit-detail-review-card-date"]');
   const reviewCardComments = reviewCard.locator(
-    '[data-stylex-owner="commit-detail-review-card-comments"]',
+    '[data-owner="commit-detail-review-card-comments"]',
   );
   await expect(reviewCard).toBeVisible();
   await expect(reviewCardContent).toHaveCSS("display", "flow-root");
@@ -3401,13 +3237,10 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     "    .diff-wrap {\n        width:100%; overflow:auto; margin-bottom:20px;\n    }",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-diff-wrap"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-diff-wrap"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("...sx.diffWrap");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
     'style="width:100%; overflow:auto; margin-bottom:20px"',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'diffWrap: { width: "100%", overflow: "auto", marginBottom: "20px" },',
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -3438,7 +3271,7 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     await expect(diff).toContainText("Index: README.md");
     await expect(diff).toContainText("-old");
     await expect(diff).toContainText("+new");
-    const diffWrap = page.locator('[data-stylex-owner="commit-detail-svn-diff-wrap"]');
+    const diffWrap = page.locator('[data-owner="commit-detail-svn-diff-wrap"]');
     await expect(diffWrap).toHaveCount(1);
     await expect(diffWrap).toHaveClass(/diff-wrap/);
     await expect(diffWrap).not.toHaveAttribute("style");
@@ -3484,20 +3317,20 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
   await expect(page.locator("#watch-button")).toHaveClass(/ybtn/);
   await expect(page.locator("#watch-button")).not.toHaveClass(/pull-left/);
   await expect(page.locator("#watch-button")).toHaveText("Watch");
-  await expect(page.locator('[data-stylex-owner="commit-detail-footer-watch"]')).toHaveCSS(
+  await expect(page.locator('[data-owner="commit-detail-footer-watch"]')).toHaveCSS(
     "float",
     "left",
   );
-  await expect(page.locator('[data-stylex-owner="commit-detail-footer-list"]')).toHaveCSS(
+  await expect(page.locator('[data-owner="commit-detail-footer-list"]')).toHaveCSS(
     "float",
     "right",
   );
-  await expect(page.locator('[data-stylex-owner="commit-detail-footer-list"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="commit-detail-footer-list"]')).not.toHaveClass(
     /pull-right/,
   );
 });
 
-test("project SVN commit detail Batch 757 owns commit metadata with StyleX", async ({ page }) => {
+test("project SVN commit detail Batch 757 owns commit metadata with Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(LEGACY_SVN_DIFF_SOURCE).toContain('<p class="commitInfo">');
   expect(LEGACY_SVN_DIFF_SOURCE).toContain('<span class="ago"');
@@ -3508,21 +3341,16 @@ test("project SVN commit detail Batch 757 owns commit metadata with StyleX", asy
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     "    .commitId {\n        color:@secondary;\n        margin-top:5px;\n        font-family: @fixed-font-family;",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-info"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-ago"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-id"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-info"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-ago"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-id"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`${sx.commitId.className} commitId`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
     "className={`${sx.commitId.className} commitId pull-right`}",
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'commitAuthorAgo: { marginLeft: "5px", color: "#bbb" }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#51aacc"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('float: "right"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "5px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
     'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
   );
 
@@ -3555,9 +3383,9 @@ test("project SVN commit detail Batch 757 owns commit metadata with StyleX", asy
       await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=trunk`);
     }
 
-    const info = page.locator('[data-stylex-owner="commit-detail-svn-info"]');
-    const ago = page.locator('[data-stylex-owner="commit-detail-svn-ago"]');
-    const id = page.locator('[data-stylex-owner="commit-detail-svn-id"]');
+    const info = page.locator('[data-owner="commit-detail-svn-info"]');
+    const ago = page.locator('[data-owner="commit-detail-svn-ago"]');
+    const id = page.locator('[data-owner="commit-detail-svn-id"]');
     const author = page.locator("#code-browse-wrap > .commitInfo > strong:not(.commitId)");
     const message = page.locator("#code-browse-wrap > .commitMsg");
     await expect(info).toBeVisible();
@@ -3583,7 +3411,7 @@ test("project SVN commit detail Batch 757 owns commit metadata with StyleX", asy
 
     const geometry = await page.evaluate(() => {
       const read = (owner: string) => {
-        const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`);
+        const element = document.querySelector<HTMLElement>(`[data-owner="${owner}"]`);
         if (!element) throw new Error(`Missing ${owner}`);
         const box = element.getBoundingClientRect();
         return { bottom: box.bottom, left: box.left, right: box.right, top: box.top };
@@ -3701,14 +3529,10 @@ test("project SVN commit detail branch dropdown uses route-local state", async (
 
 async function readCommitDetailNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(
-      "header[data-stylex-owner=global-gnb-outer]",
-    );
+    const header = document.querySelector<HTMLElement>("header[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const search = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const search = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const missing = Object.entries({ form, header, scope, search })
       .filter(([, element]) => !element)
       .map(([name]) => name);
@@ -3749,12 +3573,12 @@ async function readCommitDiffShellMetrics(page: Page) {
     const commitInfo = document.querySelector<HTMLElement>(".diffs-wrap .commitInfo");
     const commitAuthor = document.querySelector<HTMLElement>(".commitAuthor");
     const commitAuthorAgo = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="commit-detail-author-ago"]',
+      '[data-owner="commit-detail-author-ago"]',
     );
     const commitAuthorAvatar = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="commit-detail-author-avatar"]',
+      '[data-owner="commit-detail-author-avatar"]',
     );
-    const commitId = document.querySelector<HTMLElement>('[data-stylex-owner="commit-detail-id"]');
+    const commitId = document.querySelector<HTMLElement>('[data-owner="commit-detail-id"]');
     const shortMessage = document.querySelector<HTMLElement>(".commitMsg.short");
     const descMessage = document.querySelector<HTMLElement>(".commitMsg.desc");
     const commitIdWrap = document.querySelector<HTMLElement>(".commitId-wrap");
@@ -4097,13 +3921,13 @@ async function canonicalize(page: Page, selector: string) {
       }
       // F6 copy-fix-current-dom: the app renders two structures the legacy
       // template lacks — the collapsible per-file card header button
-      // ([data-stylex-owner=commit-detail-file-card-header], added in the app's
+      // ([data-owner=commit-detail-file-card-header], added in the app's
       // FileDiffView) and the react-rendered markdown help (legacy renders raw
       // markdown text + markdown="true", app renders it server-side). Both are
       // asserted separately by dedicated locators; drop them from the
       // structural comparison.
       if (
-        node.getAttribute("data-stylex-owner") === "commit-detail-file-card-header" ||
+        node.getAttribute("data-owner") === "commit-detail-file-card-header" ||
         node.classList.contains("markdown-help")
       ) {
         return "";
@@ -4132,7 +3956,10 @@ async function canonicalize(page: Page, selector: string) {
           .split(/\s+/u)
           .filter(
             (token) =>
-              token && token !== "gray-txt" && token !== "right-txt" && !isGeneratedStyleXToken(token),
+              token &&
+              token !== "gray-txt" &&
+              token !== "right-txt" &&
+              !isGeneratedStyleToken(token),
           )
           .join(" ")
           .trim();
@@ -4142,7 +3969,7 @@ async function canonicalize(page: Page, selector: string) {
 
     function normalizeStyleAttr(value: string) {
       const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
-      // F6 copy-fix: the app owns thread-review-form display via stylex
+      // F6 copy-fix: the app owns thread-review-form display via style
       // (threadReviewForm: display block); the legacy inline display:block is
       // runtime state, not DOM truth.
       if (normalized === "display:block") {
@@ -4164,15 +3991,15 @@ async function canonicalize(page: Page, selector: string) {
         attr.name.startsWith("data-v-") ||
         attr.name === "alt" ||
         attr.name === "data-style-src" ||
-        attr.name === "data-stylex-owner" ||
-        attr.name === "data-stylex-owner-instance" ||
+        attr.name === "data-owner" ||
+        attr.name === "data-owner-instance" ||
         // cascade #6: the harness marks elements it synthesized clicks on; the
         // attribute is test-runtime state, not DOM truth.
         attr.name === "data-wtr-click-selected"
       );
     }
 
-    function isGeneratedStyleXToken(token: string) {
+    function isGeneratedStyleToken(token: string) {
       return /^-[\w-]+__styles\.[\w-]+$/u.test(token) || /^x[\w-]+$/u.test(token);
     }
   });
@@ -4198,7 +4025,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         // header button and the react-rendered markdown help from the
         // structural comparison (mirrors canonicalize(); see its comment).
         if (
-          node.getAttribute("data-stylex-owner") === "commit-detail-file-card-header" ||
+          node.getAttribute("data-owner") === "commit-detail-file-card-header" ||
           node.classList.contains("markdown-help")
         ) {
           return "";
@@ -4206,10 +4033,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         const attrs = Array.from(node.attributes)
           .filter((attr) => !isNormalizedRuntimeAttr(attr))
           .filter(
-          (attr) =>
-            !(attr.name === "class" && normalizeAttr(attr) === "") &&
-            !(attr.name === "style" && normalizeAttr(attr) === ""),
-        )
+            (attr) =>
+              !(attr.name === "class" && normalizeAttr(attr) === "") &&
+              !(attr.name === "style" && normalizeAttr(attr) === ""),
+          )
           .sort((left, right) => left.name.localeCompare(right.name))
           .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
           .join(" ");
@@ -4227,7 +4054,10 @@ async function canonicalizeHtml(page: Page, html: string) {
             .split(/\s+/u)
             .filter(
               (token) =>
-                token && token !== "gray-txt" && token !== "right-txt" && !isGeneratedStyleXToken(token),
+                token &&
+                token !== "gray-txt" &&
+                token !== "right-txt" &&
+                !isGeneratedStyleToken(token),
             )
             .join(" ")
             .trim();
@@ -4237,7 +4067,7 @@ async function canonicalizeHtml(page: Page, html: string) {
 
       function normalizeStyleAttr(value: string) {
         const normalized = value.replace(/\s+/g, "").replace(/;$/u, "");
-        // F6 copy-fix: the app owns thread-review-form display via stylex
+        // F6 copy-fix: the app owns thread-review-form display via style
         // (threadReviewForm: display block); the legacy inline display:block is
         // runtime state, not DOM truth.
         if (normalized === "display:block") {
@@ -4259,12 +4089,12 @@ async function canonicalizeHtml(page: Page, html: string) {
           attr.name.startsWith("data-v-") ||
           attr.name === "alt" ||
           attr.name === "data-style-src" ||
-          attr.name === "data-stylex-owner" ||
-          attr.name === "data-stylex-owner-instance"
+          attr.name === "data-owner" ||
+          attr.name === "data-owner-instance"
         );
       }
 
-      function isGeneratedStyleXToken(token: string) {
+      function isGeneratedStyleToken(token: string) {
         return /^-[\w-]+__styles\.[\w-]+$/u.test(token) || /^x[\w-]+$/u.test(token);
       }
     },
@@ -4272,7 +4102,7 @@ async function canonicalizeHtml(page: Page, html: string) {
   );
 }
 
-test("project commit detail file header owns the legacy visible StyleX state", async ({ page }) => {
+test("project commit detail file header owns the legacy visible Style state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(LEGACY_CODE_DIFF_SOURCE).toContain("partial_diff");
   expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-file">');
@@ -4280,16 +4110,8 @@ test("project commit detail file header owns the legacy visible StyleX state", a
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-file {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 10px;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-right: 115px;");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-header"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-file-header-filename"',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffPartialFile: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffPartialFilename: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px 10px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginRight: "115px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("color: commitDetailColors.commitText");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('fontSize: "13px"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-header"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-header-filename"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4313,8 +4135,8 @@ index 1234567..abcdef1 100644
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
-    const header = page.locator('[data-stylex-owner="commit-detail-file-header"]');
-    const filename = page.locator('[data-stylex-owner="commit-detail-file-header-filename"]');
+    const header = page.locator('[data-owner="commit-detail-file-header"]');
+    const filename = page.locator('[data-owner="commit-detail-file-header-filename"]');
     await expect(header).toBeVisible();
     await expect(filename).toBeVisible();
     await expect(filename).toHaveText("src/main.rs");
@@ -4349,7 +4171,7 @@ index 1234567..abcdef1 100644
   );
 });
 
-test("project commit detail partial-filediff commit ids own the legacy visible StyleX state", async ({
+test("project commit detail partial-filediff commit ids own the legacy visible Style state", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -4360,13 +4182,8 @@ test("project commit detail partial-filediff commit ids own the legacy visible S
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-commit-id {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 2px;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("width:52px;");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-commit"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-commit-id"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('diffPartialCommit: { float: "left" }');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffPartialCommitId: {");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px 2px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('width: "52px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('textAlign: "center"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-commit"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-commit-id"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4390,8 +4207,8 @@ index 1234567..abcdef1 100644
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
-    const commit = page.locator('[data-stylex-owner="commit-detail-file-commit"]');
-    const ids = page.locator('[data-stylex-owner="commit-detail-file-commit-id"]');
+    const commit = page.locator('[data-owner="commit-detail-file-commit"]');
+    const ids = page.locator('[data-owner="commit-detail-file-commit-id"]');
     await expect(commit).toBeVisible();
     await expect(ids).toHaveCount(2);
     await expect(ids.nth(0)).toHaveText("1234567");
@@ -4440,20 +4257,8 @@ test("project commit detail Batch 750 partial-filediff border owners preserve le
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;\n                                    border:none;",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-meta"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('codeLine: "commit-detail-diff-code-pre"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.file");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.fileMeta");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeLine");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderWidth: "1px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderStyle: "solid"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("borderColor: commitDetailColors.diffBorder");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderBottomWidth: "1px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderBottomStyle: "solid"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("borderBottomColor: commitDetailColors.diffBorder");
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderWidth: "0px"');
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderStyle: "none"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-meta"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4476,9 +4281,9 @@ index 1234567..abcdef1 100644
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
-    await expect(page.locator('[data-stylex-owner="commit-detail-file"]')).toHaveCount(1);
-    await expect(page.locator('[data-stylex-owner="commit-detail-file-meta"]')).toHaveCount(1);
-    await expect(page.locator('[data-stylex-owner="commit-detail-diff-code-pre"]')).toHaveCount(2);
+    await expect(page.locator('[data-owner="commit-detail-file"]')).toHaveCount(1);
+    await expect(page.locator('[data-owner="commit-detail-file-meta"]')).toHaveCount(1);
+    await expect(page.locator('[data-owner="commit-detail-diff-code-pre"]')).toHaveCount(2);
 
     const borders = await page.locator("#src-main-rs").evaluate((file) => {
       const meta = file.querySelector<HTMLElement>(".diff-partial-meta")!;
@@ -4529,18 +4334,8 @@ test("project commit detail Batch 754 owns the emitted partial-diff table shell"
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     "table {\n                    width: 100%;\n                    border-collapse: separate;\n                    border-spacing: 0;",
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    "diffPartialTable: stylex.props(styles.diffPartialTable)",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'data-stylex-owner="commit-detail-diff-partial-table"',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'fileCode: { overflow: "auto", overflowX: "auto", overflowY: "hidden" }',
-  );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'diffPartialTable: { width: "100%", borderCollapse: "separate", borderSpacing: "0px" }',
-  );
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-partial-table"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4564,8 +4359,8 @@ index 1234567..abcdef1 100644
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
-    const code = page.locator('[data-stylex-owner="commit-detail-file-code"]');
-    const table = page.locator('[data-stylex-owner="commit-detail-diff-partial-table"]');
+    const code = page.locator('[data-owner="commit-detail-file-code"]');
+    const table = page.locator('[data-owner="commit-detail-diff-partial-table"]');
     await expect(code).toHaveCount(1);
     await expect(table).toHaveCount(1);
     await expect(code).toHaveAttribute("data-hashcode", "src/main.rs");

@@ -5,11 +5,10 @@
  * caller's responsibility via `value` (controlled) or `defaultValue`
  * (uncontrolled, e.g. quicksearch forms that read the DOM on submit).
  * The native input's clip geometry lives in app.css (`.issue-due-date-native-picker`),
- * shared by all screens without per-screen stylex classes. Screens whose
- * search-bar needs route-scoped geometry (issue create form) pass `inputStyle`
- * / `buttonStyle`; the legacy class contract stays byte-identical either way.
+ * shared by all screens without per-screen style classes. Screens whose
+ * search-bar needs route-scoped geometry (issue create form) own that paint
+ * in their slice css keyed by the data-owner values emitted here.
  */
-import * as stylex from "@stylexjs/stylex";
 import { useEffect, useState, type FocusEvent, type RefObject } from "react";
 import { useLegacyMessages } from "../i18n";
 
@@ -17,12 +16,10 @@ const NATIVE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 
 export function IssueDueDateInput({
   autoComplete,
-  buttonStyle,
   datePickerRef,
   defaultValue,
   dueDateRef,
   inputId,
-  inputStyle,
   onBlur,
   onChange,
   onFocus,
@@ -30,12 +27,10 @@ export function IssueDueDateInput({
   value,
 }: {
   autoComplete?: "off";
-  buttonStyle?: stylex.StyleXStyles;
   datePickerRef: RefObject<HTMLInputElement | null>;
   defaultValue?: string;
   dueDateRef: RefObject<HTMLInputElement | null>;
   inputId?: string;
-  inputStyle?: stylex.StyleXStyles;
   onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
   onChange?: (value: string) => void;
   onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
@@ -57,17 +52,17 @@ export function IssueDueDateInput({
   }, [value]);
 
   const openPicker = () => {
+    // Legacy pikaday keeps the visible text input focused when the calendar
+    // opens; mirror that instead of focusing the hidden native picker.
+    dueDateRef.current?.focus();
     const picker = datePickerRef.current;
     if (picker) {
-      picker.focus();
       try {
         picker.showPicker?.();
       } catch {
-        // native picker unavailable — the native input still has focus
+        // native picker unavailable — the visible input still has focus
       }
-      return;
     }
-    dueDateRef.current?.focus();
   };
 
   const handleNativeChange = (nextValue: string) => {
@@ -85,9 +80,8 @@ export function IssueDueDateInput({
         type="text"
         id={inputId}
         name="dueDate"
-        {...stylex.props(inputStyle)}
-        className={`textbox full ${stylex.props(inputStyle).className ?? ""}`.trim()}
-        data-stylex-owner={`${ownerPrefix}-due-date-input`}
+        className="textbox full"
+        data-owner={`${ownerPrefix}-due-date-input`}
         value={value}
         defaultValue={defaultValue}
         autoComplete={autoComplete}
@@ -97,9 +91,8 @@ export function IssueDueDateInput({
       />
       <button
         type="button"
-        {...stylex.props(buttonStyle)}
-        className={`search-btn btn-calendar ${stylex.props(buttonStyle).className ?? ""}`.trim()}
-        data-stylex-owner={`${ownerPrefix}-due-date-calendar`}
+        className="search-btn btn-calendar"
+        data-owner={`${ownerPrefix}-due-date-calendar`}
         aria-label={t("issue.dueDate")}
         onClick={openPicker}
       >
@@ -109,7 +102,7 @@ export function IssueDueDateInput({
         ref={datePickerRef}
         type="date"
         className="issue-due-date-native-picker"
-        data-stylex-owner={`${ownerPrefix}-due-date-native-picker`}
+        data-owner={`${ownerPrefix}-due-date-native-picker`}
         aria-label={t("milestone.form.dueDate")}
         tabIndex={-1}
         value={nativeDateValue}

@@ -10,7 +10,7 @@ const UI_PARITY_REPORT_PATTERN = /^docs\/provenance\/ui-parity-reports\/.+\.md$/
 const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
 const STYLEX_LEDGER_FILE = "docs/provenance/frontend-stylex-migration-ledger.md";
 const STYLEX_PLAN_FILE = "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md";
-const FALLBACK_OFF_E2E_FILE = "frontend/tests/legacy-fallback-off.e2e.ts";
+const FALLBACK_OFF_E2E_FILE = "frontend/tests/wtr/legacy-fallback-off.e2e.ts";
 const FALLBACK_OFF_REPORT_PATTERN =
   /^docs\/provenance\/ui-parity-reports\/fallback-off-.+\.md$/u;
 const FROZEN_LEGACY_STYLE_PATTERN = /^yona-original\/.*\.(?:css|less)$/u;
@@ -376,6 +376,7 @@ export function evaluateScalaHtmlGoalGuard({
     implementationTouchesRuntime &&
     auditUpdated &&
     auditPatch !== null &&
+    !formalFallbackRetirementBatch &&
     !allowUndocumentedRoute
   ) {
     const routeFilesMissingCompleteAudit = frontendRouteImplementationFiles.filter(

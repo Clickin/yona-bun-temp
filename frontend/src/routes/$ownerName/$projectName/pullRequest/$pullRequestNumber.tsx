@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
+import { Fragment, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
@@ -28,7 +27,6 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
-import { styles } from "./-pull-request-detail.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -147,26 +145,20 @@ function PullRequestOverviewErrorBody({
   status: 401 | 403 | 404;
 }) {
   const { t } = useLegacyMessages();
-  const errorIconStyleProps = stylex.props(
-    styles.errorIcon,
-    styles.errorIconSprite(`url(${legacySpriteUrl})`),
-  );
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div
-          className={`${stylex.props(styles.errorWrap).className} error-wrap`.trim()}
-          data-stylex-owner="pull-request-detail-error-wrap"
+          className="error-wrap"
+          data-owner="pull-request-detail-error-wrap"
+          style={
+            {
+              "--pull-request-detail-error-sprite": `url(${legacySpriteUrl})`,
+            } as CSSProperties
+          }
         >
-          <i
-            {...errorIconStyleProps}
-            className={`${errorIconStyleProps.className ?? ""} ico ico-err2`.trim()}
-            data-stylex-owner="pull-request-detail-error-icon"
-          ></i>
-          <p
-            className={stylex.props(styles.errorMessage).className}
-            data-stylex-owner="pull-request-detail-error-message"
-          >
+          <i className="ico ico-err2" data-owner="pull-request-detail-error-icon"></i>
+          <p data-owner="pull-request-detail-error-message">
             {t(status === 404 ? "error.notfound" : "error.forbidden")}
           </p>
           {status === 404 ? (
@@ -236,28 +228,19 @@ function PullRequestOverviewBody({
       );
     },
   });
-  const actionWrapperStyleProps = stylex.props(styles.actionWrapper);
+  const actionWrapperClassName = "mr5";
 
   return (
     <>
-      <div
-        className={`${stylex.props(styles.page).className} page-wrap-outer`}
-        data-stylex-owner="pull-request-detail-page"
-      >
+      <div className="page-wrap-outer" data-owner="pull-request-detail-page">
         <div className="project-page-wrap">
           <PullRequestHeader
             project={project}
             pullRequest={pullRequest}
             runtimeConfig={runtimeConfig}
           />
-          <div
-            className={`${stylex.props(styles.body).className} board-body`}
-            data-stylex-owner="pull-request-detail-body"
-          >
-            <div
-              className={`${stylex.props(styles.author).className} author-info`}
-              data-stylex-owner="pull-request-detail-author"
-            >
+          <div className="board-body" data-owner="pull-request-detail-body">
+            <div className="author-info" data-owner="pull-request-detail-author">
               <Link
                 to="/$user"
                 params={{ user: pullRequest.contributor.loginId }}
@@ -276,10 +259,7 @@ function PullRequestOverviewBody({
               </Link>
               <PullRequestBranchInfo pullRequest={pullRequest} />
             </div>
-            <div
-              className={`${stylex.props(styles.content).className} content markdown-wrap`}
-              data-stylex-owner="pull-request-detail-content"
-            >
+            <div className="content markdown-wrap" data-owner="pull-request-detail-content">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{pullRequest.bodyMarkdown}</ReactMarkdown>
             </div>
             <div
@@ -288,11 +268,7 @@ function PullRequestOverviewBody({
             ></div>
           </div>
 
-          <div
-            id="state"
-            className={`${stylex.props(styles.state).className} pullRequest-stateInfo`}
-            data-stylex-owner="pull-request-detail-state"
-          >
+          <div id="state" className="pullRequest-stateInfo" data-owner="pull-request-detail-state">
             <PullRequestStateInfo
               currentUserLoginId={currentUserLoginId}
               pullRequest={pullRequest}
@@ -300,10 +276,7 @@ function PullRequestOverviewBody({
             />
           </div>
 
-          <div
-            className={`${stylex.props(styles.actions).className} board-footer board-actrow`}
-            data-stylex-owner="pull-request-detail-actions"
-          >
+          <div className="board-footer board-actrow" data-owner="pull-request-detail-actions">
             <div className="pull-left">
               {pullRequest.permissions.canWatch ? (
                 <button
@@ -319,11 +292,7 @@ function PullRequestOverviewBody({
             </div>
 
             {/* Mirrors legacy git/view.scala.html's mr5 inline-block action wrapper. */}
-            <div
-              {...actionWrapperStyleProps}
-              className={`${actionWrapperStyleProps.className} mr5`}
-              data-stylex-owner="pull-request-detail-action-wrapper"
-            >
+            <div className={actionWrapperClassName} data-owner="pull-request-detail-action-wrapper">
               {pullRequest.permissions.canUpdate ? (
                 <Link
                   to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform"
@@ -358,17 +327,11 @@ function PullRequestOverviewBody({
 
           <hr className="nm" />
 
-          <div
-            className={`${stylex.props(styles.comments).className} board-comment-wrap`}
-            data-stylex-owner="pull-request-detail-comments"
-          >
+          <div className="board-comment-wrap" data-owner="pull-request-detail-comments">
             <PullRequestEvents pullRequest={pullRequest} />
           </div>
 
-          <div
-            className={stylex.props(styles.helpActions).className}
-            data-stylex-owner="pull-request-detail-help-actions"
-          >
+          <div data-owner="pull-request-detail-help-actions">
             <button
               type="button"
               className="ybtn ybtn-inverse ybtn-mini"
@@ -706,18 +669,6 @@ export function PullRequestHeader({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const badgeStyle =
-    stateKey === "open"
-      ? styles.badgeOpen
-      : stateKey === "closed"
-        ? styles.badgeClosed
-        : stateKey === "rejected"
-          ? styles.badgeRejected
-          : stateKey === "merged"
-            ? styles.badgeMerged
-            : stateKey === "conflict"
-              ? styles.badgeConflict
-              : undefined;
   const pullRequestInput = {
     ownerName: pullRequest.ownerName,
     projectName: pullRequest.projectName,
@@ -760,22 +711,16 @@ export function PullRequestHeader({
       );
     },
   });
-  const headerStateDateStyleProps = stylex.props(styles.headerStateDate);
-
   return (
     <>
       <div className="board-header issue">
-        <div
-          {...headerStateDateStyleProps}
-          className={`${headerStateDateStyleProps.className ?? ""} pull-right mr10 mt10`.trim()}
-          data-stylex-owner="pull-request-detail-header-state-date"
-        >
+        <div className="pull-right mr10 mt10" data-owner="pull-request-detail-header-state-date">
           <div className="date" title={pullRequest.createdLabel}>
             {pullRequest.createdLabel}
           </div>
           <span
-            className={`${stylex.props(styles.badge, badgeStyle).className} badge nm badge-issue-${stateKey}`}
-            data-stylex-owner="pull-request-detail-badge"
+            className={`badge nm badge-issue-${stateKey}`}
+            data-owner="pull-request-detail-badge"
           >
             {t(`pullRequest.state.${stateKey}`)}
           </span>
@@ -791,11 +736,11 @@ export function PullRequestHeader({
             <div
               id="reviewers"
               style={{ display: "inline-block", marginRight: "5px" }}
-              data-stylex-owner="pull-request-detail-reviewers"
+              data-owner="pull-request-detail-reviewers"
             >
               <span
                 style={{ fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }}
-                data-stylex-owner="pull-request-detail-reviewer-summary"
+                data-owner="pull-request-detail-reviewer-summary"
               >
                 {messageWithStrong(
                   t("pullRequest.review.participants", { args: ["__COUNT__"] }),
@@ -903,20 +848,9 @@ export function PullRequestBranchInfo({
   const toBranchName = branchItemName(pullRequest.toBranch);
   return (
     <div className="pullRequest-branchInfo">
-      <i
-        className={`${stylex.props(styles.branchInfoIcon, styles.branchInfoStartIcon).className} yobicon-branch`}
-        data-stylex-owner="pull-request-detail-branch-start-icon"
-      ></i>
-      <code
-        className={`${stylex.props(styles.branchInfoCode).className} from`}
-        title={t("pullRequest.from")}
-      >
-        <Link
-          to="/$user"
-          params={{ user: pullRequest.fromOwnerName }}
-          {...LEGACY_LINK_PROPS}
-          {...stylex.props(styles.branchInfoLink)}
-        >
+      <i className="yobicon-branch" data-owner="pull-request-detail-branch-start-icon"></i>
+      <code className="pr-branch-code from" title={t("pullRequest.from")}>
+        <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.fromOwnerName}
         </Link>
         <span>/</span>
@@ -927,7 +861,6 @@ export function PullRequestBranchInfo({
             projectName: pullRequest.fromProjectName,
           }}
           {...LEGACY_LINK_PROPS}
-          {...stylex.props(styles.branchInfoLink)}
         >
           {pullRequest.fromProjectName}
         </Link>
@@ -939,26 +872,18 @@ export function PullRequestBranchInfo({
             ownerName: pullRequest.fromOwnerName,
             projectName: pullRequest.fromProjectName,
           }}
-          className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
+          className="branchName"
           {...LEGACY_LINK_PROPS}
         >
           {fromBranchName}
         </Link>
       </code>
       <i
-        className={`${stylex.props(styles.branchInfoIcon, styles.branchInfoDirectionIcon).className} yobicon-right-2 ml10`}
-        data-stylex-owner="pull-request-detail-branch-direction-icon"
+        className="yobicon-right-2 ml10"
+        data-owner="pull-request-detail-branch-direction-icon"
       ></i>
-      <code
-        className={`${stylex.props(styles.branchInfoCode).className} to`}
-        title={t("pullRequest.to")}
-      >
-        <Link
-          to="/$user"
-          params={{ user: pullRequest.ownerName }}
-          {...LEGACY_LINK_PROPS}
-          {...stylex.props(styles.branchInfoLink)}
-        >
+      <code className="pr-branch-code to" title={t("pullRequest.to")}>
+        <Link to="/$user" params={{ user: pullRequest.ownerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.ownerName}
         </Link>
         <span>/</span>
@@ -966,7 +891,6 @@ export function PullRequestBranchInfo({
           to="/$ownerName/$projectName"
           params={{ ownerName: pullRequest.ownerName, projectName: pullRequest.projectName }}
           {...LEGACY_LINK_PROPS}
-          {...stylex.props(styles.branchInfoLink)}
         >
           {pullRequest.projectName}
         </Link>
@@ -978,7 +902,7 @@ export function PullRequestBranchInfo({
             ownerName: pullRequest.ownerName,
             projectName: pullRequest.projectName,
           }}
-          className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
+          className="branchName"
           {...LEGACY_LINK_PROPS}
         >
           {toBranchName}
@@ -1018,11 +942,9 @@ export function PullRequestStateInfo({
       );
     },
   });
-  const alertIconStyleProps = stylex.props(styles.alertIcon);
-
   if (pullRequest.state.toLowerCase() === "merged") {
     return (
-      <div className={`alert alert-info ${stylex.props(styles.alert).className}`}>
+      <div className="alert alert-info">
         <Link
           to="/$user"
           params={{ user: pullRequest.receiver.loginId }}
@@ -1073,39 +995,23 @@ export function PullRequestStateInfo({
   }
   if (pullRequest.isMerging) {
     return (
-      <div
-        className={`alert alert-warnning ${stylex.props(styles.alert, styles.alertWarning).className}`}
-      >
-        <i
-          {...alertIconStyleProps}
-          className={`${alertIconStyleProps.className ?? ""} yobicon-supportrequest mr5`.trim()}
-          data-stylex-owner="pull-request-detail-alert-icon"
-        ></i>
+      <div className="alert alert-warnning">
+        <i className="yobicon-supportrequest mr5" data-owner="pull-request-detail-alert-icon"></i>
         <span>{t("pullRequest.is.merging")}</span>
       </div>
     );
   }
   if (!pullRequest.conflict) {
     return (
-      <div
-        className={`alert alert-success ${stylex.props(styles.alert, styles.alertSuccess).className}`}
-      >
-        <i
-          {...alertIconStyleProps}
-          className={`${alertIconStyleProps.className ?? ""} yobicon-check-circle-alt mr5`.trim()}
-          data-stylex-owner="pull-request-detail-alert-icon"
-        ></i>
+      <div className="alert alert-success">
+        <i className="yobicon-check-circle-alt mr5" data-owner="pull-request-detail-alert-icon"></i>
         <span>{t("pullRequest.is.safe")}</span>
       </div>
     );
   }
   return (
-    <div className={`alert alert-error ${stylex.props(styles.alert, styles.alertError).className}`}>
-      <i
-        {...alertIconStyleProps}
-        className={`${alertIconStyleProps.className ?? ""} yobicon-error mr5`.trim()}
-        data-stylex-owner="pull-request-detail-alert-icon"
-      ></i>
+    <div className="alert alert-error">
+      <i className="yobicon-error mr5" data-owner="pull-request-detail-alert-icon"></i>
       <span>{t("pullRequest.is.not.safe")}</span>
       {currentUserLoginId === pullRequest.contributor.loginId ? (
         <PullRequestConflictGuide pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
@@ -1133,51 +1039,33 @@ function PullRequestConflictGuide({
   );
 
   return (
-    <div className="howto-resolve-conflict" data-stylex-owner="pull-request-detail-conflict-guide">
+    <div className="howto-resolve-conflict" data-owner="pull-request-detail-conflict-guide">
       <h6>{t("pullRequest.resolve.conflict")}</h6>
-      <div className={`${stylex.props(styles.conflictHelp).className} help`}>
-        <ol className={stylex.props(styles.conflictList).className}>
+      <div className="pr-conflict-help help">
+        <ol className="pr-conflict-list">
           <li>
-            {t("pullRequest.resolver.step1")}{" "}
-            <code
-              className={stylex.props(styles.conflictCode).className}
-            >{`git checkout ${fromBranchName}`}</code>
+            {t("pullRequest.resolver.step1")} <code>{`git checkout ${fromBranchName}`}</code>
           </li>
           <li>
             {t("pullRequest.resolver.step2")}{" "}
-            <code
-              className={stylex.props(styles.conflictCode).className}
-            >{`git remote add upstream ${upstreamUrl}`}</code>
+            <code>{`git remote add upstream ${upstreamUrl}`}</code>
           </li>
           <li>
-            {t("pullRequest.resolver.step3")}{" "}
-            <code className={stylex.props(styles.conflictCode).className}>git fetch upstream</code>
+            {t("pullRequest.resolver.step3")} <code>git fetch upstream</code>
           </li>
           <li>
-            {t("pullRequest.resolver.step4")}{" "}
-            <code
-              className={stylex.props(styles.conflictCode).className}
-            >{`git rebase upstream/${toBranchName}`}</code>
+            {t("pullRequest.resolver.step4")} <code>{`git rebase upstream/${toBranchName}`}</code>
           </li>
           <li>{t("pullRequest.resolver.step5")}</li>
           <li>
-            {t("pullRequest.resolver.step6")}{" "}
-            <code className={stylex.props(styles.conflictCode).className}>
-              git add resolved_file
-            </code>
+            {t("pullRequest.resolver.step6")} <code>git add resolved_file</code>
           </li>
           <li>
-            {t("pullRequest.resolver.step7")}{" "}
-            <code className={stylex.props(styles.conflictCode).className}>
-              git rebase --continue
-            </code>
+            {t("pullRequest.resolver.step7")} <code>git rebase --continue</code>
           </li>
           <li>{t("pullRequest.resolver.step8")}</li>
           <li>
-            {t("pullRequest.resolver.step9")}{" "}
-            <code
-              className={stylex.props(styles.conflictCode).className}
-            >{`git push -f origin ${fromBranchName}`}</code>
+            {t("pullRequest.resolver.step9")} <code>{`git push -f origin ${fromBranchName}`}</code>
           </li>
           <li>
             {t("pullRequest.resolver.step10")}
@@ -1188,7 +1076,7 @@ function PullRequestConflictGuide({
                 projectName: pullRequest.projectName,
                 pullRequestNumber: String(pullRequest.pullRequestNumber),
               }}
-              className={`${stylex.props(styles.conflictButton).className} ybtn ybtn-mini ybtn-primary`}
+              className="pr-conflict-refresh ybtn ybtn-mini ybtn-primary"
               {...LEGACY_LINK_PROPS}
             >
               {t("button.page.refresh")}
@@ -1205,20 +1093,14 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const isOpen = state === "open";
-  const helpMessagesStyleProps = stylex.props(styles.helpMessages);
-  const modalStyleProps =
-    state === "initial"
-      ? undefined
-      : stylex.props(isOpen ? styles.helpModalVisible : styles.helpModalHidden);
   const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";
   return (
     <>
       <div
         id="helpMessage"
-        {...modalStyleProps}
         style={state === "initial" ? undefined : { display: isOpen ? "block" : "none" }}
-        className={`${isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"} ${modalStyleProps?.className ?? ""}`.trim()}
-        data-stylex-owner="pull-request-detail-help-modal"
+        className={`${isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"}`.trim()}
+        data-owner="pull-request-detail-help-modal"
         aria-hidden={ariaHidden}
       >
         <div className="modal-header">
@@ -1235,9 +1117,8 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
               <br />
             </div>
             <div
-              {...helpMessagesStyleProps}
-              className={`${helpMessagesStyleProps.className ?? ""} pull-left help-messages mt10`.trim()}
-              data-stylex-owner="pull-request-detail-help-messages"
+              className="pull-left help-messages mt10"
+              data-owner="pull-request-detail-help-messages"
             >
               <p>{t("pullRequest.merge.help.2")}</p>
               <p>{t("pullRequest.merge.help.3")}</p>

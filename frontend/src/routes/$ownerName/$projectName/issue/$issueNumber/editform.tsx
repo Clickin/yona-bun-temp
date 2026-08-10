@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UploadForm } from "../../../../../components/file-uploader";
 import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-input";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
@@ -16,7 +15,6 @@ import {
 import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, YoramRecord } from "../../../../../api/types";
-import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { TabButton } from "../../../../../components/tab-button";
 import { IssueDueDateInput } from "../../../../../components/issue-due-date-input";
 import {
@@ -31,29 +29,6 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-confi
 import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectNestedShellContext } from "../../../$projectName";
-import { styles } from "./-issue-editform.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  form: stylex.props(styles.form),
-  title: stylex.props(styles.title),
-  issueNumber: stylex.props(styles.issueNumber),
-  editor: stylex.props(styles.editor),
-  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
-  editorPositioned: stylex.props(styles.editorPositioned),
-  editorTabContent: stylex.props(styles.editorTabContent),
-  assigneeInput: stylex.props(styles.assigneeInput),
-  assigneePicker: stylex.props(styles.assigneePicker),
-  labelPicker: stylex.props(styles.labelPicker),
-  labelSearchInput: stylex.props(styles.labelSearchInput),
-  pasteHelp: stylex.props(styles.pasteHelp),
-  uploadHelp: stylex.props(styles.uploadHelp),
-  actions: stylex.props(styles.actions),
-  issueOption: stylex.props(styles.issueOption),
-  sidebar: stylex.props(styles.sidebar),
-  subtask: stylex.props(styles.subtask),
-  save: stylex.props(styles.save),
-} as const;
 
 const legacyRouteLocalActiveProps = {
   "aria-current": undefined,
@@ -145,24 +120,11 @@ function ProjectIssueEditNotFoundBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer" data-stylex-owner="project-issue-editform-error-page">
+    <div className="page-wrap-outer" data-owner="project-issue-editform-error-page">
       <div className="project-page-wrap">
-        <div
-          {...stylex.props(styles.errorWrap)}
-          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-          data-stylex-owner="project-issue-editform-error-wrap"
-        >
-          <i
-            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
-            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-            data-stylex-owner="project-issue-editform-error-icon"
-          ></i>
-          <p
-            {...stylex.props(styles.errorMessage)}
-            data-stylex-owner="project-issue-editform-error-message"
-          >
-            {t("error.notfound.issue_post")}
-          </p>
+        <div className="error-wrap" data-owner="project-issue-editform-error-wrap">
+          <i className="ico ico-err2" data-owner="project-issue-editform-error-icon"></i>
+          <p data-owner="project-issue-editform-error-message">{t("error.notfound.issue_post")}</p>
           <Link
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
@@ -180,7 +142,7 @@ function ProjectIssueEditNotFoundBody({
               pageNum: 1,
             }}
             className="ybtn ybtn-primary"
-            data-stylex-owner="project-issue-editform-error-list"
+            data-owner="project-issue-editform-error-list"
           >
             {t("button.list")}
           </Link>
@@ -301,20 +263,15 @@ function ProjectIssueEditFormBody({
   }
 
   return (
-    <div
-      {...sx.page}
-      className={`${sx.page.className ?? ""} page-wrap-outer`}
-      data-stylex-owner="issue-editform-page"
-    >
+    <div className="page-wrap-outer" data-owner="issue-editform-page">
       <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap" data-stylex-owner="issue-editform-shell">
+        <div className="content-wrap frm-wrap" data-owner="issue-editform-shell">
           <form
             action={prefixBasePath(
               runtimeConfig.basePath,
               `/${ownerName}/${projectName}/issue/${issueNumber}`,
             )}
-            {...sx.form}
-            data-stylex-owner="issue-editform-form"
+            data-owner="issue-editform-form"
             id="issue-form"
             encType="multipart/form-data"
             onSubmit={(event) => {
@@ -353,11 +310,7 @@ function ProjectIssueEditFormBody({
                       <span className="draft">{t("issue.state.draft")}</span>
                     ) : (
                       <label htmlFor="title">
-                        <strong
-                          {...sx.issueNumber}
-                          className={`${sx.issueNumber.className ?? ""} secondary-txt`.trim()}
-                          data-stylex-owner="issue-editform-issue-number"
-                        >
+                        <strong className="secondary-txt" data-owner="issue-editform-issue-number">
                           #{issueNumber}
                         </strong>
                       </label>
@@ -372,9 +325,8 @@ function ProjectIssueEditFormBody({
                           id="title"
                           name="title"
                           defaultValue={stringField(issue.title, "")}
-                          {...sx.title}
-                          className={`text title ${sx.title.className ?? ""}`}
-                          data-stylex-owner="issue-editform-title"
+                          className="text title"
+                          data-owner="issue-editform-title"
                           maxLength={250}
                           placeholder={t("title")}
                           tabIndex={Number("1")}
@@ -407,11 +359,7 @@ function ProjectIssueEditFormBody({
               <div className="row-fluid">
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd
-                      {...sx.editorPositioned}
-                      style={{ position: "relative" }}
-                      data-stylex-owner="issue-editform-editor-wrapper"
-                    >
+                    <dd style={{ position: "relative" }} data-owner="issue-editform-editor-wrapper">
                       <IssueEditMarkdownEditor
                         focusRequest={bodyFocusRequest}
                         value={stringField(issue.bodyMarkdown, "")}
@@ -423,19 +371,15 @@ function ProjectIssueEditFormBody({
                     resourceType="ISSUE_POST"
                     wrapperId="upload"
                     resourceId={stringField(issue.issueId, "")}
-                    pasteHelpFixedStyleProps={{ style: sx.pasteHelp.style }}
+                    pasteHelpFixedStyleProps={{ style: { display: "block" } }}
                     pasteHelpOwner="issue-editform-paste-help"
                     helpClassName="right-txt help"
-                    helpStyleProps={{ style: sx.uploadHelp.style }}
+                    helpStyleProps={{ style: { textAlign: "right" } }}
                     helpStyleFirst={false}
                     helpOwner="issue-editform-upload-help"
                   />
 
-                  <div
-                    {...sx.actions}
-                    className={`actrow right-txt ${sx.actions.className ?? ""}`}
-                    data-stylex-owner="issue-editform-actions"
-                  >
+                  <div className="actrow right-txt" data-owner="issue-editform-actions">
                     {showNotification ? (
                       <span className="send-notification-check">
                         <label className="checkbox inline">
@@ -455,9 +399,8 @@ function ProjectIssueEditFormBody({
                         <button
                           type="submit"
                           id="button-draft-publish"
-                          {...sx.save}
-                          className={`ybtn ybtn-info ${sx.save.className ?? ""}`}
-                          data-stylex-owner="issue-editform-draft-publish"
+                          className="ybtn ybtn-info"
+                          data-owner="issue-editform-draft-publish"
                           title={draftPublishDescription}
                           onClick={handleDraftPublishClick}
                         >
@@ -466,9 +409,8 @@ function ProjectIssueEditFormBody({
                         <button
                           type="button"
                           id="draft-save-btn"
-                          {...sx.save}
-                          className={`ybtn ybtn-watching draft-save-btn ${sx.save.className ?? ""}`}
-                          data-stylex-owner="issue-editform-draft-save"
+                          className="ybtn ybtn-watching draft-save-btn"
+                          data-owner="issue-editform-draft-save"
                           title={draftSaveDescription}
                           onClick={(event) => {
                             submitIntentRef.current = "draft";
@@ -482,9 +424,8 @@ function ProjectIssueEditFormBody({
                       <button
                         type="submit"
                         id="button-save"
-                        {...sx.save}
-                        className={`ybtn ybtn-info ${sx.save.className ?? ""}`}
-                        data-stylex-owner="issue-editform-save"
+                        className="ybtn ybtn-info"
+                        data-owner="issue-editform-save"
                         onClick={() => {
                           submitIntentRef.current = "save";
                         }}
@@ -499,8 +440,8 @@ function ProjectIssueEditFormBody({
                 </div>
 
                 <div
-                  className={`span3 span-hard-wrap right-menu ${sx.sidebar.className}`}
-                  data-stylex-owner="issue-editform-sidebar"
+                  className="span3 span-hard-wrap right-menu"
+                  data-owner="issue-editform-sidebar"
                 >
                   <StateOption state={stringField(issue.state, "open")} />
                   <dl className="issue-option">
@@ -513,10 +454,9 @@ function ProjectIssueEditFormBody({
                         placeholder={t("issue.noAssignee")}
                         value={assigneeLoginId}
                         readOnly
-                        {...sx.assigneeInput}
-                        className={`bigdrop ${sx.assigneeInput.className ?? ""}`}
+                        className="bigdrop"
                         style={{ width: "100%" }}
-                        data-stylex-owner="issue-editform-assignee-input"
+                        data-owner="issue-editform-assignee-input"
                       />
                       <LegacyEditSingleSelect
                         label={t("issue.assignee")}
@@ -605,10 +545,7 @@ function StateOption({ state }: { state: string }) {
     { label: t("issue.state.closed"), value: "CLOSED" },
   ];
   return (
-    <dl
-      className={`issue-option ${sx.issueOption.className}`}
-      data-stylex-owner="issue-editform-state"
-    >
+    <dl className="issue-option" data-owner="issue-editform-state">
       <dt>{t("issue.state")}</dt>
       <dd>
         <div id="state" className={`btn-group auto${isMenuOpen ? " open" : ""}`}>
@@ -766,10 +703,7 @@ function SubtaskSelects({
   const [targetProjectId, setTargetProjectId] = useState(() => stringField(project.id, ""));
   const [selectedParentIssueId, setSelectedParentIssueId] = useState(parentIssueId);
   return (
-    <div
-      className={`subtask-wrap ${showOption ? "show" : ""} ${sx.subtask.className}`}
-      data-stylex-owner="issue-editform-subtask"
-    >
+    <div className={`subtask-wrap ${showOption ? "show" : ""}`} data-owner="issue-editform-subtask">
       <div className="span3">
         <select
           id="targetProjectId"
@@ -857,10 +791,7 @@ function IssueLabelSelect({
   }
   const selectedIds = new Set(selectedLabelIds);
   return (
-    <dl
-      className={`issue-option ${sx.issueOption.className}`}
-      data-stylex-owner="issue-editform-labels"
-    >
+    <dl className="issue-option" data-owner="issue-editform-labels">
       <dt>
         {t("label")}{" "}
         <Link
@@ -940,8 +871,8 @@ function LegacyEditSingleSelect({
   return (
     <div
       id={id}
-      className={`select2-container ${className}${className === "bigdrop" ? ` ${sx.assigneePicker.className}` : ""}${open ? " select2-dropdown-open" : ""}`}
-      data-stylex-owner={className === "bigdrop" ? "issue-editform-assignee-picker" : undefined}
+      className={`select2-container ${className}${open ? " select2-dropdown-open" : ""}`}
+      data-owner={className === "bigdrop" ? "issue-editform-assignee-picker" : undefined}
     >
       <div
         className="select2-choice"
@@ -1010,14 +941,14 @@ function LegacyEditLabelSelect({
     const labelId = stringField(label.id, "");
     if (!selectedLabelIds.has(labelId)) continue;
     const labelName = stringField(label.name, "");
-    const labelStyle = stylex.props(styles.labelBackground(stringField(label.color, "")));
+    const labelColor = stringField(label.color, "");
     selectedLabelElements.push(
       <li className="select2-search-choice" key={labelId}>
         <div>
           <strong
             data-label-id={labelId}
-            {...labelStyle}
-            className={`label issue-label active static ${labelStyle.className ?? ""}`}
+            style={labelColor ? { backgroundColor: labelColor } : undefined}
+            className="label issue-label active static"
           >
             {labelName}
           </strong>
@@ -1035,17 +966,17 @@ function LegacyEditLabelSelect({
   }
   return (
     <div
-      className={`select2-container select2-container-multi hide issue-labels bordered fullsize ${sx.labelPicker.className}`}
-      data-stylex-owner="issue-editform-label-picker"
+      className="select2-container select2-container-multi hide issue-labels bordered fullsize"
+      data-owner="issue-editform-label-picker"
     >
       <ul className="select2-choices">
         {selectedLabelElements}
         <li className="select2-search-field">
           <input
-            className={`select2-input ${sx.labelSearchInput.className}`}
+            className="select2-input"
             aria-label={t("label.select")}
             autoComplete="off"
-            data-stylex-owner="issue-editform-label-search-input"
+            data-owner="issue-editform-label-search-input"
           />
         </li>
       </ul>
@@ -1070,11 +1001,7 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
     }
   }, [focusRequest]);
   return (
-    <div
-      {...sx.markdownEditorWrapper}
-      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
-      data-stylex-owner="issue-editform-markdown-editor-wrapper"
-    >
+    <div className="mt10" data-owner="issue-editform-markdown-editor-wrapper">
       <ul className="nav nav-tabs nm small">
         <TabButton
           active={activeTab === "edit"}
@@ -1120,17 +1047,15 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
         </li>
       </ul>
       <div
-        {...sx.editorTabContent}
-        className={`tab-content ${sx.editorTabContent.className ?? ""}`}
+        className="tab-content"
         style={{ position: "relative", overflow: "visible" }}
-        data-stylex-owner="issue-editform-editor-tab-content"
+        data-owner="issue-editform-editor-tab-content"
       >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
-              {...sx.editor}
-              data-stylex-owner="issue-editform-editor"
+              data-owner="issue-editform-editor"
               ref={bodyRef}
               name="body"
               className="editorSeries content comment nm"

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   Fragment,
@@ -30,8 +29,6 @@ import {
   isRequestTextTooLargeError,
   RequestTextTooLargeErrorBody,
 } from "./-search-screen";
-import { styles } from "./-search.stylex";
-
 type SearchCategory = {
   countKey: keyof SearchCounts;
   labelKey: string;
@@ -51,36 +48,6 @@ const GLOBAL_SEARCH_CATEGORIES: SearchCategory[] = [
 
 // The legacy Scala HTML/JS is the output DOM/UX source of truth; interaction is
 // translated to React state/events and TanStack Router navigation below.
-const globalSearchCategoryStyles = stylex.create({
-  list: {
-    borderTopColor: "#ddd",
-    borderTopStyle: "solid",
-    borderTopWidth: "1px",
-    listStyle: "none",
-    margin: "0px",
-    padding: "0px",
-  },
-  item: {
-    borderBottomColor: "#e5e5e5",
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    fontSize: "13px",
-    fontWeight: "bold",
-    padding: "8px",
-  },
-  link: {
-    boxSizing: "border-box",
-    display: "block",
-    padding: 0,
-    textDecoration: "none",
-    width: "100%",
-  },
-  linkActive: { color: "#fff" },
-  linkEmpty: { color: "#d3d2d3" },
-  badge: { paddingLeft: "2px", paddingRight: "2px" },
-  badgeActive: { color: "#fff" },
-});
-
 const legacySearchPaginationLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
@@ -240,59 +207,30 @@ function GlobalSearchSuccessBody({
 
   return (
     <>
-      <div className="site-breadcrumb-outer" data-stylex-owner="global-search-breadcrumb-outer">
-        <div
-          {...stylex.props(styles.breadcrumb)}
-          data-stylex-owner="global-search-breadcrumb-inner"
-        >
+      <div className="site-breadcrumb-outer" data-owner="global-search-breadcrumb-outer">
+        <div data-owner="global-search-breadcrumb-inner">
           <h3>{t("title.search")}</h3>
         </div>
       </div>
-      <div
-        {...stylex.props(styles.page)}
-        className={`page-wrap-outer ${stylex.props(styles.page).className}`}
-        data-stylex-owner="global-search-page"
-      >
+      <div className={"page-wrap-outer"} data-owner="global-search-page">
         <div className="project-page-wrap">
-          <div className="project-page-wrap" data-stylex-owner="global-search-shell">
-            <div
-              className={`row-fluid ${stylex.props(styles.globalSearchGridRow).className}`}
-              data-stylex-owner="global-search-grid-row"
-            >
-              <div
-                className={`span2 ${stylex.props(styles.globalSearchCategoryColumn, styles.category).className}`}
-                data-stylex-owner="global-search-category"
-              >
+          <div className="project-page-wrap" data-owner="global-search-shell">
+            <div className={"row-fluid"} data-owner="global-search-grid-row">
+              <div className={"span2"} data-owner="global-search-category">
                 <ul
-                  className={`lst-stacked unstyled search-category-wrap ${stylex.props(globalSearchCategoryStyles.list).className}`}
-                  data-stylex-owner="global-search-category-list"
+                  className={"lst-stacked unstyled search-category-wrap"}
+                  data-owner="global-search-category-list"
                 >
                   {GLOBAL_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
 
                     return (
                       <li
-                        className={`${category.type === activeType ? "active" : ""} ${
-                          count === 0 ? "empty" : ""
-                        } ${
-                          stylex.props(
-                            globalSearchCategoryStyles.item,
-                            styles.categoryItem,
-                            category.type === activeType && styles.categoryItemActive,
-                          ).className
-                        }`}
-                        data-stylex-owner="global-search-category-item"
+                        className={`${category.type === activeType ? "active" : ""} ${count === 0 ? "empty" : ""}`}
+                        data-owner="global-search-category-item"
                         key={category.type}
                       >
                         <Link
-                          {...stylex.props(
-                            globalSearchCategoryStyles.link,
-                            styles.categoryLink,
-                            category.type === activeType && globalSearchCategoryStyles.linkActive,
-                            category.type === activeType && styles.categoryLinkActive,
-                            count === 0 && globalSearchCategoryStyles.linkEmpty,
-                            count === 0 && styles.categoryLinkEmpty,
-                          )}
                           to="/search"
                           search={{
                             keyword: keywordValue,
@@ -302,34 +240,15 @@ function GlobalSearchSuccessBody({
                           activeProps={legacySearchPaginationLinkActiveProps}
                         >
                           {t(category.labelKey)}{" "}
-                          <span
-                            className={`num-badge pull-right ${
-                              stylex.props(
-                                globalSearchCategoryStyles.badge,
-                                styles.categoryBadge,
-                                category.type === activeType &&
-                                  globalSearchCategoryStyles.badgeActive,
-                                category.type === activeType && styles.categoryBadgeActive,
-                              ).className
-                            }`}
-                          >
-                            {count}
-                          </span>
+                          <span className={"num-badge pull-right"}>{count}</span>
                         </Link>
                       </li>
                     );
                   })}
                 </ul>
               </div>
-              <div
-                className={`span10 ${stylex.props(styles.globalSearchResultsColumn).className}`}
-                data-stylex-owner="global-search-results-column"
-              >
-                <div
-                  {...stylex.props(styles.searchBox)}
-                  className={`search-box-wrap ${stylex.props(styles.searchBox).className ?? ""}`.trim()}
-                  data-stylex-owner="global-search-box-wrap"
-                >
+              <div className={"span10"} data-owner="global-search-results-column">
+                <div className={"search-box-wrap"} data-owner="global-search-box-wrap">
                   <form
                     id="searchInnerForm"
                     method="get"
@@ -347,8 +266,7 @@ function GlobalSearchSuccessBody({
                       type="text"
                       id="searchKeyword"
                       name="keyword"
-                      {...stylex.props(styles.searchInput)}
-                      data-stylex-owner="global-search-input"
+                      data-owner="global-search-input"
                       value={keywordValue}
                       onChange={(event) => {
                         setKeywordValue(event.currentTarget.value);
@@ -359,18 +277,11 @@ function GlobalSearchSuccessBody({
                     </button>
                   </form>
 
-                  <h3
-                    className={`search-result-title ${stylex.props(styles.resultHeading).className}`}
-                    data-stylex-owner="global-search-result-heading"
-                  >
+                  <h3 className={"search-result-title"} data-owner="global-search-result-heading">
                     {resultTitle}
                   </h3>
                 </div>
-                <div
-                  {...stylex.props(styles.result)}
-                  className={`search-result-wrap ${stylex.props(styles.result).className}`}
-                  data-stylex-owner="global-search-result-wrap"
-                >
+                <div className={"search-result-wrap"} data-owner="global-search-result-wrap">
                   <GlobalSearchResultList result={result} runtimeConfig={runtimeConfig} />
                 </div>
               </div>
@@ -393,27 +304,12 @@ function GlobalSearchResultList({
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
 
   if (result.items.length === 0) {
-    const emptyResultProps = stylex.props(
-      styles.emptyResult,
-      styles.emptyResultBackground(
-        `url(${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/no_contents.jpg")})`,
-      ),
-    );
-    return (
-      <div
-        {...emptyResultProps}
-        className={`empty-result ${emptyResultProps.className}`}
-        data-stylex-owner="global-search-empty-result"
-      ></div>
-    );
+    return <div className={"empty-result"} data-owner="global-search-empty-result"></div>;
   }
 
   if (searchType === "project") {
     return (
-      <ul
-        className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
-        data-stylex-owner="global-search-result-list"
-      >
+      <ul className={"search-list-wrap"} data-owner="global-search-result-list">
         {result.items.map((item) => {
           const projectLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
           const originProjectLink =
@@ -429,28 +325,25 @@ function GlobalSearchResultList({
 
           return (
             <li
-              className={`search-list-item project ${stylex.props(styles.resultItem, styles.resultItemProject).className}`}
+              className={"search-list-item project"}
               key={item.id}
-              data-stylex-owner="global-search-result-item"
+              data-owner="global-search-result-item"
             >
               <Link
                 to={projectLink.to}
                 hash={projectLink.hash || undefined}
-                className={`avatar-wrap ${stylex.props(styles.avatar).className}`}
-                data-stylex-owner="global-search-avatar"
+                className={"avatar-wrap"}
+                data-owner="global-search-avatar"
               >
                 <GlobalSearchProjectLogoImage
                   src={item.projectLogoUrl?.trim() || defaultProjectLogoUrl}
                 />
               </Link>
-              <div
-                className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
-                data-stylex-owner="global-search-result-title-wrap"
-              >
+              <div className={"title-wrap"} data-owner="global-search-result-title-wrap">
                 <Link
                   to={projectLink.to}
                   hash={projectLink.hash || undefined}
-                  className={`title project-link ${stylex.props(styles.projectLink).className}`}
+                  className={"title project-link"}
                 >
                   <GlobalSearchHighlightedText
                     text={`${item.ownerName}/${item.projectName}`}
@@ -459,10 +352,7 @@ function GlobalSearchResultList({
                 </Link>
               </div>
               {originProjectLink ? (
-                <div
-                  className={`search-meta-info nm np ${stylex.props(styles.meta, styles.metaNoPadding).className}`}
-                  data-stylex-owner="global-search-meta"
-                >
+                <div className={"search-meta-info nm np"} data-owner="global-search-meta">
                   <span>
                     <i className="yobicon-split yobicon-white vmiddle"></i> {t("fork.original")}
                   </span>
@@ -470,34 +360,28 @@ function GlobalSearchResultList({
                     <Link
                       to={originProjectLink.to}
                       hash={originProjectLink.hash || undefined}
-                      className={`project-link ${stylex.props(styles.projectLink).className}`}
+                      className={"project-link"}
                     >
                       {item.originOwnerName}/{item.originProjectName}
                     </Link>
                   </span>
                 </div>
               ) : null}
-              <div
-                className={`search-content np ${stylex.props(styles.content, styles.contentNoPadding).className}`}
-                data-stylex-owner="global-search-content"
-              >
-                <p className={`search-content-body ${stylex.props(styles.contentBody).className}`}>
+              <div className={"search-content np"} data-owner="global-search-content">
+                <p className={"search-content-body"}>
                   <GlobalSearchHighlightedText
                     text={item.snippets[0]?.text ?? ""}
                     keyword={result.keyword}
                   />
                 </p>
               </div>
-              <div
-                className={`search-meta-info np ${stylex.props(styles.meta, styles.metaNoPadding).className}`}
-                data-stylex-owner="global-search-meta"
-              >
-                <span className={`meta-info ${stylex.props(styles.metaItem).className}`}>
+              <div className={"search-meta-info np"} data-owner="global-search-meta">
+                <span className={"meta-info"}>
                   {t("project.create")}{" "}
                   <strong title={item.createdLabel}>{item.createdLabel}</strong>
                 </span>
                 {item.updatedLabel ? (
-                  <span className={`meta-info ${stylex.props(styles.metaItem).className}`}>
+                  <span className={"meta-info"}>
                     {t("project.codeUpdate")}{" "}
                     <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
                   </span>
@@ -513,37 +397,29 @@ function GlobalSearchResultList({
   if (searchType === "user") {
     return (
       <>
-        <ul
-          className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
-          data-stylex-owner="global-search-result-list"
-        >
+        <ul className={"search-list-wrap"} data-owner="global-search-result-list">
           {result.items.map((item) => {
             const userLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
 
             return (
               <li
-                className={`search-list-item project ${stylex.props(styles.resultItem, styles.resultItemProject).className}`}
+                className={"search-list-item project"}
                 key={item.id}
-                data-stylex-owner="global-search-result-item"
+                data-owner="global-search-result-item"
               >
                 <RouterLink
                   to={userLink.to}
                   hash={userLink.hash || undefined}
-                  className={`avatar-wrap ${stylex.props(styles.avatar).className}`}
-                  data-stylex-owner="global-search-avatar"
+                  className={"avatar-wrap"}
+                  data-owner="global-search-avatar"
                   title={item.authorLoginId}
                 >
                   {isDefaultUserSearchAvatar(item.avatarUrl) ? (
                     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-                    <img
-                      {...stylex.props(styles.avatarImage)}
-                      data-stylex-owner="global-search-avatar-image"
-                      src={item.avatarUrl}
-                    />
+                    <img data-owner="global-search-avatar-image" src={item.avatarUrl} />
                   ) : (
                     <img
-                      {...stylex.props(styles.avatarImage)}
-                      data-stylex-owner="global-search-avatar-image"
+                      data-owner="global-search-avatar-image"
                       src={item.avatarUrl || ""}
                       alt={item.authorLabel}
                       width="32"
@@ -551,14 +427,11 @@ function GlobalSearchResultList({
                     />
                   )}
                 </RouterLink>
-                <div
-                  className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
-                  data-stylex-owner="global-search-result-title-wrap"
-                >
+                <div className={"title-wrap"} data-owner="global-search-result-title-wrap">
                   <Link
                     to={userLink.to}
                     hash={userLink.hash || undefined}
-                    className={`title user-link ${stylex.props(styles.userLink).className}`}
+                    className={"title user-link"}
                   >
                     <GlobalSearchHighlightedText
                       text={`${item.authorLabel} (@${item.authorLoginId})`}
@@ -592,10 +465,7 @@ function GlobalSearchResultList({
 
     return (
       <>
-        <ul
-          className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
-          data-stylex-owner="global-search-result-list"
-        >
+        <ul className={"search-list-wrap"} data-owner="global-search-result-list">
           {result.items.map((item) => {
             const itemLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
             const projectLink = globalSearchInternalLinkTarget(
@@ -610,7 +480,7 @@ function GlobalSearchResultList({
               searchType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
               <p
-                className={`search-content-body ${stylex.props(styles.contentBody).className}`}
+                className={"search-content-body"}
                 key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
               >
                 <GlobalSearchHighlightedText text={snippet.text} keyword={result.keyword} />
@@ -620,26 +490,20 @@ function GlobalSearchResultList({
 
             return (
               <li
-                className={`search-list-item ${stylex.props(styles.resultItem).className}`}
+                className={"search-list-item"}
                 key={item.id}
-                data-stylex-owner="global-search-result-item"
+                data-owner="global-search-result-item"
               >
                 {reviewThreadOnPullRequest ? (
-                  <div
-                    className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
-                    data-stylex-owner="global-search-result-title-wrap"
-                  >
-                    <span
-                      className={`post-id ${stylex.props(styles.resultPostId).className}`}
-                      data-stylex-owner="global-search-result-post-id"
-                    >
+                  <div className={"title-wrap"} data-owner="global-search-result-title-wrap">
+                    <span className={"post-id"} data-owner="global-search-result-post-id">
                       #{item.number}
                     </span>
                     <Link
                       to={itemLink.to}
                       hash={itemLink.hash || undefined}
-                      className={`${titleClassName ?? ""} ${stylex.props(styles.resultTitle).className}`.trim()}
-                      data-stylex-owner="global-search-result-title"
+                      className={`${titleClassName ?? ""}`}
+                      data-owner="global-search-result-title"
                     >
                       {titleClassName ? (
                         <GlobalSearchHighlightedText text={item.title} keyword={result.keyword} />
@@ -649,10 +513,7 @@ function GlobalSearchResultList({
                     </Link>
                   </div>
                 ) : null}
-                <div
-                  className={`search-content ${stylex.props(styles.content).className}`}
-                  data-stylex-owner="global-search-content"
-                >
+                <div className={"search-content"} data-owner="global-search-content">
                   {reviewThreadOnPullRequest ? (
                     snippets
                   ) : (
@@ -661,14 +522,11 @@ function GlobalSearchResultList({
                     </Link>
                   )}
                 </div>
-                <div
-                  className={`search-meta-info ${stylex.props(styles.meta).className}`}
-                  data-stylex-owner="global-search-meta"
-                >
+                <div className={"search-meta-info"} data-owner="global-search-meta">
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className={`project-link meta-item ${stylex.props(styles.projectLink, styles.metaItem).className}`}
+                    className={"project-link meta-item"}
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
@@ -676,20 +534,17 @@ function GlobalSearchResultList({
                     <RouterLink
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
-                      className={`meta-item ${stylex.props(styles.metaItem).className}`}
+                      className={"meta-item"}
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
                     </RouterLink>
                   ) : (
-                    <span className={`meta-item ${stylex.props(styles.metaItem).className}`}>
+                    <span className={"meta-item"}>
                       {t(globalSearchNoAuthorMessageKey(searchType))}
                     </span>
                   )}
-                  <span
-                    className={`meta-item ${stylex.props(styles.metaItem).className}`}
-                    title={item.createdLabel}
-                  >
+                  <span className={"meta-item"} title={item.createdLabel}>
                     {item.createdLabel}
                   </span>
                 </div>
@@ -705,10 +560,7 @@ function GlobalSearchResultList({
   if (searchType === "milestone") {
     return (
       <>
-        <ul
-          className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
-          data-stylex-owner="global-search-result-list"
-        >
+        <ul className={"search-list-wrap"} data-owner="global-search-result-list">
           {result.items.map((item) => {
             const itemLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
             const projectLink = globalSearchInternalLinkTarget(
@@ -718,30 +570,24 @@ function GlobalSearchResultList({
 
             return (
               <li
-                className={`search-list-item ${stylex.props(styles.resultItem).className}`}
+                className={"search-list-item"}
                 key={item.id}
-                data-stylex-owner="global-search-result-item"
+                data-owner="global-search-result-item"
               >
-                <div
-                  className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
-                  data-stylex-owner="global-search-result-title-wrap"
-                >
+                <div className={"title-wrap"} data-owner="global-search-result-title-wrap">
                   <Link
                     to={itemLink.to}
                     hash={itemLink.hash || undefined}
-                    className={`title ${stylex.props(styles.resultTitle).className}`}
-                    data-stylex-owner="global-search-result-title"
+                    className={"title"}
+                    data-owner="global-search-result-title"
                   >
                     <GlobalSearchHighlightedText text={item.title} keyword={result.keyword} />
                   </Link>
                 </div>
-                <div
-                  className={`search-content ${stylex.props(styles.content).className}`}
-                  data-stylex-owner="global-search-content"
-                >
+                <div className={"search-content"} data-owner="global-search-content">
                   {item.snippets.map((snippet) => (
                     <p
-                      className={`search-content-body ${stylex.props(styles.contentBody).className}`}
+                      className={"search-content-body"}
                       key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                     >
                       <GlobalSearchHighlightedText text={snippet.text} keyword={result.keyword} />
@@ -749,21 +595,16 @@ function GlobalSearchResultList({
                     </p>
                   ))}
                 </div>
-                <div
-                  className={`search-meta-info ${stylex.props(styles.meta).className}`}
-                  data-stylex-owner="global-search-meta"
-                >
+                <div className={"search-meta-info"} data-owner="global-search-meta">
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className={`project-link meta-item ${stylex.props(styles.projectLink, styles.metaItem).className}`}
+                    className={"project-link meta-item"}
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
                   {item.updatedLabel ? (
-                    <span
-                      className={`due-date meta-item ${stylex.props(styles.metaItem).className}`}
-                    >
+                    <span className={"due-date meta-item"}>
                       {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
                       {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
                     </span>
@@ -778,19 +619,7 @@ function GlobalSearchResultList({
     );
   }
 
-  const emptyResultProps = stylex.props(
-    styles.emptyResult,
-    styles.emptyResultBackground(
-      `url(${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/no_contents.jpg")})`,
-    ),
-  );
-  return (
-    <div
-      {...emptyResultProps}
-      className={`empty-result ${emptyResultProps.className}`}
-      data-stylex-owner="global-search-empty-result"
-    ></div>
-  );
+  return <div className={"empty-result"} data-owner="global-search-empty-result"></div>;
 }
 
 function GlobalSearchPagination({ result }: { result: SearchResponse }) {
@@ -830,19 +659,9 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
   };
 
   return (
-    <div
-      id="pagination"
-      className={`${stylex.props(styles.paginationWrap).className} page-navigation-wrap`}
-      data-stylex-owner="global-search-pagination"
-    >
-      <ul
-        className={`${stylex.props(styles.paginationPageNums).className} page-nums`}
-        data-stylex-owner="global-search-pagination-page-nums"
-      >
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="global-search-pagination-prev-page"
-        >
+    <div id="pagination" className={"page-navigation-wrap"} data-owner="global-search-pagination">
+      <ul className={"page-nums"} data-owner="global-search-pagination-page-nums">
+        <li className={"page-num ikon"} data-owner="global-search-pagination-prev-page">
           {hasPrev ? (
             <Link
               activeOptions={legacySearchPaginationLinkActiveOptions}
@@ -851,38 +670,24 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
               search={pageSearch(currentPage - 1)}
               to="/search"
             >
-              <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="global-search-pagination-prev-icon"
-              ></i>
-              <span
-                className={stylex.props(styles.paginationIconLabel).className}
-                data-stylex-owner="global-search-pagination-prev-label"
-              >
-                {t("button.prevPage")}
-              </span>
+              <i className={"ico btn-pg-prev"} data-owner="global-search-pagination-prev-icon"></i>
+              <span data-owner="global-search-pagination-prev-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="global-search-pagination-prev-icon"
+                className={"ico btn-pg-prev off"}
+                data-owner="global-search-pagination-prev-icon"
               ></i>
-              <span
-                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="global-search-pagination-prev-label"
-              >
+              <span className={"off"} data-owner="global-search-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
-          data-stylex-owner="global-search-pagination-input-page"
-        >
+        <li className={"page-num"} data-owner="global-search-pagination-input-page">
           <input
-            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
+            className={"input-mini nospinner"}
             defaultValue={currentPage}
             key={currentPage}
             max={totalPages}
@@ -894,25 +699,16 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
               event.currentTarget.select();
             }}
             onKeyDown={handleInputKeyDown}
-            data-stylex-owner="global-search-pagination-input"
+            data-owner="global-search-pagination-input"
           />
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="global-search-pagination-delimiter"
-        >
+        <li className={"page-num delimiter"} data-owner="global-search-pagination-delimiter">
           /
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
-          data-stylex-owner="global-search-pagination-total"
-        >
+        <li className={"page-num"} data-owner="global-search-pagination-total">
           {totalPages}
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="global-search-pagination-next-page"
-        >
+        <li className={"page-num ikon"} data-owner="global-search-pagination-next-page">
           {hasNext ? (
             <Link
               activeOptions={legacySearchPaginationLinkActiveOptions}
@@ -921,28 +717,17 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
               search={pageSearch(currentPage + 1)}
               to="/search"
             >
-              <span
-                className={stylex.props(styles.paginationIconLabel).className}
-                data-stylex-owner="global-search-pagination-next-label"
-              >
-                {t("button.nextPage")}
-              </span>
-              <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="global-search-pagination-next-icon"
-              ></i>
+              <span data-owner="global-search-pagination-next-label">{t("button.nextPage")}</span>
+              <i className={"ico btn-pg-next"} data-owner="global-search-pagination-next-icon"></i>
             </Link>
           ) : (
             <>
-              <span
-                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="global-search-pagination-next-label"
-              >
+              <span className={"off"} data-owner="global-search-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="global-search-pagination-next-icon"
+                className={"ico btn-pg-next off"}
+                data-owner="global-search-pagination-next-icon"
               ></i>
             </>
           )}
@@ -991,7 +776,7 @@ function renderGlobalSearchResultTitle(message: string): ReactNode {
   return (
     <>
       {match[1]}
-      <strong {...stylex.props(styles.resultHeadingAccent)}>{match[2]}</strong>
+      <strong>{match[2]}</strong>
       {match[3]}
     </>
   );
@@ -1022,11 +807,7 @@ function GlobalSearchHighlightedText({ keyword, text }: { keyword: string; text:
       nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor, start)}</Fragment>);
     }
     nodes.push(
-      <strong
-        className={`keyword ${stylex.props(styles.keyword).className}`}
-        data-stylex-owner="global-search-keyword"
-        key={`keyword-${start}`}
-      >
+      <strong className={"keyword"} data-owner="global-search-keyword" key={`keyword-${start}`}>
         {matchText}
       </strong>,
     );
@@ -1054,11 +835,7 @@ function globalSearchInternalLinkTarget(href: string, runtimeConfig: RuntimeConf
 function GlobalSearchProjectLogoImage({ src }: { src: string }) {
   return (
     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
-    <img
-      {...stylex.props(styles.avatarImage)}
-      data-stylex-owner="global-search-avatar-image"
-      src={src}
-    />
+    <img data-owner="global-search-avatar-image" src={src} />
   );
 }
 
@@ -1082,5 +859,5 @@ function clampPageNum(pageNum: number, totalPages: number) {
 }
 
 function escapeRegExp(input: string) {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return input.replace(/[.*+?^()|[\]\\]/g, "\\$&");
 }

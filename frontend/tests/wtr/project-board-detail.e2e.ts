@@ -68,7 +68,7 @@ test("project board edit missing post renders the legacy site error shell on des
   await mockMissingProjectPost(page);
   await page.goto(`${basePath}/weblabs/portal/post/1/editform`);
 
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
@@ -182,7 +182,7 @@ async function shellMetrics(page: Page) {
 
 async function siteErrorMetrics(page: Page) {
   return page.evaluate(() => {
-    const nav = required("[data-stylex-owner=global-gnb-outer]").getBoundingClientRect();
+    const nav = required("[data-owner=global-gnb-outer]").getBoundingClientRect();
     const error = required(".project-page-wrap > .error-wrap").getBoundingClientRect();
     const errorStyle = getComputedStyle(required(".project-page-wrap > .error-wrap"));
     const messageStyle = getComputedStyle(required(".error-wrap p"));

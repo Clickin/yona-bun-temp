@@ -18,6 +18,13 @@ const basePath = "/yona";
 const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:"/yona"};</script>';
 
 const FETCH_MOCK_SCRIPT = `<script>
+  // The specs' expected fixtures are English (legacy @Messages resolved to en);
+  // Chrome inherits the system locale (ko) even with --lang, so pin the app's
+  // language resolution (frontend/src/i18n.tsx reads navigator.languages).
+  try {
+    Object.defineProperty(navigator, "language", { get: () => "en-US", configurable: true });
+    Object.defineProperty(navigator, "languages", { get: () => ["en-US"], configurable: true });
+  } catch (e) {}
   window.fetch = function (...args) { return parent.__wtrMockFetch.apply(parent, args); };
   // Legacy-compatible forms submit natively (method=post action=...); the
   // iframe navigation swallows the POST. Route non-React POST submits
@@ -205,6 +212,62 @@ function contentTypeFor(filePath) {
   }
 }
 
+// The built index.html uses relative asset URLs (vite base "./"). At nested
+// SPA routes the browser resolves ./assets/* and ./legacy-assets/* against the
+// route path (e.g. /yona/users/loginform -> /yona/users/assets/index.js). The
+// runtime server rewrites those to dist; mirror it here or the fixture plugin's
+// SPA fallback serves index.html as the module script and the app never boots.
+function serveNestedStaticAsset(pathname) {
+  for (const marker of ["assets", "legacy-assets"]) {
+    const markerPath = `/${marker}/`;
+    const idx = pathname.indexOf(markerPath, basePath.length);
+    if (idx === -1) continue;
+    const routePrefix = pathname.slice(0, idx);
+    if (routePrefix === basePath || !routePrefix.startsWith(`${basePath}/`)) continue;
+    const rel = pathname
+      .slice(idx + markerPath.length)
+      .split("/")
+      .filter(Boolean)
+      .map((part) => part.replace(/\.\./g, ""));
+    if (marker === "assets" && rel[0] === "images") {
+      // Root /yona/assets/images/ aliases dist/legacy-assets/images; keep the
+      // same alias for nested routes.
+      const distPath = join(distDir, "legacy-assets", "images", ...rel.slice(1));
+      if (existsSync(distPath) && statSync(distPath).isFile()) {
+        return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
+      }
+      continue;
+    }
+    if (marker === "assets") {
+      const distPath = join(distDir, "assets", ...rel);
+      if (existsSync(distPath) && statSync(distPath).isFile()) {
+        return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
+      }
+      continue;
+    }
+    const sourcePath = join(legacyDir, "public", ...rel);
+    if (existsSync(sourcePath) && statSync(sourcePath).isFile()) {
+      return { body: readFileSync(sourcePath), type: contentTypeFor(sourcePath) };
+    }
+    const distPath = join(distDir, "legacy-assets", ...rel);
+    if (existsSync(distPath) && statSync(distPath).isFile()) {
+      return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
+    }
+  }
+  return undefined;
+}
+
+function isNestedStaticAssetPath(pathname) {
+  for (const marker of ["assets", "legacy-assets"]) {
+    const markerPath = `/${marker}/`;
+    const idx = pathname.indexOf(markerPath, basePath.length);
+    if (idx === -1) continue;
+    const routePrefix = pathname.slice(0, idx);
+    if (routePrefix !== basePath && routePrefix.startsWith(`${basePath}/`)) return true;
+  }
+  return false;
+}
+
 // Converted specs live one directory deeper than the Playwright originals, so
 // `new URL("../src/routes/...", import.meta.url)` resolves to /tests/src/...
 // and `../../yona-original/...` to /yona-original/... — serve both. NOTE: serve()
@@ -251,6 +314,13 @@ const fixturePlugin = {
         return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
       }
       return undefined;
+    }
+    // Nested SPA routes resolve the index.html's relative ./assets and
+    // ./legacy-assets URLs against the route path; serve the real dist files
+    // (see serveNestedStaticAsset) before the generic basePath SPA fallback.
+    {
+      const nestedStatic = serveNestedStaticAsset(pathname);
+      if (nestedStatic !== undefined) return nestedStatic;
     }
     if (pathname.startsWith("/tests/frontend/")) {
       const rel = stripTxtSuffix(
@@ -375,7 +445,8 @@ esbuild.resolveMimeType = (context) => {
     pathname.startsWith("/yona/") &&
     !pathname.startsWith("/yona/assets/") &&
     !pathname.startsWith("/yona/api/") &&
-    !pathname.startsWith("/yona/legacy-assets/")
+    !pathname.startsWith("/yona/legacy-assets/") &&
+    !isNestedStaticAssetPath(pathname)
   ) {
     // SPA fallback routes under /yona/ are served as text/html by the
     // fixture plugin; without an explicit override the core falls back to the
@@ -439,22 +510,25 @@ export default {
   mimeTypes: { "**/*.ts": "text/javascript" },
   port: 8128,
   nodeResolve: false,
-  concurrency: 2,
-  testsFinishTimeout: 300000,
-  testFramework: { config: { timeout: 30000 } },
+  concurrency: 8,
+  testsFinishTimeout: 600000,
+  testFramework: { config: { timeout: 60000 } },
   browserLogs: true,
   logBrowserLogs: true,
   browsers: [
     new RealMouseLauncher(
       {
         headless: true,
-        args: ["--no-first-run"],
+        // The specs' expected fixtures are English (legacy @Messages resolved
+        // to en); without --lang Chrome inherits the system locale (ko) and
+        // every text assertion mismatches.
+        args: ["--no-first-run", "--lang=en-US"],
       },
       ({ browser }) =>
         browser.defaultBrowserContext(),
       ({ context }) => context.newPage(),
       undefined,
-      2,
+      8,
     ),
   ],
 };

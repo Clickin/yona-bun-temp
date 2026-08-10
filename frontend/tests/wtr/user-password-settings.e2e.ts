@@ -124,9 +124,9 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await expectPasswordEditTabs(page, basePath);
 
   await expect(
-    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
+    page.locator('[data-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
   ).toHaveAttribute("href", `${basePath}/user/editform/token`);
-  await expect(page.locator('[data-stylex-owner="user-password-reset-action"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="user-password-reset-action"]')).toHaveAttribute(
     "href",
     `${basePath}/lostPassword`,
   );
@@ -154,7 +154,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await page.locator("#retypedPassword").fill("different");
   await page.locator("#retypedPassword").blur();
   await expectPasswordValidationPopovers(page, ["Retyped password doesn't match"]);
-  await expect(page.locator('[data-stylex-owner="user-password-validation"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="user-password-validation"]')).toHaveCount(1);
   expect(passwordPostCount).toBe(0);
 
   await page.locator("#frmPassword button[type=submit]").click();
@@ -165,9 +165,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "password-token-tab";
   });
-  await page
-    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")')
-    .click();
+  await page.locator('[data-owner="user-settings-edit-tab-link"]:has-text("User Token")').click();
   await expect(page).toHaveURL(`${basePath}/user/editform/token`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -212,12 +210,12 @@ test("current-user password settings title is rendered metadata, not route-local
 });
 
 async function expectPasswordValidationPopovers(page: Page, messages: string[]) {
-  const popovers = page.locator('[data-stylex-owner="user-password-validation-content"]');
+  const popovers = page.locator('[data-owner="user-password-validation-content"]');
   await expect(popovers).toHaveText(messages);
 }
 
 async function expectPasswordEditTabs(page: Page, basePath: string) {
-  const tabItems = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
+  const tabItems = page.locator('[data-owner="user-settings-edit-tab-item"]');
   const tabLinks = tabItems.locator("a");
   const expectedTabs = [
     { href: `${basePath}/user/editform`, text: "Edit profile" },
@@ -285,12 +283,10 @@ function workspaceBody() {
 async function readPasswordSettingsMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+      '[data-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-edit-tabs"]',
-    );
+    const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const form = document.querySelector<HTMLElement>("#frmPassword");
     const resetLink = document.querySelector<HTMLElement>(".page-wrap > .mt10 .ybtn-fail");
     if (!breadcrumb || !pageWrapOuter || !nav || !form || !resetLink) {
@@ -352,7 +348,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
-        const owner = current.getAttribute("data-stylex-owner");
+        const owner = current.getAttribute("data-owner");
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
@@ -379,18 +375,18 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -425,7 +421,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

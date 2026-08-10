@@ -30,7 +30,10 @@ impl AppRepositoryImpl<'_> {
         let mut query =
             milestone::Entity::find().filter(milestone::Column::ProjectId.eq(Some(project.id)));
         if matches!(state.as_str(), "open" | "closed") {
-            query = query.filter(milestone::Column::State.eq(Some(issue_state_to_raw(&state))));
+            query = query.filter(milestone::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                &state,
+            ))));
         }
         let order_dir = normalize_identity(&filter.order_dir);
         query = if order_dir == "desc" {
@@ -56,7 +59,7 @@ impl AppRepositoryImpl<'_> {
                 open_issues: Vec::new(),
                 open_issue_count: 0,
                 closed_issues: Vec::new(),
-                state: issue_state_from_raw(row.state),
+                state: issue_state_from_raw(self.db.get_database_backend(), row.state),
                 title: row.title.unwrap_or_default(),
             })
             .collect::<Vec<_>>();
@@ -89,7 +92,10 @@ impl AppRepositoryImpl<'_> {
             milestone::Entity::find().filter(milestone::Column::ProjectId.eq(Some(project.id)));
         let state = normalize_identity(&filter.state);
         if matches!(state.as_str(), "open" | "closed") {
-            query = query.filter(milestone::Column::State.eq(Some(issue_state_to_raw(&state))));
+            query = query.filter(milestone::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                &state,
+            ))));
         }
         let order_by = normalize_identity(&filter.order_by);
         let order_dir = normalize_identity(&filter.order_dir);
@@ -147,13 +153,19 @@ impl AppRepositoryImpl<'_> {
             record.open_issue_count = issue::Entity::find()
                 .filter(issue::Column::ProjectId.eq(Some(requested_project.id)))
                 .filter(issue::Column::MilestoneId.eq(Some(milestone_id)))
-                .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                    self.db.get_database_backend(),
+                    "open",
+                ))))
                 .count(&self.db)
                 .await? as u32;
             record.closed_issue_count = issue::Entity::find()
                 .filter(issue::Column::ProjectId.eq(Some(requested_project.id)))
                 .filter(issue::Column::MilestoneId.eq(Some(milestone_id)))
-                .filter(issue::Column::State.eq(Some(issue_state_to_raw("closed"))))
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                    self.db.get_database_backend(),
+                    "closed",
+                ))))
                 .count(&self.db)
                 .await? as u32;
         }
@@ -199,7 +211,10 @@ impl AppRepositoryImpl<'_> {
             id: NotSet,
             title: Set(Some(input.title)),
             due_date: Set(input.due_date),
-            state: Set(Some(issue_state_to_raw(&input.state))),
+            state: Set(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                &input.state,
+            ))),
             project_id: Set(Some(project.id)),
         }
         .insert(&self.db)
@@ -243,7 +258,10 @@ impl AppRepositoryImpl<'_> {
         let mut active = milestone::ActiveModel::from(row);
         active.title = Set(Some(input.values.title.trim().to_string()));
         active.due_date = Set(input.values.due_date);
-        active.state = Set(Some(issue_state_to_raw(&input.values.state)));
+        active.state = Set(Some(issue_state_to_raw(
+            self.db.get_database_backend(),
+            &input.values.state,
+        )));
         let updated = active.update(&self.db).await?;
         self.write_text_column(
             "milestone",
@@ -281,7 +299,10 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         };
         let mut active = milestone::ActiveModel::from(row);
-        active.state = Set(Some(issue_state_to_raw(state)));
+        active.state = Set(Some(issue_state_to_raw(
+            self.db.get_database_backend(),
+            state,
+        )));
         let updated = active.update(&self.db).await?;
         self.stable_lists
             .invalidate_milestones(owner_name, project_name)

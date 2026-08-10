@@ -6,11 +6,7 @@ impl AppRepositoryImpl<'_> {
         owner_name: &str,
         project_name: &str,
     ) -> Result<Vec<IssueLabelRecord>, DbErr> {
-        if let Some(records) = self
-            .stable_lists
-            .labels(owner_name, project_name)
-            .await
-        {
+        if let Some(records) = self.stable_lists.labels(owner_name, project_name).await {
             return Ok(records);
         }
         let Some(project) = self

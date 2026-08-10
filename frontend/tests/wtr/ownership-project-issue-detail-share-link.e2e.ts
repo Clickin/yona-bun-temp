@@ -1,0 +1,13 @@
+import { readFileSync } from "../wtr-compat.ts";
+import { expect, test } from "../wtr-compat.ts";
+
+test("issue detail comment share-link hidden state is Style-owned", () => {
+  const route = readFileSync("src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const comment = readFileSync(
+    "../yona-original/app/views/issue/partial_comment.scala.html",
+    "utf8",
+  );
+  expect(comment).toContain('class="share-link" style="display: none"');
+  expect(route).toContain('data-owner="issue-detail-share-link"');
+});

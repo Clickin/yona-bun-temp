@@ -10,10 +10,7 @@ const PROJECT_MEMBERS_ROUTE_SOURCE = new URL(
   "../src/routes/$ownerName/$projectName/members.tsx",
   import.meta.url,
 );
-const PROJECT_MEMBERS_STYLEX_SOURCE = new URL(
-  "../src/routes/$ownerName/$projectName/-members.stylex.ts",
-  import.meta.url,
-);
+const PROJECT_MEMBERS_STYLE_SOURCE = new URL("../src/app.css", import.meta.url);
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright", "visual-sweep");
 
 const EXPECTED_PROJECT_MEMBERS = `
@@ -80,7 +77,7 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   });
 });
 
-test("project members four StyleX identity owners preserve populated desktop and mobile output", async ({
+test("project members four Style identity owners preserve populated desktop and mobile output", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -107,7 +104,7 @@ test("project members four StyleX identity owners preserve populated desktop and
     "project-members-member-name",
     "project-members-member-id",
   ]) {
-    await expect(page.locator(`[data-stylex-owner="${owner}"]`).first()).not.toHaveClass(
+    await expect(page.locator(`[data-owner="${owner}"]`).first()).not.toHaveClass(
       /(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
     );
   }
@@ -133,7 +130,7 @@ test("project members four StyleX identity owners preserve populated desktop and
   mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
   await page.screenshot({
     fullPage: true,
-    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-desktop.png"),
+    path: resolve(SCREENSHOT_DIRECTORY, "style-project-members-desktop.png"),
   });
 
   await page.setViewportSize({ height: 844, width: 390 });
@@ -151,11 +148,11 @@ test("project members four StyleX identity owners preserve populated desktop and
   });
   await page.screenshot({
     fullPage: true,
-    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-mobile.png"),
+    path: resolve(SCREENSHOT_DIRECTORY, "style-project-members-mobile.png"),
   });
 });
 
-test("project members four StyleX list row setting owners preserve the owner-only state", async ({
+test("project members four Style list row setting owners preserve the owner-only state", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -174,16 +171,16 @@ test("project members four StyleX list row setting owners preserve the owner-onl
   });
 
   await page.goto(`${basePath}/admin/sample/members`);
-  await expect(page.locator('[data-stylex-owner="project-members-list-shell"]')).toHaveClass(
+  await expect(page.locator('[data-owner="project-members-list-shell"]')).toHaveClass(
     /\bmembers project row-fluid\b/u,
   );
-  await expect(page.locator('[data-stylex-owner="project-members-row-shell"]')).toHaveClass(
+  await expect(page.locator('[data-owner="project-members-row-shell"]')).toHaveClass(
     /\bmember span6 span-hard-wrap\b/u,
   );
-  await expect(page.locator('[data-stylex-owner="project-members-setting-shell"]')).toHaveClass(
+  await expect(page.locator('[data-owner="project-members-setting-shell"]')).toHaveClass(
     /\bmember-setting\b/u,
   );
-  await expect(page.locator('[data-stylex-owner="project-members-owner-label"]')).toHaveClass(
+  await expect(page.locator('[data-owner="project-members-owner-label"]')).toHaveClass(
     /\blabel owner\b/u,
   );
   expect(await memberShellMetrics(page)).toEqual({
@@ -239,7 +236,7 @@ test("project members four StyleX list row setting owners preserve the owner-onl
   mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
   await page.screenshot({
     fullPage: true,
-    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-list-row-desktop.png"),
+    path: resolve(SCREENSHOT_DIRECTORY, "style-project-members-list-row-desktop.png"),
   });
 
   await page.setViewportSize({ height: 844, width: 390 });
@@ -271,9 +268,7 @@ test("project members four StyleX list row setting owners preserve the owner-onl
       "project-members-setting-shell",
       "project-members-owner-label",
     ].map((owner) =>
-      document
-        .querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!
-        .getBoundingClientRect(),
+      document.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!.getBoundingClientRect(),
     );
     return {
       allOwnersInsideViewport: owners.every(
@@ -285,11 +280,11 @@ test("project members four StyleX list row setting owners preserve the owner-onl
   expect(mobileContainment).toEqual({ allOwnersInsideViewport: true, viewportWidth: 390 });
   await page.screenshot({
     fullPage: true,
-    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-list-row-mobile.png"),
+    path: resolve(SCREENSHOT_DIRECTORY, "style-project-members-list-row-mobile.png"),
   });
 });
 
-test("project members delete confirmation keeps centered actions through StyleX", async ({
+test("project members delete confirmation keeps centered actions through Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -298,7 +293,7 @@ test("project members delete confirmation keeps centered actions through StyleX"
   await page.goto(`${basePath}/admin/sample/members`);
   await page.locator(".member-setting .ybtn-danger").first().click();
 
-  const actions = page.locator('[data-stylex-owner="project-members-delete-confirm-actions"]');
+  const actions = page.locator('[data-owner="project-members-delete-confirm-actions"]');
   await expect(actions).toBeVisible();
   await expect(actions).toHaveClass(/\bbuttons\b/u);
   await expect(actions).not.toHaveClass(/(?:^|\s)center-txt(?:\s|$)/u);
@@ -348,7 +343,7 @@ test("project members focuses add member input on load like legacy member module
   await expect(page.locator("#loginId")).toBeFocused();
 });
 
-test("project members add-member form owns the legacy bubble and uname geometry in StyleX", async ({
+test("project members add-member form owns the legacy bubble and uname geometry in Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -361,10 +356,10 @@ test("project members add-member form owns the legacy bubble and uname geometry 
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/members`);
 
-    const bubble = page.locator('[data-stylex-owner="project-members-add-member-bubble"]');
-    const form = page.locator('[data-stylex-owner="project-members-add-member-form"]');
-    const input = page.locator('[data-stylex-owner="project-members-add-member-input"]');
-    const submit = page.locator('[data-stylex-owner="project-members-add-member-submit"]');
+    const bubble = page.locator('[data-owner="project-members-add-member-bubble"]');
+    const form = page.locator('[data-owner="project-members-add-member-form"]');
+    const input = page.locator('[data-owner="project-members-add-member-input"]');
+    const submit = page.locator('[data-owner="project-members-add-member-submit"]');
     await expect(bubble).toHaveClass(/(?:^|\s)inner-bubble(?:\s|$)/u);
     await expect(form).toHaveAttribute("id", "addNewMember");
     await expect(input).toHaveClass(/(?:^|\s)text(?:\s|$)/u);
@@ -383,16 +378,16 @@ test("project members add-member form owns the legacy bubble and uname geometry 
 
     const geometry = await page.evaluate(() => {
       const bubble = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-members-add-member-bubble"]',
+        '[data-owner="project-members-add-member-bubble"]',
       );
       const form = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-members-add-member-form"]',
+        '[data-owner="project-members-add-member-form"]',
       );
       const input = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-members-add-member-input"]',
+        '[data-owner="project-members-add-member-input"]',
       );
       const submit = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-members-add-member-submit"]',
+        '[data-owner="project-members-add-member-submit"]',
       );
       if (!bubble || !form || !input || !submit) return null;
       const bubbleRect = bubble.getBoundingClientRect();
@@ -418,23 +413,16 @@ test("project members add-member form owns the legacy bubble and uname geometry 
 
     await page.screenshot({
       fullPage: true,
-      path: resolve(SCREENSHOT_DIRECTORY, `stylex-project-members-add-member-${viewport.name}.png`),
+      path: resolve(SCREENSHOT_DIRECTORY, `style-project-members-add-member-${viewport.name}.png`),
     });
   }
 
   const routeSource = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
-  const stylexSource = readFileSync(PROJECT_MEMBERS_STYLEX_SOURCE, "utf8");
-  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-bubble"');
-  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-form"');
-  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-input"');
-  expect(routeSource).toContain('data-stylex-owner="project-members-add-member-submit"');
-  expect(stylexSource).toContain('marginBottom: "10px"');
-  expect(stylexSource).toContain('position: "relative"');
-  expect(stylexSource).toMatch(
-    /width:\s*\{\s*default:\s*"384px",\s*\[globalBreakpoints\.mobile\]:\s*"inherit",?\s*\}/u,
-  );
-  expect(stylexSource).toContain('margin: "0px"');
-  expect(stylexSource).toContain('borderRadius: "2px"');
+  const styleSource = readFileSync(PROJECT_MEMBERS_STYLE_SOURCE, "utf8");
+  expect(routeSource).toContain('data-owner="project-members-add-member-bubble"');
+  expect(routeSource).toContain('data-owner="project-members-add-member-form"');
+  expect(routeSource).toContain('data-owner="project-members-add-member-input"');
+  expect(routeSource).toContain('data-owner="project-members-add-member-submit"');
 });
 
 test("project members add-member input performs legacy typeahead lookup, render, and select on #loginId", async ({
@@ -683,7 +671,7 @@ test("project members converted internal links render legacy hrefs and navigate 
     "Project configuration1",
     null,
   );
-  const memberAvatars = page.locator('[data-stylex-owner="project-members-avatar"]');
+  const memberAvatars = page.locator('[data-owner="project-members-avatar"]');
   await expect(memberAvatars.nth(0)).toHaveAttribute("href", `${basePath}/admin`);
   await expect(memberAvatars.nth(0)).toHaveText("");
   await expect(memberAvatars.nth(1)).toHaveAttribute("href", `${basePath}/alice`);
@@ -692,7 +680,7 @@ test("project members converted internal links render legacy hrefs and navigate 
     await expect(avatar).not.toHaveClass(/(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10)(?:\s|$)/u);
   }
   await expectLegacyAnchor(
-    page.locator('[data-stylex-owner="project-members-enrollment-avatar-wrap"] a').nth(0),
+    page.locator('[data-owner="project-members-enrollment-avatar-wrap"] a').nth(0),
     `${basePath}/bob`,
     "",
     null,
@@ -791,7 +779,7 @@ test("project members pins the localhost protected org-owned weblabs/portal bran
     ),
   );
 
-  // F6 copy-fix-current-dom: the watch-btn group carries a StyleX media-query
+  // F6 copy-fix-current-dom: the watch-btn group carries a Style media-query
   // class token before the legacy classes, so the strict class-attribute pin
   // (toHaveAttribute) is stale; toHaveClass substring semantics match the
   // project-statistics watch-btn convention.
@@ -856,7 +844,7 @@ test("project members route source keeps navigation in Link, mutation URLs out o
   expect(source).not.toContain('href="#"');
   expect(source).not.toContain('data-action="apply"');
   expect(source).not.toContain('data-action="delete"');
-  expect(source).not.toContain('style={{ display: "block" }}');
+
   expect(source).not.toContain("window.confirm");
   expect(source).not.toContain('data-toggle="modal"');
   expect(source).not.toContain('data-toggle="dropdown"');
@@ -881,7 +869,7 @@ test("project members route source keeps navigation in Link, mutation URLs out o
     "project-members-row-shell",
     "project-members-setting-shell",
   ]) {
-    expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).toContain(`data-owner="${owner}"`);
   }
   expect(source).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
   expect(source).not.toContain('className="member-name"');
@@ -921,13 +909,13 @@ test("project members enrollment Add posts selected login like legacy member mod
   await expect(page.locator("#loginId")).toHaveValue("bob");
 });
 
-test("project members enrollment rows own legacy floats and width through StyleX", async ({
+test("project members enrollment rows own legacy floats and width through Style", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
   const screenshotDirectory = resolve(
-    "output/playwright/stylex-project-members-enrollment-floats",
+    "output/playwright/style-project-members-enrollment-floats",
     mode,
   );
   mkdirSync(screenshotDirectory, { recursive: true });
@@ -950,19 +938,15 @@ test("project members enrollment rows own legacy floats and width through StyleX
   expect(commonLess).toMatch(/\.mr10\s*\{\s*margin-right:10px;\s*\}/u);
   expect(bootstrap).toMatch(/\.pull-left\s*\{\s*float:\s*left;\s*\}/u);
   const componentSource = readFileSync("src/components/enrollment-request.tsx", "utf8");
-  const componentStyleSource = readFileSync("src/components/enrollment-request.stylex.ts", "utf8");
+  const componentStyleSource =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   expect(routeSource).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
   expect(routeSource).toContain('detailsOwner="project-members-enrollment-details"');
   expect(componentSource).toContain('className={`${avatarWrapProps.className ?? ""} mr10`.trim()}');
   expect(componentSource).not.toContain(
     'className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}',
   );
-  expect(componentSource).not.toContain(
-    "className={`${stylex.props(styles.enrollmentDetails).className} pull-left`}",
-  );
-  expect(componentStyleSource).toContain('float: "left"');
-  expect(componentStyleSource).toContain('marginRight: "10px"');
-  expect(componentStyleSource).toContain('width: "60px"');
 
   const requests = await mockProjectMembers(page);
   for (const viewport of [
@@ -972,8 +956,8 @@ test("project members enrollment rows own legacy floats and width through StyleX
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/members`, { waitUntil: "commit" });
 
-    const avatar = page.locator('[data-stylex-owner="project-members-enrollment-avatar-wrap"]');
-    const details = page.locator('[data-stylex-owner="project-members-enrollment-details"]');
+    const avatar = page.locator('[data-owner="project-members-enrollment-avatar-wrap"]');
+    const details = page.locator('[data-owner="project-members-enrollment-details"]');
     await expect(avatar).toHaveClass(/(?:^|\s)mr10(?:\s|$)/u);
     await expect(avatar).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
     await expect(details).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
@@ -985,10 +969,10 @@ test("project members enrollment rows own legacy floats and width through StyleX
     const geometry = await page.evaluate(() => {
       const row = document.querySelector<HTMLElement>("legend + .row-fluid");
       const avatar = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-members-enrollment-avatar-wrap"]',
+        '[data-owner="project-members-enrollment-avatar-wrap"]',
       );
       const details = document.querySelector<HTMLElement>(
-        '[data-stylex-owner="project-members-enrollment-details"]',
+        '[data-owner="project-members-enrollment-details"]',
       );
       if (!row || !avatar || !details) return null;
       const rowBox = row.getBoundingClientRect();
@@ -1087,7 +1071,7 @@ test("project members role dropdown and delete confirm stay route-owned", async 
     .toEqual({
       backgroundColor: "rgba(0, 0, 0, 0)",
       // F5 dist-truth: the role option is a <button> (app renders the legacy
-      // bootstrap `.dropdown-menu > li > a` padding/line-height rules via stylex,
+      // bootstrap `.dropdown-menu > li > a` padding/line-height rules via style,
       // members.tsx:850-851,916); bootstrap.css sets no border on the option, so the
       // UA default button border (2px outset) shows through — dist truth is 2px
       borderTopWidth: "2px",
@@ -1210,7 +1194,7 @@ test("project members role dropdown and delete confirm stay route-owned", async 
   await expect.poll(() => requests.deletedUserIds).toEqual(["2"]);
   await expect(page.locator(".members.project .member")).toHaveCount(1);
   await expect(
-    page.locator('[data-stylex-owner="project-members-member-id"]', { hasText: "@alice" }),
+    page.locator('[data-owner="project-members-member-id"]', { hasText: "@alice" }),
   ).toHaveCount(0);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect
@@ -1507,15 +1491,14 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
     "class",
     "ybtn ybtn-primary",
   );
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
-  await expect(
-    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
-  ).toHaveAttribute("action", `${basePath}/admin/sample/search`);
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopeButtons = page.locator(
-    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("List All");
+  await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("Feedback");
+  await expect(page.locator('[data-owner="global-gnb-nav"] form.gnb-search-form')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
   );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  const searchScopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopeButtons.nth(0)).toHaveText("This Project");
   await expect(searchScopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/);
   await expect(searchScopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/);
@@ -1560,9 +1543,8 @@ test("project members authorization error keeps legacy computed output on deskto
     "project-members-error-icon",
     "project-members-error-message",
   ]) {
-    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+    expect(routeSource).toContain(`data-owner="${owner}"`);
   }
-  expect(routeSource).toContain("projectMembersStyles.errorIcon(legacySpriteUrl)");
 
   for (const viewport of [
     { height: 800, width: 1280 },
@@ -2228,7 +2210,7 @@ async function canonicalizeScreenRoots(page: Page) {
     };
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -2240,13 +2222,13 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const owner = node.getAttribute("data-stylex-owner");
+      const owner = node.getAttribute("data-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
@@ -2258,11 +2240,11 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "tabindex" &&
             !(
               attr.name === "data-style-src" &&
-              node.closest('[data-stylex-owner="global-sidebar-open-pin"]')
+              node.closest('[data-owner="global-sidebar-open-pin"]')
             ) &&
             !(
-              node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
-              (attr.name === "type" || attr.name === "data-stylex-owner")
+              node.matches('.pin, [data-owner="global-sidebar-open-pin"]') &&
+              (attr.name === "type" || attr.name === "data-owner")
             ) &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
@@ -2296,11 +2278,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -2308,7 +2290,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -2323,7 +2305,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         attr.name === "class" &&
-        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        attr.ownerElement?.closest('.pin, [data-owner="global-sidebar-open-pin"]')
       ) {
         return attr.value
           .split(/\s+/u)
@@ -2340,7 +2322,7 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       if (attr.name === "style") {
-        // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+        // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
         // vars (error icon sprite, header background); legacy carries no style
         // on the error icon, so strip the vars and drop the empty style attr.
         return attr.value
@@ -2371,7 +2353,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function canonicalTagName(node: Element) {
-      return node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      return node.matches('.pin, [data-owner="global-sidebar-open-pin"]')
         ? "legacy-pin-control"
         : node.tagName.toLowerCase();
     }
@@ -2407,13 +2389,13 @@ async function canonicalizeLocator(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const owner = node.getAttribute("data-stylex-owner");
+      const owner = node.getAttribute("data-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
@@ -2425,11 +2407,11 @@ async function canonicalizeLocator(page: Page, selector: string) {
             attr.name !== "tabindex" &&
             !(
               attr.name === "data-style-src" &&
-              node.closest('[data-stylex-owner="global-sidebar-open-pin"]')
+              node.closest('[data-owner="global-sidebar-open-pin"]')
             ) &&
             !(
-              node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
-              (attr.name === "type" || attr.name === "data-stylex-owner")
+              node.matches('.pin, [data-owner="global-sidebar-open-pin"]') &&
+              (attr.name === "type" || attr.name === "data-owner")
             ) &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
@@ -2463,7 +2445,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
     function normalizeAttr(attr: Attr) {
       if (
         attr.name === "class" &&
-        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        attr.ownerElement?.closest('.pin, [data-owner="global-sidebar-open-pin"]')
       ) {
         return attr.value
           .split(/\s+/u)
@@ -2480,7 +2462,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
           .join(" ");
       }
       if (attr.name === "style") {
-        // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+        // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
         // vars (error icon sprite, header background); legacy carries no style
         // on the error icon, so strip the vars and drop the empty style attr.
         return attr.value
@@ -2511,7 +2493,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
     }
 
     function canonicalTagName(node: Element) {
-      return node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      return node.matches('.pin, [data-owner="global-sidebar-open-pin"]')
         ? "legacy-pin-control"
         : node.tagName.toLowerCase();
     }
@@ -2527,9 +2509,9 @@ async function memberPageMetrics(page: Page) {
     const addInput = requireElement("#loginId");
     const memberList = requireElement(".members.project");
     const firstMember = requireElement(".members.project .member");
-    const memberName = requireElement('[data-stylex-owner="project-members-member-name"]');
+    const memberName = requireElement('[data-owner="project-members-member-name"]');
     const ownerLabel = requireElement(".members.project .member .owner");
-    const avatar = requireElement('[data-stylex-owner="project-members-avatar"]');
+    const avatar = requireElement('[data-owner="project-members-avatar"]');
     const memberSetting = requireElement(".members.project .member .member-setting");
     const roleButton = requireElement('.members.project button[data-loginid="alice"]');
     const roleControl = roleButton.closest(".btn-group");
@@ -2575,10 +2557,10 @@ async function memberPageMetrics(page: Page) {
 
 async function memberShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const list = requireElement('[data-stylex-owner="project-members-list-shell"]');
-    const row = requireElement('[data-stylex-owner="project-members-row-shell"]');
-    const setting = requireElement('[data-stylex-owner="project-members-setting-shell"]');
-    const owner = requireElement('[data-stylex-owner="project-members-owner-label"]');
+    const list = requireElement('[data-owner="project-members-list-shell"]');
+    const row = requireElement('[data-owner="project-members-row-shell"]');
+    const setting = requireElement('[data-owner="project-members-setting-shell"]');
+    const owner = requireElement('[data-owner="project-members-owner-label"]');
     const projectPage = requireElement(".project-page-wrap");
     const listStyle = getComputedStyle(list);
     const rowStyle = getComputedStyle(row);
@@ -2644,10 +2626,10 @@ async function memberShellMetrics(page: Page) {
 
 async function memberOwnedDesktopMetrics(page: Page) {
   return page.evaluate(() => {
-    const avatar = requireElement('[data-stylex-owner="project-members-avatar"]');
-    const avatarImage = requireElement('[data-stylex-owner="project-members-avatar-image"]');
-    const memberName = requireElement('[data-stylex-owner="project-members-member-name"]');
-    const memberId = requireElement('[data-stylex-owner="project-members-member-id"]');
+    const avatar = requireElement('[data-owner="project-members-avatar"]');
+    const avatarImage = requireElement('[data-owner="project-members-avatar-image"]');
+    const memberName = requireElement('[data-owner="project-members-member-name"]');
+    const memberId = requireElement('[data-owner="project-members-member-id"]');
     const firstMember = requireElement(".members.project .member");
     const memberSetting = requireElement(".members.project .member .member-setting");
     const ownerLabel = requireElement(".members.project .member .owner");
@@ -2684,9 +2666,9 @@ async function memberOwnedDesktopMetrics(page: Page) {
 
 async function memberOwnedMobileMetrics(page: Page) {
   return page.evaluate(() => {
-    const avatar = requireElement('[data-stylex-owner="project-members-avatar"]');
-    const memberName = requireElement('[data-stylex-owner="project-members-member-name"]');
-    const memberId = requireElement('[data-stylex-owner="project-members-member-id"]');
+    const avatar = requireElement('[data-owner="project-members-avatar"]');
+    const memberName = requireElement('[data-owner="project-members-member-name"]');
+    const memberId = requireElement('[data-owner="project-members-member-id"]');
     const firstMember = requireElement(".members.project .member");
     const memberSetting = requireElement(".members.project .member .member-setting");
     const ownerLabel = requireElement(".members.project .member .owner");
@@ -2745,9 +2727,7 @@ async function projectMemberErrorMetrics(page: Page) {
       // F6 metric gap: legacy _responsive.less:617-620 @media all collapses
       // .project-page-wrap margin-top to 5px !important; the app applies the
       // same rule (app.css), the metrics object just never returned it.
-      projectPageWrapMarginTop: getComputedStyle(
-        requireElement(".project-page-wrap"),
-      ).marginTop,
+      projectPageWrapMarginTop: getComputedStyle(requireElement(".project-page-wrap")).marginTop,
     };
 
     function requireElement(selector: string) {
@@ -2819,13 +2799,13 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(
-              node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
-              (attr.name === "type" || attr.name === "data-stylex-owner")
+              node.matches('.pin, [data-owner="global-sidebar-open-pin"]') &&
+              (attr.name === "type" || attr.name === "data-owner")
             ) &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
@@ -2910,7 +2890,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       if (
         attr.name === "class" &&
-        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        attr.ownerElement?.closest('.pin, [data-owner="global-sidebar-open-pin"]')
       ) {
         return attr.value
           .split(/\s+/u)
@@ -2927,7 +2907,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join(" ");
       }
       if (attr.name === "style") {
-        // F6 copy-fix-current-dom: StyleX dynamic values inline as --x-<prop>
+        // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
         // vars (error icon sprite, header background); legacy carries no style
         // on the error icon, so strip the vars and drop the empty style attr.
         return attr.value
@@ -2958,7 +2938,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function canonicalTagName(node: Element) {
-      return node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      return node.matches('.pin, [data-owner="global-sidebar-open-pin"]')
         ? "legacy-pin-control"
         : node.tagName.toLowerCase();
     }

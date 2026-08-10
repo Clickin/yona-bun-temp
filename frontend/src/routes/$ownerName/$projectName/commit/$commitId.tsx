@@ -3,7 +3,6 @@ import { DiffLineView, type ParsedDiffLine } from "../../../../components/diff-l
 import { UploadForm } from "../../../../components/file-uploader";
 import { FileDiffErrorRow } from "../../../../components/file-diff-error-row";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -29,73 +28,6 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import { styles } from "./-commit-detail.stylex";
-
-const sx = {
-  inlineCommentRow: stylex.props(styles.inlineCommentRow),
-  inlineCommentCell: stylex.props(styles.inlineCommentCell),
-  codediffLayout: stylex.props(styles.codediffLayout),
-  diffsLayout: stylex.props(styles.diffsLayout),
-  reviewPanel: stylex.props(styles.reviewPanel),
-  reviewPanelCollapsed: stylex.props(styles.reviewPanelCollapsed),
-  reviewContainer: stylex.props(styles.reviewContainer),
-  page: stylex.props(styles.page),
-  browse: stylex.props(styles.browse),
-  diffWrap: stylex.props(styles.diffWrap),
-  commitInfo: stylex.props(styles.commitInfo),
-  commitAuthor: stylex.props(styles.commitAuthor),
-  commitAuthorAgo: stylex.props(styles.commitAuthorAgo),
-  commitAuthorAvatar: stylex.props(styles.commitAuthorAvatar),
-  commitIdWrap: stylex.props(styles.commitIdWrap),
-  commitId: stylex.props(styles.commitId),
-  commitIdSvn: stylex.props(styles.commitIdSvn),
-  commitMessage: stylex.props(styles.commitMessage),
-  commitDescription: stylex.props(styles.commitDescription),
-  footerWatchLeft: stylex.props(styles.footerWatchLeft),
-  footerListRight: stylex.props(styles.footerListRight),
-  diffBody: stylex.props(styles.diffBody),
-  file: stylex.props(styles.file),
-  fileMeta: stylex.props(styles.fileMeta),
-  fileCode: stylex.props(styles.fileCode),
-  diffPartialTable: stylex.props(styles.diffPartialTable),
-  browseTabs: stylex.props(styles.browseTabs),
-  reviewTabs: stylex.props(styles.reviewTabs),
-  markdownEditorWrapper: stylex.props(styles.markdownEditorWrapper),
-  editorTabContent: stylex.props(styles.editorTabContent),
-  reviewTextarea: stylex.props(styles.reviewTextarea),
-  reviewFormShell: stylex.props(styles.reviewFormShell),
-  reviewAuthorInfoWrap: stylex.props(styles.reviewAuthorInfoWrap),
-  reviewWriteCommentBox: stylex.props(styles.reviewWriteCommentBox),
-  diffLineNumber: stylex.props(styles.diffLineNumber),
-  diffLineNumberMarker: stylex.props(styles.diffLineNumberMarker),
-  diffLineCommentIcon: stylex.props(styles.diffLineCommentIcon),
-  diffCodeCell: stylex.props(styles.diffCodeCell),
-  diffCodeLine: stylex.props(styles.diffCodeLine),
-  diffIsBinary: stylex.props(styles.diffIsBinary),
-  diffPartialFile: stylex.props(styles.diffPartialFile),
-  diffPartialCommit: stylex.props(styles.diffPartialCommit),
-  diffPartialCommitId: stylex.props(styles.diffPartialCommitId),
-  diffPartialFilename: stylex.props(styles.diffPartialFilename),
-  rightText: stylex.props(styles.rightText),
-  threadReviewForm: stylex.props(styles.threadReviewForm),
-  rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
-  threadComments: stylex.props(styles.threadComments),
-  threadComment: stylex.props(styles.threadComment),
-  inlineCommentItem: stylex.props(styles.inlineCommentItem),
-  threadMediaBody: stylex.props(styles.threadMediaBody),
-  rangedThreadMinimize: stylex.props(styles.rangedThreadMinimize),
-  threadActions: stylex.props(styles.threadActions),
-  originalMessageToggle: stylex.props(styles.originalMessageToggle),
-  reviewCardContent: stylex.props(styles.reviewCardContent),
-  reviewCardDate: stylex.props(styles.reviewCardDate),
-  reviewCardComments: stylex.props(styles.reviewCardComments),
-  diffStatBar: stylex.props(styles.diffStatBar),
-  diffStatBadgeChanged: stylex.props(styles.diffStatBadgeChanged),
-  diffStatBadgeAdd: stylex.props(styles.diffStatBadgeAdd),
-  diffStatBadgeDelete: stylex.props(styles.diffStatBadgeDelete),
-  fileDiffCardHeader: stylex.props(styles.fileDiffCardHeader),
-  fileToggleIcon: stylex.props(styles.fileToggleIcon),
-} as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 
@@ -231,9 +163,6 @@ function ProjectCommitDetailBody({
   const [reviewCardsCollapsed, setReviewCardsCollapsed] = useState(false);
   const [blockReviewFormOpen, setBlockReviewFormOpen] = useState(false);
   const [blockReviewButtonVisible, setBlockReviewButtonVisible] = useState(false);
-  const blockReviewButtonProps = stylex.props(
-    blockReviewButtonVisible ? styles.blockReviewButtonVisible : styles.blockReviewButtonHidden,
-  );
   const [commentDeleteCommentId, setCommentDeleteCommentId] = useState<number | null>(null);
   const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
@@ -327,23 +256,14 @@ function ProjectCommitDetailBody({
 
   return (
     <>
-      <div
-        {...sx.page}
-        className={`page-wrap-outer ${sx.page.className ?? ""}`.trim()}
-        data-stylex-owner="commit-detail-page"
-      >
-        <div className="project-page-wrap" data-stylex-owner="commit-detail-shell">
+      <div className={`page-wrap-outer `.trim()} data-owner="commit-detail-page">
+        <div className="project-page-wrap" data-owner="commit-detail-shell">
           <div
-            {...sx.browse}
-            className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
-            data-stylex-owner="commit-detail-browse"
+            className={`code-browse-wrap `.trim()}
+            data-owner="commit-detail-browse"
             id="code-browse-wrap"
           >
-            <ul
-              {...sx.browseTabs}
-              className={`${sx.browseTabs.className} nav nav-tabs`}
-              data-stylex-owner="commit-detail-browse-tabs"
-            >
+            <ul className={` nav nav-tabs`} data-owner="commit-detail-browse-tabs">
               <li>
                 <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
               </li>
@@ -360,9 +280,8 @@ function ProjectCommitDetailBody({
             </ul>
 
             <div
-              {...sx.codediffLayout}
-              className={`${sx.codediffLayout.className} codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}
-              data-stylex-owner="commit-detail-diff-layout"
+              className={`codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}
+              data-owner="commit-detail-diff-layout"
             >
               <button
                 type="button"
@@ -371,69 +290,51 @@ function ProjectCommitDetailBody({
               >
                 <i className="yobicon-restore"></i>
               </button>
-              <div
-                {...sx.diffsLayout}
-                className={`${sx.diffsLayout.className} diffs-wrap`}
-                data-stylex-owner="commit-detail-diffs"
-              >
-                <div
-                  {...sx.commitInfo}
-                  className={`${sx.commitInfo.className} commitInfo`}
-                  data-stylex-owner="commit-detail-info"
-                >
-                  <div
-                    {...sx.commitAuthor}
-                    className={`${sx.commitAuthor.className} commitAuthor`}
-                    data-stylex-owner="commit-detail-author"
-                  >
+              <div className={` diffs-wrap`} data-owner="commit-detail-diffs">
+                <div className={` commitInfo`} data-owner="commit-detail-info">
+                  <div className={` commitAuthor`} data-owner="commit-detail-author">
                     <CommitAuthor detail={detail} />
                     <span
-                      {...sx.commitAuthorAgo}
-                      className={`${sx.commitAuthorAgo.className} ago`}
-                      data-stylex-owner="commit-detail-author-ago"
+                      className={` ago`}
+                      data-owner="commit-detail-author-ago"
                       title={commit?.authorDate ?? ""}
                     >
                       {commit?.authorDate ?? ""}
                     </span>
                   </div>
-                  <div data-stylex-owner="commit-detail-message">
+                  <div data-owner="commit-detail-message">
                     <CommitMessage
                       message={commit?.message ?? ""}
                       shortMessage={commit?.shortMessage ?? ""}
                     />
                   </div>
-                  <div
-                    {...sx.commitIdWrap}
-                    className={`${sx.commitIdWrap.className} commitId-wrap`}
-                    data-stylex-owner="commit-detail-id-wrap"
-                  >
-                    <strong
-                      {...sx.commitId}
-                      className={`${sx.commitId.className} commitId`}
-                      data-stylex-owner="commit-detail-id"
-                    >
+                  <div className={` commitId-wrap`} data-owner="commit-detail-id-wrap">
+                    <strong className={` commitId`} data-owner="commit-detail-id">
                       @{commit?.commitId ?? commitId}
                     </strong>
                   </div>
                 </div>
 
                 {detail.files.length > 0 ? (
-                  <div {...sx.diffStatBar} data-stylex-owner="commit-detail-diff-stat-bar">
-                    <span {...sx.diffStatBadgeChanged}>
+                  <div data-owner="commit-detail-diff-stat-bar">
+                    <span className="commit-detail-diff-stat-badge-changed">
                       {detail.filesChanged ?? detail.files.length}{" "}
                       {(detail.filesChanged ?? detail.files.length) === 1 ? "file" : "files"}{" "}
                       changed
                     </span>
-                    <span {...sx.diffStatBadgeAdd}>+{detail.insertions ?? 0}</span>
-                    <span {...sx.diffStatBadgeDelete}>-{detail.deletions ?? 0}</span>
+                    <span className="commit-detail-diff-stat-badge-add">
+                      +{detail.insertions ?? 0}
+                    </span>
+                    <span className="commit-detail-diff-stat-badge-delete">
+                      -{detail.deletions ?? 0}
+                    </span>
                   </div>
                 ) : null}
 
                 {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
                 <div
-                  {...sx.diffBody}
-                  className={`${sx.diffBody.className} diff-body`}
-                  data-stylex-owner="commit-detail-diff-body-layout"
+                  className={` diff-body`}
+                  data-owner="commit-detail-diff-body-layout"
                   onMouseUp={() => {
                     const selection = globalThis.getSelection?.();
                     const selectedText = selection?.toString() ?? "";
@@ -467,9 +368,8 @@ function ProjectCommitDetailBody({
                     />
                   ))}
                   <div
-                    {...blockReviewButtonProps}
-                    className={`btnPop ${blockReviewButtonProps.className ?? ""}`.trim()}
-                    data-stylex-owner="commit-detail-block-review-button"
+                    className={`btnPop${blockReviewButtonVisible ? " is-visible" : ""}`}
+                    data-owner="commit-detail-block-review-button"
                   >
                     <button
                       type="button"
@@ -539,19 +439,8 @@ function ProjectCommitDetailBody({
                 ) : null}
               </div>
 
-              <div
-                {...(reviewCardsCollapsed ? sx.reviewPanelCollapsed : sx.reviewPanel)}
-                className={`${
-                  reviewCardsCollapsed
-                    ? sx.reviewPanelCollapsed.className
-                    : sx.reviewPanel.className
-                } review-wrap span-hard-wrap`}
-                data-stylex-owner="commit-detail-review-panel"
-              >
-                <div
-                  {...sx.reviewContainer}
-                  className={`${sx.reviewContainer.className} review-container`}
-                >
+              <div className="review-wrap span-hard-wrap" data-owner="commit-detail-review-panel">
+                <div className="review-container">
                   <button
                     type="button"
                     className="ybtn ybtn-default btn-hide-reviewcards"
@@ -559,11 +448,7 @@ function ProjectCommitDetailBody({
                   >
                     <i className="yobicon-maximize"></i>
                   </button>
-                  <ul
-                    {...sx.reviewTabs}
-                    className={`${sx.reviewTabs.className} nav nav-tabs`}
-                    data-stylex-owner="commit-detail-review-tabs"
-                  >
+                  <ul className={` nav nav-tabs`} data-owner="commit-detail-review-tabs">
                     <li className={reviewCardTab === "open" ? "active" : undefined}>
                       <button type="button" onClick={() => setReviewCardTab("open")}>
                         {`${t("issue.state.open")} ${openThreads.length}`}
@@ -593,11 +478,10 @@ function ProjectCommitDetailBody({
           </div>
 
           <button
-            {...sx.footerWatchLeft}
             id="watch-button"
             type="button"
-            className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
-            data-stylex-owner="commit-detail-footer-watch"
+            className={` ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
+            data-owner="commit-detail-footer-watch"
             onClick={() => watchMutation.mutate(!detail.isWatching)}
           >
             {t("notification.watch")}
@@ -605,9 +489,8 @@ function ProjectCommitDetailBody({
 
           <Link
             to={projectTo(ownerName, projectName, "commits", encodedBranch, path)}
-            {...sx.footerListRight}
-            className={`${sx.footerListRight.className} ybtn`}
-            data-stylex-owner="commit-detail-footer-list"
+            className={` ybtn`}
+            data-owner="commit-detail-footer-list"
           >
             {t("button.list")}
           </Link>
@@ -697,11 +580,7 @@ function SvnCommitDetailBody({
             </ul>
           </div>
 
-          <ul
-            {...sx.browseTabs}
-            className={`${sx.browseTabs.className} nav nav-tabs`}
-            data-stylex-owner="commit-detail-svn-browse-tabs"
-          >
+          <ul className={` nav nav-tabs`} data-owner="commit-detail-svn-browse-tabs">
             <li>
               <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
             </li>
@@ -710,11 +589,7 @@ function SvnCommitDetailBody({
             </li>
           </ul>
 
-          <p
-            {...sx.commitInfo}
-            className={`${sx.commitInfo.className} commitInfo`}
-            data-stylex-owner="commit-detail-svn-info"
-          >
+          <p className={` commitInfo`} data-owner="commit-detail-svn-info">
             <span className="avatar-wrap">
               <img
                 src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
@@ -725,28 +600,18 @@ function SvnCommitDetailBody({
             </span>
             <strong>{commit?.authorName || commit?.authorEmail || anonymousAuthorName}</strong>
             <span
-              {...sx.commitAuthorAgo}
-              className={`${sx.commitAuthorAgo.className} ago`}
-              data-stylex-owner="commit-detail-svn-ago"
+              className={` ago`}
+              data-owner="commit-detail-svn-ago"
               title={commit?.authorDate ?? ""}
             >
               {commit?.authorDate ?? ""}
             </span>
-            <strong
-              {...sx.commitId}
-              {...sx.commitIdSvn}
-              className={`${sx.commitId.className} ${sx.commitIdSvn.className} commitId`}
-              data-stylex-owner="commit-detail-svn-id"
-            >
+            <strong className={`  commitId`} data-owner="commit-detail-svn-id">
               @{commit?.commitId ?? commitId}
             </strong>
           </p>
           <pre className="commitMsg">{commit?.message ?? ""}</pre>
-          <div
-            {...sx.diffWrap}
-            className={`${sx.diffWrap.className} diff-wrap`}
-            data-stylex-owner="commit-detail-svn-diff-wrap"
-          >
+          <div className={` diff-wrap`} data-owner="commit-detail-svn-diff-wrap">
             <div id="commit" data-commit-origin="true" className="diff-body hide">
               {patch}
             </div>
@@ -768,11 +633,10 @@ function SvnCommitDetailBody({
         </div>
 
         <button
-          {...sx.footerWatchLeft}
           id="watch-button"
           type="button"
-          className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active" : ""}`}
-          data-stylex-owner="commit-detail-footer-watch"
+          className={` ybtn ${detail.isWatching ? "active" : ""}`}
+          data-owner="commit-detail-footer-watch"
           onClick={toggleWatch}
         >
           {t("notification.watch")}
@@ -780,9 +644,8 @@ function SvnCommitDetailBody({
 
         <Link
           to={projectTo(ownerName, projectName, "commits", encodedBranch)}
-          {...sx.footerListRight}
-          className={`${sx.footerListRight.className} ybtn`}
-          data-stylex-owner="commit-detail-footer-list"
+          className={` ybtn`}
+          data-owner="commit-detail-footer-list"
         >
           {t("button.list")}
         </Link>
@@ -844,46 +707,36 @@ function FileDiffView({
   const fileDeletions = parsed.lines.filter((l) => l.kind === "line" && l.type === "remove").length;
 
   return (
-    <div
-      id={fileId}
-      className={`${sx.file.className} diff-partial-outer`}
-      data-stylex-owner="commit-detail-file"
-    >
+    <div id={fileId} className={` diff-partial-outer`} data-owner="commit-detail-file">
       <div className="diff-partial-inner">
         <button
           type="button"
-          {...sx.fileDiffCardHeader}
           onClick={() => setCollapsed(!collapsed)}
-          data-stylex-owner="commit-detail-file-card-header"
+          data-owner="commit-detail-file-card-header"
         >
           <div style={{ display: "flex", alignItems: "center" }}>
-            <span {...sx.fileToggleIcon}>{collapsed ? "▶" : "▼"}</span>
+            <span className="commit-detail-file-toggle-icon">{collapsed ? "▶" : "▼"}</span>
             <span className="filename" style={{ fontWeight: 600, fontSize: "13px" }}>
               {fileHeader}
             </span>
           </div>
-          <div {...sx.diffStatBar} style={{ margin: 0 }}>
-            {fileAdditions > 0 ? <span {...sx.diffStatBadgeAdd}>+{fileAdditions}</span> : null}
-            {fileDeletions > 0 ? <span {...sx.diffStatBadgeDelete}>-{fileDeletions}</span> : null}
+          <div style={{ margin: 0 }}>
+            {fileAdditions > 0 ? (
+              <span className="commit-detail-diff-stat-badge-add">+{fileAdditions}</span>
+            ) : null}
+            {fileDeletions > 0 ? (
+              <span className="commit-detail-diff-stat-badge-delete">-{fileDeletions}</span>
+            ) : null}
           </div>
         </button>
 
         {!collapsed ? (
           <>
-            <div
-              {...sx.fileMeta}
-              className={`${sx.fileMeta.className} diff-partial-meta`}
-              data-stylex-owner="commit-detail-file-meta"
-            >
-              <div
-                {...sx.diffPartialCommit}
-                className={`${sx.diffPartialCommit.className} diff-partial-commit`}
-                data-stylex-owner="commit-detail-file-commit"
-              >
+            <div className={` diff-partial-meta`} data-owner="commit-detail-file-meta">
+              <div className={` diff-partial-commit`} data-owner="commit-detail-file-commit">
                 <div
-                  {...sx.diffPartialCommitId}
-                  className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
-                  data-stylex-owner="commit-detail-file-commit-id"
+                  className={` diff-partial-commit-id`}
+                  data-owner="commit-detail-file-commit-id"
                 >
                   {commitA && parsed.pathA ? (
                     <Link
@@ -898,9 +751,8 @@ function FileDiffView({
                   )}
                 </div>
                 <div
-                  {...sx.diffPartialCommitId}
-                  className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
-                  data-stylex-owner="commit-detail-file-commit-id"
+                  className={` diff-partial-commit-id`}
+                  data-owner="commit-detail-file-commit-id"
                 >
                   {commitB && parsed.pathB ? (
                     <Link
@@ -915,34 +767,24 @@ function FileDiffView({
                   )}
                 </div>
               </div>
-              <div
-                {...sx.diffPartialFile}
-                className={`${sx.diffPartialFile.className} diff-partial-file`}
-                data-stylex-owner="commit-detail-file-header"
-              >
-                <span
-                  {...sx.diffPartialFilename}
-                  className={`${sx.diffPartialFilename.className} filename`}
-                  data-stylex-owner="commit-detail-file-header-filename"
-                >
+              <div className={` diff-partial-file`} data-owner="commit-detail-file-header">
+                <span className={` filename`} data-owner="commit-detail-file-header-filename">
                   {fileHeader}
                 </span>
               </div>
             </div>
             <div
-              {...sx.fileCode}
-              className={`${sx.fileCode.className} diff-partial-code`}
+              className={` diff-partial-code`}
               data-hashcode={filePath}
-              data-stylex-owner="commit-detail-file-code"
+              data-owner="commit-detail-file-code"
             >
               <div className="patch-header">
                 {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
                 {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
               </div>
               <table
-                {...sx.diffPartialTable}
-                className={`${sx.diffPartialTable.className} diff-container show-comments`}
-                data-stylex-owner="commit-detail-diff-partial-table"
+                className={` diff-container show-comments`}
+                data-owner="commit-detail-diff-partial-table"
                 data-path-a={parsed.pathA}
                 data-path-b={parsed.pathB}
                 data-commit-a={commitA}
@@ -964,28 +806,24 @@ function FileDiffView({
                         return line.kind === "range" ? (
                           <tr className="range" key={diffLineKey(line)}>
                             <td
-                              {...sx.diffLineNumber}
-                              data-stylex-owner="commit-detail-diff-line-number-cell"
-                              className={`${sx.diffLineNumber.className} linenum`}
+                              data-owner="commit-detail-diff-line-number-cell"
+                              className={` linenum`}
                             >
                               <div
-                                {...sx.diffLineNumberMarker}
-                                data-stylex-owner="commit-detail-diff-line-number"
-                                className={`${sx.diffLineNumberMarker.className} line-number`}
+                                data-owner="commit-detail-diff-line-number"
+                                className={` line-number`}
                                 data-line-num="..."
                               >
                                 <span className="hidden">...</span>
                               </div>
                             </td>
                             <td
-                              {...sx.diffLineNumber}
-                              data-stylex-owner="commit-detail-diff-line-number-cell"
-                              className={`${sx.diffLineNumber.className} linenum`}
+                              data-owner="commit-detail-diff-line-number-cell"
+                              className={` linenum`}
                             >
                               <div
-                                {...sx.diffLineNumberMarker}
-                                data-stylex-owner="commit-detail-diff-line-number"
-                                className={`${sx.diffLineNumberMarker.className} line-number`}
+                                data-owner="commit-detail-diff-line-number"
+                                className={` line-number`}
                                 data-line-num="..."
                               >
                                 <span className="hidden">...</span>
@@ -1028,37 +866,23 @@ function FileModeChangedRow({ modeChange }: { modeChange: { newMode: string; old
 
   return (
     <tr>
-      <td
-        {...sx.diffLineNumber}
-        data-stylex-owner="commit-detail-diff-line-number-cell"
-        className={`${sx.diffLineNumber.className} linenum`}
-      >
+      <td data-owner="commit-detail-diff-line-number-cell" className={` linenum`}>
         <div
-          {...sx.diffLineNumberMarker}
-          data-stylex-owner="commit-detail-diff-line-number"
-          className={`${sx.diffLineNumberMarker.className} line-number`}
+          data-owner="commit-detail-diff-line-number"
+          className={` line-number`}
           data-line-num={modeChange.oldMode}
         ></div>
         <span className="hidden">{modeChange.oldMode}</span>
       </td>
-      <td
-        {...sx.diffLineNumber}
-        data-stylex-owner="commit-detail-diff-line-number-cell"
-        className={`${sx.diffLineNumber.className} linenum`}
-      >
+      <td data-owner="commit-detail-diff-line-number-cell" className={` linenum`}>
         <div
-          {...sx.diffLineNumberMarker}
-          data-stylex-owner="commit-detail-diff-line-number"
-          className={`${sx.diffLineNumberMarker.className} line-number`}
+          data-owner="commit-detail-diff-line-number"
+          className={` line-number`}
           data-line-num={modeChange.newMode}
         ></div>
         <span className="hidden">{modeChange.newMode}</span>
       </td>
-      <td
-        {...sx.diffIsBinary}
-        className={`${sx.diffIsBinary.className} isBinary`}
-        data-stylex-owner="commit-detail-diff-is-binary"
-      >
+      <td className={` isBinary`} data-owner="commit-detail-diff-is-binary">
         {t("code.fileModeChanged")}
       </td>
     </tr>
@@ -1132,13 +956,6 @@ function FragmentWithInlineComments({
     <>
       <DiffLineView
         line={line}
-        styles={{
-          lineNumber: sx.diffLineNumber,
-          commentIcon: sx.diffLineCommentIcon,
-          numberMarker: sx.diffLineNumberMarker,
-          codeCell: sx.diffCodeCell,
-          codeLine: sx.diffCodeLine,
-        }}
         owners={{
           lineNumberCell: "commit-detail-diff-line-number-cell",
           commentIcon: "commit-detail-diff-line-comment-icon",
@@ -1219,17 +1036,11 @@ function InlineCommentRow({
 
   return (
     <tr
-      {...sx.inlineCommentRow}
-      className={`${sx.inlineCommentRow.className} comments board-comment-wrap`}
+      className={` comments board-comment-wrap`}
       data-commit-id={threads[0]?.commitId || commitId}
-      data-stylex-owner="commit-detail-inline-comment-row"
+      data-owner="commit-detail-inline-comment-row"
     >
-      <td
-        {...sx.inlineCommentCell}
-        className={`${sx.inlineCommentCell.className}`}
-        colSpan={3}
-        data-stylex-owner="commit-detail-inline-comment-cell"
-      >
+      <td className={` `} colSpan={3} data-owner="commit-detail-inline-comment-cell">
         {threads.map((thread, index) => {
           const previousThread = threads[index - 1];
           const previousThreadFolded = previousThread
@@ -1325,27 +1136,6 @@ function CodeCommentThreadView({
   const [localIsFolded, setLocalIsFolded] = useState(() => !isNonRanged && state === "closed");
   const isFolded = controlledIsFolded ?? localIsFolded;
   const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;
-  const threadSpacingProps = stylex.props(
-    hasPreviousThread
-      ? previousThreadFolded
-        ? styles.threadAfterFoldedThread
-        : styles.threadAfterThread
-      : null,
-  );
-  const threadShellProps = stylex.props(
-    styles.threadShell,
-    state === "closed" ? styles.threadShellClosed : styles.threadShellOpen,
-    isClosedRangedFold && styles.threadShellClosedFold,
-  );
-  const threadFoldHereProps = stylex.props(isClosedRangedFold && styles.threadFoldHere);
-  const threadFoldButtonProps = stylex.props(
-    isClosedRangedFold
-      ? styles.threadFoldClosedButton
-      : isFolded
-        ? styles.threadFoldOpenButton
-        : null,
-  );
-  const threadFoldHiddenProps = stylex.props(isClosedRangedFold && styles.threadFoldHidden);
 
   function setCommentEditing(commentId: number, isEditing: boolean) {
     setEditingCommentIds((current) => {
@@ -1363,9 +1153,8 @@ function CodeCommentThreadView({
     <div
       id={`thread-${thread.id}`}
       data-state={isNonRanged ? undefined : state}
-      {...threadShellProps}
-      className={`${threadShellProps.className} ${threadSpacingProps.className ?? ""} comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
-      data-stylex-owner="commit-detail-thread-shell"
+      className={`comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
+      data-owner="commit-detail-thread-shell"
       data-range-path={isNonRanged ? undefined : thread.path}
       data-range-startside={isNonRanged ? undefined : thread.startSide}
       data-range-startline={isNonRanged ? undefined : thread.startLine}
@@ -1374,14 +1163,10 @@ function CodeCommentThreadView({
       data-range-endline={isNonRanged ? undefined : thread.endLine}
       data-range-endcolumn={isNonRanged ? undefined : thread.endColumn}
     >
-      <div
-        {...threadFoldHereProps}
-        className={`${threadFoldHereProps.className ?? ""} btn-thread-here btn-thread-minimize`}
-      >
+      <div className="btn-thread-here btn-thread-minimize">
         <button
           type="button"
-          {...threadFoldButtonProps}
-          className={`${threadFoldButtonProps.className ?? ""} ybtn ybtn-default ybtn-small`}
+          className="ybtn ybtn-default ybtn-small"
           onClick={() => {
             const next = !isFolded;
             setLocalIsFolded(next);
@@ -1393,21 +1178,11 @@ function CodeCommentThreadView({
       </div>
 
       {isNonRanged ? null : (
-        <div
-          {...sx.rangedThreadHeader}
-          {...threadFoldHiddenProps}
-          className={`${sx.rangedThreadHeader.className} ${threadFoldHiddenProps.className ?? ""} thread-header`}
-        >
-          <span
-            className={`${stylex.props(styles.rangedThreadBadge).className} badge state ${state}`}
-          >
-            {t(`issue.state.${state}`)}
-          </span>
+        <div className="thread-header">
+          <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
           <button
-            {...sx.rangedThreadMinimize}
-            {...threadFoldHiddenProps}
             type="button"
-            className={`${sx.rangedThreadMinimize.className} ${threadFoldHiddenProps.className ?? ""} ybtn ybtn-default ybtn-small btn-thread-minimize`}
+            className="ybtn ybtn-default ybtn-small btn-thread-minimize"
             onClick={() => {
               const next = !isFolded;
               setLocalIsFolded(next);
@@ -1419,20 +1194,14 @@ function CodeCommentThreadView({
         </div>
       )}
 
-      <ul
-        {...sx.threadComments}
-        {...threadFoldHiddenProps}
-        className={`${sx.threadComments.className} ${threadFoldHiddenProps.className ?? ""} comments`}
-      >
+      <ul className="comments">
         {thread.comments.map((comment) => {
           const isEditing = editingCommentIds.has(comment.id);
           return (
             <li
-              {...sx.threadComment}
-              {...(isInlineComment ? sx.inlineCommentItem : {})}
               id={`comment-${comment.id}`}
-              className={`${sx.threadComment.className} ${isInlineComment ? sx.inlineCommentItem.className : ""} comment`}
-              data-stylex-owner={isInlineComment ? "commit-detail-inline-comment-item" : undefined}
+              className="comment"
+              data-owner={isInlineComment ? "commit-detail-inline-comment-item" : undefined}
               key={comment.id}
             >
               <div className="comment-avatar">
@@ -1454,7 +1223,7 @@ function CodeCommentThreadView({
                   />
                 </Link>
               </div>
-              <div {...sx.threadMediaBody} className={`${sx.threadMediaBody.className} media-body`}>
+              <div className={` media-body`}>
                 <div className="meta-info">
                   <span className="comment_author pull-left">
                     <Link
@@ -1528,8 +1297,8 @@ function CodeCommentThreadView({
                 />
                 <div
                   id={`comment-body-${comment.id}`}
-                  {...stylex.props(isEditing && styles.commentBodyHidden)}
-                  data-stylex-owner="commit-detail-comment-body"
+                  className={isEditing ? "is-editing" : undefined}
+                  data-owner="commit-detail-comment-body"
                 >
                   <div
                     className="comment-body markdown-wrap"
@@ -1561,21 +1330,15 @@ function CodeCommentThreadView({
           action={action}
           method="post"
           encType="multipart/form-data"
-          {...sx.reviewFormShell}
-          {...sx.threadReviewForm}
-          {...threadFoldHiddenProps}
-          className={`review-form ${sx.reviewFormShell.className} ${sx.threadReviewForm.className} ${threadFoldHiddenProps.className ?? ""}`}
-          data-stylex-owner="commit-detail-thread-review-form"
+          className="review-form"
+          data-owner="commit-detail-thread-review-form"
           onSubmit={(event) => {
             event.preventDefault();
             submitReply(thread.id, formContents(event.currentTarget));
           }}
         >
           <input type="hidden" name="thread.id" value={thread.id} />
-          <div
-            {...sx.reviewAuthorInfoWrap}
-            className={`${sx.reviewAuthorInfoWrap.className} author-info-wrap pull-left hide-in-mobile`}
-          >
+          <div className="author-info-wrap pull-left hide-in-mobile">
             <div className="author-info">
               <Link
                 to="/$user"
@@ -1588,25 +1351,19 @@ function CodeCommentThreadView({
               </Link>
             </div>
           </div>
-          <div
-            {...sx.reviewWriteCommentBox}
-            className={`${sx.reviewWriteCommentBox.className} write-comment-box`}
-          >
+          <div className="write-comment-box">
             <div className="write-comment-wrap">
-              <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} threadHeight100 />
+              <Editor
+                editorMode="code-review-body"
+                wrapId={`thread-${thread.id}`}
+                threadHeight100
+              />
               <UploadForm
                 resourceType="COMMIT_COMMENT"
-                helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
-                helpStyleProps={sx.rightText}
-                helpStyleFirst={false}
+                helpClassName="right-txt help"
                 helpOwner="commit-detail-attachment-help"
               />
-              <div
-                {...sx.rightText}
-                {...sx.threadActions}
-                className={`${sx.rightText.className} ${sx.threadActions.className}`}
-                data-stylex-owner="commit-detail-thread-actions"
-              >
+              <div data-owner="commit-detail-thread-actions">
                 <button
                   type="button"
                   className="ybtn ybtn-default ybtn-small"
@@ -1645,8 +1402,7 @@ function OriginalMessageMarkdown({
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
       <button
         type="button"
-        {...sx.originalMessageToggle}
-        data-stylex-owner="commit-detail-original-message-toggle"
+        data-owner="commit-detail-original-message-toggle"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1693,16 +1449,12 @@ function CodeCommentUpdateForm({
 }) {
   const { t } = useLegacyMessages();
   const commentId = String(comment.id);
-  const commentUpdateFormStyleProps = stylex.props(
-    isEditing ? styles.commentUpdateFormVisible : styles.commentUpdateFormHidden,
-  );
 
   return (
     <div
       id={`comment-editform-${commentId}`}
-      {...commentUpdateFormStyleProps}
-      className={`${commentUpdateFormStyleProps.className ?? ""} comment-update-form`.trim()}
-      data-stylex-owner="commit-detail-comment-update-form"
+      className={`comment-update-form${isEditing ? " is-visible" : ""}`}
+      data-owner="commit-detail-comment-update-form"
     >
       <form
         action={action}
@@ -1728,9 +1480,8 @@ function CodeCommentUpdateForm({
               </div>
             </div>
             <div
-              {...sx.rightText}
-              className={`right-txt comment-update-button upload-button-line ${sx.rightText.className ?? ""}`.trim()}
-              data-stylex-owner="commit-detail-comment-update-actions"
+              className="right-txt comment-update-button upload-button-line"
+              data-owner="commit-detail-comment-update-actions"
             >
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
@@ -1825,9 +1576,8 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
           to="/$user"
           params={{ user: commit.authorLoginId }}
           activeOptions={{ exact: true }}
-          {...sx.commitAuthorAvatar}
-          className={`${sx.commitAuthorAvatar.className} avatar-wrap smaller`}
-          data-stylex-owner="commit-detail-author-avatar"
+          className={` avatar-wrap smaller`}
+          data-owner="commit-detail-author-avatar"
         >
           <img
             src={
@@ -1846,11 +1596,7 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
 
   return (
     <>
-      <span
-        {...sx.commitAuthorAvatar}
-        className={`${sx.commitAuthorAvatar.className} avatar-wrap smaller`}
-        data-stylex-owner="commit-detail-author-avatar"
-      >
+      <span className={` avatar-wrap smaller`} data-owner="commit-detail-author-avatar">
         <img
           src={
             commit.authorAvatarUrl ||
@@ -1872,19 +1618,11 @@ function CommitMessage({ message, shortMessage }: { message: string; shortMessag
   const detail = lines.slice(1).join("\n");
   return (
     <>
-      <span
-        {...sx.commitMessage}
-        className={`${sx.commitMessage.className} commitMsg short`}
-        data-stylex-owner="commit-detail-short-message"
-      >
+      <span className={` commitMsg short`} data-owner="commit-detail-short-message">
         {shortMessage || t("code.commitMsg.empty")}
       </span>
       {detail ? (
-        <pre
-          {...sx.commitDescription}
-          className={`${sx.commitDescription.className} commitMsg desc`}
-          data-stylex-owner="commit-detail-description"
-        >
+        <pre className={` commitMsg desc`} data-owner="commit-detail-description">
           {detail}
         </pre>
       ) : null}
@@ -1915,13 +1653,11 @@ function CommentForm({
         <Editor editorMode="comment-body" wrapId="comment" />
         <UploadForm
           resourceType="COMMIT_COMMENT"
-          helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
-          helpStyleProps={sx.rightText}
-          helpStyleFirst={false}
+          helpClassName="right-txt help"
           helpOwner="commit-detail-attachment-help"
         />
         <div className="write-comment-wrap">
-          <div {...sx.rightText} data-stylex-owner="commit-detail-comment-actions">
+          <div data-owner="commit-detail-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
               {t("button.comment.new")}
@@ -1951,22 +1687,14 @@ function ReviewForm({
   onClose?: () => void;
 }) {
   const { t } = useLegacyMessages();
-  const reviewFormVisibilityProps = stylex.props(
-    isOpen ? styles.reviewFormVisible : styles.reviewFormHidden,
-  );
   return (
     <div
       id="review-form"
-      {...sx.reviewFormShell}
-      {...reviewFormVisibilityProps}
-      className={`review-form ${sx.reviewFormShell.className} ${reviewFormVisibilityProps.className ?? ""}`}
-      data-stylex-owner="commit-detail-review-form"
+      className={`review-form${isOpen ? " is-open" : ""}`}
+      data-owner="commit-detail-review-form"
     >
       <form action={action} method="post" encType="multipart/form-data">
-        <div
-          {...sx.reviewAuthorInfoWrap}
-          className={`${sx.reviewAuthorInfoWrap.className} author-info-wrap pull-left hide-in-mobile`}
-        >
+        <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
             <Link
               to="/$user"
@@ -1979,10 +1707,7 @@ function ReviewForm({
             </Link>
           </div>
         </div>
-        <div
-          {...sx.reviewWriteCommentBox}
-          className={`${sx.reviewWriteCommentBox.className} write-comment-box`}
-        >
+        <div className="write-comment-box">
           <div className="write-comment-wrap">
             <div className="pull-right">
               <button
@@ -2000,12 +1725,10 @@ function ReviewForm({
             <Editor editorMode="code-review-body" wrapId="review" />
             <UploadForm
               resourceType="COMMIT_COMMENT"
-              helpClassName={`right-txt help ${sx.rightText.className ?? ""}`.trim()}
-              helpStyleProps={sx.rightText}
-              helpStyleFirst={false}
+              helpClassName="right-txt help"
               helpOwner="commit-detail-attachment-help"
             />
-            <div {...sx.rightText} data-stylex-owner="commit-detail-review-actions">
+            <div data-owner="commit-detail-review-actions">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
               </button>
@@ -2038,12 +1761,11 @@ function Editor({
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
     <div
-      {...sx.markdownEditorWrapper}
-      className={`mt10 ${sx.markdownEditorWrapper.className ?? ""}`.trim()}
-      data-stylex-owner="commit-detail-markdown-editor-wrapper"
-      data-stylex-owner-instance={wrapId}
+      className="mt10"
+      data-owner="commit-detail-markdown-editor-wrapper"
+      data-owner-instance={wrapId}
     >
-      <ul className="nav nav-tabs nm small" data-stylex-owner="commit-detail-editor-tabs">
+      <ul className="nav nav-tabs nm small" data-owner="commit-detail-editor-tabs">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>
             {t("common.editor.edit")}
@@ -2081,29 +1803,22 @@ function Editor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div
-        {...sx.editorTabContent}
-        className={`${sx.editorTabContent.className} tab-content`}
-        data-stylex-owner="commit-detail-editor-tab-content"
-      >
+      <div className="tab-content" data-owner="commit-detail-editor-tab-content">
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               name={textareaName}
-              {...(editorMode === "code-review-body" && threadHeight100 ? sx.reviewTextarea : {})}
-              className={
-                editorMode === "code-review-body" && threadHeight100
-                  ? `${sx.reviewTextarea.className} editorSeries content comment nm`
-                  : "editorSeries content comment nm"
-              }
+              className="editorSeries content comment nm"
               data-editor-mode={editorMode}
               id={`editor-${textareaName}-${wrapId}`}
               defaultValue={value}
-              {...(editorMode === "code-review-body" && threadHeight100
-                ? { style: { height: "100px" } }
-                : {})}
-              data-stylex-owner={
+              style={
+                editorMode === "code-review-body" && threadHeight100
+                  ? { height: "100px" }
+                  : undefined
+              }
+              data-owner={
                 editorMode === "code-review-body" ? "commit-detail-review-textarea" : undefined
               }
               {...legacyMarkdownTextareaAttr}
@@ -2149,13 +1864,8 @@ function ReviewCards({
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
       {threads.map((thread) => {
-        const cardStyleProps = stylex.props(
-          styles.reviewCard,
-          thread.state.toLowerCase() === "open" ? styles.reviewCardOpen : styles.reviewCardClosed,
-        );
         return (
           <Link
-            {...cardStyleProps}
             to="."
             hash={`thread-${thread.id}`}
             search={hashSearch}
@@ -2165,25 +1875,19 @@ function ReviewCards({
               className: undefined,
               "data-status": undefined,
             }}
-            className={`${cardStyleProps.className} review-card ${thread.state.toLowerCase()}`}
-            data-stylex-owner="commit-detail-review-card"
+            className={`review-card ${thread.state.toLowerCase()}`}
+            data-owner="commit-detail-review-card"
             key={thread.id}
           >
-            <p
-              className={`${sx.reviewCardContent.className} content`}
-              data-stylex-owner="commit-detail-review-card-content"
-            >
+            <p className="content" data-owner="commit-detail-review-card-content">
               {thread.comments[0]?.contentsMarkdown ?? ""}
             </p>
             <span
-              className={`${sx.reviewCardDate.className} date`}
-              data-stylex-owner="commit-detail-review-card-date"
+              className="date"
+              data-owner="commit-detail-review-card-date"
               title={thread.createdLabel}
             >
-              <span
-                className={`${sx.reviewCardComments.className} comments`}
-                data-stylex-owner="commit-detail-review-card-comments"
-              >
+              <span className="comments" data-owner="commit-detail-review-card-comments">
                 {thread.comments.length > 1 ? (
                   <>
                     <i className="yobicon-comments"></i> {thread.comments.length}
@@ -2218,14 +1922,12 @@ function CommentDeleteModal({
   onConfirm: () => void;
 }) {
   const { t } = useLegacyMessages();
-  const modalStyleProps = stylex.props(isOpen && styles.commentDeleteModalVisible);
   return (
     <>
       <div
         id="comment-delete-modal"
-        {...modalStyleProps}
-        className={`${isOpen ? "modal hide fade in" : "modal hide fade"} ${modalStyleProps.className ?? ""}`.trim()}
-        data-stylex-owner="commit-detail-comment-delete-modal"
+        className={`modal hide fade${isOpen ? " in is-open" : ""}`}
+        data-owner="commit-detail-comment-delete-modal"
       >
         <div className="modal-header">
           <button type="button" className="close" onClick={onClose}>

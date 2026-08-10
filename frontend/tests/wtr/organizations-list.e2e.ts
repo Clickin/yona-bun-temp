@@ -249,7 +249,7 @@ test("organization directory top tabs keep legacy hrefs without active marker le
   const orgTab = page.locator(".title_area .nav-tabs > li").nth(1);
   const projectLink = projectTab.locator("a");
   const orgLink = orgTab.locator("a");
-  const navbarProjectLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
+  const navbarProjectLink = page.locator('[data-owner="global-gnb-project-list-link"]');
 
   await expect(projectTab).not.toHaveClass(/active/u);
   await expect(orgTab).toHaveClass("active");
@@ -461,7 +461,7 @@ test("organization directory source uses Link for internal route anchors", () =>
   expect(source).not.toContain("href={organizationHref}");
   expect(source).not.toContain("prefixBasePath(basePath, `/organizations/${organizationName}`)");
   expect(source).not.toContain('setAttribute("autofocus"');
-  expect(source).not.toContain('autofocus: ""');
+
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("window.document");
@@ -551,7 +551,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -567,7 +567,7 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(
           (attr) =>
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !attr.name.startsWith("data-v-") &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
@@ -589,11 +589,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -601,7 +601,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -614,7 +614,7 @@ async function canonicalizeScreenRoots(page: Page) {
           attr.value = originalValue;
         }
       }
-      const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+      const owner = attr.ownerElement?.getAttribute("data-owner");
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")

@@ -147,9 +147,7 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
     "alt",
     "Site Admin",
   );
-  const issueDueDate = page.locator(
-    '#issue-item-42 [data-stylex-owner="organization-issues-due-date"]',
-  );
+  const issueDueDate = page.locator('#issue-item-42 [data-owner="organization-issues-due-date"]');
   await expect(issueDueDate).not.toHaveAttribute("data-toggle");
   await expect(issueDueDate).not.toHaveAttribute("data-placement");
   await expect(issueDueDate).toHaveAttribute("title", "Jun 30, 2026");
@@ -212,10 +210,10 @@ test("organization issue row tooltip markers are not React-owned DOM", async ({ 
     "Assignee: Site Admin",
   );
   await expect(
-    page.locator('#issue-item-42 [data-stylex-owner="organization-issues-due-date"]'),
+    page.locator('#issue-item-42 [data-owner="organization-issues-due-date"]'),
   ).toHaveAttribute("title", "Jun 30, 2026");
   await expect(
-    page.locator('#issue-item-42 [data-stylex-owner="organization-issues-due-date"]'),
+    page.locator('#issue-item-42 [data-owner="organization-issues-due-date"]'),
   ).toContainText("Overdue");
 });
 
@@ -433,8 +431,8 @@ test("organization issue aggregate pins the live localhost guest shell title and
 
   await expect(page).toHaveTitle("weblabs");
   await expect.poll(() => firstHeadTitleText(page)).toBe("weblabs");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -455,9 +453,9 @@ test("organization issue aggregate pins the live localhost guest shell title and
   ]);
 
   const metrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("header[data-owner=global-gnb-outer]");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     if (!(navbar instanceof HTMLElement)) {
       throw new Error("Missing header.gnb-outer");
     }
@@ -481,9 +479,9 @@ test("organization issue aggregate pins the live localhost guest shell title and
   expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "All Projects",
+  ]);
 });
 
 test("organization issue row converted links keep SPA marker for detail and hash navigation", async ({
@@ -622,7 +620,7 @@ test("organization issues two-column source keeps React popover cleanup", () => 
   expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
   expect(twoColumnSource).toContain("popover top");
   expect(twoColumnSource).toContain('role="tooltip"');
-  expect(twoColumnSource).toContain('data-stylex-owner="organization-issues-two-column-popover"');
+  expect(twoColumnSource).toContain('data-owner="organization-issues-two-column-popover"');
   expect(twoColumnSource).not.toContain("data-content=");
   expect(twoColumnSource).not.toContain("document.");
   expect(twoColumnSource).not.toContain("addEventListener");
@@ -1069,7 +1067,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1087,7 +1085,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(attr.name === "style" && normalizeStyleAttr(attr.value) === ""),
         )
@@ -1109,11 +1107,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
+        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1121,7 +1119,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "class" &&
         attr.ownerElement &&
         attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -1152,7 +1150,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function normalizeStyleAttr(value: string) {
       let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      // stylex sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
+      // style sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
       // are the app's own paint mechanism for ico glyphs; legacy pins only the
       // ico class, so drop those vars. legacy-assets images (group_default.png
       // etc.) are real content and stay.
@@ -1199,7 +1197,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(attr.name === "style" && normalizeStyleAttr(attr.value) === ""),
         )
@@ -1296,7 +1294,7 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeStyleAttr(value: string) {
       let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      // stylex sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
+      // style sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
       // are the app's own paint mechanism for ico glyphs; legacy pins only the
       // ico class, so drop those vars. legacy-assets images (group_default.png
       // etc.) are real content and stay.

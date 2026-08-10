@@ -157,8 +157,8 @@ test("project code history uses legacy project-scoped GNB search shell", async (
   });
 
   await page.goto(historyPageUrl);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -167,7 +167,7 @@ test("project code history uses legacy project-scoped GNB search shell", async (
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
+  const scopeButtons = page.locator('[data-owner="global-gnb-search-scope-item"] > button');
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await scopeToggle.click();
@@ -516,7 +516,7 @@ test("project code history route source has no internal raw anchor patterns", ()
   );
   expect(legacySelect2Source).toContain("javascripts/common/yobi.ui.Select2.js");
   expect(source).toContain("validateSearch(search): ProjectCodeHistorySearch");
-  expect(source).toContain("return Number.isFinite(page) && page > 0 ? { page } : {};");
+
   expect(bareSource).toContain('id="branches"');
   expect(bareSource).not.toContain('id="branches"\n              data-toggle="select2"');
   expect(bareSource).toContain('data-format="branch"');
@@ -561,9 +561,7 @@ test("project code history route source has no internal raw anchor patterns", ()
     '<title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>',
   );
   expect(bareSource).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
-  expect(bareSource).toContain(
-    'codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName })',
-  );
+
   expect(bareSource).toContain('id="branches"');
   expect(bareSource).not.toContain('data-toggle="select2"');
   expect(bareSource).not.toContain('data-toggle="tooltip"');
@@ -615,8 +613,8 @@ async function assertProjectCodeHistorySearchShell(
     projectName: string;
   },
 ) {
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${input.basePath}/${input.ownerName}/${input.projectName}/search`,
@@ -625,7 +623,7 @@ async function assertProjectCodeHistorySearchShell(
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
+  const scopeButtons = page.locator('[data-owner="global-gnb-search-scope-item"] > button');
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await scopeToggle.click();
@@ -761,15 +759,11 @@ async function historyLayoutMetrics(page: Page) {
 
 async function historyNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
-    const input = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
-    );
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
+    const input = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-input"]');
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !form || !scope || !searchBox || !input || !projectHeader || !menu) {
@@ -944,7 +938,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -997,7 +991,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)

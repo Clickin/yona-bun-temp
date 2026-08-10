@@ -149,9 +149,9 @@ test("pending verification renders inside legacy siteLayout shell", async ({ pag
   await expect(page.locator(".unsupported.hidden")).toHaveCount(1);
   await expect(page.locator("head > title").first()).toHaveText("");
   await expect(page).toHaveTitle("");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".page.full .tag-line-wrap.reset-password")).toContainText("Loading");
-  await expect(page.locator("[data-stylex-owner=site-footer]")).toBeVisible();
+  await expect(page.locator("[data-owner=site-footer]")).toBeVisible();
 });
 
 test("verification route title follows legacy empty siteLayout title without DOM mutation", () => {
@@ -202,24 +202,22 @@ test("invalid verification renders legacy plain not-found body", async ({ page }
   await expect(page.locator("body")).toHaveText("Invalid verification");
   await expect(
     page.locator(
-      ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer], #yobiDialog, #yobiToasts",
+      ".unsupported, [data-owner=global-gnb-outer], .page.full, [data-owner=site-footer], #yobiDialog, #yobiToasts",
     ),
   ).toHaveCount(0);
 });
 
 async function readDesktopVerifiedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
     const tagLine = document.querySelector<HTMLElement>(".tag-line-wrap .tag-line");
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !gnbOuter ||
       !gnbInner ||
@@ -270,11 +268,11 @@ async function readDesktopVerifiedMetrics(page: Page) {
 
 async function readMobileVerifiedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
     if (!gnbOuter || !gnbInner || !tagLineWrap || !title || !pageFooterOuter) {
       throw new Error("Expected mobile verified metric targets are missing.");
     }
@@ -297,7 +295,7 @@ async function readMobileVerifiedMetrics(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      if (name === "class" && current.closest('[data-stylex-owner="verified-user-success"]')) {
+      if (name === "class" && current.closest('[data-owner="verified-user-success"]')) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
           .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))
@@ -305,11 +303,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -317,7 +315,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)
@@ -393,7 +391,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .page.full, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");

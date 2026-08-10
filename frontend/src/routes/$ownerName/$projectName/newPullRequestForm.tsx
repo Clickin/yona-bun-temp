@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PullRequestFileUploader } from "../../../components/file-uploader";
 import { PullRequestMarkdownEditor } from "../../../components/markdown-editor";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
@@ -20,8 +19,6 @@ import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
-import { styles } from "./-new-pull-request.stylex";
-import { styles as uploadStyles } from "./-new-pull-request-form.stylex";
 
 type PullRequestFormSearch = {
   fromBranch?: string;
@@ -131,12 +128,12 @@ function ProjectNewPullRequestScreen({
 
 function ProjectNewPullRequestLoadingShell() {
   return (
-    <div className="page-wrap-outer" data-stylex-owner="new-pull-request-loading-shell">
+    <div className="page-wrap-outer" data-owner="new-pull-request-loading-shell">
       <div className="project-page-wrap">
         <div
           className="content-wrap frm-wrap"
-          data-stylex-owner="new-pull-request-loading-form"
-          data-stylex-content-ready="false"
+          data-owner="new-pull-request-loading-form"
+          data-content-ready="false"
         ></div>
       </div>
     </div>
@@ -144,25 +141,25 @@ function ProjectNewPullRequestLoadingShell() {
 }
 
 function ProjectPullRequestCreateBadRequest({ message }: { message: string }) {
-  const errorIconStyleProps = stylex.props(uploadStyles.errorIcon(`url(${legacySpriteUrl})`));
+  const errorIconStyle = {
+    backgroundImage: `url(${legacySpriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  };
   return (
-    <div className="page-wrap-outer" data-stylex-owner="new-pull-request-error-page">
+    <div className="page-wrap-outer" data-owner="new-pull-request-error-page">
       <div className="project-page-wrap">
-        <div
-          className={`${stylex.props(uploadStyles.errorWrap).className} error-wrap`.trim()}
-          data-stylex-owner="new-pull-request-error-wrap"
-        >
+        <div className="error-wrap" data-owner="new-pull-request-error-wrap">
           <i
-            {...errorIconStyleProps}
-            className={`${errorIconStyleProps.className ?? ""} ico ico-err2`.trim()}
-            data-stylex-owner="new-pull-request-error-icon"
+            style={errorIconStyle}
+            className="ico ico-err2"
+            data-owner="new-pull-request-error-icon"
           ></i>
-          <p
-            className={stylex.props(uploadStyles.errorMessage).className}
-            data-stylex-owner="new-pull-request-error-message"
-          >
-            {message}
-          </p>
+          <p data-owner="new-pull-request-error-message">{message}</p>
         </div>
       </div>
     </div>
@@ -284,12 +281,12 @@ function ProjectNewPullRequestBody({
 
   return (
     <>
-      <div className="page-wrap-outer" data-stylex-owner="new-pull-request-page">
+      <div className="page-wrap-outer" data-owner="new-pull-request-page">
         <div className="project-page-wrap">
           <div
             className="content-wrap frm-wrap"
-            data-stylex-owner="new-pull-request-form"
-            data-stylex-content-ready="true"
+            data-owner="new-pull-request-form"
+            data-content-ready="true"
           >
             <form
               action={prefixBasePath(
@@ -297,7 +294,7 @@ function ProjectNewPullRequestBody({
                 `/${ownerName}/${projectName}/pullRequests`,
               )}
               encType="multipart/form-data"
-              className={`${stylex.props(styles.form).className} nm`}
+              className="new-pr-form nm"
               onSubmit={(event) => {
                 event.preventDefault();
                 submitPullRequestForm(event.currentTarget);
@@ -343,10 +340,7 @@ function ProjectNewPullRequestBody({
                     setIsUserHasTyped(true);
                   }}
                 />
-                <div
-                  className={stylex.props(styles.editorWrapper).className}
-                  data-stylex-owner="new-pull-request-editor-wrapper"
-                >
+                <div data-owner="new-pull-request-editor-wrapper">
                   <PullRequestMarkdownEditor
                     bodyValue={bodyValue}
                     mergeSuggestionRevision={mergeSuggestionRevision}
@@ -354,8 +348,8 @@ function ProjectNewPullRequestBody({
                       setBodyValue(nextBody);
                       setIsUserHasTyped(true);
                     }}
-                    wrapperClassName={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
-                    tabContentClassName={`${stylex.props(styles.editorTabContent).className} tab-content`}
+                    wrapperClassName="mt10"
+                    tabContentClassName="tab-content"
                     owners={{
                       wrapper: "new-pull-request-markdown-editor-wrapper",
                       tabContent: "new-pull-request-editor-tab-content",
@@ -363,8 +357,8 @@ function ProjectNewPullRequestBody({
                   />
                 </div>
                 <PullRequestFileUploader
-                  helpClassName={`${stylex.props(styles.uploadSaveHelp).className} help`}
-                  pasteHelpStyleProps={stylex.props(uploadStyles.pasteHelpVisible)}
+                  helpClassName="help"
+                  pasteHelpStyleProps={{ style: { display: "block" } }}
                   owners={{
                     pasteHelp: "project-new-pull-request-form-paste-help",
                     saveHelp: "new-pull-request-upload-save-help",
@@ -379,7 +373,7 @@ function ProjectNewPullRequestBody({
                   </button>
                 </div>
               </div>
-              <ul className="nav nav-tabs mt20" data-stylex-owner="new-pull-request-tabs">
+              <ul className="nav nav-tabs mt20" data-owner="new-pull-request-tabs">
                 <li className="active">
                   <button type="button">
                     <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
@@ -460,18 +454,12 @@ function PullRequestBranchSelectors({
     );
   };
   return (
-    <div
-      className={`${stylex.props(styles.selectors).className} pull-request-wrap`}
-      data-stylex-owner="new-pull-request-selectors"
-    >
-      <div
-        className={stylex.props(styles.fromColumn).className}
-        data-stylex-owner="new-pull-request-from-column"
-      >
+    <div className="pull-request-wrap" data-owner="new-pull-request-selectors">
+      <div data-owner="new-pull-request-from-column">
         <label
           htmlFor="fromProjectId"
-          className={`${stylex.props(styles.fieldTitle).className} field-title`}
-          data-stylex-owner="new-pull-request-field-title"
+          className="field-title"
+          data-owner="new-pull-request-field-title"
         >
           {t("pullRequest.from")}
         </label>
@@ -487,13 +475,12 @@ function PullRequestBranchSelectors({
           ref={fromProjectRef}
           id="fromProjectId"
           name="fromProjectId"
-          {...stylex.props(styles.projectSelect)}
-          className={`${stylex.props(styles.projectSelect).className} mr5 select2-offscreen`}
+          className="mr5 select2-offscreen"
           tabIndex={-1}
           defaultValue={String(selected.fromProjectId)}
           key={`from-project-${selected.fromProjectId}`}
           onChange={(event) => changeValue("fromProjectId", event.currentTarget.value, true)}
-          data-stylex-owner="new-pull-request-from-project-original"
+          data-owner="new-pull-request-from-project-original"
         >
           <option></option>
           {formOptions.fromProjects.map((project) => (
@@ -529,20 +516,14 @@ function PullRequestBranchSelectors({
           ))}
         </select>
       </div>
-      <div
-        className={`${stylex.props(styles.arrow).className} arrow`}
-        data-stylex-owner="new-pull-request-arrow"
-      >
+      <div className="arrow" data-owner="new-pull-request-arrow">
         <i className="yobicon-right-2"></i>
       </div>
-      <div
-        className={stylex.props(styles.toColumn).className}
-        data-stylex-owner="new-pull-request-to-column"
-      >
+      <div data-owner="new-pull-request-to-column">
         <label
           htmlFor="toProjectId"
-          className={`${stylex.props(styles.fieldTitle).className} field-title`}
-          data-stylex-owner="new-pull-request-field-title"
+          className="field-title"
+          data-owner="new-pull-request-field-title"
         >
           {t("pullRequest.to")}
         </label>
@@ -558,13 +539,12 @@ function PullRequestBranchSelectors({
           ref={toProjectRef}
           id="toProjectId"
           name="toProjectId"
-          {...stylex.props(styles.projectSelect)}
-          className={`${stylex.props(styles.projectSelect).className} mr5 select2-offscreen`}
+          className="mr5 select2-offscreen"
           tabIndex={-1}
           defaultValue={String(selected.toProjectId)}
           key={`to-project-${selected.toProjectId}`}
           onChange={(event) => changeValue("toProjectId", event.currentTarget.value, true)}
-          data-stylex-owner="new-pull-request-to-project-original"
+          data-owner="new-pull-request-to-project-original"
         >
           <option></option>
           {formOptions.toProjects.map((project) => (
@@ -618,13 +598,13 @@ function PullRequestSelect2Closed({
   return (
     <div
       id={`s2id_${controlId}`}
-      className={`${stylex.props(styles.branchPicker).className} select2-container`}
-      data-stylex-owner={`new-pull-request-${controlId}-picker`}
+      className="select2-container"
+      data-owner={`new-pull-request-${controlId}-picker`}
     >
       <button
         type="button"
-        className={`${stylex.props(styles.select2Choice).className} select2-choice`}
-        data-stylex-owner={`new-pull-request-${controlId}-select2-choice`}
+        className="select2-choice"
+        data-owner={`new-pull-request-${controlId}-select2-choice`}
         aria-expanded="false"
         onClick={() => controlRef.current?.focus()}
       >
@@ -671,8 +651,8 @@ function PullRequestConflictConfirmModal({
         tabIndex={-1}
         role="dialog"
         aria-hidden={isOpen ? "false" : "true"}
-        className={`${isOpen ? stylex.props(styles.conflictModalOpen).className : stylex.props(styles.conflictModalClosed).className} modal hide yobiDialog${isOpen ? " in" : ""}`}
-        data-stylex-owner="new-pull-request-conflict-modal"
+        className={`modal hide yobiDialog${isOpen ? " in is-open" : ""}`}
+        data-owner="new-pull-request-conflict-modal"
       >
         <div className="btn-dismiss">
           <button type="button" className="btn-transparent" onClick={onClose}>
@@ -680,15 +660,12 @@ function PullRequestConflictConfirmModal({
           </button>
         </div>
         <div className="message">
-          <div
-            className={stylex.props(styles.conflictMessage).className}
-            data-stylex-owner="new-pull-request-conflict-message"
-          >
+          <div data-owner="new-pull-request-conflict-message">
             <p className="msg">{message}</p>
           </div>
           <div
-            className={`${stylex.props(styles.conflictActions).className} center-txt buttons mt20 mb20`}
-            data-stylex-owner="new-pull-request-conflict-actions"
+            className="center-txt buttons mt20 mb20"
+            data-owner="new-pull-request-conflict-actions"
           >
             <button type="button" className="ybtn ybtn-default" onClick={onClose}>
               {t("button.cancel")}

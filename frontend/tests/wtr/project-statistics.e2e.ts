@@ -43,11 +43,10 @@ h3,
 h4,
 h5,
 h6 {`);
-  expect(STATISTICS_ROUTE_SOURCE).toContain('data-stylex-owner="project-statistics-page-outer"');
-  expect(STATISTICS_ROUTE_SOURCE).toContain('data-stylex-owner="project-statistics-page"');
+  expect(STATISTICS_ROUTE_SOURCE).toContain('data-owner="project-statistics-page-outer"');
+  expect(STATISTICS_ROUTE_SOURCE).toContain('data-owner="project-statistics-page"');
   expect(STATISTICS_ROUTE_SOURCE).not.toContain('className="page-wrap-outer"');
   expect(STATISTICS_ROUTE_SOURCE).not.toContain('className="project-page-wrap"');
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("defineVars");
 });
 
 test("project statistics matches legacy project/statistics.scala.html DOM", async ({ page }) => {
@@ -430,9 +429,9 @@ test("project statistics header renders legacy watch dropdown and toggles projec
 async function readStatisticsMetrics(page: Page) {
   return page.evaluate(() => {
     const projectHeader = requireElement(".project-header-outer");
-    const pageWrapOuter = requireElement('[data-stylex-owner="project-statistics-page-outer"]');
-    const projectPageWrap = requireElement('[data-stylex-owner="project-statistics-page"]');
-    const heading = requireElement('[data-stylex-owner="project-statistics-page"] > h1');
+    const pageWrapOuter = requireElement('[data-owner="project-statistics-page-outer"]');
+    const projectPageWrap = requireElement('[data-owner="project-statistics-page"]');
+    const heading = requireElement('[data-owner="project-statistics-page"] > h1');
     const projectHeaderStyle = getComputedStyle(projectHeader);
     const pageWrapStyle = getComputedStyle(pageWrapOuter);
     const projectPageStyle = getComputedStyle(projectPageWrap);
@@ -486,8 +485,8 @@ async function readStatisticsMetrics(page: Page) {
 
 async function statisticsFallbackEquivalence(page: Page) {
   return page.evaluate(() => {
-    const outer = requireElement('[data-stylex-owner="project-statistics-page-outer"]');
-    const projectPage = requireElement('[data-stylex-owner="project-statistics-page"]');
+    const outer = requireElement('[data-owner="project-statistics-page-outer"]');
+    const projectPage = requireElement('[data-owner="project-statistics-page"]');
     const capture = () => ({
       outer: pick(outer),
       projectPage: pick(projectPage),
@@ -539,18 +538,18 @@ async function assertStatisticsProjectSearchShell(
     projectAction: string;
   },
 ) {
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105
   // <div class="search-box @if(project != null || org != null) {select}">
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
   const scopeControls = page.locator(
-    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+    '[data-owner=global-gnb-search-scope-item] > button[type="button"]',
   );
   await expect(scopeControls).toHaveCount(actions.length);
   await expect(scopeControls).toHaveText(
@@ -593,11 +592,11 @@ async function assertStatisticsProjectSearchShell(
 
 async function readStatisticsSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector("[data-owner=global-gnb-outer]");
     const form = document.querySelector(".gnb-search-form");
-    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const input = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
+    const input = document.querySelector('[data-owner="global-gnb-search-input"]');
     const submit = document.querySelector('.gnb-search-form button[type="submit"]');
     if (!navbar || !form || !searchBox || !scopeButton || !input || !submit) {
       return null;

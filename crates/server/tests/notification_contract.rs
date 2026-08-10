@@ -11,7 +11,10 @@ use sea_orm::{
 };
 use serde_json::json;
 use std::collections::BTreeMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc, Mutex, OnceLock,
+};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_outbox, snapshot_test_outbox};
@@ -173,10 +176,22 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
 async fn build_app_with_repository_config(
     repository_config: RepositoryConfig,
 ) -> (axum::Router, AppRepository, DatabaseConnection) {
-    let db = Database::connect("sqlite::memory:")
+    build_app_with_repository_config_and_query_count(repository_config, None).await
+}
+
+async fn build_app_with_repository_config_and_query_count(
+    repository_config: RepositoryConfig,
+    query_count: Option<Arc<AtomicUsize>>,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let mut db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
+    if let Some(query_count) = query_count {
+        db.set_metric_callback(move |_| {
+            query_count.fetch_add(1, Ordering::Relaxed);
+        });
+    }
     let app_repo = AppRepository::new_with_config(db.clone(), repository_config);
     let app = create_router_with_app_repository(
         RuntimeConfig {
@@ -729,14 +744,20 @@ async fn notification_contract_stages_mass_update_issue_state_rows_for_watchers(
 
 #[tokio::test]
 async fn notification_contract_lists_current_user_notifications_with_paging() {
-    // Guards the `/api/v1/notifications` route-module ownership split.
-    let (app, _repo, _db) = build_app_with_repository().await;
+    // The list query is one count plus one bounded joined page, independent of page contents.
+    let query_count = Arc::new(AtomicUsize::new(0));
+    let (app, _repo, _db) = build_app_with_repository_config_and_query_count(
+        RepositoryConfig::default(),
+        Some(query_count.clone()),
+    )
+    .await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
     create_issue(app.clone(), &owner_cookie, &owner_csrf, "Private issue").await;
     share_issue(app.clone(), &owner_cookie, &owner_csrf, "guest").await;
 
+    query_count.store(0, Ordering::Relaxed);
     let payload = response_json(
         rest_get(
             app,
@@ -747,6 +768,7 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
     )
     .await;
 
+    assert_eq!(query_count.load(Ordering::Relaxed), 2);
     assert_eq!(payload["total"], 1);
     assert_eq!(payload["hasMore"], true);
     let items = payload["items"].as_array().unwrap();

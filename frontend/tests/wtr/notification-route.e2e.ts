@@ -61,20 +61,18 @@ test("legacy singular notification browser route renders the raw notification fr
   await page.goto(`${basePath}/notification?from=0&limit=20`);
 
   await expect(page).toHaveURL(`${basePath}/notification?from=0&limit=20`);
+  await expect(page.locator('[data-owner="authenticated-home-notification-row"]')).toHaveCount(1);
   await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-row"]'),
-  ).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-pagination"]'),
+    page.locator('[data-owner="authenticated-home-notification-pagination"]'),
   ).toBeVisible();
   await expect(
     page.locator(
-      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, [data-stylex-owner=authenticated-home-main-stream], #setDefaultLoginPage",
+      "[data-owner=global-gnb-outer], .page-wrap-outer, [data-owner=authenticated-home-main-stream], #setDefaultLoginPage",
     ),
   ).toHaveCount(0);
 
   expect(
-    await canonicalizeSelector(page, '[data-stylex-owner="authenticated-home-notification-row"]'),
+    await canonicalizeSelector(page, '[data-owner="authenticated-home-notification-row"]'),
   ).toEqual(
     await canonicalizeHtml(
       page,
@@ -108,11 +106,11 @@ test("legacy singular notification browser route keeps the anonymous warning fra
   await expect(page).toHaveURL(`${basePath}/notification?from=0&limit=20`);
   await expect(page.locator(".warning-none")).toContainText("No notification has been received.");
   await expect(
-    page.locator('[data-stylex-owner="authenticated-home-notification-row"], #notification-more'),
+    page.locator('[data-owner="authenticated-home-notification-row"], #notification-more'),
   ).toHaveCount(0);
   await expect(
     page.locator(
-      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg, #setDefaultLoginPage",
+      "[data-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg, #setDefaultLoginPage",
     ),
   ).toHaveCount(0);
   expect(await canonicalizeSelector(page, ".warning-none")).toEqual(
@@ -191,13 +189,13 @@ async function mockAuthenticatedNotifications(
 async function readFragmentMetrics(page: Page) {
   return page.evaluate(() => {
     const shell = document.querySelector(
-      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg",
+      "[data-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg",
     );
     const main = document.querySelector<HTMLElement>("#main");
     const outletHost = main?.querySelector<HTMLElement>(":scope > div") ?? main;
     const firstFragmentNode =
       outletHost?.querySelector<HTMLElement>(
-        ':scope > [data-stylex-owner="authenticated-home-notification-row"], :scope > .warning-none',
+        ':scope > [data-owner="authenticated-home-notification-row"], :scope > .warning-none',
       ) ?? null;
     if (!firstFragmentNode || !main || !outletHost) {
       throw new Error("Expected singular notification fragment targets are missing.");

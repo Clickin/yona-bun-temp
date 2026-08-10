@@ -29,13 +29,13 @@ test("auth aliases redirect to canonical legacy public routes", async ({ page })
   expect(await canonicalizeAuthPublicRoots(page)).toEqual(signupRoots);
 
   await page.goto(`${basePath}/lostPassword?requested=1`);
-  await expect(page.locator('[data-stylex-owner="lost-password-success-alert"]')).toBeVisible();
+  await expect(page.locator('[data-owner="lost-password-success-alert"]')).toBeVisible();
   const lostPasswordRoots = await canonicalizeAuthPublicRoots(page);
 
   await page.goto(`${basePath}/forgot-password?requested=1`);
   await expect(page).toHaveURL(/\/lostPassword/u);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/lostPassword`);
-  await expect(page.locator('[data-stylex-owner="lost-password-success-alert"]')).toBeVisible();
+  await expect(page.locator('[data-owner="lost-password-success-alert"]')).toBeVisible();
   await expect(
     page.locator(`.login-form-wrap form[action='${basePath}/lostPassword']`),
   ).toBeVisible();
@@ -100,11 +100,12 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
   expect(
     await page.locator("head title").evaluateAll((els) => els.map((el) => el.textContent ?? "")),
   ).toContain(canonicalTitle);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".siteintro-bg")).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
-  ).toHaveAttribute("href", `${basePath}/users/signupform`);
+  await expect(page.locator('[data-owner="anonymous-home-intro-signup-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/users/signupform`,
+  );
   expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
   expect(await readDesktopIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
@@ -134,9 +135,10 @@ test("legacy GET /users/login keeps the public index mobile proportions", async 
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/login`);
   expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
   await expect(page.locator(".siteintro-bg")).toBeVisible();
-  await expect(
-    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
-  ).toHaveAttribute("href", `${basePath}/users/signupform`);
+  await expect(page.locator('[data-owner="anonymous-home-intro-signup-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/users/signupform`,
+  );
   expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
   expect(await readMobileIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
@@ -184,7 +186,7 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
 async function canonicalizeIndexRoots(page: Page) {
   return canonicalizeRoots(
     page,
-    ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, [data-stylex-owner=site-footer]",
+    ".unsupported, [data-owner=global-gnb-outer], .siteintro-bg, [data-owner=site-footer]",
     true,
   );
 }
@@ -192,7 +194,7 @@ async function canonicalizeIndexRoots(page: Page) {
 async function canonicalizeAuthPublicRoots(page: Page) {
   return canonicalizeRoots(
     page,
-    ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer]",
+    ".unsupported, [data-owner=global-gnb-outer], .page.full, [data-owner=site-footer]",
   );
 }
 
@@ -255,7 +257,7 @@ async function canonicalizeRoots(page: Page, selector: string, stripBrandActive 
                 value &&
                 !(
                   stripBrandActive &&
-                  current.matches('[data-stylex-owner="global-gnb-brand-link"]') &&
+                  current.matches('[data-owner="global-gnb-brand-link"]') &&
                   value === "active"
                 ) &&
                 values.indexOf(value) === index,
@@ -272,34 +274,30 @@ async function canonicalizeRoots(page: Page, selector: string, stripBrandActive 
 async function readDesktopIndexMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-cover"]',
+      '[data-owner="anonymous-home-intro-cover"]',
     );
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="global-gnb-inner"]');
+    const logo = document.querySelector<HTMLElement>('[data-owner="global-gnb-brand-link"]');
     const heading = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-heading"]',
+      '[data-owner="anonymous-home-intro-heading"]',
     );
     const signup = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-signup"]',
+      '[data-owner="anonymous-home-intro-signup"]',
     );
-    const feature = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature"]',
-    );
+    const feature = document.querySelector<HTMLElement>('[data-owner="anonymous-home-feature"]');
     const featureItem = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-item"]',
+      '[data-owner="anonymous-home-feature-item"]',
     );
     const featureIcon = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-icon"]',
+      '[data-owner="anonymous-home-feature-icon"]',
     );
     const featureInfo = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-info"]',
+      '[data-owner="anonymous-home-feature-info"]',
     );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !siteIntroCover ||
       !gnbOuter ||
@@ -362,23 +360,21 @@ async function readDesktopIndexMetrics(page: Page) {
 async function readMobileIndexMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-cover"]',
+      '[data-owner="anonymous-home-intro-cover"]',
     );
-    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const heading = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-intro-heading"]',
+      '[data-owner="anonymous-home-intro-heading"]',
     );
     const featureWrap = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-list"]',
+      '[data-owner="anonymous-home-feature-list"]',
     );
     const featureItem = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="anonymous-home-feature-item"]',
+      '[data-owner="anonymous-home-feature-item"]',
     );
-    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
-    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    const provider = document.querySelector<HTMLElement>(
-      "[data-stylex-owner=site-footer-provider]",
-    );
+    const pageFooter = document.querySelector<HTMLElement>("[data-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>("[data-owner=site-footer-provider]");
     if (
       !siteIntroCover ||
       !gnbOuter ||

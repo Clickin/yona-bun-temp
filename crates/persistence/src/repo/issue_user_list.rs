@@ -259,7 +259,9 @@ impl AppRepositoryImpl<'_> {
             if !filter_matches {
                 continue;
             }
-            if issue_state_from_raw(row.state) != normalize_identity(&filter.state) {
+            if issue_state_from_raw(self.db.get_database_backend(), row.state)
+                != normalize_identity(&filter.state)
+            {
                 continue;
             }
             if let Some(query) = filter.query.as_deref() {

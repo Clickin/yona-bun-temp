@@ -35,7 +35,6 @@ const PROJECT_PARENT_ROUTE_SOURCE = readFileSync(
 );
 const RENDERED_MARKDOWN_HELP_WRAP = `<ul class="markdown-help-wrap"><li class="markdown-help-item markdownHeaders" id="markdown-help-markdownHeaders"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre># This is an H1 ## This is an H2 ### This is an H3</pre></div><div class="span6"><div class="markdown-wrap"><h1 id="yb-header-this-is-an-h1">This is an H1<a class="active head-anchor" href="__BASE_PATH__/admin/sample/pullRequest/7/editform#yb-header-this-is-an-h1">#</a></h1><h2 id="yb-header-this-is-an-h2">This is an H2<a class="active head-anchor" href="__BASE_PATH__/admin/sample/pullRequest/7/editform#yb-header-this-is-an-h2">#</a></h2><h3 id="yb-header-this-is-an-h3">This is an H3<a class="active head-anchor" href="__BASE_PATH__/admin/sample/pullRequest/7/editform#yb-header-this-is-an-h3">#</a></h3></div></div></div></li><li class="markdown-help-item markdownStyling" id="markdown-help-markdownStyling"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre></div><div class="span6"><div class="markdown-wrap"><p><em>This is an italic</em><strong>This is an bold</strong><del>This is an strike</del></p></div></div></div></li><li class="markdown-help-item markdownLinks" id="markdown-help-markdownLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>[Site](https://example.com/ "Example Site") https://example.com/</pre></div><div class="span6"><div class="markdown-wrap"><p><a href="https://example.com/" title="Example Site">Site</a></p><p><a href="https://example.com/">https://example.com/</a></p></div></div></div></li><li class="markdown-help-item markdownLists" id="markdown-help-markdownLists"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- Red 1. White 2. Blue - Green.</pre></div><div class="span6"><div class="markdown-wrap"><ul><li>Red<ol><li>White</li><li>Blue</li></ol></li><li>Green</li></ul></div></div></div></li><li class="markdown-help-item markdownTaskList" id="markdown-help-markdownTaskList"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre></div><div class="span6"><div class="markdown-wrap"><ul><li><input type="checkbox"></input>Todos<ul><li><input checked="" type="checkbox"></input>To do A</li><li><input type="checkbox"></input>To do B</li><li><input type="checkbox"></input>To do C</li></ul></li></ul></div></div></div></li><li class="markdown-help-item markdownImages" id="markdown-help-markdownImages"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>![title](https://example.com/images/sample.png "Sample image")</pre></div><div class="span6"><div class="markdown-wrap"><p><img src="__BASE_PATH__/legacy-assets/images/ico-like-small.png" title="Sample image"></img></p></div></div></div></li><li class="markdown-help-item markdownBlockquotes" id="markdown-help-markdownBlockquotes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>> Lorem ipsum dolor sit amet, consectetuer adipiscing elit. > > Aenean commodo ligula eget dolor.</pre></div><div class="span6"><div class="markdown-wrap"><blockquote><p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p><p>Aenean commodo ligula eget dolor.</p></blockquote></div></div></div></li><li class="markdown-help-item markdownCodes" id="markdown-help-markdownCodes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>\`function test() {console.log("hello world");}\` \`\`\`javascript function test() { console.log("hello world"); } \`\`\`</pre></div><div class="span6"><div class="markdown-wrap"><p><code>function test() {console.log("hello world");}</code></p><pre><code class="hljs language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-title">test</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-built_in">console</span>.log(<span class="hljs-string">"hello world"</span>); }</code></pre></div></div></div></li><li class="markdown-help-item markdownTables" id="markdown-help-markdownTables"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>| Default | Align center | Align right | | ------------ | :----------: | ------: | | Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |</pre></div><div class="span6"><div class="markdown-wrap"><table><thead><tr><th>Default</th><th style="text-align:center">Align center</th><th style="text-align:right">Align right</th></tr></thead><tbody><tr><td>Carrot</td><td style="text-align:center">Red</td><td style="text-align:right">1,000</td></tr><tr><td>Banana</td><td style="text-align:center">Yellow</td><td style="text-align:right">32,000</td></tr></tbody></table><p>Also, you can copy & paste table from excel sheet</p></div></div></div></li><li class="markdown-help-item markdownShortLinks" id="markdown-help-markdownShortLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>Issue no: #2 Mention: @example commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593</pre></div><div class="span6"><div class="markdown-wrap"><p>Issue no:<a href="__BASE_PATH__/example/example/issue/2">#2</a></p><p></p><p>Mention:<a href="__BASE_PATH__/example">@example</a></p><p>commit:<a href="__BASE_PATH__/example/example/commit/763575">@763575</a>or<a href="__BASE_PATH__/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">@763575</a></p></div></div></div></li></ul>`;
 
-
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
@@ -78,7 +77,7 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
       .first()
       .evaluate((title) => title.textContent),
   ).toBe("Edit pull request - admin/sample");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   const shell = pullRequestEditScopedShell(page);
   await expect(shell).toBeVisible();
   await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
@@ -89,7 +88,7 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
-  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = shell.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
 
   await shell.locator("#gnb-search-scope-title").click();
@@ -213,11 +212,11 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#upload .help-pastable")).toHaveText("Paste the clipboard image");
   await expect(page.locator("#upload ul.attached-files.unstyled")).toHaveCount(1);
   await expect(page.locator("#upload ul.attached-files.unstyled li")).toHaveCount(0);
-  // F6 copy-fix: legacy `right-txt` (text-align:right, _common.less:163) is preserved via stylex
-  // uploadSaveHelp; the save-help <p> now carries data-stylex-owner="pull-request-edit-upload-save-help".
-  await expect(
-    page.locator('[data-stylex-owner="pull-request-edit-upload-save-help"]'),
-  ).toContainText("Selected file will be attached when your comment is saved.");
+  // F6 copy-fix: legacy `right-txt` (text-align:right, _common.less:163) is preserved via style
+  // uploadSaveHelp; the save-help <p> now carries data-owner="pull-request-edit-upload-save-help".
+  await expect(page.locator('[data-owner="pull-request-edit-upload-save-help"]')).toContainText(
+    "Selected file will be attached when your comment is saved.",
+  );
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
   await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
   await expect(page.locator('form.nm script[type="text/x-jquery-tmpl"]')).toHaveCount(0);
@@ -459,7 +458,7 @@ test("project pull request edit form exposes group search scope when project org
     "Pull request",
   );
   const shell = pullRequestEditScopedShell(page);
-  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = shell.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await shell.locator("#gnb-search-scope-title").click();
@@ -484,7 +483,7 @@ test("project pull request edit form keeps the project shell for project-scoped 
   ] as const) {
     await mockProjectPullRequestEditForm(page, patchRequests, { formErrorStatus: status });
     await page.goto(`${basePath}/admin/sample/pullRequest/7/editform?status=${status}`);
-    await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+    await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
@@ -704,9 +703,9 @@ function expectPullRequestUploaderHasNoLegacyLocalTemplates() {
     'import { PullRequestFileUploader } from "../../../../../components/file-uploader";',
   );
   // The route's PR uploader does not enable the legacy drag overlay; the shared component owns it.
-  expect(
-    ROUTE_SOURCE.match(/<PullRequestFileUploader[\s\S]*?\/>/u)?.[0],
-  ).not.toContain("dragOverlay");
+  expect(ROUTE_SOURCE.match(/<PullRequestFileUploader[\s\S]*?\/>/u)?.[0]).not.toContain(
+    "dragOverlay",
+  );
   expect(uploaderSource).not.toContain("tplAttachedFile");
   expect(uploaderSource).not.toContain("tplDropFilesHere");
   expect(uploaderSource).not.toContain("text/x-jquery-tmpl");
@@ -729,7 +728,9 @@ function expectPullRequestEditorUsesSharedMarkdownHelp() {
   expect(ROUTE_SOURCE).toContain(
     'import { PullRequestMarkdownEditor } from "../../../../../components/markdown-editor";',
   );
-  expect(editorSource).toContain('import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";');
+  expect(editorSource).toContain(
+    'import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";',
+  );
   expect(editorSource).toContain("help = <LegacyMarkdownHelp />");
   expect(editorSource).toContain("export function PullRequestMarkdownEditor(");
   expect(ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
@@ -748,7 +749,7 @@ function expectPullRequestEditConflictConfirmUsesRouteOwnedModal() {
 }
 
 function pullRequestEditScopedShell(page: Page) {
-  return page.locator("header[data-stylex-owner=global-gnb-outer]");
+  return page.locator("header[data-owner=global-gnb-outer]");
 }
 
 function pullRequestEditMarkdownEditor(page: Page) {
@@ -761,15 +762,11 @@ function pullRequestEditMarkdownEditor(page: Page) {
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
-    const input = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
-    );
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
+    const input = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-input"]');
     if (!navbar || !form || !scope || !searchBox || !input) {
       return null;
     }
@@ -1038,7 +1035,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
@@ -1112,7 +1109,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&

@@ -1,25 +1,12 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
 import { useLegacyMessages } from "../../../../../i18n";
 import { type RuntimeConfig } from "../../../../../runtime-config";
 import { useRootToast } from "../../../../__root";
-import { styles } from "../-commit-file.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  repo: stylex.props(styles.repo),
-  breadcrumbs: stylex.props(styles.breadcrumbs),
-  history: stylex.props(styles.history),
-  historyTable: stylex.props(styles.historyTable),
-  emptyWarning: stylex.props(styles.emptyWarning),
-  paginationLink: stylex.props(styles.paginationLink),
-  commentCount: stylex.props(styles.commentCount),
-} as const;
 
 export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch/$filePath")({
   component: ProjectCodeFileHistoryRoute,
@@ -148,22 +135,13 @@ function ProjectCodeFileHistoryBody({
   const historyPath = projectRoutePath(ownerName, projectName, "commits", encodedBranch, filePath);
 
   return (
-    <div
-      {...sx.page}
-      className={`${sx.page.className ?? ""} page-wrap-outer`.trim()}
-      data-stylex-owner="commit-file-page"
-    >
+    <div className="page-wrap-outer" data-owner="commit-file-page">
       <div className="project-page-wrap">
-        <div
-          {...sx.repo}
-          className={`bubble-wrap dark-gray repo-wrap ${sx.repo.className ?? ""}`.trim()}
-          data-stylex-owner="commit-file-repo"
-        >
-          <div className="code-browse-wrap" data-stylex-owner="commit-file-browse">
+        <div className="bubble-wrap dark-gray repo-wrap" data-owner="commit-file-repo">
+          <div className="code-browse-wrap" data-owner="commit-file-browse">
             <div
-              {...sx.breadcrumbs}
-              className={`code-breadcrumb-wrap ${sx.breadcrumbs.className ?? ""}`.trim()}
-              data-stylex-owner="commit-file-breadcrumbs"
+              className="code-breadcrumb-wrap"
+              data-owner="commit-file-breadcrumbs"
               id="breadcrumbs"
             >
               <Link
@@ -185,12 +163,8 @@ function ProjectCodeFileHistoryBody({
               ))}
             </div>
 
-            <div {...sx.history} data-stylex-owner="commit-file-history" id="history">
-              <table
-                {...sx.historyTable}
-                className={`code-table commits mt10 ${sx.historyTable.className ?? ""}`.trim()}
-                data-stylex-owner="commit-file-history-table"
-              >
+            <div data-owner="commit-file-history" id="history">
+              <table className="code-table commits mt10" data-owner="commit-file-history-table">
                 <thead className="thead">
                   <tr>
                     <td className="commit-id">
@@ -211,11 +185,7 @@ function ProjectCodeFileHistoryBody({
                 <tbody className="tbody">
                   {history.commits.length === 0 ? (
                     <tr>
-                      <td
-                        {...sx.emptyWarning}
-                        colSpan={5}
-                        data-stylex-owner="commit-file-empty-warning"
-                      >
+                      <td colSpan={5} data-owner="commit-file-empty-warning">
                         {t("code.nocommits")}
                       </td>
                     </tr>
@@ -266,10 +236,7 @@ function ProjectCodeFileHistoryBody({
                           </td>
                           <td className="messages">
                             {commit.commentCount > 0 ? (
-                              <span
-                                {...sx.commentCount}
-                                data-stylex-owner="commit-file-comment-count"
-                              >
+                              <span data-owner="commit-file-comment-count">
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}
@@ -320,9 +287,8 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: Math.max(0, history.page - 1) }}
-                {...sx.paginationLink}
-                className={`ybtn ${sx.paginationLink.className ?? ""}`.trim()}
-                data-stylex-owner="commit-file-history-pagination-newer"
+                className="ybtn"
+                data-owner="commit-file-history-pagination-newer"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
               >
@@ -333,9 +299,8 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: history.page + 1 }}
-                {...sx.paginationLink}
-                className={`ybtn ${sx.paginationLink.className ?? ""}`.trim()}
-                data-stylex-owner="commit-file-history-pagination-older"
+                className="ybtn"
+                data-owner="commit-file-history-pagination-older"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
               >

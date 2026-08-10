@@ -26,7 +26,7 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
       commentId: "",
       pathname: `${basePath}/user/issues/new`,
     });
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/alice/sample/search`,
@@ -175,7 +175,7 @@ test("user direct mine issue form keeps /user/issues/new/mine while selecting th
       commentId: "",
       pathname: `${basePath}/user/issues/new/mine`,
     });
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/dev/inbox/search`,

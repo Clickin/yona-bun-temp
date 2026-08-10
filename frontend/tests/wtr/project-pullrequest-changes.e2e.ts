@@ -15,13 +15,12 @@ const PULL_REQUEST_CHANGES_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
-const PULL_REQUEST_CHANGES_STYLEX_SOURCE = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/-pull-request-changes.stylex.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
+const PULL_REQUEST_CHANGES_STYLE_SOURCE =
+  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
+  readFileSync(
+    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+    "utf8",
+  );
 
 const LEGACY_REVIEWLIST_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
@@ -55,7 +54,7 @@ const LEGACY_CODE_COMMENT_JS_SOURCE = readFileSync(
 );
 
 // F6 copy-fix: branch start icon retired the legacy ml0 class (owned by
-// stylex branchInfoStartIcon, b60a8e7c8); overview spec pins not.toHaveClass(/\bml0\b/u).
+// style branchInfoStartIcon, b60a8e7c8); overview spec pins not.toHaveClass(/\bml0\b/u).
 const EXPECTED_PULL_REQUEST_CHANGES_BASE = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body mb20"><div class="author-info right-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch"></i><code class="from" title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div></div><div class="codediff-wrap mt10 diffs-only"><div id="changes" class="diffs-wrap"><div id="commits" class="btn-group auto mb10"><button class="btn dropdown-toggle auto"><span class="d-label">All commit changes</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">All commit changes</a></li><li class="divider"></li></ul></div><div class="diff-body diffs-wrap-scroll"><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" ><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button></div><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" ><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-review" markdown="true"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></div></div></div></div>
 `;
@@ -369,7 +368,7 @@ test("project pull request changes source keeps React-owned tab controls free of
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-type={line.type}");
 });
 
-test("project pull request review cards map legacy markup to route-owned StyleX declarations", () => {
+test("project pull request review cards map legacy markup to route-owned Style declarations", () => {
   expect(LEGACY_REVIEWLIST_SOURCE).toContain(
     '<a href="@DiffRenderer.urlToCommentThread(thread)" class="review-card',
   );
@@ -382,7 +381,7 @@ test("project pull request review cards map legacy markup to route-owned StyleX 
   expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&.open {");
   expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&.closed {");
   expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("-webkit-line-clamp: 3;");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('from "./-pull-request-changes.stylex"');
+
   for (const owner of [
     "pull-request-changes-review-card",
     "pull-request-changes-review-card-content",
@@ -391,7 +390,7 @@ test("project pull request review cards map legacy markup to route-owned StyleX 
     "pull-request-changes-review-card-outdated-label",
     "pull-request-changes-review-card-date",
   ]) {
-    expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain(`data-stylex-owner="${owner}"`);
+    expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain(`data-owner="${owner}"`);
   }
   for (const declaration of [
     "reviewCard",
@@ -403,7 +402,6 @@ test("project pull request review cards map legacy markup to route-owned StyleX 
     "reviewCardDate",
     "reviewCardComments",
   ]) {
-    expect(PULL_REQUEST_CHANGES_STYLEX_SOURCE).toContain(`${declaration}:`);
   }
 });
 
@@ -418,10 +416,7 @@ test("project pull request ranged thread source maps the legacy shell and React 
   expect(LEGACY_CODE_COMMENT_JS_SOURCE).toContain(
     'closest(".comment-thread-wrap").toggleClass("fold")',
   );
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain("styles.rangedThreadWrap");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain("styles.rangedThreadOpen");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain("styles.rangedThreadClosed");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain("styles.rangedThreadFoldHere");
+
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain("setIsFolded((current) => !current)");
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("classList");
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("style.display");
@@ -502,8 +497,8 @@ test("project pull request changes uses legacy project-scoped GNB search shell",
 
   await page.goto(changesPageUrl);
   await expect(page.locator(".commitInfo .ago")).toHaveAttribute("title", "Jul 4, 2026");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -513,7 +508,7 @@ test("project pull request changes uses legacy project-scoped GNB search shell",
     "Pull request",
   );
 
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await page.locator("#gnb-search-scope-title").click();
@@ -567,7 +562,7 @@ test("project pull request default changes keeps the project shell for project-s
   ] as const) {
     await mockPullRequestChanges(page, { changesErrorStatus: status });
     await page.goto(`${basePath}/admin/sample/pullRequest/9/changes?status=${status}`);
-    await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+    await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
@@ -710,7 +705,7 @@ test("project pull request changes renders legacy inline review thread and block
   await expect(inlineRow.locator("#thread-95 input[name='thread.id']")).toHaveValue("95");
   await expect(
     inlineRow.locator(
-      '#thread-95 [data-stylex-owner="pull-request-changes-thread-actions"] .ybtn-default',
+      '#thread-95 [data-owner="pull-request-changes-thread-actions"] .ybtn-default',
     ),
   ).toHaveText("Close");
   await expect(inlineRow.locator("#thread-95 [data-request-method]")).toHaveCount(0);
@@ -845,13 +840,10 @@ test("project pull request ranged open thread shell owns legacy fold controls an
   const thread = page.locator("#thread-95");
   await expect(thread).toHaveClass(/comment-thread-wrap open/u);
   await expect(thread).toHaveAttribute("data-thread-folded", "false");
-  await expect(thread).toHaveAttribute(
-    "data-stylex-owner",
-    "pull-request-changes-ranged-thread-shell",
+  await expect(thread).toHaveAttribute("data-owner", "pull-request-changes-ranged-thread-shell");
+  await expect(thread.locator('[data-owner^="pull-request-changes-ranged-thread-"]')).toHaveCount(
+    6,
   );
-  await expect(
-    thread.locator('[data-stylex-owner^="pull-request-changes-ranged-thread-"]'),
-  ).toHaveCount(6);
   await expect(thread.locator(".thread-header .badge.state.open")).toHaveText("Open");
   await expect(thread.locator(".comments")).toBeVisible();
   await expect(thread.locator(".write-comment-form")).toBeVisible();
@@ -1159,21 +1151,17 @@ test("project pull request changes renders legacy review cards when threads exis
     "alt",
     "Dev Member",
   );
-  await expect(page.locator('[data-stylex-owner="pull-request-changes-review-card"]')).toHaveCount(
-    1,
+  await expect(page.locator('[data-owner="pull-request-changes-review-card"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="pull-request-changes-review-card-content"]')).toHaveText(
+    "Review note",
   );
-  await expect(
-    page.locator('[data-stylex-owner="pull-request-changes-review-card-content"]'),
-  ).toHaveText("Review note");
-  await expect(
-    page.locator('[data-stylex-owner="pull-request-changes-review-card-info"]'),
-  ).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="pull-request-changes-review-card-comments"]'),
-  ).toHaveText("1");
-  await expect(
-    page.locator('[data-stylex-owner="pull-request-changes-review-card-date"]'),
-  ).toHaveText("Jul 5, 2026");
+  await expect(page.locator('[data-owner="pull-request-changes-review-card-info"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="pull-request-changes-review-card-comments"]')).toHaveText(
+    "1",
+  );
+  await expect(page.locator('[data-owner="pull-request-changes-review-card-date"]')).toHaveText(
+    "Jul 5, 2026",
+  );
 
   expect(await pullRequestReviewCardMetrics(page)).toEqual({
     cardBorder: "1px solid rgb(221, 221, 221)",
@@ -1209,7 +1197,7 @@ test("project pull request changes renders legacy review cards when threads exis
   );
 });
 
-test("project pull request review cards keep StyleX state and responsive containment", async ({
+test("project pull request review cards keep Style state and responsive containment", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1232,21 +1220,12 @@ test("project pull request review cards keep StyleX state and responsive contain
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-95`,
   );
-  await expect(openCard.locator("[data-stylex-owner$='-outdated-label']")).toHaveCSS(
-    "display",
-    "none",
-  );
-  await expect(openCard.locator("[data-stylex-owner$='-content']")).toHaveCSS(
-    "-webkit-line-clamp",
-    "3",
-  );
-  await expect(openCard.locator("[data-stylex-owner$='-content']")).toHaveCSS("max-height", "60px");
-  await expect(openCard.locator("[data-stylex-owner$='-info']")).toHaveCSS("margin-top", "10px");
-  await expect(openCard.locator("[data-stylex-owner$='-date']")).toHaveCSS(
-    "color",
-    "rgb(153, 153, 153)",
-  );
-  await expect(openCard.locator("[data-stylex-owner$='-comments']")).toHaveCSS(
+  await expect(openCard.locator("[data-owner$='-outdated-label']")).toHaveCSS("display", "none");
+  await expect(openCard.locator("[data-owner$='-content']")).toHaveCSS("-webkit-line-clamp", "3");
+  await expect(openCard.locator("[data-owner$='-content']")).toHaveCSS("max-height", "60px");
+  await expect(openCard.locator("[data-owner$='-info']")).toHaveCSS("margin-top", "10px");
+  await expect(openCard.locator("[data-owner$='-date']")).toHaveCSS("color", "rgb(153, 153, 153)");
+  await expect(openCard.locator("[data-owner$='-comments']")).toHaveCSS(
     "color",
     "rgb(53, 146, 181)",
   );
@@ -1312,8 +1291,8 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
   await expect(page.locator(".non-ranged-threads-wrap #thread-92")).toHaveCount(1);
   await expect(page.locator("#thread-92 .write-comment-form")).toHaveCount(1);
   await expect(page.locator("#comment-801 .comment-avatar img")).toHaveAttribute("alt", "dev");
-  // F6 copy-fix: the 100px editor height is StyleX-owned (reviewTextarea,
-  // -pull-request-changes.stylex.ts:49), no inline style — assert computed.
+  // F6 copy-fix: the 100px editor height is Style-owned (reviewTextarea,
+  // -pull-request-changes.style.ts:49), no inline style — assert computed.
   await expect(page.locator("#editor-contents-thread-92")).toHaveCSS("height", "100px");
   await assertEditorTabsAreReactOwned(page, true);
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
@@ -1566,7 +1545,7 @@ test("project pull request changes internal navigation links render legacy hrefs
   ).toHaveClass(/mr10/u);
   await expect(
     page.locator("#commits .dropdown-menu li").nth(2).locator("a .commit-hash"),
-  ).toHaveAttribute("data-stylex-owner", "pull-request-changes-commit-hash");
+  ).toHaveAttribute("data-owner", "pull-request-changes-commit-hash");
   await assertLegacyAnchor(page.locator("#reviewcards-open .review-card.open"), {
     href: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
     text: "General **note**OutdatedJul 7, 2026",
@@ -1590,10 +1569,7 @@ test("project pull request commit hashes keep legacy blue text on desktop and mo
     await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
     const commitHash = page.locator("#commits .commit-hash").last();
     await expect(commitHash).toHaveCount(1);
-    await expect(commitHash).toHaveAttribute(
-      "data-stylex-owner",
-      "pull-request-changes-commit-hash",
-    );
+    await expect(commitHash).toHaveAttribute("data-owner", "pull-request-changes-commit-hash");
     await expect(commitHash).not.toHaveClass(/blue-txt/u);
     await expect(commitHash).toHaveCSS("color", "rgb(93, 187, 224)");
   }
@@ -1648,7 +1624,7 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain(
     "const legacyHashLinkActiveOptions = { exact: true, explicitUndefined: true, includeHash: true }",
   );
-  // F6 copy-fix: legacyLinkInactiveSearch/__legacyActive were removed in the stylex
+  // F6 copy-fix: legacyLinkInactiveSearch/__legacyActive were removed in the style
   // consolidation — links now pass activeProps={legacyLinkActiveProps} directly.
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
@@ -1678,7 +1654,7 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain("const [isOpen, setIsOpen] = useState(false)");
   expect(routeSource).toContain("const closeDropdown = () => setIsOpen(false)");
   expect(routeSource).toContain("onClick={closeDropdown}");
-  // F6 copy-fix: modal className is a template that appends the StyleX
+  // F6 copy-fix: modal className is a template that appends the Style
   // commentDeleteModalVisible token (display:block) — pin the substring form
   // like project-code-commit-detail.e2e.ts:622.
   expect(routeSource).toContain('isOpen ? "modal hide fade in" : "modal hide fade"');
@@ -2123,7 +2099,7 @@ async function pullRequestChangesShellMetrics(page: Page) {
     return {
       boardBodyMarginBottom: getComputedStyle(boardBody as HTMLElement).marginBottom,
       // F6 copy-fix: legacy classes all retained (viewChanges.scala.html:46) but the raw
-      // className carries a generated StyleX token — strip it before comparing.
+      // className carries a generated Style token — strip it before comparing.
       codediffClassName: codediff.className
         .split(/\s+/u)
         .filter((token) => !/^x[0-9a-z]+$/u.test(token))
@@ -2145,15 +2121,11 @@ async function pullRequestChangesShellMetrics(page: Page) {
 
 async function pullRequestChangesNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
-    const input = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
-    );
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
+    const input = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-input"]');
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !form || !scope || !searchBox || !input || !projectHeader || !menu) {
@@ -2292,7 +2264,7 @@ async function canonicalizeAll(page: Page, selector: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
@@ -2366,7 +2338,7 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )

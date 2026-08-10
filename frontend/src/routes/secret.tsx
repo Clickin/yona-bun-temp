@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 
@@ -13,8 +12,6 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { secretNotFoundStyles, secretTheme } from "./-secret.stylex";
-
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   secretSetupRequired?: boolean;
 };
@@ -26,61 +23,6 @@ const legacyLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-const styles = stylex.create({
-  wrap: { textAlign: "center" },
-  logo: {
-    display: "block",
-    textAlign: "center",
-    overflow: "hidden",
-    width: "123px",
-    height: "55px",
-    lineHeight: "55px",
-    fontSize: "2em",
-    color: secretTheme.logoText,
-    backgroundColor: secretTheme.logoSurface,
-    margin: "50px auto",
-    ":hover": { color: secretTheme.logoText },
-  },
-  box: { width: "50%", margin: "20px auto" },
-  formWrap: {
-    margin: "14px auto 0",
-    position: "relative",
-    width: "400px",
-  },
-  field: {
-    borderBottomColor: {
-      default: secretTheme.fieldBorder,
-      ":focus": secretTheme.fieldFocusBorder,
-    },
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderLeftStyle: "none",
-    borderRightStyle: "none",
-    borderTopStyle: "none",
-    borderRadius: "0",
-    boxShadow: { default: "none", ":focus": "none" },
-    fontSize: "12px",
-    fontWeight: "bold",
-    height: "27px",
-    marginBottom: "15px",
-    outline: { default: "none", ":focus": "none" },
-    // Frozen mobile width/font rules are !important, so they intentionally remain
-    // effective fallback instead of being shadowed by an ineffective StyleX variant.
-    width: "386px",
-  },
-  actionRow: {
-    display: "block",
-    margin: "0 auto 20px",
-    textAlign: "center",
-  },
-});
-const secretWrapClassName = stylex.props(styles.wrap).className;
-const secretLogoClassName = stylex.props(styles.logo).className;
-const secretBoxClassName = stylex.props(styles.box).className;
-const secretFormWrapClassName = stylex.props(styles.formWrap).className;
-const secretFieldClassName = stylex.props(styles.field).className;
-const secretActionRowClassName = stylex.props(styles.actionRow).className;
 
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
@@ -166,35 +108,25 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
       <div className="page-wrap-outer">
         <div className="container page-wrap">
           <div className="page">
-            <div
-              className={`secret-wrap ${secretWrapClassName}`}
-              data-stylex-owner="secret-setup"
-              data-stylex-part="secret-setup-wrap"
-            >
+            <div className={"secret-wrap"} data-owner="secret-setup" data-part="secret-setup-wrap">
               <Link
                 to="/"
                 activeProps={legacyLinkActiveProps}
-                className={`logo ${secretLogoClassName}`}
-                data-stylex-part="secret-setup-logo"
+                className={"logo"}
+                data-part="secret-setup-logo"
               >
                 <span>{siteName}</span>
               </Link>
 
               <h3>{welcome}</h3>
 
-              <div
-                className={`alert alert-block secret-box ${secretBoxClassName}`}
-                data-stylex-part="secret-setup-box"
-              >
+              <div className={"alert alert-block secret-box"} data-part="secret-setup-box">
                 <h4>{t("app.welcome.warning.title")}</h4>
                 {t("app.welcome.warning.desc")}
               </div>
             </div>
 
-            <div
-              className={`signup-form-wrap frm-wrap ${secretFormWrapClassName}`}
-              data-stylex-owner="secret-setup-form"
-            >
+            <div className={"signup-form-wrap frm-wrap"} data-owner="secret-setup-form">
               <form
                 action={contextRoot}
                 method="post"
@@ -211,7 +143,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="loginId"
                       type="text"
                       name="loginId"
-                      className={`text password ${secretFieldClassName}`}
+                      className={"text password"}
                       placeholder=""
                       autoComplete="off"
                       readOnly
@@ -227,7 +159,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="uname"
                       type="text"
                       name="name"
-                      className={`text password ${secretFieldClassName}`}
+                      className={"text password"}
                       placeholder=""
                       autoComplete="off"
                       defaultValue=""
@@ -243,7 +175,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="email"
                       type="text"
                       name="email"
-                      className={`text password ${secretFieldClassName}`}
+                      className={"text password"}
                       placeholder=""
                       autoComplete="off"
                       defaultValue=""
@@ -259,7 +191,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="password"
                       type="password"
                       name="password"
-                      className={`text password ${secretFieldClassName}`}
+                      className={"text password"}
                       placeholder=""
                       autoComplete="off"
                     />
@@ -274,16 +206,13 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="retypedPassword"
                       type="password"
                       name="retypedPassword"
-                      className={`text password ${secretFieldClassName}`}
+                      className={"text password"}
                       placeholder=""
                       autoComplete="off"
                     />
                   </dd>
                 </dl>
-                <div
-                  className={`btns-row ${secretActionRowClassName}`}
-                  data-stylex-part="secret-setup-action-row"
-                >
+                <div className={"btns-row"} data-part="secret-setup-action-row">
                   <button type="submit" className="ybtn ybtn-success">
                     {t("app.welcome.submit")}
                   </button>
@@ -382,29 +311,16 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </ul>
         </div>
       </header>
-      <div className="page-wrap-outer" data-stylex-owner="secret-notfound-page">
+      <div className="page-wrap-outer" data-owner="secret-notfound-page">
         <div className="project-page-wrap">
-          <div
-            {...stylex.props(secretNotFoundStyles.errorWrap)}
-            className={`${stylex.props(secretNotFoundStyles.errorWrap).className} error-wrap`}
-            data-stylex-owner="secret-notfound-error-wrap"
-          >
-            <i
-              {...stylex.props(secretNotFoundStyles.errorIcon(legacySpriteUrl))}
-              className={`${stylex.props(secretNotFoundStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
-              data-stylex-owner="secret-notfound-error-icon"
-            />
-            <p
-              {...stylex.props(secretNotFoundStyles.errorMessage)}
-              data-stylex-owner="secret-notfound-error-message"
-            >
-              {t("error.notfound")}
-            </p>
+          <div className={"error-wrap"} data-owner="secret-notfound-error-wrap">
+            <i className={"ico ico-err2"} data-owner="secret-notfound-error-icon" />
+            <p data-owner="secret-notfound-error-message">{t("error.notfound")}</p>
             <Link
               to="/"
               activeProps={legacyLinkActiveProps}
               className="ybtn ybtn-info"
-              data-stylex-owner="secret-notfound-home"
+              data-owner="secret-notfound-home"
             >
               {t("menu.home")}
             </Link>

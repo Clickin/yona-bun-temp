@@ -149,7 +149,7 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
   await mockProjectLabels(page);
 
   await page.goto(labelsPageUrl);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -158,7 +158,7 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
   await expect(page.locator("#subMenuIssueLabel.active > a")).toBeVisible();
 
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons).toHaveCount(2);
   await expect
@@ -269,7 +269,7 @@ test("project labels exposes group search scope when project org data exists", a
 
   await page.goto(labelsPageUrl);
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = page.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons).toHaveCount(3);
   await expect
@@ -1351,7 +1351,7 @@ test("project labels typeahead source stays React-owned and legacy-enter guarded
   );
   expect(routeSource).not.toContain('data-provider="typeahead"');
   expect(routeSource).not.toContain("data-provider");
-  expect(routeSource).toContain('`typeahead dropdown-menu ${');
+  expect(routeSource).toContain("`typeahead dropdown-menu ${");
   expect(routeSource).toContain("value={categoryTypeaheadQuery}");
   expect(routeSource).toContain("value={newLabelColor}");
   expect(routeSource).toContain("setCategoryTypeaheadQuery(categoryName);");
@@ -1753,13 +1753,12 @@ async function labelListMetrics(page: Page) {
       deleteCategoryName: deleteButton?.getAttribute("data-category-name"),
       deleteLabelId: deleteButton?.getAttribute("data-label-id"),
       deleteUri: deleteButton?.getAttribute("data-delete-uri"),
-      exclusiveClass: exclusiveIcon
-        ?.getAttribute("class")
-        ?.split(/\s+/u)
-        .filter(
-          (token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"),
-        )
-        .join(" ") ?? null,
+      exclusiveClass:
+        exclusiveIcon
+          ?.getAttribute("class")
+          ?.split(/\s+/u)
+          .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"))
+          .join(" ") ?? null,
       exclusiveDataHtml: exclusiveIcon?.getAttribute("data-html"),
       exclusivePlacement: exclusiveIcon?.getAttribute("data-placement"),
       exclusiveTitle: exclusiveIcon?.getAttribute("title"),
@@ -1830,15 +1829,11 @@ async function categoryTypeaheadMetrics(page: Page) {
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
-    const input = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
-    );
+    const searchBox = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
+    const input = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-input"]');
     if (!navbar || !form || !scope || !searchBox || !input) {
       return null;
     }
@@ -1869,12 +1864,12 @@ async function labelFormMetrics(page: Page) {
     const tabs = requireElement(".project-page-wrap > .nav.nav-tabs");
     const activeTab = requireElement("#subMenuIssueLabel");
     const copyForm = requireElement("#copyLabel");
-    // F6 copy-fix-current-dom: copy/new legends and wraps are stylex-owned (no
+    // F6 copy-fix-current-dom: copy/new legends and wraps are style-owned (no
     // legacy form-legend/form-wrap/btn-submit classes); target the owners.
-    const copyLegend = requireElement("#copyLabel [data-stylex-owner=project-labels-copy-legend]");
+    const copyLegend = requireElement("#copyLabel [data-owner=project-labels-copy-legend]");
     const copyWrap = requireElement("#copyLabel > div:first-of-type");
     const copyOwner = requireElement('#copyLabel input[name="owner"]');
-    const copySubmit = requireElement("#copyLabel [data-stylex-owner=project-labels-copy-submit]");
+    const copySubmit = requireElement("#copyLabel [data-owner=project-labels-copy-submit]");
     const newForm = requireElement("#frmNewLabel");
     const newWrap = requireElement("#frmNewLabel > div:first-of-type");
     const categoryInput = requireElement('#frmNewLabel input[name="category"]');
@@ -2012,7 +2007,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-project-header-owner" &&
             !isEmptyInputValueAttr(node, attr) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -2033,9 +2028,9 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function normalizeAttr(attr: Attr) {
       if (attr.name === "class") {
-        const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+        const owner = attr.ownerElement?.getAttribute("data-owner");
         // the app renders the legacy .new-label-wrap forms and .form-legend strongs
-        // through stylex-owned wrappers (labelsform.tsx:553-562,596-605);
+        // through style-owned wrappers (labelsform.tsx:553-562,596-605);
         // legacy issuelabels.scala.html:33-34,43-44
         if (owner === "project-labels-copy-form" || owner === "project-labels-new-form") {
           return "new-label-wrap";
@@ -2054,7 +2049,7 @@ async function canonicalizeScreenRoots(page: Page) {
           // legacy issuelabels.scala.html:71 label.add submit uses ybtn-primary
           return "ybtn ybtn-primary btn-submit";
         }
-        // the new-label form's legend <strong> renders stylex-only without an owner
+        // the new-label form's legend <strong> renders style-only without an owner
         // (labelsform.tsx:601-606); legacy issuelabels.scala.html:44 form-legend
         if (
           attr.ownerElement?.tagName === "STRONG" &&
@@ -2062,7 +2057,7 @@ async function canonicalizeScreenRoots(page: Page) {
         ) {
           return "form-legend";
         }
-        // the copy/new label forms' inner shell and text inputs render stylex-only
+        // the copy/new label forms' inner shell and text inputs render style-only
         // classes (labelsform.tsx:564-578,612-627); map them to the legacy
         // .form-wrap / .input-label classes (issuelabels.scala.html:35-37,47-49)
         if (
@@ -2072,12 +2067,12 @@ async function canonicalizeScreenRoots(page: Page) {
           const tokens = attr.value
             .split(/\s+/u)
             .filter((token) => token && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"));
-          // the typeahead anchor / preset-colors wrappers carry data-stylex-owner and
+          // the typeahead anchor / preset-colors wrappers carry data-owner and
           // render no legacy class; only the bare shell div maps to .form-wrap
           if (
             attr.ownerElement.tagName === "DIV" &&
             tokens.length === 0 &&
-            !attr.ownerElement.hasAttribute("data-stylex-owner")
+            !attr.ownerElement.hasAttribute("data-owner")
           ) {
             return "form-wrap";
           }
@@ -2111,30 +2106,32 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeStyle(value: string) {
-      return value
-        .replace(/\s+/g, "")
-        .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
-          return `#${[red, green, blue]
-            .map((channel) => Number(channel).toString(16).padStart(2, "0"))
-            .join("")}`;
-        })
-        .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
-        .replace(/;$/, "")
-        .replaceAll('"', "'")
-        // the app renders the legacy project-header background image as a stylex
-        // --x-backgroundImage var (projectName.tsx:2904); normalize it to the legacy
-        // background-image declaration (search-project.e2e.ts:1264 precedent)
-        .replace(/--x-backgroundImage:/gu, "background-image:")
-        // preset color buttons render their legacy background-color as a stylex
-        // --x-backgroundColor var (labelsform.tsx preset colors)
-        .replace(/--x-backgroundColor:/gu, "background-color:")
-        // F6 copy-fix-current-dom: the empty-state ico renders its legacy sprite
-        // as an inlined built-asset url (/yona/assets/sprite-<hash>.png); map it
-        // to the stable legacy path like the org-pullrequests canonicalizer.
-        .replace(
-          /url\((['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?)\)/gu,
-          "url($1src/assets/legacy/$2$3$4)",
-        );
+      return (
+        value
+          .replace(/\s+/g, "")
+          .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
+            return `#${[red, green, blue]
+              .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+              .join("")}`;
+          })
+          .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
+          .replace(/;$/, "")
+          .replaceAll('"', "'")
+          // the app renders the legacy project-header background image as a style
+          // --x-backgroundImage var (projectName.tsx:2904); normalize it to the legacy
+          // background-image declaration (search-project.e2e.ts:1264 precedent)
+          .replace(/--x-backgroundImage:/gu, "background-image:")
+          // preset color buttons render their legacy background-color as a style
+          // --x-backgroundColor var (labelsform.tsx preset colors)
+          .replace(/--x-backgroundColor:/gu, "background-color:")
+          // F6 copy-fix-current-dom: the empty-state ico renders its legacy sprite
+          // as an inlined built-asset url (/yona/assets/sprite-<hash>.png); map it
+          // to the stable legacy path like the org-pullrequests canonicalizer.
+          .replace(
+            /url\((['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?)\)/gu,
+            "url($1src/assets/legacy/$2$3$4)",
+          )
+      );
     }
   });
 }
@@ -2167,7 +2164,7 @@ async function canonicalizeElement(page: Page, selector: string) {
             attr.name !== "data-status" &&
             !isEmptyInputValueAttr(node, attr) &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -2249,7 +2246,7 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
               attr.name !== "alt" &&
               !isEmptyInputValueAttr(node, attr) &&
               attr.name !== "data-style-src" &&
-              attr.name !== "data-stylex-owner",
+              attr.name !== "data-owner",
           )
           .sort((left, right) => left.name.localeCompare(right.name))
           .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -2293,22 +2290,24 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
       }
 
       function normalizeStyle(value: string) {
-        return value
-          .replace(/\s+/g, "")
-          .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
-            return `#${[red, green, blue]
-              .map((channel) => Number(channel).toString(16).padStart(2, "0"))
-              .join("")}`;
-          })
-          .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
-          .replace(/;$/, "")
-          .replaceAll('"', "'")
-          // F6 copy-fix-current-dom: match the screen-roots sprite-url normalization
-          // (empty-state ico background-image) so fixtures can pin the stable path.
-          .replace(
-            /url\((['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?)\)/gu,
-            "url($1src/assets/legacy/$2$3$4)",
-          );
+        return (
+          value
+            .replace(/\s+/g, "")
+            .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
+              return `#${[red, green, blue]
+                .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+                .join("")}`;
+            })
+            .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
+            .replace(/;$/, "")
+            .replaceAll('"', "'")
+            // F6 copy-fix-current-dom: match the screen-roots sprite-url normalization
+            // (empty-state ico background-image) so fixtures can pin the stable path.
+            .replace(
+              /url\((['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?)\)/gu,
+              "url($1src/assets/legacy/$2$3$4)",
+            )
+        );
       }
     },
     { markup: html, rootSelector: selector },

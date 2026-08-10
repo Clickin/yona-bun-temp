@@ -41,7 +41,7 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   await mockProjectCodeFile(page, codeRequests, "README.txt");
 
   await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+  await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -49,20 +49,18 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  const searchBox = page.locator('[data-owner="global-gnb-search-box"]');
   await expect(searchBox).toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            action: element.getAttribute("data-action") ?? "",
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       { action: "", text: "This Project" },
@@ -71,7 +69,7 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
 
   const fileUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(fileUrl);
@@ -153,17 +151,13 @@ test("project code file committer title metadata is native without placement mar
     "href",
     `${basePath}/admin/sample/commit/1234567890abcdef?branch=main#README.txt`,
   );
-  await expect(page.locator('[data-stylex-owner="project-code-file-comment-count"]')).toHaveText(
-    "2",
-  );
+  await expect(page.locator('[data-owner="project-code-file-comment-count"]')).toHaveText("2");
   await expect(page.locator("#commitDate")).toHaveText("Jul 2, 2026");
   await expect(page.locator("#commitMessage")).toHaveText("Update README");
   expect(codeRequests).toEqual(["branch=main&path=README.txt"]);
 });
 
-test("project code file comment count owns legacy spacing and color in StyleX", async ({
-  page,
-}) => {
+test("project code file comment count owns legacy spacing and color in Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const codeRequests: string[] = [];
   await mockProjectCodeFile(page, codeRequests, "README.txt");
@@ -171,7 +165,7 @@ test("project code file comment count owns legacy spacing and color in StyleX", 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
 
-  const commentCount = page.locator('[data-stylex-owner="project-code-file-comment-count"]');
+  const commentCount = page.locator('[data-owner="project-code-file-comment-count"]');
   await expect(commentCount).toHaveText("2");
   await expect(commentCount).toHaveClass(/ml5/u);
   await expect(commentCount).toHaveClass(/number-of-comments/u);
@@ -182,7 +176,7 @@ test("project code file comment count owns legacy spacing and color in StyleX", 
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "commit" });
-  const mobileCommentCount = page.locator('[data-stylex-owner="project-code-file-comment-count"]');
+  const mobileCommentCount = page.locator('[data-owner="project-code-file-comment-count"]');
   await expect(mobileCommentCount).toBeVisible();
   await expect(mobileCommentCount).toHaveCSS("margin-left", "5px");
   await expect(mobileCommentCount).toHaveCSS("margin-right", "8px");
@@ -208,14 +202,12 @@ test("project code text file includes legacy group search scope when project has
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
-        .evaluateAll((elements) =>
-          elements.map((element) => ({
-            action: element.getAttribute("data-action") ?? "",
-            text: element.textContent?.trim() ?? "",
-          })),
-        ),
+      page.locator("[data-owner=global-gnb-search-scope-item] > button").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
       { action: "", text: "This Project" },
@@ -225,7 +217,7 @@ test("project code text file includes legacy group search scope when project has
 
   const fileUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -234,13 +226,13 @@ test("project code text file includes legacy group search scope when project has
   await expect(page).toHaveURL(fileUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(fileUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").first().click();
+  await page.locator("[data-owner=global-gnb-search-scope-item] > button").first().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -637,9 +629,7 @@ test("project code file route source keeps backend links as reload-document Link
   expect(routeSource).not.toContain("href={rawHref}");
   expect(routeSource).not.toContain("href={openHref}");
   expect(routeSource).toContain("isOpenInBrowserPopoverVisible");
-  expect(routeSource).toContain(
-    'className={`popover top in ${stylex.props(styles.popover).className ?? ""}`.trim()}',
-  );
+
   expect(routeSource).toContain('className="popover-content"');
   expect(routeSource).not.toContain('data-content={t("code.open.desc")}');
   expect(routeSource).not.toContain('data-toggle="popover"');
@@ -672,9 +662,7 @@ test("project code file route source keeps backend links as reload-document Link
   expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
   // commit permalink Link uses projectPath(...) (filePath.tsx:875), which resolves to
   // the same legacy commit URL (conf/routes:349 GET /:user/:project/commit/:id)
-  expect(routeSource).toContain(
-    'to={projectPath(ownerName, projectName, "commit", commitId)}',
-  );
+  expect(routeSource).toContain('to={projectPath(ownerName, projectName, "commit", commitId)}');
   expect(routeSource).toContain("const newFilePathWithSearch =");
   expect(routeSource).toContain("const editPathWithSearch =");
   expect(routeSource).toContain("function branchItemName(branch: string)");
@@ -694,9 +682,7 @@ test("project code file wrapper marker is not React-owned DOM", () => {
   const fileViewBlock = routeSource.match(/function FileView\([\s\S]*?function projectHref/u)?.[0];
 
   expect(fileViewBlock).toBeTruthy();
-  expect(fileViewBlock).toContain(
-    "className={`${stylex.props(styles.fileWrap).className} file-wrap`}",
-  );
+
   expect(fileViewBlock).not.toContain('className="file-wrap" data-type="file"');
   expect(fileViewBlock).not.toContain('<div className="file-wrap" data-type');
 });
@@ -776,14 +762,10 @@ async function fileViewMetrics(page: Page) {
 
 async function readCodeFileNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(
-      "header[data-stylex-owner=global-gnb-outer]",
-    );
+    const header = document.querySelector<HTMLElement>("header[data-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const search = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
+    const search = document.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
     const missing = Object.entries({ form, header, scope, search })
       .filter(([, element]) => !element)
       .map(([name]) => name);
@@ -801,7 +783,7 @@ async function readCodeFileNavbarMetrics(page: Page) {
       formBottomWithinNavbar: formBox.bottom <= headerBox.bottom + 1,
       formRightWithinNavbar: formBox.right <= headerBox.right,
       formTopWithinNavbar: formBox.top >= headerBox.top,
-      // header carries stylex tokens + retained legacy gnb-outer project-header
+      // header carries style tokens + retained legacy gnb-outer project-header
       // (legacy layout.scala.html:35 <header class="gnb-outer project-header">)
       headerClassName: header.className
         .split(/\s+/u)
@@ -1223,7 +1205,7 @@ async function canonicalize(page: Page, selector: string) {
           .filter(
             (attr) =>
               !attr.name.startsWith("data-v-") &&
-              attr.name !== "data-stylex-owner" &&
+              attr.name !== "data-owner" &&
               attr.name !== "alt" &&
               attr.name !== "aria-current" &&
               attr.name !== "data-status" &&
@@ -1240,7 +1222,7 @@ async function canonicalize(page: Page, selector: string) {
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
-            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-owner" &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
@@ -1336,4 +1318,4 @@ async function canonicalizeHtml(page: Page, html: string) {
   }, html);
 }
 
-// Client-side syntax highlighting and code line rendering verified with Highlight.js and StyleX.
+// Client-side syntax highlighting and code line rendering verified with Highlight.js and Style.

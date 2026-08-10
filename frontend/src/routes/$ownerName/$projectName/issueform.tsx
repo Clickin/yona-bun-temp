@@ -2,7 +2,6 @@
 /* oxlint-disable react-doctor/query-mutation-missing-invalidation -- project header mutations share invalidateProject and issue creation invalidates source/target issue caches. */
 /* oxlint-disable react-doctor/no-many-boolean-props -- backend ACL capability flags are the minimal legacy form visibility contract. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import {
   Link,
   createFileRoute,
@@ -19,6 +18,7 @@ import {
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type DragEvent,
   type FormEvent,
   type KeyboardEvent,
@@ -75,7 +75,6 @@ import { IssueDueDateInput } from "../../../components/issue-due-date-input";
 import { MarkdownEditor } from "../../../components/markdown-editor";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { issueFormStyles, projectIssueFormTheme } from "./-issueform.stylex";
 
 const CHECKLIST_TEMPLATE = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 const DRAFT_SAVE_DELAY_MS = 5_000;
@@ -481,8 +480,8 @@ export function ProjectIssueFormProjectScreen({
         <div className="page-wrap-outer">
           <div className="project-page-wrap">
             <div
-              className={`${stylex.props(styles.error).className} issue-form-load-error`}
-              data-stylex-owner="project-issue-form-load-error"
+              className="issue-form-load-error"
+              data-owner="project-issue-form-load-error"
               role="alert"
             >
               {t(firstError instanceof Error ? firstError.message : "error.internalServerError")}
@@ -521,8 +520,8 @@ export function ProjectIssueFormProjectScreen({
         <div className="page-wrap-outer">
           <div className="project-page-wrap">
             <div
-              className={`${stylex.props(styles.error).className} issue-form-load-error`}
-              data-stylex-owner="project-issue-form-load-error"
+              className="issue-form-load-error"
+              data-owner="project-issue-form-load-error"
               role="alert"
             >
               {t(firstError instanceof Error ? firstError.message : "error.internalServerError")}
@@ -1041,15 +1040,9 @@ function ProjectIssueFormBody({
   };
 
   return (
-    <div
-      className="page-wrap-outer issue-form-page-wrap"
-      data-stylex-owner="project-issue-form-page"
-    >
+    <div className="page-wrap-outer issue-form-page-wrap" data-owner="project-issue-form-page">
       <div className="project-page-wrap">
-        <div
-          className={`${stylex.props(styles.form).className} content-wrap frm-wrap`}
-          data-stylex-owner="project-issue-form"
-        >
+        <div className="content-wrap frm-wrap" data-owner="project-issue-form">
           <form
             id="issue-form"
             action={prefixBasePath(
@@ -1072,13 +1065,12 @@ function ProjectIssueFormBody({
                 <dl>
                   <dd>
                     <div
-                      className={`${stylex.props(styles.titleRow).className} span12 issue-title-row`}
-                      data-stylex-owner="project-issue-form-title-row"
+                      className="span12 issue-title-row"
+                      data-owner="project-issue-form-title-row"
                     >
                       <div
-                        {...stylex.props(issueFormStyles.issueTitleField)}
-                        className={`span11 issue-title-field ${stylex.props(issueFormStyles.issueTitleField).className ?? ""}`.trim()}
-                        data-stylex-owner="project-issue-form-title-field"
+                        className="span11 issue-title-field"
+                        data-owner="project-issue-form-title-field"
                       >
                         <TitleInput
                           ownerName={ownerName}
@@ -1094,9 +1086,8 @@ function ProjectIssueFormBody({
                       </div>
                       <button
                         type="button"
-                        {...stylex.props(issueFormStyles.subtaskMessage)}
-                        className={`span1 subtask-message${isSubtaskOptionHighlighted ? " option-on" : ""} ${stylex.props(issueFormStyles.subtaskMessage).className ?? ""}`.trim()}
-                        data-stylex-owner="project-issue-form-subtask-message"
+                        className={`span1 subtask-message${isSubtaskOptionHighlighted ? " option-on" : ""}`}
+                        data-owner="project-issue-form-subtask-message"
                         aria-expanded={isSubtaskOptionVisible}
                         onClick={() =>
                           setIsSubtaskOptionVisible((current) => {
@@ -1111,9 +1102,9 @@ function ProjectIssueFormBody({
                     </div>
                     {submitError ? (
                       <div
-                        className={`${stylex.props(styles.error).className} message issue-form-error`}
+                        className="message issue-form-error"
                         role="alert"
-                        data-stylex-owner="project-issue-form-error"
+                        data-owner="project-issue-form-error"
                       >
                         {submitError}
                       </div>
@@ -1143,17 +1134,10 @@ function ProjectIssueFormBody({
                   </dd>
                 </dl>
               </div>
-              <div
-                className={`${stylex.props(styles.columns).className} row-fluid issue-form-columns`}
-                data-stylex-owner="project-issue-form-columns"
-              >
+              <div className="row-fluid issue-form-columns" data-owner="project-issue-form-columns">
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd
-                      {...stylex.props(issueFormStyles.editorCell)}
-                      className={`${stylex.props(issueFormStyles.editorCell).className} issue-editor-cell`}
-                      data-stylex-owner="project-issue-form-editor"
-                    >
+                    <dd className="issue-editor-cell" data-owner="project-issue-form-editor">
                       <IssueBodyMarkdownEditor
                         bodyMarkdown={bodyMarkdown}
                         bodyRef={bodyRef}
@@ -1187,30 +1171,8 @@ function ProjectIssueFormBody({
                     onFiles={(files) => void uploadFiles(files)}
                     onInsert={insertAttachment}
                     onRemove={(row) => void removeAttachment(row)}
-                    styles={{
-                      shell: issueFormStyles.uploadShell,
-                      fakeFile: issueFormStyles.uploadFakeFile,
-                      fileInput: issueFormStyles.uploadFileInput,
-                      pasteHelp: issueFormStyles.uploadHelpPastable,
-                      attachedFilesVisible: issueFormStyles.attachedFilesVisible,
-                      attachedFile: issueFormStyles.attachedFile,
-                      attachedFileMain: issueFormStyles.attachedFileMain,
-                      attachedFileMainDisabled: issueFormStyles.attachedFileMainDisabled,
-                      attachedFileMainIcon: issueFormStyles.attachedFileMainIcon,
-                      attachedFileName: issueFormStyles.attachedFileName,
-                      attachedFileInsertCopy: issueFormStyles.attachedFileInsertCopy,
-                      uploadProgressWrapper: issueFormStyles.uploadProgressWrapper,
-                      uploadProgress: issueFormStyles.uploadProgress,
-                      uploadProgressBar: issueFormStyles.uploadProgressBar,
-                      uploadError: issueFormStyles.uploadError,
-                      attachedFileDelete: issueFormStyles.attachedFileDelete,
-                      uploadAttachSaveHelp: issueFormStyles.uploadAttachSaveHelp,
-                    }}
                   />
-                  <div
-                    className={`${stylex.props(styles.actions).className} actrow`}
-                    data-stylex-owner="project-issue-form-actions"
-                  >
+                  <div className="actrow" data-owner="project-issue-form-actions">
                     <button
                       type="submit"
                       id="button-save"
@@ -1231,9 +1193,8 @@ function ProjectIssueFormBody({
                     </button>
                     <button
                       type="button"
-                      {...stylex.props(issueFormStyles.cancelButton)}
-                      className={`ybtn issue-form-cancel ${stylex.props(issueFormStyles.cancelButton).className ?? ""}`.trim()}
-                      data-stylex-owner="project-issue-form-cancel-button"
+                      className="ybtn issue-form-cancel"
+                      data-owner="project-issue-form-cancel-button"
                       onClick={cancelIssueForm}
                     >
                       {t("button.cancel")}
@@ -1241,8 +1202,8 @@ function ProjectIssueFormBody({
                   </div>
                 </div>
                 <div
-                  className={`${stylex.props(styles.rightMenu).className} span3 span-hard-wrap right-menu`}
-                  data-stylex-owner="project-issue-form-right-menu"
+                  className="span3 span-hard-wrap right-menu"
+                  data-owner="project-issue-form-right-menu"
                 >
                   {canCreateIssueAssignee ? (
                     <IssueAssigneeSelect
@@ -1266,9 +1227,8 @@ function ProjectIssueFormBody({
                     <dt>{t("issue.dueDate")}</dt>
                     <dd>
                       <div
-                        {...stylex.props(issueFormStyles.dueDateSearchBar)}
-                        className={`search search-bar ${stylex.props(issueFormStyles.dueDateSearchBar).className ?? ""}`.trim()}
-                        data-stylex-owner="project-issue-form-due-date-search"
+                        className="search search-bar"
+                        data-owner="project-issue-form-due-date-search"
                       >
                         <label className="blind" htmlFor="issueDueDate">
                           {t("issue.dueDate")}
@@ -1278,8 +1238,6 @@ function ProjectIssueFormBody({
                           inputId="issueDueDate"
                           datePickerRef={datePickerRef}
                           dueDateRef={dueDateRef}
-                          inputStyle={issueFormStyles.dueDateInput}
-                          buttonStyle={issueFormStyles.dueDateCalendarButton}
                           value={dueDate}
                           autoComplete="off"
                           onChange={setDueDate}
@@ -1443,12 +1401,11 @@ function TitleInput({
     >
       <input
         ref={titleRef}
-        {...stylex.props(issueFormStyles.issueTitleInput)}
         type="text"
         id="title"
         name="title"
         value={title}
-        className={`text title ${stylex.props(issueFormStyles.issueTitleInput).className ?? ""}`.trim()}
+        className="text title"
         maxLength={250}
         tabIndex={1}
         placeholder={t("title")}
@@ -1468,37 +1425,31 @@ function TitleInput({
       {suggestions.length > 0 ? (
         <div
           id="title-head-options"
-          {...stylex.props(issueFormStyles.titleHeadOptions)}
-          className={`issue-combobox-options title-head-options ${stylex.props(issueFormStyles.titleHeadOptions).className ?? ""}`.trim()}
-          data-stylex-owner="project-issue-form-title-head-options"
+          className="issue-combobox-options title-head-options"
+          data-owner="project-issue-form-title-head-options"
           role="listbox"
         >
           {suggestions.map((suggestion, index) => {
-            const optionStyle = stylex.props(
-              issueFormStyles.issueComboboxOptionButton,
-              index === activeIndex && issueFormStyles.issueComboboxOptionButtonActive,
-            );
             return (
               <button
                 type="button"
                 id={`title-head-${index}`}
                 key={`${suggestion.category}-${suggestion.id ?? suggestion.name}`}
-                {...optionStyle}
-                className={`title-head-option ${index === activeIndex ? "active" : ""} ${optionStyle.className ?? ""}`.trim()}
-                data-stylex-owner="project-issue-form-title-suggestion-option"
+                className={`title-head-option ${index === activeIndex ? "active" : ""} project-issue-form-combobox-option-button`.trim()}
+                data-owner="project-issue-form-title-suggestion-option"
                 role="option"
                 aria-selected={index === activeIndex}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => chooseSuggestion(suggestion)}
               >
                 <small
-                  {...stylex.props(
-                    issueFormStyles.issueComboboxOptionSmall,
-                    index === activeIndex && issueFormStyles.issueComboboxOptionSmallActive,
-                    issueFormStyles.titleHeadOptionsButtonSmall,
-                    issueFormStyles.labelBackground(normalizedColor(suggestion.labelColor ?? "")),
-                  )}
-                  data-stylex-owner="project-issue-form-title-suggestion-category"
+                  className="project-issue-form-combobox-option-small"
+                  style={
+                    normalizedColor(suggestion.labelColor ?? "")
+                      ? { backgroundColor: normalizedColor(suggestion.labelColor ?? "") }
+                      : undefined
+                  }
+                  data-owner="project-issue-form-title-suggestion-category"
                 >
                   {suggestion.category}
                 </small>{" "}
@@ -1657,9 +1608,8 @@ function SubtaskSelects({
         </select>
       </div>
       <div
-        {...stylex.props(isCrossProject && issueFormStyles.subtaskParentControlHidden)}
-        className={`span6 subtask-parent-control ${stylex.props(isCrossProject && issueFormStyles.subtaskParentControlHidden).className ?? ""}`.trim()}
-        data-stylex-owner="project-issue-form-subtask-parent-control"
+        className="span6 subtask-parent-control"
+        data-owner="project-issue-form-subtask-parent-control"
         hidden={isCrossProject}
       >
         <div
@@ -1818,10 +1768,7 @@ function IssueBodyMarkdownEditor({
   const [mentionPopupPosition, setMentionPopupPosition] = useState({ left: 4, top: 34 });
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
   const [textareaContentHeight, setTextareaContentHeight] = useState(300);
-  const editorTextareaStyleProps = stylex.props(
-    issueFormStyles.editorTextarea,
-    issueFormStyles.editorTextareaHeight(`${textareaContentHeight}px`),
-  );
+  const editorTextareaStyleProps = { style: { height: `${textareaContentHeight}px` } };
   const textareaBoxRef = useRef<HTMLDivElement>(null);
   const mentionMarkerRef = useRef<HTMLSpanElement>(null);
   const mentionPopupRef = useRef<HTMLDivElement>(null);
@@ -1909,13 +1856,11 @@ function IssueBodyMarkdownEditor({
     () => ({
       a: (props) => <IssueMarkdownLink {...props} basePath={runtimeConfig.basePath} />,
       video: ({ className, node: _node, ...props }) => {
-        const videoStyleProps = stylex.props(issueFormStyles.markdownPreviewVideo);
         return (
           <video
             {...props}
-            {...videoStyleProps}
-            className={`${className ?? ""} ${videoStyleProps.className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-markdown-preview-video"
+            className={className ?? ""}
+            data-owner="project-issue-form-markdown-preview-video"
           />
         );
       },
@@ -2044,42 +1989,32 @@ function IssueBodyMarkdownEditor({
     <MarkdownEditor
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
-      wrapperClassName={`mt10 issue-markdown-editor ${stylex.props(issueFormStyles.issueMarkdownEditor).className ?? ""}`.trim()}
-      wrapperStyleProps={stylex.props(issueFormStyles.issueMarkdownEditor)}
+      wrapperClassName="mt10 issue-markdown-editor"
       wrapperOwner="project-issue-form-markdown-editor"
-      tabListClassName={`nav nav-tabs nm small ${stylex.props(issueFormStyles.issueMarkdownEditorTabs).className ?? ""}`.trim()}
-      tabListStyleProps={stylex.props(issueFormStyles.issueMarkdownEditorTabs)}
+      tabListClassName="nav nav-tabs nm small"
       tabListOwner="project-issue-form-markdown-editor-tabs"
-      tabContentStyleProps={(_tab, active) =>
-        stylex.props(issueFormStyles.markdownTab, active && issueFormStyles.markdownTabActive)
-      }
+      tabContentStyleProps={(_tab, active) => ({ className: active ? "active" : undefined })}
       tabContentOwner={(tab) =>
         tab === "edit"
           ? "project-issue-form-markdown-tab-edit"
           : "project-issue-form-markdown-tab-preview"
       }
-      checklistClassName={`task-list-button ${stylex.props(issueFormStyles.taskListButton).className ?? ""}`.trim()}
-      checklistStyleProps={stylex.props(issueFormStyles.taskListButton)}
+      checklistClassName="task-list-button"
       checklistOwner="project-issue-form-task-list-button"
       checklistButtonAriaLabel={t("button.add.checklist")}
       onChecklistClick={insertChecklist}
       clearTemporaryAriaHidden
       clearTemporaryButtonTabIndex={-1}
-      noticeLabelClassName={`editor-notice-label ${stylex.props(issueFormStyles.editorNoticeLabel).className ?? ""}`.trim()}
-      noticeLabelStyleProps={stylex.props(issueFormStyles.editorNoticeLabel)}
+      noticeLabelClassName="editor-notice-label"
       noticeLabelOwner="project-issue-form-editor-notice"
       noticeContent={
         draftNotice ? (
-          <span
-            {...stylex.props(issueFormStyles.editorNoticeSaved)}
-            className={`saved ${stylex.props(issueFormStyles.editorNoticeSaved).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-editor-notice-saved"
-          >
+          <span className="saved" data-owner="project-issue-form-editor-notice-saved">
             {draftNotice}
           </span>
         ) : null
       }
-      tabContentClassName={`${stylex.props(issueFormStyles.editorTabContent).className} tab-content issue-editor-tab-content`}
+      tabContentClassName="tab-content issue-editor-tab-content"
       tabContentPaneOwner="project-issue-form-editor-tab-content"
       editPaneId="edit-body"
       textareaBoxOwner="project-issue-form-textarea-box"
@@ -2183,24 +2118,15 @@ function IssueBodyMarkdownEditor({
           {mention ? (
             <div
               aria-hidden="true"
-              {...stylex.props(
-                issueFormStyles.editorMentionMirror,
-                issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
-              )}
-              className={`editor-mention-mirror ${
-                stylex.props(
-                  issueFormStyles.editorMentionMirror,
-                  issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
-                ).className ?? ""
-              }`.trim()}
-              data-stylex-owner="project-issue-form-mention-mirror"
+              style={{ transform: `translateY(-${textareaScrollTop}px)` }}
+              className="editor-mention-mirror"
+              data-owner="project-issue-form-mention-mirror"
             >
               {bodyMarkdown.slice(0, caretPosition)}
               <span
                 ref={mentionMarkerRef}
-                {...stylex.props(issueFormStyles.editorMentionMarker)}
-                className={`editor-mention-marker ${stylex.props(issueFormStyles.editorMentionMarker).className ?? ""}`.trim()}
-                data-stylex-owner="project-issue-form-editor-mention-marker"
+                className="editor-mention-marker"
+                data-owner="project-issue-form-editor-mention-marker"
               >
                 {"\u200b"}
               </span>
@@ -2211,37 +2137,18 @@ function IssueBodyMarkdownEditor({
               ref={mentionPopupRef}
               id="editor-mention-options"
               role="listbox"
-              {...stylex.props(
-                issueFormStyles.editorMentionOptions,
-                issueFormStyles.mentionPopupPosition(
-                  mentionPopupPosition.left,
-                  mentionPopupPosition.top,
-                ),
-              )}
-              className={`issue-combobox-options editor-mention-options ${
-                stylex.props(
-                  issueFormStyles.editorMentionOptions,
-                  issueFormStyles.mentionPopupPosition(
-                    mentionPopupPosition.left,
-                    mentionPopupPosition.top,
-                  ),
-                ).className ?? ""
-              }`.trim()}
-              data-stylex-owner="project-issue-form-editor-mention-options"
+              style={{ left: mentionPopupPosition.left, top: mentionPopupPosition.top }}
+              className="issue-combobox-options editor-mention-options"
+              data-owner="project-issue-form-editor-mention-options"
             >
               {mentionSuggestions.map((suggestion, index) => {
-                const optionStyle = stylex.props(
-                  issueFormStyles.issueComboboxOptionButton,
-                  index === activeSuggestion && issueFormStyles.issueComboboxOptionButtonActive,
-                );
                 return (
                   <button
                     type="button"
                     id={`editor-mention-option-${index}`}
                     key={suggestion.key}
-                    {...optionStyle}
-                    className={`${index === activeSuggestion ? "active" : ""} ${optionStyle.className ?? ""}`.trim()}
-                    data-stylex-owner="project-issue-form-editor-mention-option"
+                    className={`${index === activeSuggestion ? "active" : ""} project-issue-form-combobox-option-button`.trim()}
+                    data-owner="project-issue-form-editor-mention-option"
                     role="option"
                     aria-selected={index === activeSuggestion}
                     aria-label={suggestion.accessibleLabel}
@@ -2254,12 +2161,8 @@ function IssueBodyMarkdownEditor({
                     <span>{suggestion.label}</span>
                     {suggestion.detail ? (
                       <small
-                        {...stylex.props(
-                          issueFormStyles.issueComboboxOptionSmall,
-                          index === activeSuggestion &&
-                            issueFormStyles.issueComboboxOptionSmallActive,
-                        )}
-                        data-stylex-owner="project-issue-form-editor-mention-option-detail"
+                        className="project-issue-form-combobox-option-small"
+                        data-owner="project-issue-form-editor-mention-option-detail"
                       >
                         {suggestion.detail}
                       </small>
@@ -2272,8 +2175,7 @@ function IssueBodyMarkdownEditor({
         </>
       }
       previewPaneId="preview-body"
-      previewClassName={`${stylex.props(issueFormStyles.markdownPreview).className} markdown-preview markdown-wrap content-body`.trim()}
-      previewStyleProps={stylex.props(issueFormStyles.markdownPreview)}
+      previewClassName="markdown-preview markdown-wrap content-body"
       previewOwner="project-issue-form-markdown-preview"
       previewChildren={() => (
         <ReactMarkdown
@@ -2343,9 +2245,8 @@ function IssueAssigneeSelect({
       <dt>{t("issue.assignee")}</dt>
       <dd>
         <div
-          {...stylex.props(issueFormStyles.assigneeControl, issueFormStyles.assigneePicker)}
-          className={`${stylex.props(issueFormStyles.assigneeControl, issueFormStyles.assigneePicker).className} select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
-          data-stylex-owner="project-issue-form-assignee-picker"
+          className={`select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
+          data-owner="project-issue-form-assignee-picker"
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setIsOpen(false);
@@ -2375,9 +2276,8 @@ function IssueAssigneeSelect({
             }}
           >
             <span
-              {...stylex.props(issueFormStyles.assigneeValue)}
-              className={`select2-chosen issue-assignee-value ${stylex.props(issueFormStyles.assigneeValue).className ?? ""}`.trim()}
-              data-stylex-owner="project-issue-form-assignee-value"
+              className="select2-chosen issue-assignee-value"
+              data-owner="project-issue-form-assignee-value"
             >
               {selected ? `${displayName(selected)} (${selected.loginId})` : t("issue.noAssignee")}
             </span>
@@ -2386,9 +2286,8 @@ function IssueAssigneeSelect({
             </span>
           </div>
           <input
-            {...stylex.props(issueFormStyles.assigneeControlInput)}
-            className={`select2-focusser select2-offscreen ${stylex.props(issueFormStyles.assigneeControlInput).className ?? ""}`.trim()}
-            data-stylex-owner="project-issue-form-assignee-control-input"
+            className="select2-focusser select2-offscreen"
+            data-owner="project-issue-form-assignee-control-input"
             type="text"
             autoComplete="off"
             aria-label={t("issue.assignee")}
@@ -2401,9 +2300,8 @@ function IssueAssigneeSelect({
               <input
                 ref={searchInputRef}
                 type="text"
-                {...stylex.props(issueFormStyles.assigneeDropdownSearch)}
-                className={`select2-input issue-assignee-dropdown-search ${stylex.props(issueFormStyles.assigneeDropdownSearch).className ?? ""}`.trim()}
-                data-stylex-owner="project-issue-form-assignee-dropdown-search"
+                className="select2-input issue-assignee-dropdown-search"
+                data-owner="project-issue-form-assignee-dropdown-search"
                 value={query}
                 aria-label={t("issue.assignee")}
                 aria-autocomplete="list"
@@ -2498,8 +2396,8 @@ function IssueMilestoneSelect({
         ) : (
           <>
             <div
-              className={`${stylex.props(issueFormStyles.milestonePicker).className} select2-container fullsize${isOpen ? " select2-dropdown-open" : ""}`}
-              data-stylex-owner="project-issue-form-milestone-picker"
+              className={`select2-container fullsize${isOpen ? " select2-dropdown-open" : ""}`}
+              data-owner="project-issue-form-milestone-picker"
             >
               <div
                 className="select2-choice"
@@ -2643,8 +2541,8 @@ function IssueLabelSelect({
       </dt>
       <dd>
         <div
-          className={`${stylex.props(issueFormStyles.labelPicker).className} select2-container select2-container-multi hide issue-labels bordered fullsize issue-combobox issue-label-combobox issue-label-control${isOpen ? " select2-dropdown-open" : ""}`}
-          data-stylex-owner="project-issue-form-label-picker"
+          className={`select2-container select2-container-multi hide issue-labels bordered fullsize issue-combobox issue-label-combobox issue-label-control${isOpen ? " select2-dropdown-open" : ""}`}
+          data-owner="project-issue-form-label-picker"
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setIsOpen(false);
@@ -2653,30 +2551,30 @@ function IssueLabelSelect({
         >
           <ul className="select2-choices">
             {selectedLabels.map((label) => {
-              const labelBackground = stylex.props(
-                issueFormStyles.labelBackground(normalizedColor(label.color)),
-              );
+              const labelColor = normalizedColor(label.color);
               return (
                 <li
                   key={label.id}
-                  {...stylex.props(issueFormStyles.issueLabelToken)}
-                  className={`select2-search-choice issue-label-token ${stylex.props(issueFormStyles.issueLabelToken).className ?? ""}`.trim()}
-                  data-stylex-owner="project-issue-form-label-token"
+                  className="select2-search-choice issue-label-token"
+                  data-owner="project-issue-form-label-token"
                 >
                   <div>
                     <strong
-                      {...labelBackground}
-                      className={`${labelBackground.className} label issue-label active static`}
-                      data-stylex-owner="project-issue-form-label-background"
+                      style={
+                        labelColor
+                          ? ({ "--x-label-color": labelColor } as CSSProperties)
+                          : undefined
+                      }
+                      className="label issue-label active static"
+                      data-owner="project-issue-form-label-background"
                     >
                       {label.name}
                     </strong>
                   </div>
                   <button
                     type="button"
-                    {...stylex.props(issueFormStyles.issueLabelTokenClose)}
-                    className={`select2-search-choice-close btn-transparent ${stylex.props(issueFormStyles.issueLabelTokenClose).className ?? ""}`.trim()}
-                    data-stylex-owner="project-issue-form-label-token-close"
+                    className="select2-search-choice-close btn-transparent"
+                    data-owner="project-issue-form-label-token-close"
                     aria-label={`${t("button.delete")} ${label.name}`}
                     onClick={() => onRemove(label.id)}
                   ></button>
@@ -2709,9 +2607,7 @@ function IssueLabelSelect({
           >
             <ul className="select2-results" role="listbox">
               {labels.map((label) => {
-                const labelBackground = stylex.props(
-                  issueFormStyles.labelBackground(normalizedColor(label.color)),
-                );
+                const labelColor = normalizedColor(label.color);
                 return (
                   <li key={label.id}>
                     <div
@@ -2729,9 +2625,13 @@ function IssueLabelSelect({
                       }}
                     >
                       <strong
-                        {...labelBackground}
-                        className={`${labelBackground.className} label issue-label active static`}
-                        data-stylex-owner="project-issue-form-label-background"
+                        style={
+                          labelColor
+                            ? ({ "--x-label-color": labelColor } as CSSProperties)
+                            : undefined
+                        }
+                        className="label issue-label active static"
+                        data-owner="project-issue-form-label-background"
                       >
                         {label.name}
                       </strong>
@@ -3578,20 +3478,6 @@ function projectIdNumber(project: ProjectContainer) {
   const projectId = Number(project.projectId);
   return Number.isFinite(projectId) ? projectId : 0;
 }
-
-const styles = stylex.create({
-  form: { position: "relative" },
-  titleRow: { display: "block" },
-  error: {
-    clear: "both",
-    color: projectIssueFormTheme.errorText,
-    fontWeight: "700",
-    marginTop: "10px",
-  },
-  columns: { display: "block" },
-  actions: { textAlign: "right" },
-  rightMenu: { display: "block" },
-});
 
 function normalizeIssueDueDate(value: string): string | null {
   const trimmed = value.trim();

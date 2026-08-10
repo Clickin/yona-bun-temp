@@ -1,4 +1,3 @@
-import * as stylex from "@stylexjs/stylex";
 import { useEffect, useState } from "react";
 
 const PIKADAY_MONTHS = [
@@ -43,12 +42,10 @@ function formatLegacyDate(year: number, month: number, day: number) {
 
 export function MilestoneDatePicker({
   containerOwner,
-  containerStyleX,
   dueDate,
   onSelect,
 }: {
   containerOwner?: string;
-  containerStyleX?: stylex.StyleXStyles;
   dueDate: string;
   onSelect: (value: string) => void;
 }) {
@@ -85,12 +82,7 @@ export function MilestoneDatePicker({
   }
 
   return (
-    <div
-      id="datepicker"
-      {...stylex.props(containerStyleX)}
-      className={`${stylex.props(containerStyleX).className ?? ""} date-picker`.trim()}
-      data-stylex-owner={containerOwner}
-    >
+    <div id="datepicker" className="date-picker" data-owner={containerOwner}>
       <div className="pika-single">
         <div className="pika-lendar">
           <div className="pika-title">

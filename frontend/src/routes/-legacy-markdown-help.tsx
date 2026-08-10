@@ -1,16 +1,10 @@
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import type { ComponentPropsWithoutRef } from "react";
 import { useState } from "react";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useLegacyMessages } from "../i18n";
 import { prefixBasePath } from "../runtime-config";
-import {
-  markdownHelpContentStyles as contentStyles,
-  markdownHelpNavStyles as navStyles,
-} from "./-legacy-markdown-help.stylex";
-
 const MARKDOWN_HELP_TARGETS = [
   "markdownHeaders",
   "markdownStyling",
@@ -247,27 +241,16 @@ function MarkdownSampleCode({
   node: _node,
   ...props
 }: MarkdownSampleCodeProps) {
-  const codeStyle = stylex.props(contentStyles.outputCode);
   if (className !== "language-javascript") {
     return (
-      <code
-        {...props}
-        {...codeStyle}
-        className={`${className ?? ""} ${codeStyle.className}`.trim()}
-        data-stylex-owner="markdown-help-output-code"
-      >
+      <code {...props} className={`${className ?? ""}`} data-owner="markdown-help-output-code">
         {children}
       </code>
     );
   }
 
   return (
-    <code
-      {...props}
-      {...stylex.props(contentStyles.outputPreCode)}
-      className={`${className} hljs ${stylex.props(contentStyles.outputPreCode).className}`}
-      data-stylex-owner="markdown-help-output-pre-code"
-    >
+    <code {...props} className={`${className} hljs`} data-owner="markdown-help-output-pre-code">
       <span className="hljs-function">
         <span className="hljs-keyword">function</span> <span className="hljs-title">test</span>(
         <span className="hljs-params" />){" "}
@@ -285,40 +268,28 @@ function MarkdownSamplePre({
   node: _node,
   ...props
 }: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
-  return (
-    <pre
-      {...props}
-      {...stylex.props(contentStyles.outputPre)}
-      data-stylex-owner="markdown-help-output-pre"
-    />
-  );
+  return <pre {...props} data-owner="markdown-help-output-pre" />;
 }
 
 function MarkdownSampleTable({
   node: _node,
   ...props
 }: ComponentPropsWithoutRef<"table"> & ExtraProps) {
-  return (
-    <table
-      {...props}
-      {...stylex.props(contentStyles.table)}
-      data-stylex-owner="markdown-help-table"
-    />
-  );
+  return <table {...props} data-owner="markdown-help-table" />;
 }
 
 function MarkdownSampleTableHeader({
   node: _node,
   ...props
 }: ComponentPropsWithoutRef<"th"> & ExtraProps) {
-  return <th {...props} {...stylex.props(contentStyles.tableHeader)} />;
+  return <th {...props} />;
 }
 
 function MarkdownSampleTableCell({
   node: _node,
   ...props
 }: ComponentPropsWithoutRef<"td"> & ExtraProps) {
-  return <td {...props} {...stylex.props(contentStyles.tableCell)} />;
+  return <td {...props} />;
 }
 
 const MARKDOWN_SAMPLE_COMPONENTS = {
@@ -340,10 +311,7 @@ function markdownHelpContentId(target: MarkdownHelpTarget) {
 
 function MarkdownSampleOutput({ sample }: { sample: string }) {
   return (
-    <div
-      className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
-      data-stylex-owner="markdown-help-output"
-    >
+    <div className={"markdown-wrap"} data-owner="markdown-help-output">
       <ReactMarkdown components={MARKDOWN_SAMPLE_COMPONENTS} remarkPlugins={[remarkGfm]}>
         {sample}
       </ReactMarkdown>
@@ -362,25 +330,20 @@ function MarkdownHelpPaneOutput({ target }: { target: MarkdownHelpTarget }) {
 }
 
 function MarkdownHelpTaskListOutput() {
-  const checklistTaskListResponsiveStyleProps = stylex.props(contentStyles.taskList);
   return (
-    <div
-      className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
-      data-stylex-owner="markdown-help-output"
-    >
-      <ul {...checklistTaskListResponsiveStyleProps} data-stylex-owner="markdown-help-task-list">
+    <div className={"markdown-wrap"} data-owner="markdown-help-output">
+      <ul data-owner="markdown-help-task-list">
         <li>
-          <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> Todos
+          <input type="checkbox" /> Todos
           <ul>
             <li>
-              <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" defaultChecked />{" "}
-              To do A
+              <input type="checkbox" defaultChecked /> To do A
             </li>
             <li>
-              <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To do B
+              <input type="checkbox" /> To do B
             </li>
             <li>
-              <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To do C
+              <input type="checkbox" /> To do C
             </li>
           </ul>
         </li>
@@ -391,10 +354,7 @@ function MarkdownHelpTaskListOutput() {
 
 function MarkdownHelpShortLinksOutput() {
   return (
-    <div
-      className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
-      data-stylex-owner="markdown-help-output"
-    >
+    <div className={"markdown-wrap"} data-owner="markdown-help-output">
       <p>
         Issue no: <MarkdownSampleLink href="/example/example/issue/2">#2</MarkdownSampleLink>
       </p>
@@ -414,13 +374,11 @@ function MarkdownHelpShortLinksOutput() {
 }
 
 function MarkdownHelpPane({ target, active }: { target: MarkdownHelpTarget; active: boolean }) {
-  const paneStyleProps = stylex.props(contentStyles.pane, active && contentStyles.paneActive);
   return (
     <li
-      {...paneStyleProps}
       id={markdownHelpContentId(target)}
-      className={`${paneStyleProps.className} markdown-help-item ${target}${active ? " active" : ""}`}
-      data-stylex-owner="markdown-help-pane"
+      className={`markdown-help-item ${target}${active ? " active" : ""}`}
+      data-owner="markdown-help-pane"
     >
       <div className="row-fluid thead">
         <div className="span6">Markdown Input</div>
@@ -428,12 +386,7 @@ function MarkdownHelpPane({ target, active }: { target: MarkdownHelpTarget; acti
       </div>
       <div className="row-fluid markdwon-syntax-wrap">
         <div className="span6 markdwon-syntax">
-          <pre
-            {...stylex.props(contentStyles.inputPre)}
-            data-stylex-owner="markdown-help-input-pre"
-          >
-            {MARKDOWN_HELP_INPUT_SAMPLES[target]}
-          </pre>
+          <pre data-owner="markdown-help-input-pre">{MARKDOWN_HELP_INPUT_SAMPLES[target]}</pre>
         </div>
         <div className="span6">
           <MarkdownHelpPaneOutput target={target} />
@@ -452,44 +405,24 @@ function MarkdownHelpNav({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <ul
-      {...stylex.props(navStyles.nav)}
-      className={`${stylex.props(navStyles.nav).className} markdown-help-nav`}
-      data-stylex-owner="markdown-help-nav-list"
-    >
-      <li {...stylex.props(navStyles.navItem)} data-stylex-owner="markdown-help-nav-item">
-        <span
-          {...stylex.props(navStyles.navLabel)}
-          className={`${stylex.props(navStyles.navLabel).className} label`}
-          data-stylex-owner="markdown-help-nav-label"
-        >
+    <ul className={"markdown-help-nav"} data-owner="markdown-help-nav-list">
+      <li data-owner="markdown-help-nav-item">
+        <span className={"label"} data-owner="markdown-help-nav-label">
           {t("title.markdown.help")}
         </span>
       </li>{" "}
       {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }, index) => {
         const active = activeTarget === target;
-        const itemStyle = stylex.props(
-          navStyles.navItem,
-          navStyles.navChoice,
-          active && navStyles.navChoiceActive,
-        );
-        const buttonStyle = stylex.props(navStyles.navButton);
-        const navClassName = `${itemStyle.className} help-nav${active ? " active" : ""}`;
-        const buttonClassName = `${buttonStyle.className} markdown-help-nav-button`;
+        const navClassName = `help-nav${active ? " active" : ""}`;
+        const buttonClassName = "markdown-help-nav-button";
         const item = (
-          <li
-            {...itemStyle}
-            className={navClassName}
-            data-stylex-owner="markdown-help-nav-choice"
-            key={target}
-          >
+          <li className={navClassName} data-owner="markdown-help-nav-choice" key={target}>
             <button
-              {...buttonStyle}
               type="button"
               className={buttonClassName}
               aria-controls={markdownHelpContentId(target)}
               aria-expanded={active}
-              data-stylex-owner="markdown-help-nav-button"
+              data-owner="markdown-help-nav-button"
               onClick={() => toggleActiveTarget(target)}
             >
               {label}
@@ -510,16 +443,9 @@ export function LegacyMarkdownHelp() {
   };
 
   return (
-    <div
-      {...stylex.props(navStyles.root)}
-      className={`${stylex.props(navStyles.root).className} markdown-help`}
-      data-stylex-owner="markdown-help-nav-root"
-    >
+    <div className={"markdown-help"} data-owner="markdown-help-nav-root">
       <MarkdownHelpNav activeTarget={activeTarget} toggleActiveTarget={toggleActiveTarget} />
-      <ul
-        className={`markdown-help-wrap ${stylex.props(contentStyles.paneList).className}`}
-        data-stylex-owner="markdown-help-pane-list"
-      >
+      <ul className={"markdown-help-wrap"} data-owner="markdown-help-pane-list">
         {MARKDOWN_HELP_TARGETS.map((target) => (
           <MarkdownHelpPane key={target} target={target} active={activeTarget === target} />
         ))}

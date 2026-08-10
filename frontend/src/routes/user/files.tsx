@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   listWorkspaceFilesRest,
@@ -12,79 +11,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { userFilesSearchColors, userFilesStyles } from "./-files.stylex";
-
-const styles = stylex.create({
-  searchRoot: {
-    backgroundColor: userFilesSearchColors.rootSurface,
-    borderColor: userFilesSearchColors.rootBorder,
-    borderRadius: "3px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    height: "20px",
-    lineHeight: "20px",
-    margin: {
-      default: "0px 0px 10px",
-      "@media (max-width: 720px)": "5px 0px",
-    },
-    padding: "4px 25px 4px 5px",
-    position: "relative",
-  },
-  searchInput: {
-    backgroundColor: userFilesSearchColors.inputSurface,
-    borderColor: userFilesSearchColors.inputText,
-    borderStyle: "none",
-    borderWidth: "0px",
-    boxShadow: "none",
-    boxSizing: "content-box",
-    color: userFilesSearchColors.inputText,
-    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-    fontSize: {
-      default: "12px",
-      "@media (max-width: 720px)": "16px",
-    },
-    fontWeight: "400",
-    height: "20px",
-    lineHeight: "20px",
-    margin: "0px -5px",
-    outline: { ":focus": "0 none" },
-    padding: "0px 5px",
-    transition: "width 0.15s",
-    verticalAlign: "middle",
-    width: {
-      default: "100%",
-      "@media (max-width: 720px)": "inherit",
-    },
-  },
-  searchAction: {
-    backgroundColor: userFilesSearchColors.actionSurface,
-    borderColor: userFilesSearchColors.actionText,
-    borderStyle: "none",
-    borderWidth: "0px",
-    color: userFilesSearchColors.actionText,
-    cursor: "pointer",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-    fontSize: "12px",
-    fontWeight: "400",
-    height: "20px",
-    lineHeight: "normal",
-    margin: "0px",
-    // `_yobiUI.less` gives the legacy search button a 12px icon hit area;
-    // keep that geometry when the optional fallback stylesheet is disabled.
-    minWidth: "12px",
-    outline: "0 none",
-    padding: "0px",
-    position: "absolute",
-    right: "5px",
-    textAlign: "center",
-    top: "5px",
-  },
-});
-
-const searchStyleProps = stylex.props(styles.searchRoot);
-const searchInputStyleProps = stylex.props(styles.searchInput);
-const searchActionStyleProps = stylex.props(styles.searchAction);
 
 type UserFilesSearch = {
   filter?: string;
@@ -182,8 +108,8 @@ function UserFilesScreen({
         precedence="legacy-filetype"
         href={prefixBasePath(basePath, "/assets/stylesheets/filetype.css")}
       />
-      <div className="page-wrap-outer" data-stylex-owner="user-files-page">
-        <div className="page-wrap" data-stylex-owner="user-files-list">
+      <div className="page-wrap-outer" data-owner="user-files-page">
+        <div className="page-wrap" data-owner="user-files-list">
           <ul className="nav nav-tabs">
             <li>
               <Link activeProps={legacyRouteLocalActiveProps} to="/notifications">
@@ -226,66 +152,28 @@ function UserFilesScreen({
               searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
             }}
           >
-            <div
-              {...searchStyleProps}
-              className={searchStyleProps.className}
-              data-stylex-owner="user-files-search"
-            >
+            <div data-owner="user-files-search">
               <input
-                {...searchInputStyleProps}
-                className={searchInputStyleProps.className}
                 key={`${filter}:${pageNum}`}
                 name="filter"
                 type="text"
                 placeholder={t("search.title")}
                 defaultValue=""
-                data-stylex-owner="user-files-search-input"
+                data-owner="user-files-search-input"
               />
-              <button
-                {...searchActionStyleProps}
-                className={searchActionStyleProps.className}
-                type="submit"
-                data-stylex-owner="user-files-search-action"
-              >
+              <button type="submit" data-owner="user-files-search-action">
                 <i className="yobicon-search"></i>
               </button>
             </div>
           </form>
-          <div
-            {...stylex.props(userFilesStyles.files)}
-            className={`${stylex.props(userFilesStyles.files).className} attachment-files`}
-            data-stylex-owner="user-files-files"
-          >
-            <div
-              className={`${stylex.props(userFilesStyles.header).className} attachment-files-header row`}
-              data-stylex-owner="user-files-header"
-            >
-              <div
-                {...stylex.props(userFilesStyles.headerPreview)}
-                className={`${stylex.props(userFilesStyles.headerPreview).className} span1 header-preview`}
-              >
-                Preview
-              </div>
-              <div
-                {...stylex.props(userFilesStyles.headerFileName)}
-                className={`${stylex.props(userFilesStyles.headerFileName).className} span5 header-file-name`}
-              >
-                Filename
-              </div>
-              <div
-                {...stylex.props(userFilesStyles.headerSize)}
-                className={`${stylex.props(userFilesStyles.headerSize).className} span1 header-size`}
-              >
-                Size
-              </div>
+          <div className="attachment-files" data-owner="user-files-files">
+            <div className="attachment-files-header row" data-owner="user-files-header">
+              <div className="span1 header-preview">Preview</div>
+              <div className="span5 header-file-name">Filename</div>
+              <div className="span1 header-size">Size</div>
               <div className="span1">Download</div>
               <div className="span2 file-date">Date</div>
-              <div
-                {...stylex.props(userFilesStyles.headerLocation)}
-                className={`${stylex.props(userFilesStyles.headerLocation).className} span4 header-location`}
-              >
-                Location
-              </div>
+              <div className="span4 header-location">Location</div>
             </div>
             {files.files.map((attachment) => (
               <UserFileRow key={attachment.id} attachment={attachment} basePath={basePath} />
@@ -319,59 +207,32 @@ function UserFileRow({
 
   return (
     <div
-      className={`${stylex.props(userFilesStyles.row, isHovered && userFilesStyles.rowHovered).className} attachment-file-detail row${isHovered ? " hover" : ""}`}
-      data-stylex-owner="user-files-row"
+      className={`attachment-file-detail row${isHovered ? " hover" : ""}`}
+      data-owner="user-files-row"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        {...stylex.props(userFilesStyles.preview)}
-        className={`${stylex.props(userFilesStyles.preview).className} file-preview span1`}
-      >
+      <div className="file-preview span1">
         <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
-          {attachment.mimeType.startsWith("image/") ? (
-            <img {...stylex.props(userFilesStyles.previewImage)} src={previewUrl} alt="" />
-          ) : null}
+          {attachment.mimeType.startsWith("image/") ? <img src={previewUrl} alt="" /> : null}
         </Link>
       </div>
-      <div
-        {...stylex.props(userFilesStyles.fileName)}
-        className={`${stylex.props(userFilesStyles.fileName).className} span5 file-name`}
-      >
+      <div className="span5 file-name">
         <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
-          <i
-            {...stylex.props(userFilesStyles.fileIcon)}
-            className={`${stylex.props(userFilesStyles.fileIcon).className} icon ${fileIconClass(attachment.name)}`}
-          ></i>
+          <i className={`icon ${fileIconClass(attachment.name)}`}></i>
           {attachment.name}
         </Link>
       </div>
-      <div
-        {...stylex.props(userFilesStyles.fileSize)}
-        className={`${stylex.props(userFilesStyles.fileSize).className} span1 file-size`}
-      >
-        {attachment.sizeLabel}
-      </div>
-      <div
-        {...stylex.props(userFilesStyles.fileDownload)}
-        className={`${stylex.props(userFilesStyles.fileDownload).className} span1 file-download`}
-      >
+      <div className="span1 file-size">{attachment.sizeLabel}</div>
+      <div className="span1 file-download">
         <Link href={downloadHref} reloadDocument to={downloadTo}>
           <button type="button" className="ybtn">
             <i className="yobicon-cloud-download"></i>
           </button>
         </Link>
       </div>
-      <div
-        {...stylex.props(userFilesStyles.fileDate)}
-        className={`${stylex.props(userFilesStyles.fileDate).className} span2 file-date`}
-      >
-        {attachment.createdLabel}
-      </div>
-      <div
-        {...stylex.props(userFilesStyles.fileLocation)}
-        className={`${stylex.props(userFilesStyles.fileLocation).className} span4 file-location`}
-      >
+      <div className="span2 file-date">{attachment.createdLabel}</div>
+      <div className="span4 file-location">
         {locationHref ? (
           <Link href={locationHref} reloadDocument target="_blank" to={locationTo}>
             {locationLabel}
@@ -401,41 +262,13 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
     });
   };
 
-  const paginationStyleProps = stylex.props(userFilesStyles.pagination);
-  const paginationListStyleProps = stylex.props(userFilesStyles.paginationList);
-  const paginationItemStyleProps = stylex.props(userFilesStyles.paginationItem);
-  const paginationIconItemStyleProps = stylex.props(
-    userFilesStyles.paginationItem,
-    userFilesStyles.paginationIconItem,
-  );
-  const paginationDelimiterStyleProps = stylex.props(
-    userFilesStyles.paginationItem,
-    userFilesStyles.paginationDelimiter,
-  );
-  const paginationInputStyleProps = stylex.props(userFilesStyles.paginationInput);
-  const paginationLabelStyleProps = stylex.props(userFilesStyles.paginationLabel);
-  const paginationDisabledLabelStyleProps = stylex.props(
-    userFilesStyles.paginationLabel,
-    userFilesStyles.paginationLabelDisabled,
-  );
+  const paginationSpriteStyle = {
+    "--user-files-pagination-sprite": `url(${legacySpriteUrl})`,
+  } as CSSProperties;
   return (
-    <div
-      {...paginationStyleProps}
-      className={paginationStyleProps.className}
-      id="pagination"
-      data-stylex-owner="user-files-pagination"
-    >
-      <ul
-        {...paginationListStyleProps}
-        className={paginationListStyleProps.className}
-        data-stylex-owner="user-files-pagination-list"
-      >
-        <li
-          {...paginationIconItemStyleProps}
-          className={paginationIconItemStyleProps.className}
-          data-pagination-variant="icon"
-          data-stylex-owner="user-files-pagination-item"
-        >
+    <div id="pagination" data-owner="user-files-pagination">
+      <ul data-owner="user-files-pagination-list">
+        <li data-pagination-variant="icon" data-owner="user-files-pagination-item">
           {hasPrev ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
@@ -443,53 +276,24 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
               search={pageSearch(currentPage - 1)}
               to="/user/files"
             >
-              <i
-                {...stylex.props(
-                  userFilesStyles.paginationIcon,
-                  userFilesStyles.paginationPrevIcon,
-                  userFilesStyles.paginationSprite(legacySpriteUrl),
-                )}
-                data-stylex-owner="user-files-pagination-icon"
-              ></i>
-              <span
-                {...paginationLabelStyleProps}
-                className={paginationLabelStyleProps.className}
-                data-stylex-owner="user-files-pagination-label"
-              >
-                {t("button.prevPage")}
-              </span>
+              <i style={paginationSpriteStyle} data-owner="user-files-pagination-icon"></i>
+              <span data-owner="user-files-pagination-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
-                {...stylex.props(
-                  userFilesStyles.paginationIcon,
-                  userFilesStyles.paginationPrevIcon,
-                  userFilesStyles.paginationPrevIconDisabled,
-                  userFilesStyles.paginationSprite(legacySpriteUrl),
-                )}
+                style={paginationSpriteStyle}
                 data-disabled="true"
-                data-stylex-owner="user-files-pagination-icon"
+                data-owner="user-files-pagination-icon"
               ></i>
-              <span
-                {...paginationDisabledLabelStyleProps}
-                className={paginationDisabledLabelStyleProps.className}
-                data-disabled="true"
-                data-stylex-owner="user-files-pagination-label"
-              >
+              <span data-disabled="true" data-owner="user-files-pagination-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          {...paginationItemStyleProps}
-          className={paginationItemStyleProps.className}
-          data-stylex-owner="user-files-pagination-item"
-        >
+        <li data-owner="user-files-pagination-item">
           <input
-            {...paginationInputStyleProps}
-            className={paginationInputStyleProps.className}
             defaultValue={currentPage}
             key={`${currentPage}-${files.totalPages}`}
             max={files.totalPages}
@@ -516,30 +320,14 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
             }}
             pattern="[0-9]*"
             type="number"
-            data-stylex-owner="user-files-pagination-input"
+            data-owner="user-files-pagination-input"
           />
         </li>
-        <li
-          {...paginationDelimiterStyleProps}
-          className={paginationDelimiterStyleProps.className}
-          data-pagination-variant="delimiter"
-          data-stylex-owner="user-files-pagination-item"
-        >
+        <li data-pagination-variant="delimiter" data-owner="user-files-pagination-item">
           /
         </li>
-        <li
-          {...paginationItemStyleProps}
-          className={paginationItemStyleProps.className}
-          data-stylex-owner="user-files-pagination-item"
-        >
-          {files.totalPages}
-        </li>
-        <li
-          {...paginationIconItemStyleProps}
-          className={paginationIconItemStyleProps.className}
-          data-pagination-variant="icon"
-          data-stylex-owner="user-files-pagination-item"
-        >
+        <li data-owner="user-files-pagination-item">{files.totalPages}</li>
+        <li data-pagination-variant="icon" data-owner="user-files-pagination-item">
           {hasNext ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
@@ -547,41 +335,18 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
               search={pageSearch(currentPage + 1)}
               to="/user/files"
             >
-              <span
-                {...paginationLabelStyleProps}
-                className={paginationLabelStyleProps.className}
-                data-stylex-owner="user-files-pagination-label"
-              >
-                {t("button.nextPage")}
-              </span>
-              <i
-                {...stylex.props(
-                  userFilesStyles.paginationIcon,
-                  userFilesStyles.paginationNextIcon,
-                  userFilesStyles.paginationSprite(legacySpriteUrl),
-                )}
-                data-stylex-owner="user-files-pagination-icon"
-              ></i>
+              <span data-owner="user-files-pagination-label">{t("button.nextPage")}</span>
+              <i style={paginationSpriteStyle} data-owner="user-files-pagination-icon"></i>
             </Link>
           ) : (
             <>
-              <span
-                {...paginationDisabledLabelStyleProps}
-                className={paginationDisabledLabelStyleProps.className}
-                data-disabled="true"
-                data-stylex-owner="user-files-pagination-label"
-              >
+              <span data-disabled="true" data-owner="user-files-pagination-label">
                 {t("button.nextPage")}
               </span>
               <i
-                {...stylex.props(
-                  userFilesStyles.paginationIcon,
-                  userFilesStyles.paginationNextIcon,
-                  userFilesStyles.paginationNextIconDisabled,
-                  userFilesStyles.paginationSprite(legacySpriteUrl),
-                )}
+                style={paginationSpriteStyle}
                 data-disabled="true"
-                data-stylex-owner="user-files-pagination-icon"
+                data-owner="user-files-pagination-icon"
               ></i>
             </>
           )}

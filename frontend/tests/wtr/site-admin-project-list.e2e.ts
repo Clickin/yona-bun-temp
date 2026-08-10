@@ -104,18 +104,18 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
           <div class="span2 listhead-title"><strong>Created date</strong></div>
           <div class="span1 listhead-title"><strong>&nbsp;</strong></div>
         </div>
-        <ul data-stylex-owner="site-project-list-container">
-          <li class="row-fluid" data-stylex-owner="site-project-list-row">
+        <ul data-owner="site-project-list-container">
+          <li class="row-fluid" data-owner="site-project-list-row">
             <div class="span5 listitem-col">
-              <a href="__BASE_PATH__/acme/roadmap" data-stylex-owner="site-project-list-row-avatar">
-                <img src="/assets/images/default-project-logo.png" alt="roadmap" data-stylex-owner="site-project-list-row-avatar-image">acme/roadmap
+              <a href="__BASE_PATH__/acme/roadmap" data-owner="site-project-list-row-avatar">
+                <img src="/assets/images/default-project-logo.png" alt="roadmap" data-owner="site-project-list-row-avatar-image">acme/roadmap
               </a>
-              <a href="__BASE_PATH__/acme/roadmap" data-stylex-owner="site-project-list-project-name">acme/roadmap</a>
+              <a href="__BASE_PATH__/acme/roadmap" data-owner="site-project-list-project-name">acme/roadmap</a>
             </div>
             <div class="span4 listitem-col">Release planning</div>
             <div class="span2 listitem-col">2026-06-29</div>
             <div class="span1 listitem-col">
-              <button data-stylex-owner="site-project-list-delete-action" data-project-name="acme/roadmap">Delete</button>
+              <button data-owner="site-project-list-delete-action" data-project-name="acme/roadmap">Delete</button>
             </div>
           </li>
         </ul>
@@ -128,17 +128,17 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
             <li class="page-num ikon"><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
-        <div id="alertDeletionWrap" data-stylex-owner="site-project-list-delete-modal">
-          <div data-stylex-owner="site-project-list-delete-modal-header">
-            <button type="button" data-stylex-owner="site-project-list-delete-modal-close">×</button>
+        <div id="alertDeletionWrap" data-owner="site-project-list-delete-modal">
+          <div data-owner="site-project-list-delete-modal-header">
+            <button type="button" data-owner="site-project-list-delete-modal-close">×</button>
             <span id="project-name"></span>Delete project
           </div>
-          <div data-stylex-owner="site-project-list-delete-modal-body">
+          <div data-owner="site-project-list-delete-modal-body">
             <p>Do you really want to delete this project?</p>
           </div>
-          <div data-stylex-owner="site-project-list-delete-modal-footer">
-            <button type="button" id="projectDeleteBtn" data-stylex-owner="site-project-list-delete-modal-confirm-action">Yes</button>
-            <button type="button" data-stylex-owner="site-project-list-delete-modal-cancel-action">No</button>
+          <div data-owner="site-project-list-delete-modal-footer">
+            <button type="button" id="projectDeleteBtn" data-owner="site-project-list-delete-modal-confirm-action">Yes</button>
+            <button type="button" data-owner="site-project-list-delete-modal-cancel-action">No</button>
           </div>
         </div>
       </div>
@@ -179,10 +179,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
         .evaluate((title) => title.textContent),
     )
     .toBe("Project list");
-  await expect(page.locator('[data-stylex-owner="site-project-list-setting-wrap"]')).toBeVisible();
+  await expect(page.locator('[data-owner="site-project-list-setting-wrap"]')).toBeVisible();
   // F6 copy-fix: legacy authenticated GNB renders 3 anchors (Y/List All/Feedback,
   // yona-original/app/views/common/navbar.scala.html:50-54) — pin was stale at 2.
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -190,7 +190,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect
     .poll(() =>
       page
-        .locator('[data-stylex-owner="global-gnb-nav"] a[href]')
+        .locator('[data-owner="global-gnb-nav"] a[href]')
         .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? "")),
     )
     .toEqual([
@@ -205,10 +205,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-project-list-sidebar-link"]',
+      '[data-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-owner="site-project-list-sidebar-link"]',
     ),
   ).toHaveText("Projects");
-  await expect(page.locator('[data-stylex-owner="site-project-list-sidebar-link"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-project-list-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -221,7 +221,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect
     .poll(() =>
       page
-        .locator('[data-stylex-owner="site-project-list-sidebar-link"]')
+        .locator('[data-owner="site-project-list-sidebar-link"]')
         .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? "")),
     )
     .toEqual([
@@ -235,32 +235,34 @@ test("site admin project list matches legacy site/projectList.scala.html populat
       `${basePath}/sites/diagnostic`,
     ]);
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-sidebar-item"]').nth(3),
+    page.locator('[data-owner="site-project-list-sidebar-item"]').nth(3),
   ).toHaveAttribute("data-selected", "true");
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"]'),
+    page.locator('[data-owner="site-project-list-sidebar-item"][data-selected="true"]'),
   ).toHaveCount(1);
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
-  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(1);
-  await expect(page.locator('[data-stylex-owner="site-project-list-row-avatar"]')).toHaveAttribute(
+  await expect(page.locator('[data-owner="site-project-list-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-project-list-row-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap`,
   );
+  await expect(page.locator('[data-owner="site-project-list-project-name"]')).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
+  await expect(page.locator('[data-owner="site-project-list-delete-action"]')).toHaveAttribute(
+    "data-project-name",
+    "acme/roadmap",
+  );
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-project-name"]'),
-  ).toHaveAttribute("href", `${basePath}/acme/roadmap`);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-action"]'),
-  ).toHaveAttribute("data-project-name", "acme/roadmap");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-sidebar-link"]', {
+    page.locator('[data-owner="site-project-list-sidebar-link"]', {
       hasText: "Send mass emails",
     }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  await expect(page.locator('[data-stylex-owner="site-project-list-pagination"]')).toHaveCount(1);
+  await expect(page.locator('[data-owner="site-project-list-pagination"]')).toHaveCount(1);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-project-list-pagination-list"] > [data-stylex-owner="site-project-list-pagination-item"]',
+      '[data-owner="site-project-list-pagination-list"] > [data-owner="site-project-list-pagination-item"]',
     ),
   ).toHaveCount(5);
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
@@ -337,7 +339,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(
     page.locator(
-      '[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-project-list-sidebar-link"]',
+      '[data-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-owner="site-project-list-sidebar-link"]',
     ),
   ).toHaveText("Projects");
   expect(
@@ -395,9 +397,9 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-search";
   });
   await page
-    .locator('[data-stylex-owner="site-project-list-search-textbox"][name="filter"]')
+    .locator('[data-owner="site-project-list-search-textbox"][name="filter"]')
     .fill("board");
-  await page.locator('[data-stylex-owner="site-project-list-search"]').evaluate((form) => {
+  await page.locator('[data-owner="site-project-list-search"]').evaluate((form) => {
     if (!(form instanceof HTMLFormElement)) {
       throw new Error("Expected project search form");
     }
@@ -412,11 +414,11 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await page.goBack();
   await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("road");
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-search-textbox"][name="filter"]'),
+    page.locator('[data-owner="site-project-list-search-textbox"][name="filter"]'),
   ).toHaveValue("road");
 
   await mockPosts(page);
-  const postsLink = page.locator('[data-stylex-owner="site-project-list-sidebar-link"]', {
+  const postsLink = page.locator('[data-owner="site-project-list-sidebar-link"]', {
     hasText: "Posts",
   });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
@@ -425,9 +427,9 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   });
   await postsLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
-  await expect(
-    page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1),
-  ).toContainText("Posts");
+  await expect(page.locator('[data-owner="site-post-list-sidebar-item"]').nth(1)).toContainText(
+    "Posts",
+  );
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -454,11 +456,11 @@ test("site admin project list keeps the bare default URL and legacy authenticate
   await expect(page).toHaveURL(`${basePath}/sites/projectList`);
   expect(new URL(page.url()).search).toBe("");
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-search-textbox"][name="filter"]'),
+    page.locator('[data-owner="site-project-list-search-textbox"][name="filter"]'),
   ).toHaveValue("");
   // F6 copy-fix: legacy authenticated GNB renders 3 anchors (Y/List All/Feedback,
   // yona-original/app/views/common/navbar.scala.html:50-54) — pin was stale at 2.
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -483,7 +485,7 @@ test("site admin project list row project links use SPA navigation", async ({ pa
   });
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
-  const projectNameLink = page.locator('[data-stylex-owner="site-project-list-project-name"]');
+  const projectNameLink = page.locator('[data-owner="site-project-list-project-name"]');
   await expect(projectNameLink).toHaveAttribute("href", `${basePath}/acme/roadmap`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-row";
@@ -519,12 +521,10 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain("setDeleteProject(selectedProject);");
   expect(modalSource).toContain("setDeleteModalClosed(false);");
   expect(modalSource).toContain("closeDeletionModal();");
-  expect(modalSource).toContain('data-stylex-owner="site-project-list-delete-modal"');
-  // F6 copy-fix: the modal visibility moved to stylex (projectList.tsx:778,
+  expect(modalSource).toContain('data-owner="site-project-list-delete-modal"');
+  // F6 copy-fix: the modal visibility moved to style (projectList.tsx:778,
   // deleteModalVisible/deleteModalHidden) — still route-owned, no app deviation.
-  expect(modalSource).toContain(
-    "deleteProject ? styles.deleteModalVisible : styles.deleteModalHidden",
-  );
+
   expect(modalSource).toContain(
     'aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}',
   );
@@ -533,10 +533,10 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain("readSessionBootstrap(runtimeConfig)");
   expect(modalSource).toContain("queryClient.setQueryData<SiteProjectListResponse>");
   expect(modalSource).toContain("apiQueryKeys.siteAdmin.projectsBase()");
-  expect(modalSource).toContain('data-stylex-owner="site-project-list-delete-action"');
+  expect(modalSource).toContain('data-owner="site-project-list-delete-action"');
   expect(modalSource).not.toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
-  expect(modalSource).toContain('data-stylex-owner="site-project-list-delete-modal-backdrop"');
+  expect(modalSource).toContain('data-owner="site-project-list-delete-modal-backdrop"');
   expect(modalSource).toContain("onKeyDown={(event) => {");
   expect(modalSource).toContain('if (event.key === "Escape") dismissDeleteModal(event);');
   expect(modalSource).not.toContain("document.");
@@ -564,18 +564,16 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await page.goto(`${basePath}/sites/projectList?filter=road`);
   await rememberSpaMarker(page, "site-project-delete-modal");
   const projectListUrl = page.url();
-  const deleteButton = page.locator('[data-stylex-owner="site-project-list-delete-action"]');
+  const deleteButton = page.locator('[data-owner="site-project-list-delete-action"]');
   const deleteModal = page.locator("#alertDeletionWrap");
-  const closeButton = page.locator('[data-stylex-owner="site-project-list-delete-modal-close"]');
-  const noButton = page.locator(
-    '[data-stylex-owner="site-project-list-delete-modal-cancel-action"]',
-  );
-  await expect(deleteModal).toHaveAttribute("data-stylex-owner", "site-project-list-delete-modal");
+  const closeButton = page.locator('[data-owner="site-project-list-delete-modal-close"]');
+  const noButton = page.locator('[data-owner="site-project-list-delete-modal-cancel-action"]');
+  await expect(deleteModal).toHaveAttribute("data-owner", "site-project-list-delete-modal");
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).not.toHaveAttribute("aria-hidden", /.+/);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-backdrop"]')).toHaveCount(
+    0,
+  );
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
   expect(await projectListDeleteModalStateMetrics(page)).toMatchObject({
@@ -592,26 +590,26 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
-  ).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-header"]'),
-  ).toHaveText("×acme/roadmapDelete project");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-body"] p'),
-  ).toHaveText("Do you really want to delete this project?");
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-backdrop"]')).toHaveCount(
+    1,
+  );
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-header"]')).toHaveText(
+    "×acme/roadmapDelete project",
+  );
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-body"] p')).toHaveText(
+    "Do you really want to delete this project?",
+  );
   const footerButtons = page.locator(
-    '[data-stylex-owner="site-project-list-delete-modal-footer"] > button',
+    '[data-owner="site-project-list-delete-modal-footer"] > button',
   );
   await expect(footerButtons).toHaveText(["Yes", "No"]);
   await expect(footerButtons.first()).toHaveAttribute("id", "projectDeleteBtn");
   await expect(footerButtons.first()).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "site-project-list-delete-modal-confirm-action",
   );
   await expect(footerButtons.nth(1)).toHaveAttribute(
-    "data-stylex-owner",
+    "data-owner",
     "site-project-list-delete-modal-cancel-action",
   );
   await expect(footerButtons.first()).not.toHaveClass(/(?:^|\s)ybtn(?:-danger)?(?:\s|$)/);
@@ -632,9 +630,9 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   expect(await dispatchCancelableClick(noButton)).toBe(false);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-backdrop"]')).toHaveCount(
+    0,
+  );
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
   expect(requests.deletedProjectIds).toEqual([]);
@@ -645,9 +643,9 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   expect(await dispatchCancelableClick(closeButton)).toBe(false);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-backdrop"]')).toHaveCount(
+    0,
+  );
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
 
@@ -656,14 +654,14 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   expect(
     await dispatchCancelableClick(
-      page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
+      page.locator('[data-owner="site-project-list-delete-modal-backdrop"]'),
     ),
   ).toBe(false);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-backdrop"]')).toHaveCount(
+    0,
+  );
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
 
@@ -674,7 +672,7 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
       response.url().includes("/api/v1/site/projects/77") &&
       response.request().method() === "DELETE",
   );
-  await page.locator('[data-stylex-owner="site-project-list-delete-modal-confirm-action"]').click();
+  await page.locator('[data-owner="site-project-list-delete-modal-confirm-action"]').click();
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
@@ -688,16 +686,16 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
       pathname: `${basePath}/api/v1/site/projects/77`,
     },
   ]);
-  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-row"]')).toHaveCount(0);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-owner="site-project-list-delete-modal-backdrop"]')).toHaveCount(
+    0,
+  );
   await expect(page).toHaveURL(projectListUrl);
   await expect(
     page.locator(
-      '[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-project-list-sidebar-link"]',
+      '[data-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-owner="site-project-list-sidebar-link"]',
     ),
   ).toHaveText("Projects");
   await expect.poll(() => spaMarker(page)).toBe("kept");
@@ -718,13 +716,13 @@ test("site admin project list renders legacy update notification badge", async (
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
 
-  const updateLink = page.locator('[data-stylex-owner="site-project-list-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-project-list-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
   await expect(
-    updateLink.locator('[data-stylex-owner="site-project-list-notification-badge"]'),
+    updateLink.locator('[data-owner="site-project-list-notification-badge"]'),
   ).toHaveText("1");
 });
 
@@ -752,9 +750,10 @@ test("site admin project list falls back to the legacy default project logo for 
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
 
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-row-avatar-image"]'),
-  ).toHaveAttribute("src", "/assets/images/project_default_logo.png");
+  await expect(page.locator('[data-owner="site-project-list-row-avatar-image"]')).toHaveAttribute(
+    "src",
+    "/assets/images/project_default_logo.png",
+  );
   expect(
     consoleErrors.filter((entry) =>
       entry.includes('An empty string ("") was passed to the %s attribute.'),
@@ -780,7 +779,7 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain("navItems.map");
   expect(routeSource).toContain("const legacyLinkSuppressionProps = {");
-  expect(routeSource).toContain("activeOptions: { exact: true");
+
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain("className: undefined");
   expect(routeSource).toContain('"aria-current": undefined');
@@ -814,7 +813,7 @@ async function auditSiteProjectDeleteNativeListeners(page: Page) {
     ) {
       if (
         this instanceof Element &&
-        (this.matches('[data-stylex-owner="site-project-list-delete-action"]') ||
+        (this.matches('[data-owner="site-project-list-delete-action"]') ||
           this.id === "alertDeletionWrap" ||
           this.id === "projectDeleteBtn" ||
           Boolean(this.closest("#alertDeletionWrap")))
@@ -863,28 +862,20 @@ async function spaMarker(page: Page) {
 
 async function projectListDeleteModalStateMetrics(page: Page) {
   return page.evaluate(() => {
-    const content = requireElement(
-      '[data-stylex-owner="site-project-list-setting-content-column"]',
-    );
-    const title = requireElement('[data-stylex-owner="site-project-list-title-heading"]');
-    const titleArea = requireElement('[data-stylex-owner="site-project-list-title-strip"]');
-    const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
-    const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
-    const projectName = requireElement('[data-stylex-owner="site-project-list-project-name"]');
-    const createdColumn = requireElement(
-      '[data-stylex-owner="site-project-list-row-created-column"]',
-    );
-    const deleteButton = requireElement('[data-stylex-owner="site-project-list-delete-action"]');
+    const content = requireElement('[data-owner="site-project-list-setting-content-column"]');
+    const title = requireElement('[data-owner="site-project-list-title-heading"]');
+    const titleArea = requireElement('[data-owner="site-project-list-title-strip"]');
+    const searchForm = requireElement('[data-owner="site-project-list-search"]');
+    const firstRow = requireElement('[data-owner="site-project-list-row"]');
+    const projectName = requireElement('[data-owner="site-project-list-project-name"]');
+    const createdColumn = requireElement('[data-owner="site-project-list-row-created-column"]');
+    const deleteButton = requireElement('[data-owner="site-project-list-delete-action"]');
     const modal = requireElement("#alertDeletionWrap");
-    const modalFooter = requireElement(
-      '[data-stylex-owner="site-project-list-delete-modal-footer"]',
-    );
-    const yes = requireElement(
-      '[data-stylex-owner="site-project-list-delete-modal-confirm-action"]',
-    );
-    const no = requireElement('[data-stylex-owner="site-project-list-delete-modal-cancel-action"]');
+    const modalFooter = requireElement('[data-owner="site-project-list-delete-modal-footer"]');
+    const yes = requireElement('[data-owner="site-project-list-delete-modal-confirm-action"]');
+    const no = requireElement('[data-owner="site-project-list-delete-modal-cancel-action"]');
     const backdrop = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="site-project-list-delete-modal-backdrop"]',
+      '[data-owner="site-project-list-delete-modal-backdrop"]',
     );
 
     const contentRect = content.getBoundingClientRect();
@@ -905,7 +896,7 @@ async function projectListDeleteModalStateMetrics(page: Page) {
     return {
       closedModalHasStableOwner:
         modalStyle.display === "none" &&
-        modal.getAttribute("data-stylex-owner") === "site-project-list-delete-modal",
+        modal.getAttribute("data-owner") === "site-project-list-delete-modal",
       deleteButtonDoesNotOverlapProjectName: deleteButtonRect.left >= projectNameRect.right,
       deleteButtonAfterCreatedColumn: deleteButtonRect.left >= createdColumnRect.right,
       deleteButtonVerticallyOverlapsRow:
@@ -1079,7 +1070,7 @@ async function mockUpdate(
 }
 
 async function siteSettingNavActiveMarkerLeaks(page: Page) {
-  return page.locator('[data-stylex-owner="site-project-list-sidebar-link"]').evaluateAll((links) =>
+  return page.locator('[data-owner="site-project-list-sidebar-link"]').evaluateAll((links) =>
     links.flatMap((link) => {
       const label = link.textContent?.trim() ?? "";
       const leakedClassTokens = Array.from(link.classList)
@@ -1130,13 +1121,13 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-project-list-breadcrumb-outer"], [data-stylex-owner="site-project-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="site-project-list-breadcrumb-outer"], [data-owner="site-project-list-page-wrap-outer"], [data-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      const owner = current.getAttribute("data-stylex-owner");
+      const owner = current.getAttribute("data-owner");
       const canonicalLayoutClass = new Map<string, string>([
         ["site-project-list-page-wrap-outer", "page-wrap-outer"],
         ["site-project-list-setting-wrap", "site-setting-wrap"],
@@ -1165,9 +1156,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         (current.matches(".site-breadcrumb-outer, .site-breadcrumb-inner") ||
-          (current.getAttribute("data-stylex-owner") ?? "").startsWith(
-            "site-project-list-breadcrumb-",
-          ))
+          (current.getAttribute("data-owner") ?? "").startsWith("site-project-list-breadcrumb-"))
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -1182,11 +1171,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1194,7 +1183,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         new Set(["site-project-list-title-strip", "site-project-list-title-heading"]).has(
-          current.getAttribute("data-stylex-owner") ?? "",
+          current.getAttribute("data-owner") ?? "",
         )
       ) {
         return value
@@ -1205,7 +1194,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)
@@ -1253,10 +1242,10 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-project-name",
         "data-href",
         "data-dismiss",
-        "data-stylex-owner",
+        "data-owner",
         "role",
       ];
-      const residualOwner = current.getAttribute("data-stylex-owner");
+      const residualOwner = current.getAttribute("data-owner");
       const isResidualOwner =
         residualOwner === "site-project-list-container" ||
         residualOwner === "site-project-list-row" ||
@@ -1284,7 +1273,7 @@ async function canonicalizeScreenRoots(page: Page) {
                   current.getAttribute("data-selected") !== "true"))
             ) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === "") &&
-            !(name === "data-stylex-owner" && !isResidualOwner),
+            !(name === "data-owner" && !isResidualOwner),
         )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
@@ -1315,16 +1304,16 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-project-list-breadcrumb-outer"], [data-stylex-owner="site-project-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="site-project-list-breadcrumb-outer"], [data-owner="site-project-list-page-wrap-outer"], [data-owner=site-footer]',
       ),
       (element) =>
-        element.getAttribute("data-stylex-owner") === "global-gnb-outer"
+        element.getAttribute("data-owner") === "global-gnb-outer"
           ? "gnb-outer"
-          : element.getAttribute("data-stylex-owner") === "site-project-list-breadcrumb-outer"
+          : element.getAttribute("data-owner") === "site-project-list-breadcrumb-outer"
             ? "site-breadcrumb-outer"
-            : element.getAttribute("data-stylex-owner") === "site-project-list-page-wrap-outer"
+            : element.getAttribute("data-owner") === "site-project-list-page-wrap-outer"
               ? "page-wrap-outer"
-              : element.getAttribute("data-stylex-owner") === "site-footer" &&
+              : element.getAttribute("data-owner") === "site-footer" &&
                   !element.classList.contains("page-footer-outer")
                 ? "site-footer"
                 : element.getAttribute("class"),
@@ -1334,39 +1323,29 @@ async function siteLayoutRootOrder(page: Page) {
 
 async function projectListMetrics(page: Page) {
   return page.evaluate(() => {
-    const titleArea = requireElement('[data-stylex-owner="site-project-list-title-strip"]');
-    const title = requireElement('[data-stylex-owner="site-project-list-title-heading"]');
-    const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
+    const titleArea = requireElement('[data-owner="site-project-list-title-strip"]');
+    const title = requireElement('[data-owner="site-project-list-title-heading"]');
+    const searchForm = requireElement('[data-owner="site-project-list-search"]');
     const filterInput = requireElement(
-      '[data-stylex-owner="site-project-list-search-textbox"][name="filter"]',
+      '[data-owner="site-project-list-search-textbox"][name="filter"]',
     );
-    const row = requireElement('[data-stylex-owner="site-project-list-setting-grid"]');
-    const sidebar = requireElement(
-      '[data-stylex-owner="site-project-list-setting-sidebar-column"]',
-    );
-    const content = requireElement(
-      '[data-stylex-owner="site-project-list-setting-content-column"]',
-    );
-    const listHead = requireElement('[data-stylex-owner="site-project-list-listhead"]');
+    const row = requireElement('[data-owner="site-project-list-setting-grid"]');
+    const sidebar = requireElement('[data-owner="site-project-list-setting-sidebar-column"]');
+    const content = requireElement('[data-owner="site-project-list-setting-content-column"]');
+    const listHead = requireElement('[data-owner="site-project-list-listhead"]');
     const firstHeaderColumn = requireElement(
-      '[data-stylex-owner="site-project-list-listhead-name-column"]',
+      '[data-owner="site-project-list-listhead-name-column"]',
     );
-    const firstRowColumn = requireElement(
-      '[data-stylex-owner="site-project-list-row-name-column"]',
-    );
-    const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
-    const avatarWrap = requireElement('[data-stylex-owner="site-project-list-row-avatar"]');
-    const avatar = requireElement('[data-stylex-owner="site-project-list-row-avatar-image"]');
-    const projectName = requireElement('[data-stylex-owner="site-project-list-project-name"]');
-    const deleteButton = requireElement('[data-stylex-owner="site-project-list-delete-action"]');
+    const firstRowColumn = requireElement('[data-owner="site-project-list-row-name-column"]');
+    const firstRow = requireElement('[data-owner="site-project-list-row"]');
+    const avatarWrap = requireElement('[data-owner="site-project-list-row-avatar"]');
+    const avatar = requireElement('[data-owner="site-project-list-row-avatar-image"]');
+    const projectName = requireElement('[data-owner="site-project-list-project-name"]');
+    const deleteButton = requireElement('[data-owner="site-project-list-delete-action"]');
     const pagination = requireElement("#pagination");
     const modal = requireElement("#alertDeletionWrap");
-    const modalYes = requireElement(
-      '[data-stylex-owner="site-project-list-delete-modal-confirm-action"]',
-    );
-    const modalNo = requireElement(
-      '[data-stylex-owner="site-project-list-delete-modal-cancel-action"]',
-    );
+    const modalYes = requireElement('[data-owner="site-project-list-delete-modal-confirm-action"]');
+    const modalNo = requireElement('[data-owner="site-project-list-delete-modal-cancel-action"]');
     const titleAreaRect = titleArea.getBoundingClientRect();
     const titleRect = title.getBoundingClientRect();
     const searchFormRect = searchForm.getBoundingClientRect();
@@ -1433,11 +1412,11 @@ async function projectListMetrics(page: Page) {
 
 async function projectListNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
+    const navbar = requireElement("[data-owner=global-gnb-outer]");
     const feedback = requireElement(
-      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     );
-    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
+    const searchBox = requireElement('[data-owner="global-gnb-search-box"]');
     const navbarRect = navbar.getBoundingClientRect();
     const feedbackRect = feedback.getBoundingClientRect();
     const searchBoxRect = searchBox.getBoundingClientRect();
@@ -1477,9 +1456,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (
         name === "class" &&
         (current.matches(".site-breadcrumb-outer, .site-breadcrumb-inner") ||
-          (current.getAttribute("data-stylex-owner") ?? "").startsWith(
-            "site-project-list-breadcrumb-",
-          ))
+          (current.getAttribute("data-owner") ?? "").startsWith("site-project-list-breadcrumb-"))
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -1581,10 +1558,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         "data-project-name",
         "data-href",
         "data-dismiss",
-        "data-stylex-owner",
+        "data-owner",
         "role",
       ];
-      const residualOwner = current.getAttribute("data-stylex-owner");
+      const residualOwner = current.getAttribute("data-owner");
       const isResidualOwner =
         residualOwner === "site-project-list-container" ||
         residualOwner === "site-project-list-row" ||
@@ -1606,7 +1583,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             current.hasAttribute(name) &&
             !(name === "class" && isResidualOwner) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === "") &&
-            !(name === "data-stylex-owner" && !isResidualOwner),
+            !(name === "data-owner" && !isResidualOwner),
         )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,

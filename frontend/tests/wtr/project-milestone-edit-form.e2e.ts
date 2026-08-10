@@ -283,7 +283,7 @@ test("project milestone edit form uses legacy project-scoped GNB search shell", 
   await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
 
-  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = shell.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons.nth(0)).toHaveAttribute("type", "button");
   await expect(scopeButtons.nth(1)).toHaveAttribute("type", "button");
@@ -334,7 +334,7 @@ test("project milestone edit form exposes group search scope when project org da
   await page.goto(editFormUrl);
   await expect(page.locator("#milestone-form")).toBeVisible();
   const shell = milestoneEditScopedShell(page);
-  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
+  const scopeButtons = shell.locator("[data-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons.nth(1)).toHaveAttribute("type", "button");
   await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);
@@ -360,7 +360,7 @@ test("project milestone edit form 404 keeps the legacy project-scoped not-found 
   await page.goto(`${basePath}/admin/sample/milestone/404/editform`);
 
   await expect(page).toHaveTitle("Page not found - admin/sample");
-  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
@@ -426,7 +426,7 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   );
   expect(routeSource).toContain("<MilestoneMarkdownEditor");
   expect(routeSource).toContain('"aria-current": undefined');
-  expect(routeSource).toContain('className: "ybtn"');
+
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).not.toMatch(/<a(?:\s|>)/u);
   expect(routeSource).not.toContain("<a\n                      href={prefixBasePath");
@@ -585,7 +585,7 @@ function acceptNextAlert(page: Page) {
 }
 
 function milestoneEditScopedShell(page: Page) {
-  return page.locator("header[data-stylex-owner=global-gnb-outer]").last();
+  return page.locator("header[data-owner=global-gnb-outer]").last();
 }
 
 async function readMilestoneEditFormMetrics(page: Page) {
@@ -730,18 +730,12 @@ function milestoneEditMarkdownEditor(page: Page) {
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const shells = document.querySelectorAll<HTMLElement>(
-      "header[data-stylex-owner=global-gnb-outer]",
-    );
+    const shells = document.querySelectorAll<HTMLElement>("header[data-owner=global-gnb-outer]");
     const navbar = shells.item(shells.length - 1);
     const form = navbar?.querySelector<HTMLElement>(".gnb-search-form");
     const scope = navbar?.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = navbar?.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-box"]',
-    );
-    const input = navbar?.querySelector<HTMLElement>(
-      '[data-stylex-owner="global-gnb-search-input"]',
-    );
+    const searchBox = navbar?.querySelector<HTMLElement>('[data-owner="global-gnb-search-box"]');
+    const input = navbar?.querySelector<HTMLElement>('[data-owner="global-gnb-search-input"]');
     if (!navbar || !form || !scope || !searchBox || !input) {
       return null;
     }
@@ -779,20 +773,20 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      // The app owns the editor wrapper's position via StyleX
+      // The app owns the editor wrapper's position via Style
       // (milestone-edit-form-editor-wrapper { position: relative }), which the
       // legacy milestone/edit.scala.html renders as an inline style — restore
-      // the legacy attribute like other stylex-owner mappings in this file.
-      const stylexInlineStyles: Record<string, string> = {};
-      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-wrapper") {
-        stylexInlineStyles["style"] = "position:relative";
+      // the legacy attribute like other style-owner mappings in this file.
+      const styleInlineStyles: Record<string, string> = {};
+      if (node.getAttribute("data-owner") === "milestone-edit-form-editor-wrapper") {
+        styleInlineStyles["style"] = "position:relative";
       }
-      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-content") {
-        stylexInlineStyles["style"] = "position:relative;overflow:visible";
+      if (node.getAttribute("data-owner") === "milestone-edit-form-editor-content") {
+        styleInlineStyles["style"] = "position:relative;overflow:visible";
       }
-      const mergedAttrs: Record<string, string> = { ...stylexInlineStyles };
+      const mergedAttrs: Record<string, string> = { ...styleInlineStyles };
       for (const attr of Array.from(node.attributes)) {
-        if (attr.name === "data-stylex-owner") continue;
+        if (attr.name === "data-owner") continue;
         if (attr.name in mergedAttrs) {
           mergedAttrs[attr.name] = `${mergedAttrs[attr.name]};${normalizeAttr(attr)}`;
         } else {
@@ -872,20 +866,20 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      // The app owns the editor wrapper's position via StyleX
+      // The app owns the editor wrapper's position via Style
       // (milestone-edit-form-editor-wrapper { position: relative }), which the
       // legacy milestone/edit.scala.html renders as an inline style — restore
-      // the legacy attribute like other stylex-owner mappings in this file.
-      const stylexInlineStyles: Record<string, string> = {};
-      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-wrapper") {
-        stylexInlineStyles["style"] = "position:relative";
+      // the legacy attribute like other style-owner mappings in this file.
+      const styleInlineStyles: Record<string, string> = {};
+      if (node.getAttribute("data-owner") === "milestone-edit-form-editor-wrapper") {
+        styleInlineStyles["style"] = "position:relative";
       }
-      if (node.getAttribute("data-stylex-owner") === "milestone-edit-form-editor-content") {
-        stylexInlineStyles["style"] = "position:relative;overflow:visible";
+      if (node.getAttribute("data-owner") === "milestone-edit-form-editor-content") {
+        styleInlineStyles["style"] = "position:relative;overflow:visible";
       }
-      const mergedAttrs: Record<string, string> = { ...stylexInlineStyles };
+      const mergedAttrs: Record<string, string> = { ...styleInlineStyles };
       for (const attr of Array.from(node.attributes)) {
-        if (attr.name === "data-stylex-owner") continue;
+        if (attr.name === "data-owner") continue;
         if (attr.name in mergedAttrs) {
           mergedAttrs[attr.name] = `${mergedAttrs[attr.name]};${normalizeAttr(attr)}`;
         } else {

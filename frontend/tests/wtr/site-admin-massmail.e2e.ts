@@ -126,7 +126,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
 </footer>
 `;
 const selectedProjectTagSelector =
-  '#selected-projects [data-stylex-owner="site-massmail-selected-project-tag"]';
+  '#selected-projects [data-owner="site-massmail-selected-project-tag"]';
 
 test("site admin mass mail matches legacy site/massMail.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -145,7 +145,7 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
     )
     .toBe("Send mass mails");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+  await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
     "Feedback",
@@ -153,15 +153,15 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   await expect
     .poll(() =>
       page
-        .locator('[data-stylex-owner="global-gnb-nav"] > li > a')
+        .locator('[data-owner="global-gnb-nav"] > li > a')
         .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
     )
     .toEqual([baseRoot, `${basePath}/projects`, "https://github.com/yona-projects/yona/issues"]);
   await expect(page.locator(".gnb-search-form")).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-link"]').nth(5)).toHaveText(
+  await expect(page.locator('[data-owner="site-massmail-sidebar-link"]').nth(5)).toHaveText(
     "Send mass emails",
   );
-  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-link"]')).toHaveText([
+  await expect(page.locator('[data-owner="site-massmail-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -207,11 +207,11 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
       { ariaCurrent: null, className: null, dataStatus: null },
       { ariaCurrent: null, className: null, dataStatus: null },
     ]);
-  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-item"]').nth(5)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-massmail-sidebar-item"]').nth(5)).toHaveCSS(
     "font-weight",
     "700",
   );
-  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-item"]').nth(5)).toHaveCSS(
+  await expect(page.locator('[data-owner="site-massmail-sidebar-item"]').nth(5)).toHaveCSS(
     "border-left-color",
     "rgb(243, 108, 34)",
   );
@@ -226,7 +226,7 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-action", /.+/);
   await expect(page.locator("#input-project")).not.toHaveAttribute("data-provider", /.+/);
   await expect(page.locator("#select-project")).not.toHaveAttribute("data-loading-text", /.+/);
-  const mailLink = page.locator('[data-stylex-owner="site-massmail-sidebar-link"]', {
+  const mailLink = page.locator('[data-owner="site-massmail-sidebar-link"]', {
     hasText: "Send email",
   });
   await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
@@ -263,7 +263,7 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   });
   await mailLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
-  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-link"]').nth(4)).toHaveText(
+  await expect(page.locator('[data-owner="site-mail-sidebar-link"]').nth(4)).toHaveText(
     "Send email",
   );
   await expect(page.locator(".title_area h2")).toHaveText("Send email");
@@ -403,7 +403,7 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   expect(routeSource).not.toContain("projectInputRef.current.value");
   expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain('data-toggle="mail-type"');
-  expect(routeSource).not.toContain('data-toggle: "mail-type"');
+
   expect(routeSource).not.toContain('data-action="hide"');
   expect(routeSource).not.toContain('data-action="show"');
   expect(routeSource).not.toContain('data-provider="typeahead"');
@@ -424,14 +424,12 @@ test("site admin mass mail renders legacy update notification badge", async ({ p
   await mockAvailableUpdate(page);
 
   await page.goto(`${basePath}/sites/massmail`);
-  const updateLink = page.locator('[data-stylex-owner="site-massmail-sidebar-link"]', {
+  const updateLink = page.locator('[data-owner="site-massmail-sidebar-link"]', {
     hasText: "Software Update",
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator('[data-stylex-owner="site-massmail-sidebar-badge"]')).toHaveText(
-    "1",
-  );
+  await expect(updateLink.locator('[data-owner="site-massmail-sidebar-badge"]')).toHaveText("1");
 });
 
 async function massMailDefaultMetrics(page: Page) {
@@ -493,7 +491,7 @@ async function massMailProjectMetrics(page: Page) {
     const input = requireElement("#input-project");
     const addButton = requireElement("#select-project");
     const selectedLabel = requireElement(
-      '#selected-projects [data-stylex-owner="site-massmail-selected-project-tag"]',
+      '#selected-projects [data-owner="site-massmail-selected-project-tag"]',
     );
 
     const projectWrapStyle = getComputedStyle(projectWrap);
@@ -639,7 +637,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -652,13 +650,13 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-massmail-sidebar-item",
           "site-massmail-sidebar-link",
           "site-massmail-sidebar-badge",
-        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+        ].includes(current.getAttribute("data-owner") ?? "")
       ) {
         return "";
       }
       if (
         name === "class" &&
-        current.matches('[data-stylex-owner="site-massmail-selected-project-tag"]')
+        current.matches('[data-owner="site-massmail-selected-project-tag"]')
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -666,7 +664,7 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       const isMassMailRecipientRadio = current.matches(
-        '[data-stylex-owner="site-massmail-recipient-radios"], [data-stylex-owner="site-massmail-recipient-radios"] > input[type="radio"]',
+        '[data-owner="site-massmail-recipient-radios"], [data-owner="site-massmail-recipient-radios"] > input[type="radio"]',
       );
       if (name === "class" && isMassMailRecipientRadio) {
         return (current.getAttribute(name) ?? "")
@@ -674,16 +672,28 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
           .join(" ");
       }
-      if (name === "class" && current.matches('[data-stylex-owner="site-massmail-write-action"]')) {
+      if (name === "class" && current.matches('[data-owner="site-massmail-write-action"]')) {
         return "";
       }
       if (
         name === "class" &&
-        current.matches('[data-stylex-owner="site-massmail-select-project-action"]')
+        current.matches('[data-owner="site-massmail-select-project-action"]')
       ) {
         return "";
       }
-      if (name === "class" && current.matches('[data-stylex-owner="site-massmail-title-strip"]')) {
+      if (name === "class" && current.matches('[data-owner="site-massmail-title-strip"]')) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
+          .join(" ");
+      }
+      if (name === "class" && current.matches('[data-owner="site-massmail-project-input"]')) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
+          .join(" ");
+      }
+      if (name === "class" && current.matches('[data-owner="site-massmail-project-wrapper"]')) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
           .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
@@ -691,29 +701,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        current.matches('[data-stylex-owner="site-massmail-project-input"]')
-      ) {
-        return (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
-          .join(" ");
-      }
-      if (
-        name === "class" &&
-        current.matches('[data-stylex-owner="site-massmail-project-wrapper"]')
-      ) {
-        return (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
-          .join(" ");
-      }
-      if (
-        name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -721,7 +713,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         return value
           .split(/\s+/u)

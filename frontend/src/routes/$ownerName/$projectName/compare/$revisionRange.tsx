@@ -1,25 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
 import { codeCompareQueryOptions, type CodeCompareResponse } from "../../../../api/code-compare";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
 import { DiffLineView, type ParsedDiffLine } from "../../../../components/diff-line-view";
 import { useLegacyMessages } from "../../../../i18n";
 import { type RuntimeConfig } from "../../../../runtime-config";
-import { styles } from "./-compare.stylex";
-
-const sx = {
-  page: stylex.props(styles.page),
-  browse: stylex.props(styles.browse),
-  commitInfo: stylex.props(styles.commitInfo),
-  empty: stylex.props(styles.empty),
-  diffStatBar: stylex.props(styles.diffStatBar),
-  diffStatBadgeChanged: stylex.props(styles.diffStatBadgeChanged),
-  diffStatBadgeAdd: stylex.props(styles.diffStatBadgeAdd),
-  diffStatBadgeDelete: stylex.props(styles.diffStatBadgeDelete),
-  fileDiffCard: stylex.props(styles.fileDiffCard),
-} as const;
 
 type ParsedFileDiff = {
   lines: ParsedDiffLine[];
@@ -122,48 +108,32 @@ function ProjectCodeCompareBody({
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
 
   return (
-    <div
-      {...sx.page}
-      className={`project-page-wrap ${sx.page.className ?? ""}`.trim()}
-      data-stylex-owner="project-compare-page"
-    >
-      <div
-        {...sx.browse}
-        className={`code-browse-wrap ${sx.browse.className ?? ""}`.trim()}
-        data-stylex-owner="project-compare-browse"
-      >
-        <p
-          {...sx.commitInfo}
-          className={`commitInfo ${sx.commitInfo.className ?? ""}`.trim()}
-          data-stylex-owner="project-compare-commit-info"
-        >
+    <div className="project-page-wrap" data-owner="project-compare-page">
+      <div className="code-browse-wrap" data-owner="project-compare-browse">
+        <p className="commitInfo" data-owner="project-compare-commit-info">
           <strong className="commitId">
             @{commitA}..{commitB}
           </strong>
         </p>
 
         {compare.files.length > 0 ? (
-          <div {...sx.diffStatBar} data-stylex-owner="project-compare-diff-stat-bar">
-            <span {...sx.diffStatBadgeChanged}>
+          <div data-owner="project-compare-diff-stat-bar">
+            <span className="project-compare-diff-stat-badge-changed">
               {compare.filesChanged} {compare.filesChanged === 1 ? "file" : "files"} changed
             </span>
-            <span {...sx.diffStatBadgeAdd}>+{compare.insertions}</span>
-            <span {...sx.diffStatBadgeDelete}>-{compare.deletions}</span>
+            <span className="project-compare-diff-stat-badge-add">+{compare.insertions}</span>
+            <span className="project-compare-diff-stat-badge-delete">-{compare.deletions}</span>
           </div>
         ) : null}
 
         {isSvn && compare.patch ? (
-          <div className="diff-wrap" data-stylex-owner="project-compare-diff-wrap">
+          <div className="diff-wrap" data-owner="project-compare-diff-wrap">
             <div className="diff-body hide" data-commit-origin="true" id="commit">
               {compare.patch}
             </div>
           </div>
         ) : compare.files.length === 0 ? (
-          <div
-            {...sx.empty}
-            className={`alert ${sx.empty.className ?? ""}`.trim()}
-            data-stylex-owner="project-compare-empty"
-          >
+          <div className="alert" data-owner="project-compare-empty">
             {t("code.noChanges")}
           </div>
         ) : (
@@ -221,11 +191,7 @@ function CompareFileDiff({
   const shortB = shortenCommitId(commitB);
 
   return (
-    <div
-      id={fileId}
-      {...sx.fileDiffCard}
-      className={`diff-partial-outer ${sx.fileDiffCard.className ?? ""}`.trim()}
-    >
+    <div id={fileId} className="diff-partial-outer">
       <div className="diff-partial-inner">
         <div className="diff-partial-meta">
           <div className="diff-partial-commit">

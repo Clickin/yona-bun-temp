@@ -31,7 +31,7 @@ test("sweep waits for public profile readiness before collecting metrics", () =>
   assert.ok(sweepSource.includes('if (path === "/admin")'));
   assert.match(
     sweepSource,
-    /\.user-box, \.user-profile-page, \[data-stylex-owner='user-profile-page'\]/u,
+    /\.user-box, \.user-profile-page, \[data-owner='user-profile-page'\]/u,
   );
 });
 

@@ -1,12 +1,10 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { resetPasswordStyles, resetPasswordTheme } from "./-resetPassword.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
@@ -23,164 +21,6 @@ const legacyAnchorActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-const styles = stylex.create({
-  validTokenReset: {
-    "--yoram-stylex-reset-password": "stylex",
-  },
-  taglineWrap: {
-    textAlign: "center",
-    marginTop: "0px",
-    marginBottom: "26px",
-    paddingTop: "80px",
-  },
-  title: {
-    display: "inline-block",
-    margin: "0px",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-    fontSize: "3.3em",
-    lineHeight: "42px",
-    fontWeight: "400",
-  },
-  titleHighlight: {
-    color: resetPasswordTheme.titleHighlight,
-  },
-  tagline: {
-    marginTop: "10px",
-    marginBottom: "0px",
-    fontSize: "1.2em",
-    // legacy inherits bootstrap body line-height 20px (bootstrap.css:180);
-    // the app :root line-height 18px shrinks the tag-line box 20 -> 18px,
-    // cascading 2px up into taglineWrap/page height and the form position
-    // (reset-password pins 338/152/246) — mirror the postform compensation.
-    lineHeight: "20px",
-    color: resetPasswordTheme.taglineText,
-  },
-  formWrap: {
-    position: "relative",
-    width: {
-      default: "400px",
-      "@media (max-width: 767px)": "95%",
-    },
-    margin: "54px auto 0px",
-  },
-  textInput: {
-    boxSizing: "content-box",
-    width: {
-      default: "386px",
-      "@media (max-width: 767px)": "95%",
-    },
-    height: "27px",
-    minHeight: "0px",
-    marginBottom: "10px",
-    fontSize: "12px",
-    fontWeight: "700",
-    borderStyle: "none",
-    borderBottomColor: resetPasswordTheme.inputBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderRadius: "0px",
-    ":focus": {
-      borderBottomColor: resetPasswordTheme.inputFocusBorder,
-      outline: "none",
-      boxShadow: "none",
-    },
-  },
-  passwordInput: {
-    marginBottom: "15px",
-  },
-  buttonRow: {
-    display: "block",
-    textAlign: "center",
-    margin: "0px auto 20px",
-  },
-  submit: {
-    display: "block",
-    boxSizing: "border-box",
-    width: "100%",
-  },
-  validationPopover: {
-    "--yoram-stylex-reset-password-validation-popover": "stylex",
-    position: "absolute",
-    zIndex: "1010",
-    display: "block",
-    maxWidth: "144px",
-    padding: "1px",
-    marginLeft: "-10px",
-    textAlign: "left",
-    whiteSpace: "normal",
-    backgroundColor: resetPasswordTheme.validationSurface,
-    borderColor: resetPasswordTheme.validationBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    borderRadius: "2px",
-    boxShadow: resetPasswordTheme.validationShadow,
-    backgroundClip: "padding-box",
-    lineHeight: "1",
-  },
-  validationPopoverArrow: {
-    position: "absolute",
-    display: "block",
-    width: "0px",
-    height: "0px",
-    borderColor: "transparent",
-    borderStyle: "solid",
-    borderWidth: "11px",
-    top: "50%",
-    right: "-11px",
-    marginTop: "-11px",
-    borderLeftColor: resetPasswordTheme.validationArrowBorder,
-    borderRightWidth: "0px",
-    "::after": {
-      content: '""',
-      position: "absolute",
-      display: "block",
-      width: "0px",
-      height: "0px",
-      borderColor: "transparent",
-      borderStyle: "solid",
-      borderWidth: "10px",
-      right: "1px",
-      bottom: "-10px",
-      borderLeftColor: resetPasswordTheme.validationArrowSurface,
-      borderRightWidth: "0px",
-    },
-  },
-  validationPopoverContent: {
-    padding: "9px 10px",
-    lineHeight: "120%",
-  },
-  badRequest: {
-    "--yoram-stylex-reset-password-bad-request": "stylex",
-  },
-  badRequestErrorWrap: {
-    padding: "100px 0px",
-    textAlign: "center",
-  },
-  badRequestMessage: {
-    margin: "30px 0px",
-    fontWeight: "700",
-    fontSize: "16px",
-    color: resetPasswordTheme.badRequestText,
-  },
-});
-
-const validTokenResetClassName = stylex.props(styles.validTokenReset).className;
-const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
-const titleClassName = stylex.props(styles.title).className;
-const titleHighlightClassName = stylex.props(styles.titleHighlight).className;
-const taglineClassName = stylex.props(styles.tagline).className;
-const formWrapClassName = stylex.props(styles.formWrap).className;
-const passwordInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
-const buttonRowClassName = stylex.props(styles.buttonRow).className;
-const submitClassName = stylex.props(styles.submit).className;
-const validationPopoverArrowClassName = stylex.props(styles.validationPopoverArrow).className;
-const validationPopoverContentClassName = stylex.props(styles.validationPopoverContent).className;
-const badRequestClassName = stylex.props(styles.badRequest).className;
-const badRequestErrorWrapClassName = stylex.props(styles.badRequestErrorWrap).className;
-const badRequestMessageClassName = stylex.props(styles.badRequestMessage).className;
-
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
   validateSearch: (search: Record<string, unknown>): ResetPasswordSearch => ({
@@ -252,41 +92,34 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{browserTitle}</title>
       <div
-        className={validTokenReset ? `page full ${validTokenResetClassName}` : "page full"}
-        data-stylex-owner={validTokenReset ? "reset-password-form" : undefined}
+        className={validTokenReset ? `page full ` : "page full"}
+        data-owner={validTokenReset ? "reset-password-form" : undefined}
       >
         <div
           className={
             validTokenReset
-              ? `center-wrap tag-line-wrap reset-password ${taglineWrapClassName}`
+              ? `center-wrap tag-line-wrap reset-password `
               : "center-wrap tag-line-wrap reset-password"
           }
-          data-stylex-part={validTokenReset ? "reset-password-tagline" : undefined}
+          data-part={validTokenReset ? "reset-password-tagline" : undefined}
         >
           <h1
-            className={validTokenReset ? `title ${titleClassName}` : "title"}
-            data-stylex-part={validTokenReset ? "reset-password-title" : undefined}
+            className={validTokenReset ? `title ` : "title"}
+            data-part={validTokenReset ? "reset-password-title" : undefined}
           >
-            <HighlightedLegacyMessage
-              highlightClassName={validTokenReset ? titleHighlightClassName : undefined}
-              message={title}
-            />
+            <HighlightedLegacyMessage message={title} />
           </h1>
           <p
-            className={validTokenReset ? `tag-line ${taglineClassName}` : "tag-line"}
-            data-stylex-part={validTokenReset ? "reset-password-copy" : undefined}
+            className={validTokenReset ? `tag-line ` : "tag-line"}
+            data-part={validTokenReset ? "reset-password-copy" : undefined}
           >
             {t("app.description")}
           </p>
         </div>
 
         <div
-          className={
-            validTokenReset
-              ? `login-form-wrap frm-wrap ${formWrapClassName}`
-              : "login-form-wrap frm-wrap"
-          }
-          data-stylex-part={validTokenReset ? "reset-password-form-wrap" : undefined}
+          className={validTokenReset ? `login-form-wrap frm-wrap ` : "login-form-wrap frm-wrap"}
+          data-part={validTokenReset ? "reset-password-form-wrap" : undefined}
         >
           <form
             action={prefixBasePath(runtimeConfig.basePath, "/resetPassword")}
@@ -303,8 +136,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   id="password"
                   type="password"
                   name="password"
-                  className={validTokenReset ? passwordInputClassName : "text password"}
-                  data-stylex-part={validTokenReset ? "reset-password-password" : undefined}
+                  data-part={validTokenReset ? "reset-password-password" : undefined}
                   placeholder={t("user.password")}
                   autoComplete="off"
                   onBlur={validateCurrentForm}
@@ -312,7 +144,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 <FieldPopover
                   anchorRef={passwordInputRef}
                   message={fieldErrors.password}
-                  stylexOwned={validTokenReset}
+                  styleOwned={validTokenReset}
                 />
               </dd>
               <dd>
@@ -321,8 +153,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   id="retypedPassword"
                   type="password"
                   name="retypedPassword"
-                  className={validTokenReset ? passwordInputClassName : "text password"}
-                  data-stylex-part={validTokenReset ? "reset-password-retyped-password" : undefined}
+                  data-part={validTokenReset ? "reset-password-retyped-password" : undefined}
                   placeholder={t("validation.retypePassword")}
                   autoComplete="off"
                   onBlur={validateCurrentForm}
@@ -330,23 +161,23 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 <FieldPopover
                   anchorRef={retypedPasswordInputRef}
                   message={fieldErrors.retypedPassword}
-                  stylexOwned={validTokenReset}
+                  styleOwned={validTokenReset}
                 />
               </dd>
             </dl>
 
             <div
-              className={validTokenReset ? `btns-row ${buttonRowClassName}` : "btns-row"}
-              data-stylex-part={validTokenReset ? "reset-password-submit-row" : undefined}
+              className={validTokenReset ? `btns-row ` : "btns-row"}
+              data-part={validTokenReset ? "reset-password-submit-row" : undefined}
             >
               <button
                 type="submit"
                 className={
                   validTokenReset
-                    ? `ybtn ybtn-primary ybtn-fullsize ${submitClassName}`
+                    ? `ybtn ybtn-primary ybtn-fullsize `
                     : "ybtn ybtn-primary ybtn-fullsize"
                 }
-                data-stylex-part={validTokenReset ? "reset-password-submit" : undefined}
+                data-part={validTokenReset ? "reset-password-submit" : undefined}
                 disabled={resetMutation.isPending}
               >
                 {t("button.confirm")}
@@ -409,11 +240,11 @@ function validateResetPasswordForm(
 function FieldPopover({
   anchorRef,
   message,
-  stylexOwned,
+  styleOwned,
 }: {
   anchorRef: React.RefObject<HTMLInputElement | null>;
   message?: string;
-  stylexOwned: boolean;
+  styleOwned: boolean;
 }) {
   const popoverRef = React.useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = React.useState<{ left: number; top: number } | null>(null);
@@ -436,40 +267,24 @@ function FieldPopover({
     left: placement ? `${placement.left}px` : "-154px",
     top: placement ? `${placement.top}px` : "0",
   };
-  const ownedStyle = stylex.props(
-    styles.validationPopover,
-    resetPasswordStyles.validationPopoverPosition(position.left, position.top),
-  );
-  const fallbackStyle = stylex.props(
-    resetPasswordStyles.validationPopoverFallback,
-    resetPasswordStyles.validationPopoverPosition(position.left, position.top),
-  );
-  if (stylexOwned) {
+  if (styleOwned) {
     return (
       <div
         ref={popoverRef}
-        {...ownedStyle}
-        data-stylex-owner="reset-password-validation-popover"
-        data-stylex-part="reset-password-validation-popover-surface"
+        style={{ left: position.left, top: position.top }}
+        data-owner="reset-password-validation-popover"
+        data-part="reset-password-validation-popover-surface"
       >
-        <div
-          className={validationPopoverArrowClassName}
-          data-stylex-part="reset-password-validation-popover-arrow"
-        ></div>
-        <div
-          className={validationPopoverContentClassName}
-          data-stylex-part="reset-password-validation-popover-content"
-        >
-          {message}
-        </div>
+        <div data-part="reset-password-validation-popover-arrow"></div>
+        <div data-part="reset-password-validation-popover-content">{message}</div>
       </div>
     );
   }
   return (
     <div
       ref={popoverRef}
-      {...fallbackStyle}
-      className={`popover left in ${fallbackStyle.className}`}
+      style={{ left: position.left, top: position.top }}
+      className={"popover left in"}
     >
       <div className="arrow"></div>
       <div className="popover-content">{message}</div>
@@ -488,21 +303,13 @@ function BadRequestPage({
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <div
-        className={`page-wrap-outer reset-password-bad-request ${badRequestClassName}`}
-        data-stylex-owner="reset-password-bad-request"
+        className={"page-wrap-outer reset-password-bad-request"}
+        data-owner="reset-password-bad-request"
       >
         <div className="project-page-wrap">
-          <div
-            className={`error-wrap ${badRequestErrorWrapClassName}`}
-            data-stylex-part="reset-password-bad-request-error-wrap"
-          >
+          <div className={"error-wrap"} data-part="reset-password-bad-request-error-wrap">
             <i className="ico-404" />
-            <p
-              className={badRequestMessageClassName}
-              data-stylex-part="reset-password-bad-request-message"
-            >
-              {message}
-            </p>
+            <p data-part="reset-password-bad-request-message">{message}</p>
             <Link
               to=".."
               activeOptions={legacyAnchorActiveOptions}
@@ -535,7 +342,7 @@ function HighlightedLegacyMessage({
       {match[1]}
       <span
         className={highlightClassName ? `highlight ${highlightClassName}` : "highlight"}
-        data-stylex-part={highlightClassName ? "reset-password-title-highlight" : undefined}
+        data-part={highlightClassName ? "reset-password-title-highlight" : undefined}
       >
         {match[2]}
       </span>

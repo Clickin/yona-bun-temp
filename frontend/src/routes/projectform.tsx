@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
@@ -13,12 +12,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
-import {
-  projectFormConditionalStyles,
-  projectFormLayout,
-  projectFormTheme,
-} from "./-projectform.stylex";
-
 type ProjectCreateSearch = {
   owner?: string;
 };
@@ -113,15 +106,6 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
-  const protectedScopeStyleProps = stylex.props(
-    styles.protectedScope,
-    !isSelectedOwnerGroup && projectFormConditionalStyles.hidden,
-  );
-  const privateScopeStyleProps = stylex.props(styles.privateScope);
-  const svnWarningStyleProps = stylex.props(
-    projectFormLayout.svnWarning,
-    vcs === "GIT" && projectFormConditionalStyles.hidden,
-  );
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -204,10 +188,7 @@ function ProjectCreateScreen({
       <title>{t("title.newProject")}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div
-            className={`${stylex.props(styles.form).className} form-wrap new-project`}
-            data-stylex-owner="project-form"
-          >
+          <div className={"form-wrap new-project"} data-owner="project-form">
             <form
               id="newProjectForm"
               action={prefixBasePath(runtimeConfig.basePath, "/projects")}
@@ -215,7 +196,7 @@ function ProjectCreateScreen({
               className="frm-wrap"
               onSubmit={handleSubmit}
             >
-              <legend data-stylex-owner="project-form-legend">
+              <legend data-owner="project-form-legend">
                 {t("title.newProject")}
                 <span>
                   <small>{t("project.import.or")} &nbsp; </small>
@@ -233,12 +214,7 @@ function ProjectCreateScreen({
                 <dt>
                   <label htmlFor="project-owner">
                     {t("project.owner")}
-                    <strong
-                      {...stylex.props(projectFormLayout.requiredMarker)}
-                      data-stylex-owner="project-form-required-marker-owner"
-                    >
-                      *
-                    </strong>
+                    <strong data-owner="project-form-required-marker-owner">*</strong>
                   </label>
                 </dt>
                 <dd>
@@ -246,8 +222,8 @@ function ProjectCreateScreen({
                     id="project-owner"
                     name="owner"
                     data-format="user"
-                    className={`${stylex.props(projectFormLayout.select).className} mb10`}
-                    data-stylex-owner="project-form-owner"
+                    className={"mb10"}
+                    data-owner="project-form-owner"
                     value={ownerName}
                     onChange={(event) => {
                       const nextOwner = event.currentTarget.value;
@@ -269,12 +245,7 @@ function ProjectCreateScreen({
                 <dt>
                   <label htmlFor="project-name">
                     {t("project.name")}
-                    <strong
-                      {...stylex.props(projectFormLayout.requiredMarker)}
-                      data-stylex-owner="project-form-required-marker-name"
-                    >
-                      *
-                    </strong>
+                    <strong data-owner="project-form-required-marker-name">*</strong>
                   </label>
                 </dt>
                 <dd>
@@ -293,13 +264,13 @@ function ProjectCreateScreen({
                       setNameError(undefined);
                     }}
                     placeholder={t("project.name.placeholder")}
-                    data-stylex-owner="project-form-name"
+                    data-owner="project-form-name"
                   />
                   {nameError ? (
                     <div
-                      className={`${stylex.props(styles.errorPopover).className} popover fade left in`}
+                      className={"popover fade left in"}
                       role="tooltip"
-                      data-stylex-owner="project-form-name-error"
+                      data-owner="project-form-name-error"
                     >
                       <div className="arrow" />
                       <div className="popover-content">{nameError}</div>
@@ -317,30 +288,18 @@ function ProjectCreateScreen({
                     className="text textarea.span4"
                     value={overview}
                     onChange={(event) => setOverview(event.currentTarget.value)}
-                    data-stylex-owner="project-form-description"
+                    data-owner="project-form-description"
                   />
                 </dd>
               </dl>
 
-              <div
-                className={`${stylex.props(styles.advanced).className} advanced-options`}
-                data-stylex-owner="project-form-advanced"
-              >
+              <div className={"advanced-options"} data-owner="project-form-advanced">
                 <div className="row-fluid">
-                  <div
-                    className={`${
-                      stylex.props(projectFormLayout.fieldLabel, projectFormLayout.shareOptionLabel)
-                        .className
-                    } span2 mt10`}
-                    data-stylex-owner="project-form-share-option-label"
-                  >
+                  <div className={"span2 mt10"} data-owner="project-form-share-option-label">
                     {t("project.shareOption")}
                   </div>
                   <div className="span10">
-                    <ul
-                      className={`${stylex.props(styles.scopes).className} unstyled project-scopes mt10`}
-                      data-stylex-owner="project-form-scopes"
-                    >
+                    <ul className={"unstyled project-scopes mt10"} data-owner="project-form-scopes">
                       <li>
                         <input
                           type="radio"
@@ -352,27 +311,19 @@ function ProjectCreateScreen({
                           onChange={() => setProjectScope("PUBLIC")}
                         />
                         <label htmlFor="public">
-                          <strong
-                            {...stylex.props(projectFormLayout.visibilityLabel)}
-                            className="ml5"
-                            data-stylex-owner="project-form-public-visibility-label"
-                          >
+                          <strong className="ml5" data-owner="project-form-public-visibility-label">
                             {t("project.public")}
                           </strong>
-                          <p
-                            className={`${stylex.props(styles.scopeNote).className} note`}
-                            data-stylex-owner="project-form-scope-note"
-                          >
+                          <p className={"note"} data-owner="project-form-scope-note">
                             {t("project.public.notice")}
                           </p>
                         </label>
                       </li>
 
                       <li
-                        {...protectedScopeStyleProps}
                         id="opt-protected"
-                        className={`mt10 ${protectedScopeStyleProps.className}`}
-                        data-stylex-owner="project-form-protected-scope"
+                        className={"mt10"}
+                        data-owner="project-form-protected-scope"
                       >
                         <input
                           type="radio"
@@ -385,25 +336,18 @@ function ProjectCreateScreen({
                         />
                         <label htmlFor="protected">
                           <strong
-                            {...stylex.props(projectFormLayout.visibilityLabel)}
                             className="ml5"
-                            data-stylex-owner="project-form-protected-visibility-label"
+                            data-owner="project-form-protected-visibility-label"
                           >
                             {t("project.protected")}
                           </strong>
-                          <p
-                            className={`${stylex.props(styles.scopeNote).className} note`}
-                            data-stylex-owner="project-form-scope-note"
-                          >
+                          <p className={"note"} data-owner="project-form-scope-note">
                             {t("project.protected.notice")}
                           </p>
                         </label>
                       </li>
 
-                      <li
-                        {...privateScopeStyleProps}
-                        className={`mt10 ${privateScopeStyleProps.className}`}
-                      >
+                      <li className={"mt10"}>
                         <input
                           type="radio"
                           id="private"
@@ -415,16 +359,12 @@ function ProjectCreateScreen({
                         />
                         <label htmlFor="private">
                           <strong
-                            {...stylex.props(projectFormLayout.visibilityLabel)}
                             className="ml5"
-                            data-stylex-owner="project-form-private-visibility-label"
+                            data-owner="project-form-private-visibility-label"
                           >
                             {t("project.private")}
                           </strong>
-                          <p
-                            className={`${stylex.props(styles.scopeNote).className} note`}
-                            data-stylex-owner="project-form-scope-note"
-                          >
+                          <p className={"note"} data-owner="project-form-scope-note">
                             {t("project.private.notice")}
                           </p>
                         </label>
@@ -436,13 +376,7 @@ function ProjectCreateScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div
-                    className={`${
-                      stylex.props(projectFormLayout.fieldLabel, projectFormLayout.vcsLabel)
-                        .className
-                    } span2 mt10`}
-                    data-stylex-owner="project-form-vcs-label"
-                  >
+                  <div className={"span2 mt10"} data-owner="project-form-vcs-label">
                     <label htmlFor="vcs">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
@@ -450,8 +384,8 @@ function ProjectCreateScreen({
                       id="vcs"
                       name="vcs"
                       data-dropdown-css-class="select2-without-searchbox"
-                      className={`${stylex.props(projectFormLayout.select).className} mb10 mt5`}
-                      data-stylex-owner="project-form-vcs"
+                      className={"mb10 mt5"}
+                      data-owner="project-form-vcs"
                       value={vcs}
                       onChange={(event) => {
                         const nextVcs = event.currentTarget.value;
@@ -464,10 +398,9 @@ function ProjectCreateScreen({
                     </select>
 
                     <span
-                      {...svnWarningStyleProps}
                       id="svn"
-                      className={`ml10 notice ${svnWarningStyleProps?.className ?? ""}`.trim()}
-                      data-stylex-owner="project-form-vcs-warning"
+                      className={`ml10 notice${vcs === "GIT" ? " is-hidden" : ""}`}
+                      data-owner="project-form-vcs-warning"
                     >
                       {t("project.svn.warning")}
                     </span>
@@ -477,10 +410,7 @@ function ProjectCreateScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div
-                    className={`${stylex.props(projectFormLayout.fieldLabel).className} span2`}
-                    data-stylex-owner="project-form-menu-setting-label"
-                  >
+                  <div className={"span2"} data-owner="project-form-menu-setting-label">
                     {t("project.menu.setting")}
                   </div>
                   <div className="span10">
@@ -544,10 +474,7 @@ function ProjectCreateScreen({
                 </div>
               </div>
 
-              <div
-                className={`${stylex.props(styles.actions).className} actions mt20`}
-                data-stylex-owner="project-form-actions"
-              >
+              <div className={"actions mt20"} data-owner="project-form-actions">
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   {t("project.create")}
                 </button>
@@ -572,44 +499,6 @@ function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
   return <option value={option.ownerName}>{option.ownerName}</option>;
 }
 
-const styles = stylex.create({
-  form: {
-    position: "relative",
-    width: "700px",
-    margin: "30px auto",
-  },
-  errorPopover: {
-    backgroundColor: projectFormTheme.errorSurface,
-    borderColor: projectFormTheme.errorBorder,
-    borderStyle: "solid",
-    borderWidth: "1px",
-    maxWidth: "144px",
-  },
-  advanced: {
-    backgroundColor: projectFormTheme.advancedBackground,
-    borderRadius: "10px",
-    padding: "10px 0px",
-  },
-  scopes: {
-    marginTop: "10px",
-  },
-  protectedScope: {
-    marginTop: "10px",
-  },
-  privateScope: {
-    marginTop: "10px",
-  },
-  scopeNote: {
-    color: projectFormTheme.scopeNoteText,
-    fontSize: "11px",
-    marginLeft: "22px",
-  },
-  actions: {
-    position: "relative",
-    textAlign: "center",
-  },
-});
-
 function MenuCheckbox({
   checked,
   defaultChecked = true,
@@ -627,14 +516,12 @@ function MenuCheckbox({
   name: string;
   onChange?: (checked: boolean) => void;
 }) {
-  const hiddenStyleProps = hidden ? stylex.props(projectFormConditionalStyles.hidden) : undefined;
-
   return (
     <label
       htmlFor={id}
-      {...hiddenStyleProps}
-      className={`bg-radiobtn label-public inline-list ${hiddenStyleProps?.className ?? ""}`.trim()}
-      data-stylex-owner={`project-form-menu-${name}`}
+      className="bg-radiobtn label-public inline-list"
+      data-owner={`project-form-menu-${name}`}
+      hidden={hidden}
     >
       <input
         type="checkbox"

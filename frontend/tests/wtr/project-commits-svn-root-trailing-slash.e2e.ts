@@ -7,12 +7,12 @@ test("svn commits trailing slash replaces to the canonical legacy root before hi
   const historyRequests = await mockSvnHistory(page);
 
   await page.goto(`${basePath}/admin/svnplayground/commits?previous=1`);
-  await expect(page.locator('[data-stylex-owner="project-commits-empty-warning"]')).toBeVisible();
+  await expect(page.locator('[data-owner="project-commits-empty-warning"]')).toBeVisible();
   await expect.poll(historyRequests).toBe(1);
 
   await page.goto(`${basePath}/admin/svnplayground/commits/?probe=1#fragment`);
   await expect(page).toHaveURL(`${basePath}/admin/svnplayground/commits?probe=1#fragment`);
-  await expect(page.locator('[data-stylex-owner="project-commits-empty-warning"]')).toBeVisible();
+  await expect(page.locator('[data-owner="project-commits-empty-warning"]')).toBeVisible();
   await expect(page.locator(".select2-container")).toBeVisible();
   await expect(page.locator(".select2-container")).toHaveCSS("width", "220px");
   await expect(page.locator(".select2-chosen")).toHaveText("HEAD");

@@ -65,7 +65,7 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
   await mockRestrictedSession(page);
 
   await page.goto(`${basePath}/restricted`);
-  await expect(page.locator('[data-stylex-owner="restricted-gnb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-owner="restricted-gnb-outer"]')).toBeVisible();
   await expect(page).toHaveTitle("Yoram");
   await expect
     .poll(() =>
@@ -80,7 +80,7 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
     "src",
     "https://www.youtube.com/embed/9bZkp7q19f0",
   );
-  const sidebarPin = page.locator('[data-stylex-owner="restricted-sidebar-pin"]');
+  const sidebarPin = page.locator('[data-owner="restricted-sidebar-pin"]');
   await expect(sidebarPin).not.toHaveAttribute("data-toggle");
   await expect(sidebarPin).not.toHaveAttribute("data-placement");
   await expect(sidebarPin).toHaveAttribute("title", "Sidebar");
@@ -126,7 +126,7 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
   });
 
   await page.goto(`${basePath}/restricted`);
-  const logoLink = page.locator('[data-stylex-owner="restricted-gnb-brand"]');
+  const logoLink = page.locator('[data-owner="restricted-gnb-brand"]');
   await expectLegacyAnchor(logoLink, {
     className: null,
     href: rootHref(basePath),
@@ -158,7 +158,7 @@ test("restricted route source keeps internal navigation out of raw anchors", asy
   expect(RESTRICTED_ROUTE_SOURCE).toContain(
     'import { Link, createFileRoute } from "@tanstack/react-router";',
   );
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-stylex-owner="restricted-gnb-brand"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-owner="restricted-gnb-brand"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps={legacyPlainLinkActiveProps}");
   expect(RESTRICTED_ROUTE_SOURCE).toContain('to="/"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain("<Link");
@@ -203,7 +203,7 @@ test("restricted route source keeps the legacy footer attribution", async () => 
 });
 
 test("restricted route source drops route-owned tooltip initializer marker", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-stylex-owner="restricted-sidebar-pin"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-owner="restricted-sidebar-pin"');
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain('className="pin"');
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain('data-placement="bottom"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain('title="Sidebar"');
@@ -283,13 +283,9 @@ async function expectLegacyAnchor(
 
 async function readDesktopRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="restricted-gnb-outer"]',
-    );
-    const gnbInner = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="restricted-gnb-inner"]',
-    );
-    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-brand"]');
+    const gnbOuter = document.querySelector<HTMLElement>('[data-owner="restricted-gnb-outer"]');
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="restricted-gnb-inner"]');
+    const logo = document.querySelector<HTMLElement>('[data-owner="restricted-gnb-brand"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
@@ -342,12 +338,8 @@ async function readDesktopRestrictedMetrics(page: Page) {
 
 async function readMobileRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="restricted-gnb-outer"]',
-    );
-    const gnbInner = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="restricted-gnb-inner"]',
-    );
+    const gnbOuter = document.querySelector<HTMLElement>('[data-owner="restricted-gnb-outer"]');
+    const gnbInner = document.querySelector<HTMLElement>('[data-owner="restricted-gnb-inner"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
@@ -392,7 +384,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner="restricted-gnb-outer"], .page-wrap-outer, .page-footer-outer',
+        '.unsupported, [data-owner="restricted-gnb-outer"], .page-wrap-outer, .page-footer-outer',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -446,14 +438,11 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string) {
       if (
         (name === "data-toggle" || name === "data-placement") &&
-        current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
+        current.closest('.pin, [data-owner="restricted-sidebar-pin"]')
       ) {
         return "";
       }
-      if (
-        name === "class" &&
-        current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
-      ) {
+      if (name === "class" && current.closest('.pin, [data-owner="restricted-sidebar-pin"]')) {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/u)
           .filter(
@@ -463,7 +452,7 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
-      if (name === "class" && current.closest('[data-stylex-owner^="restricted-gnb-"]')) {
+      if (name === "class" && current.closest('[data-owner^="restricted-gnb-"]')) {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/u)
           .filter((value) => value && !value.startsWith("x") && !value.includes("restricted__"))
@@ -533,14 +522,11 @@ async function canonicalizeHtml(page: Page, html: string) {
       function normalizeAttribute(current: Element, name: string) {
         if (
           (name === "data-toggle" || name === "data-placement") &&
-          current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
+          current.closest('.pin, [data-owner="restricted-sidebar-pin"]')
         ) {
           return "";
         }
-        if (
-          name === "class" &&
-          current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
-        ) {
+        if (name === "class" && current.closest('.pin, [data-owner="restricted-sidebar-pin"]')) {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/u)
             .filter(
@@ -553,7 +539,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
         }
-        if (name === "class" && current.closest('[data-stylex-owner^="restricted-gnb-"]')) {
+        if (name === "class" && current.closest('[data-owner^="restricted-gnb-"]')) {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/u)
             .filter((value) => value && !value.startsWith("x") && !value.includes("restricted__"))

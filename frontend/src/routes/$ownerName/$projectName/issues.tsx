@@ -1,5 +1,4 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
@@ -18,7 +17,6 @@ import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { IssueLabel } from "../../../components/issue-label";
 import { IssueDueDateInput } from "../../../components/issue-due-date-input";
 import {
@@ -29,11 +27,7 @@ import {
 import { TabButton } from "../../../components/tab-button";
 import { useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
-import { styles } from "./-issues.stylex";
 
-const issueListKeymapStyles = stylex.create({ visible: { display: "block" } });
-
-const projectIssuesStyles = stylex.create({ clickableRow: { cursor: "pointer" } });
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
@@ -317,8 +311,8 @@ function ProjectIssuesWireframe({
   return (
     <div
       className="page-wrap-outer"
-      data-stylex-owner="project-issues-page-wireframe"
-      data-stylex-content-ready="false"
+      data-owner="project-issues-page-wireframe"
+      data-content-ready="false"
       data-wireframe="project-issues"
       aria-busy="true"
     >
@@ -353,14 +347,8 @@ function ProjectIssuesWireframe({
               showAuthorCurrentUserOption={false}
             />
           </div>
-          <div
-            className={`${stylex.props(styles.results).className} span10 span-hard-wrap`}
-            id="span10"
-          >
-            <div
-              {...stylex.props(styles.newIssueAction)}
-              data-stylex-owner="project-issues-new-issue-action"
-            >
+          <div className="project-issues-results span10 span-hard-wrap" id="span10">
+            <div data-owner="project-issues-new-issue-action">
               <Link
                 to="/$ownerName/$projectName/issueform"
                 params={{ ownerName, projectName }}
@@ -648,12 +636,12 @@ function ProjectIssuesBody({
   return (
     <div
       className="page-wrap-outer"
-      data-stylex-owner="project-issues-page"
-      data-stylex-content-ready={issuesReady ? "true" : "false"}
+      data-owner="project-issues-page"
+      data-content-ready={issuesReady ? "true" : "false"}
       data-wireframe={issuesReady ? undefined : "project-issues"}
       aria-busy={!issuesReady}
     >
-      <div className="project-page-wrap" data-stylex-owner="project-issues-list">
+      <div className="project-page-wrap" data-owner="project-issues-list">
         <div className="row-fluid issue-list-wrap" onKeyDownCapture={handleIssueListKeyDownCapture}>
           <div className="left-menu span2 span-hard-wrap">
             <QuickSearch
@@ -699,16 +687,8 @@ function ProjectIssuesBody({
               }}
             />
           </div>
-          <div
-            className={`${stylex.props(styles.results).className} span10 span-hard-wrap`}
-            id="span10"
-            data-stylex-owner="project-issues-results"
-          >
-            <div
-              {...stylex.props(styles.newIssueAction)}
-              className={stylex.props(styles.newIssueAction).className ?? ""}
-              data-stylex-owner="project-issues-new-issue-action"
-            >
+          <div className="span10 span-hard-wrap" id="span10" data-owner="project-issues-results">
+            <div data-owner="project-issues-new-issue-action">
               <Link
                 activeProps={legacyRouteLocalActiveProps}
                 to="/$ownerName/$projectName/issueform"
@@ -769,22 +749,9 @@ function ProjectIssuesBody({
               <ProjectIssuesListWireframe />
             ) : !currentPageHasItems ? (
               <>
-                <div
-                  {...stylex.props(styles.errorWrap)}
-                  className={`${stylex.props(styles.errorWrap).className} error-wrap`}
-                  data-stylex-owner="project-issues-empty-error-wrap"
-                >
-                  <i
-                    {...stylex.props(styles.errorIcon, styles.errorIconSprite(legacySpriteUrl))}
-                    className={`${stylex.props(styles.errorIcon, styles.errorIconSprite(legacySpriteUrl)).className ?? ""} ico ico-err1`.trim()}
-                    data-stylex-owner="project-issues-empty-error-icon"
-                  ></i>
-                  <p
-                    {...stylex.props(styles.errorMessage)}
-                    data-stylex-owner="project-issues-empty-error-message"
-                  >
-                    {t("issue.is.empty")}
-                  </p>
+                <div className="error-wrap" data-owner="project-issues-empty-error-wrap">
+                  <i className="ico ico-err1" data-owner="project-issues-empty-error-icon"></i>
+                  <p data-owner="project-issues-empty-error-message">{t("issue.is.empty")}</p>
                 </div>
                 <IssueListKeymap project={project} />
               </>
@@ -889,10 +856,7 @@ function ProjectIssuesBody({
                     />
                   ))}
                 </ul>
-                <div
-                  {...stylex.props(styles.downloadWrap)}
-                  data-stylex-owner="project-issues-excel-download"
-                >
+                <div data-owner="project-issues-excel-download">
                   <Link
                     activeProps={{ className: "ybtn small" }}
                     to={excelHref("", ownerName, projectName, currentSearchString)}
@@ -970,56 +934,36 @@ function IssuePagination({
   return (
     <div
       id="pagination"
-      className={`${stylex.props(styles.paginationWrap).className} page-navigation-wrap`}
-      data-stylex-owner="project-issues-pagination"
+      className="page-navigation-wrap"
+      data-owner="project-issues-pagination"
       data-total={totalPages}
     >
-      <ul
-        className={`${stylex.props(styles.paginationPageNums).className} page-nums`}
-        data-stylex-owner="project-issues-pagination-page-nums"
-      >
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="project-issues-pagination-prev-page"
-        >
+      <ul className="page-nums" data-owner="project-issues-pagination-page-nums">
+        <li className="page-num ikon" data-owner="project-issues-pagination-prev-page">
           {hasPrev ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
               activeProps={legacyRouteLocalActiveProps}
               to={pageRoutePath(currentPage - 1)}
             >
-              <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev).className} ico btn-pg-prev`}
-                data-stylex-owner="project-issues-pagination-prev-icon"
-              ></i>
-              <span
-                className={stylex.props(styles.paginationIconLabel).className}
-                data-stylex-owner="project-issues-pagination-prev-label"
-              >
-                {t("button.prevPage")}
-              </span>
+              <i className="ico btn-pg-prev" data-owner="project-issues-pagination-prev-icon"></i>
+              <span data-owner="project-issues-pagination-prev-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
-                data-stylex-owner="project-issues-pagination-prev-icon"
+                className="ico btn-pg-prev off"
+                data-owner="project-issues-pagination-prev-icon"
               ></i>
-              <span
-                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="project-issues-pagination-prev-label"
-              >
+              <span className="off" data-owner="project-issues-pagination-prev-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
-          data-stylex-owner="project-issues-pagination-input-page"
-        >
+        <li className="page-num" data-owner="project-issues-pagination-input-page">
           <input
-            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
+            className="input-mini nospinner"
             defaultValue={currentPage}
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
@@ -1031,53 +975,33 @@ function IssuePagination({
               event.currentTarget.select();
             }}
             onKeyDown={handleInputKeyDown}
-            data-stylex-owner="project-issues-pagination-input"
+            data-owner="project-issues-pagination-input"
           />
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationDelimiter).className} page-num delimiter`}
-          data-stylex-owner="project-issues-pagination-delimiter"
-        >
+        <li className="page-num delimiter" data-owner="project-issues-pagination-delimiter">
           /
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
-          data-stylex-owner="project-issues-pagination-total"
-        >
+        <li className="page-num" data-owner="project-issues-pagination-total">
           {totalPages}
         </li>
-        <li
-          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
-          data-stylex-owner="project-issues-pagination-next-page"
-        >
+        <li className="page-num ikon" data-owner="project-issues-pagination-next-page">
           {hasNext ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
               activeProps={legacyRouteLocalActiveProps}
               to={pageRoutePath(currentPage + 1)}
             >
-              <span
-                className={stylex.props(styles.paginationIconLabel).className}
-                data-stylex-owner="project-issues-pagination-next-label"
-              >
-                {t("button.nextPage")}
-              </span>
-              <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext).className} ico btn-pg-next`}
-                data-stylex-owner="project-issues-pagination-next-icon"
-              ></i>
+              <span data-owner="project-issues-pagination-next-label">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next" data-owner="project-issues-pagination-next-icon"></i>
             </Link>
           ) : (
             <>
-              <span
-                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
-                data-stylex-owner="project-issues-pagination-next-label"
-              >
+              <span className="off" data-owner="project-issues-pagination-next-label">
                 {t("button.nextPage")}
               </span>
               <i
-                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
-                data-stylex-owner="project-issues-pagination-next-icon"
+                className="ico btn-pg-next off"
+                data-owner="project-issues-pagination-next-icon"
               ></i>
             </>
           )}
@@ -1112,11 +1036,7 @@ function IssueFilters({
   ];
 
   return (
-    <div
-      {...stylex.props(styles.sortFilters)}
-      className={`${stylex.props(styles.sortFilters).className} filters`}
-      data-stylex-owner="project-issues-sort-filters"
-    >
+    <div className="filters" data-owner="project-issues-sort-filters">
       {filters.map((filter) => {
         const active = orderBy === filter.field;
         return (
@@ -1160,7 +1080,6 @@ function IssueSortFilter({
   return (
     <button
       type="button"
-      {...({ orderBy: field, orderDir } as Record<string, string>)}
       className={active ? "filter active" : "filter"}
       onClick={selectIssueSortFilter}
     >
@@ -1388,11 +1307,11 @@ function MassUpdateToolbar({
     >
       <form
         id="mass-update-form"
-        className={`${stylex.props(styles.massUpdateForm).className} mass-update-form`}
+        className="mass-update-form"
         action={massUpdateAction}
         method="post"
         onSubmit={(event) => event.preventDefault()}
-        data-stylex-owner="project-issues-mass-update-form"
+        data-owner="project-issues-mass-update-form"
       >
         <div className="btn-group check-all">
           {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
@@ -1441,7 +1360,7 @@ function MassUpdateToolbar({
             <li data-value="0">
               <button
                 type="button"
-                {...stylex.props(styles.massUpdateOptionButton)}
+                className="project-issues-mass-update-option-button"
                 onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", "0")}
               >
                 {t("issue.noAssignee")}
@@ -1450,7 +1369,7 @@ function MassUpdateToolbar({
             <li data-value={currentUserId}>
               <button
                 type="button"
-                {...stylex.props(styles.massUpdateOptionButton)}
+                className="project-issues-mass-update-option-button"
                 onClick={(event) =>
                   handleMassUpdateOptionClick(event, "assignee.id", currentUserId)
                 }
@@ -1463,8 +1382,7 @@ function MassUpdateToolbar({
               <li data-value={user.id} key={user.id}>
                 <button
                   type="button"
-                  className="usf-group"
-                  {...stylex.props(styles.massUpdateOptionButton)}
+                  className="usf-group project-issues-mass-update-option-button"
                   onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", user.id)}
                 >
                   <span className="avatar-wrap smaller">
@@ -1588,7 +1506,7 @@ function MassUpdateDropdown({
             <li data-value={option.value} key={option.value}>
               <button
                 type="button"
-                {...stylex.props(styles.massUpdateOptionButton)}
+                className="project-issues-mass-update-option-button"
                 onClick={(event) => handleMassUpdateOptionClick(event, option.value)}
               >
                 {option.label}
@@ -1701,7 +1619,7 @@ function LabelMassUpdateGroup({
         >
           <button
             type="button"
-            {...stylex.props(styles.massUpdateOptionButton)}
+            className="project-issues-mass-update-option-button"
             onClick={(event) => handleMassUpdateOptionClick(event, label.id)}
           >
             {/* legacy partial_massupdate.scala.html labelList renders a plain
@@ -1804,10 +1722,6 @@ function ProjectIssueItem({
           title: issue.dueDateLabel,
         }
       : {};
-  const dueDateStyleProps = stylex.props(
-    styles.dueDateWrapper,
-    issue.state === "closed" ? styles.dueDateClosed : undefined,
-  );
   const childIssueListVisible = showSubtasksAlways || childIssueListRevealed;
   const revealChildIssueListFromRow = (target: Element | null) => {
     if (target?.closest(".mass-update-check") || target?.closest(".title-wrap > .title")) {
@@ -1868,13 +1782,7 @@ function ProjectIssueItem({
 
   const issuePostItemClassName = [
     `post-item title${issueSelected ? " active" : ""}${highlighted ? " highlightBg" : ""}`,
-    stylex.props(styles.issuePostItem, issueSelected ? styles.issuePostItemActive : undefined)
-      .className,
-    currentIssueRowHoverStyle
-      ? stylex.props(styles.issueRowHoverBackground(currentIssueRowHoverStyle.backgroundColor))
-          .className
-      : "",
-    useTwoColumnMode ? stylex.props(projectIssuesStyles.clickableRow).className : "",
+    useTwoColumnMode ? "project-issues-clickable-row" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1890,20 +1798,24 @@ function ProjectIssueItem({
       onKeyDown={handleIssueItemKeyDown}
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
       onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
-      data-stylex-owner-clickable={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
+      style={
+        currentIssueRowHoverStyle
+          ? { backgroundColor: currentIssueRowHoverStyle.backgroundColor }
+          : undefined
+      }
+      data-owner-clickable={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
       {...issueListItemLegacyAttrs}
-      data-stylex-owner="project-issues-post-item"
+      data-owner="project-issues-post-item"
     >
       <div className="span9 span-hard-wrap">
         {showMassUpdateControls ? (
           /* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update checkbox label targets the row checkbox by id. */
           <label
             htmlFor={`issue-${issueId}`}
-            className={`mass-update-check hide-in-mobile ${stylex.props(styles.massUpdateCheck).className}`}
-            data-stylex-owner="project-issues-mass-update-check"
+            className="mass-update-check hide-in-mobile"
+            data-owner="project-issues-mass-update-check"
           >
             <input
-              {...stylex.props(styles.massUpdateCheckInput)}
               id={`issue-${issueId}`}
               type="checkbox"
               name="checked-issue"
@@ -1911,28 +1823,25 @@ function ProjectIssueItem({
               data-issue-labels={issueLabelData(issueLabels)}
               checked={issueSelected}
               onChange={(event) => onIssueSelectedChange(issueId, event.currentTarget.checked)}
-              data-stylex-owner="project-issues-mass-update-check-input"
+              data-owner="project-issues-mass-update-check-input"
             />
           </label>
         ) : null}
         <div {...issueRowLegacyForAttrs} className="issue-item-row">
           <div
-            className={`title-wrap ${stylex.props(styles.titleWrap).className}`}
+            className="title-wrap"
             onClickCapture={handleTitleWrapClick}
-            data-stylex-owner="project-issues-title-wrap"
+            data-owner="project-issues-title-wrap"
           >
             <Link
               activeProps={legacyRouteLocalActiveProps}
               onClick={lockedLinkClick}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
-              className={`title ${stylex.props(styles.issueTitle).className}`}
-              data-stylex-owner="project-issues-title"
+              className="title"
+              data-owner="project-issues-title"
             >
-              <span
-                className={`post-id ${stylex.props(styles.postId).className}`}
-                data-stylex-owner="project-issues-post-id"
-              >
+              <span className="post-id" data-owner="project-issues-post-id">
                 {issue.isDraft && draftNumberSource === "draft-list" ? (
                   <span className="draft-number">#{t("issue.state.draft")}</span>
                 ) : issue.isDraft ? (
@@ -1983,16 +1892,13 @@ function ProjectIssueItem({
               onClick={lockedLinkClick}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
-              className={`title ${stylex.props(styles.issueTitle).className}`}
-              data-stylex-owner="project-issues-title"
+              className="title"
+              data-owner="project-issues-title"
             >
               {titleParts.title}
             </Link>
           </div>
-          <div
-            className={`infos ${stylex.props(styles.issueInfos).className}`}
-            data-stylex-owner="project-issues-infos"
-          >
+          <div className="infos" data-owner="project-issues-infos">
             {issue.authorLabel ? (
               <Link
                 activeProps={legacyRouteLocalActiveProps}
@@ -2011,10 +1917,7 @@ function ProjectIssueItem({
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {showMilestone && issue.milestoneId ? (
-              <span
-                className={`${stylex.props(styles.milestoneTag).className} mileston-tag`}
-                data-stylex-owner="project-issues-milestone-tag"
-              >
+              <span className="mileston-tag" data-owner="project-issues-milestone-tag">
                 <Link
                   activeProps={legacyRouteLocalActiveProps}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
@@ -2082,12 +1985,8 @@ function ProjectIssueItem({
               );
             })}
             <div
-              className={
-                childIssueListVisible
-                  ? `child-issue-list ${stylex.props(styles.childIssueListVisible).className}`
-                  : "child-issue-list hide"
-              }
-              data-stylex-owner="project-issues-child-list"
+              className={childIssueListVisible ? "child-issue-list" : "child-issue-list hide"}
+              data-owner="project-issues-child-list"
             >
               <IssueChildRows
                 basePath={basePath}
@@ -2105,17 +2004,14 @@ function ProjectIssueItem({
         </div>
       </div>
       <div className="span3 hide-in-mobile">
-        <div
-          className={`mt5 ${stylex.props(styles.issueAssigneeRail).className}`}
-          data-stylex-owner="project-issues-assignee-rail"
-        >
+        <div className="mt5" data-owner="project-issues-assignee-rail">
           {assigneeLoginId && assigneeLabel ? (
             <Link
               activeProps={legacyRouteLocalActiveProps}
               to="/$user"
               params={{ user: assigneeLoginId }}
-              className={`avatar-wrap assinee ${stylex.props(styles.issueAvatar, styles.issueAssigneeAvatar).className}`}
-              data-stylex-owner="project-issues-assignee-avatar"
+              className="avatar-wrap assinee"
+              data-owner="project-issues-assignee-avatar"
               title={`${t("issue.assignee")}: ${assigneeLabel}`}
             >
               <img
@@ -2129,27 +2025,18 @@ function ProjectIssueItem({
               />
             </Link>
           ) : (
-            <div
-              className={`${stylex.props(styles.emptyAvatar).className} empty-avatar-wrap`}
-              data-stylex-owner="project-issues-empty-avatar"
-            >
+            <div className="empty-avatar-wrap" data-owner="project-issues-empty-avatar">
               &nbsp;
             </div>
           )}
         </div>
         {issue.dueDateLabel ? (
           <div
-            {...dueDateStyleProps}
-            className={`mr20 mt10${
-              issue.dueDateOverdue ? " overdue" : ""
-            } ${dueDateStyleProps.className ?? ""}`.trim()}
-            data-stylex-owner="project-issues-due-date"
+            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""}${issue.state === "closed" ? " project-issues-due-date-closed" : ""}`.trim()}
+            data-owner="project-issues-due-date"
             {...dueDateAttrs}
           >
-            <i
-              className={`yobicon-clock2 vmiddle ${stylex.props(styles.dueDateIcon).className ?? ""}`}
-              data-stylex-owner="project-issues-due-date-icon"
-            ></i>
+            <i className="yobicon-clock2 vmiddle" data-owner="project-issues-due-date-icon"></i>
             <span className="vmiddle">
               {issue.state === "open" && issue.dueDateOverdue
                 ? t("issue.dueDate.overdue")
@@ -2322,9 +2209,9 @@ function IssueChildRow({
         </Link>
       ))}
       <span
-        className={`child-issue-date ${stylex.props(hovered ? styles.childDateVisible : styles.childDate).className}`}
+        className={`child-issue-date${hovered ? " project-issues-child-date-visible" : ""}`}
         title={issue.createdLabel}
-        data-stylex-owner="project-issues-child-date"
+        data-owner="project-issues-child-date"
       >
         {issue.createdLabel}
       </span>
@@ -2404,31 +2291,25 @@ function IssueSubtaskSummary({
   const parentIssueTitle = issue.parentIssueTitle ?? "";
   // spread includes the dynamic width var (progressBar) — destructuring only
   // className before dropped it, leaving the bar at width:0 like UA default
-  const subtaskBarProps = stylex.props(
-    styles.subtaskProgressBar,
-    styles.progressBar(`${percentage}%`),
-    percentage === 100 ? styles.subtaskProgressDoneBar : styles.subtaskProgressOpenBar,
-  );
+  const subtaskBarStyle = { width: `${percentage}%` };
 
   return (
     <>
       {childTotalCount ? (
         <>
           <div
-            className={`subtask-progress upload-progress ${
-              percentage === 100 ? "done-outline" : "red-outline"
-            } ${stylex.props(styles.subtaskProgress, percentage === 100 ? styles.subtaskProgressDone : styles.subtaskProgressOpen).className}`}
-            data-stylex-owner="project-issues-subtask-progress"
+            className={`subtask-progress upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}
+            data-owner="project-issues-subtask-progress"
           >
             <div
-              {...subtaskBarProps}
-              className={`${subtaskBarProps.className ?? ""} bar ${percentage === 100 ? "done" : "red"}`}
+              style={subtaskBarStyle}
+              className={`bar ${percentage === 100 ? "done" : "red"}`}
               title="Subtask"
-              data-stylex-owner="project-issues-subtask-progress-bar"
+              data-owner="project-issues-subtask-progress-bar"
             ></div>
           </div>
           <span
-            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""} ${stylex.props(styles.subtaskProgressRatio).className}`}
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""} project-issues-subtask-progress-ratio`}
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {childTotalCount}
@@ -2468,7 +2349,6 @@ function QuickSearch({
   const { t } = useLegacyMessages();
   const allLabel = state === "closed" ? t("issue.list.all.closed") : t("issue.list.all.open");
   const allCount = countField(issues, state === "closed" ? "closedIssueCount" : "openIssueCount");
-  const quickSearchCountClassName = stylex.props(styles.quickSearchCount).className;
 
   return (
     <ul className="lst-stacked unstyled">
@@ -2495,10 +2375,7 @@ function QuickSearch({
           }}
         >
           {allLabel}
-          <span
-            className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
-            data-stylex-owner="project-issues-quicksearch-all-count"
-          >
+          <span className="num-badge" data-owner="project-issues-quicksearch-all-count">
             {allCount}
           </span>
         </button>
@@ -2524,10 +2401,7 @@ function QuickSearch({
               }}
             >
               {t("issue.list.assignedToMe")}
-              <span
-                className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
-                data-stylex-owner="project-issues-quicksearch-assigned-count"
-              >
+              <span className="num-badge" data-owner="project-issues-quicksearch-assigned-count">
                 {countField(issues, "assignedToMeCount")}
               </span>
             </button>
@@ -2551,10 +2425,7 @@ function QuickSearch({
               }}
             >
               {t("issue.list.authoredByMe")}
-              <span
-                className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
-                data-stylex-owner="project-issues-quicksearch-authored-count"
-              >
+              <span className="num-badge" data-owner="project-issues-quicksearch-authored-count">
                 {countField(issues, "authoredByMeCount")}
               </span>
             </button>
@@ -2578,10 +2449,7 @@ function QuickSearch({
               }}
             >
               {t("issue.list.commentedByMe")}
-              <span
-                className={`num-badge ${quickSearchCountClassName ?? ""}`.trim()}
-                data-stylex-owner="project-issues-quicksearch-commented-count"
-              >
+              <span className="num-badge" data-owner="project-issues-quicksearch-commented-count">
                 {countField(issues, "commentedByMeCount")}
               </span>
             </button>
@@ -2727,8 +2595,8 @@ function IssueSearchForm({
   };
   milestonesPending: boolean;
   ownerName: string;
-  onSearchSubmit: (search: ProjectIssuesSearch) => void;
   projectName: string;
+  onSearchSubmit: (search: ProjectIssuesSearch) => void;
   search: ProjectIssuesSearch;
   showAssigneeCurrentUserOption: boolean;
   showAuthorCurrentUserOption: boolean;
@@ -2737,6 +2605,9 @@ function IssueSearchForm({
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
   const dueDatePickerRef = useRef<HTMLInputElement>(null);
+  const authorSelectRef = useRef<HTMLSelectElement>(null);
+  const assigneeSelectRef = useRef<HTMLSelectElement>(null);
+  const milestoneSelectRef = useRef<HTMLSelectElement>(null);
   const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>());
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
@@ -2784,6 +2655,7 @@ function IssueSearchForm({
   return (
     <form
       id="search"
+      className="project-issues-search-form"
       name="search"
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
       method="get"
@@ -2794,7 +2666,7 @@ function IssueSearchForm({
       <input type="hidden" name="orderDir" value={search.orderDir} />
       <input type="hidden" name="state" value={search.state} />
       <input type="hidden" name="commenterId" value={search.commenterId} />
-      <hr className="hide-in-mobile" />
+      <hr className="project-issues-search-divider hide-in-mobile" />
       <div className="search">
         <div className="search-bar">
           <input
@@ -2819,14 +2691,15 @@ function IssueSearchForm({
 
       <div
         id="advanced-search-form"
-        className={`${stylex.props(styles.searchAdvanced).className} srch-advanced hide-in-mobile`}
-        data-stylex-owner="project-issues-search-advanced"
+        className="srch-advanced hide-in-mobile"
+        data-owner="project-issues-search-advanced"
       >
         <dl className="issue-option">
           <dt>{t("issue.author")}</dt>
           <dd>
             <IssueSearchSingleSelectDisplay
               id="authorId"
+              onActivate={() => authorSelectRef.current?.focus()}
               label={
                 search.authorId
                   ? (authors.find((author) => author.id === search.authorId)?.label ??
@@ -2835,6 +2708,7 @@ function IssueSearchForm({
               }
             />
             <select
+              ref={authorSelectRef}
               key={issueSearchUserSelectKey("author", search.authorId, authors)}
               id="authorId"
               name="authorId"
@@ -2863,6 +2737,7 @@ function IssueSearchForm({
           <dd>
             <IssueSearchSingleSelectDisplay
               id="assigneeId"
+              onActivate={() => assigneeSelectRef.current?.focus()}
               label={
                 search.assigneeId === "0"
                   ? t("issue.noAssignee")
@@ -2873,6 +2748,7 @@ function IssueSearchForm({
               }
             />
             <select
+              ref={assigneeSelectRef}
               key={issueSearchUserSelectKey("assignee", search.assigneeId, assignees)}
               id="assigneeId"
               name="assigneeId"
@@ -2903,6 +2779,7 @@ function IssueSearchForm({
             <dd>
               <IssueSearchSingleSelectDisplay
                 id="milestoneId"
+                onActivate={() => milestoneSelectRef.current?.focus()}
                 label={
                   search.milestoneId === "-1"
                     ? t("issue.noMilestone")
@@ -2912,6 +2789,7 @@ function IssueSearchForm({
                 }
               />
               <select
+                ref={milestoneSelectRef}
                 id="milestoneId"
                 key={[search.milestoneId, milestones.open.length, milestones.closed.length].join(
                   ":",
@@ -2975,24 +2853,18 @@ function IssueSearchForm({
             />
           </dd>
         </dl>
-        <div
-          className={`${stylex.props(styles.labelsWrap).className} labels-wrap`}
-          data-stylex-owner="project-issues-labels-wrap"
-        >
+        <div className="labels-wrap" data-owner="project-issues-labels-wrap">
           {labelControls.showManageLink ? (
             <Link
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/labelsform"
               params={{ ownerName, projectName }}
-              className={`${stylex.props(styles.labelManageAction).className} ybtn ybtn-default ybtn-mini`}
-              data-stylex-owner="project-issues-label-manage-action"
+              className="ybtn ybtn-default ybtn-mini"
+              data-owner="project-issues-label-manage-action"
             >
               <i className="yobicon-cog vmiddle"></i>
               {labels.length === 0 ? (
-                <span
-                  className={`${stylex.props(styles.manageLabel).className} vmiddle`}
-                  data-stylex-owner="project-issues-manage-label"
-                >
+                <span className="vmiddle" data-owner="project-issues-manage-label">
                   {t("label.manage")}
                 </span>
               ) : null}
@@ -3012,9 +2884,18 @@ function IssueSearchForm({
   );
 }
 
-function IssueSearchSingleSelectDisplay({ id, label }: { id: string; label: string }) {
+function IssueSearchSingleSelectDisplay({
+  id,
+  label,
+  onActivate,
+}: {
+  id: string;
+  label: string;
+  onActivate: () => void;
+}) {
   return (
-    <div id={`s2id_${id}`} className="select2-container fullsize">
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- legacy Select2 emits a clickable div; React forwards it to the native select.
+    <div id={`s2id_${id}`} className="select2-container fullsize" onClick={onActivate}>
       <div className="select2-choice" role="presentation">
         <span className="select2-chosen">{label}</span>
         <span className="select2-arrow" aria-hidden="true">
@@ -3099,15 +2980,13 @@ function SearchMilestoneStatus({
       <div className="progress-wrap">
         <div className="progress progress-success nm">
           <div
-            className={`${stylex.props(styles.progressBar(`${completionPercent}%`)).className} bar`}
-            data-stylex-owner="project-issues-milestone-progress-bar"
+            style={{ width: `${completionPercent}%` }}
+            className="bar"
+            data-owner="project-issues-milestone-progress-bar"
           ></div>
         </div>
         <div className="progress-info">
-          <span
-            className={stylex.props(styles.milestoneProgressCount).className}
-            data-stylex-owner="project-issues-milestone-progress-count"
-          >
+          <span data-owner="project-issues-milestone-progress-count">
             <strong>{`${closedCount} / ${openCount + closedCount}`}</strong>
           </span>
         </div>
@@ -3257,9 +3136,9 @@ function IssueSearchLabelSelect({
                 aria-controls="labelIds-options"
                 aria-expanded={open}
                 placeholder={selectedLabels.length > 0 ? "" : t("label.select")}
-                {...(selectedLabels.length > 0
-                  ? stylex.props(styles.selectedLabelSearchInput)
-                  : {})}
+                className={
+                  selectedLabels.length > 0 ? "project-issues-label-search-compact" : undefined
+                }
                 onClick={() => setOpen(true)}
                 onFocus={() => setOpen(true)}
                 onKeyDown={(event) => {
@@ -3444,10 +3323,10 @@ function TwoColumnModeCheckbox({
 
   return (
     <div
-      className={`${stylex.props(styles.relativeAnchor, styles.modeControl).className} two-column-icon mr10 hide-in-mobile`}
+      className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      data-stylex-owner="project-issues-two-column-anchor"
+      data-owner="project-issues-two-column-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
@@ -3468,7 +3347,7 @@ function TwoColumnModeCheckbox({
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" {...stylex.props(styles.twoColumnPopover)}>
+        <div className="popover top project-issues-two-column-popover" role="tooltip">
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">
@@ -3517,10 +3396,10 @@ function ShowSubtasksCheckbox({
 
   return (
     <div
-      className={`${stylex.props(styles.relativeAnchor, styles.modeControl).className} show-subtasks mr10`}
+      className="show-subtasks mr10"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      data-stylex-owner="project-issues-subtasks-anchor"
+      data-owner="project-issues-subtasks-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
@@ -3541,7 +3420,7 @@ function ShowSubtasksCheckbox({
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" {...stylex.props(styles.showSubtasksPopover)}>
+        <div className="popover top project-issues-subtasks-popover" role="tooltip">
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">{popoverContent}</div>
@@ -3554,6 +3433,12 @@ function ShowSubtasksCheckbox({
 function IssueListKeymap({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const [keymapOpen, setKeymapOpen] = useState(false);
+  const keymapDialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (keymapOpen) {
+      keymapDialogRef.current?.focus();
+    }
+  }, [keymapOpen]);
   const isMac =
     typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
   const ctrlKey = isMac ? "⌘" : "CTRL";
@@ -3562,7 +3447,7 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
 
   return (
     <>
-      <div {...stylex.props(styles.keymapWrap)} data-stylex-owner="project-issues-keymap">
+      <div data-owner="project-issues-keymap">
         <button
           type="button"
           className="ybtn ybtn-inverse ybtn-mini"
@@ -3582,10 +3467,10 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
         </button>
         <div
           id="helpKeys"
-          {...(keymapOpen ? stylex.props(issueListKeymapStyles.visible) : undefined)}
-          className={`modal ${keymapOpen ? "" : "hide "}fade keymap-help${keymapOpen ? " in" : ""} ${keymapOpen ? (stylex.props(issueListKeymapStyles.visible).className ?? "") : ""}`.trim()}
-          data-stylex-owner="project-issues-keymap-modal"
+          className={`modal ${keymapOpen ? "" : "hide "}fade keymap-help${keymapOpen ? " in" : ""}`.trim()}
+          data-owner="project-issues-keymap-modal"
           tabIndex={-1}
+          ref={keymapDialogRef}
           role="dialog"
           onKeyDown={(event) => {
             if (event.key === "Escape") {

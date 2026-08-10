@@ -37,7 +37,7 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
       ),
     )
     .toContain("Code - admin/sample");
-  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
@@ -46,10 +46,11 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   );
   await expect(page.locator('form.gnb-search-form input[name="searchType"]')).toHaveValue("auto");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator("[data-stylex-owner=global-gnb-search-scope-item]")).toHaveCount(2);
-  await expect(
-    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
-  ).toHaveText(["This Project", "All Projects"]);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item]")).toHaveCount(2);
+  await expect(page.locator("[data-owner=global-gnb-search-scope-item] > button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
@@ -476,12 +477,8 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).not.toContain('id="new-file-link"\n                      href=');
   // F6 copy-fix: the legacy-assets images are now bundled imports resolved through
   // prefixBasePath(basePath, defaultProjectBackgroundUrl / defaultProjectLogoUrl).
-  expect(PROJECT_ROUTE_SOURCE).toContain(
-    'prefixBasePath(basePath, defaultProjectBackgroundUrl)',
-  );
-  expect(PROJECT_ROUTE_SOURCE).toContain(
-    'prefixBasePath(basePath, defaultProjectLogoUrl)',
-  );
+  expect(PROJECT_ROUTE_SOURCE).toContain("prefixBasePath(basePath, defaultProjectBackgroundUrl)");
+  expect(PROJECT_ROUTE_SOURCE).toContain("prefixBasePath(basePath, defaultProjectLogoUrl)");
 });
 
 test("project code file route source keeps nested folder view in React Link state", async () => {
@@ -588,7 +585,7 @@ async function folderViewMetrics(page: Page) {
 
 async function shellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
+    const navbar = document.querySelector<HTMLElement>("[data-owner=global-gnb-outer]");
     const searchForm = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeButton = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
@@ -783,7 +780,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             attr.name !== "tabindex" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -847,7 +844,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-stylex-owner",
+            attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)

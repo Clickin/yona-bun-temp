@@ -500,7 +500,10 @@ impl AppRepositoryImpl<'_> {
             .map(|project| (project.id, project))
             .collect::<HashMap<_, _>>();
         let rows = issue::Entity::find()
-            .filter(issue::Column::State.eq(Some(issue_state_to_raw(&state))))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                &state,
+            ))))
             .order_by_desc(issue::Column::CreatedDate)
             .order_by_desc(issue::Column::Id)
             .all(&self.db)

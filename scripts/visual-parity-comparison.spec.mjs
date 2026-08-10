@@ -578,7 +578,7 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
   assert.match(source, /pathname\.endsWith\("\/issues"\)/u);
-  assert.match(source, /data-stylex-content-ready="true"/u);
+  assert.match(source, /data-content-ready="true"/u);
   assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(pathname\)\)/u);
   assert.match(source, /return "\.code-browse-wrap, \.project-page-wrap \.alert";/u);
   assert.match(source, /if \(\/\\\/commits\\\/\?\$\/u\.test\(pathname\)\)/u);
@@ -603,13 +603,13 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   );
   assert.match(
     source,
-    /gnbInner: selectorState\("\.gnb-inner, \[data-stylex-owner='global-gnb-inner'\]"\)/u,
+    /gnbInner: selectorState\("\.gnb-inner, \[data-owner='global-gnb-inner'\]"\)/u,
   );
   assert.match(source, /gnbPin: selectorState\(/u);
   assert.match(source, /global-sidebar-open-pin/u);
   assert.match(
     source,
-    /gnbLogoLetter: selectorState\("\.logo-letter, \[data-stylex-owner='global-gnb-brand-link'\]"\)/u,
+    /gnbLogoLetter: selectorState\("\.logo-letter, \[data-owner='global-gnb-brand-link'\]"\)/u,
   );
   assert.match(source, /gnbSearchForm: selectorState\("\.gnb-search-form"\)/u);
   assert.match(source, /gnbPin: metrics\.gnbPin/u);
@@ -629,7 +629,7 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /signupButton: metrics\.signupButton/u);
   assert.match(
     source,
-    /footer: selectorState\("footer\.page-footer-outer, \[data-stylex-owner='site-footer'\]"\)/u,
+    /footer: selectorState\("footer\.page-footer-outer, \[data-owner='site-footer'\]"\)/u,
   );
   assert.match(source, /"\/admin\/sample\/settingform"/u);
   assert.match(source, /"\/admin\/sample\/"/u);
@@ -726,13 +726,13 @@ test("visual sweep records P2 and P3 template verifier metrics", () => {
   }
 });
 
-test("visual sweep maps the StyleX-owned help page shell to pageWrap", () => {
+test("visual sweep maps the Style-owned help page shell to pageWrap", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
-  assert.match(source, /data-stylex-owner='help-shell-page-wrap-outer'/u);
+  assert.match(source, /data-owner='help-shell-page-wrap-outer'/u);
 });
 
-test("visual sweep maps site management page and post selectors to StyleX owners", () => {
+test("visual sweep maps site management page and post selectors to Style owners", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /site-post-list-page-wrap-outer/u);

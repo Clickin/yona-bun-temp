@@ -1,7 +1,7 @@
 import { expect, test } from "../wtr-compat.ts";
 // Batch 1120: verify branch code search UI
 
-test("project code search find file and grep in file UI with stylex", async ({ page }) => {
+test("project code search find file and grep in file UI with style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.route("**/api/v1/session", async (route) => {

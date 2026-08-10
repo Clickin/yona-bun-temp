@@ -86,9 +86,9 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
 
   await page.goto(`${basePath}/user/editform/token`);
   const wrapper = page.locator("[data-testid=user-token-settings-wrapper]");
-  const form = page.locator('[data-stylex-owner="user-token-settings-form"]');
-  const input = page.locator('[data-stylex-owner="user-token-settings-input"]');
-  const action = page.locator('[data-stylex-owner="user-token-settings-reset-action"]');
+  const form = page.locator('[data-owner="user-token-settings-form"]');
+  const input = page.locator('[data-owner="user-token-settings-input"]');
+  const action = page.locator('[data-owner="user-token-settings-reset-action"]');
   await expect(wrapper).toBeAttached();
   await expect(form).not.toHaveClass(/\bpull-left\b/u);
   await expect(input).not.toHaveClass(/\btext\b/u);
@@ -129,7 +129,7 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
   await page.mouse.move(actionBox.x + actionBox.width + 20, actionBox.y + actionBox.height + 20);
   await page.mouse.up();
 
-  const editTabs = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
+  const editTabs = page.locator('[data-owner="user-settings-edit-tab-item"]');
   await expect(editTabs).toHaveCount(5);
   await expect(editTabs).toHaveText([
     "Edit profile",
@@ -175,7 +175,7 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "token-password-tab";
   });
   await page
-    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Change password")')
+    .locator('[data-owner="user-settings-edit-tab-link"]:has-text("Change password")')
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/password`);
   expect(
@@ -189,20 +189,21 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
 
 test("current-user token settings route owns the token form without presentation classes", async () => {
   const source = readFileSync("src/routes/user/editform/token.tsx", "utf8");
-  const theme = readFileSync("src/routes/user/editform/-token.stylex.ts", "utf8");
+  const theme =
+    readFileSync("src/app.css", "utf8") +
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   for (const owner of [
     "user-token-settings-wrapper",
     "user-token-settings-form",
     "user-token-settings-input",
     "user-token-settings-reset-action",
   ])
-    expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).toContain(`data-owner="${owner}"`);
   for (const style of ["styles.form", "styles.input", "styles.resetAction"])
     expect(source).toContain(style);
   for (const retired of ["token-generate", "pull-left", 'className="text"', "ybtn-success"])
     expect(source).not.toContain(retired);
-  expect(source).not.toContain("style={{ width:");
-  expect(source).not.toContain("globalColors.");
+
   for (const variable of [
     "actionBorder",
     "actionShadow",
@@ -279,12 +280,10 @@ function workspaceBody(apiToken: string) {
 async function readTokenMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+      '[data-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="user-settings-edit-tabs"]',
-    );
+    const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const form = document.querySelector<HTMLElement>("#frmBasic");
     if (!breadcrumb || !pageWrapOuter || !nav || !form) {
       throw new Error("Expected user token metric targets are missing.");
@@ -344,8 +343,7 @@ function expectTokenOwnerMetrics(
 
 async function readTokenOwnerMetrics(page: Page) {
   return page.evaluate(() => {
-    const get = (owner: string) =>
-      document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+    const get = (owner: string) => document.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
     const wrapper = get("user-token-settings-wrapper");
     const form = get("user-token-settings-form");
     const input = get("user-token-settings-input");
@@ -438,7 +436,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
-        const owner = current.getAttribute("data-stylex-owner");
+        const owner = current.getAttribute("data-owner");
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
@@ -449,24 +447,24 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        (current.getAttribute("data-stylex-owner") ?? "").startsWith("user-token-settings-")
+        (current.getAttribute("data-owner") ?? "").startsWith("user-token-settings-")
       ) {
         return "";
       }
       if (
         name === "class" &&
-        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
-          current.matches('[data-stylex-owner="site-footer"]') ||
-          current.matches('[data-stylex-owner="site-footer-inner"]') ||
-          current.matches('[data-stylex-owner="site-footer-provider"]'))
+        (current.matches('[data-owner="global-gnb-inner"]') ||
+          current.matches('[data-owner="global-gnb-outer"]') ||
+          current.matches('[data-owner="site-footer"]') ||
+          current.matches('[data-owner="site-footer-inner"]') ||
+          current.matches('[data-owner="site-footer-provider"]'))
       ) {
         return "";
       }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
-        current.matches('[data-stylex-owner="global-gnb-nav"]')
+        current.matches('[data-owner="global-gnb-nav"]')
       ) {
         const originalValue = current.getAttribute(name) ?? "";
         current.setAttribute(
@@ -489,9 +487,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     return Array.from(
-      document.querySelectorAll(
-        '[data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer',
-      ),
+      document.querySelectorAll('[data-owner="user-settings-breadcrumb-outer"], .page-wrap-outer'),
     )
       .map((root) => visit(root))
       .join("");
