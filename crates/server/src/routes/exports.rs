@@ -22,14 +22,15 @@ use super::site_admin::{
     rest_site_export_post_from_record, rest_site_export_project_label_from_record,
     ImportRecordSource, RestSiteExportIssueItem, RestSiteExportMilestoneItem,
     RestSiteExportPostItem, RestSiteExportProjectLabelItem, RestSiteExportProjectMemberItem,
-    RestSiteImportCheckpoint, RestSiteImportCountSet, RestSiteImportProjectItem,
+    RestSiteImportCheckpoint, RestSiteImportCountSet, RestSiteImportOrganizationItem,
+    RestSiteImportOrganizationMemberItem, RestSiteImportProjectItem, RestSiteImportPullRequestItem,
     RestSiteImportResponse, RestSiteImportUserItem,
 };
 use crate::persistence::{IssueListFilter, MilestoneListFilter, PostingListFilter};
 use crate::{
-    append_response_headers, internal_error, require_project_read, require_session,
-    rest_actor_id, rest_json_response, rest_repository, ConnectError, Context, PilotBackend,
-    PilotServiceImpl, RestRouteError,
+    append_response_headers, internal_error, require_project_read, rest_actor_id,
+    rest_json_response, rest_require_migration_actor, rest_repository, ConnectError, Context,
+    PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 const NDJSON_CONTENT_TYPE: &str = "application/x-ndjson";
@@ -47,6 +48,8 @@ struct NdjsonEnvelope<T: Serialize> {
 #[serde(rename_all = "camelCase")]
 struct NdjsonProjectLine {
     kind: &'static str,
+    id: i64,
+    organization_id: i64,
     owner: String,
     project_name: String,
     project_description: String,
@@ -68,6 +71,8 @@ struct NdjsonDoneLine {
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct NdjsonProjectImportLine {
+    id: i64,
+    organization_id: i64,
     #[serde(alias = "owner")]
     owner_name: String,
     #[serde(alias = "projectDescription")]
@@ -109,6 +114,8 @@ async fn rest_project_export(
 
     let project_line = serde_json::to_string(&NdjsonProjectLine {
         kind: "project",
+        id: project.id,
+        organization_id: project.organization_id.unwrap_or_default(),
         owner: owner_name.clone(),
         project_name: project_name.clone(),
         project_description: project.overview.unwrap_or_default(),
@@ -205,6 +212,7 @@ async fn stream_project_ndjson(
         .map_err(RestRouteError::from_connect_error)?;
     for member in members.members {
         let item = RestSiteExportProjectMemberItem {
+            id: 0,
             login_id: member.login_id,
             owner_name: owner_name.to_string(),
             project_name: project_name.to_string(),
@@ -360,12 +368,14 @@ async fn rest_project_import(
     body: Body,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
-    let session = require_session(&service.session_manager, &headers)
-        .map_err(RestRouteError::from_connect_error)?;
+    // Session path keeps prior behavior (no CSRF); Bearer/Yona-Token path is
+    // the migration-tool entry point. Auth material resolves before the
+    // repository so anonymous requests keep the prior 401 ordering.
+    let user_id = rest_require_migration_actor(&service, &headers, false).await?;
     let repository = rest_repository(&service)?;
 
     let authorization = repository
-        .read_project_authorization(&owner_name, &project_name, session.user_id)
+        .read_project_authorization(&owner_name, &project_name, Some(user_id))
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
@@ -497,6 +507,8 @@ impl NdjsonImportRecordSource {
                 )?;
                 Ok(NdjsonRecord::Project(RestSiteImportProjectItem {
                     created_at: line.created_at,
+                    id: line.id,
+                    organization_id: line.organization_id,
                     owner_name: line.owner_name,
                     overview: line.overview,
                     project_name: line.project_name,
@@ -583,6 +595,24 @@ impl ImportRecordSource for NdjsonImportRecordSource {
     fn next_user(
         &mut self,
     ) -> BoxFuture<'_, Result<Option<RestSiteImportUserItem>, RestRouteError>> {
+        Box::pin(async move { Ok(None) })
+    }
+
+    fn next_organization(
+        &mut self,
+    ) -> BoxFuture<'_, Result<Option<RestSiteImportOrganizationItem>, RestRouteError>> {
+        Box::pin(async move { Ok(None) })
+    }
+
+    fn next_organization_member(
+        &mut self,
+    ) -> BoxFuture<'_, Result<Option<RestSiteImportOrganizationMemberItem>, RestRouteError>> {
+        Box::pin(async move { Ok(None) })
+    }
+
+    fn next_pull_request(
+        &mut self,
+    ) -> BoxFuture<'_, Result<Option<RestSiteImportPullRequestItem>, RestRouteError>> {
         Box::pin(async move { Ok(None) })
     }
 

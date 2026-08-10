@@ -946,6 +946,92 @@ pub(crate) fn rest_actor_id(service: &PilotServiceImpl, headers: &HeaderMap) -> 
         .and_then(|session| session.user_id)
 }
 
+/// Resolve the acting user id for migration REST routes (site import/export,
+/// project import). Session-cookie path keeps the existing behavior exactly
+/// (CSRF validated when `require_csrf_for_session` is set); otherwise falls
+/// back to an API token via `Authorization: Bearer <token>` or
+/// `Yona-Token: <token>` (tokens never require CSRF).
+///
+/// Resolves auth material only — callers decide when to touch the repository,
+/// so anonymous hits on static backends answer 401 (not 501) just like the
+/// legacy `require_session`-first ordering did.
+pub(crate) async fn rest_require_migration_actor(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    require_csrf_for_session: bool,
+) -> Result<i64, RestRouteError> {
+    let session_manager = &service.session_manager;
+    let session = session_manager.read_session_from_headers(headers);
+    if let Some(session) = session.as_ref() {
+        if let Some(user_id) = session.user_id {
+            if !require_csrf_for_session
+                || require_valid_csrf(session_manager, headers, session).is_ok()
+            {
+                return Ok(user_id);
+            }
+        }
+    }
+
+    if let Some(token) = migration_api_token_from_headers(headers) {
+        if let Some(repository) = match &service.backend {
+            PilotBackend::Repository(repository) => Some(repository),
+            PilotBackend::Static => None,
+        } {
+            match repository.read_user_id_by_api_token(&token).await {
+                Ok(Some(user_id)) => return Ok(user_id),
+                Ok(None) => {}
+                Err(error) => {
+                    return Err(RestRouteError::internal(error.to_string()));
+                }
+            }
+        }
+    }
+
+    if let Some(session) = session.as_ref() {
+        if session.user_id.is_some() && require_csrf_for_session {
+            require_valid_csrf(session_manager, headers, session)
+                .map_err(RestRouteError::from_connect_error)?;
+        }
+    }
+
+    Err(RestRouteError::from_connect_error(ConnectError::unauthenticated(
+        "missing authenticated session",
+    )))
+}
+
+/// Resolve the acting user record for migration REST routes (repository
+/// backend; call [`rest_require_migration_actor`] first when the backend may
+/// be static so anonymous requests answer 401 before the repository lookup).
+pub(crate) async fn rest_migration_actor_from_user_id(
+    repository: &PilotRepository,
+    user_id: i64,
+) -> Result<persistence::AppUserRecord, RestRouteError> {
+    require_authenticated_user(repository, Some(user_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)
+}
+
+/// API token from `Authorization: Bearer <token>` or `Yona-Token: <token>`.
+fn migration_api_token_from_headers(headers: &HeaderMap) -> Option<String> {
+    if let Some(value) = headers
+        .get("Yona-Token")
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return Some(value.to_string());
+    }
+    let authorization = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())?;
+    let token = authorization
+        .strip_prefix("Bearer ")
+        .or_else(|| authorization.strip_prefix("bearer "))
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    token.map(str::to_string)
+}
+
 pub(crate) async fn rest_require_project_code_read(
     repository: &PilotRepository,
     owner_name: &str,

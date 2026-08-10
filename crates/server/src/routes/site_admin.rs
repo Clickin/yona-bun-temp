@@ -28,8 +28,9 @@ use crate::{
     legacy_external_date_string, legacy_external_parse_datetime, map_project_scope,
     normalize_identifier, normalize_issue_label_color, normalize_milestone_state,
     parse_milestone_due_date, percent_encode_uri_component, persistence, project_logo_url,
-    random_site_admin_password, random_storage_token, redirect_to, require_authenticated_user,
-    require_session, require_valid_csrf, rest_board_label_from_record, rest_repository,
+    random_site_admin_password, random_storage_token, redirect_to,
+    repository_provisioning_lock, rest_board_label_from_record, rest_migration_actor_from_user_id,
+    rest_require_migration_actor, rest_repository,
     site_export_filename_stamp, site_import_staging_lock, workspace_avatar_url, AssetMode,
     BrowserRuntimeConfig, ConnectError, PilotServiceImpl, RestBoardLabel,
     RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
@@ -335,12 +336,107 @@ struct RestSiteExportResponse {
 struct RestSiteImportPayload {
     format: String,
     users: Vec<RestSiteImportUserItem>,
+    organizations: Vec<RestSiteImportOrganizationItem>,
+    organization_members: Vec<RestSiteImportOrganizationMemberItem>,
     projects: Vec<RestSiteImportProjectItem>,
     project_members: Vec<RestSiteExportProjectMemberItem>,
     labels: Vec<RestSiteExportProjectLabelItem>,
     milestones: Vec<RestSiteExportMilestoneItem>,
     posts: Vec<RestSiteExportPostItem>,
     issues: Vec<RestSiteExportIssueItem>,
+    pull_requests: Vec<RestSiteImportPullRequestItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestSiteImportOrganizationItem {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) created_at: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestSiteImportOrganizationMemberItem {
+    pub(crate) id: i64,
+    pub(crate) organization_id: i64,
+    pub(crate) user_id: i64,
+    pub(crate) role: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestSiteImportPullRequestItem {
+    pub(crate) id: i64,
+    pub(crate) project_id: i64,
+    pub(crate) contributor_id: i64,
+    pub(crate) receiver_id: i64,
+    pub(crate) number: i64,
+    pub(crate) title: String,
+    pub(crate) body_markdown: String,
+    pub(crate) state: String,
+    pub(crate) is_merged: bool,
+    pub(crate) merged_commit_id_from: String,
+    pub(crate) merged_commit_id_to: String,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+    #[serde(default)]
+    pub(crate) events: Vec<RestSiteImportPullRequestEventItem>,
+    #[serde(default)]
+    pub(crate) threads: Vec<RestSiteImportPullRequestThreadItem>,
+    #[serde(default)]
+    pub(crate) review_comments: Vec<RestSiteImportPullRequestCommentItem>,
+    #[serde(default)]
+    pub(crate) commit_comments: Vec<RestSiteImportPullRequestCommentItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestSiteImportPullRequestEventItem {
+    pub(crate) id: i64,
+    pub(crate) pull_request_id: i64,
+    pub(crate) sender_login_id: String,
+    pub(crate) event_type: String,
+    pub(crate) old_value: String,
+    pub(crate) new_value: String,
+    pub(crate) created_at: String,
+}
+
+/// A PR comment thread, review comment, or commit comment row. Field set
+/// matches the union of the legacy `comment_thread` / `review_comment` /
+/// `commit_comment` tables; unused fields stay at their defaults.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestSiteImportPullRequestCommentItem {
+    pub(crate) id: i64,
+    pub(crate) author_id: i64,
+    pub(crate) author_login_id: String,
+    pub(crate) author_name: String,
+    pub(crate) body_markdown: String,
+    pub(crate) created_at: String,
+    pub(crate) commit_id: String,
+    pub(crate) path: String,
+    pub(crate) line: i64,
+    pub(crate) thread_id: i64,
+}
+
+/// A legacy `comment_thread` row attached to a pull request.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub(crate) struct RestSiteImportPullRequestThreadItem {
+    pub(crate) id: i64,
+    pub(crate) author_id: i64,
+    pub(crate) author_login_id: String,
+    pub(crate) author_name: String,
+    pub(crate) dtype: String,
+    pub(crate) state: String,
+    pub(crate) created_at: String,
+    pub(crate) pull_request_id: i64,
+    pub(crate) project_id: i64,
+    pub(crate) commit_id: String,
+    pub(crate) path: String,
+    pub(crate) line: i64,
 }
 
 #[derive(Default, Deserialize)]
@@ -350,10 +446,16 @@ pub(crate) struct RestSiteImportUserItem {
     created_at: String,
     display_name: String,
     email_address: String,
+    id: i64,
     is_site_admin: bool,
     #[serde(alias = "lastStateModifiedDate")]
     last_state_modified_at: String,
     login_id: String,
+    /// Legacy SHA-256 password hash (`Sha256Hash(password, salt, 1024)`).
+    #[serde(alias = "password")]
+    password_hash: String,
+    #[serde(alias = "password_salt")]
+    password_salt: String,
     state: String,
 }
 
@@ -362,10 +464,13 @@ pub(crate) struct RestSiteImportUserItem {
 pub(crate) struct RestSiteImportProjectItem {
     #[serde(alias = "projectCreatedDate")]
     pub(crate) created_at: String,
+    pub(crate) id: i64,
     pub(crate) owner_name: String,
     pub(crate) overview: String,
     pub(crate) project_name: String,
     pub(crate) project_scope: String,
+    /// Legacy `organization_id` when the project belongs to an organization.
+    pub(crate) organization_id: i64,
     #[serde(alias = "projectVcs")]
     pub(crate) vcs: String,
 }
@@ -373,6 +478,7 @@ pub(crate) struct RestSiteImportProjectItem {
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct RestSiteExportProjectMemberItem {
+    pub(crate) id: i64,
     pub(crate) login_id: String,
     pub(crate) owner_name: String,
     pub(crate) project_name: String,
@@ -385,6 +491,7 @@ pub(crate) struct RestSiteExportProjectLabelItem {
     pub(crate) category_is_exclusive: bool,
     pub(crate) category_name: String,
     pub(crate) color: String,
+    pub(crate) id: i64,
     #[serde(alias = "labelName")]
     pub(crate) name: String,
     pub(crate) owner_name: String,
@@ -397,6 +504,7 @@ pub(crate) struct RestSiteExportMilestoneItem {
     pub(crate) attachments: Vec<RestSiteExportAttachmentItem>,
     pub(crate) contents_markdown: String,
     pub(crate) due_date: String,
+    pub(crate) id: i64,
     pub(crate) owner_name: String,
     pub(crate) project_name: String,
     pub(crate) state: String,
@@ -413,6 +521,7 @@ pub(crate) struct RestSiteExportPostItem {
     #[serde(skip_serializing_if = "String::is_empty")]
     pub(crate) created_at: String,
     pub(crate) history_markdown: String,
+    pub(crate) id: i64,
     pub(crate) labels: Vec<RestSiteExportLabelItem>,
     pub(crate) notice: bool,
     pub(crate) owner_name: String,
@@ -435,6 +544,7 @@ pub(crate) struct RestSiteExportIssueItem {
     #[serde(skip_serializing_if = "String::is_empty")]
     pub(crate) created_at: String,
     pub(crate) history_markdown: String,
+    pub(crate) id: i64,
     pub(crate) issue_number: String,
     pub(crate) labels: Vec<RestSiteExportLabelItem>,
     pub(crate) milestone_title: String,
@@ -456,6 +566,12 @@ pub(crate) struct RestSiteExportCommentItem {
     contents_markdown: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     created_at: String,
+    #[serde(skip_serializing_if = "is_default_i64")]
+    id: i64,
+}
+
+fn is_default_i64(value: &i64) -> bool {
+    *value == 0
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -490,37 +606,49 @@ pub(crate) struct RestSiteImportResponse {
     checkpoint: RestSiteImportCheckpoint,
     dry_run: bool,
     pub(crate) streaming: bool,
+    imported_organizations: u32,
+    imported_organization_members: u32,
     imported_projects: u32,
     imported_project_members: u32,
     imported_issues: u32,
     imported_labels: u32,
     imported_milestones: u32,
     imported_posts: u32,
+    imported_pull_requests: u32,
     imported_users: u32,
     skipped_issues: u32,
     skipped_labels: u32,
     skipped_milestones: u32,
+    skipped_organizations: u32,
+    skipped_organization_members: u32,
     skipped_posts: u32,
     skipped_projects: u32,
     skipped_project_members: u32,
+    skipped_pull_requests: u32,
     skipped_users: u32,
     unsupported_sections: Vec<String>,
     validation_errors: Vec<RestSiteImportValidationError>,
     would_import_attachments: u32,
+    would_import_organizations: u32,
+    would_import_organization_members: u32,
     would_import_projects: u32,
     would_import_project_members: u32,
     would_import_issues: u32,
     would_import_labels: u32,
     would_import_milestones: u32,
     would_import_posts: u32,
+    would_import_pull_requests: u32,
     would_import_users: u32,
     would_skip_attachments: u32,
+    would_skip_organizations: u32,
+    would_skip_organization_members: u32,
     would_skip_projects: u32,
     would_skip_project_members: u32,
     would_skip_issues: u32,
     would_skip_labels: u32,
     would_skip_milestones: u32,
     would_skip_posts: u32,
+    would_skip_pull_requests: u32,
     would_skip_users: u32,
 }
 
@@ -576,6 +704,31 @@ impl RestSiteImportCheckpoint {
                 .users
                 .iter()
                 .map(|user| rest_site_import_user_key(user.login_id.trim())),
+        );
+        checkpoint.push_section(
+            "organizations",
+            payload
+                .organizations
+                .iter()
+                .map(|organization| rest_site_import_key_part(organization.name.trim())),
+        );
+        checkpoint.push_section(
+            "organizationMembers",
+            payload.organization_members.iter().map(|member| {
+                format!(
+                    "organizationMembers:{}:{}",
+                    member.organization_id, member.user_id
+                )
+            }),
+        );
+        checkpoint.push_section(
+            "pullRequests",
+            payload.pull_requests.iter().map(|pull_request| {
+                format!(
+                    "pullRequests:{}:{}",
+                    pull_request.project_id, pull_request.number
+                )
+            }),
         );
         checkpoint.push_section(
             "projects",
@@ -651,12 +804,15 @@ impl RestSiteImportCheckpoint {
         };
         for section in [
             "users",
+            "organizations",
+            "organizationMembers",
             "projects",
             "projectMembers",
             "labels",
             "milestones",
             "posts",
             "issues",
+            "pullRequests",
             "attachments",
         ] {
             checkpoint.sections.push(RestSiteImportCheckpointSection {
@@ -693,9 +849,12 @@ impl RestSiteImportCheckpoint {
                 "issues" => would_skip.issues,
                 "labels" => would_skip.labels,
                 "milestones" => would_skip.milestones,
+                "organizations" => would_skip.organizations,
+                "organizationMembers" => would_skip.organization_members,
                 "posts" => would_skip.posts,
                 "projects" => would_skip.projects,
                 "projectMembers" => would_skip.project_members,
+                "pullRequests" => would_skip.pull_requests,
                 "users" => would_skip.users,
                 _ => 0,
             };
@@ -925,12 +1084,15 @@ fn rest_site_import_key_part(value: &str) -> String {
 #[derive(Default)]
 pub(crate) struct RestSiteImportCountSet {
     pub(crate) attachments: u32,
+    pub(crate) organizations: u32,
+    pub(crate) organization_members: u32,
     pub(crate) projects: u32,
     pub(crate) project_members: u32,
     pub(crate) issues: u32,
     pub(crate) labels: u32,
     pub(crate) milestones: u32,
     pub(crate) posts: u32,
+    pub(crate) pull_requests: u32,
     pub(crate) users: u32,
 }
 
@@ -945,37 +1107,49 @@ impl RestSiteImportResponse {
             checkpoint,
             dry_run: false,
             streaming: false,
+            imported_organizations: imported.organizations,
+            imported_organization_members: imported.organization_members,
             imported_projects: imported.projects,
             imported_project_members: imported.project_members,
             imported_issues: imported.issues,
             imported_labels: imported.labels,
             imported_milestones: imported.milestones,
             imported_posts: imported.posts,
+            imported_pull_requests: imported.pull_requests,
             imported_users: imported.users,
             skipped_issues: skipped.issues,
             skipped_labels: skipped.labels,
             skipped_milestones: skipped.milestones,
+            skipped_organizations: skipped.organizations,
+            skipped_organization_members: skipped.organization_members,
             skipped_posts: skipped.posts,
             skipped_projects: skipped.projects,
             skipped_project_members: skipped.project_members,
+            skipped_pull_requests: skipped.pull_requests,
             skipped_users: skipped.users,
             unsupported_sections,
             validation_errors: Vec::new(),
             would_import_attachments: 0,
+            would_import_organizations: 0,
+            would_import_organization_members: 0,
             would_import_projects: 0,
             would_import_project_members: 0,
             would_import_issues: 0,
             would_import_labels: 0,
             would_import_milestones: 0,
             would_import_posts: 0,
+            would_import_pull_requests: 0,
             would_import_users: 0,
             would_skip_attachments: 0,
+            would_skip_organizations: 0,
+            would_skip_organization_members: 0,
             would_skip_projects: 0,
             would_skip_project_members: 0,
             would_skip_issues: 0,
             would_skip_labels: 0,
             would_skip_milestones: 0,
             would_skip_posts: 0,
+            would_skip_pull_requests: 0,
             would_skip_users: 0,
         }
     }
@@ -991,37 +1165,49 @@ impl RestSiteImportResponse {
             checkpoint,
             dry_run: true,
             streaming: false,
+            imported_organizations: 0,
+            imported_organization_members: 0,
             imported_projects: 0,
             imported_project_members: 0,
             imported_issues: 0,
             imported_labels: 0,
             imported_milestones: 0,
             imported_posts: 0,
+            imported_pull_requests: 0,
             imported_users: 0,
             skipped_issues: 0,
             skipped_labels: 0,
             skipped_milestones: 0,
+            skipped_organizations: 0,
+            skipped_organization_members: 0,
             skipped_posts: 0,
             skipped_projects: 0,
             skipped_project_members: 0,
+            skipped_pull_requests: 0,
             skipped_users: 0,
             unsupported_sections,
             validation_errors,
             would_import_attachments: would_import.attachments,
+            would_import_organizations: would_import.organizations,
+            would_import_organization_members: would_import.organization_members,
             would_import_projects: would_import.projects,
             would_import_project_members: would_import.project_members,
             would_import_issues: would_import.issues,
             would_import_labels: would_import.labels,
             would_import_milestones: would_import.milestones,
             would_import_posts: would_import.posts,
+            would_import_pull_requests: would_import.pull_requests,
             would_import_users: would_import.users,
             would_skip_attachments: would_skip.attachments,
+            would_skip_organizations: would_skip.organizations,
+            would_skip_organization_members: would_skip.organization_members,
             would_skip_projects: would_skip.projects,
             would_skip_project_members: would_skip.project_members,
             would_skip_issues: would_skip.issues,
             would_skip_labels: would_skip.labels,
             would_skip_milestones: would_skip.milestones,
             would_skip_posts: would_skip.posts,
+            would_skip_pull_requests: would_skip.pull_requests,
             would_skip_users: would_skip.users,
         }
     }
@@ -1031,37 +1217,49 @@ impl RestSiteImportResponse {
             checkpoint,
             dry_run: false,
             streaming: false,
+            imported_organizations: 0,
+            imported_organization_members: 0,
             imported_projects: 0,
             imported_project_members: 0,
             imported_issues: 0,
             imported_labels: 0,
             imported_milestones: 0,
             imported_posts: 0,
+            imported_pull_requests: 0,
             imported_users: 0,
             skipped_issues: 0,
             skipped_labels: 0,
             skipped_milestones: 0,
+            skipped_organizations: 0,
+            skipped_organization_members: 0,
             skipped_posts: 0,
             skipped_projects: 0,
             skipped_project_members: 0,
+            skipped_pull_requests: 0,
             skipped_users: 0,
             unsupported_sections: Vec::new(),
             validation_errors: Vec::new(),
             would_import_attachments: 0,
+            would_import_organizations: 0,
+            would_import_organization_members: 0,
             would_import_projects: 0,
             would_import_project_members: 0,
             would_import_issues: 0,
             would_import_labels: 0,
             would_import_milestones: 0,
             would_import_posts: 0,
+            would_import_pull_requests: 0,
             would_import_users: 0,
             would_skip_attachments: 0,
+            would_skip_organizations: 0,
+            would_skip_organization_members: 0,
             would_skip_projects: 0,
             would_skip_project_members: 0,
             would_skip_issues: 0,
             would_skip_labels: 0,
             would_skip_milestones: 0,
             would_skip_posts: 0,
+            would_skip_pull_requests: 0,
             would_skip_users: 0,
         }
     }
@@ -1188,6 +1386,21 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Json(body): Json<RestSiteImportPayload>| {
                     let service = service.clone();
                     async move { rest_import_site_data_json(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/export",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move {
+                        match rest_export_site_data(headers, service).await {
+                            Ok(payload) => direct_site_export_response(&payload),
+                            Err(error) => error.into_response(),
+                        }
+                    }
                 }
             }),
         )
@@ -2399,12 +2612,21 @@ pub(crate) struct RestSiteImportRollbackLedger {
     issues: Vec<(String, String, i64)>,
     labels: Vec<(String, String, i64)>,
     milestones: Vec<(String, String, i64)>,
+    organizations: Vec<String>,
+    organization_members: Vec<(i64, i64)>,
     posts: Vec<(String, String, i64)>,
     project_counters: Vec<RestSiteImportRollbackProjectCounters>,
     project_members: Vec<RestSiteImportRollbackProjectMember>,
     projects: Vec<RestSiteImportRollbackProject>,
+    pull_requests: Vec<RestSiteImportRollbackPullRequest>,
     staged_uploads: Vec<RestSiteImportStagedUpload>,
     users: Vec<i64>,
+}
+
+struct RestSiteImportRollbackPullRequest {
+    commit_ids: Vec<String>,
+    id: i64,
+    project_id: i64,
 }
 
 struct RestSiteImportStagedUpload {
@@ -2515,6 +2737,23 @@ impl RestSiteImportRollbackLedger {
             project_name.trim().to_string(),
             post_number,
         ));
+    }
+
+    fn record_organization(&mut self, organization: &persistence::OrganizationRecord) {
+        self.organizations.push(organization.organization_name.clone());
+    }
+
+    fn record_organization_member(&mut self, organization_id: i64, user_id: i64) {
+        self.organization_members
+            .push((organization_id, user_id));
+    }
+
+    fn record_pull_request(&mut self, id: i64, project_id: i64, commit_ids: Vec<String>) {
+        self.pull_requests.push(RestSiteImportRollbackPullRequest {
+            commit_ids,
+            id,
+            project_id,
+        });
     }
 
     fn record_project(&mut self, project: &persistence::ProjectRecord) {
@@ -2653,6 +2892,20 @@ impl RestSiteImportRollbackLedger {
                 .delete_project_label(owner_name, project_name, *label_id)
                 .await;
         }
+        for (organization_id, user_id) in self.organization_members.iter().rev() {
+            let _ = repository
+                .delete_organization_membership(*organization_id, *user_id)
+                .await;
+        }
+        for pull_request in self.pull_requests.iter().rev() {
+            let _ = repository
+                .delete_site_import_pull_request(
+                    pull_request.id,
+                    pull_request.project_id,
+                    &pull_request.commit_ids,
+                )
+                .await;
+        }
         for member in self.project_members.iter().rev() {
             if let Some(previous_role) = &member.previous_role {
                 let _ = repository
@@ -2667,6 +2920,11 @@ impl RestSiteImportRollbackLedger {
         for project in self.projects.iter().rev() {
             let _ = repository
                 .delete_site_import_project_shell_by_id(project.id)
+                .await;
+        }
+        for organization_name in self.organizations.iter().rev() {
+            let _ = repository
+                .delete_organization_by_name(organization_name)
                 .await;
         }
         for user_id in self.users.iter().rev() {
@@ -2704,12 +2962,31 @@ fn cleanup_empty_parent_dirs(mut current: Option<&StdPath>, stop_before: Option<
 }
 
 /// Pull-based import record source. `rest_import_site_data_streamed` consumes
-/// sections in fixed order (users -> projects -> members -> labels ->
-/// milestones -> posts -> issues), so sources may lazily produce records.
+/// sections in fixed order (users -> organizations -> organization members ->
+/// projects -> members -> labels -> milestones -> posts -> issues ->
+/// pull requests), so sources may lazily produce records.
 pub(crate) trait ImportRecordSource: Send {
     fn next_user(
         &mut self,
     ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportUserItem>, RestRouteError>>;
+    fn next_organization(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteImportOrganizationItem>, RestRouteError>,
+    >;
+    fn next_organization_member(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteImportOrganizationMemberItem>, RestRouteError>,
+    >;
+    fn next_pull_request(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteImportPullRequestItem>, RestRouteError>,
+    >;
     fn next_project(
         &mut self,
     ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportProjectItem>, RestRouteError>>;
@@ -2742,12 +3019,15 @@ pub(crate) trait ImportRecordSource: Send {
 /// Drains an in-memory `RestSiteImportPayload` (site admin JSON import path).
 struct VecImportRecordSource {
     users: std::vec::IntoIter<RestSiteImportUserItem>,
+    organizations: std::vec::IntoIter<RestSiteImportOrganizationItem>,
+    organization_members: std::vec::IntoIter<RestSiteImportOrganizationMemberItem>,
     projects: std::vec::IntoIter<RestSiteImportProjectItem>,
     project_members: std::vec::IntoIter<RestSiteExportProjectMemberItem>,
     labels: std::vec::IntoIter<RestSiteExportProjectLabelItem>,
     milestones: std::vec::IntoIter<RestSiteExportMilestoneItem>,
     posts: std::vec::IntoIter<RestSiteExportPostItem>,
     issues: std::vec::IntoIter<RestSiteExportIssueItem>,
+    pull_requests: std::vec::IntoIter<RestSiteImportPullRequestItem>,
 }
 
 impl VecImportRecordSource {
@@ -2755,21 +3035,27 @@ impl VecImportRecordSource {
         let RestSiteImportPayload {
             format: _,
             users,
+            organizations,
+            organization_members,
             projects,
             project_members,
             labels,
             milestones,
             posts,
             issues,
+            pull_requests,
         } = payload;
         Self {
             users: users.into_iter(),
+            organizations: organizations.into_iter(),
+            organization_members: organization_members.into_iter(),
             projects: projects.into_iter(),
             project_members: project_members.into_iter(),
             labels: labels.into_iter(),
             milestones: milestones.into_iter(),
             posts: posts.into_iter(),
             issues: issues.into_iter(),
+            pull_requests: pull_requests.into_iter(),
         }
     }
 }
@@ -2780,6 +3066,33 @@ impl ImportRecordSource for VecImportRecordSource {
     ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportUserItem>, RestRouteError>>
     {
         Box::pin(async move { Ok(self.users.next()) })
+    }
+
+    fn next_organization(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteImportOrganizationItem>, RestRouteError>,
+    > {
+        Box::pin(async move { Ok(self.organizations.next()) })
+    }
+
+    fn next_organization_member(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteImportOrganizationMemberItem>, RestRouteError>,
+    > {
+        Box::pin(async move { Ok(self.organization_members.next()) })
+    }
+
+    fn next_pull_request(
+        &mut self,
+    ) -> futures::future::BoxFuture<
+        '_,
+        Result<Option<RestSiteImportPullRequestItem>, RestRouteError>,
+    > {
+        Box::pin(async move { Ok(self.pull_requests.next()) })
     }
 
     fn next_project(
@@ -2855,25 +3168,60 @@ async fn rest_import_site_data_streamed(
             checkpoint.mark_skipped("users", index);
             continue;
         }
-        let imported_password_hash = hash(
-            format!(
-                "imported-user-disabled:{login_id}:{}",
-                site_export_filename_stamp()
-            ),
-            DEFAULT_COST,
-        )
-        .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        let created_user = repository
-            .create_user(persistence::CreateUserInput {
-                display_name: user.display_name.trim().to_string(),
-                email_address: email_address.to_string(),
-                is_confirmed: !user.state.trim().eq_ignore_ascii_case("LOCKED"),
-                is_site_admin: user.is_site_admin,
-                login_id: login_id.to_string(),
-                password_hash: imported_password_hash,
-            })
-            .await
+        let imported_created_at = rest_site_import_parse_legacy_datetime(&user.created_at);
+        let imported_state_modified_at =
+            rest_site_import_parse_legacy_datetime(&user.last_state_modified_at);
+        let is_confirmed = !user.state.trim().eq_ignore_ascii_case("LOCKED");
+        let password_hash = if user.password_hash.trim().is_empty() {
+            None
+        } else {
+            Some(user.password_hash.trim().to_string())
+        };
+        let password_salt = if user.password_salt.trim().is_empty() {
+            None
+        } else {
+            Some(user.password_salt.trim().to_string())
+        };
+        // Legacy id or password supplied -> preserve id and the legacy SHA-256
+        // hash so the existing password keeps working. Otherwise fall back to
+        // the disabled-password create path (behavior unchanged).
+        let created_user = if user.id > 0 || password_hash.is_some() {
+            repository
+                .insert_site_import_user(
+                    user.id,
+                    login_id,
+                    &user.display_name,
+                    &user.email_address,
+                    password_hash,
+                    password_salt,
+                    is_confirmed,
+                    user.is_site_admin,
+                    imported_created_at,
+                    imported_state_modified_at,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        } else {
+            let imported_password_hash = hash(
+                format!(
+                    "imported-user-disabled:{login_id}:{}",
+                    site_export_filename_stamp()
+                ),
+                DEFAULT_COST,
+            )
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            repository
+                .create_user(persistence::CreateUserInput {
+                    display_name: user.display_name.trim().to_string(),
+                    email_address: email_address.to_string(),
+                    is_confirmed,
+                    is_site_admin: user.is_site_admin,
+                    login_id: login_id.to_string(),
+                    password_hash: imported_password_hash,
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        };
         repository
             .restore_site_import_user_timestamps(
                 login_id,
@@ -2892,19 +3240,93 @@ async fn rest_import_site_data_streamed(
         index += 1;
     }
 
+    let mut imported_organizations = 0;
+    let mut skipped_organizations = 0;
+    let mut index = 0;
+    while let Some(organization) = source.next_organization().await? {
+        let organization_name = organization.name.trim();
+        if organization_name.is_empty()
+            || repository
+                .organization_name_exists(organization_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            skipped_organizations += 1;
+            checkpoint.mark_skipped("organizations", index);
+            continue;
+        }
+        let created_organization = repository
+            .insert_site_import_organization(
+                organization.id,
+                organization_name,
+                &organization.description,
+                rest_site_import_parse_legacy_datetime(&organization.created_at),
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        rollback.record_organization(&created_organization);
+        imported_organizations += 1;
+        checkpoint.mark_completed("organizations", index);
+        index += 1;
+    }
+
+    let mut imported_organization_members = 0;
+    let mut skipped_organization_members = 0;
+    let mut index = 0;
+    while let Some(member) = source.next_organization_member().await? {
+        let organization_exists = repository
+            .read_organization_by_id(member.organization_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some();
+        let user_exists = repository
+            .find_user_by_id(member.user_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some();
+        if member.organization_id <= 0
+            || member.user_id <= 0
+            || !organization_exists
+            || !user_exists
+        {
+            skipped_organization_members += 1;
+            checkpoint.mark_skipped("organizationMembers", index);
+            continue;
+        }
+        repository
+            .insert_site_import_organization_member(
+                member.id,
+                member.organization_id,
+                member.user_id,
+                &member.role,
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        rollback.record_organization_member(member.organization_id, member.user_id);
+        imported_organization_members += 1;
+        checkpoint.mark_completed("organizationMembers", index);
+        index += 1;
+    }
+
     let mut imported_projects = 0;
     let mut skipped_projects = 0;
     let mut index = 0;
     while let Some(project) = source.next_project().await? {
         let owner_name = project.owner_name.trim();
         let project_name = project.project_name.trim();
+        let owner_is_user = repository
+            .find_user_by_login_id(owner_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some();
+        let owner_is_organization = repository
+            .read_organization_by_name(owner_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some();
         if owner_name.is_empty()
             || project_name.is_empty()
-            || repository
-                .find_user_by_login_id(owner_name)
-                .await
-                .map_err(|error| RestRouteError::internal(error.to_string()))?
-                .is_none()
+            || (!owner_is_user && !owner_is_organization)
             || repository
                 .read_project_by_owner_and_name(owner_name, project_name)
                 .await
@@ -2915,18 +3337,42 @@ async fn rest_import_site_data_streamed(
             checkpoint.mark_skipped("projects", index);
             continue;
         }
-        let created_project = repository
-            .create_project(persistence::CreateProjectInput {
-                organization_id: None,
-                owner_name: owner_name.to_string(),
-                overview: Some(project.overview.trim().to_string()),
-                project_name: project_name.to_string(),
-                project_scope: normalize_site_import_project_scope(&project.project_scope)
-                    .map_err(RestRouteError::from_connect_error)?,
-                vcs: normalize_site_import_project_vcs(&project.vcs),
-            })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let organization_id =
+            resolve_site_import_project_organization_id(repository, project.organization_id, owner_name)
+                .await?;
+        let project_scope =
+            normalize_site_import_project_scope(&project.project_scope)
+                .map_err(RestRouteError::from_connect_error)?;
+        let vcs = normalize_site_import_project_vcs(&project.vcs);
+        let created_project = if project.id > 0 {
+            repository
+                .insert_site_import_project(
+                    project.id,
+                    owner_name,
+                    project_name,
+                    Some(project.overview.trim().to_string()),
+                    &project_scope,
+                    &vcs,
+                    organization_id,
+                    rest_site_import_parse_legacy_datetime(&project.created_at),
+                    0,
+                    0,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        } else {
+            repository
+                .create_project(persistence::CreateProjectInput {
+                    organization_id,
+                    owner_name: owner_name.to_string(),
+                    overview: Some(project.overview.trim().to_string()),
+                    project_name: project_name.to_string(),
+                    project_scope,
+                    vcs: vcs.clone(),
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        };
         repository
             .restore_site_import_project_created_at(
                 owner_name,
@@ -2944,6 +3390,23 @@ async fn rest_import_site_data_streamed(
                 );
                 RestRouteError::internal(message)
             })?;
+        // Provision the empty bare repository so git clone/push works right
+        // after import (mirrors the project-create flow).
+        {
+            let repo_path =
+                yoram_vcs::repository_path_for_vcs(&service.data_root, created_project.id, &vcs);
+            let _guard = repository_provisioning_lock()
+                .lock()
+                .map_err(|_| RestRouteError::internal("repository provisioning lock poisoned"))?;
+            let provisioning = if vcs == "Subversion" {
+                yoram_vcs::create_svn_repository(&repo_path)
+            } else {
+                yoram_vcs::create_bare_repository(&repo_path)
+            };
+            if let Err(error) = provisioning {
+                return Err(RestRouteError::internal(error.to_string()));
+            }
+        }
         rollback.record_project(&created_project);
         imported_projects += 1;
         checkpoint.mark_completed("projects", index);
@@ -3025,18 +3488,33 @@ async fn rest_import_site_data_streamed(
         } else {
             label.category_name.trim()
         };
-        match repository
-            .create_project_label(persistence::CreateProjectLabelInput {
-                category_is_exclusive: label.category_is_exclusive,
-                category_name: category_name.to_string(),
-                label_color,
-                label_name: label_name.to_string(),
-                owner_name: owner_name.to_string(),
-                project_name: project_name.to_string(),
-            })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()))?
-        {
+        let created_label = if label.id > 0 {
+            repository
+                .insert_site_import_label(
+                    label.id,
+                    owner_name,
+                    project_name,
+                    category_name,
+                    label.category_is_exclusive,
+                    label_name,
+                    &label_color,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        } else {
+            repository
+                .create_project_label(persistence::CreateProjectLabelInput {
+                    category_is_exclusive: label.category_is_exclusive,
+                    category_name: category_name.to_string(),
+                    label_color,
+                    label_name: label_name.to_string(),
+                    owner_name: owner_name.to_string(),
+                    project_name: project_name.to_string(),
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        };
+        match created_label {
             Some((record, true)) => {
                 rollback.record_label(owner_name, project_name, record.id);
                 imported_labels += 1;
@@ -3120,19 +3598,35 @@ async fn rest_import_site_data_streamed(
                 return Err(RestRouteError::from_connect_error(error));
             }
         };
-        let created_milestone = match repository
-            .create_project_milestone(persistence::MilestoneMutationInput {
-                actor_id: Some(actor.id),
-                attachment_ids: imported_attachments.ids.clone(),
-                contents_markdown,
-                due_date,
-                owner_name: owner_name.to_string(),
-                project_name: project_name.to_string(),
-                state,
-                title: title.to_string(),
-            })
-            .await
-        {
+        let created_milestone = if milestone.id > 0 {
+            repository
+                .insert_site_import_milestone(
+                    milestone.id,
+                    owner_name,
+                    project_name,
+                    &title,
+                    &contents_markdown,
+                    due_date,
+                    &state,
+                    imported_attachments.ids.clone(),
+                    Some(actor.id),
+                )
+                .await
+        } else {
+            repository
+                .create_project_milestone(persistence::MilestoneMutationInput {
+                    actor_id: Some(actor.id),
+                    attachment_ids: imported_attachments.ids.clone(),
+                    contents_markdown,
+                    due_date,
+                    owner_name: owner_name.to_string(),
+                    project_name: project_name.to_string(),
+                    state,
+                    title: title.to_string(),
+                })
+                .await
+        };
+        let created_milestone = match created_milestone {
             Ok(created) => created,
             Err(error) => {
                 let message = error.to_string();
@@ -3226,31 +3720,77 @@ async fn rest_import_site_data_streamed(
         );
         let imported_created_at = rest_site_import_parse_legacy_datetime(&issue.created_at);
         let imported_updated_at = rest_site_import_parse_legacy_datetime(&issue.updated_at);
-        let created = repository
-            .create_issue(persistence::CreateIssueInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                owner_name: issue.owner_name.trim().to_string(),
-                project_name: issue.project_name.trim().to_string(),
-                values: persistence::IssueMutationInput {
-                    assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
-                    attachment_ids: imported_attachments.ids.clone(),
-                    body_markdown,
-                    due_date: None,
-                    is_draft: false,
-                    is_publish: false,
-                    label_ids,
+        let failure_key = format!("issue:{}:{}", issue.issue_number, issue.title);
+        let created = if issue.id > 0 {
+            let project = repository
+                .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            let assignee_id = if issue.assignee_login_id.trim().is_empty() {
+                None
+            } else {
+                repository
+                    .find_user_by_login_id(issue.assignee_login_id.trim())
+                    .await
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?
+                    .map(|user| user.id)
+            };
+            let issue_number = issue.issue_number.trim().parse::<i64>().unwrap_or(0);
+            let state = if issue.state.trim().is_empty() {
+                "open"
+            } else {
+                issue.state.trim()
+            };
+            repository
+                .insert_site_import_issue(
+                    issue.id,
+                    project.map(|project| project.id).unwrap_or(0),
+                    issue_number,
+                    &issue.title,
+                    &body_markdown,
+                    &issue.history_markdown,
+                    state,
+                    actor.id,
+                    &actor.login_id,
+                    &actor.display_name,
+                    assignee_id,
                     milestone_id,
-                    parent_issue_id: None,
-                    title: issue.title,
-                },
-            })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()));
+                    imported_created_at,
+                    imported_updated_at,
+                    label_ids,
+                    imported_attachments.ids.clone(),
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))
+        } else {
+            repository
+                .create_issue(persistence::CreateIssueInput {
+                    actor_display_name: actor.display_name.clone(),
+                    actor_id: actor.id,
+                    actor_login_id: actor.login_id.clone(),
+                    owner_name: issue.owner_name.trim().to_string(),
+                    project_name: issue.project_name.trim().to_string(),
+                    values: persistence::IssueMutationInput {
+                        assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
+                        attachment_ids: imported_attachments.ids.clone(),
+                        body_markdown,
+                        due_date: None,
+                        is_draft: false,
+                        is_publish: false,
+                        label_ids,
+                        milestone_id,
+                        parent_issue_id: None,
+                        title: issue.title,
+                    },
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))
+        };
         let created = match created {
             Ok(created) => created,
             Err(error) => {
+                let message = error.to_string();
+                checkpoint.set_failure("issues", index, failure_key, message.clone());
                 rest_site_import_cleanup_attachments(
                     &service,
                     repository,
@@ -3258,7 +3798,7 @@ async fn rest_import_site_data_streamed(
                     &imported_attachments.created_attachments,
                 )
                 .await;
-                return Err(error);
+                return Err(RestRouteError::internal(message));
             }
         };
         let Some(created) = created else {
@@ -3274,7 +3814,7 @@ async fn rest_import_site_data_streamed(
             continue;
         };
         rollback.record_issue(&issue.owner_name, &issue.project_name, created.issue_number);
-        if !issue.history_markdown.trim().is_empty() {
+        if issue.id == 0 && !issue.history_markdown.trim().is_empty() {
             repository
                 .restore_issue_history(
                     &issue.owner_name,
@@ -3285,7 +3825,7 @@ async fn rest_import_site_data_streamed(
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
         }
-        if issue.state.trim().eq_ignore_ascii_case("closed") {
+        if issue.id == 0 && issue.state.trim().eq_ignore_ascii_case("closed") {
             repository
                 .update_issue_state_as_actor(
                     &created.owner_name,
@@ -3368,31 +3908,67 @@ async fn rest_import_site_data_streamed(
         );
         let imported_created_at = rest_site_import_parse_legacy_datetime(&post.created_at);
         let imported_updated_at = rest_site_import_parse_legacy_datetime(&post.updated_at);
-        let created = repository
-            .create_legacy_external_posting(persistence::CreateLegacyExternalPostingInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                attachment_actor_id: Some(actor.id),
-                created_at: imported_created_at,
-                owner_name: post.owner_name.trim().to_string(),
-                post_number: None,
-                project_name: post.project_name.trim().to_string(),
-                updated_at: imported_updated_at,
-                values: persistence::PostingMutationInput {
-                    attachment_ids: imported_attachments.ids.clone(),
-                    body_markdown,
+        let failure_key = format!("post:{}:{}", post.post_number, post.title);
+        let created = if post.id > 0 {
+            let project = repository
+                .read_project_by_owner_and_name(&post.owner_name, &post.project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            let post_number = post.post_number.trim().parse::<i64>().unwrap_or(0);
+            repository
+                .insert_site_import_posting(
+                    post.id,
+                    project.map(|project| project.id).unwrap_or(0),
+                    post_number,
+                    &post.title,
+                    &body_markdown,
+                    &post.history_markdown,
+                    actor.id,
+                    &actor.login_id,
+                    &actor.display_name,
+                    post.notice,
+                    post.readme,
+                    imported_created_at,
+                    imported_updated_at,
                     label_ids,
-                    notice: post.notice,
-                    readme: post.readme,
-                    title: post.title,
-                },
-            })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()));
+                    imported_attachments.ids.clone(),
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))
+        } else {
+            repository
+                .create_legacy_external_posting(persistence::CreateLegacyExternalPostingInput {
+                    actor_display_name: actor.display_name.clone(),
+                    actor_id: actor.id,
+                    actor_login_id: actor.login_id.clone(),
+                    attachment_actor_id: Some(actor.id),
+                    created_at: imported_created_at,
+                    owner_name: post.owner_name.trim().to_string(),
+                    post_number: post.post_number.trim().parse::<i64>().ok().filter(|number| *number > 0),
+                    project_name: post.project_name.trim().to_string(),
+                    updated_at: imported_updated_at,
+                    values: persistence::PostingMutationInput {
+                        attachment_ids: imported_attachments.ids.clone(),
+                        body_markdown,
+                        label_ids,
+                        notice: post.notice,
+                        readme: post.readme,
+                        title: post.title,
+                    },
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))
+        };
         let created = match created {
             Ok(created) => created,
             Err(error) => {
+                let message = error.to_string();
+                checkpoint.set_failure(
+                    "posts",
+                    index,
+                    failure_key,
+                    message.clone(),
+                );
                 rest_site_import_cleanup_attachments(
                     &service,
                     repository,
@@ -3400,7 +3976,7 @@ async fn rest_import_site_data_streamed(
                     &imported_attachments.created_attachments,
                 )
                 .await;
-                return Err(error);
+                return Err(RestRouteError::internal(message));
             }
         };
         let Some(created) = created else {
@@ -3416,7 +3992,7 @@ async fn rest_import_site_data_streamed(
             continue;
         };
         rollback.record_post(&post.owner_name, &post.project_name, created.post_number);
-        if !post.history_markdown.trim().is_empty() {
+        if post.id == 0 && !post.history_markdown.trim().is_empty() {
             repository
                 .restore_posting_history(
                     &post.owner_name,
@@ -3455,14 +4031,188 @@ async fn rest_import_site_data_streamed(
         index += 1;
     }
 
+    let mut imported_pull_requests = 0;
+    let mut skipped_pull_requests = 0;
+    let mut index = 0;
+    while let Some(pull_request) = source.next_pull_request().await? {
+        let project = repository
+            .read_project_by_id(pull_request.project_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let Some(project) = project else {
+            skipped_pull_requests += 1;
+            checkpoint.mark_skipped("pullRequests", index);
+            continue;
+        };
+        // Contributor/receiver fall back to the project owner when the legacy
+        // user row was not imported.
+        let contributor_id = if pull_request.contributor_id > 0 {
+            match repository
+                .find_user_by_id(pull_request.contributor_id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+            {
+                Some(user) => user.id,
+                None => match repository
+                    .find_user_by_login_id(&project.owner_name)
+                    .await
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?
+                {
+                    Some(user) => user.id,
+                    None => {
+                        skipped_pull_requests += 1;
+                        checkpoint.mark_skipped("pullRequests", index);
+                        continue;
+                    }
+                },
+            }
+        } else {
+            match repository
+                .find_user_by_login_id(&project.owner_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+            {
+                Some(user) => user.id,
+                None => {
+                    skipped_pull_requests += 1;
+                    checkpoint.mark_skipped("pullRequests", index);
+                    continue;
+                }
+            }
+        };
+        let receiver_id = if pull_request.receiver_id > 0 {
+            repository
+                .find_user_by_id(pull_request.receiver_id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .map(|user| user.id)
+                .unwrap_or(contributor_id)
+        } else {
+            contributor_id
+        };
+        let events = pull_request
+            .events
+            .iter()
+            .map(|event| persistence::SiteImportPullRequestEventInput {
+                id: event.id,
+                sender_login_id: event.sender_login_id.clone(),
+                event_type: event.event_type.clone(),
+                old_value: event.old_value.clone(),
+                new_value: event.new_value.clone(),
+                created_at: rest_site_import_parse_legacy_datetime(&event.created_at),
+            })
+            .collect::<Vec<_>>();
+        let threads = pull_request
+            .threads
+            .iter()
+            .map(|thread| persistence::SiteImportPullRequestThreadInput {
+                id: thread.id,
+                author_id: thread.author_id,
+                author_login_id: thread.author_login_id.clone(),
+                author_name: thread.author_name.clone(),
+                dtype: thread.dtype.clone(),
+                state: thread.state.clone(),
+                commit_id: thread.commit_id.clone(),
+                path: thread.path.clone(),
+                line: thread.line,
+                created_at: rest_site_import_parse_legacy_datetime(&thread.created_at),
+            })
+            .collect::<Vec<_>>();
+        let review_comments = pull_request
+            .review_comments
+            .iter()
+            .map(|comment| persistence::SiteImportPullRequestCommentInput {
+                id: comment.id,
+                author_id: comment.author_id,
+                author_login_id: comment.author_login_id.clone(),
+                author_name: comment.author_name.clone(),
+                body_markdown: comment.body_markdown.clone(),
+                commit_id: comment.commit_id.clone(),
+                path: comment.path.clone(),
+                line: comment.line,
+                thread_id: comment.thread_id,
+                created_at: rest_site_import_parse_legacy_datetime(&comment.created_at),
+            })
+            .collect::<Vec<_>>();
+        let commit_comments = pull_request
+            .commit_comments
+            .iter()
+            .map(|comment| persistence::SiteImportPullRequestCommentInput {
+                id: comment.id,
+                author_id: comment.author_id,
+                author_login_id: comment.author_login_id.clone(),
+                author_name: comment.author_name.clone(),
+                body_markdown: comment.body_markdown.clone(),
+                commit_id: comment.commit_id.clone(),
+                path: comment.path.clone(),
+                line: comment.line,
+                thread_id: comment.thread_id,
+                created_at: rest_site_import_parse_legacy_datetime(&comment.created_at),
+            })
+            .collect::<Vec<_>>();
+        let created_pr_id = repository
+            .insert_site_import_pull_request(
+                pull_request.id,
+                project.id,
+                contributor_id,
+                receiver_id,
+                pull_request.number,
+                &pull_request.title,
+                &pull_request.body_markdown,
+                &pull_request.state,
+                pull_request.is_merged,
+                empty_string_as_none(&pull_request.merged_commit_id_from),
+                empty_string_as_none(&pull_request.merged_commit_id_to),
+                None,
+                None,
+                rest_site_import_parse_legacy_datetime(&pull_request.created_at),
+                rest_site_import_parse_legacy_datetime(&pull_request.updated_at),
+                &events,
+                &threads,
+                &review_comments,
+                &commit_comments,
+            )
+            .await
+            .map_err(|error| {
+                let message = error.to_string();
+                checkpoint.set_failure(
+                    "pullRequests",
+                    index,
+                    format!("pullRequest:{}", pull_request.number),
+                    message.clone(),
+                );
+                RestRouteError::internal(message)
+            })?;
+        match created_pr_id {
+            Some(_pr_id) => {
+                let commit_ids = commit_comments
+                    .iter()
+                    .map(|comment| comment.commit_id.clone())
+                    .filter(|commit_id| !commit_id.trim().is_empty())
+                    .collect::<Vec<_>>();
+                rollback.record_pull_request(pull_request.id, project.id, commit_ids);
+                imported_pull_requests += 1;
+                checkpoint.mark_completed("pullRequests", index);
+            }
+            None => {
+                skipped_pull_requests += 1;
+                checkpoint.mark_skipped("pullRequests", index);
+            }
+        }
+        index += 1;
+    }
+
     Ok(RestSiteImportResponse::imported(
         RestSiteImportCountSet {
             issues: imported_issues,
             labels: imported_labels,
             milestones: imported_milestones,
+            organizations: imported_organizations,
+            organization_members: imported_organization_members,
             posts: imported_posts,
             projects: imported_projects,
             project_members: imported_project_members,
+            pull_requests: imported_pull_requests,
             users: imported_users,
             ..RestSiteImportCountSet::default()
         },
@@ -3470,9 +4220,12 @@ async fn rest_import_site_data_streamed(
             issues: skipped_issues,
             labels: skipped_labels,
             milestones: skipped_milestones,
+            organizations: skipped_organizations,
+            organization_members: skipped_organization_members,
             posts: skipped_posts,
             projects: skipped_projects,
             project_members: skipped_project_members,
+            pull_requests: skipped_pull_requests,
             users: skipped_users,
             ..RestSiteImportCountSet::default()
         },
@@ -3528,6 +4281,53 @@ async fn rest_site_import_dry_run_report(
         }
         would_import.users += 1;
         state.users.insert(login_id.to_string());
+    }
+
+    for (_index, organization) in payload.organizations.iter().enumerate() {
+        let organization_name = organization.name.trim();
+        if organization_name.is_empty()
+            || repository
+                .organization_name_exists(organization_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            would_skip.organizations += 1;
+            continue;
+        }
+        would_import.organizations += 1;
+    }
+
+    for (_index, member) in payload.organization_members.iter().enumerate() {
+        let organization_exists = repository
+            .read_organization_by_id(member.organization_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some();
+        let user_exists = repository
+            .find_user_by_id(member.user_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_some();
+        if member.organization_id <= 0 || member.user_id <= 0 || !organization_exists || !user_exists
+        {
+            would_skip.organization_members += 1;
+            continue;
+        }
+        would_import.organization_members += 1;
+    }
+
+    for (_index, pull_request) in payload.pull_requests.iter().enumerate() {
+        let project_exists = pull_request.project_id > 0
+            && repository
+                .read_project_by_id(pull_request.project_id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_some();
+        if !project_exists || pull_request.title.trim().is_empty() {
+            would_skip.pull_requests += 1;
+            continue;
+        }
+        would_import.pull_requests += 1;
     }
 
     for (index, project) in payload.projects.iter().enumerate() {
@@ -4243,55 +5043,101 @@ async fn rest_site_import_post_comments(
             post_number,
             contents_markdown.as_str(),
         );
-        let detail = repository
-            .create_posting_comment(persistence::CreatePostingCommentInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                attachment_actor_id: None,
-                attachment_ids: imported_attachments.ids,
-                contents_markdown,
-                created_at: rest_site_import_parse_legacy_datetime(&comment.created_at),
-                owner_name: owner_name.trim().to_string(),
-                parent_comment_id,
-                post_number,
-                project_name: project_name.trim().to_string(),
-            })
-            .await
-            .map_err(|error| RestRouteError::internal(error.to_string()));
-        let detail = match detail {
-            Ok(detail) => detail,
-            Err(error) => {
-                rest_site_import_cleanup_attachments(
-                    service,
-                    repository,
-                    &actor,
-                    &imported_attachments.created_attachments,
+        let created_comment_id = if comment.id > 0 {
+            match repository
+                .insert_site_import_posting_comment(
+                    comment.id,
+                    owner_name,
+                    project_name,
+                    post_number,
+                    actor.id,
+                    &actor.login_id,
+                    &actor.display_name,
+                    &contents_markdown,
+                    parent_comment_id,
+                    rest_site_import_parse_legacy_datetime(&comment.created_at),
+                    imported_attachments.ids,
                 )
-                .await;
-                checkpoint.set_failure(
-                    "posts.comments",
-                    index,
-                    failure_resource_key,
-                    "site.import.failed",
-                );
-                return Err(error);
+                .await
+            {
+                Ok(Some(comment_id)) => Some(comment_id),
+                Ok(None) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    continue;
+                }
+                Err(error) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    checkpoint.set_failure(
+                        "posts.comments",
+                        index,
+                        failure_resource_key,
+                        "site.import.failed",
+                    );
+                    return Err(RestRouteError::internal(error.to_string()));
+                }
+            }
+        } else {
+            let detail = repository
+                .create_posting_comment(persistence::CreatePostingCommentInput {
+                    actor_display_name: actor.display_name.clone(),
+                    actor_id: actor.id,
+                    actor_login_id: actor.login_id.clone(),
+                    attachment_actor_id: None,
+                    attachment_ids: imported_attachments.ids,
+                    contents_markdown,
+                    created_at: rest_site_import_parse_legacy_datetime(&comment.created_at),
+                    owner_name: owner_name.trim().to_string(),
+                    parent_comment_id,
+                    post_number,
+                    project_name: project_name.trim().to_string(),
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()));
+            match detail {
+                Ok(Some(posting)) => {
+                    posting.comments.iter().map(|comment| comment.id).max()
+                }
+                Ok(None) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    None
+                }
+                Err(error) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    checkpoint.set_failure(
+                        "posts.comments",
+                        index,
+                        failure_resource_key,
+                        "site.import.failed",
+                    );
+                    return Err(error);
+                }
             }
         };
-        if detail.is_none() {
-            rest_site_import_cleanup_attachments(
-                service,
-                repository,
-                &actor,
-                &imported_attachments.created_attachments,
-            )
-            .await;
-            continue;
-        }
-        if let Some(created_comment_id) = detail
-            .as_ref()
-            .and_then(|posting| posting.comments.iter().map(|comment| comment.id).max())
-        {
+        if let Some(created_comment_id) = created_comment_id {
             Box::pin(rest_site_import_post_comments(
                 service,
                 repository,
@@ -4348,60 +5194,107 @@ async fn rest_site_import_issue_comments(
             issue_number,
             contents_markdown.as_str(),
         );
-        let detail = repository
-            .create_issue_comment(persistence::CreateIssueCommentInput {
-                actor_display_name: actor.display_name.clone(),
-                actor_id: actor.id,
-                actor_login_id: actor.login_id.clone(),
-                attachment_ids: imported_attachments.ids,
-                contents_markdown,
-                issue_number,
-                owner_name: owner_name.trim().to_string(),
-                parent_comment_id,
-                project_name: project_name.trim().to_string(),
-            })
-            .await;
-        let detail = match detail {
-            Ok(detail) => detail,
-            Err(error) => {
-                let message = error.to_string();
-                rest_site_import_cleanup_attachments(
-                    service,
-                    repository,
-                    &actor,
-                    &imported_attachments.created_attachments,
-                )
-                .await;
-                checkpoint.set_failure(
-                    "issues.comments",
-                    index,
-                    failure_resource_key,
-                    message.clone(),
-                );
-                return Err(RestRouteError::internal(message));
-            }
-        };
-        if detail.is_none() {
-            rest_site_import_cleanup_attachments(
-                service,
-                repository,
-                &actor,
-                &imported_attachments.created_attachments,
-            )
-            .await;
-            continue;
-        }
-        if let Some(created_comment_id) = detail
-            .as_ref()
-            .and_then(|issue| issue.comments.iter().map(|comment| comment.id).max())
-        {
-            repository
-                .restore_site_import_issue_comment_created_at(
-                    created_comment_id,
+        let created_comment_id = if comment.id > 0 {
+            match repository
+                .insert_site_import_issue_comment(
+                    comment.id,
+                    owner_name,
+                    project_name,
+                    issue_number,
+                    actor.id,
+                    &actor.login_id,
+                    &actor.display_name,
+                    &contents_markdown,
+                    parent_comment_id,
                     rest_site_import_parse_legacy_datetime(&comment.created_at),
+                    imported_attachments.ids,
                 )
                 .await
-                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            {
+                Ok(Some(comment_id)) => Some(comment_id),
+                Ok(None) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    continue;
+                }
+                Err(error) => {
+                    let message = error.to_string();
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    checkpoint.set_failure(
+                        "issues.comments",
+                        index,
+                        failure_resource_key,
+                        message.clone(),
+                    );
+                    return Err(RestRouteError::internal(message));
+                }
+            }
+        } else {
+            let detail = repository
+                .create_issue_comment(persistence::CreateIssueCommentInput {
+                    actor_display_name: actor.display_name.clone(),
+                    actor_id: actor.id,
+                    actor_login_id: actor.login_id.clone(),
+                    attachment_ids: imported_attachments.ids,
+                    contents_markdown,
+                    issue_number,
+                    owner_name: owner_name.trim().to_string(),
+                    parent_comment_id,
+                    project_name: project_name.trim().to_string(),
+                })
+                .await;
+            match detail {
+                Ok(Some(issue)) => issue.comments.iter().map(|comment| comment.id).max(),
+                Ok(None) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    continue;
+                }
+                Err(error) => {
+                    let message = error.to_string();
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        &actor,
+                        &imported_attachments.created_attachments,
+                    )
+                    .await;
+                    checkpoint.set_failure(
+                        "issues.comments",
+                        index,
+                        failure_resource_key,
+                        message.clone(),
+                    );
+                    return Err(RestRouteError::internal(message));
+                }
+            }
+        };
+        if let Some(created_comment_id) = created_comment_id {
+            if comment.id == 0 {
+                repository
+                    .restore_site_import_issue_comment_created_at(
+                        created_comment_id,
+                        rest_site_import_parse_legacy_datetime(&comment.created_at),
+                    )
+                    .await
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            }
             Box::pin(rest_site_import_issue_comments(
                 service,
                 repository,
@@ -4973,6 +5866,33 @@ async fn rest_site_import_actor(
     Ok(None)
 }
 
+/// Resolve the organization id for an imported project: the legacy
+/// `organization_id` wins when that org row exists; otherwise fall back to
+/// the org owning the owner name.
+async fn resolve_site_import_project_organization_id(
+    repository: &persistence::AppRepositoryImpl<'_>,
+    organization_id: i64,
+    owner_name: &str,
+) -> Result<Option<i64>, RestRouteError> {
+    if organization_id > 0 {
+        if let Some(organization) = repository
+            .read_organization_by_id(organization_id)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            return Ok(Some(organization.id));
+        }
+    }
+    if let Some(organization) = repository
+        .read_organization_by_name(owner_name)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+    {
+        return Ok(Some(organization.id));
+    }
+    Ok(None)
+}
+
 fn normalize_site_import_project_scope(value: &str) -> Result<String, ConnectError> {
     let trimmed = value.trim();
     let scope = if trimmed.is_empty() {
@@ -5107,6 +6027,7 @@ async fn rest_export_site_project_members(
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
         for member in records.members {
             project_members.push(RestSiteExportProjectMemberItem {
+                id: 0,
                 login_id: member.login_id,
                 owner_name: owner_name.to_string(),
                 project_name: project_name.to_string(),
@@ -5126,6 +6047,7 @@ pub(crate) fn rest_site_export_project_label_from_record(
         category_is_exclusive: label.category_is_exclusive,
         category_name: label.category_name.clone(),
         color: label.color.clone(),
+        id: label.id,
         name: label.name.clone(),
         owner_name: owner_name.to_string(),
         project_name: project_name.to_string(),
@@ -5146,6 +6068,7 @@ pub(crate) fn rest_site_export_milestone_from_record(
             .collect(),
         contents_markdown: milestone.contents_markdown.clone(),
         due_date: milestone.due_date_label.clone(),
+        id: milestone.id,
         owner_name: owner_name.to_string(),
         project_name: project_name.to_string(),
         state: milestone.state.clone(),
@@ -5361,16 +6284,13 @@ async fn rest_require_site_admin_repository<'a>(
     headers: &HeaderMap,
     validate_csrf: bool,
 ) -> Result<&'a PilotRepository, RestRouteError> {
-    let session = require_session(&service.session_manager, headers)
-        .map_err(RestRouteError::from_connect_error)?;
-    if validate_csrf {
-        require_valid_csrf(&service.session_manager, headers, &session)
-            .map_err(RestRouteError::from_connect_error)?;
-    }
+    // Session path behaves exactly as before (CSRF when validate_csrf); the
+    // Bearer/Yona-Token path is the migration-tool entry point (no CSRF).
+    // Auth material is resolved before the repository so anonymous requests
+    // on static backends keep answering 401.
+    let user_id = rest_require_migration_actor(service, headers, validate_csrf).await?;
     let repository = rest_repository(service)?;
-    let actor = require_authenticated_user(repository, session.user_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let actor = rest_migration_actor_from_user_id(repository, user_id).await?;
     if !actor.is_site_admin {
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("site admin is required"),
@@ -5537,6 +6457,7 @@ pub(crate) fn rest_site_export_post_from_record(
         comments: rest_site_export_post_comments_from_records(data_root, &record.comments),
         created_at: legacy_external_date_string(record.created_at),
         history_markdown: record.history_markdown.clone(),
+        id: record.id,
         labels: record
             .labels
             .iter()
@@ -5568,6 +6489,7 @@ pub(crate) fn rest_site_export_issue_from_record(
         comments: rest_site_export_issue_comments_from_records(data_root, &record.comments),
         created_at: legacy_external_date_string(record.created_at),
         history_markdown: record.history_markdown.clone(),
+        id: record.id,
         issue_number: record.issue_number.to_string(),
         labels: record
             .labels
@@ -5598,6 +6520,7 @@ fn rest_site_export_post_comment_from_record(
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
         created_at: legacy_external_date_string(record.created_at),
+        id: record.id,
     }
 }
 
@@ -5616,6 +6539,7 @@ fn rest_site_export_issue_comment_from_record(
         child_comments,
         contents_markdown: record.contents_markdown.clone(),
         created_at: legacy_external_date_string(record.created_at),
+        id: record.id,
     }
 }
 

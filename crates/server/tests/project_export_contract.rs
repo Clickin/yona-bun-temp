@@ -495,26 +495,31 @@ async fn project_import_restores_exported_ndjson_records() {
     let imported = response_json(response).await;
     assert_eq!(imported["dryRun"], false);
     assert_eq!(imported["streaming"], true);
-    assert_eq!(imported["importedIssues"], 1);
-    assert_eq!(imported["importedPosts"], 1);
+    // The export carries legacy ids, so re-importing the same instance is
+    // idempotent: the existing project/issue/post rows are skipped.
+    assert_eq!(imported["importedIssues"], 0);
+    assert_eq!(imported["importedPosts"], 0);
     assert_eq!(imported["importedMilestones"], 0);
     assert_eq!(imported["importedLabels"], 0);
+    assert_eq!(imported["skippedIssues"], 1);
+    assert_eq!(imported["skippedPosts"], 1);
 
+    // The pre-existing seeded data is untouched.
     let issue = repo
-        .read_issue_detail("member", "dataproj", 2)
+        .read_issue_detail("member", "dataproj", 1)
         .await
-        .expect("read imported issue")
-        .expect("imported issue exists");
+        .expect("read seeded issue")
+        .expect("seeded issue exists");
     assert_eq!(issue.title, "Issue 1");
     assert_eq!(issue.body_markdown, "issue body");
     assert_eq!(issue.attachments.len(), 1);
     assert_eq!(issue.comments.len(), 1);
 
     let post = repo
-        .read_posting_detail_for_viewer("member", "dataproj", 2, None)
+        .read_posting_detail_for_viewer("member", "dataproj", 1, None)
         .await
-        .expect("read imported post")
-        .expect("imported post exists");
+        .expect("read seeded post")
+        .expect("seeded post exists");
     assert_eq!(post.title, "Post 1");
     assert_eq!(post.body_markdown, "post body");
     assert_eq!(post.attachments.len(), 1);

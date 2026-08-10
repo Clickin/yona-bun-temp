@@ -1831,6 +1831,47 @@ pub struct UpdatePullRequestCommentInput {
     pub pull_request_number: i64,
 }
 
+/// Legacy `pull_request_event` row for site-data import.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteImportPullRequestEventInput {
+    pub id: i64,
+    pub sender_login_id: String,
+    pub event_type: String,
+    pub old_value: String,
+    pub new_value: String,
+    pub created_at: Option<DateTime>,
+}
+
+/// Legacy `comment_thread` row for site-data import.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteImportPullRequestThreadInput {
+    pub id: i64,
+    pub author_id: i64,
+    pub author_login_id: String,
+    pub author_name: String,
+    pub dtype: String,
+    pub state: String,
+    pub commit_id: String,
+    pub path: String,
+    pub line: i64,
+    pub created_at: Option<DateTime>,
+}
+
+/// Legacy `review_comment` / `commit_comment` row for site-data import.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteImportPullRequestCommentInput {
+    pub id: i64,
+    pub author_id: i64,
+    pub author_login_id: String,
+    pub author_name: String,
+    pub body_markdown: String,
+    pub commit_id: String,
+    pub path: String,
+    pub line: i64,
+    pub thread_id: i64,
+    pub created_at: Option<DateTime>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestThreadStateInput {
     pub actor_id: i64,

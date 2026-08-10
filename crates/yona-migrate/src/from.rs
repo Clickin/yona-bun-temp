@@ -3,32 +3,70 @@ use std::path::PathBuf;
 
 use anyhow::{Context as _, Result};
 
+/// Legacy Yona external-API surface recognized by this tool.
+///
+/// - `GET /sites/export`                 — full DB table dump; session (site manager) only.
+/// - `GET /-_-api/v1/owners/{owner}/projects/{project}/exports`
+///                                       — project export; PAT (`Authorization: token <pat>`).
+/// - `GET /-_-api/v1/admin/users`        — user list; PAT.
+/// - `POST /-_-api/v1/users/token`       — PAT creation.
+/// - `GET /migration/{owner}/projects/{project}/{labels,issuelabel,milestones,issues,posts}`
+///                                       — legacy migration helpers; session.
+///
+/// Legacy authentication is a personal access token sent as
+/// `Authorization: token <pat>` + `Yona-Token: <pat>` (the legacy `UserApi`
+/// parses `Authorization.split("token")[1]`, so `Bearer` fails). The new
+/// Rust app accepts `Authorization: Bearer <token>`.
+#[allow(dead_code)]
+pub fn describe_legacy_routes() -> &'static str {
+    "GET /sites/export\n\
+     GET /-_-api/v1/owners/{owner}/projects/{project}/exports\n\
+     GET /-_-api/v1/admin/users\n\
+     POST /-_-api/v1/users/token\n\
+     GET /migration/{owner}/projects/{project}/{labels,issuelabel,milestones,issues,posts}"
+}
+
+/// Legacy-side authentication: PAT (`token` prefix) or a session cookie.
+#[derive(Clone, Debug)]
+pub enum FromAuth {
+    /// Personal access token (`Authorization: token <pat>`, `Yona-Token`).
+    Token(String),
+    /// Session cookie (site-manager session copied from the browser).
+    Cookie(String),
+}
+
+/// Legacy request headers (PAT convention).
+pub fn legacy_auth_headers(auth: &FromAuth) -> Vec<(&'static str, String)> {
+    match auth {
+        FromAuth::Token(token) => vec![
+            ("Authorization", format!("token {}", token)),
+            ("Yona-Token", token.to_owned()),
+        ],
+        FromAuth::Cookie(cookie) => vec![("Cookie", cookie.to_owned())],
+    }
+}
+
+/// New-app (Yoram) request headers.
+pub fn yoram_auth_headers(token: &str) -> Vec<(&'static str, String)> {
+    vec![("Authorization", format!("Bearer {}", token))]
+}
+
 /// One table's worth of rows collected from the source.
 pub struct SourceTableSet {
     pub tables: Vec<(String, Vec<serde_json::Value>)>,
 }
 
-fn auth_headers(token: &str) -> Vec<(&'static str, String)> {
-    // Legacy Yona accepts "Yona-Token" header. New Rust server accepts "Authorization: Bearer".
-    // Send both — legacy ignores Bearer, new server ignores Yona-Token.
-    vec![
-        ("Authorization", format!("Bearer {}", token)),
-        ("Yona-Token", token.to_owned()),
-    ]
-}
-
 /// Read the full site export from a legacy Yona instance.
 ///
 /// GET `{base_url}/sites/export` — returns raw DB table dump.
-/// Requires authentication via `Authorization: Bearer {token}` or `Yona-Token {token}`.
-pub fn read_site_export(base_url: &str, token: &str) -> Result<SourceTableSet> {
+pub fn read_site_export(base_url: &str, auth: &FromAuth) -> Result<SourceTableSet> {
     let url = format!("{}/sites/export", base_url.trim_end_matches('/'));
     let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(300))
+        .timeout(std::time::Duration::from_secs(600))
         .build()?;
 
     let mut req = client.get(&url).header("Accept", "application/json");
-    for (k, v) in auth_headers(token) {
+    for (k, v) in legacy_auth_headers(auth) {
         req = req.header(k, &v);
     }
 
@@ -56,21 +94,19 @@ pub fn read_site_export(base_url: &str, token: &str) -> Result<SourceTableSet> {
     Ok(SourceTableSet { tables })
 }
 
-/// Read the project-level export from a Yona/Yoram instance.
+/// Read the project-level export from a legacy Yona instance.
 ///
-/// GET `{base_url}/-_-api/v1/owners/{owner}/projects/{project}/exports` (Yona)
-/// or GET `{base_url}/api/v1/owners/{owner}/projects/{project}/exports` (Yoram)
+/// GET `{base_url}/-_-api/v1/owners/{owner}/projects/{project}/exports` (legacy PAT)
 pub fn read_project_export(
     base_url: &str,
-    token: &str,
+    auth: &FromAuth,
     owner: &str,
     project: &str,
 ) -> Result<serde_json::Value> {
     let base = base_url.trim_end_matches('/');
-    // Try Yoram API path first, fall back to legacy Yona path
     let paths = [
-        format!("{}/api/v1/owners/{}/projects/{}/exports", base, owner, project),
         format!("{}/-_-api/v1/owners/{}/projects/{}/exports", base, owner, project),
+        format!("{}/api/v1/owners/{}/projects/{}/exports", base, owner, project),
     ];
 
     let client = reqwest::blocking::Client::builder()
@@ -80,7 +116,7 @@ pub fn read_project_export(
     let mut last_error = None;
     for url in &paths {
         let mut req = client.get(url).header("Accept", "application/json");
-        for (k, v) in auth_headers(token) {
+        for (k, v) in legacy_auth_headers(auth) {
             req = req.header(k, &v);
         }
 
@@ -161,6 +197,38 @@ mod tests {
         assert_eq!(base64_encode(b"a"), "YQ==");
         assert_eq!(base64_encode(b"abc"), "YWJj");
         assert_eq!(base64_encode(b""), "");
+    }
+
+    #[test]
+    fn test_legacy_auth_headers_use_token_prefix_not_bearer() {
+        let headers = legacy_auth_headers(&FromAuth::Token("pat-123".to_string()));
+        let authorization = headers
+            .iter()
+            .find(|(name, _)| *name == "Authorization")
+            .unwrap()
+            .1
+            .clone();
+        assert!(authorization.starts_with("token "), "got {authorization}");
+        assert!(!authorization.starts_with("Bearer"), "got {authorization}");
+        let yona_token = headers
+            .iter()
+            .find(|(name, _)| *name == "Yona-Token")
+            .unwrap()
+            .1
+            .clone();
+        assert_eq!(yona_token, "pat-123");
+    }
+
+    #[test]
+    fn test_cookie_auth_header() {
+        let headers = legacy_auth_headers(&FromAuth::Cookie("PLAY_SESSION=abc".to_string()));
+        assert_eq!(headers, vec![("Cookie", "PLAY_SESSION=abc".to_string())]);
+    }
+
+    #[test]
+    fn test_yoram_auth_headers_use_bearer() {
+        let headers = yoram_auth_headers("tok");
+        assert_eq!(headers, vec![("Authorization", "Bearer tok".to_string())]);
     }
 
     #[test]

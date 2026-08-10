@@ -46,7 +46,8 @@ use crate::repo_types::{
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, ReviewThreadRouteContext, SearchContextRecord, SearchCountsRecord,
     SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
-    SiteAdminToggleResult, SiteImportProjectCounterSnapshot, SiteIssueListRecord,
+    SiteAdminToggleResult, SiteImportProjectCounterSnapshot, SiteImportPullRequestCommentInput,
+    SiteImportPullRequestEventInput, SiteImportPullRequestThreadInput, SiteIssueListRecord,
     SiteNoAvatarUserRecord, SitePostingListRecord, SiteProjectListRecord,
     SiteUserAvatarFromAttachmentResult, SiteUserDeleteResult, SiteUserListFilter,
     SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
@@ -522,6 +523,8 @@ mod repo_role_project_helpers;
 mod repo_search;
 #[path = "site_admin.rs"]
 mod repo_site_admin;
+#[path = "site_import.rs"]
+mod repo_site_import;
 #[path = "site_import_rollback.rs"]
 mod repo_site_import_rollback;
 #[path = "user.rs"]

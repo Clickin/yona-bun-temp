@@ -5640,3 +5640,269 @@ async fn site_admin_mail_sender_accepts_runtime_smtp_from_override() {
     assert_eq!(options["sender"], "override@yona.example");
     assert_eq!(options["notConfiguredItems"], json!([]));
 }
+
+#[tokio::test]
+async fn site_admin_migration_token_auth_restores_orgs_prs_passwords_and_ids() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (_admin_csrf, _admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+    let token = repo
+        .reset_api_token_for_user(admin_id)
+        .await
+        .expect("api token");
+
+    // Legacy SHA-256 hash for "pass" (Sha256Hash(password, salt, 1024)).
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "id": 101,
+            "loginId": "imported",
+            "displayName": "Imported",
+            "emailAddress": "imported@example.com",
+            "password": "r0egKhZzB4AkoXUp9kRF1BNxv9LWeaLAhV0yhz1lgmU=",
+            "passwordSalt": "c2FsdC1mb3ItdGVzdA==",
+            "state": "ACTIVE",
+            "isSiteAdmin": false,
+            "createdAt": "2020-01-01T00:00:01+0000",
+            "lastStateModifiedAt": "2020-01-01T00:00:02+0000"
+        }],
+        "organizations": [{
+            "id": 10,
+            "name": "myorg",
+            "description": "org desc",
+            "createdAt": "2020-01-01T00:00:00+0000"
+        }],
+        "organizationMembers": [{
+            "id": 100,
+            "organizationId": 10,
+            "userId": 101,
+            "role": "org_admin"
+        }],
+        "projects": [{
+            "id": 20,
+            "ownerName": "myorg",
+            "projectName": "repo",
+            "overview": "Migrated repo",
+            "projectScope": "protected",
+            "projectVcs": "GIT",
+            "organizationId": 10,
+            "createdAt": "2020-01-01T00:00:00+0000"
+        }],
+        "projectMembers": [{
+            "id": 200,
+            "loginId": "imported",
+            "ownerName": "myorg",
+            "projectName": "repo",
+            "role": "manager"
+        }],
+        "issues": [{
+            "id": 50,
+            "issueNumber": "1",
+            "title": "Migrated issue",
+            "bodyMarkdown": "issue body",
+            "state": "open",
+            "authorLoginId": "imported",
+            "ownerName": "myorg",
+            "projectName": "repo",
+            "createdAt": "2020-01-02T03:00:00+0000",
+            "updatedAt": "2020-01-02T04:00:00+0000",
+            "comments": [{
+                "id": 51,
+                "authorLoginId": "imported",
+                "contentsMarkdown": "issue comment",
+                "createdAt": "2020-01-02T05:00:00+0000"
+            }],
+            "labels": [],
+            "attachments": []
+        }],
+        "posts": [{
+            "id": 60,
+            "postNumber": "1",
+            "title": "Migrated post",
+            "bodyMarkdown": "post body",
+            "authorLoginId": "imported",
+            "ownerName": "myorg",
+            "projectName": "repo",
+            "notice": false,
+            "readme": false,
+            "createdAt": "2020-01-03T00:00:00+0000",
+            "updatedAt": "2020-01-03T00:00:00+0000",
+            "comments": [],
+            "labels": [],
+            "attachments": []
+        }],
+        "pullRequests": [{
+            "id": 70,
+            "projectId": 20,
+            "contributorId": 101,
+            "receiverId": 101,
+            "number": 1,
+            "title": "Migrated PR",
+            "bodyMarkdown": "pr body",
+            "state": "OPEN",
+            "isMerged": false,
+            "createdAt": "2020-01-04T00:00:00+0000",
+            "updatedAt": "2020-01-04T00:00:00+0000",
+            "events": [{
+                "id": 71,
+                "pullRequestId": 70,
+                "senderLoginId": "imported",
+                "eventType": "NEW_PULL_REQUEST",
+                "newValue": "Migrated PR",
+                "createdAt": "2020-01-04T00:00:00+0000"
+            }],
+            "threads": [],
+            "reviewComments": [],
+            "commitComments": []
+        }]
+    });
+
+    // Token-authenticated import (Bearer, no CSRF).
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/site/import")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::from(payload.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let imported = response_json(response).await;
+    assert_eq!(imported["importedUsers"], 1);
+    assert_eq!(imported["importedOrganizations"], 1);
+    assert_eq!(imported["importedOrganizationMembers"], 1);
+    assert_eq!(imported["importedProjects"], 1);
+    assert_eq!(imported["importedProjectMembers"], 1);
+    assert_eq!(imported["importedIssues"], 1);
+    assert_eq!(imported["importedPosts"], 1);
+    assert_eq!(imported["importedPullRequests"], 1);
+
+    // Legacy ids preserved and FKs intact.
+    let user = repo
+        .find_user_by_login_id("imported")
+        .await
+        .expect("read user")
+        .expect("imported user exists");
+    assert_eq!(user.id, 101);
+    assert_eq!(
+        user.password_hash,
+        "r0egKhZzB4AkoXUp9kRF1BNxv9LWeaLAhV0yhz1lgmU="
+    );
+    assert_eq!(user.password_salt.as_deref(), Some("c2FsdC1mb3ItdGVzdA=="));
+    let org = repo
+        .read_organization_by_id(10)
+        .await
+        .expect("read org")
+        .expect("imported org exists");
+    assert_eq!(org.organization_name, "myorg");
+    let project = repo
+        .read_project_by_owner_and_name("myorg", "repo")
+        .await
+        .expect("read project")
+        .expect("imported project exists");
+    assert_eq!(project.id, 20);
+    assert_eq!(project.organization_id, Some(10));
+    let issue = repo
+        .read_issue_detail("myorg", "repo", 1)
+        .await
+        .expect("read issue")
+        .expect("imported issue exists");
+    assert_eq!(issue.id, 50);
+    assert_eq!(issue.title, "Migrated issue");
+    assert_eq!(issue.comments.len(), 1);
+    let post = repo
+        .read_posting_detail_for_viewer("myorg", "repo", 1, None)
+        .await
+        .expect("read post")
+        .expect("imported post exists");
+    assert_eq!(post.id, 60);
+    let pr = repo
+        .read_pull_request_detail("myorg", "repo", 1, None)
+        .await
+        .expect("read pr")
+        .expect("imported pr exists");
+    assert_eq!(pr.title, "Migrated PR");
+
+    // The legacy SHA-256 hash keeps the old password working.
+    let (login_csrf, login_cookie) = bootstrap(app.clone()).await;
+    let sign_in = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &login_cookie)
+                .header("x-csrf-token", &login_csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"imported\",\"password\":\"pass\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in.status(), StatusCode::OK);
+
+    // Token-authenticated site export returns the same structure.
+    let export = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/site/export")
+                .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(export.status(), StatusCode::OK);
+    let exported = response_json(export).await;
+    assert_eq!(exported["format"], "yobi-data");
+    assert_eq!(
+        exported["projects"]
+            .as_array()
+            .expect("projects array")
+            .iter()
+            .find(|project| project["projectName"] == "repo")
+            .expect("exported project")["ownerName"],
+        "myorg"
+    );
+    let exported_issue = exported["issues"]
+        .as_array()
+        .expect("issues array")
+        .iter()
+        .find(|issue| issue["issueNumber"] == "1")
+        .expect("exported issue");
+    assert_eq!(exported_issue["title"], "Migrated issue");
+    assert_eq!(exported_issue["id"], 50);
+
+    // A non-admin token is rejected on the site-import surface.
+    let (_, _, plain_id) = register_user(app.clone(), "plain").await;
+    let plain_token = repo
+        .reset_api_token_for_user(plain_id)
+        .await
+        .expect("plain token");
+    let forbidden = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/site/export")
+                .header(http::header::AUTHORIZATION, format!("Bearer {plain_token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+}
