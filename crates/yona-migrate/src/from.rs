@@ -143,6 +143,66 @@ pub fn read_project_export(
 }
 
 /// Read site or project export from a local JSON file.
+/// Read the site export from a running Yoram instance (Yoram→Yoram).
+///
+/// GET `{base_url}/api/v1/site/export` with `Authorization: Bearer <token>`.
+/// The response is already in the site-import payload shape (format
+/// "yobi-data", camelCase, id-bearing items), so it feeds the target import
+/// without the legacy table transform.
+pub fn read_yoram_site_export(base_url: &str, token: &str) -> Result<serde_json::Value> {
+    let url = format!("{}/api/v1/site/export", base_url.trim_end_matches('/'));
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(600))
+        .build()?;
+    let response = client
+        .get(&url)
+        .header("Accept", "application/json")
+        .bearer_auth(token)
+        .send()
+        .context("Failed to fetch site export from Yoram")?;
+    if !response.status().is_success() {
+        anyhow::bail!(
+            "Site export request failed: HTTP {} {}",
+            response.status(),
+            response.status().canonical_reason().unwrap_or("unknown"),
+        );
+    }
+    response.json().context("Failed to parse Yoram site export")
+}
+
+/// Fetch one attachment's bytes from the source Yoram instance.
+///
+/// GET `{base_url}/files/{id}` with Bearer auth — the app serves attachment
+/// bytes over HTTP regardless of its storage backend (local partition, S3,
+/// ...), which is what keeps the migrator backend-agnostic.
+pub fn fetch_attachment_bytes(
+    base_url: &str,
+    token: &str,
+    attachment_id: i64,
+) -> Result<Vec<u8>> {
+    let url = format!(
+        "{}/files/{}?download=1",
+        base_url.trim_end_matches('/'),
+        attachment_id
+    );
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(600))
+        .build()?;
+    let response = client
+        .get(&url)
+        .bearer_auth(token)
+        .send()
+        .context("Failed to fetch attachment from source")?;
+    if !response.status().is_success() {
+        anyhow::bail!(
+            "Attachment {} fetch failed: HTTP {}",
+            attachment_id,
+            response.status()
+        );
+    }
+    Ok(response.bytes()?.to_vec())
+}
+
 pub fn read_from_file(path: &PathBuf) -> Result<serde_json::Value> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read file {}", path.display()))?;

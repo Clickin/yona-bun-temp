@@ -38,6 +38,11 @@ pub struct SiteUserRecord {
     pub is_site_admin: bool,
     pub last_state_modified_at: Option<DateTime>,
     pub login_id: String,
+    /// Password hash carried in site exports so a Yoram→Yoram migration
+    /// preserves existing logins (site-admin-only surface, same data the
+    /// DB-direct migration path already reads).
+    pub password_hash: Option<String>,
+    pub password_salt: Option<String>,
     pub state: String,
 }
 

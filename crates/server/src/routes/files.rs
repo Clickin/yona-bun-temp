@@ -381,10 +381,23 @@ pub(crate) async fn get_uploaded_file(
     };
     let is_avatar = attachment.container_type == "USER_AVATAR";
     if !is_avatar {
-        let actor_id = service
+        // Session first, then API token (migration tool fetches attachment
+        // bytes from the source over HTTP — S3-backed storage stays behind
+        // the app, so the REST file route is the durable byte source).
+        let session_actor = service
             .session_manager
             .read_session_from_headers(&headers)
             .and_then(|session| session.user_id);
+        let token_actor = match crate::routes::utils::migration_api_token_from_headers(&headers) {
+            Some(token) => match &service.backend {
+                PilotBackend::Repository(repository) => {
+                    repository.read_user_id_by_api_token(&token).await.ok().flatten()
+                }
+                PilotBackend::Static => None,
+            },
+            None => None,
+        };
+        let actor_id = session_actor.or(token_actor);
         match attachment_container_read_allowed(
             repository,
             &attachment.container_type,

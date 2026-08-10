@@ -1012,7 +1012,7 @@ pub(crate) async fn rest_migration_actor_from_user_id(
 }
 
 /// API token from `Authorization: Bearer <token>` or `Yona-Token: <token>`.
-fn migration_api_token_from_headers(headers: &HeaderMap) -> Option<String> {
+pub(crate) fn migration_api_token_from_headers(headers: &HeaderMap) -> Option<String> {
     if let Some(value) = headers
         .get("Yona-Token")
         .and_then(|value| value.to_str().ok())

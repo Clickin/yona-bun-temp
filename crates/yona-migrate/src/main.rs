@@ -56,6 +56,19 @@ struct Args {
     #[arg(long, group = "from")]
     from_url: Option<String>,
 
+    /// Source Yoram instance (Yoram→Yoram migration). Reads
+    /// `GET /api/v1/site/export` (Bearer via --from-token) and imports the
+    /// payload as-is; attachment bytes are fetched from the source's
+    /// `/files/{id}` route, so the source storage backend (local partition,
+    /// S3, ...) never needs direct access.
+    #[arg(long, group = "from")]
+    from_yoram_url: Option<String>,
+
+    /// Source login id of the API-token owner (Yoram git/svn smart HTTP
+    /// Basic auth is `login:api-token`; default: each project owner).
+    #[arg(long)]
+    from_login: Option<String>,
+
     /// Source personal access token (legacy `Authorization: token <pat>`)
     #[arg(long, requires = "from_url")]
     from_token: Option<String>,
@@ -137,6 +150,7 @@ fn main() -> Result<()> {
         Mode::FileRead => run_file_read(&args),
         Mode::DbRead => run_db_read(&args),
         Mode::H2Read => run_h2_read(&args),
+        Mode::YoramRead => run_yoram_to_yoram(&args),
     }
 }
 
@@ -151,9 +165,13 @@ enum Mode {
     FileRead,
     DbRead,
     H2Read,
+    YoramRead,
 }
 
 fn determine_mode(args: &Args) -> Mode {
+    if args.from_yoram_url.is_some() {
+        return Mode::YoramRead;
+    }
     if args.from_h2_url.is_some() {
         return Mode::H2Read;
     }
@@ -309,6 +327,222 @@ fn run_h2_read(args: &Args) -> Result<()> {
     let payload = from::read_from_h2(h2_url, h2_jar)?;
     let tables = dump_tables(&payload)?;
     run_table_import(tables, args)
+}
+
+/// Yoram→Yoram: the site export payload IS the site import payload, so no
+/// legacy table transform runs. Attachments carry `hash` + `id`; the bytes
+/// are fetched from the source's `/files/{id}` route and uploaded as
+/// `uploads/{hash}` (the placeholder flow keys rows by hash).
+fn run_yoram_to_yoram(args: &Args) -> Result<()> {
+    let from_url = args.from_yoram_url.as_ref().unwrap();
+    let from_token = match &args.from_token {
+        Some(token) => token.clone(),
+        None => die("--from-yoram-url needs --from-token (Yoram Bearer token)"),
+    };
+    let to_token = args.to_token.as_deref();
+
+    eprintln!("Reading Yoram site export from {from_url} ...");
+    let payload = from::read_yoram_site_export(from_url, &from_token)?;
+
+    let count = |key: &str| {
+        payload
+            .get(key)
+            .and_then(|value| value.as_array())
+            .map(|rows| rows.len())
+            .unwrap_or(0)
+    };
+    let attachment_pairs = collect_payload_attachments(&payload);
+    eprintln!(
+        "Read export: users={} projects={} issues={} posts={} attachments={}",
+        count("users"),
+        count("projects"),
+        count("issues"),
+        count("posts"),
+        attachment_pairs.len()
+    );
+
+    if args.dry_run {
+        eprintln!("DRY RUN — would import the export payload as-is");
+        return Ok(());
+    }
+
+    if let Some(file_path) = &args.to_file {
+        to::write_to_file(file_path, &payload)?;
+        eprintln!("Wrote export to {}", file_path.display());
+        return Ok(());
+    }
+
+    if let Some(to_url) = &args.to_url {
+        let to_token = to_token.unwrap();
+        // Upload attachment bytes before the import POST (parallel, deduped
+        // by the server's path-exists check), matching the DB-direct flow.
+        let uploader = if attachment_pairs.is_empty() {
+            None
+        } else {
+            let from_url = from_url.clone();
+            let from_token = from_token.clone();
+            let to_url = to_url.clone();
+            let to_token = to_token.to_string();
+            let pairs = attachment_pairs.clone();
+            Some(std::thread::spawn(move || {
+                upload_attachments_from_url(&from_url, &from_token, &to_url, &to_token, &pairs)
+            }))
+        };
+        eprintln!("Importing into {to_url} ...");
+        let result = to::write_site_import(to_url, to_token, &payload)?;
+        eprintln!("Import result: {}", serde_json::to_string_pretty(&result)?);
+        if let Some(uploader) = uploader {
+            match uploader.join() {
+                Ok(Ok(report)) => eprintln!("{report}"),
+                Ok(Err(error)) => eprintln!("Attachment upload failed: {error:#}"),
+                Err(_) => eprintln!("Attachment uploader thread panicked"),
+            }
+        }
+        if args.with_repos {
+            let ctx = payload_to_transformation_context(&payload);
+            transfer_repositories(args, &ctx)?;
+        }
+    } else {
+        to::write_to_stdout(&payload)?;
+    }
+    Ok(())
+}
+
+/// Collect `(hash, id)` pairs for every attachment in the export payload
+/// (issues/posts/milestones and their comments).
+fn collect_payload_attachments(payload: &serde_json::Value) -> Vec<(String, i64)> {
+    let mut pairs = Vec::new();
+    for key in ["issues", "posts", "milestones"] {
+        let Some(items) = payload.get(key).and_then(|value| value.as_array()) else {
+            continue;
+        };
+        for item in items {
+            for container in std::iter::once(item).chain(
+                item.get("comments")
+                    .and_then(|value| value.as_array())
+                    .into_iter()
+                    .flatten(),
+            ) {
+                let Some(attachments) = container
+                    .get("attachments")
+                    .and_then(|value| value.as_array())
+                else {
+                    continue;
+                };
+                for att in attachments {
+                    let hash = att.get("hash").and_then(|value| value.as_str());
+                    let id = att.get("id").and_then(|value| value.as_i64());
+                    if let (Some(hash), Some(id)) = (hash, id) {
+                        if !hash.is_empty() && id > 0 {
+                            pairs.push((hash.to_string(), id));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    pairs.sort();
+    pairs.dedup();
+    pairs
+}
+
+/// Fetch attachment bytes from the source (`/files/{id}`, Bearer) and upload
+/// them to the target (`POST /api/v1/site/import/files`, hash + file).
+fn upload_attachments_from_url(
+    from_url: &str,
+    from_token: &str,
+    to_url: &str,
+    to_token: &str,
+    pairs: &[(String, i64)],
+) -> Result<String> {
+    use std::sync::mpsc;
+    use std::sync::{Arc, Mutex};
+
+    if pairs.is_empty() {
+        return Ok("No attachment files to upload".to_string());
+    }
+    let queue = Arc::new(Mutex::new(pairs.to_vec()));
+    let uploaded = Arc::new(Mutex::new(0usize));
+    let missing = Arc::new(Mutex::new(0usize));
+    let (failure_tx, failure_rx) = mpsc::channel::<String>();
+    let workers = 4.min(queue.lock().expect("queue lock").len());
+    let fetch_client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(600))
+        .build()
+        .context("failed to build fetch client")?;
+    let upload_client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(600))
+        .build()
+        .context("failed to build upload client")?;
+    std::thread::scope(|scope| {
+        for _ in 0..workers {
+            let queue = queue.clone();
+            let uploaded = uploaded.clone();
+            let missing = missing.clone();
+            let failure_tx = failure_tx.clone();
+            let from_url = from_url.to_string();
+            let from_token = from_token.to_string();
+            let to_url = to_url.to_string();
+            let to_token = to_token.to_string();
+            let fetch_client = &fetch_client;
+            let upload_client = &upload_client;
+            scope.spawn(move || {
+                loop {
+                    let pair = {
+                        let mut queue = queue.lock().expect("queue lock");
+                        queue.pop()
+                    };
+                    let Some((hash, id)) = pair else { break };
+                    let bytes = match from::fetch_attachment_bytes(&from_url, &from_token, id) {
+                        Ok(bytes) => bytes,
+                        Err(error) => {
+                            *missing.lock().expect("missing lock") += 1;
+                            let _ = failure_tx.send(format!("{hash} (id {id}): {error:#}"));
+                            continue;
+                        }
+                    };
+                    let path = std::env::temp_dir().join(format!("yona-migrate-att-{hash}"));
+                    let _ = std::fs::write(&path, &bytes);
+                    match upload_one_file(upload_client, &to_url, &to_token, &hash, &path) {
+                        Ok(()) => {
+                            *uploaded.lock().expect("uploaded lock") += 1;
+                        }
+                        Err(error) => {
+                            let _ = failure_tx.send(format!("{hash}: {error:#}"));
+                        }
+                    }
+                    let _ = std::fs::remove_file(&path);
+                }
+            });
+        }
+    });
+    drop(failure_tx);
+    let failures = failure_rx.try_iter().collect::<Vec<_>>();
+    let uploaded = *uploaded.lock().expect("uploaded lock");
+    let missing = *missing.lock().expect("missing lock");
+    if let Some(first) = failures.first() {
+        eprintln!("Attachment fetch/upload failures ({}): {first}", failures.len());
+    }
+    Ok(format!(
+        "Attachment transfer done: {uploaded} uploaded, {missing} fetch failures, {} other failures",
+        failures.len().saturating_sub(missing)
+    ))
+}
+
+/// Build a TransformationContext from an export payload (for repo transfer).
+fn payload_to_transformation_context(payload: &serde_json::Value) -> site_transform::TransformationContext {
+    let mut ctx = site_transform::TransformationContext::new();
+    if let Some(projects) = payload.get("projects").and_then(|value| value.as_array()) {
+        for project in projects {
+            ctx.projects.push(serde_json::json!({
+                "id": project.get("id").and_then(|v| v.as_i64()).unwrap_or(0),
+                "ownerName": project.get("ownerName").and_then(|v| v.as_str()).unwrap_or(""),
+                "projectName": project.get("projectName").and_then(|v| v.as_str()).unwrap_or(""),
+                "projectVcs": project.get("vcs").and_then(|v| v.as_str()).unwrap_or("GIT"),
+            }));
+        }
+    }
+    ctx
 }
 
 /// Extract `(table, rows)` pairs from a dump object.
@@ -637,6 +871,17 @@ fn transfer_repositories(args: &Args, ctx: &site_transform::TransformationContex
         return Ok(());
     };
     let Some(repo_dir) = &args.from_repo_dir else {
+        if let Some(yoram_url) = &args.from_yoram_url {
+            return transfer_repositories_from_yoram(
+                yoram_url,
+                args.from_token.as_deref(),
+                args.from_login.as_deref(),
+                to_url,
+                to_login,
+                to_token,
+                ctx,
+            );
+        }
         if args.from_password.is_none() {
             eprintln!("Skipping repository transfer: specify --from-repo-dir (or --from-password to clone over HTTP)");
             return Ok(());
@@ -700,6 +945,52 @@ fn transfer_repositories_over_http(
         run_cmd("git", &["clone", "--mirror", &source, &format!(".yona-migrate-{}-{}.git", owner, name)])?;
         run_cmd("git", &["-C", &format!(".yona-migrate-{}-{}.git", owner, name), "push", "--mirror", &mirror])?;
         let _ = std::fs::remove_dir_all(format!(".yona-migrate-{}-{}.git", owner, name));
+    }
+    Ok(())
+}
+
+fn transfer_repositories_from_yoram(
+    from_url: &str,
+    from_token: Option<&str>,
+    from_login: Option<&str>,
+    to_url: &str,
+    to_login: &str,
+    to_token: &str,
+    ctx: &site_transform::TransformationContext,
+) -> Result<()> {
+    let Some(from_token) = from_token else {
+        eprintln!("Skipping repository transfer: --from-yoram-url needs --from-token");
+        return Ok(());
+    };
+    for project in &ctx.projects {
+        let owner = project.get("ownerName").and_then(|v| v.as_str()).unwrap_or("");
+        let name = project.get("projectName").and_then(|v| v.as_str()).unwrap_or("");
+        if owner.is_empty() || name.is_empty() {
+            continue;
+        }
+        let vcs = project.get("projectVcs").and_then(|v| v.as_str()).unwrap_or("GIT");
+        if vcs.eq_ignore_ascii_case("Subversion") {
+            eprintln!("Skipping SVN over HTTP transfer for {owner}/{name}: use --from-repo-dir");
+            continue;
+        }
+        // Yoram smart HTTP Basic auth is `login:api-token`.
+        let source_login = from_login.unwrap_or(owner);
+        let source_url = format!(
+            "{}/{}/{}.git",
+            from_url.trim_end_matches('/'),
+            owner,
+            name
+        );
+        let source = with_basic_auth_url(&source_url, source_login, from_token);
+        let mirror = format!("{}/{}/{}.git", to_url.trim_end_matches('/'), owner, name);
+        let mirror = with_basic_auth_url(&mirror, to_login, to_token);
+        let clone_dir = format!(".yona-migrate-{}-{}.git", owner, name);
+        eprintln!("Mirror-cloning {source_url} ...");
+        let _ = std::fs::remove_dir_all(&clone_dir);
+        run_cmd("git", &["clone", "--mirror", &source, &clone_dir])?;
+        let push = run_cmd("git", &["-C", &clone_dir, "push", "--mirror", &mirror]);
+        let _ = std::fs::remove_dir_all(&clone_dir);
+        push?;
     }
     Ok(())
 }

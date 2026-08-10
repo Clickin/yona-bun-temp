@@ -82,6 +82,13 @@ struct RestSiteUserItem {
     is_site_admin: bool,
     last_state_modified_at: String,
     login_id: String,
+    /// Migration-only fields (site-admin surface): carried so a
+    /// Yoram→Yoram site export round-trips through the site import and
+    /// existing logins survive. Omitted when the user has no password.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    password_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    password_salt: Option<String>,
     state: String,
 }
 
@@ -6123,7 +6130,10 @@ async fn rest_export_site_users(
         loop {
             let record = repository
                 .list_site_users(persistence::SiteUserListFilter {
-                    exclude_site_manager: true,
+                    // Migration exports must carry the site manager's own
+                    // account: excluding it orphans every manager-owned
+                    // project (the owner lookup skips them on import).
+                    exclude_site_manager: false,
                     page,
                     query: String::new(),
                     state: state.to_string(),
@@ -6541,6 +6551,8 @@ async fn rest_site_user_from_record(
             .map(|value| value.to_string())
             .unwrap_or_default(),
         login_id: record.login_id,
+        password_hash: record.password_hash,
+        password_salt: record.password_salt,
         state: record.state,
     })
 }

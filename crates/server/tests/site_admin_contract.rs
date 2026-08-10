@@ -219,6 +219,19 @@ async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> 
         .unwrap()
 }
 
+async fn rest_get_with_bearer(app: axum::Router, uri: &str, token: &str) -> Response<Body> {
+    app.oneshot(
+        Request::builder()
+            .method(Method::GET)
+            .uri(uri)
+            .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+}
+
 async fn rest_post(
     app: axum::Router,
     uri: &str,
@@ -1061,7 +1074,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     let forbidden = rest_get(app.clone(), "/yona/sites/export", Some(&member_cookie)).await;
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
 
-    let response = rest_get(app, "/yona/sites/export", Some(&admin_cookie)).await;
+    let response = rest_get(app.clone(), "/yona/sites/export", Some(&admin_cookie)).await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
         response.headers().get(http::header::CONTENT_TYPE).unwrap(),
@@ -1240,6 +1253,44 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
             .is_some_and(|value| !value.is_empty()),
         "site export should carry legacy issue comment createdAt"
     );
+    // Migration round-trip: the site manager's own account must be in the
+    // export (excluding it orphans every manager-owned project on import),
+    // and the export carries the password hash so logins survive a
+    // Yoram→Yoram migration.
+    let manager = payload["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|user| user["loginId"] == "siteboss")
+        .expect("site manager must be part of the site export");
+    assert_eq!(manager["isSiteAdmin"], true);
+    assert!(
+        manager["passwordHash"].as_str().is_some_and(|value| !value.is_empty()),
+        "site export should carry the user password hash"
+    );
+    // The REST export route answers the migration tool over Bearer token.
+    let token = repo
+        .reset_api_token_for_user(admin_id)
+        .await
+        .expect("api token");
+    let bearer_export = rest_get_with_bearer(app.clone(), "/yona/api/v1/site/export", &token).await;
+    assert_eq!(bearer_export.status(), StatusCode::OK);
+    let bearer_payload: Value =
+        serde_json::from_str(&response_text(bearer_export).await).unwrap();
+    assert!(bearer_payload["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|user| user["loginId"] == "siteboss"));
+    // Attachment bytes are served over HTTP to the Bearer token as well
+    // (the migrator's byte source stays backend-agnostic).
+    let bearer_file = rest_get_with_bearer(
+        app.clone(),
+        &format!("/yona/files/{}", export_issue_attachment.id),
+        &token,
+    )
+    .await;
+    assert_eq!(bearer_file.status(), StatusCode::OK);
 }
 
 #[tokio::test]

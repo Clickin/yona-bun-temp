@@ -223,6 +223,8 @@ pub(super) fn site_user_record_from_model(
         is_site_admin,
         last_state_modified_at: user.last_state_modified_date,
         login_id: user.login_id.unwrap_or_default(),
+        password_hash: user.password.clone(),
+        password_salt: user.password_salt.clone(),
         state,
     }
 }
