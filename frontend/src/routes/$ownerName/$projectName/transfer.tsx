@@ -290,7 +290,7 @@ function ProjectTransferBody({
             </button>
           </div>
           <div
-            className={`modal hide${isTransferModalOpen ? " in" : ""}${isTransferModalOpen ? " is-visible" : " is-hidden"}`}
+            className={`modal hide${isTransferModalOpen ? " in" : ""}`}
             id="alertTransfer"
             data-owner="project-transfer-modal"
             aria-hidden={!isTransferModalOpen}

@@ -2228,6 +2228,7 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-wtr-click-selected" &&
@@ -2395,6 +2396,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-wtr-click-selected" &&
@@ -2799,6 +2801,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-wtr-click-selected" &&

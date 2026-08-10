@@ -82,6 +82,14 @@ struct Args {
     #[arg(long)]
     from_db_url: Option<String>,
 
+    /// Source H2 database (jdbc:h2:...) — read via the legacy host's H2 jar.
+    #[arg(long)]
+    from_h2_url: Option<String>,
+
+    /// Path to the H2 jar (required with --from-h2-url; ships with Yona).
+    #[arg(long, requires = "from_h2_url")]
+    from_h2_jar: Option<PathBuf>,
+
     /// Legacy bare-repository root (repos at `{root}/{project_id}` / `{project_id}.git` / `{project_id}.svn`)
     #[arg(long)]
     from_repo_dir: Option<PathBuf>,
@@ -128,6 +136,7 @@ fn main() -> Result<()> {
         Mode::ProjectLevel => run_project_export(&args),
         Mode::FileRead => run_file_read(&args),
         Mode::DbRead => run_db_read(&args),
+        Mode::H2Read => run_h2_read(&args),
     }
 }
 
@@ -141,9 +150,13 @@ enum Mode {
     ProjectLevel,
     FileRead,
     DbRead,
+    H2Read,
 }
 
 fn determine_mode(args: &Args) -> Mode {
+    if args.from_h2_url.is_some() {
+        return Mode::H2Read;
+    }
     if args.from_db_url.is_some() {
         return Mode::DbRead;
     }
@@ -284,6 +297,16 @@ fn run_db_read(args: &Args) -> Result<()> {
     eprintln!("Reading dump from database {db_url} ...");
 
     let payload = from::read_from_db(db_url)?;
+    let tables = dump_tables(&payload)?;
+    run_table_import(tables, args)
+}
+
+fn run_h2_read(args: &Args) -> Result<()> {
+    let h2_url = args.from_h2_url.as_ref().unwrap();
+    let h2_jar = args.from_h2_jar.as_ref().unwrap();
+    eprintln!("Reading dump from H2 database {h2_url} ...");
+
+    let payload = from::read_from_h2(h2_url, h2_jar)?;
     let tables = dump_tables(&payload)?;
     run_table_import(tables, args)
 }

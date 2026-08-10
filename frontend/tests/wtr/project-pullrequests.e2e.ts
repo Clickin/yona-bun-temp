@@ -1935,6 +1935,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(attr.name === "style" && normalizeAttr(attr) === ""),
@@ -2125,6 +2126,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
             !(attr.name === "style" && normalizeAttr(attr) === ""),

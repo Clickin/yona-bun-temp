@@ -1446,10 +1446,16 @@ async function canonicalizeLocator(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
         )
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter(
+          (attr) =>
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            attr.name !== "data-scoped",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .flatMap((attr) => {
           const value = normalizeAttr(attr);
@@ -1517,11 +1523,17 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
         )
         .filter((attr) => !isPin || attr.name === "class" || attr.name === "title")
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter(
+          (attr) =>
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            attr.name !== "data-scoped",
+        )
         .filter((attr) => !(isPinIcon && attr.name === "aria-hidden"))
         .sort((left, right) => left.name.localeCompare(right.name))
         .flatMap((attr) => {
@@ -1623,10 +1635,16 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
         )
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter(
+          (attr) =>
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            attr.name !== "data-scoped",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .flatMap((attr) => {
           const value = normalizeAttr(attr);

@@ -1,4 +1,5 @@
 /// FROM sources — reads from a running legacy Yona or Yoram instance via REST API.
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::{Context as _, Result};
@@ -272,6 +273,203 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
 /// integer column is emitted as a JSON number (parity with the Python dump).
 const BOOL_COLUMNS: &[&str] = &["is_exclusive", "is_conflict", "is_merging"];
 
+/// Read the full site dump from a legacy H2 database (an official Yona
+/// backend) via the H2 jar's JDBC Shell + `CSVWRITE`, producing the same
+/// table JSON the MariaDB path emits. Requires `java` and the H2 jar on the
+/// host (both ship with every Yona distribution). The tool is expected to run
+/// on the legacy server, matching the direct-data-partition architecture.
+pub fn read_from_h2(h2_url: &str, h2_jar: &PathBuf) -> Result<serde_json::Value> {
+    let work_dir = std::env::temp_dir().join(format!("yona-migrate-h2-{}", std::process::id()));
+    std::fs::create_dir_all(&work_dir).context("failed to create H2 work dir")?;
+
+    let mut object = serde_json::Map::new();
+    for (key, table, columns) in DB_TABLES {
+        let types_csv = work_dir.join(format!("types-{table}.csv"));
+        let data_csv = work_dir.join(format!("data-{table}.csv"));
+        let type_sql = format!(
+            "CALL CSVWRITE('{}', 'SELECT COLUMN_NAME, TYPE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ''{}''');",
+            types_csv.display(),
+            table.to_ascii_uppercase()
+        );
+        if run_h2_shell(h2_jar, h2_url, &type_sql).is_err() {
+            eprintln!("H2: table `{table}` not readable, skipping");
+            object.insert((*key).to_string(), serde_json::Value::Array(Vec::new()));
+            continue;
+        }
+        let mut column_types: HashMap<String, String> = HashMap::new();
+        for row in parse_h2_csv(&types_csv)? {
+            if row.len() >= 2 {
+                column_types.insert(row[0].clone(), row[1].to_ascii_uppercase());
+            }
+        }
+        let column_list = columns
+            .iter()
+            .map(|column| format!("`{column}`"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!("SELECT {column_list} FROM `{table}`");
+        let data_sql = format!(
+            "CALL CSVWRITE('{}', '{}');",
+            data_csv.display(),
+            sql.replace('\'', "''")
+        );
+        if run_h2_shell(h2_jar, h2_url, &data_sql).is_err() {
+            eprintln!("H2: table `{table}` not readable, skipping");
+            object.insert((*key).to_string(), serde_json::Value::Array(Vec::new()));
+            continue;
+        }
+        let mut values = Vec::new();
+        for row in parse_h2_csv(&data_csv)? {
+            let mut value = serde_json::Map::new();
+            for (index, column) in columns.iter().enumerate() {
+                let raw = row.get(index).cloned().unwrap_or_default();
+                value.insert(
+                    (*column).to_string(),
+                    h2_cell_to_json(column, &raw, column_types.get(&column.to_ascii_uppercase())),
+                );
+            }
+            values.push(serde_json::Value::Object(value));
+        }
+        object.insert((*key).to_string(), serde_json::Value::Array(values));
+    }
+    let _ = std::fs::remove_dir_all(&work_dir);
+    Ok(serde_json::Value::Object(object))
+}
+
+/// Run one H2 Shell batch; `-sql` accepts multiple statements separated by
+/// newlines.
+fn run_h2_shell(h2_jar: &PathBuf, h2_url: &str, statements: &str) -> Result<()> {
+    let output = std::process::Command::new("java")
+        .args([
+            "-cp",
+            h2_jar.to_str().context("H2 jar path is not UTF-8")?,
+            "org.h2.tools.Shell",
+            "-url",
+            h2_url,
+            "-user",
+            "sa",
+            "-password",
+            "",
+            "-sql",
+            statements,
+        ])
+        .output()
+        .context("failed to spawn java (H2 Shell) — is java on PATH?")?;
+    if !output.status.success() {
+        anyhow::bail!(
+            "H2 Shell failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    Ok(())
+}
+
+/// Parse CSVWRITE output: header row + quoted fields, doubled quotes and
+/// embedded commas/newlines inside quotes.
+fn parse_h2_csv(path: &PathBuf) -> Result<Vec<Vec<String>>> {
+    let content = match std::fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => {
+            return Err(error).context("failed to read H2 CSV");
+        }
+    };
+    let mut rows = Vec::new();
+    let mut fields = Vec::new();
+    let mut field = String::new();
+    let mut in_quotes = false;
+    let mut chars = content.chars().peekable();
+    while let Some(character) = chars.next() {
+        match character {
+            '"' if in_quotes => {
+                if chars.peek() == Some(&'"') {
+                    chars.next();
+                    field.push('"');
+                } else {
+                    in_quotes = false;
+                }
+            }
+            '"' => in_quotes = true,
+            ',' if !in_quotes => {
+                fields.push(std::mem::take(&mut field));
+            }
+            '\n' if !in_quotes => {
+                fields.push(std::mem::take(&mut field));
+                rows.push(std::mem::take(&mut fields));
+            }
+            _ => field.push(character),
+        }
+    }
+    if !field.is_empty() || !fields.is_empty() {
+        fields.push(field);
+        rows.push(fields);
+    }
+    if rows.len() > 1 {
+        rows.remove(0); // header
+    } else {
+        rows.clear();
+    }
+    Ok(rows)
+}
+
+/// Map an H2 CSV cell to the JSON value type the legacy dump uses, driven by
+/// the information_schema data type. Field-name overrides keep parity with
+/// the MariaDB extractor (which emits `notice`/`readme`/`active` as JSON
+/// numbers even though H2 stores them as BOOLEAN).
+fn h2_cell_to_json(column: &str, raw: &str, data_type: Option<&String>) -> serde_json::Value {
+    use chrono::TimeZone as _;
+
+    let data_type = data_type.map(|value| value.as_str()).unwrap_or("VARCHAR");
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return serde_json::Value::Null;
+    }
+    if BOOL_COLUMNS.contains(&column) {
+        return serde_json::Value::Bool(trimmed.eq_ignore_ascii_case("true"));
+    }
+    if INT_FIELDS.contains(&column) {
+        return trimmed
+            .parse::<i64>()
+            .map(|value| serde_json::Value::Number(value.into()))
+            .unwrap_or(serde_json::Value::Null);
+    }
+    if data_type.contains("INT") || data_type == "SMALLINT" || data_type == "TINYINT" {
+        if let Ok(value) = trimmed.parse::<i64>() {
+            return serde_json::Value::Number(value.into());
+        }
+        return serde_json::Value::Null;
+    }
+    if data_type == "BOOLEAN" || data_type == "BIT" {
+        return serde_json::Value::Bool(trimmed.eq_ignore_ascii_case("true"));
+    }
+    if data_type.contains("TIMESTAMP") || data_type == "DATE" || data_type == "DATETIME" {
+        let text = trimmed.trim_end_matches(".0");
+        let millis = chrono::NaiveDateTime::parse_from_str(text, "%Y-%m-%d %H:%M:%S")
+            .or_else(|_| {
+                chrono::NaiveDate::parse_from_str(text, "%Y-%m-%d").map(|date| {
+                    date.and_hms_opt(0, 0, 0).expect("midnight datetime")
+                })
+            })
+            .ok()
+            .and_then(|datetime| chrono::Local.from_local_datetime(&datetime).single())
+            .map(|value| value.timestamp_millis())
+            .unwrap_or(0);
+        return serde_json::Value::Number(millis.into());
+    }
+    serde_json::Value::String(trimmed.to_string())
+}
+
+/// Integer-typed legacy fields (JSON numbers regardless of the H2 column
+/// type), mirroring the MariaDB extractor.
+const INT_FIELDS: &[&str] = &[
+    "active",
+    "default_reviewer_count",
+    "is_using_reviewer_count",
+    "notice",
+    "readme",
+    "remember_me",
+];
+///
 /// Read the full site dump directly from the legacy MySQL/MariaDB database.
 ///
 /// `url` is a `mysql://user:password@host:port/database` connection string.

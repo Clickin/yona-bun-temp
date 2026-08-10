@@ -794,7 +794,7 @@ export function SiteLayoutShell({
       : selectedSearchScope === "group" && groupSearchAction
         ? t("search.scope.group")
         : t("search.scope.all");
-  const globalGnbSearchScopeToggleClassName = `ybtn dropdown-toggle ${undefined}`;
+  const globalGnbSearchScopeToggleClassName = "ybtn dropdown-toggle";
   const handleSearchScopeToggleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();

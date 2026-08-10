@@ -10190,6 +10190,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(node.matches(".markdown-help-item") && attr.name === "id") &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-owner-instance" &&
             attr.name !== "data-style-src" &&
@@ -10262,6 +10263,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-owner-instance" &&
             attr.name !== "data-project-header-owner" &&

@@ -1131,6 +1131,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !(attr.name === "rel" && attr.value === "noreferrer") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-active" &&
             attr.name !== "data-part" &&
@@ -1419,6 +1420,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !(attr.name === "rel" && attr.value === "noreferrer") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-active" &&
             attr.name !== "data-part" &&

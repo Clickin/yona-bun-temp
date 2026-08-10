@@ -244,7 +244,7 @@ function ProjectDeleteFormBody({
             </button>
           </div>
           <div
-            className={`modal hide${deletionModalOpen ? " is-visible" : " is-hidden"}`}
+            className={`modal hide${deletionModalOpen ? " in" : ""}`}
             id="alertDeletion"
             data-owner="project-delete-modal"
             aria-hidden={deletionModalState === "initial" ? undefined : !deletionModalOpen}

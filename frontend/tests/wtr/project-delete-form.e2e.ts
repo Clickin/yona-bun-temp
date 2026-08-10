@@ -1469,6 +1469,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner",
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
@@ -1565,6 +1566,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-scoped" &&
             attr.name !== "data-owner",
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
