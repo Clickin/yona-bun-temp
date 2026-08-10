@@ -506,6 +506,13 @@ pub fn create_svn_repository(repo_path: &Path) -> Result<(), VcsError> {
             repo_path.display()
         )));
     }
+    // svnadmin create is not idempotent (unlike `git init --bare`): a valid
+    // repo left behind by an earlier (possibly rolled-back) import is fine.
+    if repo_path.is_dir()
+        && (repo_path.join("format").exists() || repo_path.join("db").is_dir())
+    {
+        return Ok(());
+    }
 
     let output = svn_command("svnadmin")
         .args(["create"])
@@ -1943,12 +1950,20 @@ pub fn run_git_http_backend(
     if !request.repo_root.exists() || !request.repo_root.is_dir() {
         return Err(VcsError::NotFound);
     }
+    // Resolve a relative data root to an absolute path before handing it to
+    // the child process: git-http-backend re-resolves GIT_PROJECT_ROOT
+    // against its own cwd (which we set to the repo root), so a relative
+    // root would double up (.yona-data/repo/.yona-data/repo) and 404.
+    let repo_root = request
+        .repo_root
+        .canonicalize()
+        .unwrap_or_else(|_| request.repo_root.to_path_buf());
 
     let mut command = Command::new("git");
     command
         .arg("http-backend")
-        .current_dir(request.repo_root)
-        .env("GIT_PROJECT_ROOT", request.repo_root)
+        .current_dir(&repo_root)
+        .env("GIT_PROJECT_ROOT", &repo_root)
         .env("PATH_INFO", request.path_info)
         .env("REQUEST_METHOD", request.method)
         .env("QUERY_STRING", request.query_string)
@@ -4814,5 +4829,71 @@ mod tests {
         let grep_empty = grep_code_files(&repo_path, &find_all.selected_branch, "nonexistent_keyword")
             .expect("grep code files empty");
         assert!(grep_empty.matches.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod git_backend_relative_root_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    /// git-http-backend re-resolves a relative GIT_PROJECT_ROOT against its
+    /// own cwd (the repo root), so a relative data root double-paths and 404s.
+    /// `run_git_http_backend` must canonicalize the root before spawning.
+    #[test]
+    fn run_git_http_backend_accepts_relative_repo_root() {
+        let data_dir = tempdir().expect("git backend tempdir");
+        let repo_dir = data_dir.path().join("repo/1.git");
+        std::fs::create_dir_all(repo_dir.parent().expect("repo parent"))
+            .expect("create repo parent");
+        let output = Command::new("git")
+            .args(["init", "--bare"])
+            .arg(&repo_dir)
+            .output()
+            .expect("git init");
+        assert!(output.status.success());
+
+        let cwd = std::env::current_dir().expect("current dir");
+        let relative_root = relative_path_from(&cwd, &repo_dir.parent().expect("repo parent"));
+        let response = run_git_http_backend(GitHttpBackendRequest {
+            body: &[],
+            content_type: Some("application/x-git-upload-pack-request"),
+            git_protocol: None,
+            method: "GET",
+            path_info: "/1.git/info/refs",
+            query_string: "service=git-upload-pack",
+            remote_addr: "127.0.0.1",
+            remote_user: None,
+            repo_root: &relative_root,
+        })
+        .expect("backend response");
+
+        assert_eq!(response.status, 200);
+        assert!(
+            String::from_utf8_lossy(&response.body).contains("service=git-upload-pack"),
+            "got advertisement: {:?}",
+            String::from_utf8_lossy(&response.body).chars().take(80).collect::<String>()
+        );
+    }
+
+    /// Hand-rolled pathdiff: a relative path from `base` to `target`.
+    fn relative_path_from(base: &std::path::Path, target: &std::path::Path) -> std::path::PathBuf {
+        let base_parts: Vec<&std::ffi::OsStr> = base.components().map(|c| c.as_os_str()).collect();
+        let target_parts: Vec<&std::ffi::OsStr> = target.components().map(|c| c.as_os_str()).collect();
+        let mut common = 0;
+        while common < base_parts.len()
+            && common < target_parts.len()
+            && base_parts[common] == target_parts[common]
+        {
+            common += 1;
+        }
+        let mut result = std::path::PathBuf::new();
+        for _ in common..base_parts.len() {
+            result.push("..");
+        }
+        for part in &target_parts[common..] {
+            result.push(part);
+        }
+        result
     }
 }

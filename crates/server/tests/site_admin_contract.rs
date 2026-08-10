@@ -5906,3 +5906,93 @@ async fn site_admin_migration_token_auth_restores_orgs_prs_passwords_and_ids() {
         .unwrap();
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn site_import_svn_provisioning_tolerates_leftover_repo_dir() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (_admin_csrf, _admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+    let token = repo
+        .reset_api_token_for_user(admin_id)
+        .await
+        .expect("api token");
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "id": 101,
+            "loginId": "imported",
+            "displayName": "Imported",
+            "emailAddress": "imported@example.com",
+            "state": "ACTIVE",
+            "isSiteAdmin": false,
+            "createdAt": "2020-01-01T00:00:00+0000",
+            "lastStateModifiedAt": "2020-01-01T00:00:00+0000"
+        }],
+        "organizations": [],
+        "organizationMembers": [],
+        "projects": [{
+            "id": 20,
+            "ownerName": "imported",
+            "projectName": "svnproj",
+            "overview": "SVN project",
+            "projectScope": "public",
+            "projectVcs": "Subversion",
+            "createdAt": "2020-01-01T00:00:00+0000"
+        }],
+        "projectMembers": [],
+        "labels": [],
+        "milestones": [],
+        "posts": [],
+        "issues": [],
+        "pullRequests": []
+    });
+
+    let post_import = |payload: Value| {
+        let app = app.clone();
+        let token = token.clone();
+        async move {
+            app.clone()
+                .oneshot(
+                    Request::builder()
+                        .method(Method::POST)
+                        .uri("/yona/api/v1/site/import")
+                        .header(http::header::CONTENT_TYPE, "application/json")
+                        .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+                        .body(Body::from(payload.to_string()))
+                        .unwrap(),
+                )
+                .await
+                .unwrap()
+        }
+    };
+
+    // First import provisions the empty SVN repo directory.
+    let response = post_import(payload.clone()).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_json(response).await["importedProjects"], 1);
+    let svn_repo_dir = data_dir.path().join("repo/20.svn");
+    assert!(svn_repo_dir.is_dir(), "svn repo provisioned on import");
+
+    // A rolled-back import leaves the repo directory behind while the project
+    // row is gone; re-importing must tolerate the leftover directory instead
+    // of failing `svnadmin create`.
+    project::Entity::delete_by_id(20)
+        .exec(&db)
+        .await
+        .expect("drop project row");
+    let response = post_import(payload).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_json(response).await["importedProjects"], 1);
+    let restored = repo
+        .read_project_by_owner_and_name("imported", "svnproj")
+        .await
+        .expect("project re-created")
+        .expect("project row present");
+    assert_eq!(restored.vcs, "Subversion");
+}

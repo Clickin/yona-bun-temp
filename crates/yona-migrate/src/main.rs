@@ -76,6 +76,12 @@ struct Args {
     #[arg(long)]
     from_file: Option<PathBuf>,
 
+    /// Source database (mysql://user:pass@host:port/db) — read the legacy
+    /// MariaDB/H2-compatible schema directly, bypassing the HTTP export
+    /// surface. Preferred production source.
+    #[arg(long)]
+    from_db_url: Option<String>,
+
     /// Legacy bare-repository root (repos at `{root}/{project_id}` / `{project_id}.git` / `{project_id}.svn`)
     #[arg(long)]
     from_repo_dir: Option<PathBuf>,
@@ -121,6 +127,7 @@ fn main() -> Result<()> {
         Mode::SiteLevel => run_site_export(&args),
         Mode::ProjectLevel => run_project_export(&args),
         Mode::FileRead => run_file_read(&args),
+        Mode::DbRead => run_db_read(&args),
     }
 }
 
@@ -133,9 +140,13 @@ enum Mode {
     SiteLevel,
     ProjectLevel,
     FileRead,
+    DbRead,
 }
 
 fn determine_mode(args: &Args) -> Mode {
+    if args.from_db_url.is_some() {
+        return Mode::DbRead;
+    }
     if args.from_file.is_some() {
         return Mode::FileRead;
     }
@@ -264,14 +275,36 @@ fn run_file_read(args: &Args) -> Result<()> {
     eprintln!("Reading dump from {} ...", file_path.display());
 
     let payload = from::read_from_file(file_path)?;
+    let tables = dump_tables(&payload)?;
+    run_table_import(tables, args)
+}
+
+fn run_db_read(args: &Args) -> Result<()> {
+    let db_url = args.from_db_url.as_ref().unwrap();
+    eprintln!("Reading dump from database {db_url} ...");
+
+    let payload = from::read_from_db(db_url)?;
+    let tables = dump_tables(&payload)?;
+    run_table_import(tables, args)
+}
+
+/// Extract `(table, rows)` pairs from a dump object.
+fn dump_tables(payload: &serde_json::Value) -> Result<Vec<(String, Vec<serde_json::Value>)>> {
     let map = payload
         .as_object()
         .ok_or_else(|| anyhow::anyhow!("dump must be a JSON object of table arrays"))?;
-    let tables: Vec<(String, Vec<serde_json::Value>)> = map
+    Ok(map
         .iter()
         .filter_map(|(name, value)| value.as_array().map(|rows| (name.clone(), rows.clone())))
-        .collect();
+        .collect())
+}
 
+/// Shared site-import flow: transform the table dump, fill attachments,
+/// then dry-run / write file / POST to the target.
+fn run_table_import(
+    tables: Vec<(String, Vec<serde_json::Value>)>,
+    args: &Args,
+) -> Result<()> {
     let mut ctx = site_transform::transform_dump(&tables);
     eprintln!("Transformed: {}", summarize_counts(&ctx));
 
@@ -487,8 +520,14 @@ fn transfer_git_repository(
 ) -> Result<()> {
     let source = [repo_dir.join(id.to_string()), repo_dir.join(format!("{id}.git"))]
         .into_iter()
-        .find(|path| path.exists())
-        .ok_or_else(|| anyhow::anyhow!("no bare repo found for project id {id} in {}", repo_dir.display()))?;
+        .find(|path| path.exists());
+    let Some(source) = source else {
+        eprintln!(
+            "Skipping git repo for project id {id}: not found in {}",
+            repo_dir.display()
+        );
+        return Ok(());
+    };
     let mirror = format!("{}/{}/{}.git", to_url.trim_end_matches('/'), owner, name);
     let mirror = with_basic_auth_url(&mirror, to_login, to_token);
     let clone_dir = format!(".yona-migrate-{}-{}.git", owner, name);
@@ -541,13 +580,23 @@ fn transfer_svn_repository(
         .stdin(std::process::Stdio::from(dump_file))
         .output()
         .context("failed to spawn svnrdump")?;
-    let _ = std::fs::remove_file(&dump_path);
     if !output.status.success() {
-        anyhow::bail!(
+        // ponytail: the new app's SVN DAV write path is read-focused;
+        // keep the dump and hand the operator the documented `svnadmin load`
+        // fallback instead of failing the whole migration.
+        eprintln!(
             "svnrdump load failed: {}",
             String::from_utf8_lossy(&output.stderr).trim()
         );
+        eprintln!(
+            "Kept SVN dump at {dump_path}. On the Yoram host, run:\n\
+             \x20 svnadmin load <yoram-data-root>/repo/{id}.svn < {dump_path}\n\
+             (yoram-data-root defaults to .yona-data next to the server; \
+             the repo dir is created by the import.)"
+        );
+        return Ok(());
     }
+    let _ = std::fs::remove_file(&dump_path);
     Ok(())
 }
 

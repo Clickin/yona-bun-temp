@@ -25,7 +25,7 @@ pub(crate) fn response(
     let mut response = (StatusCode::OK, body).into_response();
     response
         .headers_mut()
-        .insert("dav", HeaderValue::from_static("1,2"));
+        .insert("dav", HeaderValue::from_static("1,2, SVN-atomic-revprops, SVN-mergeinfo"));
     response
         .headers_mut()
         .insert("ms-author-via", HeaderValue::from_static("DAV"));

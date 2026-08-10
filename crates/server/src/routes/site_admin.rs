@@ -1,6 +1,6 @@
 use axum::{
     body::Bytes,
-    extract::{Path, Query},
+    extract::{DefaultBodyLimit, Path, Query},
     http::StatusCode,
     http::{HeaderMap, Method},
     response::{IntoResponse, Redirect, Response},
@@ -1265,6 +1265,18 @@ impl RestSiteImportResponse {
     }
 }
 
+/// Site-import request body cap. The metadata payload for the full production
+/// dump is ~20MB; `YONA_SITE_IMPORT_MAX_BODY_BYTES` overrides the 512MB
+/// default. Attachment bytes embedded as base64 scale this up, so the
+/// attachment staging path (files on the yoram host) is preferred for
+/// production-scale migrations.
+fn site_import_max_body_bytes() -> usize {
+    std::env::var("YONA_SITE_IMPORT_MAX_BODY_BYTES")
+        .ok()
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .unwrap_or(512 * 1024 * 1024)
+}
+
 pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
@@ -1387,7 +1399,8 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     let service = service.clone();
                     async move { rest_import_site_data_json(headers, body, service).await }
                 }
-            }),
+            })
+            .layer(DefaultBodyLimit::max(site_import_max_body_bytes())),
         )
         .route(
             "/site/export",
@@ -3404,7 +3417,14 @@ async fn rest_import_site_data_streamed(
                 yoram_vcs::create_bare_repository(&repo_path)
             };
             if let Err(error) = provisioning {
-                return Err(RestRouteError::internal(error.to_string()));
+                let message = error.to_string();
+                checkpoint.set_failure(
+                    "projects",
+                    index,
+                    rest_site_import_project_key(owner_name, project_name),
+                    format!("repository provisioning: {message}"),
+                );
+                return Err(RestRouteError::internal(message));
             }
         }
         rollback.record_project(&created_project);
