@@ -28,6 +28,10 @@ test("download link preserves external href and copy without ybtn classes", asyn
   await expect(link).toHaveAttribute("href", "https://example.test/yona-1.1.0");
   await expect(link).toHaveText("Download");
   await expect(link).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  // TanStack Link default anchor: external URL without target/rel (matches the
+  // legacy anchor, which also had neither).
+  await expect(link).not.toHaveAttribute("target");
+  await expect(link).not.toHaveAttribute("rel");
 });
 
 for (const viewport of [

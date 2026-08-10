@@ -108,7 +108,6 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
               <Link
                 href={releaseUrl}
                 to={releaseUrl as unknown as ExternalLinkTarget}
-                className="ybtn ybtn-success"
                 data-owner="site-update-download-action"
               >
                 {t("site.update.download")}
