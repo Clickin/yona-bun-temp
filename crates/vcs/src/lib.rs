@@ -1622,7 +1622,12 @@ fn svn_temp_work_dir(label: &str) -> Result<PathBuf, VcsError> {
 }
 
 fn svn_file_url(path: &Path) -> String {
-    format!("file:///{}", path.display().to_string().replace('\\', "/"))
+    // Relative data roots (e.g. `.yona-data`) must be absolute for svn —
+    // `file:///.yona-data/...` points at the filesystem root.
+    let canonical = path
+        .canonicalize()
+        .unwrap_or_else(|_| path.to_path_buf());
+    format!("file:///{}", canonical.display().to_string().replace('\\', "/"))
 }
 
 fn run_svn_command(command: &mut Command) -> Result<(), VcsError> {

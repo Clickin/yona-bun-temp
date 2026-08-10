@@ -503,7 +503,7 @@ function HomeScreen({
               "--siteintro-background-image": `url("${viteOwnedSiteIntroBackgroundUrl}")`,
             } as CSSProperties
           }
-          className={`siteintro ${undefined}`}
+          className={"siteintro"}
           data-owner="anonymous-home-intro"
         >
           <div className={"siteintro-cover"} data-owner="anonymous-home-intro-cover">
@@ -1901,11 +1901,6 @@ function SidebarOrganizationList({
     : isAuthenticatedSidenav
       ? "authenticated-sidenav-favorite-shell"
       : undefined;
-  const favoriteShellGroupClass = isAuthenticatedSidenav ? ` ` : "";
-  const favoriteShellInputClass = isAuthenticatedSidenav ? ` ` : "";
-  const favoriteShellBarClass = isAuthenticatedSidenav ? ` ${undefined}` : "";
-  const favoriteShellResultClass = isAuthenticatedSidenav ? ` ` : "";
-  const favoriteShellNoResultClass = isAuthenticatedSidenav ? ` ${undefined}` : "";
   if (
     ownProjects.length === 0 &&
     favoriteOrganizations.length === 0 &&
@@ -1917,12 +1912,12 @@ function SidebarOrganizationList({
         className={isLeftSidebarFavoriteShell ? undefined : "search-result"}
         data-owner={favoriteShellOwner}
       >
-        <div className={isLeftSidebarFavoriteShell ? undefined : `group${favoriteShellGroupClass}`}>
+        <div className={isLeftSidebarFavoriteShell ? undefined : "group favorite-shell-group"}>
           <input
             className={
               isLeftSidebarFavoriteShell
                 ? undefined
-                : `search-input org-search${favoriteShellInputClass}`
+                : "search-input org-search favorite-shell-input"
             }
             type="text"
             autoComplete="off"
@@ -1933,7 +1928,7 @@ function SidebarOrganizationList({
             value={searchQuery}
           />
           <span
-            className={isLeftSidebarFavoriteShell ? undefined : `bar${favoriteShellBarClass}`}
+            className={isLeftSidebarFavoriteShell ? undefined : "bar favorite-shell-bar"}
           ></span>
         </div>
         <div
@@ -1941,7 +1936,7 @@ function SidebarOrganizationList({
           className={
             isLeftSidebarFavoriteShell
               ? undefined
-              : `no-result tab-pane user-ul${favoriteShellNoResultClass}`
+              : "no-result tab-pane user-ul favorite-shell-result"
           }
         >
           {t("title.no.results")}
@@ -1955,12 +1950,10 @@ function SidebarOrganizationList({
       className={isLeftSidebarFavoriteShell ? undefined : "search-result"}
       data-owner={favoriteShellOwner}
     >
-      <div className={isLeftSidebarFavoriteShell ? undefined : `group${favoriteShellGroupClass}`}>
+      <div className={isLeftSidebarFavoriteShell ? undefined : "group favorite-shell-group"}>
         <input
           className={
-            isLeftSidebarFavoriteShell
-              ? undefined
-              : `search-input org-search${favoriteShellInputClass}`
+            isLeftSidebarFavoriteShell ? undefined : "search-input org-search favorite-shell-input"
           }
           type="text"
           autoComplete="off"
@@ -1970,13 +1963,13 @@ function SidebarOrganizationList({
           placeholder={t("title.type.name")}
           value={searchQuery}
         />
-        <span
-          className={isLeftSidebarFavoriteShell ? undefined : `bar${favoriteShellBarClass}`}
-        ></span>
+        <span className={isLeftSidebarFavoriteShell ? undefined : "bar favorite-shell-bar"}></span>
       </div>
       <ul
         className={
-          isLeftSidebarFavoriteShell ? undefined : `tab-pane user-ul${favoriteShellResultClass}`
+          isLeftSidebarFavoriteShell
+            ? "favorite-shell-result"
+            : "tab-pane user-ul favorite-shell-result"
         }
         id={sidebarDomId(idPrefix, "organizations")}
       >
@@ -2532,14 +2525,10 @@ function SidebarProjectItem({
     >
       <SidebarHoverPopover
         content={isLeftSidebar ? "" : overview}
-        rootClassName={
-          isLeftSidebar ? undefined : `project-list project-flex-container ${undefined}`
-        }
+        rootClassName={isLeftSidebar ? undefined : "project-list project-flex-container"}
         variant={isLeftSidebar ? "legacy" : "authenticated-favorite-project"}
       >
-        <div
-          className={isLeftSidebar ? undefined : `project-item project-item-container ${undefined}`}
-        >
+        <div className={isLeftSidebar ? undefined : "project-item project-item-container"}>
           {(isAuthenticatedFavoritePane || isAuthenticatedProjectPane) && !isLeftSidebar ? (
             <Link
               aria-label={`Open ${ownerName}/${projectName}`}
@@ -2645,9 +2634,9 @@ function SidebarRecentIssueList({
                 : undefined
           }
         >
-          <div className={"group"}>
+          <div className={"group recent-shell-group"}>
             <input
-              className={"search-input project-search"}
+              className={"search-input project-search recent-shell-input"}
               type="text"
               id={sidebarDomId(idPrefix, "recent-issue-query")}
               autoComplete="off"
@@ -2657,19 +2646,21 @@ function SidebarRecentIssueList({
               placeholder={t("title.type.name")}
               value={searchQuery}
             />
-            <span className={"bar"}></span>
+            <span className={"bar recent-shell-bar"}></span>
           </div>
-          <div className={"tab-content"}>
+          <div className={"tab-content recent-shell-content"}>
             {issues.length === 0 ? (
               <div
                 id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}
-                className={"no-result tab-pane user-ul active"}
+                className={
+                  "no-result tab-pane user-ul active recent-shell-result recent-shell-empty-result"
+                }
               >
                 {t("title.no.results")}
               </div>
             ) : (
               <ul
-                className={"tab-pane user-ul active"}
+                className={"tab-pane user-ul active recent-shell-result"}
                 id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}
               >
                 {visibleIssues.map((issue) => (
@@ -2732,7 +2723,7 @@ function SidebarRecentIssueItem({
         }
       >
         {isAuthenticatedSidenav ? (
-          <div className={`project-item project-item-container ${undefined}`}>
+          <div className={"project-item project-item-container"}>
             <Link
               params={{ issueNumber, ownerName, projectName }}
               to="/$ownerName/$projectName/issue/$issueNumber"

@@ -232,7 +232,8 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
         return write_response::move_path(&repo_path, &route, principal.as_ref(), &parts.headers);
     }
     if method == "DELETE" {
-        if path::activity_id(&route.svn_path).is_some() {
+        if let Some(activity_id) = path::activity_id(&route.svn_path) {
+            write::clear_activity_log(&repo_path, &activity_id);
             return svn_protocol_status_response(StatusCode::NO_CONTENT);
         }
         return write_response::delete(&repo_path, &route, principal.as_ref());

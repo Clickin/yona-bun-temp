@@ -17,6 +17,16 @@ test("authenticated side-nav Favorite shell uses the global theme color boundary
     readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
   expect(routeSource).toContain('"authenticated-sidenav-favorite-shell"');
+  // React-owned shell rules must not depend on the legacy classes the
+  // geometry tests strip (search-result/group/search-input/org-search/bar/
+  // user-ul/no-result), so the retired StyleX owners are keyed on stable
+  // favorite-shell-* classes emitted here.
+  expect(routeSource).toContain('"group favorite-shell-group"');
+  expect(routeSource).toContain('"search-input org-search favorite-shell-input"');
+  expect(routeSource).toContain('"bar favorite-shell-bar"');
+  expect(themeSource).toContain(
+    '[data-owner="authenticated-sidenav-favorite-shell"] > .favorite-shell-group',
+  );
 });
 
 for (const state of ["populated", "empty"] as const) {

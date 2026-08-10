@@ -1,10 +1,39 @@
 use axum::body::Bytes;
 use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::svndiff;
 use yoram_vcs::VcsError;
+
+/// Staging area for client-supplied commit messages, keyed by activity id.
+/// Lives next to the repository so no shared server state is needed.
+fn activity_log_path(repo_path: &Path, activity_id: &str) -> PathBuf {
+    repo_path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(".svn-activities")
+        .join(format!("{activity_id}.log"))
+}
+
+pub(crate) fn store_activity_log(repo_path: &Path, activity_id: &str, message: &str) {
+    let path = activity_log_path(repo_path, activity_id);
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(&path, message);
+}
+
+pub(crate) fn activity_log(repo_path: &Path, activity_id: &str) -> Option<String> {
+    std::fs::read_to_string(activity_log_path(repo_path, activity_id))
+        .ok()
+        .map(|message| message.trim().to_string())
+        .filter(|message| !message.is_empty())
+}
+
+pub(crate) fn clear_activity_log(repo_path: &Path, activity_id: &str) {
+    let _ = std::fs::remove_file(activity_log_path(repo_path, activity_id));
+}
 
 pub(crate) fn revision_response(status: StatusCode, revision: i64) -> Response {
     let mut response = status.into_response();

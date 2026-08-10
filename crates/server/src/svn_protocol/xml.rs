@@ -45,6 +45,44 @@ pub(crate) fn property_patches(request: &str) -> Option<Vec<yoram_vcs::SvnProper
     Some(patches)
 }
 
+/// Extract the `svn:log` value from an activity-root PROPPATCH (the commit
+/// message the client wants recorded). Handles any prefix (`S:`, `V:`, ...).
+pub(crate) fn activity_log(request: &str) -> Option<String> {
+    let mut rest = request;
+    while let Some(open_start) = rest.find('<') {
+        rest = &rest[open_start + 1..];
+        if rest.starts_with('/') || rest.starts_with('!') || rest.starts_with('?') {
+            continue;
+        }
+        let Some(open_end) = rest.find('>') else {
+            break;
+        };
+        let raw_name = rest[..open_end]
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .trim_end_matches('/');
+        let local_name = raw_name
+            .split_once(':')
+            .map(|(_, local)| local)
+            .unwrap_or(raw_name);
+        if local_name.eq_ignore_ascii_case("log") {
+            let value_start = open_end + 1;
+            let value = rest[value_start..]
+                .find(&format!("</{raw_name}>"))
+                .map(|end| rest[value_start..value_start + end].to_string())
+                .unwrap_or_default();
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            return Some(trimmed.to_string());
+        }
+        rest = &rest[open_end + 1..];
+    }
+    None
+}
+
 fn find_tag(xml: &str, tag: &str) -> Option<usize> {
     xml.find(&format!("<S:{tag}"))
         .or_else(|| xml.find(&format!("<s:{tag}")))

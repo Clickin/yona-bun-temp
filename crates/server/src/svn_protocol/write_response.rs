@@ -48,7 +48,13 @@ pub(super) fn put(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let message = format!("Update {path} through WebDAV by {}", actor.login_id);
+    let message = write::activity_log(
+        repo_path,
+        path::working_activity_id(&route.svn_path)
+            .as_deref()
+            .unwrap_or(""),
+    )
+    .unwrap_or_else(|| format!("Update {path} through WebDAV by {}", actor.login_id));
     match yoram_vcs::svn_put_file(repo_path, &path, &contents, &message) {
         Ok(revision) => {
             let status = if existed {
@@ -63,7 +69,10 @@ pub(super) fn put(
         Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
             svn_protocol_not_implemented_response(route, "PUT")
         }
-        Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(VcsError::SvnFailed(error)) => {
+            eprintln!("[svn-debug] svn_put_file failed for {path}: {error}");
+            svn_protocol_status_response(StatusCode::CONFLICT)
+        }
         Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
     }
 }
@@ -94,10 +103,18 @@ pub(super) fn copy(
     if destination_revision.is_some() || destination_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let message = format!(
-        "Copy {source_path} to {destination_path} through WebDAV by {}",
-        actor.login_id
-    );
+    let message = write::activity_log(
+        repo_path,
+        path::working_activity_id(&route.svn_path)
+            .as_deref()
+            .unwrap_or(""),
+    )
+    .unwrap_or_else(|| {
+        format!(
+            "Copy {source_path} to {destination_path} through WebDAV by {}",
+            actor.login_id
+        )
+    });
     match yoram_vcs::svn_copy_path(
         repo_path,
         source_revision,
@@ -142,10 +159,18 @@ pub(super) fn move_path(
     if destination_revision.is_some() || destination_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let message = format!(
-        "Move {source_path} to {destination_path} through WebDAV by {}",
-        actor.login_id
-    );
+    let message = write::activity_log(
+        repo_path,
+        path::working_activity_id(&route.svn_path)
+            .as_deref()
+            .unwrap_or(""),
+    )
+    .unwrap_or_else(|| {
+        format!(
+            "Move {source_path} to {destination_path} through WebDAV by {}",
+            actor.login_id
+        )
+    });
     match yoram_vcs::svn_move_path(repo_path, &source_path, &destination_path, &message) {
         Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
@@ -172,7 +197,13 @@ pub(super) fn mkcol(
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let message = format!("Create {path} through WebDAV by {}", actor.login_id);
+    let message = write::activity_log(
+        repo_path,
+        path::working_activity_id(&route.svn_path)
+            .as_deref()
+            .unwrap_or(""),
+    )
+    .unwrap_or_else(|| format!("Create {path} through WebDAV by {}", actor.login_id));
     match yoram_vcs::svn_make_collection(repo_path, &path, &message) {
         Ok(revision) => write::revision_response(StatusCode::CREATED, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
@@ -198,6 +229,14 @@ pub(super) fn proppatch(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if path::working_activity_id(&route.svn_path).is_some() && path.trim().is_empty() {
+        // Activity root PROPPATCH: the client records the commit message
+        // (svn:log) here. Persist it for the write ops that follow.
+        let request = String::from_utf8_lossy(body);
+        if let Some(activity_id) = path::working_activity_id(&route.svn_path) {
+            if let Some(message) = xml::activity_log(&request) {
+                write::store_activity_log(repo_path, &activity_id, &message);
+            }
+        }
         let mut response = (
             StatusCode::MULTI_STATUS,
             report_items::proppatch_multistatus(&href::resource(route, "", false), &[]),
@@ -259,7 +298,13 @@ pub(super) fn delete(
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let message = format!("Delete {path} through WebDAV by {}", actor.login_id);
+    let message = write::activity_log(
+        repo_path,
+        path::working_activity_id(&route.svn_path)
+            .as_deref()
+            .unwrap_or(""),
+    )
+    .unwrap_or_else(|| format!("Delete {path} through WebDAV by {}", actor.login_id));
     match yoram_vcs::svn_delete_path(repo_path, &path, &message) {
         Ok(revision) => write::revision_response(StatusCode::NO_CONTENT, revision),
         Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
