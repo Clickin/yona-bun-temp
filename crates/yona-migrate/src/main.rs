@@ -308,8 +308,26 @@ fn run_table_import(
     let mut ctx = site_transform::transform_dump(&tables);
     eprintln!("Transformed: {}", summarize_counts(&ctx));
 
+    // Attachment content: for a live target the tool uploads files out of
+    // band (multipart, keyed by the legacy hash) so the import can proceed on
+    // metadata alone — placeholder rows are filled as the uploads land. The
+    // uploader runs concurrently with the import and skips hashes already on
+    // the server, making the transfer resumable. `--to-file` keeps the
+    // offline base64 bundle instead.
+    let mut uploader = None;
     if let Some(data_dir) = &args.yona_data_dir {
-        fill_attachments(&mut ctx, data_dir);
+        if args.to_url.is_some() && !args.dry_run {
+            let hashes = collect_attachment_hashes(&ctx);
+            let to_token = args.to_token.clone().unwrap_or_default();
+            let uploader_dir = data_dir.clone();
+            let uploader_url = args.to_url.clone().unwrap();
+            let worker = std::thread::spawn(move || {
+                upload_attachment_files(&uploader_url, &to_token, hashes, &uploader_dir)
+            });
+            uploader = Some(worker);
+        } else {
+            fill_attachments(&mut ctx, data_dir);
+        }
     }
 
     if args.dry_run {
@@ -329,6 +347,13 @@ fn run_table_import(
         let to_token = args.to_token.as_deref().unwrap();
         let result = to::write_site_import(to_url, to_token, &output)?;
         eprintln!("Import result: {}", serde_json::to_string_pretty(&result)?);
+        if let Some(uploader) = uploader {
+            match uploader.join() {
+                Ok(Ok(report)) => eprintln!("{}", report),
+                Ok(Err(error)) => eprintln!("Attachment upload failed: {error:#}"),
+                Err(_) => eprintln!("Attachment upload thread panicked"),
+            }
+        }
         if args.with_repos {
             transfer_repositories(args, &ctx)?;
         }
@@ -336,6 +361,153 @@ fn run_table_import(
         to::write_to_stdout(&output)?;
     }
 
+    Ok(())
+}
+
+/// Every attachment hash referenced by the transformed payload.
+fn collect_attachment_hashes(ctx: &site_transform::TransformationContext) -> Vec<String> {
+    let mut hashes = Vec::new();
+    for item in std::iter::empty::<&serde_json::Value>()
+        .chain(ctx.issues.iter())
+        .chain(ctx.posts.iter())
+        .chain(ctx.milestones.iter())
+    {
+        if let Some(attachments) = item.get("attachments").and_then(|v| v.as_array()) {
+            for att in attachments {
+                if let Some(hash) = att.get("hash").and_then(|v| v.as_str()) {
+                    if !hash.is_empty() {
+                        hashes.push(hash.to_string());
+                    }
+                }
+            }
+        }
+        if let Some(comments) = item.get("comments").and_then(|v| v.as_array()) {
+            for comment in comments {
+                if let Some(attachments) = comment.get("attachments").and_then(|v| v.as_array()) {
+                    for att in attachments {
+                        if let Some(hash) = att.get("hash").and_then(|v| v.as_str()) {
+                            if !hash.is_empty() {
+                                hashes.push(hash.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    hashes.sort();
+    hashes.dedup();
+    hashes
+}
+
+/// Upload attachment files to `POST {to_url}/api/v1/site/import/files` as
+/// multipart (hash + file), streaming from the legacy uploads directory.
+/// Files already present on the server are skipped, so an interrupted run
+/// resumes cleanly.
+fn upload_attachment_files(
+    to_url: &str,
+    to_token: &str,
+    hashes: Vec<String>,
+    data_dir: &PathBuf,
+) -> Result<String> {
+    use std::sync::mpsc;
+    use std::sync::{Arc, Mutex};
+
+    if hashes.is_empty() {
+        return Ok("No attachment files to upload".to_string());
+    }
+    let queue = Arc::new(Mutex::new(hashes.into_iter().collect::<Vec<_>>()));
+    let uploaded = Arc::new(Mutex::new(0usize));
+    let missing = Arc::new(Mutex::new(0usize));
+    let (failure_tx, failure_rx) = mpsc::channel::<String>();
+    let workers = 4.min(queue.lock().expect("queue lock").len());
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(600))
+        .build()
+        .context("failed to build upload client")?;
+    std::thread::scope(|scope| {
+        for _ in 0..workers {
+            let queue = queue.clone();
+            let uploaded = uploaded.clone();
+            let missing = missing.clone();
+            let failure_tx = failure_tx.clone();
+            let to_url = to_url.to_string();
+            let to_token = to_token.to_string();
+            let data_dir = data_dir.clone();
+            let client = &client;
+            scope.spawn(move || {
+                loop {
+                    let hash = {
+                        let mut queue = queue.lock().expect("queue lock");
+                        queue.pop()
+                    };
+                    let Some(hash) = hash else { break };
+                    let path = data_dir.join("uploads").join(&hash);
+                    if !path.exists() {
+                        *missing.lock().expect("missing lock") += 1;
+                        continue;
+                    }
+                    match upload_one_file(client, &to_url, &to_token, &hash, &path) {
+                        Ok(()) => {
+                            *uploaded.lock().expect("uploaded lock") += 1;
+                        }
+                        Err(error) => {
+                            let _ = failure_tx.send(format!("{hash}: {error:#}"));
+                        }
+                    }
+                }
+            });
+        }
+    });
+    drop(failure_tx);
+    let failures = failure_rx.try_iter().collect::<Vec<_>>();
+    let uploaded = *uploaded.lock().expect("uploaded lock");
+    let missing = *missing.lock().expect("missing lock");
+    if let Some(first) = failures.first() {
+        eprintln!("Attachment upload failures ({}): {first}", failures.len());
+    }
+    Ok(format!(
+        "Attachment upload done: {uploaded} uploaded, {missing} missing locally, {} failed",
+        failures.len()
+    ))
+}
+
+/// POST one attachment file as multipart (`hash` + `file` fields).
+fn upload_one_file(
+    client: &reqwest::blocking::Client,
+    to_url: &str,
+    to_token: &str,
+    hash: &str,
+    path: &PathBuf,
+) -> Result<()> {
+    use reqwest::blocking::multipart::{Form, Part};
+    use std::io::BufReader;
+
+    let file = std::fs::File::open(path)
+        .with_context(|| format!("failed to open attachment {}", path.display()))?;
+    let length = file
+        .metadata()
+        .map(|metadata| metadata.len())
+        .unwrap_or(0);
+    let part = Part::reader_with_length(BufReader::new(file), length)
+        .file_name(hash.to_string())
+        .mime_str("application/octet-stream")
+        .context("invalid upload part")?;
+    let form = Form::new()
+        .text("hash", hash.to_string())
+        .part("file", part);
+    let response = client
+        .post(format!(
+            "{}/api/v1/site/import/files",
+            to_url.trim_end_matches('/')
+        ))
+        .bearer_auth(to_token)
+        .multipart(form)
+        .send()
+        .context("attachment upload request failed")?;
+    if !response.status().is_success() {
+        anyhow::bail!("upload failed: HTTP {}", response.status());
+    }
     Ok(())
 }
 

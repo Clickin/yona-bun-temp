@@ -5996,3 +5996,128 @@ async fn site_import_svn_provisioning_tolerates_leftover_repo_dir() {
         .expect("project row present");
     assert_eq!(restored.vcs, "Subversion");
 }
+
+#[tokio::test]
+async fn site_import_creates_placeholder_attachments_and_accepts_out_of_band_files() {
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (_admin_csrf, _admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+    let token = repo
+        .reset_api_token_for_user(admin_id)
+        .await
+        .expect("api token");
+
+    let legacy_hash = "a".repeat(64);
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "id": 101,
+            "loginId": "imported",
+            "displayName": "Imported",
+            "emailAddress": "imported@example.com",
+            "state": "ACTIVE",
+            "isSiteAdmin": false,
+            "createdAt": "2020-01-01T00:00:00+0000",
+            "lastStateModifiedAt": "2020-01-01T00:00:00+0000"
+        }],
+        "organizations": [],
+        "organizationMembers": [],
+        "projects": [{
+            "id": 20,
+            "ownerName": "imported",
+            "projectName": "restored",
+            "overview": "Migrated",
+            "projectScope": "public",
+            "projectVcs": "GIT",
+            "createdAt": "2020-01-01T00:00:00+0000"
+        }],
+        "projectMembers": [],
+        "labels": [],
+        "milestones": [],
+        "posts": [],
+        "issues": [{
+            "id": 50,
+            "issueNumber": "1",
+            "title": "Issue with attachment",
+            "bodyMarkdown": "see /files/900",
+            "state": "open",
+            "authorLoginId": "imported",
+            "ownerName": "imported",
+            "projectName": "restored",
+            "createdAt": "2020-01-02T00:00:00+0000",
+            "updatedAt": "2020-01-02T00:00:00+0000",
+            "comments": [],
+            "labels": [],
+            "attachments": [{
+                "id": 900,
+                "name": "proof.png",
+                "mimeType": "image/png",
+                "size": 4,
+                "hash": legacy_hash.clone(),
+                "createdAt": "2020-01-02T00:00:00+0000"
+            }]
+        }],
+        "pullRequests": []
+    });
+
+    // Out-of-band upload first (placeholder flow: the import does not need
+    // the file present).
+    let upload_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/site/import/files")
+                .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "multipart/form-data; boundary=testboundary",
+                )
+                .body(Body::from(
+                    "--testboundary\r\nContent-Disposition: form-data; name=\"hash\"\r\n\r\n"
+                        .to_string()
+                        + &legacy_hash
+                        + "\r\n--testboundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"proof.png\"\r\nContent-Type: application/octet-stream\r\n\r\nAAAA\r\n--testboundary--\r\n",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(upload_response.status(), StatusCode::OK);
+    assert!(data_dir
+        .path()
+        .join(format!("uploads/{legacy_hash}"))
+        .is_file(), "file staged at uploads/legacy-hash");
+
+    // Import creates the placeholder attachment row without inline content.
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/site/import")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::from(payload.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let imported = response_json(response).await;
+    assert_eq!(imported["importedIssues"], 1);
+
+    let attachments = attachment::Entity::find()
+        .filter(attachment::Column::Hash.eq(&legacy_hash))
+        .all(&db)
+        .await
+        .expect("attachment rows");
+    assert_eq!(attachments.len(), 1);
+    assert_eq!(attachments[0].hash.as_deref(), Some(legacy_hash.as_str()));
+    assert_eq!(attachments[0].name.as_deref(), Some("proof.png"));
+}

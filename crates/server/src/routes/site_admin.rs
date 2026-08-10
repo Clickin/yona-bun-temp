@@ -1,6 +1,6 @@
 use axum::{
     body::Bytes,
-    extract::{DefaultBodyLimit, Path, Query},
+    extract::{DefaultBodyLimit, Multipart, Path, Query},
     http::StatusCode,
     http::{HeaderMap, Method},
     response::{IntoResponse, Redirect, Response},
@@ -584,6 +584,11 @@ pub(crate) struct RestSiteExportAttachmentItem {
     #[serde(alias = "createdDate")]
     #[serde(skip_serializing_if = "String::is_empty")]
     created_at: String,
+    /// Legacy content hash (sha256 hex). The import creates the attachment
+    /// row against this hash even when the file bytes are not carried in the
+    /// payload; the migration tool then uploads the file to `uploads/{hash}`
+    /// in the background (resumable, deduped by hash).
+    hash: String,
     id: i64,
     mime_type: String,
     name: String,
@@ -1265,11 +1270,22 @@ impl RestSiteImportResponse {
     }
 }
 
+/// Storage tokens are safe filename components (legacy sha256 hex or the
+/// base64url upload token); reject anything that could traverse or escape
+/// the uploads directory.
+fn valid_storage_token(token: &str) -> bool {
+    !token.is_empty()
+        && token.len() <= 128
+        && token
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_')
+}
+
 /// Site-import request body cap. The metadata payload for the full production
 /// dump is ~20MB; `YONA_SITE_IMPORT_MAX_BODY_BYTES` overrides the 512MB
-/// default. Attachment bytes embedded as base64 scale this up, so the
-/// attachment staging path (files on the yoram host) is preferred for
-/// production-scale migrations.
+/// default. Attachment bytes are uploaded out of band via
+/// `/site/import/files` (see `rest_site_import_file_upload`), so this limit
+/// only ever needs to cover metadata plus small inline base64 batches.
 fn site_import_max_body_bytes() -> usize {
     std::env::var("YONA_SITE_IMPORT_MAX_BODY_BYTES")
         .ok()
@@ -1401,6 +1417,21 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 }
             })
             .layer(DefaultBodyLimit::max(site_import_max_body_bytes())),
+        )
+        .route(
+            "/site/import/files",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, multipart: Multipart| {
+                    let service = service.clone();
+                    async move { rest_site_import_file_upload(headers, multipart, service).await }
+                }
+            })
+            .layer(DefaultBodyLimit::max(
+                service
+                    .max_uploaded_file_size
+                    .saturating_add(1024 * 1024),
+            )),
         )
         .route(
             "/site/export",
@@ -4988,7 +5019,22 @@ fn rest_site_import_dry_run_attachments(
                 }
                 would_import.attachments += 1;
             }
-            Ok(None) => {}
+            Ok(None) => {
+                // Placeholder attachment: the file arrives out of band via
+                // /site/import/files keyed by the legacy hash, so a valid
+                // hash counts as importable.
+                if !attachment.hash.trim().is_empty()
+                    && valid_storage_token(attachment.hash.trim())
+                {
+                    if attachment.id > 0
+                        && !state.payload_portable_attachment_ids.insert(attachment.id)
+                    {
+                        would_skip.attachments += 1;
+                    } else {
+                        would_import.attachments += 1;
+                    }
+                }
+            }
             Err(message) => {
                 would_skip.attachments += 1;
                 rest_site_import_push_validation_error(
@@ -5423,6 +5469,65 @@ fn rest_site_import_portable_attachment_bytes(
     Ok(Some(bytes))
 }
 
+/// Out-of-band attachment upload for site imports (the migration tool runs
+/// this concurrently with the import itself, keyed by the legacy content
+/// hash, so the transfer is resumable). Multipart fields: `hash` (legacy
+/// sha256 hex) and `file`. The file lands at `uploads/{hash}` — the same
+/// final path the placeholder attachment rows reference.
+async fn rest_site_import_file_upload(
+    headers: HeaderMap,
+    mut multipart: Multipart,
+    service: PilotServiceImpl,
+) -> Response {
+    let repository = match rest_require_site_admin_repository(&service, &headers, false).await {
+        Ok(repository) => repository,
+        Err(error) => return error.into_response(),
+    };
+    let _ = repository;
+    let mut hash = String::new();
+    let mut file_bytes: Option<Vec<u8>> = None;
+    while let Ok(Some(field)) = multipart.next_field().await {
+        match field.name() {
+            Some("hash") => {
+                hash = field.text().await.unwrap_or_default().trim().to_string();
+            }
+            Some("file") => {
+                file_bytes = field.bytes().await.ok().map(|bytes| bytes.to_vec());
+            }
+            _ => {}
+        }
+    }
+    let Some(bytes) = file_bytes else {
+        return (StatusCode::BAD_REQUEST, "missing file field").into_response();
+    };
+    if !valid_storage_token(&hash) {
+        return (StatusCode::BAD_REQUEST, "invalid hash").into_response();
+    }
+    if bytes.len() > service.max_uploaded_file_size {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "file too large").into_response();
+    }
+    let path = uploaded_file_path_with_root(&service.data_root, &hash);
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            if let Err(error) = std::fs::create_dir_all(parent) {
+                return RestRouteError::internal(error.to_string()).into_response();
+            }
+        }
+        if let Err(error) = std::fs::write(&path, &bytes) {
+            let _ = std::fs::remove_file(&path);
+            return RestRouteError::internal(error.to_string()).into_response();
+        }
+    }
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "hash": hash,
+            "size": bytes.len() as i64,
+        })),
+    )
+        .into_response()
+}
+
 async fn rest_site_import_attachments(
     service: &PilotServiceImpl,
     repository: &persistence::AppRepositoryImpl<'_>,
@@ -5531,6 +5636,67 @@ async fn rest_site_import_attachments(
                 final_path.clone(),
                 journal_path,
             );
+            repository
+                .restore_site_import_attachment_created_at(
+                    created.id,
+                    rest_site_import_parse_legacy_datetime(&attachment.created_at),
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            attachment_ids.push(created.id);
+            if attachment.id > 0 && attachment.id != created.id {
+                link_rewrites.push((attachment.id, created.id));
+            }
+            created_attachments.push(created);
+            continue;
+        }
+
+        // Placeholder: no inline bytes, but a legacy hash is present. Create
+        // the attachment row against `uploads/{hash}` even if the file has
+        // not arrived yet — the migration tool uploads it out of band (see
+        // POST /api/v1/site/import/files), which also makes the transfer
+        // resumable. Rollback removes the row and any file at that hash.
+        let legacy_hash = attachment.hash.trim();
+        if !legacy_hash.is_empty() && valid_storage_token(legacy_hash) {
+            let file_name = attachment
+                .name
+                .trim()
+                .is_empty()
+                .then(|| "attachment.bin".to_string())
+                .unwrap_or_else(|| attachment.name.trim().to_string());
+            let mime_type = if attachment.mime_type.trim().is_empty() {
+                "application/octet-stream".to_string()
+            } else {
+                attachment.mime_type.trim().to_string()
+            };
+            let size = if attachment.size > 0 {
+                attachment.size
+            } else {
+                0
+            };
+            let created = match repository
+                .create_user_attachment_upload(
+                    actor.id,
+                    &actor.login_id,
+                    &file_name,
+                    &mime_type,
+                    size,
+                    legacy_hash,
+                )
+                .await
+            {
+                Ok(created) => created,
+                Err(error) => {
+                    rest_site_import_cleanup_attachments(
+                        service,
+                        repository,
+                        actor,
+                        &created_attachments,
+                    )
+                    .await;
+                    return Err(RestRouteError::internal(error.to_string()));
+                }
+            };
             repository
                 .restore_site_import_attachment_created_at(
                     created.id,
@@ -6622,6 +6788,7 @@ fn rest_site_export_attachment_from_record(
             .map(|bytes| general_purpose::STANDARD.encode(bytes)),
         content_sha256: content_bytes.as_deref().map(sha256_hex),
         created_at: legacy_external_date_string(record.created_at),
+        hash: record.hash.clone(),
         id: record.id,
         mime_type: record.mime_type.clone(),
         name: record.name.clone(),
