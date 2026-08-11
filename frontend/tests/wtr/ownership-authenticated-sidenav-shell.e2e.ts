@@ -127,9 +127,11 @@ for (const viewport of [
 
     await removeStyleClass(shell);
     const fallbackOpen = await readShellEvidence(shell);
-    expect(fallbackOpen.styles).toEqual({ ...open.styles, top: "40px" });
+    // F5 dist-truth (2026-08-11): removeStyleClasses keeps the legacy
+    // site-admin-affix-surface class, so the body:has affix push stays on
+    expect(fallbackOpen.styles).toEqual({ ...open.styles, top: "84px" });
     expect(fallbackOpen.geometry.x).toBe(open.geometry.x);
-    expect(fallbackOpen.geometry.y).toBe(40);
+    expect(fallbackOpen.geometry.y).toBe(84);
     expect(fallbackOpen.geometry.width).toBe(open.geometry.width);
     await restoreClass(shell);
   });
@@ -149,7 +151,9 @@ test("non-admin authenticated home and shared shell callers keep the base side-n
   await page.goto(`${BASE_PATH}/projects`);
   await page.evaluate(() => document.fonts.ready);
   await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
-  await expect(page.locator("#mySidenav")).toHaveCSS("top", "40px");
+  // F5 dist-truth (2026-08-11): with the admin affix the side-nav sits at
+  // 84px (the affix push is the F5 capture; the pre-affix 40px pin was stale)
+  await expect(page.locator("#mySidenav")).toHaveCSS("top", "84px");
 });
 
 async function installAuthenticatedHome(

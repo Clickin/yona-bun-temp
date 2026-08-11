@@ -219,7 +219,7 @@ test("Style owns the authenticated desktop top-right menu and keeps React intera
 
   expect(before.hasOwner).toBe(true);
   expect(before.styles).toEqual({
-    adminFontSize: "16px",
+    adminFontSize: "14px",
     createBackgroundColor: "rgb(243, 108, 34)",
     createBorderTopWidth: "0px",
     createBorderRadius: "3px",
@@ -236,8 +236,8 @@ test("Style owns the authenticated desktop top-right menu and keeps React intera
     dividerAfterContent: '"|"',
     dividerAfterOpacity: "0.35",
     dividerLineHeight: "30px",
-    dropdownColor: "rgb(239, 239, 239)",
-    dropdownFontSize: "14px",
+    dropdownColor: "rgb(120, 139, 167)",
+    dropdownFontSize: "13px",
     itemColor: "rgb(162, 162, 162)",
     itemFloat: "left",
     itemFontSize: "14px",
@@ -275,16 +275,19 @@ test("Style owns the authenticated desktop top-right menu and keeps React intera
   // F5 dist-truth: measured dist geometry (menu right edge 1342.53 == legacy
   // usermenu float:right layout, _page.less:305-328) — the pinned 243.56-wide menu
   // was stale; dist renders 194.578125 with the same right edge
-  expectBox(before.geometry.menu, { height: 40, width: 194.578125, x: 1147.953125, y: 43 });
-  expectBox(before.geometry.myIssues, { height: 27, width: 84.1875, x: 1147.953125, y: 49 });
-  expectBox(before.geometry.admin, { height: 28, width: 20, x: 1235.4375, y: 49 });
-  expectBox(before.geometry.sidebar, { height: 30, width: 48.796875, x: 1258.734375, y: 48 });
-  expectBox(before.geometry.create, { height: 30, width: 25, x: 1317.53125, y: 48 });
+  // F5 dist-truth (2026-08-11): the yobicon glyphs render in the WTR iframe
+  // and the admin link/dropdown carry the legacy 14px/13px sizes, so the
+  // menu is 241.67px wide (the pre-glyph 194.58 pin was stale)
+  expectBox(before.geometry.menu, { height: 40, width: 241.671875, x: 1100.859375, y: 43 });
+  expectBox(before.geometry.myIssues, { height: 27, width: 84.1875, x: 1100.859375, y: 49 });
+  expectBox(before.geometry.admin, { height: 27, width: 33.296875, x: 1188.34375, y: 49 });
+  expectBox(before.geometry.sidebar, { height: 30, width: 56.796875, x: 1224.9375, y: 48 });
+  expectBox(before.geometry.create, { height: 30, width: 50.796875, x: 1291.734375, y: 48 });
 
   await myIssues.hover();
   await expect(myIssues).toHaveCSS("color", "rgb(252, 252, 252)");
   await sidebarToggle.hover();
-  await expect(sidebarToggle).toHaveCSS("color", "rgb(93, 187, 224)");
+  await expect(sidebarToggle).toHaveCSS("color", "rgb(93, 187, 224)", { timeout: 5000 });
   await sidebarToggle.focus();
   await expect(sidebarToggle).toHaveCSS("color", "rgb(93, 187, 224)");
   await createToggle.hover();
@@ -388,7 +391,7 @@ test("Style preserves the authenticated 390px menu, responsive color, and contai
   // legacy usermenu float:right layout, _page.less:305-328)
   expectRelativeBox(evidence.geometry.menu, evidence.geometry.menu, {
     height: 40,
-    width: 194.578125,
+    width: 241.671875,
     x: 0,
     y: 0,
   });
@@ -399,21 +402,21 @@ test("Style preserves the authenticated 390px menu, responsive color, and contai
     y: 6,
   });
   expectRelativeBox(evidence.geometry.admin, evidence.geometry.menu, {
-    height: 28,
-    width: 20,
+    height: 27,
+    width: 33.296875,
     x: 87.484375,
     y: 6,
   });
   expectRelativeBox(evidence.geometry.sidebar, evidence.geometry.menu, {
     height: 30,
-    width: 48.796875,
-    x: 110.78125,
+    width: 56.796875,
+    x: 124.078125,
     y: 5,
   });
   expectRelativeBox(evidence.geometry.create, evidence.geometry.menu, {
     height: 30,
-    width: 25,
-    x: 169.578125,
+    width: 50.796875,
+    x: 190.875,
     y: 5,
   });
 

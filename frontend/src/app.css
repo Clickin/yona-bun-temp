@@ -13679,8 +13679,8 @@ div[data-owner="project-transfer-modal-backdrop"] {
   float: left;
   margin: 5px 0;
   position: relative;
-  color: #efefef;
-  font-size: 14px;
+  color: #788ba7;
+  font-size: 13px;
   margin-left: 10px;
 }
 @media (max-width: 720px) {
@@ -13692,8 +13692,8 @@ div[data-owner="project-transfer-modal-backdrop"] {
   float: left;
   margin: 5px 0;
   position: relative;
-  color: #efefef;
-  font-size: 14px;
+  color: #788ba7;
+  font-size: 13px;
 }
 @media (max-width: 720px) {
   [data-owner="root-usermenu-sidebar-dropdown"] {
@@ -13705,7 +13705,7 @@ div[data-owner="project-transfer-modal-backdrop"] {
   line-height: 30px;
   padding: 5px 10px;
   text-decoration: none;
-  font-size: 16px;
+  font-size: 14px;
 }
 [data-owner="root-usermenu-site-admin-link"]:hover {
   color: #fcfcfc;
@@ -13757,7 +13757,7 @@ div[data-owner="project-transfer-modal-backdrop"] {
   font-size: 10px;
   font-weight: 400;
 }
-body:has([data-owner="site-admin-affix"]) #mySidenav {
+body:has(.site-admin-affix-surface) #mySidenav {
   top: 84px;
 }
 @media (max-width: 720px) {
