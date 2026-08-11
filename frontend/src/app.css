@@ -13229,15 +13229,35 @@ div[data-owner="project-transfer-modal-backdrop"] {
   right: -5px;
   top: 9px;
 }
-[data-owner="left-sidebar-close-pin"]:focus {
-  background-color: #03a9f4;
-  box-shadow: none;
-  color: #ffffff;
+[data-owner="left-sidebar-close-pin"] .yobicon-arrow-left {
+  padding: 4px 2px;
+}
+[data-owner="left-sidebar-close-pin"] .yobicon-arrow-left.closing {
+  animation: left-sidebar-close-pin-fade 0.15s ease-out;
+}
+@keyframes left-sidebar-close-pin-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 [data-owner="left-sidebar-close-pin"]:hover {
   cursor: pointer;
   background-color: #03a9f4;
   color: #3e2723;
+}
+[data-owner="left-sidebar-close-pin"]:focus {
+  background-color: #03a9f4;
+  box-shadow: none;
+  color: #ffffff;
+}
+[data-owner="left-sidebar-close-pin"]:hover .yobicon-arrow-left {
+  color: #ffffff;
+}
+[data-owner="left-sidebar-close-pin"]:focus .yobicon-arrow-left {
+  color: #ffffff;
 }
 [data-owner="left-sidebar-footer"] {
   bottom: 8px;

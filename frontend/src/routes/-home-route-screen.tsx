@@ -1218,7 +1218,10 @@ function LegacyFramedSidebar({
           title="Sidebar"
           type="button"
         >
-          <i aria-hidden="true" className={"yobicon-arrow-left"} />
+          <i
+            aria-hidden="true"
+            className={`yobicon-arrow-left ${motion === "closing" ? "closing" : ""}`}
+          />
         </button>
       </div>
       <ul data-owner="left-sidebar-tabs">

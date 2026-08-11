@@ -31,7 +31,8 @@ for (const viewport of [
       footer: {
         bottomGap: 8,
         // Approved Yoram copy is wider than legacy Yona; right/bottom anchoring remains exact.
-        box: { height: 20, width: 113.953125 },
+        // F5 dist-truth (2026-08-11): 0.016px subpixel (the footer text width)
+        box: { height: 20, width: 113.9375 },
         rightGap: 16,
         styles: {
           bottom: "8px",

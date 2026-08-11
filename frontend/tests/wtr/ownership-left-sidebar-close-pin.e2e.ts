@@ -18,6 +18,10 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await installAuthenticatedHome(page);
     await page.goto(`${BASE_PATH}/`);
+    // Browser harness persists localStorage across runs; reset the sidebar
+    // open-state so the pin test starts from the legacy default (open).
+    await page.evaluate(() => localStorage.removeItem("shallWeOpenLeftNavigation"));
+    await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
 
     const sidebar = page.getByRole("complementary", { name: "Sidebar" });
@@ -69,11 +73,27 @@ for (const viewport of [
     await expect(icon).toHaveAttribute("aria-hidden", "true");
 
     await icon.hover();
-    await expect(pin).toHaveCSS("color", "rgb(62, 39, 35)");
-    await expect(pin).toHaveCSS("cursor", "pointer");
-    await expect(icon).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(icon).toHaveCSS("cursor", "pointer");
-    await expect(pin).toHaveCSS("background-color", "rgb(3, 169, 244)");
+    // F5 dist-truth: the pin/icon color transition settles within ~150ms;
+    // poll from the settled state to avoid a mid-transition read.
+    await new Promise((r) => setTimeout(r, 300));
+    // F5 dist-truth: hover colors resolve through the pin :hover cascade;
+    // direct reads (the wtr poll can read mid-transition).
+    const hoverStyles = await pin.evaluate((btn) => {
+      const iconEl = btn.querySelector(".yobicon-arrow-left") as HTMLElement;
+      const s = (el: HTMLElement) => getComputedStyle(el);
+      return {
+        pinColor: s(btn).getPropertyValue("color").trim(),
+        pinCursor: s(btn).getPropertyValue("cursor").trim(),
+        iconColor: s(iconEl).getPropertyValue("color").trim(),
+        iconCursor: s(iconEl).getPropertyValue("cursor").trim(),
+        pinBg: s(btn).getPropertyValue("background-color").trim(),
+      };
+    });
+    expect(hoverStyles.pinColor).toBe("rgb(62, 39, 35)");
+    expect(hoverStyles.pinCursor).toBe("pointer");
+    expect(hoverStyles.iconColor).toBe("rgb(255, 255, 255)");
+    expect(hoverStyles.iconCursor).toBe("pointer");
+    expect(hoverStyles.pinBg).toBe("rgb(3, 169, 244)");
     expect(await pin.evaluate((node) => node.getBoundingClientRect().toJSON())).toMatchObject({
       height: 26,
       width: 24,
@@ -86,16 +106,29 @@ for (const viewport of [
     );
 
     await pin.focus();
-    await expect(pin).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(icon).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(pin).toHaveCSS("background-color", "rgb(3, 169, 244)");
-    await expect(pin).toBeFocused();
+    await new Promise((r) => setTimeout(r, 300));
+    // F5 dist-truth: focus styles read directly (same poll caveat).
+    const focusStyles = await pin.evaluate((btn) => {
+      const iconEl = btn.querySelector(".yobicon-arrow-left") as HTMLElement;
+      const s = (el: HTMLElement) => getComputedStyle(el);
+      return {
+        pinColor: s(btn).getPropertyValue("color").trim(),
+        iconColor: s(iconEl).getPropertyValue("color").trim(),
+        pinBg: s(btn).getPropertyValue("background-color").trim(),
+        focused: btn === document.activeElement,
+      };
+    });
+    expect(focusStyles.pinColor).toBe("rgb(255, 255, 255)");
+    expect(focusStyles.iconColor).toBe("rgb(255, 255, 255)");
+    expect(focusStyles.pinBg).toBe("rgb(3, 169, 244)");
+    expect(focusStyles.focused).toBe(true);
 
     await pin.click();
-    await expect(sidebarShell).toHaveCount(0);
+    await expect(sidebar).toHaveCount(0);
     expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe(
       "false",
     );
+    const openPin = page.getByRole("button", { name: "Sidebar" });
     await openPin.click();
     await expect(
       page.getByRole("complementary", { name: "Sidebar" }).getByRole("button", {
@@ -126,6 +159,7 @@ test("left sidebar close pin has complete global-theme Style ownership", () => {
   expect(appCss).not.toContain(".pin-in-sidebar");
   expect(route).not.toContain('className="pin-in-sidebar"');
   expect(route).toContain("className={`yobicon-arrow-left ${");
+  const marker = route.indexOf("yobicon-arrow-left");
   const jsxStart = route.lastIndexOf("<button", marker);
   const jsxEnd = route.indexOf("</button>", marker);
   expect(marker).toBeGreaterThanOrEqual(0);

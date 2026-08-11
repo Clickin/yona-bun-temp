@@ -124,17 +124,45 @@ for (const viewport of [
     if (viewport.label === "mobile") await expect(label).toBeHidden();
     else await expect(label).toBeVisible();
 
+    // F5 dist-truth: hover colors transition ~150ms; direct reads (the wtr
+    // poll can read mid-transition values).
+    // F5 dist-truth: hover colors resolve via the owner-scoped :hover rules;
+    // settle then read once (re-hovering re-resolves the locator and can
+    // land on a different matched element).
+    const readHover = async (loc: Locator) =>
+      loc.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return {
+          color: s.color,
+          deco: s.textDecorationLine,
+          bg: s.backgroundColor,
+        };
+      });
     await profile.hover();
-    await expect(profile).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(profile).toHaveCSS("text-decoration-line", "underline");
+    await new Promise((r) => setTimeout(r, 300));
+    expect(await readHover(profile)).toMatchObject({
+      color: "rgb(255, 255, 255)",
+      deco: "underline",
+    });
     await account.hover();
-    await expect(account).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(account).toHaveCSS("text-decoration-line", "underline");
+    await new Promise((r) => setTimeout(r, 300));
+    expect(await readHover(account)).toMatchObject({
+      color: "rgb(255, 255, 255)",
+      deco: "underline",
+    });
     await logout.hover();
-    await expect(logout).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(logout).toHaveCSS("text-decoration-line", "underline");
-    await expect(logoutLabel).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(logoutLabel).toHaveCSS("background-color", "rgb(156, 39, 176)");
+    await new Promise((r) => setTimeout(r, 300));
+    // F5 dist-truth: the legacy `.logout` class lives on the inner span
+    // (usermenu.scala.html) — the `a` itself keeps the generic hover
+    // orange; the white !important applies to the span.
+    expect(await readHover(logout)).toMatchObject({
+      color: "rgb(243, 108, 34)",
+      deco: "underline",
+    });
+    expect(await readHover(logoutLabel)).toMatchObject({
+      color: "rgb(255, 255, 255)",
+      bg: "rgb(156, 39, 176)",
+    });
 
     await pin.click();
     await expect(sidebarShell).toHaveCount(0);
