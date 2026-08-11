@@ -9270,12 +9270,6 @@
  font-weight: bold;
  line-height: 20px;
 }
-.pr-branch-code {
- background-color: transparent;
- border: none;
- color: #2a7f8f;
- padding: 0;
-}
 .pr-conflict-help {
  padding: 10px;
  font-size: 12px;
@@ -11756,10 +11750,7 @@ div[data-owner="project-transfer-modal-backdrop"] {
 [data-owner="root-yoram-toast"] { position: relative; box-sizing: border-box; width: 450px; padding: 10px 20px; margin: 10px; font-size: 13px; font-weight: 700; color: #000000; word-break: keep-all; overflow-wrap: break-word; outline: none; background-color: #cddc39; border-radius: 2px; box-shadow: 1px 1px 3px #000000; opacity: 0.9; transition-duration: 0.3s }
 [data-owner="secret-notfound-error-message"] { color: #898989; font-size: 16px; font-weight: bold; margin: 30px 0px }
 [data-owner="secret-notfound-error-wrap"] { padding: 100px 0px; text-align: center }
-.site-admin-affix-surface { background-color: #ad0000; box-sizing: border-box; color: #ffffff; font-size: 20px; font-weight: 700; line-height: normal; padding: 10px; text-align: center; width: 100%; z-index: 1000 }
-.site-admin-affix-surface > span { font-size: 10px; font-weight: 400 }
 body:has([data-owner="site-admin-affix"]) #mySidenav { top: 84px }
-@media (max-width: 720px) { .site-admin-affix-surface { width: auto } }
 [data-owner="site-footer"] { background-color: #ffffff; box-sizing: content-box; min-width: 0px; padding: 10px }
 @media (max-width: 720px) { [data-owner="site-footer"] { min-width: 10px } }
 [data-owner="site-footer-inner"] { box-sizing: content-box; line-height: 34px; margin: 0px auto; text-align: center; width: 100% }
@@ -21525,13 +21516,13 @@ label[data-owner="organization-new-label"] {
 }
 
 /* legacy retired: site-admin affix line box — legacy Helvetica Neue metrics expand the 20px line box to 23px (43px/66px tall); the app :root system-ui font keeps it at 20px */
-.site-admin-affix-surface {
+.admin-logged-in-affix {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 23px;
   height: 43px;
 }
 @media (max-width: 720px) {
-  .site-admin-affix-surface {
+  .admin-logged-in-affix {
     height: 66px;
   }
 }

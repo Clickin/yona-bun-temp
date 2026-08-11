@@ -222,7 +222,9 @@ test("project board list keymap modal is route state owned", async ({ page }) =>
   expect(keymapSource).toContain("event.stopPropagation();");
   expect(keymapSource).toContain("setIsOpen(true);");
   expect(keymapSource).toContain("setIsOpen(false);");
-  expect(keymapSource).toContain("keymapOpenStyleProps");
+  expect(keymapSource).toContain(
+    'const modalClassName = isOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help"',
+  );
   expect(keymapSource).toContain('event.key === "Escape"');
   expect(keymapSource).not.toContain('data-toggle="modal"');
   expect(keymapSource).not.toContain('data-target="#helpKeys"');
@@ -664,7 +666,9 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(keymapSource).toContain("event.stopPropagation();");
   expect(keymapSource).toContain("setIsOpen(true);");
   expect(keymapSource).toContain("setIsOpen(false);");
-  expect(keymapSource).toContain("keymapOpenStyleProps");
+  expect(keymapSource).toContain(
+    'const modalClassName = isOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help"',
+  );
   expect(keymapSource).toContain('event.key === "Escape"');
   expect(keymapSource).not.toContain('data-dismiss="modal"');
   expect(keymapSource).toContain('className="modal-backdrop fade in"');
@@ -1864,8 +1868,12 @@ test("project board detail owns legacy Watch button paint in Style", async ({ pa
   expect(legacyVariablesSource).toMatch(/@yobi-btn-default\s*:\s*@yobi-white;/u);
   expect(routeSource).toContain('ybtn${post.isWatching ? " ybtn-watching" : ""}');
 
-  expect(styleSource).toMatch(/watch:\s*\{[\s\S]*?backgroundColor:\s*"#ffffff"/u);
-  expect(styleSource).toMatch(/watchWatching:\s*\{[\s\S]*?backgroundColor:\s*"#f4efea"/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-watch"\]\s*\{[\s\S]*?background-color:\s*#ffffff/u,
+  );
+  expect(styleSource).toMatch(
+    /\.ybtn\.ybtn-watching,\s*[\s\S]*?background-color:\s*#f4efea\s*!important/u,
+  );
   const watchButtonSource = routeSource.slice(
     routeSource.indexOf('id="watch-button"'),
     routeSource.indexOf("function PostingHistory"),
@@ -2194,9 +2202,13 @@ test("project board detail owns the final ml6 delete-action spacing in Style", a
   expect(legacyCommentsSource).toContain('class="btn-transparent ml6"');
   expect(legacyYobiSource).toContain('@import "less/_common.less";');
   expect(legacyCommonSource).toMatch(/\.ml6\s*\{\s*margin-left:\s*6px;\s*\}/u);
-  expect(styleSource.match(/marginLeft:\s*"6px"/g)).toHaveLength(2);
-  expect(styleSource).toContain("postDeleteAction:");
-  expect(styleSource).toContain("commentDeleteAction:");
+  expect(
+    styleSource.match(
+      /\[data-owner="post-detail-(?:post|comment)-delete-action"\]\s*\{\s*margin-left:\s*6px;/g,
+    ),
+  ).toHaveLength(2);
+  expect(styleSource).toContain('[data-owner="post-detail-post-delete-action"]');
+  expect(styleSource).toContain('[data-owner="post-detail-comment-delete-action"]');
   expect(routeSource.match(/data-owner="post-detail-post-delete-action"/g)).toHaveLength(1);
   expect(routeSource.match(/data-owner="post-detail-comment-delete-action"/g)).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="[^"]*\bml6\b/u);
@@ -2378,9 +2390,11 @@ test("project board detail owns the final edit-action spacing in Style", async (
     '@import "less/_override.less";',
   ]);
   expect(styleSource).toMatch(
-    /postEditAction:\s*\{[^}]*marginLeft:\s*"10px"[^}]*paddingTop:\s*"5px"/su,
+    /\[data-owner="post-detail-post-edit-action"\]\s*\{[^}]*margin-left:\s*10px[^}]*padding-top:\s*5px/su,
   );
-  expect(styleSource).toMatch(/commentEditAction:\s*\{[^}]*marginLeft:\s*"10px"/su);
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-edit-action"\]\s*\{[^}]*margin-left:\s*10px/su,
+  );
   expect(routeSource.match(/data-owner="post-detail-post-edit-action"/g)).toHaveLength(2);
   expect(routeSource.match(/data-owner="post-detail-comment-edit-action"/g)).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="[^"]*\b(?:ml10|pt5px)\b/u);
@@ -2517,10 +2531,10 @@ test("project board detail owns responsive header metadata in Style", async ({ p
     '@import "less/_override.less";',
   ]);
   expect(styleSource).toMatch(
-    /desktopMetadata:\s*\{[\s\S]*?float:\s*"right"[\s\S]*?marginRight:\s*"10px"[\s\S]*?marginTop:\s*"10px"[\s\S]*?["']@media all and \(max-width:\s*720px\)["']:\s*\{\s*display:\s*"none"/u,
+    /\[data-owner="post-detail-desktop-metadata"\]\s*\{[^}]*float:\s*right[^}]*margin-right:\s*10px[^}]*margin-top:\s*10px[^}]*\}[\s\S]*?@media all and \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="post-detail-desktop-metadata"\]\s*\{\s*display:\s*none/u,
   );
   expect(styleSource).toMatch(
-    /mobileMetadata:\s*\{[\s\S]*?display:\s*"none"[\s\S]*?float:\s*"right"[\s\S]*?fontSize:\s*"0\.7em"[\s\S]*?["']@media all and \(max-width:\s*720px\)["']:\s*\{\s*display:\s*"block"/u,
+    /\[data-owner="post-detail-mobile-metadata"\]\s*\{[^}]*display:\s*none[^}]*float:\s*right[^}]*font-size:\s*0\.7em[^}]*\}[\s\S]*?@media all and \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="post-detail-mobile-metadata"\]\s*\{\s*display:\s*block/u,
   );
   expect(routeSource.match(/data-owner="post-detail-desktop-metadata"/g)).toHaveLength(1);
   expect(routeSource.match(/data-owner="post-detail-mobile-metadata"/g)).toHaveLength(1);
@@ -2684,9 +2698,11 @@ test("project board-post body and footer own their left floats in Style", async 
     '@import "less/_migration.less";',
     '@import "less/_override.less";',
   ]);
-  expect(styleSource).toMatch(/watchWrapper:\s*\{\s*float:\s*"left"\s*\}/u);
   expect(styleSource).toMatch(
-    /keymapWrapper:\s*\{[^}]*float:\s*"left"[^}]*marginLeft:\s*55[^}]*padding:\s*"10px 0px"/su,
+    /\[data-owner="post-detail-watch-wrapper"\]\s*\{\s*float:\s*left;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-keymap-wrapper"\]\s*\{[^}]*float:\s*left[^}]*margin-left:\s*55px[^}]*padding:\s*10px\s+0/u,
   );
   expect(routeSource.match(/data-owner="post-detail-watch-wrapper"/g)).toHaveLength(1);
   expect(routeSource.match(/data-owner="post-detail-keymap-wrapper"/g)).toHaveLength(1);
@@ -2898,8 +2914,11 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
   for (const owner of owners) {
     expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
   }
-  expect(styleSource).toContain("disabledCommentBox");
-  expect(styleSource).toMatch(/commentCreateTextareaControl:\s*\{[\s\S]*?width:\s*"100%"/u);
+  expect(styleSource).toContain('[data-owner="post-detail-disabled-comment"]');
+  expect(styleSource).toMatch(
+    /\.write-comment-box \.write-comment-wrap textarea\.disabled\s*\{[\s\S]*?height:\s*80px/u,
+  );
+  expect(styleSource).toMatch(/\.textarea-box\s+textarea\s*\{[\s\S]*?width:\s*100%/u);
 
   for (const viewport of [
     { height: 900, locale: "ko-KR", title: "로그인 후 댓글 입력이 가능합니다.", width: 1366 },
@@ -3126,9 +3145,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyYobiSource).toMatch(
     /@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";\s*@import "less\/_yobiUI\.less";/u,
   );
-  expect(styleSource).toMatch(/commentCreateForm:\s*\{ margin:\s*"0px 0px 2px" \}/u);
   expect(styleSource).toMatch(
-    /commentCreateWriteBox:\s*\{[\s\S]*?fontFamily:[\s\S]*?-apple-system, BlinkMacSystemFont[\s\S]*?Segoe UI Symbol[\s\S]*?padding:\s*"0px 0px 15px 54px"[\s\S]*?@media all and \(max-width: 720px\)[\s\S]*?padding:\s*0/u,
+    /\[data-owner="post-detail-comment-create-form"\]\s*\{\s*margin:\s*0 0 2px;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?padding:\s*0 0 15px 54px;[\s\S]*?font-family:[\s\S]*?-apple-system, BlinkMacSystemFont[\s\S]*?Segoe UI Symbol/u,
   );
   for (const owner of ["post-detail-comment-create-form", "post-detail-comment-create-write-box"]) {
     expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
@@ -3200,33 +3221,35 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     /a\.nbtn, div\.nbtn, span\.nbtn, p\.nbtn\s*\{[\s\S]*?&\.medium \{ padding: 6px 20px; \}[\s\S]*?\.fake-file-wrap\s*\{\s*position: relative; display:block; clear:both;\s*overflow: hidden; cursor:pointer;[\s\S]*?\.file\s*\{\s*position: absolute; z-index:2; cursor:pointer;\s*top:0; left: 5px;[\s\S]*?min-width:100px; width:100%;\s*\.opacity\(0\);/u,
   );
   expect(styleSource).toMatch(
-    /commentUploadWrap:\s*\{[\s\S]*?backgroundColor:\s*"#efefef"[\s\S]*?borderRadius:\s*"0px 0px 5px 5px"[\s\S]*?marginBottom:\s*"10px"[\s\S]*?padding:\s*"10px !important"/u,
+    /\.write-comment-box \.upload-wrap\s*\{[\s\S]*?background:\s*#efefef;[\s\S]*?padding:\s*10px;[\s\S]*?margin-bottom:\s*10px;[\s\S]*?border-radius:\s*0(?:px)?\s+0(?:px)?\s+5px\s+5px;/u,
   );
-  expect(styleSource).toMatch(/commentUploadAttachWrap:\s*\{ textAlign:\s*"center" \}/u);
+  expect(styleSource).toMatch(/\.upload-wrap \.attach-wrap\s*\{\s*text-align:\s*center;\s*\}/u);
   expect(styleSource).toMatch(
-    /commentUploadButtonWrap:\s*\{\s*display:\s*"inline-block !important",\s*margin:\s*"0px 5px",\s*verticalAlign:\s*"top"/u,
-  );
-  expect(styleSource).toMatch(
-    /commentUploadFileInput:\s*\{[\s\S]*?left:\s*"5px"[\s\S]*?minWidth:\s*"100px"[\s\S]*?opacity:\s*0[\s\S]*?position:\s*"absolute"[\s\S]*?top:\s*0[\s\S]*?width:\s*"100%"[\s\S]*?zIndex:\s*2/u,
-  );
-  expect(styleSource).toMatch(/commentUploadDroppable:\s*\{ display:\s*"inline" \}/u);
-  expect(styleSource).toMatch(
-    /commentUploadPlain:\s*\{ display:\s*"inline-block", lineHeight:\s*"30px" \}/u,
-  );
-  expect(styleSource).toMatch(/commentUploadPastable:\s*\{ display:\s*"block" \}/u);
-  expect(styleSource).toMatch(
-    /commentUploadAttachedFiles:\s*\{\s*borderTop:\s*"1px solid #e0e0e0",\s*display:\s*"none",\s*marginBottom:\s*0,\s*marginTop:\s*"15px",\s*padding:\s*"15px 0px"/u,
+    /\.upload-wrap \.attach-wrap \.btn-wrap\s*\{\s*display:\s*inline-block !important;\s*margin:\s*0 5px;\s*vertical-align:\s*top;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /commentUploadHelp:\s*\{ display:\s*"none", textAlign:\s*"right" \}/u,
+    /\.fake-file-wrap \.file\s*\{\s*position:\s*absolute;[\s\S]*?z-index:\s*2;[\s\S]*?top:\s*0;[\s\S]*?left:\s*5px;[\s\S]*?min-width:\s*100px;[\s\S]*?width:\s*100%;[\s\S]*?opacity:\s*0;/u,
   );
-  expect(styleSource).toMatch(/commentCreateWriteWrap:\s*\{ position:\s*"relative" \}/u);
-  expect(styleSource).toMatch(/commentActions:\s*\{ textAlign:\s*"right" \}/u);
+  expect(styleSource).toMatch(/\.upload-wrap \.help-droppable\s*\{\s*display:\s*inline;\s*\}/u);
   expect(styleSource).toMatch(
-    /commentCreateDynamicButton:\s*\{\s*display:\s*"none !important",\s*visibility:\s*"hidden !important"/u,
+    /\.upload-wrap \.attach-wrap \.plain\s*\{\s*display:\s*inline-block;\s*line-height:\s*30px;\s*\}/u,
+  );
+  expect(styleSource).toMatch(/\.upload-wrap \.help-pastable\s*\{\s*display:\s*block;\s*\}/u);
+  expect(styleSource).toMatch(
+    /\.upload-wrap \.attached-files\s*\{[\s\S]*?display:\s*none;[\s\S]*?border-top:\s*1px solid #e0e0e0;/u,
   );
   expect(styleSource).toMatch(
-    /commentCreateSubmitButton:\s*\{[\s\S]*?backgroundColor:\s*"#FF7332 !important"[\s\S]*?borderColor:\s*"#E95E01"[\s\S]*?color:\s*"#ffffff"[\s\S]*?":hover"[\s\S]*?"#E95E01 !important"[\s\S]*?":focus"[\s\S]*?"#E95E01 !important"[\s\S]*?":active"[\s\S]*?"#E95E01 !important"/u,
+    /\[data-owner="post-detail-comment-upload-help"\]\s*\{\s*text-align:\s*right;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.write-comment-box \.write-comment-wrap\s*\{\s*position:\s*relative;\s*\}/u,
+  );
+  expect(styleSource).toMatch(/\.right-txt\s*\{\s*text-align:\s*right;\s*\}/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-create-dynamic-button"\],[\s\S]*?\[data-owner="post-detail-comment-create-submit"\][\s\S]*?\{[\s\S]*?margin-left:\s*0\.3em;[\s\S]*?transition:\s*all 0\.3s ease;[\s\S]*?vertical-align:\s*middle;[\s\S]*?z-index:\s*2;/u,
+  );
+  expect(styleSource).toMatch(
+    /\.ybtn\.ybtn-success,[\s\S]*?background-color:\s*#FF7332\s*!important;\s*border:\s*1px solid #E95E01;[\s\S]*?background-color:\s*#E95E01\s*!important;/u,
   );
 
   for (const owner of [
@@ -3319,14 +3342,25 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   );
   expect(legacyYobiconSource).toMatch(/\.yobicon-list:before\s*\{\s*content:\s*"\\e25e";/u);
   expect(styleSource).toMatch(
-    /commentCreateClearTemporary:\s*\{\s*display:\s*"none",\s*marginLeft:\s*"10px"\s*\}/u,
-  );
-  expect(styleSource).toMatch(/commentCreateEditorNoticeLabel:\s*\{\s*padding:\s*"4px 15px"\s*\}/u);
-  expect(styleSource).toMatch(
-    /commentCreateTextareaBox:\s*\{\s*display:\s*"block",\s*margin:\s*0,\s*padding:\s*"0px 14px 0px 0px",\s*position:\s*"relative",\s*\}/u,
+    /\.editor-clear-temporary\s*\{\s*margin-left:\s*10px;\s*display:\s*none;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /commentCreateTextareaControl:\s*\{[\s\S]*?borderRadius:\s*"2px"[\s\S]*?boxShadow:\s*"none"[\s\S]*?fontSize:\s*"12px"[\s\S]*?height:\s*"160px"[\s\S]*?margin:\s*0[\s\S]*?resize:\s*"vertical"[\s\S]*?width:\s*"100%"[\s\S]*?borderColor:\s*"#F36C22 !important"[\s\S]*?@media all and \(max-width: 720px\)[\s\S]*?fontSize:\s*"16px !important"/u,
+    /\.nav-tabs\.small \.editor-notice-label\s*\{\s*padding:\s*4px 15px;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.textarea-box\s*\{\s*padding:\s*0;\s*margin:\s*0;\s*display:\s*block;\s*padding-right:\s*14px;\s*position:\s*relative;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.write-comment-box \.comment\s*\{\s*height:\s*160px;\s*margin:\s*0;\s*resize:\s*vertical;[\s\S]*?box-shadow:\s*none;/u,
+  );
+  expect(styleSource).toMatch(
+    /\.textarea-box\s+textarea\s*\{\s*width:\s*100%;[\s\S]*?resize:\s*vertical\s*!important;/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-update-textarea"\]:focus,[\s\S]*?\[data-owner="post-detail-comment-create-textarea"\]:focus\s*\{\s*border-color:\s*#f36c22\s*!important;/u,
+  );
+  expect(styleSource).toMatch(
+    /@media all and \(max-width:\s*720px\)[\s\S]*?input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px\s*!important;/u,
   );
   for (const owner of [
     "post-detail-comment-create-textarea-box",
@@ -3334,12 +3368,26 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   ]) {
     expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
   }
-  expect(styleSource).toMatch(/commentUpdateChecklistWrap:\s*\{ marginTop:\s*"2px" \}/u);
+  expect(styleSource).toMatch(/\.task-list-button\s*\{\s*margin-top:\s*2px;\s*\}/u);
   expect(styleSource).toMatch(
-    /commentUpdateChecklistButton:\s*\{[\s\S]*?backgroundColor:\s*"#eeeeee"[\s\S]*?borderColor:\s*"transparent"[\s\S]*?fontSize:\s*"13px !important"[\s\S]*?marginTop:\s*"1px"[\s\S]*?padding:\s*"1px 10px !important"[\s\S]*?backgroundColor:\s*"#fbe9e7"[\s\S]*?borderColor:\s*"#EF9A9A"[\s\S]*?color:\s*"#C93426"/u,
+    /\[data-owner="post-detail-comment-update-checklist-button"\],\s*\[data-owner="post-detail-comment-create-checklist-button"\]\s*\{\s*background-color:\s*#eeeeee;\s*border-color:\s*transparent;\s*box-shadow:\s*none;\s*color:\s*#666666;\s*font-weight:\s*600;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateChecklistIcon:\s*\{[\s\S]*?fontFamily:\s*"yobicon"[\s\S]*?lineHeight:\s*"20px"[\s\S]*?verticalAlign:\s*"baseline"[\s\S]*?"::before":\s*\{ content:\s*'"\\\\e25e"' \}/u,
+    /\[data-owner="post-detail-comment-update-checklist-button"\]:hover,[\s\S]*?\[data-owner="post-detail-comment-create-checklist-button"\]:focus\s*\{\s*background-color:\s*#fbe9e7;\s*border-color:\s*#ef9a9a;\s*color:\s*#c93426;/u,
+  );
+  expect(styleSource).toMatch(
+    /\.ybtn\.ybtn-small,[\s\S]*?padding:\s*3px 10px\s*!important;\s*font-size:\s*13px\s*!important;/u,
+  );
+  expect(styleSource).toMatch(
+    /\.ybtn\.ybtn-danger-no-outline,[\s\S]*?padding:\s*1px 10px\s*!important;/u,
+  );
+  expect(styleSource).toMatch(/\.task-list-button button\s*\{\s*margin-top:\s*1px;\s*\}/u);
+  expect(styleSource).toMatch(
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?vertical-align:\s*baseline;/u,
+  );
+  expect(styleSource).toMatch(/\.yobicon-list:before\s*\{\s*content:\s*"\\e25e";/u);
+  expect(styleSource).toMatch(
+    /\.task-list-button \.tasklist-icon\s*\{\s*vertical-align:\s*top;\s*\}/u,
   );
   expect(routeSource.match(/post-detail-comment-create-clear-temporary/g)).toHaveLength(1);
   expect(routeSource.match(/post-detail-comment-create-editor-notice-label/g)).toHaveLength(1);
@@ -3396,13 +3444,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(routeSource).toContain(`"${owner}"`);
   }
   expect(styleSource).toMatch(
-    /editorTabContent:\s*\{\s*overflow:\s*"visible",\s*position:\s*"relative"\s*\}/u,
+    /\[data-owner="post-detail-editor-tab-content"\]\s*\{\s*overflow:\s*visible;\s*position:\s*relative;\s*\}/u,
   );
-  expect(styleSource).toMatch(/editorPane:\s*\{\s*display:\s*"none"\s*\}/u);
-  expect(styleSource).toMatch(/editorPaneActive:\s*\{\s*display:\s*"block"\s*\}/u);
-  expect(routeSource).toContain(
-    "tabContentClassName: `${sx.editorTabContent.className} tab-content`",
-  );
+  expect(styleSource).toMatch(/\.tab-content > \.tab-pane,[\s\S]*?\{\s*display:\s*none;\s*\}/u);
+  expect(styleSource).toMatch(/\.tab-content > \.active,[\s\S]*?\{\s*display:\s*block;\s*\}/u);
+  expect(routeSource).toContain('tabContentClassName: "tab-content"');
   // F6 copy-fix-current-dom: the editor owners are hoisted prop constants now
   // (tabContentPaneOwner/editPaneOwner/previewPaneOwner, $postNumber.tsx:2884-2906),
   // so the literal data-owner=... no longer appears in the route source.
@@ -4167,14 +4213,23 @@ test("project board detail owns parent comment action and reply controls in Styl
     '@import "less/_migration.less";',
     '@import "less/_override.less";',
   ]);
-  expect(styleSource).toMatch(/commentActionRow:\s*\{\s*float:\s*"right"\s*\}/u);
   expect(styleSource).toMatch(
-    /childCommentReply:\s*\{[\s\S]*?fontSize:\s*"12px"[\s\S]*?backgroundColor:\s*"#fff"[\s\S]*?position:\s*"relative"[\s\S]*?right:\s*"10px"[\s\S]*?color:\s*"#00b0e8"[\s\S]*?border:\s*"1px solid #00b0e8"[\s\S]*?marginTop:\s*"-32px"[\s\S]*?padding:\s*"0 5px"[\s\S]*?borderRadius:\s*"3px"[\s\S]*?float:\s*"right"[\s\S]*?zIndex:\s*2[\s\S]*?":hover":\s*\{[\s\S]*?boxShadow:\s*"1px 1px 2px #e0e0e0"[\s\S]*?cursor:\s*"pointer"[\s\S]*?display:\s*"block"/u,
+    /\[data-owner="post-detail-comment-action-row"\]\s*\{\s*float:\s*right;\s*\}/u,
   );
-  expect(styleSource).toMatch(/childCommentReplyHidden:\s*\{\s*display:\s*"none"\s*\}/u);
-  expect(styleSource).toMatch(/childCommentReplyVisible:\s*\{\s*display:\s*"block"\s*\}/u);
   expect(styleSource).toMatch(
-    /childCommentNotificationReceiver:\s*\{\s*borderBottomLeftRadius:\s*"3px",\s*borderBottomRightRadius:\s*"3px",\s*marginLeft:\s*"12px",\s*\}/u,
+    /\.board-comment-wrap \.comments \.comment \.add-a-comment\s*\{\s*font-size:\s*12px;[\s\S]*?background-color:\s*#fff;[\s\S]*?position:\s*relative;[\s\S]*?right:\s*10px;[\s\S]*?color:\s*#00b0e8;[\s\S]*?border:\s*1px solid #00b0e8;[\s\S]*?margin-top:\s*-32px;[\s\S]*?padding:\s*0 5px;[\s\S]*?border-radius:\s*3px;[\s\S]*?display:\s*none;[\s\S]*?z-index:\s*2;[\s\S]*?\.add-a-comment:hover\s*\{[\s\S]*?box-shadow:\s*1px 1px 2px #e0e0e0;[\s\S]*?cursor:\s*pointer;[\s\S]*?display:\s*block;/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-child-comment-reply"\]\s*\{\s*float:\s*right;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-child-comment-reply"\]\.is-hidden\s*\{\s*display:\s*none;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-child-comment-reply"\]\.is-visible\s*\{\s*display:\s*block;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.board-view \.board-comment-wrap \.comments \.child-comment-input-form \.notification-receiver,[\s\S]*?margin-left:\s*12px;\s*border-bottom-right-radius:\s*3px;\s*border-bottom-left-radius:\s*3px;/u,
   );
 
   expect(routeSource.match(/data-owner="post-detail-comment-action-row"/g)).toHaveLength(1);
@@ -4412,7 +4467,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     expect(batch811RouteSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
   }
   expect(batch811StyleSource).toMatch(
-    /commentCreateNotificationReceiver:\s*\{\s*backgroundColor:\s*"#F7F7F7",\s*display:\s*"none",\s*padding:\s*"5px 5px 5px 10px",\s*textAlign:\s*"start",\s*\}/u,
+    /\.notification-receiver\s*\{\s*display:\s*none;\s*padding:\s*5px 5px 5px 10px;\s*text-align:\s*start;\s*background-color:\s*#f7f7f7/u,
   );
 
   const { commentCreateRequests } = await mockProjectPosts(page);
@@ -4552,6 +4607,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -5446,11 +5502,10 @@ test("project board detail auto-links populated parent rich Markdown", async ({ 
     expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
     expect(routeSource).not.toMatch(new RegExp(`data-owner="${owner}"[^>]*style=`, "u"));
   }
-  expect(styleSource).toContain("parentCommentUserLink:");
-  expect(styleSource).toContain("parentCommentProjectLink:");
-  expect(styleSource).toContain("parentCommentOrganizationLink:");
-  expect(styleSource).toContain("parentCommentIssueStateOpen:");
-  expect(styleSource).toContain("parentCommentIssueStateClosed:");
+  expect(styleSource).toMatch(/\.user-link\s*\{[\s\S]*?border:\s*1px solid #4FC3F7/u);
+  expect(styleSource).toMatch(/\.project-link,\s*[\s\S]*?border:\s*1px solid #9741ff/u);
+  expect(styleSource).toMatch(/\.issue-state\.open\s*\{[\s\S]*?background-color:\s*#2ea043/u);
+  expect(styleSource).toMatch(/\.issue-state\.closed\s*\{[\s\S]*?background-color:\s*#da3733/u);
 
   const commentBody = page.locator("#comment-21 .comment-body.markdown-wrap");
   await expect(commentBody).toHaveAttribute("data-via-email", "false");
@@ -6294,26 +6349,30 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   expect(routeSource).not.toContain('className="subcomment-author hide"');
   expect(routeSource).toContain("remarkChildCommentMetadata");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(styleSource).toMatch(/childCommentForm:\s*\{\s*display:\s*"none"\s*\}/u);
   expect(styleSource).toMatch(
-    /childCommentParagraph:\s*\{\s*color:\s*"#202020",\s*margin:\s*0,\s*padding:\s*0\s*\}/u,
-  );
-  expect(styleSource).toMatch(/childCommentStrong:\s*\{\s*fontWeight:\s*"bold"\s*\}/u);
-  expect(styleSource).toMatch(/childCommentAuthorStrong:\s*\{\s*fontWeight:\s*"bold"\s*\}/u);
-  expect(
-    styleSource.match(
-      /color:\s*"#005580",\s*outline:\s*"none !important",\s*textDecoration:\s*"underline"/g,
-    ),
-  ).toHaveLength(4);
-  expect(styleSource).toMatch(
-    /childCommentNoTextDecoration:\s*\{\s*color:\s*"#0e90d2",\s*textDecoration:\s*"none !important",\s*\}/u,
-  );
-  expect(styleSource).toMatch(/childCommentIssueLink:\s*\{\s*color:\s*"#0e90d2"\s*\}/u);
-  expect(styleSource).toMatch(
-    /childCommentIssueStateOpen:\s*\{\s*backgroundColor:\s*"#2ea043",\s*borderRadius:\s*"3px",\s*color:\s*"#fff",\s*marginLeft:\s*"3px",\s*padding:\s*"0 3px",\s*userSelect:\s*"none",\s*":hover":\s*\{\s*textDecoration:\s*"none"\s*\},\s*\}/u,
+    /\.board-comment-wrap .comments .comment .subcomment-media-body \.child-comment-input-form\s*\{\s*display:\s*none;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /childCommentIssueStateClosed:\s*\{\s*backgroundColor:\s*"#da3733",\s*borderRadius:\s*"3px",\s*color:\s*"#fff",\s*marginLeft:\s*"3px",\s*padding:\s*"0 3px",\s*userSelect:\s*"none",\s*":hover":\s*\{\s*textDecoration:\s*"none"\s*\},\s*\}/u,
+    /\[data-owner="post-detail-child-comment-paragraph"\]\s*\{\s*color:\s*#202020;\s*margin:\s*0;\s*padding:\s*0/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-child-comment-strong"\]\s*,[\s\S]*?\[data-owner="post-detail-child-comment-author-strong"\]\s*\{\s*font-weight:\s*bold/u,
+  );
+  expect(styleSource).toMatch(
+    /a:hover,\s*a:focus\s*\{\s*color:\s*#005580;\s*text-decoration:\s*underline;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /a:hover\s*\{\s*outline:\s*none\s*!important;\s*text-decoration:\s*underline;\s*\}[\s\S]*?a:focus\s*\{\s*outline:\s*none\s*!important;\s*text-decoration:\s*underline;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.board-comment-wrap[\s\S]*?\.contents \.no-text-decoration\s*\{\s*color:\s*#0e90d2;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.no-text-decoration\s*\{\s*text-decoration:\s*none\s*!important;\s*\}/u,
+  );
+  expect(styleSource).toMatch(/\.contents a\.issueLink\s*\{\s*color:\s*#0e90d2;\s*\}/u);
+  expect(styleSource).toMatch(
+    /\.issue-state\s*\{\s*border-radius:\s*3px;\s*padding:\s*0 3px;\s*margin-left:\s*3px;\s*user-select:\s*none;\s*\}[\s\S]*?\.issue-state\.open\s*\{\s*color:\s*#fff;\s*background-color:\s*#2ea043;\s*\}[\s\S]*?\.issue-state\.closed\s*\{\s*color:\s*#fff;\s*background-color:\s*#da3733;\s*\}[\s\S]*?\.issue-state:hover\s*\{\s*text-decoration:\s*none;/u,
   );
   for (const owner of batch817Owners) {
     expect(routeSource.match(new RegExp(`data-owner="${owner}"`, "g"))).toHaveLength(1);
@@ -6321,11 +6380,13 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   }
 
   expect(styleSource).toMatch(
-    /childCommentBlockquote:\s*\{\s*borderLeftColor:\s*"#eeeeee",\s*borderLeftStyle:\s*"solid",\s*borderLeftWidth:\s*"5px",\s*margin:\s*"0 0 10px",\s*padding:\s*"0 0 0 15px",\s*\}/u,
+    /blockquote\s*\{\s*padding:\s*0 0 0 15px;\s*margin:\s*0 0 20px;\s*border-left:\s*5px solid #eeeeee;\s*\}/u,
   );
+  expect(styleSource).toMatch(/\.contents\s+blockquote\s*\{\s*margin-bottom:\s*10px;\s*\}/u);
   expect(styleSource).toMatch(
-    /childCommentBlockquoteParagraph:\s*\{\s*fontSize:\s*"1em",\s*fontWeight:\s*300,\s*lineHeight:\s*1\.25,\s*margin:\s*0,\s*padding:\s*0,\s*\}/u,
+    /\[data-owner="post-detail-child-comment-blockquote-paragraph"\]\s*\{\s*font-weight:\s*300;\s*line-height:\s*1\.25;\s*margin:\s*0;\s*padding:\s*0;\s*\}/u,
   );
+  expect(styleSource).toMatch(/\.contents\s+blockquote\s+p\s*\{\s*font-size:\s*1em;\s*\}/u);
   await mockProjectPosts(page, "childComment");
 
   await page.goto(`${basePath}/admin/sample/post/3`);
@@ -7294,12 +7355,18 @@ test("authenticated populated board post owns the comment-card skeleton in Style
   expect(legacyResponsiveSource).toMatch(
     /@media all and \(max-width:\s*720px\)[\s\S]*?\.media-body \.meta-info\s*\{\s*padding:\s*5px 5px !important;[\s\S]*?\.comment-avatar\s*\{\s*display:\s*none;[\s\S]*?\.media-body\s*\{\s*margin-left:\s*0 !important;[\s\S]*?&:before\s*\{\s*display:\s*none;/u,
   );
-  expect(styleSource).toContain("commentList:");
-  expect(styleSource).toContain("commentRow:");
-  expect(styleSource).toContain("commentAvatar:");
-  expect(styleSource).toContain("commentAvatarWrap:");
-  expect(styleSource).toContain("commentMedia:");
-  expect(styleSource).toContain("commentMeta:");
+  expect(styleSource).toMatch(/\.board-comment-wrap \.comments\s*\{[\s\S]*?list-style:\s*none/u);
+  expect(styleSource).toMatch(
+    /\.comment\s*\{[\s\S]*?padding:\s*10px 0px;[\s\S]*?position:\s*relative/u,
+  );
+  expect(styleSource).toMatch(/\.comment-avatar\s*\{\s*float:\s*left;\s*padding-left:\s*5px/u);
+  expect(styleSource).toMatch(/\.avatar-wrap\s*\{[\s\S]*?display:\s*inline-block/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-media"\]::before\s*\{[\s\S]*?background-color:\s*#f8f8f8/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-meta"\]\s*\{[\s\S]*?background-color:\s*#f7f7f7/u,
+  );
   for (const owner of [
     "post-detail-comment-list",
     "post-detail-comment-row",
@@ -7613,32 +7680,40 @@ test("authenticated populated board post owns comment identity actions and body 
   ]) {
   }
   expect(styleSource).toMatch(
-    /commentAuthor:\s*\{[^}]*color:\s*"#3f3e40"[^}]*fontSize:\s*"13px"[^}]*marginRight:\s*"5px"[^}]*verticalAlign:\s*"middle"/su,
+    /\.board-view .board-comment-wrap .comments \.comment_author\s*\{[\s\S]*?margin-right:\s*5px;[\s\S]*?color:\s*#3f3e40;[\s\S]*?font-size:\s*13px;[\s\S]*?vertical-align:\s*middle/u,
+  );
+  expect(styleSource).toMatch(/\.resp-comment-avatar\s*\{\s*display:\s*none;\s*\}/u);
+  expect(styleSource).toMatch(
+    /@media all and \(max-width:\s*720px\)[\s\S]*?\.media-body \.resp-comment-avatar\s*\{\s*display:\s*inline-block;/u,
   );
   expect(styleSource).toMatch(
-    /commentResponsiveAvatar:\s*\{[^}]*display:\s*"none"[\s\S]*?max-width:\s*720px[^}]*display:\s*"inline-block"/u,
+    /\.avatar-wrap\s*\{\s*width:\s*32px;\s*height:\s*32px;\s*vertical-align:\s*top;\s*overflow:\s*hidden;\s*display:\s*inline-block;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /commentResponsiveAvatarWrap:\s*\{[^}]*display:\s*"inline-block"[^}]*height:\s*"32px"[^}]*overflow:\s*"hidden"[^}]*verticalAlign:\s*"top"[^}]*width:\s*"32px"[\s\S]*?height:\s*"24px"[^}]*marginTop:\s*"-5px"[^}]*width:\s*"24px"/u,
+    /@media all and \(max-width:\s*720px\)[\s\S]*?\.media-body \.avatar-wrap\s*\{\s*width:\s*24px\s*!important;\s*height:\s*24px\s*!important;\s*margin-top:\s*-5px;/u,
   );
-  expect(styleSource).toMatch(/commentAgo:\s*\{\s*color:\s*"#7F8C8D"/u);
+  expect(styleSource).toMatch(/\.meta-info \.ago\s*\{\s*color:\s*#7F8C8D;\s*\}/u);
   expect(styleSource).toMatch(
-    /commentActionButton:\s*\{[^}]*backgroundColor:\s*"transparent"[^}]*border:\s*0[^}]*outline:\s*"none"[^}]*padding:\s*0/su,
+    /\.btn-transparent\s*\{\s*border:\s*0;\s*padding:\s*0;\s*background:\s*transparent;\s*\}/u,
   );
   expect(styleSource).not.toMatch(
-    /commentActionButton:\s*\{[^}]*(?:display|minHeight|minWidth|lineHeight):/su,
+    /^\s*\.btn-transparent\s*\{\s*[^}]*(?:display|min-height|min-width|line-height):/msu,
   );
   expect(styleSource).toMatch(
-    /commentActionIcon:\s*\{[^}]*backgroundImage:\s*"none"[^}]*color:\s*"#000000"[^}]*display:\s*"inline-block"[^}]*fontFamily:\s*"yobicon"[^}]*fontSize:\s*"20px"[^}]*fontStyle:\s*"normal"[^}]*fontVariant:\s*"normal"[^}]*fontWeight:\s*400[^}]*lineHeight:\s*"20px"[^}]*opacity:\s*0\.2[^}]*textDecoration:\s*"none"[^}]*verticalAlign:\s*"baseline"[\s\S]*?":hover":\s*\{\s*color:\s*"#51aacc",\s*opacity:\s*1/u,
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?line-height:\s*1;[\s\S]*?display:\s*inline-block;[\s\S]*?text-decoration:\s*none;[\s\S]*?background-image:\s*none;[\s\S]*?vertical-align:\s*baseline;/u,
   );
   expect(styleSource).toMatch(
-    /commentEditIcon:\s*\{\s*marginTop:\s*"2px",\s*"::before":\s*\{\s*content:\s*'"\\\\e51d"'/u,
+    /\.act-row i\s*\{\s*font-size:\s*20px;\s*line-height:\s*20px;\s*color:\s*#000;\s*opacity:\s*0\.2;[\s\S]*?\.act-row i:hover\s*\{\s*color:\s*#51aacc;\s*opacity:\s*1;/u,
   );
   expect(styleSource).toMatch(
-    /commentDeleteIcon:\s*\{\s*"::before":\s*\{\s*content:\s*'"\\\\e838"'/u,
+    /\[data-owner="post-detail-comment-edit-icon"\],[\s\S]*?\[data-owner="post-detail-comment-delete-icon"\]\s*\{\s*color:\s*#000000;\s*font-size:\s*20px;\s*opacity:\s*0\.2;/u,
   );
+  expect(styleSource).toMatch(/\.act-row i\.yobicon-edit-2\s*\{\s*margin-top:\s*2px;\s*\}/u);
+  expect(styleSource).toMatch(/\.yobicon-edit-2:before\s*\{\s*content:\s*"\\e51d";/u);
+  expect(styleSource).toMatch(/\.yobicon-trash:before\s*\{\s*content:\s*"\\e838";/u);
+  expect(styleSource).toMatch(/\.comment-body\s*\{\s*font-size:\s*1\.1em;/u);
   expect(styleSource).toMatch(
-    /commentBody:\s*\{[^}]*fontSize:\s*"1\.1em"[^}]*padding:\s*"15px 20px"/u,
+    /\[data-owner="post-detail-comment-body-content"\]\s*\{\s*padding:\s*15px 20px;\s*\}/u,
   );
   expect(styleSource).not.toContain("commentBodyResponsiveCascade");
   for (const owner of [
@@ -7954,7 +8029,10 @@ test("authenticated populated board post owns comment section boundary and heade
   );
   expect(legacyYobiconSource).toMatch(/\.yobicon-comments:before\s*\{\s*content:\s*"\\e4b7";/u);
   expect(styleSource).toMatch(
-    /comments:\s*\{[^}]*clear:\s*"both"[^}]*display:\s*"block"[^}]*fontFamily:[\s\S]*?@media all and \(max-width:\s*720px\)[^}]*padding:\s*"2px"/u,
+    /\.board-comment-wrap\s*\{\s*display:\s*block;\s*clear:\s*both;\s*font-family:[\s\S]*?Segoe UI Symbol";/u,
+  );
+  expect(styleSource).toMatch(
+    /@media all and \(max-width:\s*720px\)[\s\S]*?\.board-comment-wrap\s*\{\s*padding:\s*2px;\s*\}/u,
   );
   for (const styleName of ["commentHeader", "commentHeaderIcon", "commentDivider"]) {
   }
@@ -8350,42 +8428,53 @@ test("authenticated populated board post owns open parent comment update form in
   ]) {
   }
   expect(styleSource).toMatch(
-    /commentUpdateTextareaControl:\s*\{[\s\S]*?fontSize:\s*"12px"[\s\S]*?width:\s*"100%"[\s\S]*?borderColor:\s*"#F36C22 !important"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{ fontSize:\s*"16px !important" \}/u,
+    /\.textarea-box\s+textarea\s*\{\s*width:\s*100%;[\s\S]*?resize:\s*vertical\s*!important;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateFileUploadLabel:\s*\{\s*display:\s*"block",\s*transition:\s*"background 0\.3s"/u,
+    /\[data-owner="post-detail-comment-update-textarea"\]:focus,[\s\S]*?\[data-owner="post-detail-comment-create-textarea"\]:focus\s*\{\s*border-color:\s*#f36c22\s*!important;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateActionButton:\s*\{[\s\S]*?backgroundColor:\s*"#ffffff"[\s\S]*?padding:\s*"4px 12px !important"[\s\S]*?transition:\s*"all 0\.3s ease"[\s\S]*?":active":/u,
+    /@media all and \(max-width:\s*720px\)[\s\S]*?input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px\s*!important;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateSaveButton:\s*\{[\s\S]*?backgroundColor:\s*"#3A7EE5 !important"[\s\S]*?borderColor:\s*"#206EE5"[\s\S]*?":hover":\s*\{[\s\S]*?backgroundColor:\s*"#206EE5 !important"[\s\S]*?":active":\s*\{[\s\S]*?backgroundColor:\s*"#3A7EE5 !important"/u,
+    /\.upload-button-line \.file-upload__label\s*\{\s*display:\s*block;\s*border-radius:\s*2px;\s*transition:\s*background 0\.3s;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateEditorNav:\s*\{[\s\S]*?height:\s*"29px"[\s\S]*?margin:\s*"0px !important"[\s\S]*?"::before":[\s\S]*?"::after":/u,
+    /\.ybtn,\s*\.flat > li > \.ybtn\s*\{[\s\S]*?background-color:\s*#FFF;[\s\S]*?padding:\s*4px 12px\s*!important;[\s\S]*?transition:\s*all 0\.3s ease;[\s\S]*?outline:\s*0 none;[\s\S]*?z-index:\s*2;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateEditorTabLink:\s*\{[\s\S]*?color:\s*"#3592b5"[\s\S]*?padding:\s*"4px 15px"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{[\s\S]*?paddingLeft:\s*"5px !important",[\s\S]*?paddingRight:\s*"5px !important",/u,
-  );
-  expect(styleSource).toMatch(/commentUpdateChecklistWrap:\s*\{ marginTop:\s*"2px" \}/u);
-  expect(styleSource).toMatch(
-    /commentUpdateChecklistButton:\s*\{[\s\S]*?backgroundColor:\s*"#eeeeee"[\s\S]*?borderColor:\s*"transparent"[\s\S]*?boxShadow:\s*"none"[\s\S]*?fontSize:\s*"13px !important"[\s\S]*?marginTop:\s*"1px"[\s\S]*?padding:\s*"1px 10px !important"[\s\S]*?backgroundColor:\s*"#fbe9e7"[\s\S]*?borderColor:\s*"#EF9A9A"[\s\S]*?color:\s*"#C93426"/u,
+    /\.ybtn\.ybtn-info,[\s\S]*?background-color:\s*#3A7EE5\s*!important;\s*border:\s*1px solid #206EE5;[\s\S]*?background-color:\s*#206EE5\s*!important;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateChecklistIcon:\s*\{[\s\S]*?fontFamily:\s*"yobicon"[\s\S]*?lineHeight:\s*"20px"[\s\S]*?verticalAlign:\s*"baseline"[\s\S]*?"::before":\s*\{ content:\s*'"\\\\e25e"' \}/u,
+    /\[data-owner="post-detail-comment-update-editor-nav"\],[\s\S]*?\[data-owner="post-detail-comment-create-editor-nav"\]\s*\{\s*height:\s*29px;\s*padding:\s*0;\s*\}/u,
+  );
+  expect(styleSource).toMatch(/\.nav-tabs\.small\s*\{\s*height:\s*29px;\s*\}/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-update-editor-tab"\],[\s\S]*?\[data-owner="post-detail-comment-create-editor-tab"\]\s*\{\s*color:\s*#3592b5;[\s\S]*?padding:\s*4px 15px;/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateDropOverlay:\s*\{[\s\S]*?backgroundColor:\s*"rgba\(255, 255, 255, 0\.8\)"[\s\S]*?borderColor:\s*"#FFB23D"[\s\S]*?borderStyle:\s*"dashed"[\s\S]*?borderWidth:\s*"3px"[\s\S]*?bottom:\s*"2px"[\s\S]*?display:\s*"none"[\s\S]*?left:\s*"2px"[\s\S]*?pointerEvents:\s*"none"[\s\S]*?position:\s*"absolute"[\s\S]*?right:\s*"2px"[\s\S]*?top:\s*"2px"[\s\S]*?zIndex:\s*9999/u,
+    /@media all and \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="post-detail-comment-update-editor-tab"\],[\s\S]*?\[data-owner="post-detail-comment-create-editor-tab-active"\]\s*\{\s*padding-left:\s*5px\s*!important;\s*padding-right:\s*5px\s*!important;/u,
+  );
+  expect(styleSource).toMatch(/\.task-list-button\s*\{\s*margin-top:\s*2px;\s*\}/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="post-detail-comment-update-checklist-button"\],\s*\[data-owner="post-detail-comment-create-checklist-button"\]\s*\{\s*background-color:\s*#eeeeee;\s*border-color:\s*transparent;\s*box-shadow:\s*none;\s*color:\s*#666666;\s*font-weight:\s*600;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateDropMessageWrap:\s*\{ height:\s*"100%", position:\s*"relative", width:\s*"100%" \}/u,
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?vertical-align:\s*baseline;/u,
+  );
+  expect(styleSource).toMatch(/\.yobicon-list:before\s*\{\s*content:\s*"\\e25e";/u);
+  expect(styleSource).toMatch(
+    /\.upload-drop-here\s*\{\s*position:\s*absolute;\s*top:\s*2px;\s*left:\s*2px;\s*right:\s*2px;\s*bottom:\s*2px;\s*border:\s*3px dashed #FFB23D;\s*background:\s*rgba\(255,\s*255,\s*255,\s*0\.8\);\s*z-index:\s*9999;\s*display:\s*none;\s*pointer-events:\s*none;\s*\}/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateDropMessage:\s*\{[\s\S]*?color:\s*"#999999"[\s\S]*?fontSize:\s*"26px"[\s\S]*?marginTop:\s*"-13px"[\s\S]*?position:\s*"absolute"[\s\S]*?textAlign:\s*"center"[\s\S]*?top:\s*"50%"[\s\S]*?width:\s*"100%"/u,
+    /\.upload-drop-here \.msg-wrap\s*\{\s*position:\s*relative;\s*width:\s*100%;\s*height:\s*100%;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /\.upload-drop-here \.msg\s*\{\s*position:\s*absolute;\s*top:\s*50%;\s*width:\s*100%;\s*margin-top:\s*-13px;\s*color:\s*#999;\s*font-size:\s*26px;\s*text-align:\s*center;\s*\}/u,
   );
 
   expect(styleSource).toMatch(
-    /commentCreateNotificationReceiver:\s*\{\s*backgroundColor:\s*"#F7F7F7",\s*display:\s*"none",\s*padding:\s*"5px 5px 5px 10px",\s*textAlign:\s*"start",\s*\}/u,
+    /\.notification-receiver\s*\{\s*display:\s*none;\s*padding:\s*5px 5px 5px 10px;\s*text-align:\s*start;\s*background-color:\s*#f7f7f7;\s*\}/u,
   );
   for (const owner of [
     "post-detail-comment-update-notification-receiver",
@@ -9444,6 +9533,28 @@ async function mockProjectPosts(
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/v1/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -10190,6 +10301,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "alt" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
             !(node.matches(".markdown-help-item") && attr.name === "id") &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-owner-instance" &&
@@ -10222,6 +10334,7 @@ async function canonicalize(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -10263,6 +10376,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-owner-instance" &&
@@ -10329,6 +10443,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -10500,6 +10615,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

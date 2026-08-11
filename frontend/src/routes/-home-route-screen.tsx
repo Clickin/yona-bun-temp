@@ -283,7 +283,11 @@ function HomeScreen({
           </div>
         ) : (
           notificationItems.map((notification) => (
-            <NotificationStreamItem key={notification.id} notification={notification} />
+            <NotificationStreamItem
+              basePath={runtimeConfig.basePath}
+              key={notification.id}
+              notification={notification}
+            />
           ))
         )}
         {notificationHasMore ? (
@@ -462,7 +466,11 @@ function HomeScreen({
                       </div>
                     ) : (
                       notificationItems.map((notification) => (
-                        <NotificationStreamItem key={notification.id} notification={notification} />
+                        <NotificationStreamItem
+                          basePath={runtimeConfig.basePath}
+                          key={notification.id}
+                          notification={notification}
+                        />
                       ))
                     )}
                     {notificationHasMore ? (
@@ -573,12 +581,24 @@ function HomeFlashToast({ message }: { message: string }) {
   return null;
 }
 
-function NotificationStreamItem({ notification }: { notification: NotificationItem }) {
+function NotificationStreamItem({
+  basePath,
+  notification,
+}: {
+  basePath: string;
+  notification: NotificationItem;
+}) {
   const messageWrapRef = React.useRef<HTMLDivElement>(null);
   const messageRef = React.useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [expandedMinHeight, setExpandedMinHeight] = React.useState<string | undefined>();
+  // The server API base-prefixes targetHref; TanStack Router re-prefixes `to`,
+  // so strip the base path before handing it to the router.
+  const targetHref =
+    basePath !== "/" && notification.targetHref.startsWith(`${basePath}/`)
+      ? notification.targetHref.slice(basePath.length)
+      : notification.targetHref;
   const notificationTypeTokens = notification.typeIcon.split(" ");
   const notificationGlyph = notificationTypeTokens[0] || "megaphone";
   const isUpdated =
@@ -638,7 +658,7 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
         <div data-owner="authenticated-home-notification-info">
           <div data-owner="authenticated-home-notification-title">
             {notification.targetHref ? (
-              <Link to={notification.targetHref} {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}>
+              <Link to={targetHref} {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}>
                 {notification.targetTitle}
               </Link>
             ) : (
@@ -945,8 +965,9 @@ export function SiteLayoutShell({
           </div>
         </div>
         {shouldRenderSiteAdminAffix ? (
-          <div className="site-admin-affix-surface" data-owner="site-admin-affix">
-            {t("user.siteAdminLoggedInAffix")} <span>{t("user.siteAdminLoggedInAffix.maxim")}</span>
+          <div className="admin-logged-in-affix" data-owner="site-admin-affix">
+            {t("user.siteAdminLoggedInAffix")}{" "}
+            <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
           </div>
         ) : null}
         <header data-scoped={hasScopedSearch ? "true" : undefined} data-owner="global-gnb-outer">

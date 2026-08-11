@@ -2546,7 +2546,12 @@ function TasklistBar() {
         <span className="done-counter" data-owner="post-detail-task-done-counter"></span>
       </div>
       <div className="task-progress" data-owner="post-detail-task-progress">
-        <div className="bar red" data-owner="post-detail-tasklist-progress" title="Tasklist"></div>
+        <div
+          className="bar red"
+          data-owner="post-detail-tasklist-progress"
+          style={{ width: 0 }}
+          title="Tasklist"
+        ></div>
       </div>
     </div>
   );

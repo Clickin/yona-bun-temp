@@ -849,7 +849,7 @@ export function PullRequestBranchInfo({
   return (
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch" data-owner="pull-request-detail-branch-start-icon"></i>
-      <code className="pr-branch-code from" title={t("pullRequest.from")}>
+      <code className="from" title={t("pullRequest.from")}>
         <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.fromOwnerName}
         </Link>
@@ -882,7 +882,7 @@ export function PullRequestBranchInfo({
         className="yobicon-right-2 ml10"
         data-owner="pull-request-detail-branch-direction-icon"
       ></i>
-      <code className="pr-branch-code to" title={t("pullRequest.to")}>
+      <code className="to" title={t("pullRequest.to")}>
         <Link to="/$user" params={{ user: pullRequest.ownerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.ownerName}
         </Link>

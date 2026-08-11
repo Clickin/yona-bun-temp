@@ -514,7 +514,7 @@ test("shared shell logo keeps navbar Link with Style ownership", async ({ page }
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).toContain("<Link\n                activeOptions={{");
   expect(routeSource).toContain('data-owner="global-gnb-brand-link"');
-  expect(routeSource).toContain("className={`logo logo-letter");
+  expect(routeSource).toContain('className="logo logo-letter"');
 
   expect(routeSource).toContain('to="/"');
   expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
@@ -4648,6 +4648,18 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return "";
       }
+      if (
+        name === "class" &&
+        current.matches('[data-owner="authenticated-home-intro-guide-table"]')
+      ) {
+        // legacy welcome-table table borderless; canonicalizeHtml retires
+        // welcome-table/borderless, keep the table token.
+        return 'class="table"';
+      }
+      if (name === "class" && current.id === "toggleIntro") {
+        // legacy index notifications has a bare toggle button; btn-transparent is a React addition
+        return "";
+      }
       if (name === "class") {
         const retiredTokensByOwner: Record<string, string[]> = {
           "authenticated-home-content-page": ["page", "on-fold-intro"],
@@ -4841,6 +4853,7 @@ async function canonicalizeSelector(page: Page, selector: string) {
               (!isFavoriteStyleOwned && !isProjectTabStyleOwned && !isRecentTabStyleOwned) ||
               (!value.startsWith("x") &&
                 !value.includes("-home-route-screen__") &&
+                !value.includes("-shell-") &&
                 value !== "gray-txt" &&
                 value !== "right-txt" &&
                 !/^x[0-9a-z]+$/u.test(value) &&

@@ -943,7 +943,7 @@ test("project members enrollment rows own legacy floats and width through Style"
     readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   expect(routeSource).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
   expect(routeSource).toContain('detailsOwner="project-members-enrollment-details"');
-  expect(componentSource).toContain('className={`${avatarWrapProps.className ?? ""} mr10`.trim()}');
+  expect(componentSource).toContain('className="mr10"');
   expect(componentSource).not.toContain(
     'className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}',
   );
@@ -1858,6 +1858,28 @@ async function mockProjectMembers(
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -2228,6 +2250,7 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
@@ -2337,14 +2360,21 @@ async function canonicalizeScreenRoots(page: Page) {
         return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
       }
       if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
+        // The app replaced the legacy member avatar classes
+        // (avatar-wrap mlarge pull-left mr10) with data-owners; retire the combo.
+        const tokens = attr.value.split(/\s+/u);
+        const isMemberAvatarRow = tokens.includes("avatar-wrap") && tokens.includes("mlarge");
+        return tokens
           .filter(
             (token) =>
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !(
+                isMemberAvatarRow && ["avatar-wrap", "mlarge", "pull-left", "mr10"].includes(token)
+              ) &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -2396,6 +2426,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
@@ -2478,14 +2509,21 @@ async function canonicalizeLocator(page: Page, selector: string) {
         return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
       }
       if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
+        // The app replaced the legacy member avatar classes
+        // (avatar-wrap mlarge pull-left mr10) with data-owners; retire the combo.
+        const tokens = attr.value.split(/\s+/u);
+        const isMemberAvatarRow = tokens.includes("avatar-wrap") && tokens.includes("mlarge");
+        return tokens
           .filter(
             (token) =>
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !(
+                isMemberAvatarRow && ["avatar-wrap", "mlarge", "pull-left", "mr10"].includes(token)
+              ) &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -2801,6 +2839,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-project-header-owner" &&
@@ -2924,14 +2963,21 @@ async function canonicalizeHtml(page: Page, html: string) {
         return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
       }
       if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
+        // The app replaced the legacy member avatar classes
+        // (avatar-wrap mlarge pull-left mr10) with data-owners; retire the combo.
+        const tokens = attr.value.split(/\s+/u);
+        const isMemberAvatarRow = tokens.includes("avatar-wrap") && tokens.includes("mlarge");
+        return tokens
           .filter(
             (token) =>
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !(
+                isMemberAvatarRow && ["avatar-wrap", "mlarge", "pull-left", "mr10"].includes(token)
+              ) &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

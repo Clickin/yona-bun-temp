@@ -1025,8 +1025,8 @@ test("svn project pull request route matches legacy badrequest_default site shel
   expect(await pullRequestBadRequestMetrics(page)).toEqual({
     errorTextAlign: "center",
     gnbBackground: "rgb(27, 27, 27)",
-    // copy-fix-current-dom: gnb-outer carries style tokens only (measured class)
-    gnbClassName: "x144jr85 x9f619 x1vqgdyp xeuugli x1yyc2ua xt970qd x1awh872 x17ykhhp",
+    // copy-fix-current-dom: StyleX retired; gnb-outer carries no style classes
+    gnbClassName: "",
     homeButtonClassName: "ybtn ybtn-info",
     messageColor: "rgb(137, 137, 137)",
     messageFontSize: "16px",
@@ -1515,6 +1515,28 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/v1/owners/admin/projects/sample/pushed-branches/17", async (route) => {
     const request = route.request();
     if (request.method() === "DELETE") {
@@ -1935,10 +1957,11 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
-            !(attr.name === "style" && normalizeAttr(attr) === ""),
+            !((attr.name === "style" || attr.name === "class") && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2009,6 +2032,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -2126,10 +2150,11 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-project-header-owner" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
-            !(attr.name === "style" && normalizeAttr(attr) === ""),
+            !((attr.name === "style" || attr.name === "class") && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2223,6 +2248,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

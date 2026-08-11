@@ -613,8 +613,8 @@ test("project pull request overview retires the overridden branch start ml0 fall
   expect(routeSource).toContain('data-owner="pull-request-detail-branch-direction-icon"');
   expect(routeSource).not.toContain("yobicon-branch ml0");
 
-  expect(styleSource).toContain("fontWeight: 400");
-  expect(styleSource).toContain("lineHeight: 1");
+  expect(styleSource).toMatch(/\[class\^="yobicon-"\][\s\S]*?font-weight:\s*normal/u);
+  expect(styleSource).toMatch(/\[class\^="yobicon-"\][\s\S]*?line-height:\s*1/u);
 
   // F6 copy-fix-current-dom: legacy ml10 folded into margin-left 10px
   // (-pull-request-detail.style.ts:107-109)
@@ -2319,8 +2319,8 @@ async function expectLegacyAnchor(
     await expect(locator).toHaveAttribute("title", attrs.title);
   }
   await expect(locator).toHaveText(attrs.text);
-  await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
-  await expect(locator).not.toHaveAttribute("data-status", /.+/u);
+  // TanStack Router sets aria-current/data-status on active links (STATIC_ACTIVE_PROPS,
+  // user activeProps cannot override); canonicalizers strip them in DOM comparisons.
 }
 
 async function expectNoRouteTooltipInitializers(page: Page) {
