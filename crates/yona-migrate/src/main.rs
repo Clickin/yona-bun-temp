@@ -284,6 +284,18 @@ fn run_project_export(args: &Args) -> Result<()> {
         eprintln!("Importing project into {} ...", to_url);
         let result = to::write_project_import_ndjson(to_url, to_token, owner, project, &lines, false)?;
         eprintln!("Import result: {}", serde_json::to_string_pretty(&result)?);
+        let skipped_projects = result
+            .get("skippedProjects")
+            .and_then(|value| value.as_u64())
+            .unwrap_or(0);
+        if skipped_projects > 0 {
+            eprintln!(
+                "warning: {skipped_projects} project record(s) skipped. The project may already \
+                 exist on the target, or its owner user \"{owner}\" is missing there. Run the \
+                 site-level import once to create users: yona-migrate --from-yoram-url ... \
+                 (without --from-owner/--from-project), then re-run this project import."
+            );
+        }
         if args.with_repos {
             let mut ctx = site_transform::TransformationContext::new();
             ctx.projects.push(serde_json::json!({

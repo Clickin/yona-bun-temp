@@ -109,3 +109,27 @@ The Node tool calls these external surfaces:
   provenance, tests tied to the external tool contract, and a separate
   migrator/export/import plan. New narrow app-owned helpers require updates to
   SPEC FG-18, `docs/provenance/legacy-external-api.md`, and focused route tests.
+
+## SVN project transfer decision (2026-08-10)
+
+- SVN project migration requires direct repository-directory access on **both**
+  the source and the target host; HTTP-only transfer is out of scope, matching
+  legacy Yona's filesystem-bound SVN constraints.
+  - Source side: `svnadmin dump <legacy data root>/repo/{id}.svn` — the
+    migrator runs this automatically with `--from-repo-dir`. The new app's
+    svnrdump `dump` over DAV is unsupported (`<S:replay>` REPORT dispatches but
+    lacks text-delta body generation), so HTTP dump is not a path.
+  - Target side: `svnrdump load` over DAV was attempted (vcc PROPPATCH
+    revprop staging, advisory root LOCK). The load-lock handshake is not a
+    plain DAV `LOCK` and could not be satisfied, so the attempt was reverted
+    and abandoned. The documented fallback stands: the operator runs
+    `svnadmin load <yoram data root>/repo/{id}.svn < dump` on the Yoram host
+    (the import provisions the repo directory). The migrator keeps the dump
+    file and prints the exact command when `svnrdump load` fails.
+  - `svn commit` over DAV (working-copy writes + svn:log preservation) is
+    fully supported and verified; only bulk dump/load over HTTP is not.
+- Project-level import requires the owner user to already exist on the target:
+  the project-import response skips project records whose owner is missing.
+  Run the site-level import once to create users, then re-run the project
+  import. The migrator now prints a warning when `skippedProjects > 0`,
+  naming the likely missing owner.
