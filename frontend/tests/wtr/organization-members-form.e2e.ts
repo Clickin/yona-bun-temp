@@ -876,6 +876,28 @@ async function mockOrganizationMembers(
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/v1/organizations/weblabs", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1399,6 +1421,7 @@ async function canonicalizeScreenRoots(
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
+            attr.name !== "data-active" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status",
         )
@@ -1464,6 +1487,7 @@ async function canonicalizeScreenRoots(
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

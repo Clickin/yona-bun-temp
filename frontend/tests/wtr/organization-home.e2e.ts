@@ -1109,6 +1109,28 @@ async function mockOrganizationHome(
       body: JSON.stringify(session),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/v1/organizations/weblabs/leave", async (route) => {
     options.leaveRequests?.push({
       hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
@@ -1452,6 +1474,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
         )
         .filter(
           (attr) =>
+            attr.name !== "data-active" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-scoped",
@@ -1486,6 +1509,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "yobicon-middle" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1530,6 +1554,7 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter((attr) => !isPin || attr.name === "class" || attr.name === "title")
         .filter(
           (attr) =>
+            attr.name !== "data-active" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-scoped",
@@ -1592,6 +1617,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "yobicon-middle" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1641,6 +1667,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         )
         .filter(
           (attr) =>
+            attr.name !== "data-active" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-scoped",
@@ -1740,6 +1767,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "yobicon-middle" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

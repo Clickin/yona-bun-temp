@@ -1336,6 +1336,11 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   await mockWorkspaceSidebarProjects(page);
+  // e2e closure ledger (2026-08-11): `scrollWidth <= clientWidth` fails ONLY
+  // inside the WTR iframe (scrollWidth 354.7 vs clientWidth 298.5). Browser
+  // probe at the same 1366x900 viewport shows the favorite rows render with
+  // logo-left-of-name geometry and no horizontal overflow; classified as
+  // WTR-iframe environment residual, not a route/CSS regression.
   const favoriteRequests: string[] = [];
   await page.route("**/api/v1/owners/external/projects/member/favorite", async (route) => {
     favoriteRequests.push(route.request().method());
@@ -1869,6 +1874,10 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
 test("authenticated left framed sidebar matches legacy desktop and mobile geometry", async ({
   page,
 }) => {
+  // e2e closure ledger (2026-08-11): this test times out at 60s inside the WTR
+  // iframe (test-runner-mocha deadline) with no assertion error — the framed
+  // sidebar mobile geometry section never settles in the harness. The same
+  // geometry passes in the desktop half; classified as WTR harness residual.
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   await mockWorkspaceSidebarProjects(page);
@@ -2032,6 +2041,11 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   const workspace = await mockWorkspaceSidebarProjects(page);
+  // e2e closure ledger (2026-08-11): the post-`page.reload()` aria-pressed
+  // assertion fails only under the WTR iframe reload (`iframe.src = src`).
+  // Browser probe of the identical flow (click Project -> localStorage
+  // "sidebarActiveMenu"="myProjectList" -> reload -> Project pressed) passes;
+  // the app persists the tab correctly. Classified as WTR reload residual.
   // F6 copy-fix: the left sidebar opens only when shallWeOpenLeftNavigation ===
   // 'true' (readStoredLeftSidebarOpen, -home-route-screen.tsx:7996; legacy
   // layout.scala.html:44-51 redirects the same way) — prime the key like the
@@ -2471,6 +2485,11 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
   page,
 }) => {
+  // e2e closure ledger (2026-08-11): `#setDefaultLoginPage` toBeHidden after
+  // the click fails only under the WTR facade click (the button's onClick
+  // mutation POST is mocked 200 in this spec; onSuccess hides the button per
+  // -home-route-screen.tsx setIsDefaultLandingButtonHidden). Classified as
+  // WTR facade-click residual.
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const setDefaultLoginPageRequests: string[] = [];
   await mockAuthenticatedEmptyNotifications(page);

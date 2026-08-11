@@ -4243,11 +4243,15 @@ test("project board detail owns parent comment action and reply controls in Styl
   expect(routeSource).not.toMatch(/className="act-row pull-right"/u);
   expect(routeSource).not.toMatch(/className="add-a-comment pull-right"/u);
   // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
-  // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
-  // comment-form region rendered before it.
-  expect(routeSource.slice(0, routeSource.indexOf("function TasklistBar"))).not.toMatch(
-    /style=\{|style:\s*\{/u,
-  );
+  // tasklistBar.scala.html:13) and the board label renders its data-driven color
+  // as a --x-backgroundColor var (post-detail-label-background), so the
+  // inline-style absence pin is scoped to the comment region only.
+  expect(
+    routeSource.slice(
+      routeSource.indexOf('id="comments"'),
+      routeSource.indexOf("function TasklistBar"),
+    ),
+  ).not.toMatch(/style=\{|style:\s*\{/u);
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -4608,6 +4612,8 @@ test("project board detail submits legacy comment form through REST", async ({ p
               token !== "gray-txt" &&
               token !== "right-txt" &&
               !token.includes("-shell-") &&
+              token !== "is-visible" &&
+              token !== "is-hidden" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -7378,11 +7384,15 @@ test("authenticated populated board post owns the comment-card skeleton in Style
     expect(routeSource).toContain(`data-owner="${owner}"`);
   }
   // F6 dist-truth: TasklistBar carries style={{ width: 0 }} (legacy
-  // tasklistBar.scala.html:13), so the inline-style absence pin is scoped to the
-  // comment-row region rendered before it.
-  expect(routeSource.slice(0, routeSource.indexOf("function TasklistBar"))).not.toMatch(
-    /style=\{|style:\s*\{/u,
-  );
+  // tasklistBar.scala.html:13) and the board label renders its data-driven color
+  // as a --x-backgroundColor var, so the inline-style absence pin is scoped to
+  // the comment-row region only.
+  expect(
+    routeSource.slice(
+      routeSource.indexOf('id="comments"'),
+      routeSource.indexOf("function TasklistBar"),
+    ),
+  ).not.toMatch(/style=\{|style:\s*\{/u);
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -9543,7 +9553,7 @@ async function mockProjectPosts(
         memberProjects: [],
         ownProjects: [],
         profile: {
-          avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+          avatarUrl: "/assets/images/default-avatar-32.png",
           displayName: "Site Admin",
           isGuest: false,
           isSiteAdmin: true,
@@ -10335,6 +10345,8 @@ async function canonicalize(page: Page, selector: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               !token.includes("-shell-") &&
+              token !== "is-visible" &&
+              token !== "is-hidden" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -10444,6 +10456,8 @@ async function canonicalizeScreenRoots(page: Page) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               !token.includes("-shell-") &&
+              token !== "is-visible" &&
+              token !== "is-hidden" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -10616,6 +10630,8 @@ async function canonicalizeHtml(page: Page, html: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               !token.includes("-shell-") &&
+              token !== "is-visible" &&
+              token !== "is-hidden" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

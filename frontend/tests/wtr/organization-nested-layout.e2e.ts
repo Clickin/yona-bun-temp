@@ -480,6 +480,28 @@ async function mockOrganizationNestedLayout(page: Page) {
       contentType: "application/json",
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+      contentType: "application/json",
+    }),
+  );
   await page.route("**/api/v1/organizations/weblabs/container", async (route) => {
     await route.fulfill({
       body: JSON.stringify({

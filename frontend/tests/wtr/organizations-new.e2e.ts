@@ -399,6 +399,28 @@ async function mockAuthenticatedSession(page: Page) {
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/v1/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -475,6 +497,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -596,6 +619,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

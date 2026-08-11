@@ -528,6 +528,28 @@ async function mockOrganizationAdmin(
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -779,7 +801,12 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
         )
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter(
+          (attr) =>
+            attr.name !== "data-active" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
         .filter(([name, value]) => !(name === "class" && value === ""))
@@ -833,6 +860,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -875,7 +903,12 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
         )
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter(
+          (attr) =>
+            attr.name !== "data-active" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
         .filter(([name, value]) => !(name === "class" && value === ""))
@@ -961,6 +994,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

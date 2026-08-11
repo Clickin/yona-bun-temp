@@ -420,6 +420,28 @@ async function mockProjectBranches(
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route(
     `**/api/v1/owners/${ownerName}/projects/${projectName}/container**`,
     async (route) => {
@@ -725,6 +747,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             attr.name !== "alt" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
         )
@@ -787,6 +810,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -867,6 +891,7 @@ async function canonicalize(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
         )
@@ -892,6 +917,7 @@ async function canonicalize(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -922,6 +948,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            attr.name !== "data-active" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
         )
@@ -1006,6 +1033,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

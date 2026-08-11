@@ -359,11 +359,9 @@ test("project commit detail watch buttons are route-owned React controls", async
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-watch"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-list"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'className={`${sx.footerWatchLeft.className} ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}',
+    'className={` ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}',
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    "className={`${sx.footerListRight.className} ybtn`}",
-  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={` ybtn`}");
 
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
     /id="watch-button"[\s\S]{0,220}data-toggle="button"/u,
@@ -614,8 +612,9 @@ test("project commit detail comment delete modal is route-owned React state", as
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setCommentDeleteCommentId");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("openCommentDeleteModal(comment.id)");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('id="comment-delete-modal"');
-  // bucket-3: modal className became a style-merged template literal.
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('isOpen ? "modal hide fade in" : "modal hide fade"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'className={`modal hide fade${isOpen ? " in is-open" : ""}`}',
+  );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('className="modal-backdrop fade in"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('role="presentation"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={onClose}");
@@ -1239,7 +1238,7 @@ test("project commit detail Batch 756 owns Git metadata with Style", async ({ pa
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
 
   expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
-    'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
+    'font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace;',
   );
 
   await mockProjectCommitDetail(page, [], {
@@ -1486,7 +1485,7 @@ test("project commit detail renders legacy partial_filediff rows", async ({ page
     ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;",
   );
 
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain('font-family: "monospace", Consolas, Tahoma;');
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
       {
@@ -1585,7 +1584,9 @@ test("project commit detail Batch 746 partial diff row and cell owners keep lega
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.discommentable {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("display:none;");
 
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("sx.diffLineCommentIcon");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'commentIcon: "commit-detail-diff-line-comment-icon"',
+  );
   expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.lineNumberCell}");
   expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.lineNumber}");
   expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.codeCell}");
@@ -1699,8 +1700,8 @@ index 1234567..abcdef1 100644
 test("project commit detail owns diff-body font family", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`${sx.diffBody.className} diff-body`}");
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain('font-family: "monospace", Consolas, Tahoma;');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={` diff-body`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-body-layout"');
 
   await mockProjectCommitDetail(page, []);
@@ -2183,7 +2184,9 @@ test("project commit detail ranged thread header and badge own frozen geometry",
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 5px 10px;");
 
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-thread-actions"');
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("threadShell:");
+  expect(COMMIT_DETAIL_STYLE_SOURCE).toMatch(
+    /\.comment-thread-wrap\s*\{[\s\S]*?border:\s*1px solid #e5e5e5;/u,
+  );
 
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-thread-shell"');
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
@@ -3238,7 +3241,7 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     "    .diff-wrap {\n        width:100%; overflow:auto; margin-bottom:20px;\n    }",
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-diff-wrap"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("...sx.diffWrap");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={` diff-wrap`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
     'style="width:100%; overflow:auto; margin-bottom:20px"',
   );
@@ -3344,14 +3347,12 @@ test("project SVN commit detail Batch 757 owns commit metadata with Style", asyn
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-info"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-ago"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-id"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`${sx.commitId.className} commitId`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
-    "className={`${sx.commitId.className} commitId pull-right`}",
-  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`  commitId`}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("className={`  commitId pull-right`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
 
   expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
-    'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
+    'font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace;',
   );
 
   await mockProjectCommitDetail(

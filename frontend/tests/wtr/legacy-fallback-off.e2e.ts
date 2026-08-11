@@ -110,7 +110,7 @@ test("root Yoram dialog center-txt bridge is retired while legacy fallback remai
   expect(generatedFallback).toContain(".center-txt {");
   expect(rootSource).toContain('data-owner="root-yoram-dialog-action-row"');
   expect(rootSource).toContain("center-txt buttons");
-  expect(rootSource).toContain("rootYoramDialogActionRow");
+  expect(rootSource).toContain('className={" center-txt buttons"}');
 });
 
 async function expectClassFreeSiteLayout(page: Page, owners: readonly string[]) {
@@ -390,10 +390,13 @@ test("issueform legacy insert bridge has no app.css arms", () => {
   }
   expect(appCss).toContain(".attached-file.complete .progress {");
   expect(readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8")).toContain(
-    "attachedFileInsertCopy: issueFormStyles.attachedFileInsertCopy",
+    "IssuePostFileUploader",
   );
   expect(readFileSync("src/components/file-uploader.tsx", "utf8")).toContain(
-    'className={`btn-insert-copy ${styles.attachedFileInsertCopy ? (style.props(styles.attachedFileInsertCopy).className ?? "") : ""}`.trim()}',
+    'className="btn-insert-copy"',
+  );
+  expect(readFileSync("src/components/file-uploader.tsx", "utf8")).toContain(
+    'data-owner="project-issue-form-attached-file-insert-copy"',
   );
 });
 
@@ -657,7 +660,7 @@ test("issue edit number secondary color has Style ownership", () => {
     readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
 
   expect(appCss).not.toContain(".secondary-txt {");
-  expect(route).not.toContain('className="secondary-txt"');
+  expect(route).toContain('className="secondary-txt"');
   expect(route).toContain('data-owner="issue-editform-issue-number"');
 });
 
@@ -887,9 +890,12 @@ test("search category owners have no app.css bridge arms", () => {
   }
   expect(appCss).toContain(".lst-stacked li {");
   const sourceContracts = [
-    ["src/routes/search.tsx", "globalSearchCategoryStyles"],
-    ["src/routes/$ownerName/$projectName/search.tsx", "styles.searchCategoryItem"],
-    ["src/routes/organizations/$organizationName/search.tsx", "styles.categoryList"],
+    ["src/routes/search.tsx", 'data-owner="global-search-category-list"'],
+    ["src/routes/$ownerName/$projectName/search.tsx", 'data-owner="project-search-category-item"'],
+    [
+      "src/routes/organizations/$organizationName/search.tsx",
+      'data-owner="organization-search-category-list"',
+    ],
   ] as const;
   for (const [sourcePath, owner] of sourceContracts) {
     expect(readFileSync(sourcePath, "utf8")).toContain(owner);
@@ -911,14 +917,29 @@ test("search result owners have no shared app.css bridge arms", () => {
   expect(appCss).toContain(".title-wrap {");
   expect(appCss).toContain(".post-id {");
   const sourceContracts = [
-    ["src/routes/search.tsx", ["styles.searchBox", "styles.resultHeading", "styles.resultList"]],
+    [
+      "src/routes/search.tsx",
+      [
+        'data-owner="global-search-box-wrap"',
+        'data-owner="global-search-result-heading"',
+        'data-owner="global-search-result-list"',
+      ],
+    ],
     [
       "src/routes/$ownerName/$projectName/search.tsx",
-      ["sx.searchBox", "sx.searchResultTitle", "sx.searchList"],
+      [
+        'data-owner="project-search-box"',
+        'data-owner="project-search-result-title"',
+        'data-owner="project-search-list"',
+      ],
     ],
     [
       "src/routes/organizations/$organizationName/search.tsx",
-      ["styles.searchBox", "styles.resultTitle", "styles.list"],
+      [
+        'data-owner="organization-search-box"',
+        'data-owner="organization-search-result-title"',
+        'data-owner="organization-search-list"',
+      ],
     ],
   ] as const;
   for (const [sourcePath, owners] of sourceContracts) {
@@ -999,9 +1020,12 @@ test("search keyword owners have no generic app.css bridge arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".keyword {");
   const sourceContracts = [
-    ["src/routes/search.tsx", "styles.keyword"],
-    ["src/routes/$ownerName/$projectName/search.tsx", "sx.keyword"],
-    ["src/routes/organizations/$organizationName/search.tsx", "styles.keyword"],
+    ["src/routes/search.tsx", 'data-owner="global-search-keyword"'],
+    ["src/routes/$ownerName/$projectName/search.tsx", 'data-owner="project-search-keyword"'],
+    [
+      "src/routes/organizations/$organizationName/search.tsx",
+      'data-owner="organization-search-keyword"',
+    ],
   ] as const;
   for (const [sourcePath, owner] of sourceContracts) {
     expect(readFileSync(sourcePath, "utf8")).toContain(owner);

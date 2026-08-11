@@ -999,14 +999,18 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   expect(less).toContain(".project-page-wrap");
   expect(less).toContain("margin-bottom: -2px");
 
-  expect(route).toContain("{...submenuListProps}");
+  expect(route).toContain('className="nav nav-tabs"');
   expect(route).toContain('data-owner="project-setting-submenu-list"');
   expect(route).toContain('data-owner="project-setting-submenu-item"');
-  expect(style).toContain("projectSettingSubmenuList:");
-
-  expect(style).toContain("lineHeight: 0");
-
-  expect(style).toContain("projectSettingSubmenuItem:");
+  expect(style).toMatch(
+    /\[data-owner="project-setting-submenu-list"\]\s*\{[\s\S]*?margin-bottom:\s*20px;\s*margin-left:\s*0;\s*list-style:\s*none;/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-submenu-list"\]::before\s*\{[\s\S]*?line-height:\s*0;/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-submenu-item"\]\s*\{\s*margin-bottom:\s*-2px;\s*\}/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
@@ -1144,8 +1148,12 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
       readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
   ]);
-  expect(linkStyleSource).toContain("projectSettingSubmenuLink:");
-  expect(linkStyleSource).toContain("projectSettingSubmenuLinkActive:");
+  expect(linkStyleSource).toMatch(
+    /\[data-owner="project-setting-submenu-link"\]\s*\{[\s\S]*?padding-left:\s*12px;[\s\S]*?padding-right:\s*12px;[\s\S]*?line-height:\s*20px;/u,
+  );
+  expect(linkStyleSource).toMatch(
+    /\[data-owner="project-setting-submenu-link"\]\.is-active,[\s\S]*?\[data-owner="project-setting-submenu-link"\]\.is-active:focus\s*\{[\s\S]*?border-bottom-color:\s*transparent;/u,
+  );
 
   expect(linkRouteSource).toContain('data-owner="project-setting-submenu-link"');
 
@@ -1252,8 +1260,10 @@ test("issue template edit preserves the legacy ybtn contract through its route-l
   expect(legacy).toContain('class="ybtn" target="_blank"');
   expect(legacy).toContain("?issueTemplate=true");
   expect(route).toContain('data-owner="project-setting-issue-template-edit"');
-  expect(route).toContain("className={`${sx.issueTemplateEdit.className} ybtn`}");
-  expect(style).toContain("issueTemplateEdit:");
+  expect(route).toContain('className="ybtn"');
+  expect(style).toMatch(
+    /\[data-owner="project-setting-issue-template-edit"\]\s*\{[\s\S]*?border-radius:\s*3px;[\s\S]*?border-style:\s*solid;[\s\S]*?border-width:\s*1px;/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -1680,7 +1690,7 @@ test("project settings middle rows own the frozen cu label, description, and not
   expect(legacy).toContain("color: #777;");
   expect(legacy).toContain("font-size: 12px;");
 
-  expect(route).toContain("className={`${sx.cuLabel.className} cu-label vmiddle`}");
+  expect(route).toContain('className="cu-label vmiddle"');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
@@ -1834,9 +1844,12 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
   expect(responsiveStyles).toContain("padding: 10px 0 !important;");
 
   expect(route).toContain('data-owner="project-setting-middle-reviewer"');
-  expect(style).toContain("middleBox:");
-
-  expect(style).toContain('"10px 0px"');
+  expect(style).toMatch(
+    /\[data-owner="project-setting-middle-share"\],[\s\S]*?\[data-owner="project-setting-middle-menu"\]\s*\{\s*border-bottom:\s*1px solid #e9e9e9;\s*padding:\s*10px 20px;\s*\}/u,
+  );
+  expect(style).toMatch(
+    /@media \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="project-setting-middle-share"\],[\s\S]*?\[data-owner="project-setting-middle-menu"\]\s*\{\s*padding:\s*10px 0;\s*\}/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
@@ -1956,15 +1969,21 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
   expect(responsiveStyles).toContain("padding: 10px 0 !important;");
   expect(route).toContain('data-owner="project-setting-top-box"');
   expect(route).toContain('data-owner="project-setting-bottom-box"');
-  expect(route).toContain("className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}");
+  expect(route).toContain('className="box-wrap top clearfix frm-wrap"');
 
   expect(route).toContain("onSubmit={onSubmit}");
-  expect(style).toContain("topBox:");
-  expect(style).toContain("bottomBox:");
-
-  expect(style).toContain("paddingTop:");
-  expect(style).toContain('"20px 0px"');
-  expect(style).toContain('"10px 0px"');
+  expect(style).toMatch(
+    /\[data-owner="project-setting-top-box"\]\s*\{[\s\S]*?border-bottom:\s*1px solid #e9e9e9;\s*padding:\s*0 20px;\s*padding-top:\s*20px;\s*padding-bottom:\s*20px;/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-bottom-box"\]\s*\{[\s\S]*?border-bottom:\s*0 none;\s*padding:\s*20px 0;\s*padding-bottom:\s*12px;\s*text-align:\s*center;/u,
+  );
+  expect(style).toMatch(
+    /@media \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="project-setting-top-box"\]\s*\{\s*padding:\s*10px 0;\s*padding-top:\s*10px;\s*padding-bottom:\s*10px;\s*\}/u,
+  );
+  expect(style).toMatch(
+    /@media \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="project-setting-bottom-box"\]\s*\{\s*padding:\s*10px 0;\s*padding-bottom:\s*10px;\s*\}/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -2072,8 +2091,8 @@ test("project settings form and frame own the frozen shell declarations", async 
   expect(pageStyles).toContain("margin-bottom: 20px;");
   expect(pageStyles).toContain(".border-radius(5px);");
   expect(pageStyles).toContain("background-color: #F7F7F7;");
-  expect(route).toContain("className={`${sx.form.className} nm`}");
-  expect(route).toContain("className={`${sx.frame.className} bubble-wrap gray`}");
+  expect(route).toContain('className="nm"');
+  expect(route).toContain('className="bubble-wrap gray"');
   expect(route).toContain('data-owner="project-setting-form"');
   expect(route).toContain('data-owner="project-setting-frame"');
 
@@ -2168,10 +2187,18 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
   expect(route).toContain('data-owner="project-setting-name-label"');
   expect(route).toContain('data-owner="project-setting-description-label"');
 
-  expect(style).toContain("settingFields:");
-  expect(style).toContain("settingFieldTerm:");
-  expect(style).toContain("settingFieldDescription:");
-  expect(style).toContain("settingFieldLabel:");
+  expect(style).toMatch(
+    /\[data-owner="project-setting-name-term"\],\s*\[data-owner="project-setting-description-term"\]\s*\{\s*margin:\s*3px 0 1px;\s*padding:\s*0;\s*\}/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-name-field"\]\s*\{[\s\S]*?margin:\s*0;\s*padding:\s*0;\s*\}/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-description-field"\]\s*\{\s*margin:\s*0;\s*padding:\s*0;\s*\}/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-name-label"\],\s*\[data-owner="project-setting-description-label"\]\s*\{\s*font-weight:\s*bold;\s*margin-right:\s*5px;\s*\}/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -2960,8 +2987,12 @@ test("project settings owns the legacy left-column logo upload surface", async (
   expect(less).toContain("top:0; left: 5px;");
   expect(route).toContain('data-owner="project-setting-logo-upload-button"');
   expect(route).toContain('data-owner="project-setting-logo-upload-input"');
-  expect(style).toContain("logoUploadButton:");
-  expect(style).toContain("logoUploadInput:");
+  expect(style).toMatch(
+    /\[data-owner="project-setting-logo-upload-button"\]\s*\{[\s\S]*?padding:\s*6px 20px;[\s\S]*?position:\s*relative;[\s\S]*?text-align:\s*center;/u,
+  );
+  expect(style).toMatch(
+    /\[data-owner="project-setting-logo-upload-input"\]\s*\{[\s\S]*?left:\s*5px;\s*min-width:\s*100px;\s*opacity:\s*0;\s*position:\s*absolute;\s*top:\s*0;/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);

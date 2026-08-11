@@ -290,7 +290,7 @@ function HomeScreen({
             />
           ))
         )}
-        {notificationHasMore ? (
+        {notificationHasMore && !isLoadingMoreNotifications ? (
           <li>
             <button
               id="notification-more"
@@ -473,7 +473,7 @@ function HomeScreen({
                         />
                       ))
                     )}
-                    {notificationHasMore ? (
+                    {notificationHasMore && !isLoadingMoreNotifications ? (
                       <li>
                         <button
                           id="notification-more"
@@ -592,7 +592,6 @@ function NotificationStreamItem({
   const messageRef = React.useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const [expandedMinHeight, setExpandedMinHeight] = React.useState<string | undefined>();
   // The server API base-prefixes targetHref; TanStack Router re-prefixes `to`,
   // so strip the base path before handing it to the router.
   const targetHref =
@@ -620,22 +619,10 @@ function NotificationStreamItem({
     messageWrap.style.overflow = currentOverflow;
     setHasOverflow(isOverflowing);
     setIsExpanded(false);
-    setExpandedMinHeight(undefined);
   }, [notification.message]);
 
   function toggleLearnMore() {
-    setIsExpanded((wasExpanded) => {
-      const nextExpanded = !wasExpanded;
-      const measuredExpandedMessageHeight = nextExpanded
-        ? (messageRef.current?.getBoundingClientRect().height ?? 0)
-        : undefined;
-      setExpandedMinHeight(
-        measuredExpandedMessageHeight === undefined
-          ? undefined
-          : `${measuredExpandedMessageHeight}px`,
-      );
-      return nextExpanded;
-    });
+    setIsExpanded((wasExpanded) => !wasExpanded);
   }
 
   function handleLearnMoreClick(event: React.MouseEvent<HTMLDivElement>) {
@@ -669,14 +656,16 @@ function NotificationStreamItem({
             data-owner="authenticated-home-notification-message-wrap"
             id={`message-${notification.id}`}
             ref={messageWrapRef}
-            {...(expandedMinHeight ? {} : {})}
+            style={{ maxHeight: isExpanded ? "none" : undefined }}
             data-part="authenticated-home-notification-expanded-height"
           >
             <div data-owner="authenticated-home-notification-message" ref={messageRef}>
               <LegacyNotificationMessage message={notification.message} />
             </div>
           </div>
-          {hasOverflow ? <div data-owner="authenticated-home-notification-more">...</div> : null}
+          {hasOverflow && !isExpanded ? (
+            <div data-owner="authenticated-home-notification-more">...</div>
+          ) : null}
           <div data-owner="authenticated-home-notification-meta">
             <Link
               to="/$user"

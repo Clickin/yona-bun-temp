@@ -1525,7 +1525,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
         memberProjects: [],
         ownProjects: [],
         profile: {
-          avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+          avatarUrl: "/assets/images/default-avatar-32.png",
           displayName: "Site Admin",
           isGuest: false,
           isSiteAdmin: true,
