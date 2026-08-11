@@ -24,8 +24,9 @@ use crate::resolve_current_session_response;
 use crate::{
     anonymous_current_session_response, append_response_headers, attach_session_headers,
     auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
-    percent_encode_uri_component, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, rest_read_current_session, send_password_reset_mail, AssetMode, AuthUiConfig,
+    percent_encode_uri_component, random_storage_token, require_session, require_valid_csrf,
+    rest_json_response, rest_owned_view, rest_read_current_session, send_password_reset_mail,
+    AssetMode, AuthUiConfig,
     BrowserRuntimeConfig, ConnectError, Context, ErrorCode, LdapFixtureUser, LdapRuntimeConfig,
     PasswordVerification, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
     hash_password_with_argon2id, verify_password, LEGACY_LOGIN_INVALID_MESSAGE,
@@ -1344,6 +1345,32 @@ fn oauth_login_id_hint(query: &HashMap<String, String>, email: &str) -> String {
         })
 }
 
+fn oauth_state_cookie_name(provider: &str) -> String {
+    format!("oauth_state_{}", provider.trim().to_ascii_lowercase())
+}
+
+fn oauth_state_cookie_value(
+    provider: &str,
+    value: &str,
+    base_path: &str,
+    public_origin: &str,
+    max_age: Option<i64>,
+) -> String {
+    let secure = public_origin.trim().to_ascii_lowercase().starts_with("https://");
+    let secure_suffix = if secure { "; Secure" } else { "" };
+    let max_age_suffix = max_age
+        .map(|seconds| format!("; Max-Age={seconds}"))
+        .unwrap_or_default();
+    format!(
+        "{}={}; Path={}; HttpOnly; SameSite=Lax{}{}",
+        oauth_state_cookie_name(provider),
+        value,
+        base_path,
+        max_age_suffix,
+        secure_suffix
+    )
+}
+
 fn configured_oauth_start_redirect(
     provider: &str,
     config: &crate::OAuthProviderRuntimeConfig,
@@ -1354,17 +1381,32 @@ fn configured_oauth_start_redirect(
         service.public_origin,
         base_path_href(&service.base_path, &format!("/authenticate/{provider}"))
     );
+    let state = random_storage_token();
     let mut location = format!(
-        "{}?client_id={}&redirect_uri={}&response_type=code&state=yona-oauth",
+        "{}?client_id={}&redirect_uri={}&response_type=code&state={}",
         config.authorization_url.trim(),
         percent_encode_uri_component(config.client_id.trim()),
-        percent_encode_uri_component(&redirect_uri)
+        percent_encode_uri_component(&redirect_uri),
+        percent_encode_uri_component(&state)
     );
     if !config.scope.trim().is_empty() {
         location.push_str("&scope=");
         location.push_str(&percent_encode_uri_component(config.scope.trim()));
     }
-    Redirect::to(&location).into_response()
+    let mut response = Redirect::to(&location).into_response();
+    response.headers_mut().append(
+        axum::http::header::SET_COOKIE,
+        oauth_state_cookie_value(
+            provider,
+            &state,
+            &service.base_path,
+            &service.public_origin,
+            Some(600),
+        )
+        .parse()
+        .expect("set-cookie header"),
+    );
+    response
 }
 
 pub(crate) async fn direct_authenticate_provider(
@@ -1377,6 +1419,40 @@ pub(crate) async fn direct_authenticate_provider(
     let Some(config) = oauth_provider_configured(&service, &provider).cloned() else {
         return direct_unsupported_authenticate_provider(provider, service).await;
     };
+
+    let is_callback = query.contains_key("code")
+        || query.contains_key("error")
+        || oauth_callback_identity(&query).is_some();
+    if is_callback {
+        let state_cookie = headers
+            .get(axum::http::header::COOKIE)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|header| {
+                super::utils::read_cookie_value(header, &oauth_state_cookie_name(&provider))
+            });
+        let query_state = query
+            .get("state")
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        if !state_cookie
+            .as_deref()
+            .is_some_and(|stored| query_state.as_deref() == Some(stored))
+        {
+            let state_cookie_delete = oauth_state_cookie_value(
+                &provider,
+                "",
+                &service.base_path,
+                &service.public_origin,
+                Some(0),
+            );
+            let mut response = direct_authenticate_provider_denied(provider, service).await;
+            response.headers_mut().append(
+                axum::http::header::SET_COOKIE,
+                state_cookie_delete.parse().expect("set-cookie header"),
+            );
+            return response;
+        }
+    }
 
     if query
         .get("error")
@@ -1458,6 +1534,12 @@ pub(crate) async fn direct_authenticate_provider(
         post_auth_landing_path(query.get("redirectUrl"), default_landing_path.as_deref());
     let mut response =
         Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response();
+    response.headers_mut().append(
+        axum::http::header::SET_COOKIE,
+        oauth_state_cookie_value(&provider, "", &service.base_path, &service.public_origin, Some(0))
+            .parse()
+            .expect("set-cookie header"),
+    );
     for cookie in service
         .session_manager
         .build_set_cookie_headers(&authenticated_session)

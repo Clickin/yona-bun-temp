@@ -406,7 +406,7 @@ fn normalize_preferred_language(input: &str, supported: &[String]) -> Option<Str
         })
 }
 
-fn read_cookie_value(cookie_header: &str, name: &str) -> Option<String> {
+pub(crate) fn read_cookie_value(cookie_header: &str, name: &str) -> Option<String> {
     cookie_header.split(';').find_map(|part| {
         let trimmed = part.trim();
         let (key, value) = trimmed.split_once('=')?;

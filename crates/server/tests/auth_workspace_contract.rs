@@ -155,6 +155,32 @@ fn cookie_header_from_set_cookie_response(response: &axum::response::Response) -
         .join("; ")
 }
 
+async fn oauth_start_state(app: &axum::Router, provider: &str) -> (String, String) {
+    // Runs the OAuth start redirect and returns (state, cookie header carrying oauth_state_{provider}).
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/authenticate/{provider}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let set_cookies = set_cookie_headers(&response);
+    let state_cookie = named_cookie(&set_cookies, &format!("oauth_state_{provider}="));
+    let state = state_cookie
+        .split(';')
+        .next()
+        .and_then(|pair| pair.split_once('='))
+        .map(|(_, value)| value.to_string())
+        .unwrap_or_else(|| panic!("oauth state cookie value missing in {state_cookie}"));
+    let cookie_header = cookie_header_from_set_cookie_response(&response);
+    (state, cookie_header)
+}
+
 async fn spawn_oauth_provider_stub(provider: &str) -> String {
     let app = match provider {
         "github" => axum::Router::new()
@@ -594,6 +620,25 @@ async fn legacy_oauth_start_redirects_to_configured_github_authorization_endpoin
         .contains("redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Fyona%2Fauthenticate%2Fgithub"));
     assert!(location.contains("scope=user%3Aemail"));
     assert!(location.contains("response_type=code"));
+    assert!(
+        !location.contains("state=yona-oauth"),
+        "start redirect must use a fresh random state, not the legacy fixed literal"
+    );
+    let set_cookies = set_cookie_headers(&response);
+    let state_cookie = named_cookie(&set_cookies, "oauth_state_github=");
+    assert!(state_cookie.contains("HttpOnly"), "state cookie: {state_cookie}");
+    assert!(state_cookie.contains("SameSite=Lax"), "state cookie: {state_cookie}");
+    assert!(state_cookie.contains("Max-Age=600"), "state cookie: {state_cookie}");
+    let state = state_cookie
+        .split(';')
+        .next()
+        .and_then(|pair| pair.split_once('='))
+        .map(|(_, value)| value)
+        .expect("state cookie value");
+    assert!(
+        location.contains(&format!("state={state}")),
+        "location must echo the cookie state: {location}"
+    );
 }
 
 #[tokio::test]
@@ -620,15 +665,15 @@ async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in
         },
     )
     .await;
-    let (_, cookie_header) = bootstrap(app.clone()).await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "github").await;
 
     let callback = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/authenticate/github?code=fixture-code&providerUserId=octo-1&email=octo@example.com&name=Octo%20Cat")
-                .header(http::header::COOKIE, &cookie_header)
+                .uri(format!("/yona/authenticate/github?code=fixture-code&providerUserId=octo-1&email=octo@example.com&name=Octo%20Cat&state={state}"))
+                .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -706,15 +751,15 @@ async fn legacy_oauth_logout_clears_local_session_without_provider_logout_redire
         },
     )
     .await;
-    let (_, cookie_header) = bootstrap(app.clone()).await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "github").await;
 
     let callback = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/authenticate/github?code=fixture-code&providerUserId=octo-logout&email=octo-logout@example.com&name=Octo%20Logout")
-                .header(http::header::COOKIE, &cookie_header)
+                .uri(format!("/yona/authenticate/github?code=fixture-code&providerUserId=octo-logout&email=octo-logout@example.com&name=Octo%20Logout&state={state}"))
+                .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -789,15 +834,15 @@ async fn legacy_oauth_callback_exchanges_github_code_for_provider_identity() {
         },
     )
     .await;
-    let (_, cookie_header) = bootstrap(app.clone()).await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "github").await;
 
     let callback = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/authenticate/github?code=real-provider-code")
-                .header(http::header::COOKIE, &cookie_header)
+                .uri(format!("/yona/authenticate/github?code=real-provider-code&state={state}"))
+                .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -855,15 +900,15 @@ async fn legacy_oauth_callback_exchanges_google_code_for_provider_identity() {
         },
     )
     .await;
-    let (_, cookie_header) = bootstrap(app.clone()).await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "google").await;
 
     let callback = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/authenticate/google?code=real-provider-code")
-                .header(http::header::COOKIE, &cookie_header)
+                .uri(format!("/yona/authenticate/google?code=real-provider-code&state={state}"))
+                .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -929,15 +974,15 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
         .set_default_landing_path(existing.id, Some("notifications".to_string()))
         .await
         .unwrap();
-    let (_, cookie_header) = bootstrap(app.clone()).await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "google").await;
 
     let callback = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/authenticate/google?providerUserId=google-door&email=door@example.com&name=Google%20Door")
-                .header(http::header::COOKIE, &cookie_header)
+                .uri(format!("/yona/authenticate/google?providerUserId=google-door&email=door@example.com&name=Google%20Door&state={state}"))
+                .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -983,6 +1028,210 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
                 .filter_map(|provider| provider.as_str())
                 .collect::<Vec<_>>()),
         Some(vec!["google"])
+    );
+}
+
+#[tokio::test]
+// Guards OAuth state CSRF closure: a callback without a state param (no start round trip) is
+// denied, no session cookie is issued, and no local user or linked_account row is persisted.
+async fn legacy_oauth_callback_without_state_is_denied_without_session_or_linked_account() {
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yoram_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    scope: "user:email".to_string(),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+
+    let callback = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github?providerUserId=evil-1&email=evil@example.com&name=Evil")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        callback
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?error=oauthDenied&provider=github")
+    );
+    let set_cookies = set_cookie_headers(&callback);
+    assert!(
+        set_cookies
+            .iter()
+            .all(|cookie| !cookie.starts_with("yona_session=")),
+        "denied callback must not issue a session cookie: {set_cookies:?}"
+    );
+    assert!(
+        repository
+            .find_user_by_identifier("evil@example.com")
+            .await
+            .unwrap()
+            .is_none(),
+        "denied callback must not create a local user"
+    );
+    let provider_rows = linked_account::Entity::find()
+        .filter(linked_account::Column::ProviderKey.eq("github"))
+        .all(&db)
+        .await
+        .unwrap();
+    assert!(
+        provider_rows.is_empty(),
+        "denied callback must not persist a linked account"
+    );
+}
+
+#[tokio::test]
+// Guards OAuth state CSRF closure: a callback whose state does not match the start-issued cookie
+// is denied even when the identity-hook parameters are present.
+async fn legacy_oauth_callback_with_mismatched_state_is_denied() {
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yoram_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    scope: "user:email".to_string(),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (_, state_cookie_header) = oauth_start_state(&app, "github").await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github?providerUserId=evil-1&email=evil@example.com&name=Evil&state=attacker-chosen-state")
+                .header(http::header::COOKIE, state_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        callback
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?error=oauthDenied&provider=github")
+    );
+    let set_cookies = set_cookie_headers(&callback);
+    assert!(
+        set_cookies
+            .iter()
+            .all(|cookie| !cookie.starts_with("yona_session=")),
+        "mismatched-state callback must not issue a session cookie: {set_cookies:?}"
+    );
+}
+
+#[tokio::test]
+// Guards that the query-identity callback hook stays usable with a valid start-issued state:
+// login succeeds and the provider shows in the connectedSocialProviders projection.
+async fn legacy_oauth_callback_identity_hook_works_with_valid_state() {
+    let (app, _, _) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["github".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+                "github",
+                yoram_server::OAuthProviderRuntimeConfig {
+                    authorization_url: "https://github.example/login/oauth/authorize".to_string(),
+                    client_id: "github-client".to_string(),
+                    client_secret: "github-secret".to_string(),
+                    scope: "user:email".to_string(),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "github").await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/authenticate/github?providerUserId=hook-1&email=hook@example.com&name=Hook%20User&state={state}"))
+                .header(http::header::COOKIE, state_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        callback
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
+    );
+    let callback_cookie_header = cookie_header_from_set_cookie_response(&callback);
+
+    let workspace = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, callback_cookie_header)
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(workspace.status(), StatusCode::OK);
+    let payload: serde_json::Value = serde_json::from_str(&response_text(workspace).await).unwrap();
+    assert_eq!(
+        payload
+            .pointer("/profile/connectedSocialProviders")
+            .and_then(|value| value.as_array())
+            .map(|providers| providers
+                .iter()
+                .filter_map(|provider| provider.as_str())
+                .collect::<Vec<_>>()),
+        Some(vec!["github"])
     );
 }
 
