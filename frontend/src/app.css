@@ -25970,7 +25970,8 @@ label[data-owner="organization-new-label"] {
   word-break: break-all;
 }
 [data-owner="left-sidebar-recent-issue-popover"],
-[data-owner="authenticated-sidenav-recent-issue-popover"] {
+[data-owner="authenticated-sidenav-recent-issue-popover"],
+[data-owner="authenticated-sidenav-favorite-project-popover"] {
   background-clip: padding-box;
   background-color: #03a9f4;
   border-color: rgba(0, 0, 0, 0.2);
@@ -25996,7 +25997,8 @@ label[data-owner="organization-new-label"] {
   z-index: 1010;
 }
 [data-owner="left-sidebar-recent-issue-popover"] > div:first-child,
-[data-owner="authenticated-sidenav-recent-issue-popover"] > div:first-child {
+[data-owner="authenticated-sidenav-recent-issue-popover"] > div:first-child,
+[data-owner="authenticated-sidenav-favorite-project-popover"] > div:first-child {
   border-color: transparent;
   border-left-width: 0;
   border-right-color: rgba(0, 0, 0, 0.25);
@@ -26011,12 +26013,13 @@ label[data-owner="organization-new-label"] {
   width: 0;
 }
 [data-owner="left-sidebar-recent-issue-popover"] > div:first-child::after,
-[data-owner="authenticated-sidenav-recent-issue-popover"] > div:first-child::after {
+[data-owner="authenticated-sidenav-recent-issue-popover"] > div:first-child::after,
+[data-owner="authenticated-sidenav-favorite-project-popover"] > div:first-child::after {
   border-color: transparent;
-  border-left-width: 0;
-  border-right-color: #03a9f4;
   border-style: solid;
   border-width: 10px;
+  border-left-width: 0;
+  border-right-color: #03a9f4;
   bottom: -10px;
   content: "";
   display: block;
@@ -26026,7 +26029,8 @@ label[data-owner="organization-new-label"] {
   width: 0;
 }
 [data-owner="left-sidebar-recent-issue-popover"] > div:last-child,
-[data-owner="authenticated-sidenav-recent-issue-popover"] > div:last-child {
+[data-owner="authenticated-sidenav-recent-issue-popover"] > div:last-child,
+[data-owner="authenticated-sidenav-favorite-project-popover"] > div:last-child {
   line-height: 120%;
   padding: 9px 10px;
 }
@@ -26398,7 +26402,7 @@ label[data-owner="organization-new-label"] {
   .sidebar-project-link
   > div:nth-child(1)
   i {
-  color: #ffffff;
+  color: #000000;
 }
 [data-owner="authenticated-sidenav-favorite-project-rows"]
   .sidebar-project-link

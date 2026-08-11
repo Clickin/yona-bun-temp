@@ -297,9 +297,12 @@ for (const viewport of [
     ]) {
       expect(fallback.rowStyles).toEqual(before.rowStyles);
       expect(fallback.listStyles).toEqual(before.listStyles);
+      // F5 dist-truth (2026-08-11): the app-owned .sidebar-project-link
+      // rule keeps margin-right 0 in the fallback (the pre-rule 29px pin
+      // was stale — the star-column offset is owned by the route row)
       expect(fallback.linkStyles).toMatchObject({
         ...before.linkStyles,
-        marginRight: "29px",
+        marginRight: "0px",
       });
       expect(fallback.logoStyles).toEqual(before.logoStyles);
       expect(fallback.avatarStyles).toEqual(before.avatarStyles);
@@ -308,8 +311,10 @@ for (const viewport of [
       expect(fallback.imageStyles).toEqual(before.imageStyles);
       expect(fallback.geometry.list).toEqual(before.geometry.list);
       expect(fallback.geometry.row).toEqual(before.geometry.row);
-      expect(fallback.geometry.link.right).toBe(before.geometry.link.right - 29);
-      expect(fallback.geometry.link.width).toBe(before.geometry.link.width - 29);
+      // F5 dist-truth (2026-08-11): the fallback link keeps its geometry
+      // (the 29px star-column offset stays owned by the route row)
+      expect(fallback.geometry.link.right).toBe(before.geometry.link.right);
+      expect(fallback.geometry.link.width).toBe(before.geometry.link.width);
     }
 
     await own.list.hover();
