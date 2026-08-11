@@ -8,8 +8,9 @@ use serde_json::{json, Value};
 use tower::ServiceExt;
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    attachment, AppRepository, CreateIssueCommentInput, CreateIssueInput, CreatePostingInput,
-    CreateProjectLabelInput, IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
+    attachment, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
+    CreatePostingInput, CreateProjectLabelInput, IssueMutationInput, MilestoneMutationInput,
+    PostingMutationInput,
 };
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
@@ -614,4 +615,137 @@ async fn project_import_requires_manager_or_site_admin() {
     )
     .await;
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn project_export_answers_bearer_token_for_private_projects() {
+    // Yoram→Yoram: the migration tool reads the project export with a Bearer
+    // API token, including for private projects (the token owner must have
+    // read access). Previously the export only resolved session actors.
+    let data_dir = tempfile::tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+        data_root: data_dir.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (_csrf, cookie, user_id) = register_user(app.clone(), "member").await;
+    seed_exportable_project(&app, &repo, &db, &data_dir, &cookie, &_csrf, user_id).await;
+    let token = repo
+        .reset_api_token_for_user(user_id)
+        .await
+        .expect("api token");
+
+    let response = rest_get_with_bearer(
+        app,
+        "/yona/api/v1/owners/member/projects/dataproj/exports",
+        &token,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let lines = parse_ndjson(&response_text(response).await);
+    assert_eq!(lines[0]["kind"], "project");
+    assert_eq!(lines[0]["projectName"], "dataproj");
+}
+
+#[tokio::test]
+async fn project_import_bootstraps_missing_project_for_site_admin() {
+    // Yoram→Yoram into a fresh instance: the NDJSON `project` record creates
+    // the project when it does not exist yet, gated on the caller being a
+    // site admin (the owner user must already exist on the target).
+    let (app, repo, db) = build_app_with_repository().await;
+    let (_csrf, _cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+    let token = repo
+        .reset_api_token_for_user(admin_id)
+        .await
+        .expect("api token");
+    let (_owner_csrf, _owner_cookie, _owner_id) = register_user(app.clone(), "member").await;
+
+    let body = r#"{"kind":"project","id":77,"owner":"member","projectName":"newproj","projectDescription":"bootstrap","projectVcs":"GIT","projectScope":"private"}
+{"kind":"done","memberCount":0,"issueCount":0,"postCount":0,"milestoneCount":0}
+"#;
+    let response = rest_raw_post_with_bearer(
+        app,
+        "/yona/api/v1/owners/member/projects/newproj/imports",
+        &token,
+        "application/x-ndjson",
+        body,
+    )
+    .await;
+    let imported = response_json(response).await;
+    assert_eq!(imported["dryRun"], false);
+    assert_eq!(imported["importedProjects"], 1);
+    let project = repo
+        .read_project_by_owner_and_name("member", "newproj")
+        .await
+        .expect("read project")
+        .expect("project created by import");
+    assert_eq!(project.id, 77);
+    assert_eq!(project.project_scope, "private");
+}
+
+#[tokio::test]
+async fn project_import_denies_missing_project_for_non_admin() {
+    let (app, _repo, _db) = build_app_with_repository().await;
+    // The first registered user becomes the initial site admin; register one
+    // first so `member` is a plain non-admin user.
+    let (_admin_csrf, _admin_cookie, _admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_csrf, cookie, _user_id) = register_user(app.clone(), "member").await;
+
+    let body = r#"{"kind":"project","owner":"member","projectName":"newproj","projectDescription":"","projectVcs":"GIT","projectScope":"public"}
+{"kind":"done","memberCount":0,"issueCount":0,"postCount":0,"milestoneCount":0}
+"#;
+    let response = rest_raw_post(
+        app,
+        "/yona/api/v1/owners/member/projects/newproj/imports?dryRun=true",
+        Some(&cookie),
+        "application/x-ndjson",
+        body,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+
+async fn mark_site_admin(db: &DatabaseConnection, user_id: i64) {
+    site_admin::ActiveModel {
+        id: NotSet,
+        admin_id: Set(Some(user_id)),
+    }
+    .insert(db)
+    .await
+    .expect("site admin insert");
+}
+
+async fn rest_get_with_bearer(app: axum::Router, uri: &str, token: &str) -> Response<Body> {
+    app.oneshot(
+        Request::builder()
+            .method(Method::GET)
+            .uri(uri)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+}
+
+async fn rest_raw_post_with_bearer(
+    app: axum::Router,
+    uri: &str,
+    token: &str,
+    content_type: &str,
+    body: &str,
+) -> Response<Body> {
+    app.oneshot(
+        Request::builder()
+            .method(Method::POST)
+            .uri(uri)
+            .header(header::CONTENT_TYPE, content_type)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::from(body.to_string()))
+            .unwrap(),
+    )
+    .await
+    .unwrap()
 }

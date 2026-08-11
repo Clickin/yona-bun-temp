@@ -29,8 +29,8 @@ use super::site_admin::{
 use crate::persistence::{IssueListFilter, MilestoneListFilter, PostingListFilter};
 use crate::{
     append_response_headers, internal_error, require_project_read, rest_actor_id,
-    rest_json_response, rest_require_migration_actor, rest_repository, ConnectError, Context,
-    PilotBackend, PilotServiceImpl, RestRouteError,
+    rest_json_response, rest_migration_actor_from_user_id, rest_require_migration_actor,
+    rest_repository, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 const NDJSON_CONTENT_TYPE: &str = "application/x-ndjson";
@@ -100,7 +100,12 @@ async fn rest_project_export(
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     let repository = rest_repository(&service)?;
-    let actor_id = rest_actor_id(&service, &headers);
+    // Session first, then migration API token (Bearer) so the migration
+    // tool can export private projects from another Yoram instance.
+    let actor_id = match rest_require_migration_actor(&service, &headers, false).await {
+        Ok(user_id) => Some(user_id),
+        Err(_) => rest_actor_id(&service, &headers),
+    };
     let _authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
@@ -378,12 +383,30 @@ async fn rest_project_import(
         .read_project_authorization(&owner_name, &project_name, Some(user_id))
         .await
         .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization: Option<_> = match authorization {
+        Some(authorization) => Some(authorization),
+        None => {
+            // Project does not exist yet: the NDJSON `project` record creates
+            // it (Yoram→Yoram project migration into a fresh instance), but
+            // only site admins may bootstrap a project through this route.
+            let actor = rest_migration_actor_from_user_id(repository, user_id).await?;
+            if !actor.is_site_admin {
+                return Err(RestRouteError::from_connect_error(
+                    ConnectError::permission_denied(
+                        "site admin required to import a project that does not exist yet",
+                    ),
+                ));
+            }
+            None
+        }
+    };
 
-    if !authorization.viewer.is_site_admin && !authorization.viewer.is_project_manager {
-        let error = ConnectError::permission_denied("site admin or project owner required");
-        return Err(RestRouteError::from_connect_error(error));
+    if let Some(authorization) = authorization.as_ref() {
+        if !authorization.viewer.is_site_admin && !authorization.viewer.is_project_manager {
+            let error = ConnectError::permission_denied("site admin or project owner required");
+            return Err(RestRouteError::from_connect_error(error));
+        }
     }
 
     let mut source = NdjsonImportRecordSource::new(body.into_data_stream(), owner_name, project_name);

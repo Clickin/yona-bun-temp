@@ -203,6 +203,53 @@ pub fn fetch_attachment_bytes(
     Ok(response.bytes()?.to_vec())
 }
 
+/// Read the project-level NDJSON export from a running Yoram instance
+/// (Yoram→Yoram). The new app's `GET /api/v1/owners/{owner}/projects/
+/// {project}/exports` streams the same NDJSON the import route consumes, so
+/// the migrator passes the lines through to the target unchanged.
+pub fn read_yoram_project_export(
+    base_url: &str,
+    token: &str,
+    owner: &str,
+    project: &str,
+) -> Result<Vec<String>> {
+    let url = format!(
+        "{}/api/v1/owners/{}/projects/{}/exports",
+        base_url.trim_end_matches('/'),
+        owner,
+        project,
+    );
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(600))
+        .build()?;
+    let response = client
+        .get(&url)
+        .header("Accept", "application/x-ndjson")
+        .bearer_auth(token)
+        .send()
+        .context("Failed to fetch project export from Yoram")?;
+    if !response.status().is_success() {
+        anyhow::bail!(
+            "Project export request failed: HTTP {} {}",
+            response.status(),
+            response.status().canonical_reason().unwrap_or("unknown"),
+        );
+    }
+    let body = response
+        .text()
+        .context("Failed to read project export body")?;
+    let lines = body
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    if lines.is_empty() {
+        anyhow::bail!("Project export returned no NDJSON lines");
+    }
+    Ok(lines)
+}
+
 pub fn read_from_file(path: &PathBuf) -> Result<serde_json::Value> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read file {}", path.display()))?;

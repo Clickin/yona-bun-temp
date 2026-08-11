@@ -332,13 +332,20 @@ fn run_h2_read(args: &Args) -> Result<()> {
 /// Yoram→Yoram: the site export payload IS the site import payload, so no
 /// legacy table transform runs. Attachments carry `hash` + `id`; the bytes
 /// are fetched from the source's `/files/{id}` route and uploaded as
-/// `uploads/{hash}` (the placeholder flow keys rows by hash).
+/// `uploads/{hash}` (the placeholder flow keys rows by hash). With
+/// `--from-owner` + `--from-project`, migrates a single project via the
+/// NDJSON export/import surface instead.
 fn run_yoram_to_yoram(args: &Args) -> Result<()> {
     let from_url = args.from_yoram_url.as_ref().unwrap();
     let from_token = match &args.from_token {
         Some(token) => token.clone(),
         None => die("--from-yoram-url needs --from-token (Yoram Bearer token)"),
     };
+
+    if let (Some(owner), Some(project)) = (&args.from_owner, &args.from_project) {
+        return run_yoram_project_to_yoram(args, from_url, &from_token, owner, project);
+    }
+
     let to_token = args.to_token.as_deref();
 
     eprintln!("Reading Yoram site export from {from_url} ...");
@@ -404,6 +411,62 @@ fn run_yoram_to_yoram(args: &Args) -> Result<()> {
         }
     } else {
         to::write_to_stdout(&payload)?;
+    }
+    Ok(())
+}
+
+/// Project-level Yoram→Yoram: read the source's NDJSON project export and
+/// pass the lines through to the target's project import route. Repository
+/// bytes travel over smart HTTP with the source token owner's login.
+fn run_yoram_project_to_yoram(
+    args: &Args,
+    from_url: &str,
+    from_token: &str,
+    owner: &str,
+    project: &str,
+) -> Result<()> {
+    eprintln!("Reading Yoram project export: {owner}/{project} from {from_url} ...");
+    let lines = from::read_yoram_project_export(from_url, from_token, owner, project)?;
+    eprintln!("Read {} NDJSON lines", lines.len());
+
+    if args.dry_run {
+        eprintln!("DRY RUN — would import project {owner}/{project}");
+        return Ok(());
+    }
+
+    if let Some(file_path) = &args.to_file {
+        let content = lines.join("\n");
+        std::fs::write(file_path, content)
+            .with_context(|| format!("Failed to write {}", file_path.display()))?;
+        eprintln!("Wrote project NDJSON to {}", file_path.display());
+        return Ok(());
+    }
+
+    if let Some(to_url) = &args.to_url {
+        let to_token = args.to_token.as_deref().unwrap();
+        eprintln!("Importing project into {to_url} ...");
+        let result =
+            to::write_project_import_ndjson(to_url, to_token, owner, project, &lines, false)?;
+        eprintln!("Import result: {}", serde_json::to_string_pretty(&result)?);
+        if args.with_repos {
+            let mut ctx = site_transform::TransformationContext::new();
+            for line in &lines {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(line) {
+                    if value.get("kind").and_then(|k| k.as_str()) == Some("project") {
+                        ctx.projects.push(serde_json::json!({
+                            "id": value.get("id").and_then(|v| v.as_i64()).unwrap_or(0),
+                            "ownerName": owner,
+                            "projectName": project,
+                            "projectVcs": value.get("projectVcs").and_then(|v| v.as_str()).unwrap_or("GIT"),
+                        }));
+                        break;
+                    }
+                }
+            }
+            transfer_repositories(args, &ctx)?;
+        }
+    } else {
+        to::write_to_stdout(&serde_json::json!({ "lines": lines }))?;
     }
     Ok(())
 }
