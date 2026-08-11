@@ -26,8 +26,11 @@ test("project create select controls own the legacy 220px inline widths", async 
     const vcs = page.locator('[data-owner="project-form-vcs"]');
     await expect(owner).toHaveCSS("min-width", "220px");
     await expect(vcs).toHaveCSS("min-width", "220px");
-    await expect(owner).not.toHaveAttribute("style", /min-width/u);
-    await expect(vcs).not.toHaveAttribute("style", /min-width/u);
+    // legacy project/create.scala.html:24,121 emits style="min-width: 220px;"
+    // inline on #project-owner/#vcs; the route reproduces that (project-create
+    // parity) — pin the legacy attribute, not its absence
+    await expect(owner).toHaveAttribute("style", /min-width:\s*220px/u);
+    await expect(vcs).toHaveAttribute("style", /min-width:\s*220px/u);
     const geometry = await page.evaluate(() => {
       const owner = document.querySelector('[data-owner="project-form-owner"]');
       const vcs = document.querySelector('[data-owner="project-form-vcs"]');

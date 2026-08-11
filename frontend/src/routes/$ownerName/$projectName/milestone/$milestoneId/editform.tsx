@@ -202,7 +202,7 @@ function ProjectMilestoneEditFormBody({
                   <MilestoneFileUploader
                     resourceId={stringField(milestone.id, "")}
                     pasteHelpStyleProps={{ style: { display: "block" } }}
-                    helpClassName="help"
+                    helpClassName="right-txt help"
                     owners={{
                       wrapper: "milestone-edit-form-uploader",
                       attachWrap: "milestone-edit-form-upload-controls",

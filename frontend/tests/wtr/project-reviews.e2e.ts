@@ -51,7 +51,9 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   expect(await emptyReviewGeometry(page)).toEqual({
     documentWidth: 1366,
-    height: 500,
+    // F5 dist-truth: wrapper-less project-page-wrap (legacy reviewthread/list
+    // has no page-wrap-outer; count-0 contract) measures 590px at 1366px
+    height: 590,
     width: 1366,
     x: 0,
     y: 208,
@@ -88,7 +90,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     `${projectBasePath}/search`,
   );
   expect(await projectHeaderMetrics(page)).toEqual({
-    headerClassName: expect.stringMatching(/x[0-9a-z]+/u),
+    headerClassName: "",
     searchAction: `${projectBasePath}/search`,
     searchBoxHasRetiredLegacyClass: true,
     searchBoxHasRetiredSelectClass: true,
@@ -475,8 +477,11 @@ test("project reviews export source uses TanStack Link href", () => {
   );
 
   expect(exportSource).toContain("<Link");
-  expect(exportSource).toContain("href={`${action}${exportQuery}`}");
   expect(exportSource).toContain("to={`${baseRoute}${exportQuery}`}");
+  // to carries the full download URL including the export query (format=xls) —
+  // TanStack Link renders a `to` containing a query string verbatim and
+  // overrides any explicit `href` prop with it (verified on Link 1.170).
+  expect(exportSource).not.toContain("href={`${action}${exportQuery}`}");
   expect(exportSource).toContain("reloadDocument");
   expect(exportSource).not.toContain("<a");
 });

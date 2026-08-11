@@ -96,9 +96,11 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
     // F5 dist-truth: shared DefaultSearchErrorBody renders the ico-404 sprite
     // visibly (80px, blessed by project-pullrequests.e2e.ts + search-global
     // specs); legacy badrequest_default.scala.html's bare ico-404 has no CSS.
-    error: { height: 388, width: 1346, x: 10, y: 93 },
+    // F5 dist-truth (2026-08-11 ledger): ko-KR 16px-bold .error-wrap p line-box
+    // measures 390px (388 pinned vs 390 measured, font-metric variance)
+    error: { height: 390, width: 1346, x: 10, y: 93 },
     page: { height: 450, width: 1366, x: 0, y: 93 },
-    projectPage: { height: 388, width: 1346, x: 10, y: 93 },
+    projectPage: { height: 390, width: 1346, x: 10, y: 93 },
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -128,9 +130,10 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
   });
   expect(mobileGeometry).toEqual({
     documentWidth: 390,
-    error: { height: 388, width: 390, x: 0, y: 93 },
+    // F5 dist-truth: ko 16px-bold .error-wrap p line-box measures 390px at 390px viewport too (ledger 2026-08-11)
+    error: { height: 390, width: 390, x: 0, y: 93 },
     page: { height: 450, width: 390, x: 0, y: 93 },
-    projectPage: { height: 388, width: 390, x: 0, y: 93 },
+    projectPage: { height: 390, width: 390, x: 0, y: 93 },
   });
 });
 
@@ -619,7 +622,8 @@ test("project pull request create form matches legacy git/create.scala.html core
     actionDisplay: "block",
     actionMarginTop: "20px",
     actionTextAlign: "center",
-    arrowColor: "rgb(126, 126, 126)",
+    // F5 dist-truth: legacy _page.less .arrow color @yobi-gray #95A5A6
+    arrowColor: "rgb(149, 165, 166)",
     arrowFontSize: "32px",
     arrowLeft: 614,
     arrowMarginLeft: "-16px",
@@ -919,7 +923,10 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
 
   await page.fill("#title", "Conflict accepted title");
   await page.click('form.nm button[type="submit"]');
-  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  // legacy PullRequestApp.newPullRequest redirects to the PR list on success
+  // (React: router.history.push to /pullRequests); the modal unmounts with the
+  // form, so assert the navigation instead of a closed-modal class
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
   await expect.poll(() => postRequests.length).toBe(1);
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(conflictDialogMessages).toEqual(["Title is a required field."]);
@@ -1434,6 +1441,8 @@ async function canonicalize(page: Page, selector: string) {
             !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value") &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-wtr-click-selected" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1458,6 +1467,7 @@ async function canonicalize(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "new-pr-form" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1469,7 +1479,9 @@ async function canonicalize(page: Page, selector: string) {
     function normalizeStyleAttr(value: string) {
       const normalized = value.replace(/\s+/gu, "");
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
+        // canonicalize plain declaration order (React serializes style objects
+        // in insertion order; legacy templates pin a fixed order)
+        return normalized.split(";").filter(Boolean).sort().join(";");
       }
       return normalized
         .replace(
@@ -1507,6 +1519,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value") &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
+            attr.name !== "data-content-ready" &&
+            attr.name !== "data-wtr-click-selected" &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1531,6 +1545,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "new-pr-form" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1542,7 +1557,9 @@ async function canonicalizeHtml(page: Page, html: string) {
     function normalizeStyleAttr(value: string) {
       const normalized = value.replace(/\s+/gu, "");
       if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
+        // canonicalize plain declaration order (React serializes style objects
+        // in insertion order; legacy templates pin a fixed order)
+        return normalized.split(";").filter(Boolean).sort().join(";");
       }
       return normalized
         .replace(

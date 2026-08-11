@@ -44,8 +44,29 @@ for (const state of ["populated", "empty"] as const) {
       await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
       // F5 dist-truth: the shell slides open with a 0.5s width transition
       // (rootSidebarMotionStyles.shell); pseudo-element geometry only matches
-      // the settled layout, so wait it out (favorite-stars precedent waits 600ms).
-      await page.waitForTimeout(600);
+      // the settled layout, so poll #mySidenav's width until it stops changing
+      // (transitionend pattern; favorite-stars precedent waited a fixed 600ms).
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            const sidenav = document.getElementById("mySidenav");
+            if (!sidenav) {
+              resolve();
+              return;
+            }
+            let lastWidth = sidenav.getBoundingClientRect().width;
+            const poll = () => {
+              const width = sidenav.getBoundingClientRect().width;
+              if (Math.abs(width - lastWidth) < 0.001) {
+                resolve();
+                return;
+              }
+              lastWidth = width;
+              setTimeout(poll, 50);
+            };
+            setTimeout(poll, 50);
+          }),
+      );
 
       const root = page.locator('[data-owner="authenticated-sidenav-favorite-shell"]');
       const input = root.getByRole("textbox");

@@ -354,7 +354,11 @@ function ProjectCodeFolderBody({
           />
 
           <div className="code-viewer-wrap" data-owner="project-code-branch-viewer">
-            <div data-owner="project-code-branch-spinner" id="spin"></div>
+            <div
+              data-owner="project-code-branch-spinner"
+              id="spin"
+              style={{ position: "fixed", top: "50%", left: "50%" }}
+            ></div>
             <FolderList code={code} />
           </div>
         </div>

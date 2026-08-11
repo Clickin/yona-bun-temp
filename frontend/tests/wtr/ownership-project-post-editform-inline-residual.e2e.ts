@@ -21,7 +21,10 @@ test("moves board post edit editor wrapper to route-local Style", async ({ page 
   await page.goto(`${basePath}/admin/sample/post/12/editform`, { waitUntil: "commit" });
   const wrapper = page.locator('[data-owner="post-edit-form-editor"]');
   await expect(wrapper).toBeVisible();
-  await expect(wrapper).not.toHaveAttribute("style", /.+/);
+  // e2e closure ledger (2026-08-11): legacy board/edit.scala.html renders
+  // <dd style="position: relative;"> (asserted above); the route restores that
+  // inline style verbatim, so the no-inline-style pin is stale.
+  await expect(wrapper).toHaveAttribute("style", "position: relative;");
   await expect(wrapper).toHaveCSS("position", "relative");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
 

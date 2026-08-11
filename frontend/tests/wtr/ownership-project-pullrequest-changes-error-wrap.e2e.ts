@@ -13,6 +13,7 @@ async function mockChangesError(page: Page, status = 404) {
     isGuest: false,
     isSiteAdmin: false,
     loginId: "",
+    preferredLanguage: "en-US",
     userLabel: "",
   };
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
@@ -23,7 +24,23 @@ async function mockChangesError(page: Page, status = 404) {
   await page.route("**/api/v1/owners/admin/projects/sample/container**", (route) =>
     route.fulfill({
       contentType: "application/json",
-      json: { ownerName: "admin", projectName: "sample", vcs: "GIT", viewerCanUpdate: false },
+      json: {
+        id: 7,
+        ownerName: "admin",
+        projectName: "sample",
+        projectScope: "PUBLIC",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        vcs: "GIT",
+        viewerCanUpdate: true,
+        showBoard: true,
+      },
     }),
   );
   await page.route(
@@ -31,7 +48,7 @@ async function mockChangesError(page: Page, status = 404) {
     async (route: Route) => {
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ error: { status } }),
+        body: JSON.stringify({ error: { message: "forbidden", status } }),
         status,
       });
     },

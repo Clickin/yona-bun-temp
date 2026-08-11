@@ -136,7 +136,10 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     pageWrapMinWidth: "1100px",
     presetColorHeight: "24px",
     presetColorWidth: "auto",
-    projectPageMarginTop: "5px",
+    // F5 dist-truth (2026-08-11): legacy .project-page-wrap margin:20px auto 0 at
+    // desktop; the fallback `@media all` 5px !important leak is overridden by
+    // the app.css .page-wrap-outer > .project-page-wrap 20px rule (not-found parity)
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
     tabsMarginBottom: "20px",
     categoryInputWidth: "214px",
@@ -218,8 +221,9 @@ test("project labels renders default project header assets under the configured 
     "src",
     // Vite content-hashed dist asset (project_default_logo-CAWzVokN.png) — same
     // legacy image (legacy routes.Assets.at('images/project_default_logo.png'),
-    // TemplateHelper.scala:192-196); pin accepts the dist URL form
-    new RegExp(`${mountPrefix}/assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
+    // TemplateHelper.scala:192-196); pin accepts the dist URL form (path may be
+    // route-chunk-relative: {base}/admin/sample/issue/assets/...)
+    new RegExp(`[^"]*assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
   );
   await expect
     .poll(() =>
@@ -236,7 +240,7 @@ test("project labels renders default project header assets under the configured 
   await page.setViewportSize({ height: 844, width: 390 });
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`${mountPrefix}/assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
+    new RegExp(`[^"]*assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
   );
   await expect
     .poll(() =>
@@ -421,7 +425,7 @@ test("project labels internal links preserve legacy hrefs with SPA transition", 
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
@@ -989,6 +993,17 @@ test("project labels category typeahead suggests rendered categories and suppres
   await expect(typeahead.locator('li[data-value="type"] strong')).toHaveText("t");
   await expect(typeahead.locator('li[data-value="priority"] strong')).toHaveText("t");
 
+  // the typeahead menu's min-width comes from the input ref after React
+  // commits the open state; wait for the styled width before measuring
+  // (F6: menu.width was 22 when captured mid-render)
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const menu = document.querySelector<HTMLElement>("#frmNewLabel .typeahead.dropdown-menu");
+        return menu ? Math.round(menu.getBoundingClientRect().width) : 0;
+      }),
+    )
+    .toBeGreaterThan(100);
   const typeaheadMetrics = await categoryTypeaheadMetrics(page);
   expect(typeaheadMetrics).not.toBeNull();
   expect(typeaheadMetrics!.menu.left).toBeCloseTo(typeaheadMetrics!.input.left, 0);
@@ -1351,7 +1366,7 @@ test("project labels typeahead source stays React-owned and legacy-enter guarded
   );
   expect(routeSource).not.toContain('data-provider="typeahead"');
   expect(routeSource).not.toContain("data-provider");
-  expect(routeSource).toContain("`typeahead dropdown-menu ${");
+  expect(routeSource).toContain('className="typeahead dropdown-menu"');
   expect(routeSource).toContain("value={categoryTypeaheadQuery}");
   expect(routeSource).toContain("value={newLabelColor}");
   expect(routeSource).toContain("setCategoryTypeaheadQuery(categoryName);");
@@ -2090,6 +2105,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.startsWith("project-labels-category-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -2125,10 +2141,13 @@ async function canonicalizeScreenRoots(page: Page) {
           // --x-backgroundColor var (labelsform.tsx preset colors)
           .replace(/--x-backgroundColor:/gu, "background-color:")
           // F6 copy-fix-current-dom: the empty-state ico renders its legacy sprite
-          // as an inlined built-asset url (/yona/assets/sprite-<hash>.png); map it
-          // to the stable legacy path like the org-pullrequests canonicalizer.
+          // as an inlined built-asset url (/yona/assets/sprite-<hash>.png or the
+          // route-chunk form /yona/<route>/assets/sprite-<hash>.png); the route
+          // passes it through a --project-labels-empty-error-sprite var — map the
+          // var + built url to the legacy background-image + stable path.
+          .replace(/--project-labels-empty-error-sprite:url\(/gu, "background-image:url(")
           .replace(
-            /url\((['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?)\)/gu,
+            /url\((['"]?)(?:https?:\/\/[^/]+)?\/yona\/(?:[^'")]+?\/)*assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?)\)/gu,
             "url($1src/assets/legacy/$2$3$4)",
           )
       );
@@ -2192,6 +2211,7 @@ async function canonicalizeElement(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.startsWith("project-labels-category-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -2274,6 +2294,7 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
                 token &&
                 token !== "gray-txt" &&
                 token !== "right-txt" &&
+                !token.startsWith("project-labels-category-") &&
                 !/^x[0-9a-z]+$/u.test(token) &&
                 !token.includes("__"),
             )

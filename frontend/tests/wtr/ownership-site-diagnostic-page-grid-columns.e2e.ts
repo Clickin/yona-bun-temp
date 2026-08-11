@@ -51,11 +51,15 @@ test("site diagnostic page/grid/columns own the active frozen layout declaration
     "settingContentColumn",
   ]) {
   }
-  expect(route).not.toContain('className="page-wrap-outer"');
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/siteMngLayout.scala.html
+  // renders <div class="page-wrap-outer"><div class="site-setting-wrap"><div class="row-fluid">
+  // with span2/span10 columns; the route restores those grid classes per parity.
+  // site-setting-wrap stays a shared const so no literal className="site-setting-wrap" leaks.
+  expect(route).toContain('className="page-wrap-outer"');
   expect(route).not.toContain('className="site-setting-wrap"');
-  expect(route).not.toContain('className="row-fluid"');
-  expect(route).not.toContain('className="span2"');
-  expect(route).not.toContain('className="span10"');
+  expect(route).toContain('className="row-fluid"');
+  expect(route).toContain('className="span2"');
+  expect(route).toContain('className="span10"');
 
   expect(route).not.toContain('className="pull-left"');
   expect(route).not.toContain('className="title_area"');

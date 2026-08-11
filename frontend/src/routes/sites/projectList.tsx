@@ -24,6 +24,7 @@ type ProjectListSearch = {
   pageNum?: number;
 };
 
+const legacyProjectListSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
@@ -143,16 +144,22 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
           </h3>
         </div>
       </div>
-      <div data-owner="site-project-list-page-wrap-outer">
-        <div data-owner="site-project-list-setting-wrap" data-owner-page="site-project-list-page">
-          <div data-owner="site-project-list-setting-grid">
-            <div data-owner="site-project-list-setting-sidebar-column">
+      <div className="page-wrap-outer" data-owner="site-project-list-page-wrap-outer">
+        <div
+          className="site-setting-wrap"
+          data-owner="site-project-list-setting-wrap"
+          data-owner-page="site-project-list-page"
+        >
+          <div className="row-fluid" data-owner="site-project-list-setting-grid">
+            <div className="span2" data-owner="site-project-list-setting-sidebar-column">
               <SiteAdminSidebar
                 activeTo="/sites/projectList"
                 badgeOwner="site-project-list-notification-badge"
                 baseLinkProps={legacyLinkSuppressionProps}
+                linkPropsByTo={{ "/sites/projectList": { search: legacyProjectListSidebarSearch } }}
                 dataSelected="always"
                 navOwner="site-project-list-sidebar-nav"
+                ulClassName="site-setting-nav"
                 ownerPrefix="site-project-list-sidebar"
                 showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
                 styleSlots={{
@@ -166,12 +173,13 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 }}
               />
             </div>
-            <div data-owner="site-project-list-setting-content-column">
+            <div className="span10" data-owner="site-project-list-setting-content-column">
               <div data-owner="site-project-list-title-strip">
                 <h2 data-owner="site-project-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.projectList" />
                 </h2>
                 <form
+                  className="form-search pull-right"
                   data-owner="site-project-list-search"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/projectList")}
                   onSubmit={(event) => {
@@ -187,38 +195,55 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                     });
                   }}
                 >
-                  <div data-owner="site-project-list-search-bar">
+                  <div className="search-bar" data-owner="site-project-list-search-bar">
                     <input
                       type="text"
+                      className="textbox"
                       data-owner="site-project-list-search-textbox"
                       key={filter}
                       name="filter"
                       placeholder={t("site.project.filter")}
                       defaultValue={filter}
                     />
-                    <button type="submit" data-owner="site-project-list-search-button">
-                      <i data-owner="site-project-list-search-icon"></i>
+                    <button
+                      type="submit"
+                      className="search-btn"
+                      data-owner="site-project-list-search-button"
+                    >
+                      <i className="yobicon-search" data-owner="site-project-list-search-icon"></i>
                     </button>
                   </div>
                 </form>
               </div>
-              <div data-owner="site-project-list-listhead">
-                <div data-owner="site-project-list-listhead-name-column">
+              <div className="row-fluid listhead" data-owner="site-project-list-listhead">
+                <div
+                  className="span5 listhead-title"
+                  data-owner="site-project-list-listhead-name-column"
+                >
                   <strong>
                     <LegacyMessage messageKey="project.name" />
                   </strong>
                 </div>
-                <div data-owner="site-project-list-listhead-description-column">
+                <div
+                  className="span4 listhead-title"
+                  data-owner="site-project-list-listhead-description-column"
+                >
                   <strong>
                     <LegacyMessage messageKey="project.description" />
                   </strong>
                 </div>
-                <div data-owner="site-project-list-listhead-created-column">
+                <div
+                  className="span2 listhead-title"
+                  data-owner="site-project-list-listhead-created-column"
+                >
                   <strong>
                     <LegacyMessage messageKey="project.created" />
                   </strong>
                 </div>
-                <div data-owner="site-project-list-listhead-action-column">
+                <div
+                  className="span1 listhead-title"
+                  data-owner="site-project-list-listhead-action-column"
+                >
                   <strong>&nbsp;</strong>
                 </div>
               </div>
@@ -323,9 +348,13 @@ function ProjectListPagination({
   });
 
   return (
-    <div data-owner="site-project-list-pagination" id="pagination">
-      <ul data-owner="site-project-list-pagination-list">
-        <li data-pagination-variant="icon" data-owner="site-project-list-pagination-item">
+    <div className="page-navigation-wrap" data-owner="site-project-list-pagination" id="pagination">
+      <ul className="page-nums" data-owner="site-project-list-pagination-list">
+        <li
+          className="page-num ikon"
+          data-pagination-variant="icon"
+          data-owner="site-project-list-pagination-item"
+        >
           {hasPrev ? (
             <Link
               {...legacyLinkSuppressionProps}
@@ -333,6 +362,7 @@ function ProjectListPagination({
               to="/sites/projectList"
             >
               <i
+                className="ico btn-pg-prev"
                 data-disabled="false"
                 style={
                   {
@@ -345,6 +375,7 @@ function ProjectListPagination({
           ) : (
             <>
               <i
+                className="ico btn-pg-prev off"
                 data-disabled="true"
                 data-pagination-state="off"
                 style={
@@ -353,14 +384,19 @@ function ProjectListPagination({
                   } as CSSProperties
                 }
               ></i>
-              <span data-pagination-state="off" data-owner="site-project-list-pagination-label">
+              <span
+                className="off"
+                data-pagination-state="off"
+                data-owner="site-project-list-pagination-label"
+              >
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li data-owner="site-project-list-pagination-item">
+        <li className="page-num" data-owner="site-project-list-pagination-item">
           <input
+            className="input-mini nospinner"
             data-owner="site-project-list-pagination-input"
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
@@ -390,11 +426,21 @@ function ProjectListPagination({
             defaultValue={currentPage}
           />
         </li>
-        <li data-pagination-variant="delimiter" data-owner="site-project-list-pagination-item">
+        <li
+          className="page-num delimiter"
+          data-pagination-variant="delimiter"
+          data-owner="site-project-list-pagination-item"
+        >
           /
         </li>
-        <li data-owner="site-project-list-pagination-item">{totalPages}</li>
-        <li data-pagination-variant="icon" data-owner="site-project-list-pagination-item">
+        <li className="page-num" data-owner="site-project-list-pagination-item">
+          {totalPages}
+        </li>
+        <li
+          className="page-num ikon"
+          data-pagination-variant="icon"
+          data-owner="site-project-list-pagination-item"
+        >
           {hasNext ? (
             <Link
               {...legacyLinkSuppressionProps}
@@ -403,6 +449,7 @@ function ProjectListPagination({
             >
               <span data-owner="site-project-list-pagination-label">{t("button.nextPage")}</span>
               <i
+                className="ico btn-pg-next"
                 data-disabled="false"
                 style={
                   {
@@ -413,10 +460,15 @@ function ProjectListPagination({
             </Link>
           ) : (
             <>
-              <span data-pagination-state="off" data-owner="site-project-list-pagination-label">
+              <span
+                className="off"
+                data-pagination-state="off"
+                data-owner="site-project-list-pagination-label"
+              >
                 {t("button.nextPage")}
               </span>
               <i
+                className="ico btn-pg-next off"
                 data-disabled="true"
                 data-pagination-state="off"
                 style={
@@ -445,8 +497,8 @@ function ProjectListItem({
   const projectLogoUrl = project.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 
   return (
-    <li data-owner="site-project-list-row">
-      <div data-owner="site-project-list-row-name-column">
+    <li className="row-fluid listitem" data-owner="site-project-list-row">
+      <div className="span5 listitem-col" data-owner="site-project-list-row-name-column">
         <Link
           to="/$ownerName/$projectName"
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
@@ -467,9 +519,13 @@ function ProjectListItem({
           {project.ownerName}/{project.projectName}
         </Link>
       </div>
-      <div data-owner="site-project-list-row-description-column">{project.overview}</div>
-      <div data-owner="site-project-list-row-created-column">{project.createdAt}</div>
-      <div data-owner="site-project-list-row-action-column">
+      <div className="span4 listitem-col" data-owner="site-project-list-row-description-column">
+        {project.overview}
+      </div>
+      <div className="span2 listitem-col" data-owner="site-project-list-row-created-column">
+        {project.createdAt}
+      </div>
+      <div className="span1 listitem-col" data-owner="site-project-list-row-action-column">
         <button
           data-owner="site-project-list-delete-action"
           data-project-name={`${project.ownerName}/${project.projectName}`}

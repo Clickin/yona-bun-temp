@@ -468,7 +468,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             at{" "}
             <strong title={stringField(project.createdTitle, createdLabel)}>{createdLabel}</strong>{" "}
             {lastPushedLabel ? (
-              <span data-owner="organization-home-project-code-update">
+              <span className="small-font" data-owner="organization-home-project-code-update">
                 , {t("project.codeUpdate")}{" "}
                 <strong title={stringField(project.lastPushedTitle, lastPushedLabel)}>
                   {lastPushedLabel}
@@ -536,7 +536,7 @@ function MemberPanel({
           {showLeave ? (
             <button
               type="button"
-              className="ybtn ybtn-minimum ybtn-danger"
+              className="ybtn ybtn-minimum ybtn-danger pull-right"
               id="groupLeaveBtn"
               data-owner="organization-home-group-leave-button"
               onClick={onLeaveClick}

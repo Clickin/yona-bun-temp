@@ -54,11 +54,16 @@ test("moves only the active legacy user-list management shell to five Style owne
   );
 
   for (const owner of owners) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="page-wrap-outer"');
-  expect(route).not.toContain("site-setting-wrap");
-  expect(route.match(/className=/gu)).toEqual(["className=", "className="]);
-  for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
-    expect(route).not.toContain(retired);
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/siteMngLayout.scala.html
+  // wraps the management screens in page-wrap-outer/site-setting-wrap/row-fluid with
+  // span2/span10 columns; the route restores them per parity. site-setting-wrap is
+  // rendered via the shared siteSettingWrapClassName const so no literal leaks.
+  expect(route).toContain('className="page-wrap-outer"');
+  expect(route).toContain('className="row-fluid"');
+  expect(route).toContain('className="span2"');
+  expect(route).toContain('className="span10"');
+  expect(route).toContain("siteSettingWrapClassName");
+  expect(route).not.toContain('className="site-setting-wrap"');
   expect(route).toContain('data-owner="site-user-list-listhead"');
   expect(route).toContain('data-owner="site-user-list-row"');
   expect(route).toContain('data-owner="site-user-list-row-leave-date"');
@@ -82,11 +87,15 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
     const grid = get(owners[2]);
     const sidebar = get(owners[3]);
     const content = get(owners[4]);
-    await expect(pageWrap).not.toHaveClass(/\bpage-wrap-outer\b/u);
-    await expect(setting).not.toHaveClass(/\bsite-setting-wrap\b/u);
-    await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
-    await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
-    await expect(content).not.toHaveClass(/\bspan10\b/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/siteMngLayout.scala.html
+    // renders page-wrap-outer/site-setting-wrap/row-fluid + span2/span10 on the
+    // management shell; the route restores them per parity (geometry below still
+    // verifies the frozen layout values).
+    await expect(pageWrap).toHaveClass(/\bpage-wrap-outer\b/u);
+    await expect(setting).toHaveClass(/\bsite-setting-wrap\b/u);
+    await expect(grid).toHaveClass(/\brow-fluid\b/u);
+    await expect(sidebar).toHaveClass(/\bspan2\b/u);
+    await expect(content).toHaveClass(/\bspan10\b/u);
     const userRows = page.locator(
       '[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]',
     );

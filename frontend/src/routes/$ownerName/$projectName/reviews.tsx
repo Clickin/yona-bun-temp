@@ -157,135 +157,126 @@ function ProjectReviewsBody({
   }
 
   return (
-    <div className="page-wrap-outer" data-owner="project-reviews-page-wrap-outer">
-      <div className="project-page-wrap" data-owner="project-reviews-page-wrap">
-        <div className="row-fluid issue-list-wrap">
-          <div className="span2 search-wrap span-hard-wrap" data-owner="project-reviews-sidebar">
-            <div className="inner advanced">
-              <ul className="lst-stacked unstyled">
-                <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
-                  <button type="button" onClick={() => filterClick({})}>
-                    {t("review.allReview")}
-                    <span className="num-badge" data-owner="project-reviews-sidebar-count-all">
-                      {reviews.allCount}
-                    </span>
-                  </button>
-                </li>
-                <li className={search.participantId === currentUserId ? "active" : ""}>
-                  <button
-                    type="button"
-                    onClick={() => filterClick({ participantId: currentUserId })}
-                  >
-                    {t("review.involvingYou")}
-                    <span
-                      className="num-badge"
-                      data-owner="project-reviews-sidebar-count-participant"
-                    >
-                      {reviews.participantCount}
-                    </span>
-                  </button>
-                </li>
-                <li className={search.authorId === currentUserId ? "active" : ""}>
-                  <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
-                    {t("review.createdByYou")}
-                    <span className="num-badge" data-owner="project-reviews-sidebar-count-author">
-                      {reviews.authorCount}
-                    </span>
-                  </button>
-                </li>
-              </ul>
-              <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
-                <input type="hidden" name="authorId" value={search.authorId || ""} />
-                <input type="hidden" name="participantId" value={search.participantId || ""} />
-                <input type="hidden" name="orderDir" value={activeOrderDir} />
-                <input type="hidden" name="orderBy" value={activeOrderBy} />
-                <input type="hidden" name="state" value={activeState} />
-                <hr className="hide-in-mobile" />
-                <div className="search-bar span-hard-wrap">
-                  <input
-                    name="filter"
-                    className="textbox full"
-                    data-owner="project-reviews-search-input"
-                    type="text"
-                    defaultValue={search.filter}
-                  />
-                  <button type="submit" className="search-btn">
-                    <i className="yobicon-search"></i>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          <div className="span10 span-hard-wrap">
-            <div className="filters" data-owner="project-reviews-filters">
-              <button
-                type="button"
-                className="filter"
-                data-owner="project-reviews-sort"
-                onClick={() => {
-                  pushReviews({
-                    orderBy: "createdDate",
-                    orderDir: nextCreatedDateOrderDir,
-                    pageNum: 1,
-                  });
-                }}
-              >
-                <i
-                  className={`ico btn-gray-arrow ${
-                    activeOrderBy === "createdDate" && activeOrderDir !== "desc" ? "" : "down"
-                  }`}
-                ></i>
-                {t("common.order.date")}
-              </button>
-            </div>
-            <ul className="nav nav-tabs nm" data-owner="project-reviews-tabs">
-              <li className={activeState === "open" ? "active" : ""}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    pushReviews({ pageNum: 1, state: "open" });
-                  }}
-                >
-                  {t("issue.state.open")}
-                  <span className="num-badge">{reviews.openCount}</span>
+    <div className="project-page-wrap" data-owner="project-reviews-page-wrap">
+      <div className="row-fluid issue-list-wrap">
+        <div className="span2 search-wrap span-hard-wrap" data-owner="project-reviews-sidebar">
+          <div className="inner advanced">
+            <ul className="lst-stacked unstyled">
+              <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
+                <button type="button" onClick={() => filterClick({})}>
+                  {t("review.allReview")}
+                  <span className="num-badge" data-owner="project-reviews-sidebar-count-all">
+                    {reviews.allCount}
+                  </span>
                 </button>
               </li>
-              <li className={activeState === "closed" ? "active" : ""}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    pushReviews({ pageNum: 1, state: "closed" });
-                  }}
-                >
-                  {t("issue.state.closed")}
-                  <span className="num-badge">{reviews.closedCount}</span>
+              <li className={search.participantId === currentUserId ? "active" : ""}>
+                <button type="button" onClick={() => filterClick({ participantId: currentUserId })}>
+                  {t("review.involvingYou")}
+                  <span
+                    className="num-badge"
+                    data-owner="project-reviews-sidebar-count-participant"
+                  >
+                    {reviews.participantCount}
+                  </span>
+                </button>
+              </li>
+              <li className={search.authorId === currentUserId ? "active" : ""}>
+                <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
+                  {t("review.createdByYou")}
+                  <span className="num-badge" data-owner="project-reviews-sidebar-count-author">
+                    {reviews.authorCount}
+                  </span>
                 </button>
               </li>
             </ul>
-            <div className="review-list-wrap" data-owner="project-reviews-list-wrap">
-              <ProjectReviewRows
-                ownerName={ownerName}
-                projectName={projectName}
-                reviews={reviews}
-              />
-            </div>
-            <div data-owner="project-reviews-export-action">
-              <Link
-                href={`${action}${exportQuery}`}
-                to={`${baseRoute}${exportQuery}`}
-                reloadDocument
-                className="ybtn small"
-              >
-                <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
-              </Link>
-            </div>
-            <ProjectReviewPagination
-              action={action}
-              basePath={runtimeConfig.basePath}
-              reviews={reviews}
-              search={search}
-            />
+            <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
+              <input type="hidden" name="authorId" value={search.authorId || ""} />
+              <input type="hidden" name="participantId" value={search.participantId || ""} />
+              <input type="hidden" name="orderDir" value={activeOrderDir} />
+              <input type="hidden" name="orderBy" value={activeOrderBy} />
+              <input type="hidden" name="state" value={activeState} />
+              <hr className="hide-in-mobile" />
+              <div className="search-bar span-hard-wrap">
+                <input
+                  name="filter"
+                  className="textbox full"
+                  data-owner="project-reviews-search-input"
+                  type="text"
+                  defaultValue={search.filter}
+                />
+                <button type="submit" className="search-btn">
+                  <i className="yobicon-search"></i>
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
+        <div className="span10 span-hard-wrap">
+          <div className="filters" data-owner="project-reviews-filters">
+            <button
+              type="button"
+              className="filter"
+              data-owner="project-reviews-sort"
+              onClick={() => {
+                pushReviews({
+                  orderBy: "createdDate",
+                  orderDir: nextCreatedDateOrderDir,
+                  pageNum: 1,
+                });
+              }}
+            >
+              <i
+                className={`ico btn-gray-arrow ${
+                  activeOrderBy === "createdDate" && activeOrderDir !== "desc" ? "" : "down"
+                }`}
+              ></i>
+              {t("common.order.date")}
+            </button>
+          </div>
+          <ul className="nav nav-tabs nm" data-owner="project-reviews-tabs">
+            <li className={activeState === "open" ? "active" : ""}>
+              <button
+                type="button"
+                onClick={() => {
+                  pushReviews({ pageNum: 1, state: "open" });
+                }}
+              >
+                {t("issue.state.open")}
+                <span className="num-badge">{reviews.openCount}</span>
+              </button>
+            </li>
+            <li className={activeState === "closed" ? "active" : ""}>
+              <button
+                type="button"
+                onClick={() => {
+                  pushReviews({ pageNum: 1, state: "closed" });
+                }}
+              >
+                {t("issue.state.closed")}
+                <span className="num-badge">{reviews.closedCount}</span>
+              </button>
+            </li>
+          </ul>
+          <div className="review-list-wrap" data-owner="project-reviews-list-wrap">
+            <ProjectReviewRows ownerName={ownerName} projectName={projectName} reviews={reviews} />
+          </div>
+          <div data-owner="project-reviews-export-action">
+            {/* e2e closure ledger (2026-08-11): legacy reviewthread/list.scala.html:90
+                  href="@addQueryString(removeQueryString(requestHeader.uri, "pageNum"), "format=xls")"
+                  — the export URL carries format=xls. TanStack Link overrides an explicit
+                  `href` prop with the href computed from `to`, so the query must live in
+                  `to` (verified: to="/reviews?format=xls" renders that href verbatim). */}
+            <Link to={`${baseRoute}${exportQuery}`} reloadDocument className="ybtn small">
+              <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
+            </Link>
+          </div>
+          <ProjectReviewPagination
+            action={action}
+            basePath={runtimeConfig.basePath}
+            reviews={reviews}
+            search={search}
+          />
         </div>
       </div>
     </div>

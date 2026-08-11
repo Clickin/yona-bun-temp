@@ -293,7 +293,6 @@ function BranchRow({
             data-owner="project-branches-pull-request-link"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >
-            <span aria-hidden="true" data-owner="project-branches-pull-request-dot" />
             pullRequest-{branch.pullRequest.pullRequestNumber}
           </Link>
         ) : (

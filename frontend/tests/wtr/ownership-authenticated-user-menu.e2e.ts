@@ -118,7 +118,7 @@ test("authenticated user menu owns its legacy declarations through global Style 
   ]) {
   }
 
-  expect(menu.match(/\{" "\}/gu)).toHaveLength(2);
+  expect(menu.match(/\{" "\}/gu)).toHaveLength(1);
   // wave-33 retained-class retention (667398a04): the two toggle buttons keep
   // legacy <a class="gnb-dropdown-toggle"> / <a class="gnb-dropdown-toggle dropdwon-box-btn">
   // (yona-original/app/views/common/usermenu.scala.html:81,89) — assert retention.

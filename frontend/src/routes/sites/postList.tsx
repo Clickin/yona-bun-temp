@@ -72,10 +72,14 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           </h3>
         </div>
       </div>
-      <div data-owner="site-post-list-page-wrap-outer">
-        <div data-owner="site-post-list-setting-wrap" data-owner-page="site-post-list-page">
-          <div data-owner="site-post-list-setting-grid">
-            <div data-owner="site-post-list-setting-sidebar-column">
+      <div className="page-wrap-outer" data-owner="site-post-list-page-wrap-outer">
+        <div
+          className="site-setting-wrap"
+          data-owner="site-post-list-setting-wrap"
+          data-owner-page="site-post-list-page"
+        >
+          <div className="row-fluid" data-owner="site-post-list-setting-grid">
+            <div className="span2" data-owner="site-post-list-setting-sidebar-column">
               <SiteAdminSidebar
                 activeTo="/sites/postList"
                 badgeOwner="site-post-list-sidebar-badge"
@@ -87,6 +91,7 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   },
                 }}
                 navOwner="site-post-list-sidebar"
+                ulClassName="site-setting-nav"
                 ownerPrefix="site-post-list-sidebar"
                 showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
                 styleSlots={{
@@ -100,13 +105,13 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 }}
               />
             </div>
-            <div data-owner="site-post-list-setting-content-column">
+            <div className="span10" data-owner="site-post-list-setting-content-column">
               <div data-owner="site-post-list-title-strip">
                 <h2 data-owner="site-post-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.postList" />
                 </h2>
               </div>
-              <ul data-owner="site-post-list-container">
+              <ul className="post-list-wrap" data-owner="site-post-list-container">
                 {(query.data?.posts ?? []).map((post, index) => (
                   <PostListItem
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
@@ -262,8 +267,9 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
   const createdTitle = post.createdTitle ?? post.createdLabel;
 
   return (
-    <li data-owner="site-post-list-row">
+    <li className="row-fluid listitem" data-owner="site-post-list-row">
       <Link
+        className="avatar-wrap list-avatar"
         data-owner="site-post-list-project-avatar"
         params={{ ownerName: post.ownerName, projectName: post.projectName }}
         to="/$ownerName/$projectName"

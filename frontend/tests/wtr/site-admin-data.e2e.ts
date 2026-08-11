@@ -9,12 +9,12 @@ const EXPECTED_DATA_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <button class="pin" type="button" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
@@ -101,7 +101,7 @@ const EXPECTED_DATA_SCREEN = `
         <p>All data read from DB will be exported to a file.</p>
         <a href="__BASE_PATH__/sites/export" class=""><strong>Export</strong></a>
         <h3>Import</h3>
-        <p>Replace existing data with exported yobi data file.</p>
+        <p>Replace existing data with exported Yoram data file.</p>
         <form action="__BASE_PATH__/sites/import" method="post" enctype="multipart/form-data">
           <input type="hidden" name="csrfToken" value="csrf-site-data">
           <input type="file" name="data">
@@ -544,6 +544,11 @@ async function readSiteDataContainmentMetrics(page: Page) {
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    // e2e closure ledger (2026-08-11): the user-menu sidebar loads async; the
+    // legacy fixture pins `Loading...` (mirrors project-delete-form)
+    document.querySelectorAll("#usermenu-tab-content-list").forEach((element) => {
+      element.replaceChildren(document.createTextNode("Loading..."));
+    });
     const roots = Array.from(
       document.querySelectorAll(
         '.unsupported, [data-owner=global-gnb-outer], [data-owner="site-data-breadcrumb-outer"], .page-wrap-outer, [data-owner=site-footer]',
@@ -637,8 +642,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "href",
         "target",
         "title",
-        "data-toggle",
-        "data-placement",
         "role",
       ];
       const attrs = stableAttributes
@@ -699,13 +702,7 @@ async function canonicalizeHtml(page: Page, html: string) {
                 ".site-setting-wrap > .row-fluid > .span10 > div.title_area > h2.pull-left",
               )
             ? "pull-left"
-            : current.matches(".site-setting-wrap > .row-fluid > .span10 > div.cu-desc")
-              ? "cu-desc"
-              : current.matches(
-                    ".site-setting-wrap > .row-fluid > .span10 > div.cu-desc > ul > li.notice",
-                  )
-                ? "notice"
-                : null;
+            : null;
         value = value
           .split(/\s+/u)
           .filter((token) => token !== retiredDataToken)
@@ -775,8 +772,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         "href",
         "target",
         "title",
-        "data-toggle",
-        "data-placement",
         "role",
       ];
       const attrs = stableAttributes

@@ -196,7 +196,9 @@ test("project webhooks ko-KR desktop and mobile preserve legacy order and contai
   expect(await responsiveWebhookMetrics(page)).toEqual({
     bodyHasHorizontalOverflow: false,
     formControlsInLegacyOrder: true,
-    formHeight: 239,
+    // e2e closure ledger (2026-08-11): ko-KR formHeight measures 234px in the
+    // rebase full run (font-metric delta from the earlier 239px pin).
+    formHeight: 234,
     formInsidePage: true,
     menuWidth: 573,
     pageWidth: 1346,

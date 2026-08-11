@@ -314,7 +314,9 @@ test("site admin update renders the legacy available-version branch", async ({ p
   await expect
     .poll(async () => downloadLinkDom(page))
     .toEqual({
-      className: expect.stringMatching(/^(?!.*\bybtn\b).*$/u),
+      // F6 copy-fix: the download Link renders no className (update.tsx keeps
+      // only data-owner); pin absence instead of a non-ybtn class token.
+      className: null,
       href: "https://example.test/yona-1.1.0",
       tagName: "A",
       target: null,

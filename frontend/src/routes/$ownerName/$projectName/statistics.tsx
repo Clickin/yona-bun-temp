@@ -56,8 +56,8 @@ function ProjectStatisticsRouteShell({
   const body = (
     <>
       <title>{`statistics - ${ownerName}/${projectName}`}</title>
-      <div className="page-wrap-outer" data-owner="project-statistics-page-outer">
-        <div className="project-page-wrap" data-owner="project-statistics-page">
+      <div data-owner="project-statistics-page-outer">
+        <div data-owner="project-statistics-page">
           <h1 className="s2e-statistics-heading">Under Construction</h1>
         </div>
       </div>

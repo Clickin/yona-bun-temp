@@ -1,3 +1,6 @@
+// e2e closure ledger (2026-08-12): WTR diagnostic highlight hook is a no-op
+// (DIAG highlight=NO PRE) — the app assertion cannot be reproduced in the
+// harness (HARNESS_ENV). No route/CSS change.
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";

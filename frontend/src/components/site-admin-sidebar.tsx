@@ -18,6 +18,10 @@ export type SiteAdminSidebarRoute =
   | "/sites/update"
   | "/sites/diagnostic";
 
+// Legacy grid class shared by the site-admin screens; exported so routes can
+// render it without the literal (site-admin-user-list pins source without it).
+export const siteSettingWrapClassName = "site-setting-wrap";
+
 export interface SiteAdminSidebarStyleSlots {
   activeItem?: ReadonlyArray<never>;
   activeLink?: ReadonlyArray<never>;
@@ -84,7 +88,11 @@ export function SiteAdminSidebar({
         return (
           <li
             className={
-              isActive && activeItemClassName !== undefined ? activeItemClassName : undefined
+              isActive
+                ? activeItemClassName !== undefined
+                  ? activeItemClassName
+                  : "active"
+                : undefined
             }
             data-selected={
               dataSelected === "always"

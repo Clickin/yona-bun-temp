@@ -226,8 +226,12 @@ test(`profile issue subtask summary owns title-cell styles without inapplicable 
   // "no className=" retirement pin is stale; the summary owns them again,
   // carrying the legacy subtask-progress/upload-progress runtime classes.
   expect(scopedRoute).toContain("className=");
-  expect(scopedRoute).toContain("subtask-progress upload-progress red-outline");
-  expect(scopedRoute).toContain("subtask-progress completion-ratio");
+  expect(scopedRoute).toContain(
+    'subtask-progress upload-progress${percentage === 100 ? " done-outline" : " red-outline"}',
+  );
+  expect(scopedRoute).toContain(
+    'subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}',
+  );
   for (const owner of [
     "user-profile-issue-subtask-progress-wrapper",
     "user-profile-issue-subtask-progress-shell",

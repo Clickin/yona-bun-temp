@@ -637,7 +637,16 @@ function NotificationStreamItem({
   return (
     <li data-owner="authenticated-home-notification-row">
       <div data-owner="authenticated-home-notification-type">
-        {isUpdated ? "Edit" : <i className={`yobicon-${notificationGlyph}`} />}
+        {isUpdated ? (
+          "Edit"
+        ) : (
+          <i
+            className={`yobicon-${notificationGlyph}${notificationTypeTokens
+              .slice(1)
+              .map((token) => ` yobicon-${token}`)
+              .join("")}`}
+          />
+        )}
       </div>
       {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
@@ -954,13 +963,16 @@ export function SiteLayoutShell({
           </div>
         </div>
         {shouldRenderSiteAdminAffix ? (
-          <div className="admin-logged-in-affix" data-owner="site-admin-affix">
-            {t("user.siteAdminLoggedInAffix")}{" "}
-            <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
+          <div className="site-admin-affix-surface" data-owner="site-admin-affix">
+            {t("user.siteAdminLoggedInAffix")} <span>{t("user.siteAdminLoggedInAffix.maxim")}</span>
           </div>
         ) : null}
-        <header data-scoped={hasScopedSearch ? "true" : undefined} data-owner="global-gnb-outer">
-          <div data-owner="global-gnb-inner">
+        <header
+          className="gnb-outer"
+          data-scoped={hasScopedSearch ? "true" : undefined}
+          data-owner="global-gnb-outer"
+        >
+          <div className="gnb-inner" data-owner="global-gnb-inner">
             {!showLeftSidebar ? (
               <button
                 aria-controls="sidebar"
@@ -994,7 +1006,10 @@ export function SiteLayoutShell({
               </li>
               {legacyProjectListingEnabled ? (
                 <>
-                  <li data-owner="global-gnb-project-list-item">
+                  <li
+                    className={activeMenu === "projects" ? "active" : ""}
+                    data-owner="global-gnb-project-list-item"
+                  >
                     <Link
                       activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                       activeProps={LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS.activeProps}
@@ -1047,7 +1062,7 @@ export function SiteLayoutShell({
                         {gnbSearchScopeTitle}{" "}
                       </button>
                       <ul
-                        className={`dropdown-menu flat right `.trim()}
+                        className="dropdown-menu flat right"
                         data-owner="global-gnb-search-scope-menu"
                       >
                         {projectSearchAction ? (
@@ -1075,7 +1090,7 @@ export function SiteLayoutShell({
                     </div>
                   ) : null}
                   <div
-                    className={`search-box ${hasScopedSearch ? "select" : ""} `}
+                    className={`search-box${hasScopedSearch ? " select" : ""}`}
                     data-owner="global-gnb-search-box"
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
@@ -1162,6 +1177,7 @@ function LegacyFramedSidebar({
       aria-hidden={motion === "closing" ? true : undefined}
       className="sidebar"
       data-owner="left-sidebar-outer-shell"
+      data-sidebar-expanded={motionExpanded ? "true" : "false"}
       data-sidebar-motion={motion}
       inert={motion !== "open"}
       id="sidebar"
@@ -1267,7 +1283,6 @@ function AuthenticatedSiteUserMenu({
   basePath,
   runtimeConfig,
   session,
-  sidenavUsesAdminAffixTop,
   workspace,
 }: {
   basePath: string;
@@ -1317,7 +1332,7 @@ function AuthenticatedSiteUserMenu({
     <>
       <div
         id="mySidenav"
-        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} `}
+        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"}`}
         data-owner="authenticated-site-sidenav-shell"
       >
         <div
@@ -1360,27 +1375,17 @@ function AuthenticatedSiteUserMenu({
             </Link>
           </div>
           <ul className={"nav nav-tabs nm"} data-owner="authenticated-sidenav-tabs">
-            <li
-              className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""} `}
-            >
-              <button
-                type="button"
-                data-toggle="tab"
-                onClick={() => setActiveSidebarTab("favorite")}
-              >
+            <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
+              <button type="button" onClick={() => setActiveSidebarTab("favorite")}>
                 {t("title.favorite")}
               </button>
             </li>
-            <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""} `}>
-              <button
-                type="button"
-                data-toggle="tab"
-                onClick={() => setActiveSidebarTab("project")}
-              >
+            <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
+              <button type="button" onClick={() => setActiveSidebarTab("project")}>
                 {t("title.project")}
               </button>
             </li>
-            <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""} `}>
+            <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
               <button type="button" data-toggle="tab" onClick={() => setActiveSidebarTab("recent")}>
                 {t("title.recently.visited.issue")}
               </button>
@@ -1457,7 +1462,7 @@ function AuthenticatedSiteUserMenu({
           </button>
         </li>
         <li
-          className={`${isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"} `}
+          className={`${isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"}`}
           data-owner="root-usermenu-create-dropdown"
           onBlur={handleCreateMenuBlur}
         >
@@ -1569,7 +1574,6 @@ function AnonymousSidenav({
           <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
             <button
               type="button"
-              data-toggle="tab"
               data-owner="anonymous-sidebar-tab-favorite"
               onClick={() => onSelectSidebarTab("favorite")}
             >
@@ -1579,7 +1583,6 @@ function AnonymousSidenav({
           <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
             <button
               type="button"
-              data-toggle="tab"
               data-owner="anonymous-sidebar-tab-project"
               onClick={() => onSelectSidebarTab("project")}
             >
@@ -1589,7 +1592,6 @@ function AnonymousSidenav({
           <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
             <button
               type="button"
-              data-toggle="tab"
               data-owner="anonymous-sidebar-tab-recent"
               onClick={() => onSelectSidebarTab("recent")}
             >

@@ -178,10 +178,10 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
     secretBoxPaddingLeft: "14px",
     secretBoxPaddingRight: "35px",
     secretBoxPaddingTop: "14px",
-    // F5 dist-truth: 50% of the 1260px content wrap (suite-5 viewport; the
-    // legacy 640px pin predates the current iframe scrollbar state). App and
-    // legacy both declare width:50% (secret.scala.html:40).
-    secretBoxWidth: "630px",
+    // F5 dist-truth: 50vw of the 1280px suite viewport (the 630px pin was taken
+    // at a narrower iframe state). App and legacy both declare width:50%
+    // (secret.scala.html:40).
+    secretBoxWidth: "640px",
   });
 
   await page.fill("#uname", "Site Admin");

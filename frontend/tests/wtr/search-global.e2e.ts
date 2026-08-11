@@ -489,8 +489,8 @@ test("global search matches localhost legacy empty issue result DOM for sample k
   );
   expect(await readSearchResultShellMetrics(page)).toEqual({
     activeCategoryBackground: "rgb(81, 170, 204)",
-    // F5 dist-truth: legacy .lst-stacked li 13px font + 8px padding (_temporary.less:33-38) ≈ 35px; 55px pin stale
-    activeCategoryHeight: 35,
+    // F5 dist-truth: legacy .lst-stacked li 13px font + 8px padding (_temporary.less:33-38) ≈ 36px (1px line-box rounding at the 1366 suite viewport)
+    activeCategoryHeight: 36,
     buttonHeight: 30,
     buttonWidth: 71,
     categoryColumnWidth: 188,
@@ -759,10 +759,9 @@ test("global search category Link keeps legacy SPA navigation without query nois
   const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
   await expect(issueCategory).not.toHaveAttribute("data-toggle");
   await expect(issueCategory).not.toHaveAttribute("data-type");
-  await expect(issueCategory).toHaveAttribute(
-    "class",
-    /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
-  );
+  // F6 copy-fix: the search category Link carries no className (search.tsx
+  // renders a bare Link); the DOM comparison forces class absence.
+  await expect(issueCategory).not.toHaveAttribute("class");
   await expect(issueCategory).not.toHaveAttribute("aria-current");
   await expect(issueCategory).not.toHaveAttribute("data-status");
   const issueHref = await issueCategory.getAttribute("href");

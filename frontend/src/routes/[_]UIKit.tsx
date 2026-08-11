@@ -368,31 +368,50 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
               data-value=""
               data-selected="true"
               className={selectedValue === "" ? "active" : undefined}
-            >
-              <button
-                type="button"
-                onClick={(event) => {
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedValue("");
+                setHasSelectedValue(true);
+                setIsOpen(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
                   event.stopPropagation();
                   setSelectedValue("");
                   setHasSelectedValue(true);
                   setIsOpen(false);
-                }}
-              >
-                전체
-              </button>
+                }
+              }}
+              aria-selected={selectedValue === ""}
+              role="option"
+              tabIndex={-1}
+            >
+              <button type="button">전체</button>
             </li>
-            <li data-value="0" className={selectedValue === "0" ? "active" : undefined}>
-              <button
-                type="button"
-                onClick={(event) => {
+            <li
+              data-value="0"
+              className={selectedValue === "0" ? "active" : undefined}
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedValue("0");
+                setHasSelectedValue(true);
+                setIsOpen(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
                   event.stopPropagation();
                   setSelectedValue("0");
                   setHasSelectedValue(true);
                   setIsOpen(false);
-                }}
-              >
-                담당자 없음
-              </button>
+                }
+              }}
+              aria-selected={selectedValue === "0"}
+              role="option"
+              tabIndex={-1}
+            >
+              <button type="button">담당자 없음</button>
             </li>
           </ul>
           {hasSelectedValue ? (

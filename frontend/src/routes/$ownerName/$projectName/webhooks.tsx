@@ -224,7 +224,7 @@ function ProjectWebhooksBody({
             <strong className="form-legend" data-owner="project-webhooks-form-legend">
               {t("project.webhook.new")}
             </strong>
-            <div className="form-actions" data-owner="project-webhooks-form-fields">
+            <div className="form-wrap form-actions" data-owner="project-webhooks-form-fields">
               <div>
                 <input
                   type="text"

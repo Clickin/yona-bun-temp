@@ -374,7 +374,6 @@ function ProjectIssueEditFormBody({
                     pasteHelpFixedStyleProps={{ style: { display: "block" } }}
                     pasteHelpOwner="issue-editform-paste-help"
                     helpClassName="right-txt help"
-                    helpStyleProps={{ style: { textAlign: "right" } }}
                     helpStyleFirst={false}
                     helpOwner="issue-editform-upload-help"
                   />

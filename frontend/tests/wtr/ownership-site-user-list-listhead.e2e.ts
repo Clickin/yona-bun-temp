@@ -53,6 +53,10 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
     const root = page.locator(`[data-owner="${owners.root}"]`);
     const columns = root.locator(`:scope > [data-owner="${owners.column}"]`);
     await expect(columns).toHaveCount(4);
+    // e2e closure ledger (2026-08-11): the mid-closure run diffed the fallback
+    // fixture's inherited line-height (20px) against the React root's committed
+    // line-height:30px (legacy _page.less:5311 .listhead); the fixture inheritance
+    // shifted with the site grid classes (span10/row-fluid) restored per ROUTE_DOM.
     expect(
       await root.evaluate((element) =>
         ["row-fluid", "listhead"].filter((token) => element.classList.contains(token)),

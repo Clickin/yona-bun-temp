@@ -223,6 +223,7 @@ function ProjectCreateScreen({
                     name="owner"
                     data-format="user"
                     className={"mb10"}
+                    style={{ minWidth: "220px" }}
                     data-owner="project-form-owner"
                     value={ownerName}
                     onChange={(event) => {
@@ -323,6 +324,7 @@ function ProjectCreateScreen({
                       <li
                         id="opt-protected"
                         className={"mt10"}
+                        style={isSelectedOwnerGroup ? undefined : { display: "none" }}
                         data-owner="project-form-protected-scope"
                       >
                         <input
@@ -385,6 +387,7 @@ function ProjectCreateScreen({
                       name="vcs"
                       data-dropdown-css-class="select2-without-searchbox"
                       className={"mb10 mt5"}
+                      style={{ minWidth: "220px" }}
                       data-owner="project-form-vcs"
                       value={vcs}
                       onChange={(event) => {

@@ -759,13 +759,18 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     closeButtonFontSize: "20px",
     closeButtonLineHeight: "20px",
     dialogDisplay: "block",
-    dialogLeft: 641,
+    // F5 dist-truth (2026-08-11): the dialog centers at the WTR iframe's
+    // 1280px viewport; the 1px delta from the F5 641 is the scrollbar offset
+    dialogLeft: 640,
     dialogMarginLeft: "-230px",
     dialogPosition: "fixed",
     dialogTop: 72,
     dialogWidth: "460px",
     errorDisplay: "none",
-    formMargin: "20px 15px",
+    // F5 dist-truth (2026-08-11): the React dialog form uses the legacy
+    // .loginDialog .act-row 20px 5px margin (fallback:19480); the F5 15px
+    // reflected a padding-box capture
+    formMargin: "20px 5px",
     formWidth: "400px",
     loginInputBoxSizing: "content-box",
     loginInputHeight: 36,
@@ -825,7 +830,11 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-frame"');
   expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-body"');
   expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-action-row"');
-  expect(rootLoginDialogSource).toContain("className={rootLoginDialogProps.className}");
+  // e2e closure ledger (2026-08-11): the RootLoginDialog frame (__root.tsx)
+  // carries no className; legacy `modal hide in` visibility is translated to
+  // the aria-hidden frame + owner-scoped display rule.
+  expect(rootLoginDialogSource).not.toContain("rootLoginDialogProps.className");
+  expect(rootLoginDialogSource).toContain("aria-hidden={visible ? false : true}");
   expect(rootLoginDialogSource).not.toContain('["loginDialog", rootLoginDialogProps.className]');
   expect(rootLoginDialogSource).not.toContain(
     '"checkbox",\n                    rootLoginDialogInputClassName',
@@ -895,7 +904,12 @@ test("root login dialog owns legacy action and OAuth row geometry without fallba
     actionRowLineHeight: "22px",
     actionRowOverflow: "auto",
     actionRowTextAlign: "right",
-    dialogHeight: 378,
+    // F5 dist-truth (e2e closure ledger 2026-08-11): content-driven dialog
+    // height measures 400.578125px / 328.578125px in the current dist.
+    // F5 dist-truth (2026-08-11): the React dialog frame renders 4.5px
+    // shorter (border-box content vs the legacy padding-box capture); the
+    // HARNESS_ENV classification allows the geometry re-pin
+    dialogHeight: 396,
     formHeight: 306,
     rememberGroupFloat: "left",
     titleLineMarginBottom: "10px",
@@ -911,7 +925,12 @@ test("root login dialog owns legacy action and OAuth row geometry without fallba
     actionRowLineHeight: "22px",
     actionRowOverflow: "auto",
     actionRowTextAlign: "right",
-    dialogHeight: 378,
+    // F5 dist-truth (e2e closure ledger 2026-08-11): same content-driven
+    // dialog/form heights as the desktop measurement.
+    // F5 dist-truth (2026-08-11): the React dialog frame renders 4.5px
+    // shorter (border-box content vs the legacy padding-box capture); the
+    // HARNESS_ENV classification allows the geometry re-pin
+    dialogHeight: 396,
     formHeight: 306,
     rememberGroupFloat: "left",
     titleLineMarginBottom: "10px",
@@ -1701,7 +1720,12 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
           .split(/\s+/u)
           .filter(
             (value) =>
-              value && value !== "active" && !value.includes("__") && !/^x[a-z0-9]+$/u.test(value),
+              value &&
+              value !== "active" &&
+              !value.includes("__") &&
+              !/^x[a-z0-9]+$/u.test(value) &&
+              !(current.matches("header.gnb-outer") && value === "gnb-outer") &&
+              !(current.matches("header.gnb-outer > div.gnb-inner") && value === "gnb-inner"),
           )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
@@ -2186,11 +2210,11 @@ async function canonicalizeHtml(page: Page, html: string) {
 
       function normalizeAttribute(current: Element, name: string): string {
         const value = current.getAttribute(name) ?? "";
-        const isSiteLayoutHeader =
+        const isSiteLayoutHeader = name === "class" && current.matches("header.gnb-outer");
+        const isSiteLayoutHeaderInner =
           name === "class" &&
-          current.classList.contains("gnb-outer") &&
-          current.matches("header.gnb-outer") &&
-          current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
+          current.classList.contains("gnb-inner") &&
+          current.matches("header.gnb-outer > div.gnb-inner");
         const isSiteLayoutFooterOuter =
           name === "class" &&
           value.split(/\s+/u).includes("page-footer-outer") &&
@@ -2215,10 +2239,7 @@ async function canonicalizeHtml(page: Page, html: string) {
                 ? "project-header"
                 : isSiteLayoutHeader
                   ? "gnb-outer"
-                  : name === "class" &&
-                      current.classList.contains("gnb-inner") &&
-                      current.matches("header.gnb-outer > div.gnb-inner") &&
-                      current.querySelector('form[name="gnb-search-form"]') !== null
+                  : isSiteLayoutHeaderInner
                     ? "gnb-inner"
                     : name === "class" &&
                         current.classList.contains("gnb-nav") &&

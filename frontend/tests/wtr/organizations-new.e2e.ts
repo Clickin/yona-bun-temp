@@ -350,7 +350,7 @@ test("organization create route source keeps cancel navigation out of raw anchor
   expect(routeSource).toContain('data-errtype="name"');
   expect(routeSource).toContain('<title>{t("app.name")}</title>');
   expect(routeSource).toContain(
-    '<Link\n                    {...cancelActionStyleProps}\n                    to="/"',
+    '<Link\n                    to="/"\n                    className="ybtn"',
   );
   expect(routeSource).toContain("activeProps={legacyAnchorActiveProps}");
   expect(routeSource).not.toContain("createLink");

@@ -133,14 +133,21 @@ export function prefixBasePath(basePath: string, href: string): string {
 
   const normalizedHref = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   if (basePath === "/") {
-    return normalizedHref;
+    return normalizedHref.replace(/^\/\.\//u, "/").replace(/\/\.\//gu, "/");
   }
 
   const suffixIndex = normalizedHref.search(/[?#]/);
   const pathname = suffixIndex === -1 ? normalizedHref : normalizedHref.slice(0, suffixIndex);
-  return pathname === basePath || pathname.startsWith(`${basePath}/`)
-    ? normalizedHref
-    : `${basePath}${normalizedHref}`;
+  // Vite asset imports resolve to `./assets/...`; collapse the dot segment so
+  // the emitted href stays a clean base-path URL (legacy parity).
+  const cleanedPathname = pathname.replace(/^\/\.\//u, "/").replace(/\/\.\//gu, "/");
+  const cleanedHref =
+    cleanedPathname === pathname
+      ? normalizedHref
+      : normalizedHref.replace(pathname, cleanedPathname);
+  return cleanedPathname === basePath || cleanedPathname.startsWith(`${basePath}/`)
+    ? cleanedHref
+    : `${basePath}${cleanedHref}`;
 }
 
 function normalizeOptionalString(input: string | null | undefined): string {

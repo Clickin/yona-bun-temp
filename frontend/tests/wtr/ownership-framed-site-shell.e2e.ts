@@ -233,6 +233,16 @@ for (const viewport of [
 
     await shell.getByRole("button", { name: "Sidebar" }).click();
     await expect(shell).toHaveAttribute("data-sidebar-open", "true");
+    const motionProbe = await page.evaluate(() => {
+      const aside = document.querySelector('[data-owner="left-sidebar-outer-shell"]');
+      return aside
+        ? {
+            motion: aside.getAttribute("data-sidebar-motion"),
+            expanded: aside.getAttribute("data-sidebar-expanded"),
+            rect: aside.getBoundingClientRect().width,
+          }
+        : null;
+    });
     // F5 dist-truth: the open state animates with a 0.5s width transition
     // (leftSidebarOuterShellStyles.motion, -home-route-screen.tsx:2969-2975);
     // the sidebar/main geometry only matches the settled layout, so wait it out
@@ -312,8 +322,8 @@ test("framed SiteLayout paint is isolated from removed presentation classes", as
       };
     };
     const before = snapshot();
-    const shellGeneratedClasses = [...shell.classList];
-    const mainGeneratedClasses = [...main.classList];
+    const shellOwner = shell.getAttribute("data-owner");
+    const mainOwner = main.getAttribute("data-owner");
     shell.classList.add("legacy-framed-shell", "is-open");
     main.classList.add("legacy-framed-main");
     const withRemovedPresentationClasses = snapshot();
@@ -322,16 +332,20 @@ test("framed SiteLayout paint is isolated from removed presentation classes", as
     const stripped = snapshot();
     return {
       before,
-      mainGeneratedClasses,
-      shellGeneratedClasses,
+      mainOwner,
+      shellOwner,
       stripped,
       withRemovedPresentationClasses,
     };
   });
-  expect(result.shellGeneratedClasses.length).toBeGreaterThan(0);
-  expect(result.mainGeneratedClasses.length).toBeGreaterThan(0);
+  expect(result.shellOwner).toBe("framed-site-shell");
+  expect(result.mainOwner).toBe("framed-site-main");
   expect(result.withRemovedPresentationClasses).toEqual(result.before);
-  expect(result.stripped).not.toEqual(result.before);
+  // Removed presentation classes (legacy-framed-shell/is-open/legacy-framed-main)
+  // no longer drive paint: the framed shell is fully data-owner-owned, so
+  // stripping all classes leaves the same computed paint (premise of the old
+  // `not.toEqual` assertion is obsolete).
+  expect(result.stripped).toEqual(result.before);
 });
 
 async function readShell(page: Page) {

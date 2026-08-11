@@ -253,6 +253,9 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   value={body}
                   wrapperClassName="mt10"
                   tabContentClassName="tab-content"
+                  tabContentPaneStyleProps={{
+                    style: { overflow: "visible", position: "relative" },
+                  }}
                   owners={{
                     wrapper: "project-postform-markdown-editor-wrapper",
                     tabContent: "project-postform-editor-tab-content",
@@ -265,6 +268,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             {canShowUploader ? (
               <BoardPostFileUploader
                 helpClassName="right-txt help"
+                pasteHelpStyleProps={{ style: { display: "block" } }}
                 owners={{
                   wrapper: "project-postform-upload-wrap",
                   attachWrap: "project-postform-attach-wrap",

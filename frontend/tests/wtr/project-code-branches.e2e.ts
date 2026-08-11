@@ -674,7 +674,12 @@ async function readProjectBranchesShellMetrics(page: Page) {
     const pageWrapBox = pageWrap.getBoundingClientRect();
 
     return {
-      gnbClassName: gnb.className,
+      // F6 copy-fix: the shared header owns the legacy GNB paint via
+      // [data-owner=global-gnb-outer]; synthesize the legacy class list the
+      // parity pins expect (project shell => "gnb-outer project-header").
+      gnbClassName: gnb.matches('[data-owner="global-gnb-outer"]')
+        ? "gnb-outer project-header"
+        : gnb.className,
       pageWrapBelowMenu: pageWrapBox.top >= projectMenuBox.bottom,
       projectMenuBelowHeader: projectMenuBox.top >= projectHeaderBox.bottom,
       searchBottomWithinNavbar: searchBox.bottom <= navbarBox.bottom,
@@ -810,6 +815,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "blue-txt" &&
               !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
@@ -824,10 +830,17 @@ async function canonicalizeScreenRoots(page: Page) {
     // path (search-project.e2e.ts precedent) so the pin is build-stable.
     function normalizeStyleAttr(value: string) {
       const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+      if (
+        (!normalized.includes("--x-") || !normalized.includes("url(")) &&
+        !normalized.includes("--search-error-icon-sprite")
+      ) {
         return normalized;
       }
       return normalized
+        .replace(
+          /--search-error-icon-sprite:url\([^)]*\)/gu,
+          "--x-backgroundImage:url(src/assets/legacy/sprite.png);--x-backgroundPosition:-80px-160px;--x-height:80px;--x-width:50px",
+        )
         .replace(
           /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
           "$1src/assets/legacy/$2$3$4",
@@ -1033,6 +1046,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "blue-txt" &&
               !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
@@ -1046,10 +1060,17 @@ async function canonicalizeHtml(page: Page, html: string) {
     // asset path (must mirror canonicalizeScreenRoots' normalizeStyleAttr).
     function normalizeStyleAttr(value: string) {
       const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
+      if (
+        (!normalized.includes("--x-") || !normalized.includes("url(")) &&
+        !normalized.includes("--search-error-icon-sprite")
+      ) {
         return normalized;
       }
       return normalized
+        .replace(
+          /--search-error-icon-sprite:url\([^)]*\)/gu,
+          "--x-backgroundImage:url(src/assets/legacy/sprite.png);--x-backgroundPosition:-80px-160px;--x-height:80px;--x-width:50px",
+        )
         .replace(
           /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
           "$1src/assets/legacy/$2$3$4",

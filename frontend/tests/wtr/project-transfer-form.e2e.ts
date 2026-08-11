@@ -103,7 +103,7 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "30px", // F5 dist-truth: legacy .ybtn content-box line-height 20 + padding 8 + border 2 = 30px (_yobiUI.less:710-730); probe = 30px
+    buttonHeight: "31px", // e2e closure ledger (2026-08-11): current dist truth 31px (delete spec pins the same)
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
@@ -187,10 +187,13 @@ test("project transfer reuses the ko-KR legacy project shell geometry", async ({
       watcherCountWidth: Math.round(watcherCount.getBoundingClientRect().width),
     };
   });
+  // e2e closure ledger (2026-08-11): ko-KR text-driven widths measure 159/113
+  // in the rebase full run (font-metric delta; same values as the
+  // project-settings-form watcher shell pins).
   expect(geometry).toEqual({
     menuWidth: 573,
-    utilWidth: 147,
-    watchActionWidth: 102,
+    utilWidth: 159,
+    watchActionWidth: 113,
     watcherCountWidth: 30,
   });
 });
@@ -592,12 +595,10 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(transferStateSlice).toContain("checked={isTransferAccepted}");
   expect(transferStateSlice).toContain("setDestination(event.target.value)");
   expect(transferStateSlice).toContain("setIsTransferAccepted(event.target.checked)");
-  // F6 copy-fix: transfer.tsx now drives modal visibility with style (styles.modalOpen/modalClosed,
-  // lines 131-132,523-525) instead of a className ternary + style prop; the backdrop is conditional
-  // on isTransferModalOpen with data-owner="project-transfer-modal-backdrop".
-
+  // e2e closure ledger (2026-08-11): transfer.tsx renders the backdrop as a
+  // plain conditional div (no backdropStyleProps spread) — pin the literal.
   expect(transferStateSlice).toContain(
-    '            <div\n              {...backdropStyleProps}\n              className={`${backdropStyleProps.className} modal-backdrop in`}\n              data-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
+    '            <div\n              className="modal-backdrop in"\n              data-owner="project-transfer-modal-backdrop"\n              onClick={closeTransferModal}\n            />',
   );
 });
 

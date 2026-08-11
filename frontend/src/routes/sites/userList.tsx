@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
-import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
+import { SiteAdminSidebar, siteSettingWrapClassName } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, type MouseEvent, type SyntheticEvent } from "react";
 import type { CSSProperties } from "react";
@@ -207,17 +207,17 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <>
       <LegacySiteUserListTitle />
-      <div data-owner="site-user-list-breadcrumb-outer">
-        <div data-owner="site-user-list-breadcrumb-inner">
+      <div className="site-breadcrumb-outer" data-owner="site-user-list-breadcrumb-outer">
+        <div className="site-breadcrumb-inner" data-owner="site-user-list-breadcrumb-inner">
           <h3 data-owner="site-user-list-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>
       </div>
-      <div data-owner="site-user-list-page-wrap-outer">
-        <div data-owner="site-user-list-setting-wrap">
-          <div data-owner="site-user-list-setting-grid">
-            <div data-owner="site-user-list-setting-sidebar-column">
+      <div className="page-wrap-outer" data-owner="site-user-list-page-wrap-outer">
+        <div className={siteSettingWrapClassName} data-owner="site-user-list-setting-wrap">
+          <div className="row-fluid" data-owner="site-user-list-setting-grid">
+            <div className="span2" data-owner="site-user-list-setting-sidebar-column">
               <SiteAdminSidebar
                 activeTo="/sites/userList"
                 badgeOwner="site-user-list-sidebar-notification-badge"
@@ -235,19 +235,14 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   link: [],
                   nav: [],
                 }}
+                ulClassName="site-setting-nav"
               />
             </div>
-            <div data-owner="site-user-list-setting-content-column">
+            <div className="span10" data-owner="site-user-list-setting-content-column">
               <div data-owner="site-user-list-title-strip">
                 <h2 data-owner="site-user-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.userList" />
                 </h2>
-                <p data-owner="site-user-list-initial-admin-policy">
-                  {t("site.userList.initialAdminPolicy", {
-                    fallback:
-                      "The first registered user is the initial Site Admin and cannot have this role revoked or be removed.",
-                  })}
-                </p>
                 <form
                   data-owner="site-user-list-title-search-form"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
@@ -270,15 +265,20 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   }}
                 >
                   <input type="hidden" name="state" value={search.state} />
-                  <div data-owner="site-user-list-title-search-wrapper">
+                  <div className="search-bar" data-owner="site-user-list-title-search-wrapper">
                     <input
+                      className="textbox"
                       data-owner="site-user-list-title-search-input"
                       name="query"
                       type="text"
                       placeholder={t("site.userList.search")}
                       defaultValue={search.query}
                     />
-                    <button type="submit" data-owner="site-user-list-title-search-button">
+                    <button
+                      type="submit"
+                      className="search-btn"
+                      data-owner="site-user-list-title-search-button"
+                    >
                       <i data-owner="site-user-list-title-search-icon"></i>
                     </button>
                   </div>
@@ -288,23 +288,23 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 currentState={search.state}
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
-              <div data-owner="site-user-list-listhead">
-                <div data-owner="site-user-list-listhead-column">
+              <div className="row-fluid listhead" data-owner="site-user-list-listhead">
+                <div className="span3 listhead-title" data-owner="site-user-list-listhead-column">
                   <strong>
                     <LegacyMessage messageKey="user.name" />
                   </strong>
                 </div>
-                <div data-owner="site-user-list-listhead-column">
+                <div className="span3 listhead-title" data-owner="site-user-list-listhead-column">
                   <strong>
                     <LegacyMessage messageKey="user.email" />
                   </strong>
                 </div>
-                <div data-owner="site-user-list-listhead-column">
+                <div className="span2 listhead-title" data-owner="site-user-list-listhead-column">
                   <strong>
                     <LegacyMessage messageKey="userinfo.since" />
                   </strong>
                 </div>
-                <div data-owner="site-user-list-listhead-column">
+                <div className="span4 listhead-title" data-owner="site-user-list-listhead-column">
                   <strong>
                     {search.state === "DELETED" ? (
                       <LegacyMessage messageKey="userinfo.leave" />
@@ -314,7 +314,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   </strong>
                 </div>
               </div>
-              <ul data-owner="site-user-list-row-list">
+              <ul className="user-list-wrap" data-owner="site-user-list-row-list">
                 {(response?.users ?? []).map((user, index) => (
                   <UserListItem
                     even={index % 2 === 1}
@@ -516,7 +516,9 @@ function UserListPagination({
             type="number"
           />
         </li>
-        <li data-owner="site-user-list-pagination-item">/</li>
+        <li className="delimiter" data-owner="site-user-list-pagination-item">
+          /
+        </li>
         <li data-owner="site-user-list-pagination-item">{totalPages}</li>
         <li data-owner="site-user-list-pagination-item">
           {hasNext ? (
@@ -575,11 +577,12 @@ function UserStateTabs({
   ];
 
   return (
-    <ul data-owner="site-user-list-state-tabs">
+    <ul className="nav nav-tabs" data-owner="site-user-list-state-tabs">
       {items.map((item) => {
         const isActive = item.state === currentState;
         return (
           <li
+            className={isActive ? "active" : undefined}
             data-selected={isActive ? "true" : undefined}
             data-owner="site-user-list-state-tab-item"
             key={item.state}
@@ -592,7 +595,7 @@ function UserStateTabs({
             >
               <LegacyMessage messageKey={item.labelKey} />
               {item.state === "SITE_ADMIN" ? (
-                <span data-owner="site-user-list-state-tab-numeric-badge">
+                <span className="num-badge" data-owner="site-user-list-state-tab-numeric-badge">
                   {legacySiteAdminBadgeCount}
                 </span>
               ) : null}
@@ -627,8 +630,8 @@ function UserListItem({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <li data-owner="site-user-list-row">
-      <div data-owner="site-user-list-row-column">
+    <li className="row-fluid listitem" data-owner="site-user-list-row">
+      <div className="span3 listitem-col" data-owner="site-user-list-row-column">
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
           data-owner="site-user-list-row-avatar"
@@ -665,10 +668,10 @@ function UserListItem({
           @{user.loginId}
         </Link>
       </div>
-      <div data-owner="site-user-list-row-column">
+      <div className="span3 listitem-col" data-owner="site-user-list-row-column">
         <span data-owner="site-user-list-row-email">{user.emailAddress}</span>
       </div>
-      <div data-owner="site-user-list-row-date">
+      <div className="span2 listitem-col created-date" data-owner="site-user-list-row-date">
         <span>{user.createdAt}</span>
       </div>
       {state !== "DELETED" ? (
@@ -721,6 +724,7 @@ function UserListItem({
           </button>
           <button
             type="button"
+            className="ybtn ybtn-small ybtn-danger"
             disabled={user.id === initialUserId}
             title={
               user.id === initialUserId

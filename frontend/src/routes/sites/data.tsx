@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
+import { siteSettingWrapClassName } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -51,9 +52,9 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         </div>
       </div>
       <div className="page-wrap-outer" data-owner="site-data-page">
-        <div data-owner="site-data-content">
-          <div data-owner="site-data-setting-grid">
-            <div data-owner="site-data-sidebar-column">
+        <div className={siteSettingWrapClassName} data-owner="site-data-content">
+          <div className="row-fluid" data-owner="site-data-setting-grid">
+            <div className="span2" data-owner="site-data-sidebar-column">
               <SiteAdminSidebar
                 badgeOwner="site-data-sidebar-badge"
                 baseLinkProps={legacySiteSidebarLinkProps}
@@ -67,22 +68,23 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   link: [],
                   nav: [],
                 }}
+                ulClassName="site-setting-nav"
               />
             </div>
-            <div data-owner="site-data-setting-content-column">
+            <div className="span10" data-owner="site-data-setting-content-column">
               <div data-owner="site-data-title-strip">
                 <h2 data-owner="site-data-title-heading">{t("site.sidebar.data")}</h2>
               </div>
 
               <div className="cu-desc" data-owner="site-data-warning-surface">
                 <ul>
-                  <li data-owner="site-data-warning-item">
+                  <li className="notice" data-owner="site-data-warning-item">
                     <strong>{t("site.data.warning1")}</strong>
                   </li>
-                  <li data-owner="site-data-warning-item">
+                  <li className="notice" data-owner="site-data-warning-item">
                     <strong>{t("site.data.warning2")}</strong>
                   </li>
-                  <li data-owner="site-data-warning-item">
+                  <li className="notice" data-owner="site-data-warning-item">
                     <strong>{t("site.data.warning3")}</strong>
                   </li>
                 </ul>

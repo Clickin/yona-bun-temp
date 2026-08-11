@@ -1,3 +1,7 @@
+// e2e closure ledger (2026-08-12): suite hangs past the 600000ms WTR global
+// timeout with no per-test assertion observed (HARNESS_ENV). Suite-hang
+// closure: no route/CSS prescription; needs a short per-test timeout bisect
+// for the unfinished waitForRequest/poll.
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 

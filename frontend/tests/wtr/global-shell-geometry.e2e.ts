@@ -53,10 +53,8 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
     /import\s+viteOwnedSiteIntroBackgroundUrl\s+from\s+["']\.\.\/assets\/legacy\/photo-svetacreative\.jpg["'];/u,
   );
   expect(
-    homeRouteSource.match(
-      /anonymousHomeIntroDynamicStyles\.background\(viteOwnedSiteIntroBackgroundUrl\)/gu,
-    ),
-  ).toHaveLength(2);
+    homeRouteSource.match(/--siteintro-background-image[\s\S]*viteOwnedSiteIntroBackgroundUrl/gu),
+  ).toHaveLength(1);
 
   expect(legacyNavbarSource).toContain(
     "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest){",

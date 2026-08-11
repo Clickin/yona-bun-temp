@@ -1163,7 +1163,7 @@ function IssueDetailBody({
                     </LegacyHoverPopover>
                   ) : null}
                   <span
-                    className="project-btn-item hide show-in-mobile-inline ml4"
+                    className="project-btn-item hide show-in-mobile-inline"
                     data-owner="project-issue-detail-mobile-new-subtask"
                   >
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">

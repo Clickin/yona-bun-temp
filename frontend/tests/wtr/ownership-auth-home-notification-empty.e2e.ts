@@ -119,14 +119,17 @@ for (const viewport of [
     // The restored legacy cascade inherits Bootstrap's 20px body line-height
     // (bootstrap.css:176-183). With `_page.less`'s 15px block padding, the
     // warning is 50px tall. The restored legacy intro/toggle shell also puts
-    // desktop and intermediate content at the live 174.078125px position;
-    // mobile remains at 181px.
+    // desktop and intermediate content at the live 174.078125px position.
+    // e2e closure ledger (2026-08-11): mobile F5 dist-truth — the admin
+    // affix (isSiteAdmin session) wraps to two lines at 390px (66px vs 43px
+    // desktop), shifting the notification list to y=204 (was 181 in the
+    // pre-affix pin).
     const expected =
       viewport.width === 1366
         ? { width: 887.78125, x: 10, y: 174.078125 }
         : viewport.width === 800
           ? { width: 527.65625, x: 0, y: 174.078125 }
-          : { width: 390, x: 0, y: 181 };
+          : { width: 390, x: 0, y: 204 };
     expect(evidence.list.box).toMatchObject({ height: 50, ...expected });
     expect(evidence.empty.box).toMatchObject({ height: 50, ...expected });
     expect(evidence.list).toMatchObject({ listStyleType: "none", margin: "0px", padding: "0px" });

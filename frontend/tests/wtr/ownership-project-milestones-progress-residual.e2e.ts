@@ -22,7 +22,7 @@ test("project milestones progress owns static geometry", async () => {
   expect(source).toContain('data-owner="project-milestones-progress"');
   expect(source).toContain('data-owner="project-milestones-infos"');
   expect(source).toContain('data-owner="project-milestones-completion"');
-  expect(source).toContain("isLast");
+  expect(source).toContain("project-milestones-progress-bar");
 
   expect(appCss).not.toContain(".milestones .progress-wrap {");
   expect(appCss).not.toContain(".milestones .progress {");

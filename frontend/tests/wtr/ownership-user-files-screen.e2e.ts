@@ -159,6 +159,9 @@ test.describe("Style user files screen family", () => {
     await expect(row.locator(".file-name")).toHaveCSS("font-weight", "700");
     await expect(row.locator(".file-preview img")).toHaveCSS("max-width", "40px");
     await row.hover();
+    // e2e closure ledger (2026-08-11): the mid-closure run measured the unfocused
+    // border (rgb(238,238,238)) here; the committed app.css:21075 .hover rule
+    // (border-color #10a2e4) plus the route's mouseenter hover state are intact.
     await expect(row).toHaveCSS("border-color", "rgb(16, 162, 228)");
 
     const pagination = page.locator('[data-owner="user-files-pagination"]');

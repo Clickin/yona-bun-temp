@@ -875,9 +875,13 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-        )
+        .map((name) => {
+          const normalized = normalizeSiteLayoutGnbNavAttribute(current, name);
+          // drop empty class attrs to mirror the live header (no class attr)
+          if (name === "class" && normalized === "") return null;
+          return `${name}=${JSON.stringify(normalized)}`;
+        })
+        .filter((attr) => attr !== null)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1002,9 +1006,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
-        )
+        .map((name) => {
+          const normalized = normalizeSiteLayoutGnbNavAttribute(current, name);
+          // drop empty class attrs to mirror the live header (no class attr)
+          if (name === "class" && normalized === "") return null;
+          return `${name}=${JSON.stringify(normalized)}`;
+        })
+        .filter((attr) => attr !== null)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`

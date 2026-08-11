@@ -340,7 +340,12 @@ function ProjectNewPullRequestBody({
                     setIsUserHasTyped(true);
                   }}
                 />
-                <div data-owner="new-pull-request-editor-wrapper">
+                <div
+                  data-owner="new-pull-request-editor-wrapper"
+                  // legacy editor.scala.html wraps the tab nav + tab-content in
+                  // <div style="position:relative">; the mt10 editor sits inside
+                  style={{ position: "relative" }}
+                >
                   <PullRequestMarkdownEditor
                     bodyValue={bodyValue}
                     mergeSuggestionRevision={mergeSuggestionRevision}
@@ -350,6 +355,11 @@ function ProjectNewPullRequestBody({
                     }}
                     wrapperClassName="mt10"
                     tabContentClassName="tab-content"
+                    tabContentPaneStyleProps={{
+                      // legacy editor.scala.html:48 <div class="tab-content"
+                      // style="position:relative;overflow: visible">
+                      style: { overflow: "visible", position: "relative" },
+                    }}
                     owners={{
                       wrapper: "new-pull-request-markdown-editor-wrapper",
                       tabContent: "new-pull-request-editor-tab-content",
@@ -455,7 +465,7 @@ function PullRequestBranchSelectors({
   };
   return (
     <div className="pull-request-wrap" data-owner="new-pull-request-selectors">
-      <div data-owner="new-pull-request-from-column">
+      <div className="pull-left" data-owner="new-pull-request-from-column">
         <label
           htmlFor="fromProjectId"
           className="field-title"
@@ -519,7 +529,7 @@ function PullRequestBranchSelectors({
       <div className="arrow" data-owner="new-pull-request-arrow">
         <i className="yobicon-right-2"></i>
       </div>
-      <div data-owner="new-pull-request-to-column">
+      <div className="pull-right" data-owner="new-pull-request-to-column">
         <label
           htmlFor="toProjectId"
           className="field-title"
@@ -651,7 +661,7 @@ function PullRequestConflictConfirmModal({
         tabIndex={-1}
         role="dialog"
         aria-hidden={isOpen ? "false" : "true"}
-        className={`modal hide yobiDialog${isOpen ? " in is-open" : ""}`}
+        className={`modal hide yobiDialog${isOpen ? " in" : ""}`}
         data-owner="new-pull-request-conflict-modal"
       >
         <div className="btn-dismiss">
@@ -739,7 +749,6 @@ function MergeResult({
                   <Link
                     to="/$ownerName/$projectName/commit/$commitId"
                     params={{ commitId: commit.commitId, ownerName, projectName }}
-                    search={{ branch: "", path: "" }}
                   >
                     {commit.commitShortId}
                   </Link>

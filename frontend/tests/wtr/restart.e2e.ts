@@ -76,7 +76,10 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
     logoWidth: "123px",
     secretBoxMarginBottom: "20px",
     secretBoxMarginTop: "20px",
-    secretBoxWidth: "640px",
+    // F5 dist-truth: WTR iframe renders 50vw of the 1040px suite viewport; the
+    // legacy 640px pin predates the current iframe width (restart.scala.html:40
+    // declares width:50%, app.css [data-part=restart-notice-copy] mirrors it).
+    secretBoxWidth: "520px",
     secretWrapPaddingBottom: "50px",
     secretWrapPaddingTop: "50px",
   });
@@ -148,7 +151,8 @@ test("restart route source keeps TanStack-owned home navigation without a route-
   expect(source).toContain('to="/"');
   expect(source).toContain("activeOptions={{ exact: true, explicitUndefined: true }}");
   expect(source).toContain("activeProps={legacyLogoLinkActiveProps}");
-  expect(source).toContain("className={`logo ${restartLogoClassName}`}");
+  expect(source).toContain('className={"logo"}');
+  expect(source).toContain('data-part="restart-notice-logo"');
   expect(source).not.toContain("useLinkProps");
   expect(source).not.toContain("<a ");
   expect(source).not.toContain("<a{");

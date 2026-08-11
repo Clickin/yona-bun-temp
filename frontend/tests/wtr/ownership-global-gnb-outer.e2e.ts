@@ -125,7 +125,10 @@ test("global GNB outer has complete global-theme Style ownership", () => {
   const owner = route.slice(route.lastIndexOf("<header", marker), route.indexOf(">", marker));
   expect(marker).toBeGreaterThanOrEqual(0);
 
-  expect(owner).not.toContain("className");
+  // e2e closure ledger (2026-08-11): the shared shell header carries the
+  // legacy `gnb-outer` class (all DOM-parity fixtures pin it); the class-free
+  // pin was stale — the paint isolation is owned by the app.css rules below
+  expect(owner).toContain('className="gnb-outer"');
 
   expect(appCss).toContain(".gnb-outer {");
   expect(appCss).toContain("@media (max-width: 900px) {");
@@ -204,7 +207,9 @@ for (const state of [
 
     const outer = page.locator(OUTER);
     await expect(outer).toBeVisible();
-    await expect(outer).not.toHaveClass(/(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u);
+    // e2e closure ledger (2026-08-11): flipped legacy-positive — the shared
+    // shell header carries the legacy gnb-outer class (source + runtime)
+    await expect(outer).toHaveClass(/(?:^|\s)gnb-outer(?:\s|$)/u);
     await expect(outer.locator(":scope > [data-owner='global-gnb-inner']")).toHaveCount(1);
 
     const evidence = await outer.evaluate((element) => {

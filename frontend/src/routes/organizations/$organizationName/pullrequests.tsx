@@ -106,7 +106,10 @@ function OrganizationPullRequestsBody({
   const searchAction = selectedCategory === "closed" ? closedAction : openAction;
   const navigateTab = (to: string) => {
     const base = prefixBasePath(runtimeConfig.basePath, "");
-    void router.navigate({ to: to.startsWith(base) ? to.slice(base.length) : to });
+    // legacy PJAX tab switch lands on a clean URL (no ?filter=&pageNum=1);
+    // history.push with the bare prefixed path avoids validateSearch re-serializing
+    // filter/pageNum defaults onto the URL
+    router.history.push(to.startsWith(base) ? to : prefixBasePath(runtimeConfig.basePath, to));
   };
 
   return (

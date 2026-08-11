@@ -11,7 +11,6 @@ import {
   type MouseEvent,
 } from "react";
 import {
-  acceptOrganizationEnrollmentRest,
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
@@ -132,18 +131,6 @@ function OrganizationMembersBody({
       return addOrganizationMemberRest(runtimeConfig, csrfToken, {
         loginId: String(formData.get("loginId") ?? ""),
         organizationName,
-      });
-    },
-    onSuccess() {
-      queryClient.invalidateQueries({ queryKey: adminQueryKey });
-    },
-  });
-  const acceptEnrollmentMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
-        organizationName,
-        userId,
       });
     },
     onSuccess() {
@@ -394,11 +381,13 @@ function OrganizationMembersBody({
                     avatarWrapOwner="organization-enrollment-avatar-wrap"
                     detailsOwner="organization-members-enrollment-details"
                     key={stringField(user.loginId, "")}
-                    onAccept={(loginId, userId) => {
+                    onAccept={(loginId, _userId) => {
+                      // legacy yobi.organization.Member _onClickEnrollAcceptBtns:
+                      // fills #loginId and submits #addNewMember (no accept REST)
                       setLoginIdQuery(loginId);
                       setIsTypeaheadOpen(false);
                       setActiveSuggestionIndex(0);
-                      acceptEnrollmentMutation.mutate(Number(userId));
+                      addLoginId(loginId);
                     }}
                     user={user}
                   />
@@ -441,6 +430,7 @@ function OrganizationMember({
           className: undefined,
           "data-status": undefined,
         }}
+        className="avatar-wrap mlarge pull-left mr10"
         data-owner="organization-member-avatar"
         params={{ user: loginId }}
         to="/$user"
@@ -453,8 +443,12 @@ function OrganizationMember({
           alt=""
         />
       </Link>
-      <div data-owner="organization-member-name">{stringField(member.userLabel, loginId)}</div>
-      <div data-owner="organization-member-id">@{loginId}</div>
+      <div className="member-name" data-owner="organization-member-name">
+        {stringField(member.userLabel, loginId)}
+      </div>
+      <div className="member-id" data-owner="organization-member-id">
+        @{loginId}
+      </div>
       <div className="member-setting" data-owner="organization-member-meta">
         <div className={roleDropdownOpen ? "btn-group open" : "btn-group"}>
           <button

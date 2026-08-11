@@ -114,8 +114,8 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
   );
   expect(legacyBootstrapSource).toContain("p {\n  margin: 0 0 10px;");
   expect(legacyUsermenuSource).toContain('href="@routes.UserApp.userInfo(currentUser.loginId)"');
-  expect(routeSource).toContain("rootNotFoundErrorIconStyleProps");
-  expect(routeSource).toContain("rootNotFoundErrorMessageStyleProps");
+  expect(routeSource).toContain('data-owner="root-alias-notfound-error-icon"');
+  expect(routeSource).toContain('data-owner="root-alias-notfound-error-message"');
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim();");
   expect(routeSource).toContain("feedbackUrl ? (");
   expect(routeSource).not.toContain("github.com/nforge/yobi");

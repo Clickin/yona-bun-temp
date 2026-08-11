@@ -161,20 +161,23 @@ async function mockProjectHome(page: Page) {
       supportedLanguages: ["en-US"],
     };
   }, basePath);
-  await page.route("**/api/v1/session", (route: Route) =>
-    route.fulfill({
-      contentType: "application/json",
-      json: {
-        actorId: null,
-        isAnonymous: true,
-        isConfirmed: false,
-        isGuest: false,
-        loginId: "",
-        preferredLanguage: "en-US",
-        userLabel: "",
-      },
-    }),
-  );
+  const sessionJson = {
+    actorId: null,
+    isAnonymous: true,
+    isConfirmed: false,
+    isGuest: false,
+    loginId: "",
+    preferredLanguage: "en-US",
+    userLabel: "",
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
+    await page.route(url, (route: Route) =>
+      route.fulfill({
+        contentType: "application/json",
+        json: sessionJson,
+      }),
+    );
+  }
   await page.route("**/api/v1/owners/admin/projects/*/container**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",

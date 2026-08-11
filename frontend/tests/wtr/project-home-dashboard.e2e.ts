@@ -41,7 +41,7 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
     countColumnPaddingRight: 15,
     countColumnTextAlign: "right",
     countColumnWidthRatio: 0.15,
-    headingBorderLeftWidth: 0,
+    headingBorderLeftWidth: 3,
     headingMarginBottom: 20,
     headingPaddingLeft: 10,
     labelChipDataLabelId: "9",
@@ -183,7 +183,7 @@ test("project home Dashboard tab keeps legacy overview proportions", async ({ pa
       emptyMessageFontSize: 13,
       emptyMessageMarginBottom: 15,
       firstColumnWidthRatio: 0.49,
-      headingBorderColor: "rgb(51, 51, 51)",
+      headingBorderColor: "rgb(255, 115, 50)",
       leftPaneWidthRatio: 0.74,
       // legacy truth: _responsive.less:617 `@media all` unconstrained
       // `.project-page-wrap { margin-top: 5px !important }` — 5px at every width

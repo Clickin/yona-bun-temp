@@ -521,6 +521,7 @@ export type BoardPostMarkdownEditorProps = {
   editorStyle?: MarkdownEditorStyleProps;
   tabListStyle?: MarkdownEditorStyleProps;
   tabContentClassName: string;
+  tabContentPaneStyleProps?: MarkdownEditorStyleProps;
   notificationStyle?: MarkdownEditorStyleProps;
   /** Markdown help block rendered above the panes; default <LegacyMarkdownHelp />. */
   help?: ReactNode;
@@ -544,6 +545,7 @@ export function BoardPostMarkdownEditor({
   editorStyle,
   tabListStyle,
   tabContentClassName,
+  tabContentPaneStyleProps,
   notificationStyle,
   help,
   owners = NO_OWNERS,
@@ -578,6 +580,7 @@ export function BoardPostMarkdownEditor({
       tabAs="link"
       tabLinkProps={tabLinkProps}
       tabContentClassName={tabContentClassName}
+      tabContentPaneStyleProps={tabContentPaneStyleProps}
       tabContentPaneOwner={owners.tabContent}
       editPaneId="edit-body"
       previewPaneId="preview-body"
@@ -662,6 +665,7 @@ export type PullRequestMarkdownEditorProps = {
   wrapperStyle?: MarkdownEditorStyleProps;
   editorStyle?: MarkdownEditorStyleProps;
   tabContentClassName: string;
+  tabContentPaneStyleProps?: MarkdownEditorStyleProps;
   owners?: { wrapper?: string; tabContent?: string };
 };
 
@@ -674,6 +678,7 @@ export function PullRequestMarkdownEditor({
   wrapperStyle,
   editorStyle,
   tabContentClassName,
+  tabContentPaneStyleProps,
   owners = NO_OWNERS,
 }: PullRequestMarkdownEditorProps) {
   const hasBodyValue = bodyValue !== undefined;
@@ -684,6 +689,7 @@ export function PullRequestMarkdownEditor({
       wrapperStyleProps={wrapperStyle}
       wrapperOwner={owners.wrapper}
       tabContentClassName={tabContentClassName}
+      tabContentPaneStyleProps={tabContentPaneStyleProps}
       tabContentPaneOwner={owners.tabContent}
       editPaneId="edit-body"
       previewPaneId="preview-body"

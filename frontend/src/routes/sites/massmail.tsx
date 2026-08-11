@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
+import { siteSettingWrapClassName } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { listProjectsQueryOptions } from "../../api/org-project";
@@ -46,23 +47,24 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <>
       <SiteMassMailTitle />
-      <div data-owner="site-massmail-breadcrumb-outer">
-        <div data-owner="site-massmail-breadcrumb-inner">
+      <div className="site-breadcrumb-outer" data-owner="site-massmail-breadcrumb-outer">
+        <div className="site-breadcrumb-inner" data-owner="site-massmail-breadcrumb-inner">
           <h3 data-owner="site-massmail-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>
       </div>
-      <div data-owner="site-massmail-page">
-        <div data-owner="site-massmail-content">
-          <div data-owner="site-massmail-setting-grid">
-            <div data-owner="site-massmail-sidebar-column">
+      <div className="page-wrap-outer" data-owner="site-massmail-page">
+        <div className={siteSettingWrapClassName} data-owner="site-massmail-content">
+          <div className="row-fluid" data-owner="site-massmail-setting-grid">
+            <div className="span2" data-owner="site-massmail-sidebar-column">
               <SiteAdminSidebar
                 activeTo="/sites/massmail"
                 badgeOwner="site-massmail-sidebar-badge"
                 baseLinkProps={legacySiteSidebarLinkProps}
                 linkPropsByTo={{ "/sites/massmail": { search: legacyMassMailSidebarSearch } }}
                 navOwner="site-massmail-sidebar"
+                ulClassName="site-setting-nav"
                 ownerPrefix="site-massmail-sidebar"
                 showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)}
                 styleSlots={{
@@ -76,7 +78,7 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 }}
               />
             </div>
-            <div data-owner="site-massmail-setting-content-column">
+            <div className="span10" data-owner="site-massmail-setting-content-column">
               <div className="title_area" data-owner="site-massmail-title-strip">
                 <h2 className="pull-left">
                   <LegacyMessage messageKey="title.massMail" />
@@ -174,7 +176,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   return (
     <div className="mess-mail-wrap">
-      <label data-owner="site-massmail-recipient-radios" htmlFor="mailtoAll">
+      <label className="radio" data-owner="site-massmail-recipient-radios" htmlFor="mailtoAll">
         <input
           type="radio"
           name="mailingType"
@@ -186,7 +188,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         />
         {t("site.massMail.toAll")}
       </label>
-      <label data-owner="site-massmail-recipient-radios" htmlFor="mailtoPrj">
+      <label className="radio" data-owner="site-massmail-recipient-radios" htmlFor="mailtoPrj">
         <input
           type="radio"
           name="mailingType"
@@ -235,6 +237,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             }}
           />
           <button
+            className="ybtn"
             data-owner="site-massmail-select-project-action"
             id="select-project"
             type="submit"

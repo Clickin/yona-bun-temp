@@ -482,9 +482,6 @@ test("organization pull request route source keeps direct typed row links", asyn
     "src/routes/organizations/$organizationName/pullrequests.tsx",
     "utf8",
   );
-  const headerBreadcrumb = source.match(
-    /<span className="project-author">[\s\S]*?<\/span>\s*<\/div>\s*<\/div>/u,
-  )?.[0];
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("OrganizationRouteLink");
@@ -516,18 +513,13 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain("type LegacyListItemHrefAttrs");
   expect(source).toContain("{ href: pullRequestRowHref } satisfies LegacyListItemHrefAttrs");
   expect(source).toContain('<div className="row-fluid cb">');
-  expect(source).toMatch(
-    /className=\{`\$\{sx\.row\.className\} post-item title`\}[\s\S]+?\{\.\.\.pullRequestRowAttrs\}/u,
-  );
+  expect(source).toMatch(/className="post-item title"[\s\S]+?\{\.\.\.pullRequestRowAttrs\}/u);
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');
   expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"');
-  expect(source).toContain('to="/organizations/$organizationName"');
-  expect(source).toContain('to="/organizations/$organizationName/issues"');
-  expect(source).toContain('to="/organizations/$organizationName/boards"');
-  expect(source).toContain('to="/organizations/$organizationName/pullrequests"');
-  expect(source).toContain('to="/organizations/$organizationName/settingform"');
+  // org header/menu links and breadcrumb live in the parent route
+  // ($organizationName.tsx) — pinned by organization-home.e2e.ts
   expect(source).toContain("function splitHeaderWordsInBrackets");
   expect(source).toContain('className="title-prefix"');
   expect(source).toContain('type="button"');
@@ -535,8 +527,6 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain("<title>{organizationName}</title>");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
-  expect(headerBreadcrumb).toContain("<Link");
-  expect(headerBreadcrumb).toContain('to="/organizations/$organizationName"');
 });
 
 async function expectLegacyRouteLocalLinkMarkers(
@@ -844,7 +834,7 @@ async function canonicalizeScreenRoots(page: Page) {
       // ico class (the frozen sprites CSS owns the visual), so drop those
       // vars from the DOM comparison.
       normalized = normalized.replace(
-        /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
+        /--[A-Za-z0-9-]+:url\(['"]?[^'")]*\/assets\/[^'")]+['"]?\)/gu,
         "",
       );
       normalized = normalized.replace(
@@ -852,6 +842,9 @@ async function canonicalizeScreenRoots(page: Page) {
         (_match, name: string) =>
           `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
       );
+      // review progress fill is --x-review-progress-width in route; legacy
+      // group_pullrequest_list.scala.html pins a plain width:NN% bar
+      normalized = normalized.replace(/review-progress-width:/gu, "width:");
       if (!normalized.includes("url(")) {
         return normalized;
       }
@@ -987,7 +980,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     function normalizeStyleAttr(value: string) {
       let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
       normalized = normalized.replace(
-        /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
+        /--[A-Za-z0-9-]+:url\(['"]?[^'")]*\/assets\/[^'")]+['"]?\)/gu,
         "",
       );
       normalized = normalized.replace(
@@ -995,6 +988,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         (_match, name: string) =>
           `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
       );
+      // review progress fill is --x-review-progress-width in route; legacy
+      // group_pullrequest_list.scala.html pins a plain width:NN% bar
+      normalized = normalized.replace(/review-progress-width:/gu, "width:");
       if (!normalized.includes("url(")) {
         return normalized;
       }

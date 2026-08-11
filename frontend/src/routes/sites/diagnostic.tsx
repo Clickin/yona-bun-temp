@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
+import { siteSettingWrapClassName } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { siteDiagnosticsQueryOptions, siteUpdateQueryOptions } from "../../api/site-admin";
 import type { SiteDiagnosticsResponse } from "../../api/site-admin";
@@ -50,10 +51,10 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
           </h3>
         </div>
       </div>
-      <div data-owner="site-diagnostic-page">
-        <div data-owner="site-diagnostic-content">
-          <div data-owner="site-diagnostic-setting-grid">
-            <div data-owner="site-diagnostic-sidebar-column">
+      <div className="page-wrap-outer" data-owner="site-diagnostic-page">
+        <div className={siteSettingWrapClassName} data-owner="site-diagnostic-content">
+          <div className="row-fluid" data-owner="site-diagnostic-setting-grid">
+            <div className="span2" data-owner="site-diagnostic-sidebar-column">
               <SiteAdminSidebar
                 activeItemClassName="active"
                 activeTo="/sites/diagnostic"
@@ -73,7 +74,7 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
                 ulClassName="site-setting-nav"
               />
             </div>
-            <div data-owner="site-diagnostic-setting-content-column">
+            <div className="span10" data-owner="site-diagnostic-setting-content-column">
               <div
                 data-owner={
                   hasNoDiagnosticErrors

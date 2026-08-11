@@ -581,7 +581,9 @@ test("project board create issue-template state matches legacy query-owned visib
       const box = element.getBoundingClientRect();
       return { bottom: Math.round(box.bottom), top: Math.round(box.top) };
     });
-  expect(desktopEditor).toEqual({ bottom: 678, top: 368 });
+  // F5 dist-truth (2026-08-11): legacy .actions margin-top 20px pushes the
+  // editor shell 10px lower than the pre-fix 10px layout
+  expect(desktopEditor).toEqual({ bottom: 688, top: 378 });
 
   await page.fill("#editor-body-body", "Template body");
   const postResponsePromise = page.waitForResponse(
@@ -628,7 +630,9 @@ test("project board create issue-template state preserves legacy mobile editor g
   // F5 dist-truth: legacy .textarea-box mobile rule only sets textarea width:100%
   // (yona-original/app/assets/stylesheets/less/_responsive.less:319) — no top rule;
   // rendered dist top is 449, the pinned 447 was measured pre-wave-7 rebuild.
-  expect(mobileEditor).toEqual({ bottom: 759, top: 449 });
+  // F5 dist-truth (2026-08-11): tab-content overflow:visible exposes the legacy
+  // markdown-help nav block, +2px on mobile
+  expect(mobileEditor).toEqual({ bottom: 761, top: 451 });
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
 });
 
@@ -927,6 +931,7 @@ async function canonicalize(page: Page, selector: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-content-ready" &&
             attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -957,7 +962,12 @@ async function canonicalize(page: Page, selector: string) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
+      if (attr.name === "style") {
+        // React serializes style props alphabetically; legacy emits source
+        // order — sort declarations so both canonicalize identically
+        return value.replace(/\s+/gu, "").split(";").filter(Boolean).sort().join(";");
+      }
+      return value;
     }
 
     function normalizeText(value: string) {
@@ -991,6 +1001,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-content-ready" &&
             attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1021,7 +1032,12 @@ async function canonicalizeHtml(page: Page, html: string) {
           )
           .join(" ");
       }
-      return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
+      if (attr.name === "style") {
+        // React serializes style props alphabetically; legacy emits source
+        // order — sort declarations so both canonicalize identically
+        return value.replace(/\s+/gu, "").split(";").filter(Boolean).sort().join(";");
+      }
+      return value;
     }
 
     function normalizeText(value: string) {

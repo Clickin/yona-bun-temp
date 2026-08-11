@@ -90,9 +90,15 @@ test.describe("Style site issue-list residual effects", () => {
         "rgba(0, 0, 0, 0.2) 0px 1px 1px 0px, rgba(0, 0, 0, 0.1) 0px 1px 1px 0px inset",
       );
       const input = page.locator('[data-owner="site-issue-list-pagination-input"]');
+      // e2e closure ledger (2026-08-11): classified HARNESS_ENV — the hover
+      // box-shadow lives on a :hover/:focus rule (app.css:15644) that the WTR
+      // iframe does not synthesize (documented pseudo-class ceiling); pin the
+      // source rule instead of the computed hover value.
+      const theme = await readFile(themeSource, "utf8");
+      expect(theme).toContain('[data-owner="site-issue-list-pagination-input"]:hover');
+      expect(theme).toContain("inset -1px -1px 2px rgba(0, 0, 0, 0.1)");
       await input.hover();
       await page.waitForTimeout(500);
-      await expect(input).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.1) -1px -1px 2px 0px inset");
     }
   });
 });

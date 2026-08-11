@@ -199,17 +199,22 @@ test("current-user token settings route owns the token form without presentation
     "user-token-settings-reset-action",
   ])
     expect(source).toContain(`data-owner="${owner}"`);
-  for (const style of ["styles.form", "styles.input", "styles.resetAction"])
-    expect(source).toContain(style);
+  // StyleX retired: the route owns the form through data-owner + app.css
+  // owner rules, not runtime `styles.*` props.
+  expect(source).not.toContain("styles.");
+  for (const owner of [
+    '[data-owner="user-token-settings-form"]',
+    '[data-owner="user-token-settings-input"]',
+    '[data-owner="user-token-settings-reset-action"]',
+  ])
+    expect(theme).toContain(owner);
   for (const retired of ["token-generate", "pull-left", 'className="text"', "ybtn-success"])
     expect(source).not.toContain(retired);
 
   for (const variable of [
-    "actionBorder",
-    "actionShadow",
-    "actionSurface",
-    "actionInteractiveSurface",
-    "actionText",
+    "--color-yona-primary",
+    "--color-yona-primary-dark",
+    "--color-yona-surface",
   ])
     expect(theme).toContain(variable);
 });
@@ -444,6 +449,8 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-edit-tab-item")
           return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
         if (owner === "user-settings-edit-tab-link") return "";
+        if (owner === "user-settings-page-wrap-outer") return 'class="page-wrap-outer"';
+        if (owner === "user-settings-page-wrap") return 'class="page-wrap"';
       }
       if (
         name === "class" &&
@@ -487,7 +494,9 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     return Array.from(
-      document.querySelectorAll('[data-owner="user-settings-breadcrumb-outer"], .page-wrap-outer'),
+      document.querySelectorAll(
+        '[data-owner="user-settings-breadcrumb-outer"], [data-owner="user-settings-page-wrap-outer"], .page-wrap-outer',
+      ),
     )
       .map((root) => visit(root))
       .join("");

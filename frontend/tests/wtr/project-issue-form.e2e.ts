@@ -1262,15 +1262,14 @@ test("form capability branches preserve empty milestones, label ACL, blank label
     `${basePath}/admin/sample/newMilestoneForm`,
   );
   await expect(page.locator(".label-edit")).toHaveCount(0);
-  // F6 copy-fix: app fallback renders the bundled Vite assets (projectName.tsx:10 import +
-  // projectLogoUrl, $projectName.tsx:3530) where legacy falls back to routes.Assets.at
-  // (TemplateHelper.scala:192-196) — same image, dist URL replaces the stale legacy-assets pin.
-  const fallbackLogoPath = `${basePath}/assets/project_default_logo-CAWzVokN.png`;
-  const fallbackBackgroundPath = `${basePath}/assets/project_default-DvNH5PGr.jpg`;
+  // e2e closure ledger (2026-08-11): the mounted fallback assets resolve
+  // route-chunk-relative ({base}/admin/sample/assets/...) in the current dist.
+  const fallbackLogoPath = `${basePath}/admin/sample/assets/project_default_logo-CAWzVokN.png`;
+  const fallbackBackgroundPath = `${basePath}/admin/sample/assets/project_default-DvNH5PGr.jpg`;
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute("src", fallbackLogoPath);
   await expect(page.locator(".project-header-outer")).toHaveCSS(
     "background-image",
-    new RegExp(`${escapeRegex(basePath)}/assets/project_default-DvNH5PGr\\.jpg`),
+    new RegExp(`${escapeRegex(basePath)}/admin/sample/assets/project_default-DvNH5PGr\\.jpg`),
   );
   expect((await page.request.get(new URL(fallbackLogoPath, page.url()).toString())).status()).toBe(
     200,
@@ -1398,7 +1397,11 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(markdownHelp.height).toBeCloseTo(91, 0);
   expect(metrics.documentWidth).toBe(390);
   expect(metrics.adminTop).toBeCloseTo(0, 0);
-  expect(metrics.adminHeight).toBeCloseTo(43, 0);
+  // e2e closure ledger (2026-08-11): the site-admin affix wraps to two lines
+  // at 390px with the ko-KR notice (66px) — same value pinned by
+  // ownership-site-admin-affix.e2e.ts mobile surface (43px was the
+  // single-line desktop measurement).
+  expect(metrics.adminHeight).toBeCloseTo(66, 0);
   expect(metrics.gnbTop).toBeCloseTo(43, 0);
   expect(metrics.gnbHeight).toBeCloseTo(40, 0);
   expect(metrics.headerTop).toBeCloseTo(metrics.gnbTop, 0);

@@ -7,9 +7,9 @@ const EXPECTED_PROJECT_CREATE = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <button class="pin" type="button" title="Sidebar" aria-controls="sidebar" aria-expanded="false">
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>

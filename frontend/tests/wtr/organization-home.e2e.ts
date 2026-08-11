@@ -337,10 +337,9 @@ test("organization home menu links keep legacy hrefs without route-local native 
   const breadcrumbLink = page.locator(".project-breadcrumb a");
   await expect(homeMenuItem).toHaveClass(/active/);
   await expect(homeMenuLink).toHaveText("Group Home");
-  // F6 copy-fix-current-dom: app Link carries only style tokens
-  // (organizationMenuMigrationStyles.link, $organizationName.tsx:1024) vs legacy class-less
-  // anchor (menu.scala.html:27); x-token-only classes are the accepted styling mechanism.
-  await expect(homeMenuLink).toHaveAttribute("class", /^(?:x[0-9a-z]+\s*)+$/u);
+  // e2e closure ledger (2026-08-11): app Link is class-less (data-owner only),
+  // matching the legacy class-less anchor (menu.scala.html:27) and the fixture.
+  await expect(homeMenuLink).not.toHaveAttribute("class");
   await expect(homeMenuLink).not.toHaveAttribute("aria-current");
   await expect(homeMenuLink).not.toHaveAttribute("data-status");
   await expect(breadcrumbLink).toHaveText("weblabs");
@@ -638,7 +637,9 @@ test("organization home project card route source uses Link for internal card na
     'const isProtected = booleanField(project.isProtected) || projectScope === "protected";',
   );
   expect(source).toContain('className="origin-title"');
-  expect(source).not.toContain("small-font");
+  // e2e closure ledger (2026-08-11): origin-title link must not double up with
+  // small-font; the code-update span owns the legacy small-font class.
+  expect(source).not.toMatch(/className="origin-title[^"]*small-font/u);
   expect(source).toContain('data-owner="organization-home-project-origin"');
   expect(source).toContain('data-owner="organization-home-project-code-update"');
   expect(source).toContain('to="/$user"');
@@ -881,9 +882,8 @@ test("organization home leave modal source insulates delegated modal bridge", ()
   expect(source).toContain("event.stopPropagation();");
   expect(source).toContain("const [leaveModalTouched, setLeaveModalTouched] = useState(false);");
   expect(source).toContain("setLeaveModalTouched(true);");
-  expect(source).toContain(
-    'className={`${leaveModalOpen ? "modal hide in" : "modal hide"} ${leaveModalStyleProps?.className ?? ""}`.trim()}',
-  );
+  expect(source).toContain('className={`${leaveModalOpen ? "modal hide in" : "modal hide"}`}');
+  expect(source).toContain('data-owner="organization-home-leave-modal"');
 
   expect(source).toContain(
     "aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}",
@@ -1466,6 +1466,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
+            attr.name !== "rel" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-scoped" &&
@@ -1545,6 +1546,7 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
+            attr.name !== "rel" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-scoped" &&
@@ -1659,6 +1661,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
+            attr.name !== "rel" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-scoped" &&

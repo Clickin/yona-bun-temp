@@ -1075,7 +1075,8 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     illustrationHeight: 80,
     illustrationWidth: 50,
     // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
-    messageHeight: 18,
+    // F5 dist-truth: ko-KR 16px-bold .error-wrap p line-box measures 20px (ledger 2026-08-11)
+    messageHeight: 20,
     messageWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
@@ -1095,7 +1096,8 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     illustrationHeight: 80,
     illustrationWidth: 50,
     // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
-    messageHeight: 18,
+    // F5 dist-truth: ko-KR 16px-bold .error-wrap p line-box measures 20px even at 390px (ledger 2026-08-11)
+    messageHeight: 20,
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
@@ -1145,7 +1147,8 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     illustrationHeight: 80,
     illustrationWidth: 50,
     // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
-    messageHeight: 18,
+    // F5 dist-truth: ko-KR 16px-bold .error-wrap p line-box measures 20px (ledger 2026-08-11)
+    messageHeight: 20,
     messageWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
@@ -1165,7 +1168,8 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     illustrationHeight: 80,
     illustrationWidth: 50,
     // copy-fix-current-dom: visible ico-404 sprite shifts the layout (measured dist truth)
-    messageHeight: 18,
+    // F5 dist-truth: ko-KR 16px-bold .error-wrap p line-box measures 20px even at 390px (ledger 2026-08-11)
+    messageHeight: 20,
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
@@ -2032,6 +2036,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-list-badge" &&
               !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
@@ -2048,7 +2053,8 @@ async function canonicalizeScreenRoots(page: Page) {
             // vars (error icon sprite, review progress width); canonicalize them
             // to their plain declarations. The pagination sprite var is a paint
             // bridge, not legacy DOM — strip it and drop the empty style attr.
-            .replace(/--x-([A-Za-z0-9]+):/gu, "$1:")
+            .replace(/--x-([A-Za-z0-9-]+):/gu, "$1:")
+            .replace(/review-progress-width:/gu, "width:")
             .replace(/--site-pagination-sprite:url\([^)]*\)/gu, "")
         : attr.value;
     }
@@ -2248,6 +2254,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-list-badge" &&
               !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
@@ -2264,7 +2271,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             // vars (error icon sprite, review progress width); canonicalize them
             // to their plain declarations. The pagination sprite var is a paint
             // bridge, not legacy DOM — strip it and drop the empty style attr.
-            .replace(/--x-([A-Za-z0-9]+):/gu, "$1:")
+            .replace(/--x-([A-Za-z0-9-]+):/gu, "$1:")
+            .replace(/review-progress-width:/gu, "width:")
             .replace(/--site-pagination-sprite:url\([^)]*\)/gu, "")
         : attr.value;
     }

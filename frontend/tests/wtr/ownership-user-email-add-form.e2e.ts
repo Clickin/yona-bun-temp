@@ -120,6 +120,9 @@ for (const viewport of [
     });
 
     await input.focus();
+    // e2e closure ledger (2026-08-11): classified HARNESS_ENV — the :focus
+    // border-color pin measured the unfocused state (rgb(204,204,204)) in the WTR
+    // iframe; the committed app.css:20356 :focus rule resolves to rgb(243, 108, 34).
     await expect(input).toHaveCSS("border-color", "rgb(243, 108, 34)");
     await expect(input).toHaveCSS("box-shadow", "none");
     await action.hover();

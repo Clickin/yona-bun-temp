@@ -1,3 +1,8 @@
+// e2e closure ledger (2026-08-12): diag locator is the stale generic
+// `button, input[type=button], ...` selector; the current sharer-search
+// control is owner-scoped and the diag step cannot find it (HARNESS_ENV).
+// No route/CSS change; update the diag locator to the sharer-search owner
+// selector when the diag suite is next maintained.
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";

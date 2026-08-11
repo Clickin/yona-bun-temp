@@ -107,7 +107,10 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
             className={validTokenReset ? `title ` : "title"}
             data-part={validTokenReset ? "reset-password-title" : undefined}
           >
-            <HighlightedLegacyMessage message={title} />
+            <HighlightedLegacyMessage
+              highlightClassName={validTokenReset ? "reset-password-title-highlight" : undefined}
+              message={title}
+            />
           </h1>
           <p
             className={validTokenReset ? `tag-line ` : "tag-line"}

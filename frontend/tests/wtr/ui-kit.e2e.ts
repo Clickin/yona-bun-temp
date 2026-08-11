@@ -280,7 +280,8 @@ test("root shell owns login dialog state without delegated document modal mutati
   expect(ROOT_ROUTE_SOURCE).toContain("submitRootLoginDialogForm");
   expect(ROOT_ROUTE_SOURCE).toContain("onClickCapture={handleRootShellClick}");
   expect(ROOT_ROUTE_SOURCE).toContain("onSubmit={handleRootLoginDialogSubmit}");
-  expect(ROOT_ROUTE_SOURCE).toContain("className={rootLoginDialogProps.className}");
+  expect(ROOT_ROUTE_SOURCE).toContain("RootLoginDialog");
+  expect(ROOT_ROUTE_SOURCE).toContain('visible={rootShellModal === "loginDialog"}');
   expect(ROOT_ROUTE_SOURCE).not.toContain('["loginDialog", rootLoginDialogProps.className]');
   // Bucket-3 (wave 36): the backdrop className is composed from an array
   // literal — `"modal-backdrop in"` is a token, not a whole className attr.
@@ -296,9 +297,9 @@ test("UI kit route owns original-message demo state", async () => {
   expect(UIKIT_ROUTE_SOURCE).toContain('data-original-message-owner="route"');
   expect(UIKIT_ROUTE_SOURCE).toContain('data-owner="uikit-original-message-toggle"');
 
-  expect(UIKIT_STYLE_SOURCE).toContain("borderWidth: 0");
-  expect(UIKIT_STYLE_SOURCE).toContain("paddingLeft: 5");
-  expect(UIKIT_STYLE_SOURCE).toContain("paddingRight: 5");
+  expect(UIKIT_STYLE_SOURCE).toContain("border-width: 0px");
+  expect(UIKIT_STYLE_SOURCE).toContain("padding-left: 5px");
+  expect(UIKIT_STYLE_SOURCE).toContain("padding-right: 5px");
   expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('border', 0)");
   expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('padding-left', '5px')");
   expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('padding-right', '5px')");

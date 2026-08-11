@@ -162,7 +162,10 @@ for (const viewport of [
             descWidth: 786,
             innerWidth: 772,
             messageHeight: 180,
-            rowHeight: 251,
+            // e2e closure ledger (2026-08-11): desktop F5 dist-truth — the
+            // overflowing message renders the "..." more marker (display
+            // inline-block since the 482c32788 closure) at 253px total.
+            rowHeight: 253,
             rowWidth: 887.78125,
             rowX: 10,
             rowY: 169,
@@ -173,10 +176,16 @@ for (const viewport of [
             descWidth: 338,
             innerWidth: 324,
             messageHeight: 200,
-            rowHeight: 271,
+            // e2e closure ledger (2026-08-11): mobile F5 dist-truth — the
+            // "..." more marker renders at 390px (seeded message overflows
+            // the 200px clamp) and the 90%-wide desc follows the type onto
+            // the next line, making the row 305px (was 271 pre-marker); the
+            // admin affix wraps to two lines at 390px, shifting the row to
+            // y=204 (was 181).
+            rowHeight: 305,
             rowWidth: 390,
             rowX: 0,
-            rowY: 181,
+            rowY: 204,
             typeX: 25,
           };
     expect(evidence.row).toMatchObject({

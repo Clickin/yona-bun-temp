@@ -422,17 +422,17 @@ test("scope paint remains isolated without runtime presentation classes", async 
   const menu = page.locator(MENU);
   // wave-33 retained-class retention (667398a04): the scope div retains legacy
   // btn-group and the toggle retains ybtn dropdown-toggle per
-  // navbar.scala.html:61,65; the menu and items stay legacy-class-free.
+  // navbar.scala.html:61,65; the menu retains legacy `dropdown-menu flat right`
+  // (navbar.scala.html:68) — organization-home DOM parity; items stay class-free.
   for (const locator of [scope, toggle]) {
     await expect(locator).toHaveClass(
       /(?:^|\s)(?:btn-group|open|ybtn|dropdown-toggle|dropdown-menu|flat|right)(?:\s|$)/u,
     );
   }
-  for (const locator of [menu, page.locator(ITEM).first()]) {
-    await expect(locator).not.toHaveClass(
-      /(?:^|\s)(?:btn-group|open|ybtn|dropdown-toggle|dropdown-menu|flat|right)(?:\s|$)/u,
-    );
-  }
+  await expect(menu).toHaveClass(/(?:^|\s)(?:dropdown-menu|flat|right)(?:\s|$)/u);
+  await expect(page.locator(ITEM).first()).not.toHaveClass(
+    /(?:^|\s)(?:btn-group|open|ybtn|dropdown-toggle|dropdown-menu|flat|right)(?:\s|$)/u,
+  );
   await toggle.click();
   await page.waitForTimeout(300);
   const owned = await scopeEvidence(scope, toggle, menu);

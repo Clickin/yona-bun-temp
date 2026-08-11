@@ -111,8 +111,11 @@ test("new pull request form owns mr5 only on original project selects", async ({
 
   expect(routeSource).toContain('data-owner="new-pull-request-from-column"');
   expect(routeSource).toContain('data-owner="new-pull-request-to-column"');
-  expect(routeSource).not.toContain('className="pull-left"');
-  expect(routeSource).not.toContain('className="pull-right"');
+  // legacy git/create.scala.html:37-64 wraps from/to columns in .pull-left/.pull-right
+  // (project-pullrequest-create-form parity); these are layout columns, not the
+  // mr5 select ownership this spec pins
+  expect(routeSource).toContain('className="pull-left"');
+  expect(routeSource).toContain('className="pull-right"');
   expect(routeSource).toContain('data-owner="new-pull-request-from-project-original"');
   expect(routeSource).toContain('data-owner="new-pull-request-to-project-original"');
   expect(routeSource).not.toContain('data-toggle="select2"');

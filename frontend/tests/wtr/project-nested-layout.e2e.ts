@@ -1,3 +1,6 @@
+// e2e closure ledger (2026-08-12): suite hangs past the 600000ms WTR global
+// timeout with no per-test assertion observed (HARNESS_ENV). Suite-hang
+// closure: no route/CSS prescription; needs a short per-test timeout bisect.
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 test("project home to issues and forbidden pull request keeps the legacy project shell DOM nodes mounted", async ({

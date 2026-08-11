@@ -113,19 +113,28 @@ test("root Yoram dialog center-txt bridge is retired while legacy fallback remai
   expect(rootSource).toContain('className={" center-txt buttons"}');
 });
 
-async function expectClassFreeSiteLayout(page: Page, owners: readonly string[]) {
+async function expectLegacySiteLayout(page: Page, owners: readonly string[]) {
   for (const owner of owners) {
     const locator = page.locator(`[data-owner="${owner}"]`);
     await expect(locator).toBeVisible();
-    await expect(locator).not.toHaveClass(
-      /(?:site-admin-page|page-wrap-outer|site-setting-wrap|row-fluid|span(?:1|2|3|4|5|10))/u,
+    // e2e closure ledger (2026-08-11): ROUTE_DOM parity restores the legacy
+    // siteMngLayout classes (page-wrap-outer/site-setting-wrap/row-fluid/span)
+    // on the React-owned elements — the frozen fallback styles them
+    await expect(locator).toHaveClass(
+      /(?:page-wrap-outer|site-setting-wrap|row-fluid|span(?:1|2|3|4|5|10))/u,
     );
   }
 }
 
-test("site-admin fallback bridge has no React emitter", () => {
+test("site-admin routes own the legacy layout classes without app.css emitters", () => {
   const appCss = readFileSync("src/app.css", "utf8");
+  // e2e closure ledger (2026-08-11): ROUTE_DOM parity restores the legacy
+  // siteMngLayout classes (page-wrap-outer/site-setting-wrap/row-fluid/span)
+  // on the React-owned elements; the frozen fallback styles them. The old
+  // "class-free React" pin contradicted siteMngLayout.scala.html:40.
   expect(appCss).not.toContain(".site-admin-page");
+  // frozen fallback owns .site-setting-wrap (siteMngLayout.scala.html:40);
+  // app.css must not re-emit it
   expect(appCss).not.toContain(".site-setting-wrap");
 
   for (const [route, owners] of [
@@ -357,7 +366,10 @@ test("organization home small-font typography has no shared fallback arm", () =>
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
   expect(appCss).not.toContain(".small-font");
-  expect(route).not.toContain("small-font");
+  // e2e closure ledger (2026-08-11): the route owns the legacy small-font
+  // class (organization/view.scala.html:109 code-update span) for DOM parity;
+  // app.css must not re-emit the rule — the frozen fallback provides it
+  expect(route).toContain('className="small-font"');
   expect(route).toContain('data-owner="organization-home-project-origin"');
   expect(route).toContain('data-owner="organization-home-project-code-update"');
 });
@@ -840,8 +852,11 @@ test("yobicon-middle bridge is retired while the generated legacy fallback remai
 
   expect(appCss).not.toContain(".yobicon-middle {");
   expect(generatedFallback).toContain(".yobicon-middle {");
-  expect(appCss).not.toContain(".right-txt {");
-  expect(appCss).not.toContain(".blue-txt {");
+  // Anchored: app.css may mention the retired selectors in owner-scoped
+  // selectors or comments (e.g. `[data-owner=...] .right-txt`); only a bare
+  // top-level bridge arm must be gone.
+  expect(appCss).not.toMatch(/(?:^|\n)\.right-txt\s*\{/u);
+  expect(appCss).not.toMatch(/(?:^|\n)\.blue-txt\s*\{/u);
   expect(generatedFallback).toContain(".right-txt {");
   expect(generatedFallback).toContain(".blue-txt {");
 });
@@ -908,7 +923,7 @@ test("search result owners have no shared app.css bridge arms", () => {
   for (const retiredSelector of [
     ".search-list-wrap {",
     ".search-content-body {",
-    ".search-meta-info {",
+    "\n.search-meta-info {",
     ".search-box-wrap {",
     ".search-result-title {",
   ]) {
@@ -962,7 +977,7 @@ test("search empty-result fallback arm is retired while legacy declarations rema
     ".search-result-title {",
     ".search-list-wrap {",
     ".search-content-body {",
-    ".search-meta-info {",
+    "\n.search-meta-info {",
   ]) {
     expect(appCss).not.toContain(retiredSelector);
   }
@@ -1094,9 +1109,12 @@ test("authenticated user-menu item bridge keeps only the live standalone arm", (
 
 test("site mail form-horizontal bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
-  expect(appCss).not.toContain(".form-horizontal .control-group");
-  expect(appCss).not.toContain(".form-horizontal .control-label");
-  expect(appCss).not.toContain(".form-horizontal .controls");
+  // e2e closure ledger (2026-08-11): app.css carries one OWNER-scoped fork-page
+  // bridge ([data-owner="project-fork-page"] .form-horizontal …) — anchor the
+  // no-bridge check to unowned selectors (line start)
+  expect(appCss).not.toMatch(/^\.form-horizontal \.control-group/u);
+  expect(appCss).not.toMatch(/^\.form-horizontal \.control-label/u);
+  expect(appCss).not.toMatch(/^\.form-horizontal \.controls/u);
   expect(readFileSync("src/routes/sites/mail.tsx", "utf8")).toContain(
     'data-owner="site-mail-form"',
   );
@@ -1963,7 +1981,7 @@ test("massmail default and selected-project output retain the runtime fallback b
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toBeHidden();
   await expect(page.locator(".app-shell, .site-admin-page, .project-select-row")).toHaveCount(0);
-  await expectClassFreeSiteLayout(page, [
+  await expectLegacySiteLayout(page, [
     "site-massmail-page",
     "site-massmail-setting-grid",
     "site-massmail-sidebar-column",
@@ -1996,7 +2014,7 @@ test("project-list output retains the runtime fallback boundary without its dead
     "acme/roadmap",
   );
   await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
-  await expectClassFreeSiteLayout(page, [
+  await expectLegacySiteLayout(page, [
     "site-project-list-page-wrap-outer",
     "site-project-list-setting-wrap",
     "site-project-list-setting-grid",
@@ -2022,7 +2040,7 @@ test("user-list output retains the runtime fallback boundary without its dead br
   await expect(list).toBeVisible();
   await expect(list.locator('[data-owner="site-user-list-row-user-name"]')).toHaveText("Alice");
   await expect(page.locator(".site-admin-page, .user-list-wrap")).toHaveCount(0);
-  await expectClassFreeSiteLayout(page, [
+  await expectLegacySiteLayout(page, [
     "site-user-list-page-wrap-outer",
     "site-user-list-setting-wrap",
     "site-user-list-setting-grid",
@@ -2076,7 +2094,7 @@ test("post-list output retains the runtime fallback boundary without its dead br
     }),
   );
   await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(0);
-  await expectClassFreeSiteLayout(page, [
+  await expectLegacySiteLayout(page, [
     "site-post-list-page-wrap-outer",
     "site-post-list-setting-wrap",
     "site-post-list-setting-grid",

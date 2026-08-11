@@ -1,3 +1,7 @@
+// e2e closure ledger (2026-08-12): all 8 tests mirror the issue-list API to a
+// live legacy backend (YONA_E2E_BACKEND_ORIGIN, admin/WYVE_OCS) and skip when
+// the mirror probe fails (HARNESS_ENV live-data dependency). No route/CSS
+// change; app behavior is covered by the mocked project-issues parity specs.
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routePath = "/admin/WYVE_OCS/issues?orderBy=updatedDate&orderDir=desc&pageNum=1&state=closed";

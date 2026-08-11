@@ -850,7 +850,7 @@ function ReviewCard({
           </span>
         ) : null}
         <span
-          className={`outdated-label ${thread.isOutdated ? "" : "hidden"}`}
+          className="outdated-label"
           data-owner="pull-request-changes-review-card-outdated-label"
         >
           {t("review.outdated")}

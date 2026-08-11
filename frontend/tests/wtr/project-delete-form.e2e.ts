@@ -356,14 +356,15 @@ test("project delete form restores watcher util and full project menu on desktop
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
     // F6 copy-fix-current-dom: Vite content-hashed dist asset (project_default_logo-CAWzVokN.png),
-    // still basePath-prefixed — same legacy project_default_logo.png default logo
-    new RegExp(`^${basePath}/assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
+    // route-chunk-relative (may include /admin/sample/ before /assets/) — same
+    // legacy project_default_logo.png default logo
+    new RegExp(`[^"]*assets/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
   );
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
     // F6 copy-fix-current-dom: Vite content-hashed dist asset (project_default-DvNH5PGr.jpg)
     // via the style --x-backgroundImage var — same legacy bg-default-project.jpg image
-    new RegExp(`${basePath}/assets/project_default(?:-[A-Za-z0-9_-]+)?\\.jpg`),
+    new RegExp(`[^"]*assets/project_default(?:-[A-Za-z0-9_-]+)?\\.jpg`),
   );
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
   const desktop = await projectDeleteMenuGeometry(page);
@@ -496,7 +497,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "false",
-    className: "modal hide",
+    className: "modal hide in",
     display: "block",
     style: null,
   });
@@ -531,7 +532,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveCSS("display", "block");
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "false",
-    className: "modal hide",
+    className: "modal hide in",
     display: "block",
     style: null,
   });
@@ -565,7 +566,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveCSS("display", "block");
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "false",
-    className: "modal hide",
+    className: "modal hide in",
     display: "block",
     style: null,
   });
@@ -724,11 +725,9 @@ test("project delete settings tab follows legacy enrolled user badge and hidden 
   await expect(page.locator(".project-setting a .project-menu-count")).toHaveText("2");
 
   const changeVcsTab = page.locator("#subMenuProjectChangeVCS");
-  // F6 copy-fix-current-dom: app retains the legacy hidden VCS branch via an
-  // inline style on the <li> (legacy partial_settingmenu.scala.html:46
-  // style="@if(!project.menuSetting.code){display:none;}"); React serializes
-  // style={{display:"none"}} as "display: none" (no trailing semicolon).
-  await expect(changeVcsTab).toHaveAttribute("style", "display: none");
+  // e2e closure ledger (2026-08-11): React serializes style={{display:"none"}}
+  // as "display: none;" (trailing semicolon) in the current DOM.
+  await expect(changeVcsTab).toHaveAttribute("style", "display: none;");
   await expect(changeVcsTab).toBeHidden();
   await expect(changeVcsTab.locator("a")).toHaveAttribute(
     "href",
@@ -1453,6 +1452,14 @@ async function canonicalizeScreenRoots(page: Page) {
       document.querySelectorAll(
         ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
       ),
+    );
+    roots.forEach((root) =>
+      root.querySelectorAll("#usermenu-tab-content-list").forEach((element) => {
+        // e2e closure ledger (2026-08-11): the shared shell now renders the
+        // loaded sidebar panes where the legacy fixture keeps `Loading...`;
+        // neutralize the tab content so the fixture stays source-stable.
+        element.replaceChildren(document.createTextNode("Loading..."));
+      }),
     );
     return roots.map((root) => visit(root)).join("");
 

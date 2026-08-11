@@ -971,7 +971,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -1002,6 +1003,9 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-fork-controls" &&
+              token !== "pr-fork-clone-page" &&
+              token !== "pr-fork-clone-project-page" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1013,6 +1017,7 @@ async function canonicalizeScreenRoots(page: Page) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-[A-Za-z0-9-]+:[^;]+(?:;|$)/gu, "")
+            .replace(/--search-error-icon-sprite:[^;]+(?:;|$)/gu, "")
         : attr.value;
     }
 
@@ -1044,7 +1049,8 @@ async function canonicalizePageWrap(page: Page) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -1075,6 +1081,9 @@ async function canonicalizePageWrap(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-fork-controls" &&
+              token !== "pr-fork-clone-page" &&
+              token !== "pr-fork-clone-project-page" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1086,6 +1095,7 @@ async function canonicalizePageWrap(page: Page) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-[A-Za-z0-9-]+:[^;]+(?:;|$)/gu, "")
+            .replace(/--search-error-icon-sprite:[^;]+(?:;|$)/gu, "")
         : attr.value;
     }
 
@@ -1257,7 +1267,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -1288,6 +1299,9 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-fork-controls" &&
+              token !== "pr-fork-clone-page" &&
+              token !== "pr-fork-clone-project-page" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1299,6 +1313,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             .replace(/;$/u, "")
             .replaceAll('"', "'")
             .replace(/--x-[A-Za-z0-9-]+:[^;]+(?:;|$)/gu, "")
+            .replace(/--search-error-icon-sprite:[^;]+(?:;|$)/gu, "")
         : attr.value;
     }
 

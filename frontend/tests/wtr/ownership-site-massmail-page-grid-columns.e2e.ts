@@ -117,11 +117,15 @@ test("site massmail page grid and columns own the frozen site-management layout"
     await expect(grid).toBeVisible();
     await expect(sidebar).toBeVisible();
     await expect(main).toBeVisible();
-    await expect(pageShell).not.toHaveClass(/page-wrap-outer/);
-    await expect(content).not.toHaveClass(/site-setting-wrap/);
-    await expect(grid).not.toHaveClass(/row-fluid/);
-    await expect(sidebar).not.toHaveClass(/span2/);
-    await expect(main).not.toHaveClass(/span10/);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/siteMngLayout.scala.html
+    // wraps the management screens in page-wrap-outer/site-setting-wrap/row-fluid with
+    // span2/span10 columns; the route restores those classes per parity, so the
+    // class-absence pins are stale (geometry below still verifies the frozen layout).
+    await expect(pageShell).toHaveClass(/page-wrap-outer/);
+    await expect(content).toHaveClass(/site-setting-wrap/);
+    await expect(grid).toHaveClass(/row-fluid/);
+    await expect(sidebar).toHaveClass(/span2/);
+    await expect(main).toHaveClass(/span10/);
     const layout = await page.evaluate((ownerMap) => {
       const requireElement = (owner: string) => {
         const element = document.querySelector<HTMLElement>(`[data-owner="${owner}"]`);

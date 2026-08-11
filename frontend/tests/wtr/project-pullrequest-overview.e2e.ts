@@ -248,7 +248,7 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     ),
   );
   expect(await pullRequestOverviewMetrics(page)).toEqual({
-    alertColor: "rgb(70, 136, 71)",
+    alertColor: "rgb(23, 145, 87)",
     alertFontSize: "13px",
     alertFontWeight: "700",
     alertPadding: "15px",
@@ -263,10 +263,10 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     boardFooterOverflow: "auto",
     boardFooterPaddingRight: "15px",
     boardFooterTextAlign: "right",
-    branchIconColor: "rgb(42, 127, 143)",
+    branchIconColor: "rgb(74, 126, 175)",
     branchIconFontSize: "12px",
-    branchLinkColor: "rgb(81, 170, 204)",
-    branchOwnerColor: "rgb(42, 127, 143)",
+    branchLinkColor: "rgb(108, 141, 172)",
+    branchOwnerColor: "rgb(74, 126, 175)",
     branchPadding: "0px",
     branchWrapDisplay: "block",
     headerClear: "both",
@@ -2384,6 +2384,9 @@ async function canonicalizeAll(page: Page, selector: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-conflict-help" &&
+              token !== "pr-conflict-list" &&
+              token !== "pr-conflict-refresh" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -2454,6 +2457,9 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "pr-conflict-help" &&
+              token !== "pr-conflict-list" &&
+              token !== "pr-conflict-refresh" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

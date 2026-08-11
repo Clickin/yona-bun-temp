@@ -549,6 +549,12 @@ async function mockAuthenticatedOrganizations(
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    // e2e closure ledger (2026-08-11): the user-menu sidebar loads the workspace
+    // project/org list asynchronously; the legacy fixture pins `Loading...`
+    // (mirrors project-delete-form canonicalizer)
+    document.querySelectorAll("#usermenu-tab-content-list").forEach((element) => {
+      element.replaceChildren(document.createTextNode("Loading..."));
+    });
     const roots = Array.from(
       document.querySelectorAll(
         ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",

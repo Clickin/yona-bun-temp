@@ -64,7 +64,10 @@ test(`reviews batch 6 exposes the legacy shell geometry ${fallbackOff ? "fallbac
     await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
   }
 
-  const shell = page.locator(".page-wrap-outer > .project-page-wrap");
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy reviewthread/list.scala.html:34
+  // starts with <div class="project-page-wrap"> (no page-wrap-outer wrapper); the route
+  // dropped its page-wrap-outer per parity, so pin the route-owned shell directly.
+  const shell = page.locator('[data-owner="project-reviews-page-wrap"]');
   const issueList = shell.locator(":scope > .row-fluid.issue-list-wrap");
   await expect(shell).toBeVisible();
   await expect(issueList).toBeVisible();
@@ -75,9 +78,9 @@ test(`reviews batch 6 exposes the legacy shell geometry ${fallbackOff ? "fallbac
 
   const geometry = await page.evaluate(() => {
     const outer = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const project = document.querySelector<HTMLElement>(".page-wrap-outer > .project-page-wrap");
+    const project = document.querySelector<HTMLElement>('[data-owner="project-reviews-page-wrap"]');
     const issueList = document.querySelector<HTMLElement>(
-      ".page-wrap-outer > .project-page-wrap > .row-fluid.issue-list-wrap",
+      '[data-owner="project-reviews-page-wrap"] > .row-fluid.issue-list-wrap',
     );
     if (!outer || !project || !issueList) throw new Error("missing reviews shell");
     const outerBox = outer.getBoundingClientRect();

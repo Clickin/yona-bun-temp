@@ -830,6 +830,7 @@ function ProfileIssueRow({
               <span
                 className={"pull-right"}
                 data-owner="user-profile-issue-due-date"
+                data-overdue={dueDateOverdue ? "true" : "false"}
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
                 <i className={"yobicon-clock2"} data-owner="user-profile-issue-due-date-clock"></i>

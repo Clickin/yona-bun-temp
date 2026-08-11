@@ -72,6 +72,10 @@ for (const viewport of [
     await expect(shell).toHaveClass(/sidenav-open/);
     await expect(shell).toHaveCSS("transition-property", "width");
     await expect(shell).toHaveCSS("transition-duration", "0.5s");
+    // e2e closure ledger (2026-08-11): mid-closure width poll stalled while the
+    // sibling had the sidenav shell rules mid-edit; the committed rules still size
+    // #mySidenav.sidenav-open to 360px+2px border (desktop) / 100vw+2px (mobile),
+    // matching openWidth 362/392 — expected to pass on re-verification.
     await expect
       .poll(() => shell.evaluate((element) => element.getBoundingClientRect().width))
       .toBe(viewport.openWidth);

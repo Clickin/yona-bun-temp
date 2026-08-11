@@ -3078,7 +3078,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           const matches = (await actualCount()) === count;
           return negate ? !matches : matches;
         },
-        `toHaveCount(${count}) — actual: ${await describeCount()}`,
+        `toHaveCount(${count}) — actual: ${await describeCount()} [sel: ${target instanceof Locator ? target.selector : "?"}]`,
         options?.timeout,
       );
     },

@@ -49,7 +49,12 @@ test("project form preserves legacy mt10 ownership and behavior", async ({ page 
   expect(routeSource).not.toContain("right-txt");
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("addEventListener");
-  expect(routeSource).not.toMatch(/\bstyle\s*=/u);
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy project/create.scala.html:24,121
+  // pins style='min-width: 220px;' on the owner/VCS selects and :55 inline display:none on
+  // #opt-protected; the route restores those inline styles per parity, so the
+  // no-inline-style pin is stale.
+  expect(routeSource).toMatch(/minWidth: "220px"/u);
+  expect(routeSource).toContain('isSelectedOwnerGroup ? undefined : { display: "none" }');
 
   await mockProjectCreate(page);
   mkdirSync(screenshotDirectory, { recursive: true });

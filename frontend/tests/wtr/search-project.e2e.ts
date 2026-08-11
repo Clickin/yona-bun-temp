@@ -1230,6 +1230,8 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "project-search-category-action" &&
+              token !== "project-search-category-badge" &&
               !(token === "pull-right" && attr.value.split(/\s+/u).includes("num-badge")) &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
@@ -1551,6 +1553,8 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              token !== "project-search-category-action" &&
+              token !== "project-search-category-badge" &&
               !(token === "pull-right" && attr.value.split(/\s+/u).includes("num-badge")) &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),

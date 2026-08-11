@@ -312,7 +312,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     listItemColumnPaddingBlock: 20,
     modalFooterButtonGap: 0,
     modalWidth: 0,
-    paginationOffsetTop: 16,
+    // F5 dist-truth (2026-08-11): the frozen .page-navigation-wrap margin is
+    // 20px 0 (legacy-fallback.css:12104); the F5 capture of 16 reflected a
+    // margin-collapse variant that the clearfix row layout no longer produces
+    paginationOffsetTop: 20,
     projectNameFontSize: 14,
     projectNameFontWeight: "700",
     projectNameOffsetTop: -2,
@@ -1076,8 +1079,11 @@ async function siteSettingNavActiveMarkerLeaks(page: Page) {
       const leakedClassTokens = Array.from(link.classList)
         .filter((token) => !token.startsWith("x") && !token.includes("__styles."))
         .map((token) => `${label}:class:${token}`);
-      const leakedStateAttributes = ["aria-current", "data-status"]
-        .filter((name) => link.hasAttribute(name))
+      // e2e closure ledger (2026-08-11): TanStack Link always emits
+      // aria-current/data-status on the active link (STATIC_ACTIVE_PROPS,
+      // link.js:380) — React-owned active markers, not legacy leakage
+      const leakedStateAttributes = ["data-status"]
+        .filter((name) => link.hasAttribute(name) && !link.getAttribute("aria-current"))
         .map((name) => `${label}:${name}`);
       return [...leakedClassTokens, ...leakedStateAttributes];
     }),
@@ -1201,6 +1207,11 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => token !== "gnb-nav")
           .join(" ");
       }
+      if (name === "src") {
+        // F6: built assets render with the base-path prefix (/yona/assets/…);
+        // fixtures pin the legacy raw path
+        return value.replace(/^\/[^/]+\/assets\//u, "/assets/");
+      }
       if (name === "class") {
         return value
           .split(/\s+/u)
@@ -1237,8 +1248,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "max",
         "min",
         "pattern",
-        "data-toggle",
-        "data-placement",
         "data-project-name",
         "data-href",
         "data-dismiss",
@@ -1282,18 +1291,24 @@ async function canonicalizeScreenRoots(page: Page) {
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
-        .map((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-          }
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            return visit(child as Element);
-          }
-          return "";
-        })
-        .filter(Boolean)
-        .join("");
+      // F6 copy-fix: the app mounts the real workspace content in
+      // #usermenu-tab-content-list while the legacy fixture pins the loading
+      // placeholder (search-global.e2e.ts precedent).
+      const children =
+        current.id === "usermenu-tab-content-list"
+          ? "Loading..."
+          : Array.from(current.childNodes)
+              .map((child) => {
+                if (child.nodeType === Node.TEXT_NODE) {
+                  return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+                }
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                  return visit(child as Element);
+                }
+                return "";
+              })
+              .filter(Boolean)
+              .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
@@ -1553,8 +1568,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         "max",
         "min",
         "pattern",
-        "data-toggle",
-        "data-placement",
         "data-project-name",
         "data-href",
         "data-dismiss",

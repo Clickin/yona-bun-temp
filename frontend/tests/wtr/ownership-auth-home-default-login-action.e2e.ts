@@ -94,7 +94,7 @@ test("authenticated Home default-login action has complete global-theme Style ow
   }
 
   const markupStart = route.indexOf('id="setDefaultLoginPage"');
-  const markupEnd = route.indexOf("{notificationHasMore ?", markupStart);
+  const markupEnd = route.indexOf("{notificationHasMore &&", markupStart);
   const markup = route.slice(markupStart, markupEnd);
   for (const owner of [
     "authenticated-home-default-login-action",

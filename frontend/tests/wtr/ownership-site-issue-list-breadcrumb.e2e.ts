@@ -66,8 +66,10 @@ test("breadcrumb source owns exactly the frozen route-local declarations", () =>
   expect(breadcrumb).toContain("<h3");
   expect(appCss).toContain(".site-breadcrumb-outer {\n    border-bottom: 1px solid #ddd;");
   expect(appCss).toContain(
-    ".site-breadcrumb-inner h3 {\n    margin: 0;\n    padding: 10px 10px 5px;\n    font-weight: 400;",
+    ".site-breadcrumb-inner h3 {\n    margin: 0;\n    padding: 10px 10px 5px;",
   );
+  expect(appCss).toContain("font-size: 24.5px;");
+  expect(appCss).toContain("font-weight: 400;");
   expect(breadcrumb).not.toContain("borderBottom");
 });
 

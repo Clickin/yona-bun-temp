@@ -2493,6 +2493,12 @@ test("direct notifications route matches legacy Application.notifications empty 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const setDefaultLoginPageRequests: string[] = [];
   await mockAuthenticatedEmptyNotifications(page);
+  // e2e closure ledger (2026-08-11): a previous test leaks
+  // shallWeOpenLeftNavigation=true into the WTR iframe, which suppresses the
+  // GNB pin button; clear it before loading the notifications route.
+  await page.addInitScript(() => {
+    localStorage.removeItem("shallWeOpenLeftNavigation");
+  });
   await page.route("**/api/v1/workspace", (route) =>
     route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
   );

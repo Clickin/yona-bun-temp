@@ -742,9 +742,7 @@ test("organization members delete modal source insulates delegated modal bridge"
   expect(modalSource).toContain("const dismissDeleteMemberModal");
   expect(modalSource).toContain("const submitDeleteMember");
   expect(modalSource).toContain("closeDeleteMemberModal();");
-  expect(modalSource).toContain(
-    'className={`${deleteUserId === null ? "modal hide" : "modal hide in"} ${deleteModalStyleProps?.className ?? ""}`.trim()}',
-  );
+  expect(modalSource).toContain('className={`modal hide${deleteUserId === null ? "" : " in"}`}');
   expect(modalSource).toContain('className="modal-backdrop fade in"');
   expect(modalSource).toContain("onDelete={openDeleteMemberModal}");
   expect(modalSource).toContain("onClick={dismissDeleteMemberModal}");

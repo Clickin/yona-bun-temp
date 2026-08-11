@@ -61,8 +61,11 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(route).toContain("members project row-fluid");
   expect(route).toContain("member span6 span-hard-wrap");
 
-  expect(route).toContain("onAccept={(loginId, userId) =>");
-  expect(route).toContain("acceptEnrollmentMutation.mutate(Number(userId))");
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy yobi.organization.Member.js:151-157
+  // _onClickEnrollAcceptBtns fills #loginId and submits #addNewMember (no accept REST), so
+  // the route's enroll-accept handler takes (loginId, _userId) and posts the add-member form.
+  expect(route).toContain("onAccept={(loginId, _userId) =>");
+  expect(route).toContain("addLoginId(loginId)");
   expect(route).toContain('data-owner="organization-members-header"');
   expect(route).toContain('data-owner="organization-members-add-form-input"');
 
@@ -101,9 +104,12 @@ test("organization member list records the exact six-owner legacy boundary", () 
   ]) {
     expect(legacyYobi).toContain(importedStylesheet);
   }
-  expect(route).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
-  expect(route).not.toContain('className="member-name"');
-  expect(route).not.toContain('className="member-id"');
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy organization/members.scala.html:51
+  // renders the member avatar link with class="avatar-wrap mlarge pull-left mr10" and
+  // :54-55 the member-name/member-id divs; the route restores those classes per parity.
+  expect(route).toContain('className="avatar-wrap mlarge pull-left mr10"');
+  expect(route).toContain('className="member-name"');
+  expect(route).toContain('className="member-id"');
 });
 
 for (const fallbackOff of [false, true]) {
@@ -321,8 +327,7 @@ test("organization enrollment request preserves avatar geometry, order, copy, an
 }) => {
   await page.setViewportSize({ width: 1366, height: 900 });
   const fixture = { populated: false, enrollment: true };
-  const enrollmentFixture = { loginId: "pending", userId: 3 };
-  const requests = await mockMembers(page, fixture, enrollmentFixture);
+  const requests = await mockMembers(page, fixture);
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   const request = page.locator(".project-page-wrap .row-fluid").last().locator(".span2").first();
@@ -396,15 +401,16 @@ test("organization enrollment request preserves avatar geometry, order, copy, an
   expect(desktopGeometry!.image.width).toBe(65);
   expect(desktopGeometry!.image.height).toBe(65);
 
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy yobi.organization.Member.js:151-157
+  // _onClickEnrollAcceptBtns fills #loginId and submits #addNewMember; the route mirrors it
+  // with an add-member POST (no accept REST endpoint exists in legacy).
   const acceptRequestPromise = page.waitForRequest(
     (request) => request.method() === "POST" && request.url().includes("/api/v1/organizations/"),
   );
   await accept.click();
   const acceptRequest = await acceptRequestPromise;
-  expect(acceptRequest.url()).toContain(
-    `/api/v1/organizations/weblabs/enrollments/${enrollmentFixture.userId}/accept`,
-  );
-  await expect.poll(() => requests.acceptedEnrollments).toEqual([enrollmentFixture]);
+  expect(acceptRequest.url()).toContain("/api/v1/organizations/weblabs/members");
+  await expect.poll(() => requests.acceptedLoginIds).toEqual(["pending"]);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileGeometry = await request.evaluate((element) => {
@@ -454,9 +460,11 @@ for (const viewport of [
     await expect(ids).toHaveText(["@admin", "@dev"]);
     await expect(list).toHaveClass(/\bmembers project row-fluid\b/u);
     await expect(rows.first()).toHaveClass(/\bmember span6 span-hard-wrap\b/u);
-    await expect(avatars.first()).not.toHaveClass(/\b(?:avatar-wrap|mlarge|pull-left|mr10)\b/u);
-    await expect(names.first()).not.toHaveClass(/\bmember-name\b/u);
-    await expect(ids.first()).not.toHaveClass(/\bmember-id\b/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy organization/members.scala.html:51,54-55
+    // pins avatar-wrap mlarge pull-left mr10 and member-name/member-id classes on the row.
+    await expect(avatars.first()).toHaveClass(/\b(?:avatar-wrap|mlarge|pull-left|mr10)\b/u);
+    await expect(names.first()).toHaveClass(/\bmember-name\b/u);
+    await expect(ids.first()).toHaveClass(/\bmember-id\b/u);
 
     await expect(list).toHaveCSS("list-style-type", "none");
     await expect(list).toHaveCSS("margin", "0px");
@@ -549,11 +557,7 @@ for (const viewport of [
   });
 }
 
-async function mockMembers(
-  page: Page,
-  fixture: { populated: boolean; enrollment?: boolean },
-  enrollmentFixture = { loginId: "pending", userId: 3 },
-) {
+async function mockMembers(page: Page, fixture: { populated: boolean; enrollment?: boolean }) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -586,19 +590,20 @@ async function mockMembers(
       json: adminPayload(fixture.populated, fixture.enrollment ?? false),
     }),
   );
-  const acceptedEnrollments: Array<{ loginId: string; userId: number }> = [];
-  await page.route(
-    `**/api/v1/organizations/weblabs/enrollments/${enrollmentFixture.userId}/accept`,
-    async (route) => {
-      if (route.request().method() === "POST") {
-        acceptedEnrollments.push(enrollmentFixture);
-      }
-      await route.fulfill({
-        contentType: "application/json",
-        json: adminPayload(fixture.populated, fixture.enrollment ?? false),
-      });
-    },
-  );
+  const acceptedLoginIds: string[] = [];
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy yobi.organization.Member.js:151-157
+  // _onClickEnrollAcceptBtns submits #addNewMember (no accept REST endpoint), so the
+  // enroll-accept click posts the add-member form instead of an enrollments accept route.
+  await page.route("**/api/v1/organizations/weblabs/members", async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as { loginId?: string };
+      acceptedLoginIds.push(body.loginId ?? "");
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      json: adminPayload(fixture.populated, fixture.enrollment ?? false),
+    });
+  });
   await page.route("**/api/v1/organizations/weblabs/container", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -627,7 +632,7 @@ async function mockMembers(
       },
     }),
   );
-  return { acceptedEnrollments };
+  return { acceptedLoginIds };
 }
 
 async function mockMemberAddFormRoutes(page: Page) {

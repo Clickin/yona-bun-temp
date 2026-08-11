@@ -158,7 +158,7 @@ function ProjectBoardEditFormBody({
                     }}
                   />
                 </dd>
-                <dd data-owner="post-edit-form-editor">
+                <dd data-owner="post-edit-form-editor" style={{ position: "relative" }}>
                   <BoardPostMarkdownEditor
                     focusRequest={bodyFocusRequest}
                     value={post.bodyMarkdown}

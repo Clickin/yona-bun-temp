@@ -164,12 +164,13 @@ function OrganizationNewScreen({
                     />
                   </dd>
                 </dl>
-                <div data-owner="organization-new-actions">
+                <div className="actions" data-owner="organization-new-actions">
                   <button data-owner="organization-new-actions" disabled={createMutation.isPending}>
                     <i className="yobicon-friends" /> {t("organization.create")}
                   </button>
                   <Link
                     to="/"
+                    className="ybtn"
                     data-owner="organization-new-actions"
                     activeOptions={{ exact: true }}
                     activeProps={legacyAnchorActiveProps}

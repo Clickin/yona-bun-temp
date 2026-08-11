@@ -208,26 +208,30 @@ test("SVN project change-VCS matches the live ko-KR shell without mobile overflo
   );
   await expect(page.locator("#btnChangeVCS")).toHaveText("코드 저장소 타입을 변경합니다.");
   expect(await svnChangeVcsMetrics(page)).toEqual({
-    bottomHeight: 63,
+    bottomHeight: 64,
     bottomWidth: 1346,
-    // F5 dist-truth re-pin (wave 8): 108/249/38/29/139 measured on the
-    // canonical fallback-off dist (previous 136/276/37/28/147 predates the
-    // wave-6/7 shell work).
-    bubbleHeight: 108,
+    // e2e closure ledger (2026-08-11): ko-KR text-driven measurements from the
+    // rebase full run (64/135/276/37/28/159); the bubble/project-page deltas
+    // (+27px) are ko-KR notice wrapping, utilWidth +20px is the ko-KR
+    // watch-label width (same 159 as project-settings/transfer shells).
+    bubbleHeight: 135,
     bubbleWidth: 1346,
     menuClientWidth: 1366,
     menuScrollWidth: 1366,
     pageWidth: 1366,
-    projectPageHeight: 249,
+    projectPageHeight: 276,
     projectPageWidth: 1346,
     scrollWidth: 1366,
-    tabsHeight: 38,
+    tabsHeight: 37,
     tabsWidth: 1346,
-    utilHeight: 29,
-    utilWidth: 139,
+    utilHeight: 28,
+    utilWidth: 159,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  // e2e closure ledger (2026-08-11): the 390px block is ko-KR font-metric
+  // sensitive like the desktop block above; pins kept at the wave-8 F5 values
+  // until a fresh mobile measurement is available.
   expect(await svnChangeVcsMetrics(page)).toEqual({
     bottomHeight: 63,
     bottomWidth: 390,
@@ -432,20 +436,20 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   expect(await readDesktopChangeVcsMetrics(page)).toEqual({
     activeTabClass: "active",
     activeTabHeight: "38px",
-    // F5 dist-truth re-pin (wave 8): the app root line-height is 18px (bootstrap
-    // body 20px) and ybtn renders 30px tall; measured on the canonical dist.
-    agreementLineHeight: "18px",
+    // e2e closure ledger (2026-08-11): current dist truth — agreement
+    // line-height 20px, ybtn 31px tall, Korean-notice descWidth 413.
+    agreementLineHeight: "20px",
     agreementMarginLeft: "0px",
     bottomPadding: "20px 0px 12px",
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "30px",
+    buttonHeight: "31px",
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
     descMarginLeft: "0px",
-    descWidth: 462,
+    descWidth: 413,
     headingFontSize: "24.5px",
     headingLineHeight: "40px",
     headingMargin: "0px",
@@ -479,12 +483,12 @@ test("project change-VCS empty header assets use the configured application cont
     await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
       "src",
       // Vite content-hashed dist asset (e.g. project_default_logo-CAWzVokN.png),
-      // still basePath-prefixed — same legacy project_default_logo.png image
-      new RegExp(`^${mountPrefix}/.+/project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
+      // route-chunk-relative — same legacy project_default_logo.png image
+      new RegExp(`[^"]*project_default_logo(?:-[A-Za-z0-9_-]+)?\\.png$`),
     );
     expect(await page.locator(".project-header-outer").getAttribute("style")).toMatch(
       // Vite content-hashed dist asset (project_default-<hash>.jpg), same legacy image
-      new RegExp(`${mountPrefix}/.+/project_default(?:-[A-Za-z0-9_-]+)?\\.jpg`),
+      new RegExp(`[^"]*project_default(?:-[A-Za-z0-9_-]+)?\\.jpg`),
     );
     expect(await page.locator(".project-header-outer").getAttribute("style")).not.toContain(
       "url('/assets/",

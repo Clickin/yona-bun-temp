@@ -119,11 +119,10 @@ for (const viewport of [
     const selectedItem = items.filter({ hasText: "프로젝트" });
     await expect(selectedItem).toHaveCount(1);
     await expect(selectedItem).toHaveAttribute("data-selected", "true");
-    expect(
-      await nav
-        .locator("[data-owner]")
-        .evaluateAll((nodes) => nodes.flatMap((node) => Array.from(node.classList))),
-    ).not.toEqual(expect.arrayContaining(["site-setting-nav", "active"]));
+    // e2e closure ledger (2026-08-11): the active item carries the legacy
+    // `active` class (siteMngLayout.scala.html isActiveMenu) — the
+    // class-free pin was stale vs DOM parity
+    await expect(selectedItem).toHaveClass(/\bactive\b/u);
     await expect(nav.locator('[data-owner="site-project-list-notification-badge"]')).toHaveCount(0);
 
     // The legacy .site-setting-nav block (_page.less:5251) was retired from

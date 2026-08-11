@@ -65,6 +65,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <Link
                 activeOptions={legacyPlainLinkActiveOptions}
                 activeProps={legacyPlainLinkActiveProps}
+                className="logo"
                 data-owner="restricted-gnb-brand"
                 to="/"
               >

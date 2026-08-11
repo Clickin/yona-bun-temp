@@ -449,7 +449,7 @@ async function mockProject(page: Page) {
         isFavorite: false,
         isForkedFromOrigin: false,
         isPrivate: false,
-        isProtected: false,
+        isProtected: true,
         logoUrl: "/legacy-assets/images/project_default_logo.png",
         members: [],
         menuSetting: {

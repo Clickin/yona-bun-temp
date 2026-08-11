@@ -66,7 +66,7 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 const inputWithTrailingMarginStyleProps = {
-  className: "project-labels-form-input-trailing-margin",
+  className: "input-label",
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/labelsform")({
@@ -429,6 +429,7 @@ function ProjectLabelsBody({
             <>
               <form
                 id="copyLabel"
+                className="new-label-wrap"
                 action={prefixBasePath(
                   runtimeConfig.basePath,
                   `/${ownerName}/${projectName}/copyLabels`,
@@ -437,23 +438,29 @@ function ProjectLabelsBody({
                 data-owner="project-labels-copy-form"
                 onSubmit={onCopy}
               >
-                <strong data-owner="project-labels-copy-legend">{t("label.copy.append")}</strong>
-                <div className="project-labels-form-wrap">
+                <strong className="form-legend" data-owner="project-labels-copy-legend">
+                  {t("label.copy.append")}
+                </strong>
+                <div className="form-wrap">
                   <input
                     type="text"
                     name="owner"
                     {...inputWithTrailingMarginStyleProps}
-                    className={`${inputWithTrailingMarginStyleProps.className} mr5`}
+                    className="input-label mr5"
                     placeholder={t("project.owner")}
                   />
                   <input
                     type="text"
                     name="projectName"
-                    className="project-labels-form-input"
+                    className="input-label"
                     placeholder={t("project.name")}
                   />
                 </div>
-                <button type="submit" data-owner="project-labels-copy-submit">
+                <button
+                  type="submit"
+                  className="ybtn ybtn-info btn-submit"
+                  data-owner="project-labels-copy-submit"
+                >
                   {t("label.copy")}
                 </button>
                 <div>{t("label.copy.description")}</div>
@@ -461,6 +468,7 @@ function ProjectLabelsBody({
               </form>
               <form
                 id="frmNewLabel"
+                className="new-label-wrap"
                 action={prefixBasePath(
                   runtimeConfig.basePath,
                   `/${ownerName}/${projectName}/issue/labels`,
@@ -469,14 +477,14 @@ function ProjectLabelsBody({
                 data-owner="project-labels-new-form"
                 onSubmit={onCreate}
               >
-                <strong className="project-labels-form-legend">{t("label.new")}</strong>
-                <div className="project-labels-form-wrap">
+                <strong className="form-legend">{t("label.new")}</strong>
+                <div className="form-wrap">
                   <div data-owner="project-labels-typeahead-anchor">
                     <input
                       type="text"
                       name="category"
                       {...inputWithTrailingMarginStyleProps}
-                      className={`${inputWithTrailingMarginStyleProps.className} mr5`}
+                      className="input-label mr5"
                       maxLength={250}
                       autoComplete="off"
                       placeholder={t("label.category")}
@@ -507,16 +515,18 @@ function ProjectLabelsBody({
                       placeholder={t("label.name")}
                       onFocus={onNameFocus}
                       style={newLabelNameColor ? { backgroundColor: newLabelNameColor } : undefined}
-                      className={`project-labels-form-input${contrastClass(newLabelNameColor)}`.trim()}
+                      className={`input-label${contrastClass(newLabelNameColor)}`.trim()}
                     />
                     {showCategoryTypeahead ? (
                       <ul
                         style={{
                           display: "block",
-                          left: 0,
+                          left: newLabelCategoryInputRef.current
+                            ? `${newLabelCategoryInputRef.current.getBoundingClientRect().left}px`
+                            : 0,
                           position: "fixed",
                           top: newLabelCategoryInputRef.current
-                            ? `calc(${newLabelCategoryInputRef.current.offsetHeight}px - 10px)`
+                            ? `calc(${newLabelCategoryInputRef.current.getBoundingClientRect().bottom}px + 2px)`
                             : undefined,
                           minWidth: newLabelCategoryInputRef.current
                             ? `${newLabelCategoryInputRef.current.offsetWidth}px`
@@ -760,10 +770,10 @@ function ProjectLabelsList({
         >
           <div className="span3">
             <h5 className="mr20" data-owner="project-labels-category-heading">
-              <span className="project-labels-category-name category-name">{category.name}</span>
+              <span className="category-name">{category.name}</span>
               <p className="mt5">
                 <i
-                  className={`project-labels-category-exclusive category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
+                  className={`category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
                   data-html="true"
                   title={`${t("label.category.option")}<br>${t(
                     category.isExclusive
@@ -794,21 +804,17 @@ function ProjectLabelsList({
                   const labelId = stringField(label.id, "");
                   const labelName = stringField(label.name, "");
                   return (
-                    <tr
-                      className="project-labels-list-table-row"
-                      data-label-id={labelId}
-                      key={labelId || labelName}
-                    >
-                      <td className="project-labels-list-table-cell">
+                    <tr data-label-id={labelId} key={labelId || labelName}>
+                      <td>
                         <span
-                          className="project-labels-list-table-label issue-label active"
+                          className="issue-label active"
                           data-label-id={labelId}
                           data-label-name={labelName}
                         >
                           {labelName}
                         </span>
                       </td>
-                      <td className="project-labels-list-actions actions">
+                      <td className="actions">
                         {canManageIssueLabels ? (
                           <>
                             <button
@@ -1140,7 +1146,7 @@ function EditCategoryModal({
               key={category ? `category-name-${category.id}` : "category-name-empty"}
               type="text"
               name="name"
-              className="project-labels-edit-category-name text category-name"
+              className="text category-name"
               placeholder={t("label.category")}
               value={category?.name || undefined}
               onChange={(event) =>
@@ -1422,10 +1428,10 @@ function EditLabelModal({
                   ? ({ "--project-labels-edit-label-name-bg": labelNameColor } as CSSProperties)
                   : undefined
               }
-              className="project-labels-edit-label-name text input-label-name"
+              className="text input-label-name"
             />
 
-            <div className="project-labels-edit-preset-colors label-preset-colors edit">
+            <div className="label-preset-colors edit">
               {EDIT_LABEL_COLORS.map((color) => (
                 <ColorButton
                   color={color}

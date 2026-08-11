@@ -154,11 +154,11 @@ test("not-configured alert isolates generated Style classes to its stable owner"
   page,
 }) => {
   const alert = await open(page);
-  expect(
-    await alert.evaluate((element) =>
-      [...element.classList].some((token) => /^x[a-z0-9_-]{5,}$/iu.test(token)),
-    ),
-  ).toBe(true);
+  // e2e closure ledger (2026-08-12): StyleX was retired, so the alert carries
+  // no generated x-token — the stable owner + Bootstrap classes are the
+  // isolation contract (mail.tsx:192 className="alert alert-error").
+  await expect(alert).toHaveClass(/alert alert-error/);
+  await expect(alert).toHaveAttribute("data-owner", "site-mail-not-configured-alert");
   expect(
     await page.evaluate(
       (selector) =>

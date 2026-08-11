@@ -480,7 +480,6 @@ function PullRequestStateEventMessage({
           ownerName: pullRequest.ownerName,
           projectName: pullRequest.projectName,
         }}
-        search={{ branch: "", path: "" }}
         title={t("code.showCommit")}
         {...LEGACY_LINK_PROPS}
       >

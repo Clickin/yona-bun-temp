@@ -88,7 +88,10 @@ test("project setting default branch Select2 closed/open state owns frozen geome
     containerDisplay: "inline-block",
     containerBorderRadius: "3px",
     choiceBackground: "rgba(0, 0, 0, 0)",
-    choiceBorderStyle: "none",
+    // e2e closure ledger (2026-08-11): CSS_GAP — legacy select2.css:29-33 sizes the
+    // choice as 26px content + 2x1px border (content-box); the route rule now carries
+    // border-style solid/1px, so the earlier "none" pin is stale.
+    choiceBorderStyle: "solid",
     arrowBackground: "rgba(0, 0, 0, 0)",
     arrowBorderLeftStyle: "none",
   });

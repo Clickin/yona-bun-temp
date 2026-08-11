@@ -17,7 +17,10 @@ test("organization home owns legacy small-font typography in route-local Style",
   expect(legacy).toContain("font-size: 10px;");
   expect(legacy).toContain("font-weight: normal;");
   expect(appCss).not.toContain(".small-font");
-  expect(route).not.toContain("small-font");
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy organization/view.scala.html:109
+  // renders the code-update span with class="small-font"; the route restored it per
+  // organization-home.e2e.ts parity, so the no-literal pin is stale.
+  expect(route).toContain('className="small-font"');
   expect(route).toContain('data-owner="organization-home-project-origin"');
   expect(route).toContain('data-owner="organization-home-project-code-update"');
   expect(legacy).toContain(".blue-txt      { color:@blue;}");

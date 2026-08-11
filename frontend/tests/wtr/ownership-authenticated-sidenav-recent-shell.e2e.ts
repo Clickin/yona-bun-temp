@@ -43,24 +43,30 @@ for (const state of ["populated", "empty"] as const) {
       await expect(shell).toBeVisible();
       // F5 dist-truth: the panel is right-anchored (#mySidenav {position:absolute;right:0},
       // yona-original/app/assets/stylesheets/less/_usermenu.less:852) and animates its
-      // width over 0.5s; wait until the shell box stops changing so the snapshot
-      // reads the rest geometry the pins pin ({left: viewport.x, width: viewport.shellWidth}).
-      let settledBox: { left: number; width: number } | null = null;
-      for (let attempt = 0; attempt < 200; attempt += 1) {
-        const box = await shell.evaluate((element) => {
-          const rect = element.getBoundingClientRect();
-          return { left: rect.left, width: rect.width };
-        });
-        if (
-          settledBox !== null &&
-          Math.abs(box.left - settledBox.left) < 0.001 &&
-          Math.abs(box.width - settledBox.width) < 0.001
-        ) {
-          break;
-        }
-        settledBox = box;
-        await page.waitForTimeout(50);
-      }
+      // width over 0.5s; wait until #mySidenav's width stops changing so the
+      // snapshot reads the rest geometry the pins pin ({left: viewport.x,
+      // width: viewport.shellWidth}). Mirrors the favorite-shell settle poll.
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            const sidenav = document.getElementById("mySidenav");
+            if (!sidenav) {
+              resolve();
+              return;
+            }
+            let lastWidth = sidenav.getBoundingClientRect().width;
+            const poll = () => {
+              const width = sidenav.getBoundingClientRect().width;
+              if (Math.abs(width - lastWidth) < 0.001) {
+                resolve();
+                return;
+              }
+              lastWidth = width;
+              setTimeout(poll, 50);
+            };
+            setTimeout(poll, 50);
+          }),
+      );
       const initial = await readEvidence(shell);
       console.log(
         `authenticated-sidenav-recent-shell-${state}-${viewport.label}`,

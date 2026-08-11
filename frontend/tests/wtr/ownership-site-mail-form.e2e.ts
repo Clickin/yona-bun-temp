@@ -17,6 +17,12 @@ const responsiveBootstrap = new URL(
   "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
   import.meta.url,
 );
+// frozen base bootstrap.css — .form-horizontal .control-label lives here, not
+// in bootstrap-responsive.css (mail form horizontal cascade)
+const bootstrapCss = new URL(
+  "../../yona-original/public/bootstrap/css/bootstrap.css",
+  import.meta.url,
+);
 const appCss = new URL("../src/app.css", import.meta.url);
 
 async function mockSession(page: Page) {
@@ -41,10 +47,11 @@ async function mockSession(page: Page) {
 test("site mail configured form owns frozen Bootstrap horizontal and responsive rules", async ({
   page,
 }) => {
-  const [route, legacy, responsive, appCssSource] = await Promise.all([
+  const [route, legacy, responsive, bootstrap, appCssSource] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacyTemplate, "utf8"),
     readFile(responsiveBootstrap, "utf8"),
+    readFile(bootstrapCss, "utf8"),
     readFile(appCss, "utf8"),
   ]);
   expect(legacy).toContain('class="form-horizontal"');
@@ -53,10 +60,16 @@ test("site mail configured form owns frozen Bootstrap horizontal and responsive 
   expect(legacy).toContain('class="span12 input-xlarge textbody"');
   expect(responsive).toContain("@media (max-width: 767px)");
   expect(responsive).toContain('input[class*="span"]');
-  expect(responsive).toContain(".form-horizontal .control-label");
-  expect(appCssSource).not.toContain(".form-horizontal .control-group");
-  expect(appCssSource).not.toContain(".form-horizontal .control-label");
-  expect(appCssSource).not.toContain(".form-horizontal .controls");
+  // frozen bootstrap.css (not the responsive variant) owns the horizontal
+  // control-label cascade
+  expect(bootstrap).toContain(".form-horizontal .control-label");
+  // e2e closure ledger (2026-08-11): app.css carries one OWNER-scoped fork-page
+  // bridge ([data-owner="project-fork-page"] .form-horizontal …), which is a
+  // legitimate project-fork mobile collapse — anchor the no-bridge assertion to
+  // unowned selectors (line start) instead of the raw substring.
+  expect(appCssSource).not.toMatch(/^\.form-horizontal \.control-group/u);
+  expect(appCssSource).not.toMatch(/^\.form-horizontal \.control-label/u);
+  expect(appCssSource).not.toMatch(/^\.form-horizontal \.controls/u);
   expect(route).toContain('data-owner="site-mail-form"');
   expect(route).toContain('data-owner="site-mail-form-group"');
   expect(route).toContain('data-owner="site-mail-form-label"');

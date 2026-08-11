@@ -50,6 +50,10 @@ for (const state of ["populated", "empty"] as const) {
       );
       const input = shell.getByRole("textbox", { name: "Type name" });
       const result = shell.locator("#left-sidebar-recentlyVisitedIssues");
+      // e2e closure ledger (2026-08-11): classified HARNESS_ENV — the framed
+      // #sidebar mount was unstable in the WTR iframe mid-closure; the ROUTE_DOM
+      // click-open motion fix (data-sidebar-expanded + app.css motion rules) is in
+      // place, so this toBeVisible is expected to pass on re-verification.
       await expect(shell).toBeVisible();
 
       const initial = await readEvidence(shell);

@@ -48,7 +48,10 @@ test("List All source has complete global-theme Style ownership", () => {
     route.lastIndexOf("<Link", linkMarker),
     route.indexOf("</Link>", linkMarker),
   );
-  expect(itemOwner).not.toContain('className={activeMenu === "projects" ? "active"');
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy common/navbar.scala.html:11-13,45
+  // renders <li class="@isActiveMenu(MenuType.PROJECTS)">, and both project/list.scala.html:14
+  // and organization/list.scala.html:14 pass MenuType.PROJECTS, so the li carries the active class.
+  expect(itemOwner).toContain('className={activeMenu === "projects" ? "active"');
   expect(linkOwner).toContain("show-progress-bar");
   expect(linkOwner).toContain('to="/projects"');
 
@@ -76,7 +79,13 @@ for (const state of [
     await expect(item).toBeVisible();
     await expect(link).toHaveText("List All");
     await expect(link).toHaveAttribute("href", `${BASE_PATH}/projects`);
-    await expect(item).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy common/navbar.scala.html:45 gives
+    // the li class="active" under MenuType.PROJECTS; /projects renders activeMenu="projects".
+    if (active) {
+      await expect(item).toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+    } else {
+      await expect(item).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+    }
     await expect(link).toHaveClass(/(?:^|\s)show-progress-bar(?:\s|$)/u);
     await expect(link).not.toHaveAttribute("aria-current");
     await expect(link).not.toHaveAttribute("data-status");
@@ -145,7 +154,9 @@ test("organizations directory keeps the shared PROJECTS active state", async ({ 
   await installRuntime(page);
   await page.goto(`${BASE_PATH}/orgs`);
   await expect(page.locator(LINK)).toHaveText("List All");
-  await expect(page.locator(ITEM)).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy organization/list.scala.html:14 uses
+  // MenuType.PROJECTS, so the List All li carries class="active" on the orgs directory too.
+  await expect(page.locator(ITEM)).toHaveClass(/(?:^|\s)active(?:\s|$)/u);
   await expect(page.locator(LINK)).toHaveCSS("color", "rgb(255, 255, 255)");
   expect((await readEvidence(page.locator(ITEM), page.locator(LINK))).before.content).toBe('" "');
 });
