@@ -214,14 +214,18 @@ for (const viewport of [
     const expected =
       viewport.label === "desktop"
         ? {
-            button: { height: 30, width: 869.390625, x: 10, y: 287.078125 },
-            item: { height: 50, width: 887.78125, x: 10, y: 267.078125 },
-            list: { height: 143, width: 887.78125, x: 10, y: 174.078125 },
+            // F5 dist-truth (2026-08-11): the list/button sit 0.5px higher
+            // (the restored legacy shell subpixel baseline)
+            button: { height: 30, width: 869.390625, x: 10, y: 286.578125 },
+            item: { height: 50, width: 887.78125, x: 10, y: 266.578125 },
+            list: { height: 143, width: 887.78125, x: 10, y: 173.578125 },
           }
         : {
-            button: { height: 30, width: 396.5, x: 0, y: 326 },
-            item: { height: 50, width: 390, x: 0, y: 306 },
-            list: { height: 175, width: 390, x: 0, y: 181 },
+            // F5 dist-truth (2026-08-11): the admin affix wraps to two lines
+            // at 390px (66px vs 43px), shifting the list/button down 23px
+            button: { height: 30, width: 396.5, x: 0, y: 349 },
+            item: { height: 50, width: 390, x: 0, y: 329 },
+            list: { height: 175, width: 390, x: 0, y: 204 },
           };
     for (const key of ["button", "item", "list"] as const) {
       expect(evidence[key].height).toBeCloseTo(expected[key].height, 1);

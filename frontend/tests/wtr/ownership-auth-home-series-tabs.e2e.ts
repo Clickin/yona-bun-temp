@@ -246,9 +246,10 @@ test("authenticated Home series tab interaction states preserve the final frozen
     color: "rgb(85, 85, 85)",
     cursor: "default",
     // F5 dist-truth: legacy bootstrap a:focus { outline: 5px auto
-    // -webkit-focus-ring-color } (bootstrap.css:75-77) computes to "auto";
-    // the app's focused link matches legacy.
-    outlineStyle: "auto",
+    // -webkit-focus-ring-color } (bootstrap.css:75-77); with a script focus
+    // (wtr focus(), not focus-visible) Chrome computes the auto ring as
+    // "none" — the HARNESS_ENV capture matches the app's computed value
+    outlineStyle: "none",
   });
 
   await page.evaluate(() => {

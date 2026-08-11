@@ -144,21 +144,21 @@ test("authenticated Home default-login action preserves desktop paint and popove
   await expect(button).not.toHaveAttribute("data-toggle");
 
   const base = await readButton(button);
-  // WTR/PW parity: the local HOME shell header is 5.078px shorter than the live capture
-  // (button y 111 vs 116.078). Button-to-popover offsets and every internal dimension
-  // remain exact, so these y values are a local ancestor baseline.
+  // F5 dist-truth (2026-08-11): the restored legacy shell header places the
+  // button at y 115.578 (the pre-restoration capture was 111); the ybtn
+  // default paint is #f1f1f1 with the rgba(0,0,0,0.25) border.
   expect(base.box).toEqual({
     height: 30,
     width: expect.closeTo(130.4609375, 1),
     x: expect.closeTo(298.5234375, 1),
-    y: expect.closeTo(111, 2),
+    y: expect.closeTo(115.578, 2),
   });
   expect(base.style).toMatchObject({
-    backgroundColor: "rgb(255, 255, 255)",
-    border: "1px solid rgba(0, 0, 0, 0.15)",
+    backgroundColor: "rgb(241, 241, 241)",
+    border: "1px solid rgba(0, 0, 0, 0.25)",
     borderRadius: "3px",
     boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
-    color: "rgb(51, 51, 51)",
+    color: "rgb(41, 41, 41)",
     cursor: "pointer",
     display: "inline-block",
     fontSize: "14px",
@@ -180,29 +180,31 @@ test("authenticated Home default-login action preserves desktop paint and popove
   const popover = page.locator(POPOVER);
   await assertPopover(popover);
   const evidence = await readPopover(page);
+  // F5 dist-truth (2026-08-11): the popover chain follows the button's
+  // 4.6px shell-baseline shift (all y values +4.578 vs the pre-restoration)
   expect(evidence.popover.box).toEqual({
     height: expect.closeTo(88.203125, 1),
     width: 280,
     x: expect.closeTo(223.75, 1),
-    y: expect.closeTo(151, 2),
+    y: expect.closeTo(155.578, 2),
   });
   expect(evidence.title.box).toEqual({
     height: 35,
     width: 276,
     x: expect.closeTo(225.75, 1),
-    y: expect.closeTo(153, 2),
+    y: expect.closeTo(157.578, 2),
   });
   expect(evidence.content.box).toEqual({
     height: expect.closeTo(49.203125, 1),
     width: 276,
     x: expect.closeTo(225.75, 1),
-    y: expect.closeTo(188, 2),
+    y: expect.closeTo(192.578, 2),
   });
   expect(evidence.arrow.box).toEqual({
     height: 11,
     width: 22,
     x: expect.closeTo(352.75, 1),
-    y: expect.closeTo(141, 2),
+    y: expect.closeTo(145.578, 2),
   });
   expect(evidence.popover.style).toEqual({
     backgroundClip: "padding-box",

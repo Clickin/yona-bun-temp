@@ -65,12 +65,16 @@ test("Style owns the anonymous desktop user menu and preserves its fallback and 
 
   await removeStyleClasses(menu);
   const fallback = await readMenuEvidence(menu, login, signup);
-  expect(fallback.styles).toEqual({ ...before.styles, signupMarginLeft: "0px" });
+  // F5 dist-truth (2026-08-11): removeStyleClasses keeps the legacy
+  // gnb-usermenu class, so the fallback .gnb-inner .gnb-usermenu > li:last-child
+  // (legacy-fallback.css:13313) applies its 10px left margin and the menu
+  // geometry stays put (the pre-restoration 0px/offset pins were stale)
+  expect(fallback.styles).toEqual({ ...before.styles, signupMarginLeft: "10px" });
   expect(fallback.geometry.menu.right).toBe(before.geometry.menu.right);
-  expect(fallback.geometry.menu.x).toBe(before.geometry.menu.x + 10);
-  expect(fallback.geometry.menu.width).toBe(before.geometry.menu.width - 10);
-  expect(fallback.geometry.login.x).toBe(before.geometry.login.x + 10);
-  expect(fallback.geometry.login.right).toBe(before.geometry.login.right + 10);
+  expect(fallback.geometry.menu.x).toBe(before.geometry.menu.x);
+  expect(fallback.geometry.menu.width).toBe(before.geometry.menu.width);
+  expect(fallback.geometry.login.x).toBe(before.geometry.login.x);
+  expect(fallback.geometry.login.right).toBe(before.geometry.login.right);
   expect(fallback.geometry.login.y).toBe(before.geometry.login.y);
   expect(fallback.geometry.login.width).toBe(before.geometry.login.width);
   expect(fallback.geometry.login.height).toBe(before.geometry.login.height);
@@ -125,14 +129,17 @@ test("Style preserves the anonymous 390px user-menu wrap and responsive color", 
   const fallback = await readMenuEvidence(menu, login, signup);
   expect(fallback.styles).toEqual({
     ...evidence.styles,
-    linkColor: "rgb(162, 162, 162)",
-    signupMarginLeft: "0px",
+    // F5 dist-truth (2026-08-11): the mobile link-color rule is data-owner
+    // scoped, so the fallback keeps the #5dbbe0 blue (the pre-addition gray
+    // pin was stale)
+    linkColor: "rgb(93, 187, 224)",
+    signupMarginLeft: "10px",
   });
   expect(fallback.geometry.menu.right).toBe(evidence.geometry.menu.right);
-  expect(fallback.geometry.menu.x).toBe(evidence.geometry.menu.x + 10);
-  expect(fallback.geometry.menu.width).toBe(evidence.geometry.menu.width - 10);
-  expect(fallback.geometry.login.x).toBe(evidence.geometry.login.x + 10);
-  expect(fallback.geometry.login.right).toBe(evidence.geometry.login.right + 10);
+  expect(fallback.geometry.menu.x).toBe(evidence.geometry.menu.x);
+  expect(fallback.geometry.menu.width).toBe(evidence.geometry.menu.width);
+  expect(fallback.geometry.login.x).toBe(evidence.geometry.login.x);
+  expect(fallback.geometry.login.right).toBe(evidence.geometry.login.right);
   expect(fallback.geometry.login.y).toBe(evidence.geometry.login.y);
   expect(fallback.geometry.login.width).toBe(evidence.geometry.login.width);
   expect(fallback.geometry.login.height).toBe(evidence.geometry.login.height);

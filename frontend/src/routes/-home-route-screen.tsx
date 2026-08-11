@@ -170,15 +170,16 @@ function HomeScreen({
     runtimeConfig.basePath,
     domainLocalDefaultLandingTarget,
   );
+  const [isDefaultLandingButtonHidden, setIsDefaultLandingButtonHidden] = React.useState(false);
   const shouldShowDefaultLandingButton =
     routePath !== "/" &&
     routePathWithoutSlash !== "" &&
-    routePathWithoutSlash !== defaultLandingWithoutSlash;
+    routePathWithoutSlash !== defaultLandingWithoutSlash &&
+    !isDefaultLandingButtonHidden;
   const setRootToast = useRootToast();
   const [isIntroVisible, setIsIntroVisible] = React.useState(
     () => typeof window === "undefined" || localStorage.getItem("yobi-intro") !== "false",
   );
-  const [isDefaultLandingButtonHidden, setIsDefaultLandingButtonHidden] = React.useState(false);
   const [isDefaultLandingPopoverVisible, setIsDefaultLandingPopoverVisible] = React.useState(false);
   const defaultLandingPopoverTimer = React.useRef<number | null>(null);
   const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);

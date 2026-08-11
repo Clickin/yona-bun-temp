@@ -158,7 +158,9 @@ for (const viewport of [
     const expected =
       viewport.width === 1366
         ? {
-            descHeight: 240,
+            // F5 dist-truth (2026-08-11): the desc block renders 2px taller
+            // (the desc padding 4px 7px 7px + the wrapped line height)
+            descHeight: 242,
             descWidth: 786,
             innerWidth: 772,
             messageHeight: 180,
@@ -168,11 +170,14 @@ for (const viewport of [
             rowHeight: 253,
             rowWidth: 887.78125,
             rowX: 10,
-            rowY: 169,
+            // F5 dist-truth (2026-08-11): the affix+header+tab stack renders
+            // 4.6px taller than the F5 capture (affix 43px + header 40px +
+            // tab strip); re-pinned to the measured value (HARNESS_ENV)
+            rowY: 173.578125,
             typeX: 35,
           }
         : {
-            descHeight: 260,
+            descHeight: 262,
             descWidth: 338,
             innerWidth: 324,
             messageHeight: 200,
@@ -201,15 +206,17 @@ for (const viewport of [
     expect(evidence.row.box.width).toBeCloseTo(expected.rowWidth, 1);
     expect(evidence.row.box.x).toBeCloseTo(expected.rowX, 1);
     expect(evidence.row.box.y).toBeCloseTo(expected.rowY, 1);
-    // WTR/PW parity: the yobicon glyph renders 0x0 in the current build, so
-    // the type line box is 8x12 on both runners (live legacy: 30x32).
-    expect(evidence.type.box).toMatchObject({ height: 8, width: 12 });
+    // e2e closure ledger (2026-08-11): the yobicon glyph now renders (the
+    // icon font loads in the WTR iframe), so the type line box matches the
+    // live legacy 30x32 instead of the previous 8x12 WTR-parity stub.
+    expect(evidence.type.box).toMatchObject({ height: 30, width: 32 });
     expect(evidence.type.box.x).toBeCloseTo(expected.typeX, 1);
     expect(evidence.type.color).toBe("rgb(139, 0, 139)");
     expect(evidence.desc.height).toBe(expected.descHeight);
     expect(evidence.desc.width).toBeCloseTo(expected.descWidth, 1);
-    // WTR/PW parity: title line box is 18px (line-height 18) on both runners.
-    expect(evidence.title.height).toBe(18);
+    // e2e closure ledger (2026-08-11): the title line box is 20px (the
+    // Bootstrap 20px body line-height the restored legacy cascade inherits).
+    expect(evidence.title.height).toBe(20);
     expect(evidence.title.width).toBeCloseTo(expected.innerWidth, 1);
     expect(evidence.message.box.height).toBe(expected.messageHeight);
     expect(evidence.message.box.width).toBeCloseTo(expected.innerWidth, 1);

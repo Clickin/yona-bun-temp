@@ -11808,14 +11808,14 @@ div[data-owner="project-transfer-modal-backdrop"] {
   padding: 0px;
 }
 [data-owner="authenticated-home-default-login-action"] {
-  background-color: #ffffff;
-  border-color: rgba(0, 0, 0, 0.15);
+  background-color: #f1f1f1;
+  border-color: rgba(0, 0, 0, 0.25);
   border-radius: 3px;
   border-style: solid;
   border-width: 1px;
   box-shadow: 0px 1px 0px rgba(0, 0, 0, 0.05);
   box-sizing: content-box;
-  color: #333333;
+  color: #292929;
   cursor: pointer;
   display: inline-block;
   font-family:
@@ -11884,11 +11884,11 @@ div[data-owner="project-transfer-modal-backdrop"] {
   z-index: 1010;
 }
 [data-owner="authenticated-home-default-login-popover-arrow"] {
-  border-bottom-color: rgba(0, 0, 0, 0.25);
   border-color: transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.25);
   border-style: solid;
-  border-top-width: 0px;
   border-width: 11px;
+  border-top-width: 0px;
   display: block;
   height: 0px;
   left: 50%;
@@ -11898,11 +11898,11 @@ div[data-owner="project-transfer-modal-backdrop"] {
   width: 0px;
 }
 [data-owner="authenticated-home-default-login-popover-arrow"]::after {
-  border-bottom-color: #ffffff;
   border-color: transparent;
+  border-bottom-color: #ffffff;
   border-style: solid;
-  border-top-width: 0px;
   border-width: 10px;
+  border-top-width: 0px;
   content: "";
   display: block;
   height: 0px;
@@ -12179,6 +12179,8 @@ div[data-owner="project-transfer-modal-backdrop"] {
   border-block-end-color: #dddddd;
   border-block-start-color: #eeeeee;
   border-inline-color: #eeeeee;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
   text-decoration: none;
   color: #555555;
 }
@@ -16139,8 +16141,10 @@ body:has([data-owner="site-admin-affix"]) #mySidenav {
 }
 [data-owner="anonymous-site-user-menu"] li {
   float: left;
-  margin: 5px 0;
   position: relative;
+}
+[data-owner="anonymous-site-user-menu"] li:not(:last-child) {
+  margin: 5px 0;
 }
 [data-owner="anonymous-site-user-menu"] a:not([data-owner="anonymous-site-signup"]),
 [data-owner="anonymous-site-user-menu"] .user-item-btn {
