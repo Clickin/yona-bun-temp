@@ -27,12 +27,12 @@ type IssueListRouteSearch = {
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+  activeProps: { "aria-current": undefined, className: undefined },
 };
 
 const legacyIssueListLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+  activeProps: { "aria-current": undefined, className: undefined },
 };
 const legacySiteIssueListSidebarSearch = {
   __legacySiteIssueListSidebarActiveMarker: "inactive",
@@ -398,7 +398,7 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
             }}
             hash="comments"
           >
-            <i data-owner="site-issue-list-comments-icon"></i>
+            <i data-owner="site-issue-list-comments-icon" className="yobicon-comments"></i>
             {issue.commentCount}
           </Link>
         </span>

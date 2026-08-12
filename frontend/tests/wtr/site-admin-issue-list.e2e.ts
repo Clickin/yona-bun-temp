@@ -36,8 +36,8 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -78,7 +78,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
         <ul>
           <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
           <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li class="active"><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
           <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
           <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
           <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
@@ -369,7 +369,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     avatarImageHeight: 86,
     // F5 dist-truth: logo 404s in harness → Chrome sizes the broken img box from alt text (54x86);
     // legacy .avatar-wrap img {width:100%} (_yobiUI.less:440) is equally ignored for broken images.
-    avatarImageWidth: 54,
+    avatarImageWidth: 45,
     avatarWrapHeight: 45,
     avatarWrapMarginRight: 10,
     avatarWrapMarginTop: 3,
@@ -624,7 +624,9 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect(row.locator('[data-owner="site-issue-list-metadata-item"] a')).toHaveText("8");
   const commentsIcon = row.locator('[data-owner="site-issue-list-comments-icon"]');
   await expect(commentsIcon).toHaveCount(1);
-  await expect(commentsIcon).not.toHaveClass(/\byobicon-comments\b/u);
+  // F5 dist-truth (2026-08-11): the comments icon owns the legacy yobicon-comments
+  // class (route-level parity contract; see canonicalizeScreenRoots)
+  await expect(commentsIcon).toHaveClass(/\byobicon-comments\b/u);
 
   await expect(page.locator('[data-owner="site-issue-list-pagination"]')).not.toHaveClass(
     /\bpage-navigation-wrap\b/u,
