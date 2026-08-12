@@ -35,8 +35,8 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -149,16 +149,26 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
       .nth(6)
       .locator('[data-owner="site-update-sidebar-link"]'),
   ).toHaveText("Software Update");
-  await expect(page.locator('[data-owner="site-update-sidebar-link"]')).toHaveText([
-    "Users",
-    "Posts",
-    "Issues",
-    "Projects",
-    "Send email",
-    "Send mass emails",
-    "Software Update",
-    "Diagnostics",
-  ]);
+  // F5 dist-truth: the multi-element array toHaveText reads the last item's
+  // textContent through the wtr locator chain, which can race the sidebar
+  // render; poll the text contents directly (stable contract).
+  await expect
+    .poll(async () =>
+      page
+        .locator('[data-owner="site-update-sidebar-link"]')
+        .evaluateAll((links) => links.map((link) => link.textContent?.trim() ?? "")),
+    )
+    .toEqual([
+      "Users",
+      "Posts",
+      "Issues",
+      "Projects",
+      "Send email",
+      "Send mass emails",
+      "Software Update",
+      "Diagnostics",
+    ]);
+
   expect(
     await page
       .locator('[data-owner="site-update-sidebar-link"]')
@@ -277,7 +287,16 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   });
   await diagnosticsLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/diagnostic`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Diagnostics");
+  await page.waitForTimeout(400);
+  // F5 dist-truth: the wtr locator chain reads the active nav anchor's text
+  // empty right after the SPA transition; poll the textContent directly.
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        () => document.querySelector(".site-setting-nav li.active a")?.textContent ?? null,
+      ),
+    )
+    .toBe("Diagnostics");
   await expect(page.locator(".title_area h2")).toHaveText("Diagnostics");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),

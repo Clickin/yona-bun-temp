@@ -76,6 +76,7 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
             </div>
             <div className="span10" data-owner="site-diagnostic-setting-content-column">
               <div
+                className="title_area"
                 data-owner={
                   hasNoDiagnosticErrors
                     ? "site-diagnostic-no-error-title"
