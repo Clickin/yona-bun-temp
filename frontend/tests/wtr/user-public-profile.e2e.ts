@@ -1006,6 +1006,7 @@ async function canonicalizeProfileRoots(page: Page) {
             attr.name !== "style" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-overdue" &&
             (attr.name !== "class" || normalizeAttr(attr) !== ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1064,6 +1065,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "style" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-overdue" &&
             (attr.name !== "class" || normalizeAttr(attr) !== ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1123,6 +1125,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "style" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-overdue" &&
             (attr.name !== "class" || normalizeAttr(attr) !== ""),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
