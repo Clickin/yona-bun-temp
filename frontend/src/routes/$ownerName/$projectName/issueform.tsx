@@ -1611,6 +1611,11 @@ function SubtaskSelects({
         className="span6 subtask-parent-control"
         data-owner="project-issue-form-subtask-parent-control"
         hidden={isCrossProject}
+        // the frozen bootstrap `.row-fluid [class*="span"] { display: block }`
+        // (bootstrap.css:360) overrides the UA [hidden] rule, so mirror the
+        // legacy jQuery .hide() (inline display:none) for the cross-project
+        // parent control.
+        style={isCrossProject ? { display: "none" } : undefined}
       >
         <div
           id="s2id_parentId"
