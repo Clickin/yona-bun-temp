@@ -24841,6 +24841,10 @@ label[data-owner="organization-new-label"] {
   transform: none;
   width: 29px;
 }
+[data-owner="authenticated-sidenav-favorite-stars"][data-owner-state="pending-unstarred"],
+[data-owner="authenticated-sidenav-favorite-stars"][data-owner-state="pending-unstarred"] > i {
+  color: #e91e63;
+}
 /* Sidenav favorite project rows: the legacy .project-list > .sidebar-project-link
  29px star column (app.css layered 2357-2360) is React-owned now; keep the link
  flush so the star button itself owns the right rail. */
