@@ -11310,8 +11310,17 @@ div[data-owner="project-transfer-modal-backdrop"] {
   }
 }
 [data-owner="project-statistics-page"] {
-  margin: 5px auto 0;
+  /* F5 dist-truth (2026-08-11): the legacy .project-page-wrap margin-top is
+     20px; the 5px pin predates the shell shift (see reviewthread/list). */
+  margin: 20px auto 0;
   width: 100%;
+}
+@media (max-width: 720px) {
+  /* legacy _responsive.less:617-619 forces .project-page-wrap margin-top
+     5px !important at mobile — the frozen sheet owns the mobile frame. */
+  [data-owner="project-statistics-page"] {
+    margin: 5px auto 0;
+  }
 }
 .s2e-statistics-heading {
   color: inherit;

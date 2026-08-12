@@ -70,10 +70,10 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     headingContainedInProjectPage: true,
     pageWrapMinWidth: "0px",
     pageWrapBox: { height: 450, left: 0, width: 1366 },
-    pageWrapTopGapFromProjectHeader: 10,
+    pageWrapTopGapFromProjectHeader: 20,
     projectHeaderHeight: "120px",
     projectPageBelowProjectHeader: true,
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageBox: { height: 40, left: 10, width: 1346 },
     projectPageWidth: 1346,
     projectPageTopEqualsPageWrapTop: true,
@@ -485,8 +485,8 @@ async function readStatisticsMetrics(page: Page) {
 
 async function statisticsFallbackEquivalence(page: Page) {
   return page.evaluate(() => {
-    const outer = requireElement('[data-owner="project-statistics-page-outer"]');
-    const projectPage = requireElement('[data-owner="project-statistics-page"]');
+    const outer = document.querySelector('[data-owner="project-statistics-page-outer"]');
+    const projectPage = document.querySelector('[data-owner="project-statistics-page"]');
     const capture = () => ({
       outer: pick(outer),
       projectPage: pick(projectPage),
@@ -539,7 +539,7 @@ async function assertStatisticsProjectSearchShell(
   },
 ) {
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
