@@ -322,7 +322,7 @@ function ProjectWebhooksBody({
             <LegacyWebhookHelp help={t("project.webhook.help")} />
           </form>
         ) : null}
-        <div id="webhooksList" className="" data-owner="project-webhooks-list">
+        <div id="webhooksList" className="webhook-list-wrap" data-owner="project-webhooks-list">
           <ProjectWebhooksList
             ownerName={ownerName}
             projectName={projectName}

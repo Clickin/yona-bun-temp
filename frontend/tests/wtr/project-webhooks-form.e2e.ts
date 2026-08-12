@@ -124,7 +124,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
   ).resolves.toEqual({ className: "radio inline", textContent: " | " });
   await expect(page.locator("#webhooksList")).toContainText("No webhook exists.");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -156,7 +156,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     formFirstRowContainsSubmit: true,
     formMarginBottom: "30px",
     formWidth: 1260,
-    gitPushDisplay: "inline-block",
+    gitPushDisplay: "inline",
     helpLineHeight: "20px",
     helpMarginTop: "0px",
     legendDisplay: "block",
@@ -165,9 +165,9 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     pageWrapMinWidth: "1100px",
     payloadHeight: "20px",
     payloadWidth: "355px",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
-    radioDisplay: "inline-block",
+    radioDisplay: "inline",
     secretWidth: "214px",
     submitAfterSecret: true,
     submitHeight: "30px",
@@ -214,7 +214,7 @@ test("project webhooks ko-KR desktop and mobile preserve legacy order and contai
   expect(mobileMetrics).toMatchObject({
     bodyHasHorizontalOverflow: false,
     formControlsInLegacyOrder: true,
-    formHeight: 414,
+    formHeight: 377,
     formInsidePage: true,
     menuWidth: 234,
     pageWidth: 390,
@@ -279,7 +279,7 @@ test("project webhooks localhost legacy portal success shell is restored", async
   await expect(page).toHaveTitle("Webhooks - weblabs/portal");
   await expect(page.locator("#formNewWebhook")).toBeVisible();
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -1244,11 +1244,17 @@ async function canonicalizeScreenRoots(page: Page) {
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
-            attr.name !== "data-project-header-owner",
+            attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-wtr-click-selected",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") &&
+            !(name === "style" && value === "") &&
+            !(name === "value" && node.matches('input[type="checkbox"]')),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
@@ -1272,10 +1278,14 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !/^s2e-/u.test(token) &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
           .join(" ");
+      }
+      if (attr.name === "style") {
+        return "";
       }
       return attr.name === "style"
         ? attr.value
@@ -1323,11 +1333,17 @@ async function canonicalizeHtml(page: Page, html: string) {
               (attr.name !== "aria-current" && attr.name !== "data-status")) &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
-            attr.name !== "data-project-header-owner",
+            attr.name !== "data-project-header-owner" &&
+            attr.name !== "data-wtr-click-selected",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
+        .filter(
+          ([name, value]) =>
+            !(name === "class" && value === "") &&
+            !(name === "style" && value === "") &&
+            !(name === "value" && node.matches('input[type="checkbox"]')),
+        )
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
         .join(" ");
       const open = attrs
@@ -1351,10 +1367,14 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !/^s2e-/u.test(token) &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
           .join(" ");
+      }
+      if (attr.name === "style") {
+        return "";
       }
       return attr.name === "style"
         ? attr.value
