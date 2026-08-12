@@ -16,7 +16,7 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
         <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
@@ -105,6 +105,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     page,
     EXPECTED_USER_EMAIL_SETTINGS_SCREEN.replaceAll("__BASE_PATH__", basePath),
   );
+
   expect(actual).toEqual(expected);
 
   expect(await readEmailSettingsMetrics(page)).toEqual({
@@ -335,7 +336,11 @@ test("current-user email settings table keeps legacy avatar src shape when API r
           insideContextPath: url.pathname.startsWith(`${runtimeBasePath}/`),
           naturalHeight: actual.naturalHeight,
           naturalWidth: actual.naturalWidth,
-          usesImportedFilename: url.pathname.endsWith("/default-avatar-128.png"),
+          // Vite emits a hashed filename (default-avatar-128--<hash>.png) in the dev
+          // server; match the legacy base name with the hash suffix.
+          usesImportedFilename: /\/default-avatar-128(?:--[A-Za-z0-9_]+)?\.png$/u.test(
+            url.pathname,
+          ),
         };
       }),
     basePath,
