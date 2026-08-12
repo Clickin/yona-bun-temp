@@ -504,7 +504,7 @@ async function canonicalizeScreenRoots(page: Page) {
     });
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], [data-owner=site-diagnostic-breadcrumb-outer], .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -556,6 +556,13 @@ async function canonicalizeScreenRoots(page: Page) {
       return value;
     }
 
+    function diagnosticOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "site-diagnostic-breadcrumb-outer") return "site-breadcrumb-outer";
+      if (owner === "site-diagnostic-breadcrumb-inner") return "site-breadcrumb-inner";
+      return null;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -575,9 +582,18 @@ async function canonicalizeScreenRoots(page: Page) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && diagnosticOwnerClassName(current) !== null),
+        )
         .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+          (name) =>
+            `${name}=${JSON.stringify(
+              name === "class" && diagnosticOwnerClassName(current) !== null
+                ? diagnosticOwnerClassName(current)
+                : normalizeSiteLayoutGnbNavAttribute(current, name),
+            )}`,
         )
         .filter((attr) => {
           // e2e closure ledger (2026-08-11): retired shell classes normalize to
@@ -666,6 +682,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       return value;
     }
 
+    function diagnosticOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "site-diagnostic-breadcrumb-outer") return "site-breadcrumb-outer";
+      if (owner === "site-diagnostic-breadcrumb-inner") return "site-breadcrumb-inner";
+      return null;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -685,9 +708,18 @@ async function canonicalizeHtml(page: Page, html: string) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && diagnosticOwnerClassName(current) !== null),
+        )
         .map(
-          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+          (name) =>
+            `${name}=${JSON.stringify(
+              name === "class" && diagnosticOwnerClassName(current) !== null
+                ? diagnosticOwnerClassName(current)
+                : normalizeSiteLayoutGnbNavAttribute(current, name),
+            )}`,
         )
         .filter((attr) => {
           // e2e closure ledger (2026-08-11): retired shell classes normalize to

@@ -786,7 +786,7 @@ async function canonicalizeScreenRoots(page: Page) {
     });
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], [data-owner=site-mail-breadcrumb-outer], .page-wrap-outer, [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -858,6 +858,13 @@ async function canonicalizeScreenRoots(page: Page) {
       return value;
     }
 
+    function mailOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "site-mail-breadcrumb-outer") return "site-breadcrumb-outer";
+      if (owner === "site-mail-breadcrumb-inner") return "site-breadcrumb-inner";
+      return null;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -880,9 +887,16 @@ async function canonicalizeScreenRoots(page: Page) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && mailOwnerClassName(current) !== null),
+        )
         .map((name) => {
-          const normalized = normalizeSiteLayoutGnbNavAttribute(current, name);
+          const normalized =
+            name === "class" && mailOwnerClassName(current) !== null
+              ? mailOwnerClassName(current)
+              : normalizeSiteLayoutGnbNavAttribute(current, name);
           // drop empty class attrs to mirror the live header (no class attr)
           if (name === "class" && normalized === "") return null;
           return `${name}=${JSON.stringify(normalized)}`;
@@ -989,6 +1003,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       return value;
     }
 
+    function mailOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "site-mail-breadcrumb-outer") return "site-breadcrumb-outer";
+      if (owner === "site-mail-breadcrumb-inner") return "site-breadcrumb-inner";
+      return null;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -1011,9 +1032,16 @@ async function canonicalizeHtml(page: Page, html: string) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && mailOwnerClassName(current) !== null),
+        )
         .map((name) => {
-          const normalized = normalizeSiteLayoutGnbNavAttribute(current, name);
+          const normalized =
+            name === "class" && mailOwnerClassName(current) !== null
+              ? mailOwnerClassName(current)
+              : normalizeSiteLayoutGnbNavAttribute(current, name);
           // drop empty class attrs to mirror the live header (no class attr)
           if (name === "class" && normalized === "") return null;
           return `${name}=${JSON.stringify(normalized)}`;

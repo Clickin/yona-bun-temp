@@ -79,8 +79,8 @@ function SiteMailScreen({
   return (
     <>
       <title>{t("title.sendMail")}</title>
-      <div className="site-breadcrumb-outer" data-owner="site-mail-breadcrumb-outer">
-        <div className="site-breadcrumb-inner" data-owner="site-mail-breadcrumb-inner">
+      <div data-owner="site-mail-breadcrumb-outer">
+        <div data-owner="site-mail-breadcrumb-inner">
           <h3 data-owner="site-mail-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
