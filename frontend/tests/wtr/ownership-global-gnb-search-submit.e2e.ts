@@ -43,7 +43,9 @@ test("global GNB search submit has complete global-theme Style ownership", () =>
   // wave-33 retained-class retention (667398a04): legacy navbar.scala.html:105
   // renders <div class="search-box ..."> and the route retains className
   // `search-box ...` (-home-route-screen.tsx:2028).
-  expect(boxMarkup).toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
+  // the route renders className={`search-box${...}`} — the ${ follows the
+  // class name directly.
+  expect(boxMarkup).toMatch(/(?:^|[\s"'`])search-box(?:\$\{|[\s"'`]|$)/u);
   expect(appCss).not.toContain(".gnb-search-form .search-box button {");
 });
 
@@ -213,14 +215,14 @@ test("owned submit preserves the legacy GET payload", async ({ page }) => {
   const form = page.locator(FORM);
   await expect(form).not.toHaveAttribute("method");
   await page.locator(INPUT).fill("needle");
-  const requestPromise = page.waitForRequest((request) => {
-    const url = new URL(request.url());
-    return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
-  });
+  // F5 dist-truth: the native form GET navigates the harness iframe without
+  // a request event; poll the page URL.
   await page.locator(SUBMIT).click({ noWaitAfter: true });
-  const requestUrl = new URL((await requestPromise).url());
-  expect(requestUrl.searchParams.get("searchType")).toBe("auto");
-  expect(requestUrl.searchParams.get("keyword")).toBe("needle");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("keyword"), { timeout: 10000 })
+    .toBe("needle");
+  expect(new URL(page.url()).searchParams.get("searchType")).toBe("auto");
+  expect(new URL(page.url()).searchParams.get("keyword")).toBe("needle");
 });
 
 function submitStyle() {

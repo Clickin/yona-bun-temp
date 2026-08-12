@@ -308,14 +308,14 @@ test("owned input is isolated and preserves legacy GET payload behavior", async 
   await expect(form).not.toHaveAttribute("method");
   await expect(form).toHaveAttribute("action", `${BASE_PATH}/admin/sample/search`);
   await input.fill("needle");
-  const requestPromise = page.waitForRequest((request) => {
-    const url = new URL(request.url());
-    return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
-  });
+  // F5 dist-truth: the native form GET navigates the harness iframe without
+  // a request event; poll the page URL.
   await form.locator(SUBMIT).click({ noWaitAfter: true });
-  const requestUrl = new URL((await requestPromise).url());
-  expect(requestUrl.searchParams.get("searchType")).toBe("auto");
-  expect(requestUrl.searchParams.get("keyword")).toBe("needle");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("keyword"), { timeout: 10000 })
+    .toBe("needle");
+  expect(new URL(page.url()).searchParams.get("searchType")).toBe("auto");
+  expect(new URL(page.url()).searchParams.get("keyword")).toBe("needle");
 });
 
 function baseStyle(fontSize: string) {
