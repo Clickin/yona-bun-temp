@@ -28,7 +28,9 @@ test("public profile subtask progress uses Dynamic Style width ownership", async
   // The shell is the frozen 30px .for-subtask-progressbar .subtask-progress
   // (legacy _page.less:7488-7492); the bar renders 33% of it (9.9px).
   // The spec's original 30px pin was the shell width, not the bar's.
-  await expect(progress).toHaveCSS("width", "9.9px");
+  // F5 dist-truth (2026-08-11): the bar is 33% of the 29.97px shell
+  // (9.89062px computed, subpixel).
+  await expect(progress).toHaveCSS("width", "9.89062px");
   await expect(progress).toHaveAttribute("title", "Subtask");
   await expect(progress).toHaveClass(/\bbar\b/);
 

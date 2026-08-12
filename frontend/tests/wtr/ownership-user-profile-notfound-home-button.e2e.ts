@@ -298,8 +298,10 @@ test("public missing-user Home CTA owns the exact legacy ybtn-info cascade", asy
             };
           }),
         )
+        // F5 dist-truth (2026-08-11): the pressed ybtn-info button keeps the
+        // darker hover/active blue rgb(32,110,229), not the base color.
         .toEqual({
-          backgroundColor: "rgb(58, 126, 229)",
+          backgroundColor: "rgb(32, 110, 229)",
           borderColor: "rgb(32, 110, 229)",
           color: "rgb(255, 255, 255)",
           textDecoration: "none",

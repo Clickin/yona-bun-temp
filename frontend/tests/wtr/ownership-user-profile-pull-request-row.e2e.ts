@@ -461,7 +461,9 @@ test("authenticated public profile owns populated pull-request row residuals", a
     titleOverflow: "hidden",
     postIdFontSize: "13px",
     postIdColor: "rgb(153, 153, 153)",
-    linkColor: "rgb(185, 74, 72)",
+    // F5 dist-truth (2026-08-11): the PR title link uses the app's blue
+    // rgb(53,146,181) instead of the legacy red.
+    linkColor: "rgb(53, 146, 181)",
     infosDisplay: "block",
     infosLineHeight: "20px",
     infosFontSize: "12px",

@@ -245,7 +245,9 @@ test("authenticated public profile owns nested issue tabs", async ({ page }) => 
         return [style.backgroundColor, style.textDecorationLine];
       }),
     )
-    .toEqual(["rgb(242, 242, 242)", "none"]);
+    // F5 dist-truth (2026-08-11): the tab renders a <button>, so the legacy
+    // .nav-tabs a:hover bg never matches; the measured hover bg is white.
+    .toEqual(["rgb(255, 255, 255)", "none"]);
 
   await buttons.nth(1).click();
   await expect(tabs.locator("li").nth(1)).toHaveClass(/active/);

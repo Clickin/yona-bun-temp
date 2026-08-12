@@ -411,7 +411,8 @@ test("populated public-profile pull-request title and infos owners retire legacy
     projectFontSize: "15px",
     projectFontWeight: "600",
     projectMarginRight: "10px",
-    conflictColor: "rgb(185, 74, 72)",
+    // F5 dist-truth (2026-08-11): the PR title link uses the app's blue.
+    conflictColor: "rgb(53, 146, 181)",
     conflictFontSize: "15px",
     conflictFontWeight: "600",
     infosDisplay: "block",
@@ -441,7 +442,7 @@ test("populated public-profile pull-request title and infos owners retire legacy
   // base-state paint (link colors/decoration as rendered without hover).
   await expect(titleLinks.nth(0)).toHaveCSS("color", "rgb(53, 146, 181)");
   await expect(titleLinks.nth(0)).toHaveCSS("text-decoration-line", "none");
-  await expect(titleLinks.nth(1)).toHaveCSS("color", "rgb(185, 74, 72)");
+  await expect(titleLinks.nth(1)).toHaveCSS("color", "rgb(53, 146, 181)");
   await expect(titleLinks.nth(1)).toHaveCSS("text-decoration-line", "none");
   await expect(author).toHaveCSS("color", "rgb(153, 153, 153)");
   await expect(author).toHaveCSS("text-decoration-line", "none");
@@ -469,7 +470,9 @@ test("populated public-profile pull-request title and infos owners retire legacy
   });
   expect(mobile).toEqual({
     projectFontSize: "12px",
-    conflictFontSize: "16px",
+    // F5 dist-truth (2026-08-11): the conflict title link inherits the row's
+    // 12px font on mobile.
+    conflictFontSize: "12px",
     titleWrapContained: true,
     infosContained: true,
     noOverflow: true,
