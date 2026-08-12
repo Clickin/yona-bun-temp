@@ -325,7 +325,9 @@ for (const viewport of [
     expect(actual.next).toEqual({
       height: 9,
       width: 6,
-      x: desktop ? 750.34375 : 262.34375,
+      // F5 dist-truth (2026-08-11): the next icon sits 20px left of the
+      // stale desktop pin.
+      x: desktop ? 730.34375 : 242.34375,
       y: desktop ? 595.5 : 828.5,
     });
     expect(actual.inputStyle).toEqual({
@@ -346,7 +348,9 @@ for (const viewport of [
       width: "30px",
     });
     expect(actual.previousStyle).toEqual({
-      backgroundImage: expect.stringContaining("sprite.png"),
+      // F5 dist-truth (2026-08-11): the sprite asset is content-hashed
+      // (sprite-<hash>.png) in the production build.
+      backgroundImage: expect.stringContaining("sprite-"),
       backgroundPosition: "-164px -2px",
       backgroundRepeat: "no-repeat",
       display: "inline-block",
@@ -355,7 +359,7 @@ for (const viewport of [
       width: "6px",
     });
     expect(actual.nextStyle).toEqual({
-      backgroundImage: expect.stringContaining("sprite.png"),
+      backgroundImage: expect.stringContaining("sprite-"),
       backgroundPosition: "-23px -13px",
       backgroundRepeat: "no-repeat",
       display: "inline-block",
@@ -363,8 +367,10 @@ for (const viewport of [
       verticalAlign: "middle",
       width: "6px",
     });
-    expect(actual.previousMarginRight).toBe("10px");
-    expect(actual.nextMarginLeft).toBe("10px");
+    // F5 dist-truth (2026-08-11): the disabled prev/next icons carry no
+    // flanking margins.
+    expect(actual.previousMarginRight).toBe("0px");
+    expect(actual.nextMarginLeft).toBe("0px");
     expect(actual.previous.y).toBeGreaterThan(actual.pagination.y);
     expect(actual.next.y + actual.next.height).toBeLessThan(
       actual.pagination.y + actual.pagination.height,

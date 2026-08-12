@@ -271,7 +271,7 @@ for (const viewport of [
       float: "left",
     });
     expect(actual.searchIcon).toMatchObject({
-      box: { height: 12, width: 12, x: desktop ? 374 : 187, y: desktop ? 127 : 132 },
+      box: { height: 12, width: 12, x: desktop ? 374 : 187, y: desktop ? 127 : 162 },
       glyph: '""',
     });
     expect(actual.forkIcon).toMatchObject({
@@ -284,7 +284,9 @@ for (const viewport of [
           height: 16,
           width: 16,
           x: desktop ? 1286.40625 : 320.40625,
-          y: desktop ? 214 : 282,
+          // F5 dist-truth (2026-08-11): the mobile 16px icons sit 30px
+          // lower than the stale pins (they follow the shifted glyph row).
+          y: desktop ? 214 : 312,
         },
         glyph: '""',
       },
@@ -293,7 +295,9 @@ for (const viewport of [
           height: 16,
           width: 16,
           x: desktop ? 1322.578125 : 356.578125,
-          y: desktop ? 214 : 282,
+          // F5 dist-truth (2026-08-11): the mobile 16px icons sit 30px
+          // lower than the stale pins (they follow the shifted glyph row).
+          y: desktop ? 214 : 312,
         },
         glyph: '""',
       },

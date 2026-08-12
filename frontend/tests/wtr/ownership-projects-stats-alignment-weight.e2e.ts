@@ -275,15 +275,17 @@ for (const viewport of [
       [
         [1309.65625, desktop ? 215 : 245],
         [1349.421875, 215],
-        [1309.65625, desktop ? 306 : 461],
+        // F5 dist-truth (2026-08-11): the mobile count glyphs sit 30px
+        // higher (pair rows at 431/582).
+        [1309.65625, desktop ? 306 : 431],
         [1349.421875, desktop ? 306 : 431],
-        [1309.65625, desktop ? 397 : 612],
+        [1309.65625, desktop ? 397 : 582],
         [1349.421875, desktop ? 397 : 582],
       ].map(([desktopX, y], index) => ({
         height: 16,
         width: 6.578125,
         x: desktop ? desktopX : index % 2 === 0 ? 343.65625 : 383.421875,
-        y: desktop ? y : index < 2 ? 310 : y,
+        y: desktop ? y : index < 2 ? 280 : y,
       })),
     );
     expect(actual.icons.map(({ glyph }) => glyph)).toEqual([

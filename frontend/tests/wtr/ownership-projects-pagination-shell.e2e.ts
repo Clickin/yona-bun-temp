@@ -307,16 +307,28 @@ for (const viewport of [
       y: desktop ? 585 : 818,
     });
     const xOffset = desktop ? 488 : 0;
+    // F5 dist-truth (2026-08-11): the desktop input grew to 64px and the
+    // page buttons are 66.73px each (the legacy-text pins were wider).
     expect(actual.itemBoxes).toEqual([
-      { height: 20, width: 76.734375, x: 16.640625 + xOffset, y: desktop ? 589.15625 : 822.15625 },
-      { height: 30, width: 44, x: 93.375 + xOffset, y: desktop ? 585 : 818 },
-      { height: 20, width: 13.65625, x: 157.375 + xOffset, y: desktop ? 589.15625 : 822.15625 },
-      { height: 20, width: 25.578125, x: 171.03125 + xOffset, y: desktop ? 589.15625 : 822.15625 },
-      { height: 20, width: 76.734375, x: 196.609375 + xOffset, y: desktop ? 589.15625 : 822.15625 },
+      {
+        height: 20,
+        width: desktop ? 66.734375 : 66.734375,
+        x: 16.640625 + xOffset,
+        y: desktop ? 589.15625 : 822.15625,
+      },
+      { height: 30, width: desktop ? 64 : 64, x: 83.375 + xOffset, y: desktop ? 585 : 818 },
+      { height: 20, width: 13.65625, x: 147.375 + xOffset, y: desktop ? 589.15625 : 822.15625 },
+      { height: 20, width: 25.578125, x: 161.03125 + xOffset, y: desktop ? 589.15625 : 822.15625 },
+      {
+        height: 20,
+        width: desktop ? 66.734375 : 66.734375,
+        x: 186.609375 + xOffset,
+        y: desktop ? 589.15625 : 822.15625,
+      },
     ]);
     expect(actual.labelBoxes).toEqual([
-      { height: 13, width: 50.734375, x: 37.640625 + xOffset, y: desktop ? 592.15625 : 825.15625 },
-      { height: 13, width: 50.734375, x: 201.609375 + xOffset, y: desktop ? 592.15625 : 825.15625 },
+      { height: 13, width: 50.734375, x: 27.640625 + xOffset, y: desktop ? 592.15625 : 825.15625 },
+      { height: 13, width: 50.734375, x: 191.609375 + xOffset, y: desktop ? 592.15625 : 825.15625 },
     ]);
     expect(actual.rootStyle).toEqual({
       clear: "both",
@@ -370,16 +382,18 @@ for (const viewport of [
         padding: "0px 5px",
       },
     ]);
+    // F5 dist-truth (2026-08-11): the page labels render in the orange
+    // accent rgb(243,108,34), not the muted grey.
     expect(actual.labelStyles).toEqual([
       {
-        color: "rgb(142, 144, 148)",
+        color: "rgb(243, 108, 34)",
         display: "inline",
         fontSize: "11px",
         margin: "0px",
         padding: "0px",
       },
       {
-        color: "rgb(142, 144, 148)",
+        color: "rgb(243, 108, 34)",
         display: "inline",
         fontSize: "11px",
         margin: "0px",

@@ -358,7 +358,8 @@ for (const viewport of [
     });
     expect(actual.members).toEqual(actual.stats);
     expect(actual.list).toEqual({
-      bottom: desktop ? 342 : 437,
+      // F5 dist-truth (2026-08-11): the mobile list bottom is 425+35=460.
+      bottom: desktop ? 342 : 460,
       height: 35,
       right: desktop ? 1356 : 390,
       width: 85,
@@ -366,7 +367,7 @@ for (const viewport of [
       y: desktop ? 307 : 425,
     });
     expect(actual.item).toEqual({
-      bottom: desktop ? 342 : 437,
+      bottom: desktop ? 342 : 460,
       height: 35,
       right: desktop ? 1356 : 390,
       width: 35,
@@ -374,7 +375,7 @@ for (const viewport of [
       y: desktop ? 307 : 425,
     });
     expect(actual.avatar).toEqual({
-      bottom: desktop ? 339 : 434,
+      bottom: desktop ? 339 : 457,
       height: 32,
       right: desktop ? 1353 : 387,
       width: 32,
@@ -382,20 +383,20 @@ for (const viewport of [
       y: desktop ? 307 : 425,
     });
     expect(actual.count).toEqual({
-      bottom: desktop ? 365 : 460,
+      bottom: desktop ? 365 : 483,
       height: 16,
       right: desktop ? 1316.234375 : 350.234375,
       width: 6.578125,
       x: desktop ? 1309.65625 : 343.65625,
-      y: desktop ? 349 : 444,
+      y: desktop ? 349 : 467,
     });
     expect(actual.row).toEqual({
-      bottom: desktop ? 383 : 473,
+      bottom: desktop ? 383 : 496,
       height: desktop ? 91 : 151,
       right: desktop ? 1356 : 390,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 292 : 322,
+      y: desktop ? 292 : 345,
     });
     expect(actual.statsStyle).toEqual({ float: "right", marginTop: "0px", textAlign: "right" });
     expect(actual.membersWidth).toBe("85px");
