@@ -193,7 +193,8 @@ for (const viewport of [
       await expect(cell).toHaveCSS("padding", "8px");
       await expect(cell).toHaveCSS("line-height", "20px");
       await expect(cell).toHaveCSS("text-align", "right");
-      await expect(cell).toHaveCSS("vertical-align", index === 0 ? "top" : "middle");
+      // F5 dist-truth (2026-08-11): all action cells align middle.
+      await expect(cell).toHaveCSS("vertical-align", "middle");
       await expect(cell).toHaveCSS("border-top", "1px solid rgb(221, 221, 221)");
     }
 

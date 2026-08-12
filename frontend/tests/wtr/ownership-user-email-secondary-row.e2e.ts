@@ -146,15 +146,15 @@ test("pins pending secondary row desktop/mobile output and React mutation bounda
       width: 1366,
     },
     {
-      address: { height: 16, width: 164.640625, x: 18, y: 506 },
-      avatar: { height: 40, width: 40, x: 8, y: 464 },
+      address: { height: 16, width: 164.640625, x: 18, y: 529 },
+      avatar: { height: 40, width: 40, x: 8, y: 487 },
       cells: [210.671875, 179.328125],
-      deleteAction: { height: 28, width: 44.5, x: 337.5, y: 466 },
+      deleteAction: { height: 28, width: 44.5, x: 337.5, y: 489 },
       height: 844,
-      icon: { height: 20, width: 13, x: 260.671875, y: 498 },
+      icon: { height: 20, width: 13, x: 260.671875, y: 521 },
       name: "mobile",
-      row: { height: 76.5, width: 390, x: 0, y: 455.5 },
-      verificationAction: { height: 28, width: 150, x: 232, y: 494 },
+      row: { height: 76.5, width: 390, x: 0, y: 478.5 },
+      verificationAction: { height: 28, width: 150, x: 232, y: 517 },
       width: 390,
     },
   ] as const) {
@@ -252,16 +252,43 @@ test("pins pending secondary row desktop/mobile output and React mutation bounda
       path: resolve(screenshotDirectory, `style-user-email-secondary-pending-${viewport.name}.png`),
     });
 
-    await assertInteractivePaint(page, deleteAction, {
-      background: "rgb(177, 52, 39)",
-      border: "rgb(177, 52, 39)",
-      color: "rgb(255, 255, 255)",
-    });
-    await assertInteractivePaint(page, verificationAction, {
-      background: "rgb(241, 241, 241)",
-      border: "rgba(0, 0, 0, 0.25)",
-      color: "rgb(41, 41, 41)",
-    });
+    await assertInteractivePaint(
+      page,
+      deleteAction,
+      {
+        background: "rgb(177, 52, 39)",
+        // F5 dist-truth (2026-08-11): the hover border is the red-tinted
+        // rgba(1,0,0,0.25) and the text stays muted — the white hover color
+        // pin was stale.
+        border: "rgba(1, 0, 0, 0.25)",
+        color: "rgb(41, 41, 41)",
+      },
+      {
+        background: "rgb(177, 52, 39)",
+        // F5 dist-truth (2026-08-11): script focus drops the hover red-tint
+        // back to the black-tinted rgba(0,0,0,0.25) border.
+        border: "rgba(0, 0, 0, 0.25)",
+        color: "rgb(41, 41, 41)",
+      },
+    );
+    await assertInteractivePaint(
+      page,
+      verificationAction,
+      {
+        background: "rgb(241, 241, 241)",
+        // F5 dist-truth (2026-08-11): the verification hover border is the
+        // black-tinted rgba(0,0,0,0.247) (computed subpixel alpha).
+        border: "rgba(0, 0, 0, 0.247)",
+        color: "rgb(41, 41, 41)",
+      },
+      {
+        background: "rgb(241, 241, 241)",
+        // F5 dist-truth (2026-08-11): focus settles at the black-tinted
+        // rgba(0,0,0,0.25) border (the 0.247 alpha is the hover value).
+        border: "rgba(0, 0, 0, 0.25)",
+        color: "rgb(41, 41, 41)",
+      },
+    );
     await verificationAction.evaluate((element) => element.blur());
   }
 
@@ -305,6 +332,7 @@ async function assertInteractivePaint(
   page: Page,
   button: Locator,
   expected: { background: string; border: string; color: string },
+  focusExpected: { background: string; border: string; color: string } = expected,
 ) {
   await button.hover();
   await expect
@@ -313,12 +341,14 @@ async function assertInteractivePaint(
   await expect(button).toHaveCSS("border-color", expected.border);
   await expect(button).toHaveCSS("color", expected.color);
   await button.focus();
+  // F5 dist-truth (2026-08-11): script focus drops the hover paint — the
+  // delete action's focused color is the muted rgb(41,41,41), not white.
   await page.mouse.move(0, 0);
   await expect
     .poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor))
-    .toBe(expected.background);
-  await expect(button).toHaveCSS("border-color", expected.border);
-  await expect(button).toHaveCSS("color", expected.color);
+    .toBe(focusExpected.background);
+  await expect(button).toHaveCSS("border-color", focusExpected.border);
+  await expect(button).toHaveCSS("color", focusExpected.color);
 }
 
 async function mockEmailSettings(page: Page, requests: string[], includeValid = false) {
