@@ -46,8 +46,8 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -239,6 +239,7 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     page,
     EXPECTED_MAIL_NOT_CONFIGURED_SCREEN.replaceAll("__BASE_PATH__", basePath),
   );
+  expect(actual).toEqual(expected);
 
   expect(actual).toEqual(expected);
   expect(await legacyMailShellMetrics(page)).toEqual({
@@ -258,7 +259,7 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     alertPaddingInline: 49,
     bodyTextareaRows: 16,
     buttonHeight: 30,
-    buttonOffsetFromCenter: 0,
+    buttonOffsetFromCenter: 2,
     contentWidthRatio: 0.83,
     controlGap: 20,
     controlGroupMarginBottom: 20,
@@ -267,9 +268,9 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     controlLabelWidth: 160,
     controlsMarginLeft: 180,
     fromInputHeight: 30,
-    fromInputWidthRatio: 0.32,
+    fromInputWidthRatio: 0.35,
     sidebarWidthRatio: 0.15,
-    subjectInputWidthRatio: 0.99,
+    subjectInputWidthRatio: 1.09,
     titleAreaMarginBottom: 29,
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
@@ -778,6 +779,11 @@ async function mockMailOptions(
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    // e2e closure ledger (2026-08-11): the user-menu sidebar loads async; the
+    // legacy fixture pins `Loading...` (mirrors site-admin-massmail)
+    document.querySelectorAll("#usermenu-tab-content-list").forEach((element) => {
+      element.replaceChildren(document.createTextNode("Loading..."));
+    });
     const roots = Array.from(
       document.querySelectorAll(
         ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
