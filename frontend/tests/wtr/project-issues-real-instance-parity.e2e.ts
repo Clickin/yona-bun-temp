@@ -12,12 +12,16 @@ const issueListApiPath = `${localBasePath}/api/v1/projects/admin/WYVE_OCS/issues
 const mirrorSkipMessage =
   "requires a legacy-data mirror backend containing admin/WYVE_OCS; point YONA_E2E_BACKEND_ORIGIN at a mirror or seed the parity fixture";
 
-// ponytail: one cached same-origin probe; the WTR proxy owns mirror routing.
+// ponytail: one cached probe against the LIVE legacy backend; the WTR proxy
+// owns mirror routing. Probing the app API would always succeed against the
+// mocked harness, so this must target the legacy origin (unreachable in CI ->
+// skip). In the real-instance mirror mode, fetch bypasses page mocks (direct
+// network) so a reachable backend yields 200.
 const mirrorProbe = (async () => {
   try {
-    const response = await fetch(
-      `${issueListApiPath}?state=closed&orderBy=updatedDate&orderDir=desc&pageNum=1`,
-    );
+    const response = await fetch(`${legacyOrigin}${routePath}`, {
+      signal: AbortSignal.timeout(3000),
+    });
     return response.status === 200;
   } catch {
     return false;
