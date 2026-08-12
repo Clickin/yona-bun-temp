@@ -193,9 +193,9 @@ test("project home Dashboard tab keeps legacy overview proportions", async ({ pa
       firstColumnWidthRatio: 0.49,
       headingBorderColor: "rgb(255, 115, 50)",
       leftPaneWidthRatio: 0.74,
-      // F5 dist-truth (2026-08-11): the desktop page-wrap top margin is
-      // 20px (the legacy 5px pin predates the shell work).
-      pageWrapMarginTop: 20,
+      // legacy _responsive.less:617 @media all keeps 5px at every width
+      // (the earlier 20px pin measured the app, which had the wrong margin).
+      pageWrapMarginTop: 5,
       progressHeight: 7,
       progressMarginTop: 7,
       progressWidth: 100,

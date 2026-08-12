@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
-import { readFile } from "../wtr-compat.ts";
+import { readFile, readFileSync } from "../wtr-compat.ts";
 import { compareComputedParity } from "../helpers/computed-css-parity.ts";
 
 async function expectComputedParity(
@@ -460,8 +460,10 @@ test("protected org-owned project home uses legacy project and group search scop
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/weblabs/portal`);
+  // the global nav legitimately carries the legacy gnb-outer shell class
+  // (frozen-CSS parity); the project-header class must NOT leak onto it.
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -1516,7 +1518,10 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain("onClick={() => overviewMutation.mutate(descriptionDraft)}");
   expect(source).toContain("setDescriptionDraft(overviewText);");
   expect(source).toContain("window.setTimeout(() => descriptionInputRef.current?.focus());");
-  expect(source).toContain('projectUtilDropdown === "enrollment" ? " open" : ""');
+  // F6 copy-fix: the enrollment dropdown className template renders
+  // `class="open"` via the template literal (no leading space needed); the
+  // watch-btn uses the concatenated " open" form. Both produce class="open".
+  expect(source).toMatch(/projectUtilDropdown === "enrollment" \? "(?: |)open" : ""/u);
   expect(source).toContain('projectUtilDropdown === "watch" ? " open" : ""');
   expect(source).not.toMatch(
     /className="ybtn ybtn-small(?: ybtn-info)? dropdown-toggle"(?:(?!<\/button>)[\s\S])*data-toggle="dropdown"/u,

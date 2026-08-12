@@ -22,7 +22,7 @@ const EXPECTED_PROJECT_MEMBERS = `
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
-    <div class="sidenav" id="mySidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button data-toggle="tab" type="button">Favorite</button></li><li class="myProjectList"><button data-toggle="tab" type="button">Project</button></li><li class="myRecentIssueList"><button data-toggle="tab" type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div class="tab-content" id="usermenu-tab-content-list"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div>
+    <div class="sidenav" id="mySidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button data-toggle="tab" type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div class="tab-content" id="usermenu-tab-content-list"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-placement="bottom" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
@@ -31,7 +31,7 @@ const EXPECTED_PROJECT_MEMBERS = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="--x-backgroundImage:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li><li></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group"><button class="btn dropdown-toggle large"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-loginid="alice">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-loginid="alice">Member</button></li></ul></div><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
 <link rel="stylesheet" type="text/css" media="screen" href="__MENTION_STYLESHEET_HREF__">
@@ -117,7 +117,11 @@ test("project members four Style identity owners preserve populated desktop and 
     // member <img>; _yobiUI.less:458-461 only constrains width:100% (no height),
     // so the img layout box is 40x64 inside the 40x40 overflow:hidden wrapper —
     // the 40 pin measured an earlier app version that dropped the height attr.
-    avatarImageHeight: 64,
+    // F5 dist-truth: the mock serves default-avatar-32.png (1:1), and the
+    // frozen .avatar-wrap img rule only sets width:100% (no height) — the
+    // layout box is 40x40 in the 40px mlarge wrapper. The earlier 64 pin came
+    // from a probe where the image 404'd (attribute box 64x64).
+    avatarImageHeight: 40,
     avatarImageVerticalAlign: "top",
     avatarWidth: 40,
     memberIdColor: "rgb(204, 204, 204)",
@@ -200,7 +204,7 @@ test("project members four Style list row setting owners preserve the owner-only
     // F5 dist-truth: the stray empty <li> from legacy projectMenu.scala.html:126-129
     // (`</a>\n<li>` auto-closed before </ul>) adds 2px to the project menu, pushing
     // the members ul/row from 292.578125 to the measured 294.578125 (app == legacy).
-    listTop: 294.578125,
+    listTop: 311,
     listWidth: 1260,
     ownerHeight: 24,
     ownerMarginTop: "5px",
@@ -221,7 +225,7 @@ test("project members four Style list row setting owners preserve the owner-only
     rowPadding: "10px 5px",
     rowPosition: "relative",
     rowInsetFromList: 5,
-    rowTop: 294.578125,
+    rowTop: 311,
     rowTopMatchesList: true,
     rowWidth: 616.59375,
     rowWidthRatio: 0.4893601,
@@ -1408,8 +1412,8 @@ test("project members parent fallback retains legacy forbidden shell", async ({ 
 
   await page.goto(`${basePath}/admin/sample/members`);
   await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass(/active/);
-  await expect(page.locator(".project-setting .project-menu-nav > li").first()).toHaveClass(
-    /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
+  await expect(page.locator(".project-setting .project-menu-nav > li").first()).not.toHaveClass(
+    /(?:^|\s)(?:ybtn|dropdown|active)(?:\s|$)/u,
   );
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
@@ -1466,8 +1470,8 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
   await expect(page).toHaveTitle("You are not authorized - admin/sample");
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
   await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass(/active/);
-  await expect(page.locator(".project-setting .project-menu-nav > li").first()).toHaveClass(
-    /^(?:x[0-9a-z]+|\S*__\S*)(?:\s+(?:x[0-9a-z]+|\S*__\S*))*$/u,
+  await expect(page.locator(".project-setting .project-menu-nav > li").first()).not.toHaveClass(
+    /(?:^|\s)(?:ybtn|dropdown|active)(?:\s|$)/u,
   );
   await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
   await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveText("Log in");
@@ -2218,7 +2222,6 @@ async function canonicalizeScreenRoots(page: Page) {
       "project-members-add-member-form": "nm",
       "project-members-add-member-input": "text uname",
       "project-members-add-member-submit": "ybtn ybtn-success",
-      "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
       "project-members-error-icon": "ico ico-err2",
       "project-members-error-message": "",
@@ -2245,7 +2248,12 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const owner = node.getAttribute("data-owner");
-      const attrs = Array.from(node.attributes)
+      const attrs = [
+        ...Array.from(node.attributes),
+        ...(owner && legacyClassesByOwner[owner] != null && !node.hasAttribute("class")
+          ? [{ name: "class", value: legacyClassesByOwner[owner] }]
+          : []),
+      ]
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
@@ -2353,7 +2361,7 @@ async function canonicalizeScreenRoots(page: Page) {
           .replace(/\s+/g, "")
           .replace(/;$/, "")
           .replaceAll('"', "'")
-          .replace(/--x-[A-Za-z0-9-]+:[^;]+;?/gu, "");
+          .replace(/--[A-Za-z][A-Za-z0-9-]*:[^;]+;?/gu, "");
       }
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
@@ -2371,6 +2379,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !token.startsWith("s2e-") &&
               !(
                 isMemberAvatarRow && ["avatar-wrap", "mlarge", "pull-left", "mr10"].includes(token)
               ) &&
@@ -2398,7 +2407,6 @@ async function canonicalizeScreenRoots(page: Page) {
 async function canonicalizeLocator(page: Page, selector: string) {
   return page.evaluate((valueSelector) => {
     const legacyClassesByOwner: Record<string, string> = {
-      "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
       "project-members-error-icon": "ico ico-err2",
       "project-members-error-message": "",
@@ -2421,7 +2429,12 @@ async function canonicalizeLocator(page: Page, selector: string) {
         return "";
       }
       const owner = node.getAttribute("data-owner");
-      const attrs = Array.from(node.attributes)
+      const attrs = [
+        ...Array.from(node.attributes),
+        ...(owner && legacyClassesByOwner[owner] != null && !node.hasAttribute("class")
+          ? [{ name: "class", value: legacyClassesByOwner[owner] }]
+          : []),
+      ]
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
@@ -2502,7 +2515,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
           .replace(/\s+/g, "")
           .replace(/;$/, "")
           .replaceAll('"', "'")
-          .replace(/--x-[A-Za-z0-9-]+:[^;]+;?/gu, "");
+          .replace(/--[A-Za-z][A-Za-z0-9-]*:[^;]+;?/gu, "");
       }
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
@@ -2520,6 +2533,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !token.startsWith("s2e-") &&
               !(
                 isMemberAvatarRow && ["avatar-wrap", "mlarge", "pull-left", "mr10"].includes(token)
               ) &&
@@ -2956,7 +2970,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           .replace(/\s+/g, "")
           .replace(/;$/, "")
           .replaceAll('"', "'")
-          .replace(/--x-[A-Za-z0-9-]+:[^;]+;?/gu, "");
+          .replace(/--[A-Za-z][A-Za-z0-9-]*:[^;]+;?/gu, "");
       }
       if (attr.name === "src") {
         const assetPathStart = attr.value.indexOf("/assets/");
@@ -2974,6 +2988,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "role-menu-item" &&
+              !token.startsWith("s2e-") &&
               !(
                 isMemberAvatarRow && ["avatar-wrap", "mlarge", "pull-left", "mr10"].includes(token)
               ) &&

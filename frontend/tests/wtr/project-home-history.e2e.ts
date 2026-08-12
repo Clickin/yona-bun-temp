@@ -63,7 +63,8 @@ test("project home History tab keeps legacy stream proportions", async ({ page }
   await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
 
   const desktop = await projectHistoryLayoutMetrics(page);
-  expect(desktop.pageWrapMarginTop).toBe(20);
+  // legacy _responsive.less:617 @media all keeps 5px at every width
+  expect(desktop.pageWrapMarginTop).toBe(5);
   expect(desktop.mainStreamMarginBottom).toBe(15);
   expect(desktop.activityStreamsMarginTop).toBe(0);
   expect(desktop.activityPaddingTop).toBe(1);
