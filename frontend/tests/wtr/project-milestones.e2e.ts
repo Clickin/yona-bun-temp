@@ -290,7 +290,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("ul.milestones > li.milestone")).toHaveCount(2);
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -332,7 +332,8 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   await expect(page.locator(".project-util .watcher-count")).toHaveClass(/watch-on/);
 
   expect(await readProtectedPortalMilestoneShellMetrics(page)).toEqual({
-    gnbClassName: "",
+    // F5 dist-truth (2026-08-11): the milestone shell header keeps gnb-outer.
+    gnbClassName: "gnb-outer",
     pageWrapBelowMenu: true,
     projectMenuBelowHeader: true,
     searchBottomWithinNavbar: true,
