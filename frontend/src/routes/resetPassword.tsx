@@ -138,6 +138,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   ref={passwordInputRef}
                   id="password"
                   type="password"
+                  className="text"
                   name="password"
                   data-part={validTokenReset ? "reset-password-password" : undefined}
                   placeholder={t("user.password")}
@@ -155,6 +156,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   ref={retypedPasswordInputRef}
                   id="retypedPassword"
                   type="password"
+                  className="text"
                   name="retypedPassword"
                   data-part={validTokenReset ? "reset-password-retyped-password" : undefined}
                   placeholder={t("validation.retypePassword")}
