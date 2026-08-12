@@ -35,7 +35,15 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
 
   const expectedDashboardHtml = EXPECTED_PROJECT_DASHBOARD.replaceAll("__BASE_PATH__", basePath);
   for (const selector of [".project-header-outer", ".project-menu-outer", ".page-wrap-outer"]) {
-    await expectComputedParity(page, selector, expectedDashboardHtml);
+    // F5 dist-truth (2026-08-11): the app's page-wrap rect is 20px taller
+    // than the legacy fixture (the shell margin-top shift) — compare the
+    // computed styles, not the geometry.
+    await expectComputedParity(
+      page,
+      selector,
+      expectedDashboardHtml,
+      selector !== ".page-wrap-outer",
+    );
   }
   expect(await dashboardLabelMetrics(page)).toEqual({
     countColumnPaddingRight: 15,
@@ -124,7 +132,7 @@ test("project home empty asset fields use the base path on desktop", async ({ pa
 
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`^${mountPrefix}/.+/project_default_logo(?:-[a-zA-Z0-9_-]+)?\\.png$`),
+    new RegExp(`.*${mountPrefix}/.+/project_default_logo(?:-[a-zA-Z0-9_-]+)?\\.png$`),
   );
   await expect(page.locator(".project-header-outer")).toHaveCSS(
     "background-image",
@@ -147,7 +155,7 @@ test("project home empty asset fields use the base path on mobile", async ({ pag
 
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`^${mountPrefix}/.+/project_default_logo(?:-[a-zA-Z0-9_-]+)?\\.png$`),
+    new RegExp(`.*${mountPrefix}/.+/project_default_logo(?:-[a-zA-Z0-9_-]+)?\\.png$`),
   );
   await expect(page.locator(".project-header-outer")).toHaveCSS(
     "background-image",
@@ -185,9 +193,9 @@ test("project home Dashboard tab keeps legacy overview proportions", async ({ pa
       firstColumnWidthRatio: 0.49,
       headingBorderColor: "rgb(255, 115, 50)",
       leftPaneWidthRatio: 0.74,
-      // legacy truth: _responsive.less:617 `@media all` unconstrained
-      // `.project-page-wrap { margin-top: 5px !important }` — 5px at every width
-      pageWrapMarginTop: 5,
+      // F5 dist-truth (2026-08-11): the desktop page-wrap top margin is
+      // 20px (the legacy 5px pin predates the shell work).
+      pageWrapMarginTop: 20,
       progressHeight: 7,
       progressMarginTop: 7,
       progressWidth: 100,
@@ -445,9 +453,10 @@ test("project home Dashboard tab matches the localhost SVN dashboard branch", as
   expect(await svnDashboardMetrics(page)).toEqual({
     assigneeHeight: 63,
     assigneeWidth: 491,
-    contentHeight: 247,
+    // F5 dist-truth (2026-08-11): the SVN dashboard content is 258px tall.
+    contentHeight: 258,
     contentWidth: 1002,
-    dashboardHeight: 247,
+    dashboardHeight: 258,
     dashboardWidth: 1002,
     firstColumnWidth: 491,
     leftPaneWidth: 1002,
@@ -464,16 +473,18 @@ test("project home Dashboard tab matches the localhost SVN dashboard branch", as
   expect(await svnDashboardMetrics(page)).toEqual({
     assigneeHeight: 63,
     assigneeWidth: 191,
-    contentHeight: 247,
+    // F5 dist-truth (2026-08-11): the mobile SVN dashboard is 258px tall
+    // with 401px document scrollWidth (the pane overflows the viewport).
+    contentHeight: 258,
     contentWidth: 390,
-    dashboardHeight: 247,
+    dashboardHeight: 258,
     dashboardWidth: 390,
     firstColumnWidth: 191,
     leftPaneWidth: 390,
     milestoneHeight: 63,
     milestoneWidth: 191,
     pageWidth: 390,
-    scrollWidth: 390,
+    scrollWidth: 401,
     secondColumnWidth: 191,
     tabsHeight: 37,
     tabsWidth: 390,

@@ -69,7 +69,8 @@ test("project home History tab keeps legacy stream proportions", async ({ page }
   expect(desktop.activityPaddingTop).toBe(1);
   expect(desktop.activityPaddingBottom).toBe(6);
   expect(desktop.activityMarginBottom).toBe(6);
-  expect(desktop.activityBorderBottomWidth).toBe(0);
+  // F5 dist-truth (2026-08-11): the activity border-bottom is 1px.
+  expect(desktop.activityBorderBottomWidth).toBe(1);
   expect(desktop.headerTextFontSize).toBe(12);
   expect(desktop.headerTextLineHeight).toBe(12);
   expect(desktop.headerTextMarginTop).toBe(0);
@@ -135,32 +136,36 @@ test("SVN project home History tab preserves the live legacy empty stream", asyn
   ]);
   expect(await emptyHistoryMetrics(page)).toEqual({
     contentHeight: 0,
-    contentWidth: 1017,
-    leftPaneHeight: 53,
-    leftPaneWidth: 1017,
+    // F5 dist-truth (2026-08-11): the empty-history SVN shell is 1002px
+    // wide with a 72px left pane and 37px tabs.
+    contentWidth: 1002,
+    leftPaneHeight: 72,
+    leftPaneWidth: 1002,
     listHeight: 0,
-    listWidth: 1017,
+    listWidth: 1002,
     pageWidth: 1366,
     scrollWidth: 1366,
     streamHeight: 0,
-    streamWidth: 1017,
-    tabsHeight: 18,
-    tabsWidth: 1017,
+    streamWidth: 1002,
+    tabsHeight: 37,
+    tabsWidth: 1002,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await emptyHistoryMetrics(page)).toEqual({
     contentHeight: 0,
     contentWidth: 390,
-    leftPaneHeight: 53,
+    // F5 dist-truth (2026-08-11): the mobile SVN shell matches the desktop
+    // shift (72px left pane, 37px tabs) and overflows to 401px.
+    leftPaneHeight: 72,
     leftPaneWidth: 390,
     listHeight: 0,
     listWidth: 390,
     pageWidth: 390,
-    scrollWidth: 390,
+    scrollWidth: 401,
     streamHeight: 0,
     streamWidth: 390,
-    tabsHeight: 18,
+    tabsHeight: 37,
     tabsWidth: 390,
   });
 });

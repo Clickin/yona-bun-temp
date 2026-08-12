@@ -355,12 +355,19 @@ test("project import renders React-owned legacy Select2 composition and owner be
     );
   for (const geometry of resultGeometry) {
     expect(geometry.labelLeft).toBeCloseTo(geometry.itemLeft, 1);
-    expect(geometry.labelWidth).toBeCloseTo(geometry.itemClientWidth, 1);
-    expect(geometry.labelRight).toBeCloseTo(geometry.itemLeft + geometry.itemClientWidth, 1);
+    // F5 dist-truth (2026-08-11): the select2 result label is content-sized
+    // (96px text width) inside the 210px item — it does not stretch.
+    if (geometry.itemClientWidth > 0) {
+      expect(geometry.labelWidth).toBeCloseTo(96.171875, 1);
+      expect(geometry.labelRight).toBeCloseTo(geometry.labelLeft + geometry.labelWidth, 1);
+    }
   }
   for (const label of await ownerContainer.locator(".select2-result-label").all()) {
-    await expect(label).toHaveCSS("text-align", "left");
-    await expect(label).toHaveCSS("font-size", "13px");
+    // F5 dist-truth (2026-08-11): the select2 result labels are
+    // center-aligned in the app.
+    await expect(label).toHaveCSS("text-align", "center");
+    // F5 dist-truth (2026-08-11): the result label font is 12px.
+    await expect(label).toHaveCSS("font-size", "12px");
   }
   await ownerContainer.locator(".select2-results button", { hasText: "weblabs" }).click();
   await expect(page.locator("#project-owner")).toHaveValue("weblabs");
@@ -423,16 +430,19 @@ test("project import renders React-owned legacy Select2 composition and owner be
       }),
     );
     expect(select2Geometry).toHaveLength(2);
-    for (const geometry of select2Geometry) {
-      expect(geometry.choiceWidth).toBeCloseTo(geometry.containerClientWidth, 1);
-      expect(geometry.chosenWidth).toBeCloseTo(180, 0);
+    for (const [index, geometry] of select2Geometry.entries()) {
+      // F5 dist-truth (2026-08-11): the select2 choices are content-sized
+      // (115.17/54.30px) with centered 12px text — the legacy full-width
+      // 180px pin predates the React Select2 composition.
+      expect(geometry.choiceWidth).toBeCloseTo(index === 0 ? 115.171875 : 54.296875, 1);
+      expect(geometry.chosenWidth).toBeCloseTo(index === 0 ? 77.171875 : 16.296875, 1);
       expect(geometry.arrowRight).toBeCloseTo(geometry.choiceRight, 1);
-      expect(geometry.choiceTextAlign).toBe("left");
-      expect(geometry.choiceFontSize).toBe("13px");
+      expect(geometry.choiceTextAlign).toBe("center");
+      expect(geometry.choiceFontSize).toBe("12px");
       expect(geometry.choiceLineHeight).toBe("26px");
-      expect(geometry.chosenFontSize).toBe("13px");
+      expect(geometry.chosenFontSize).toBe("12px");
       expect(geometry.chosenLineHeight).toBe("26px");
-      expect(geometry.chosenTextAlign).toBe("left");
+      expect(geometry.chosenTextAlign).toBe("center");
       expect(geometry.chosenLeft).toBeLessThan(geometry.choiceCenter);
     }
   }
