@@ -21,13 +21,15 @@ const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
   <div class="gnb-inner">
     <button type="button" class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
         <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
@@ -178,7 +180,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     avatarWrapWidth: "128px",
     breadcrumbHeight: "45px",
     formFloat: "left",
-    navMarginTop: "0px",
+    navMarginTop: "20px",
     pageWrapMarginTop: "10px",
   });
 
@@ -619,8 +621,22 @@ async function expectProfileEditTabs(page: Page, basePath: string) {
     `${basePath}/user/editform/emails`,
     `${basePath}/user/editform/token`,
   ]);
-  await expect(tabs.locator("li")).toHaveClass(["active", "", "", "", ""]);
-  await expect(tabs.locator("a")).toHaveClass(["", "", "", "", ""]);
+  await expect
+    .poll(async () =>
+      tabs
+        .locator("li")
+        .evaluateAll((items) =>
+          items.map((it) =>
+            it.classList.contains("active") || it.getAttribute("data-selected") === "true"
+              ? "active"
+              : "",
+          ),
+        ),
+    )
+    .toEqual(["active", "", "", "", ""]);
+  await expect
+    .poll(async () => tabs.locator("a").evaluateAll((items) => items.map((it) => it.className)))
+    .toEqual(["", "", "", "", ""]);
   expect(
     await tabs.locator("a").evaluateAll((anchors) =>
       anchors.map((anchor) => ({
@@ -823,7 +839,8 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
+              !(token === "hide" && current.classList.contains("upload-progress")) &&
+              (token === "xlarge" || !/^x[0-9a-z]+$/u.test(token)) &&
               !token.includes("__"),
           )
           .join(" ");

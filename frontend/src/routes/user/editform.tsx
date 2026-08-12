@@ -85,8 +85,8 @@ function UserSettingsNestedLayout({
           </h3>
         </div>
       </div>
-      <div className="" data-owner="user-settings-page-wrap-outer">
-        <div className="" data-owner="user-settings-page-wrap">
+      <div className="page-wrap-outer" data-owner="user-settings-page-wrap-outer">
+        <div className="page-wrap" data-owner="user-settings-page-wrap">
           <EditTabMenu active={activeTab} />
           {activeTab === "profile" ? (
             <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
@@ -202,6 +202,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     <>
       <form
         id="frmBasic"
+        className="pull-left"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
         data-owner="user-settings-profile-form"
@@ -218,7 +219,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       >
         <dl>
           <dt>{t("user.loginId")}</dt>
-          <dd data-owner="user-settings-profile-login-id-row">
+          <dd className="mt10" data-owner="user-settings-profile-login-id-row">
             <input
               type="text"
               className="text"
@@ -228,7 +229,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             />
           </dd>
           <dt>{t("user.name")}</dt>
-          <dd data-owner="user-settings-profile-name-row">
+          <dd className="mt10" data-owner="user-settings-profile-name-row">
             <input
               key={`name-${displayName}`}
               type="text"
@@ -239,7 +240,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             />
           </dd>
           <dt>{t("user.email")}</dt>
-          <dd data-owner="user-settings-profile-email-row">
+          <dd className="mt10" data-owner="user-settings-profile-email-row">
             <input
               key={`email-${email}`}
               type="email"
@@ -263,6 +264,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
       <form
         id="frmAvatar"
+        className="pull-left"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
         data-owner="user-settings-avatar-form"
@@ -290,7 +292,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               data-owner="user-settings-avatar-progress-bar"
             ></div>
           </div>
-          <div className="btn-wrap" data-owner="user-settings-avatar-upload-wrap">
+          <div className="btn-wrap mt10 center-txt" data-owner="user-settings-avatar-upload-wrap">
             <div
               className="ybtn ybtn-small fake-file-wrap btnUploadAvatar"
               data-owner="user-settings-avatar-upload"
@@ -336,7 +338,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         }
         className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
       >
-        <div className="modal-header" data-owner="user-settings-avatar-crop-header">
+        <div className="modal-header center-txt" data-owner="user-settings-avatar-crop-header">
           <div className="avatar-wrap xlarge" data-owner="user-settings-avatar-crop-wrap">
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
             <img src={avatarPreviewUrl || undefined} data-owner="user-settings-avatar-crop-image" />
