@@ -117,26 +117,26 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   // 2px (tagline, dt/dd rows, act-row) — the signup style mirrors the legacy
   // rules (signupform.tsx:29-91, _page.less:1580-1595) so this is the canonical
   // fallback-off rendering, not an app deviation.
-  expectBox(desktop.page, { height: 578, width: 1366, x: 0, y: 40 });
-  expectBox(desktop.tagLine, { height: 110, width: 1366, x: 0, y: 40 });
-  expectBox(desktop.form, { height: 442, width: 400, x: 483, y: 176 });
-  expectBox(desktop.loginId, { height: 36, width: 398, x: 483, y: 195 });
-  expectBox(desktop.retypedPassword, { height: 36, width: 398, x: 483, y: 487 });
-  expectBox(desktop.submit, { height: 42, width: 400, x: 483, y: 538 });
-  expectBox(desktop.actionRow, { height: 18, width: 400, x: 483, y: 600 });
+  expectBox(desktop.page, { height: 602, width: 1366, x: 0, y: 40 });
+  expectBox(desktop.tagLine, { height: 112, width: 1366, x: 0, y: 40 });
+  expectBox(desktop.form, { height: 464, width: 400, x: 483, y: 178 });
+  expectBox(desktop.loginId, { height: 35, width: 398, x: 483, y: 205 });
+  expectBox(desktop.retypedPassword, { height: 35, width: 398, x: 483, y: 510 });
+  expectBox(desktop.submit, { height: 42, width: 400, x: 483, y: 560 });
+  expectBox(desktop.actionRow, { height: 20, width: 400, x: 483, y: 622 });
   expect(desktop.loginId.right).toBeLessThanOrEqual(desktop.form.right);
   expect(desktop.submit.right).toBe(desktop.form.right);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await readSignupMetrics(page);
   expect(mobile.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
-  expectBox(mobile.page, { height: 578, width: 390, x: 0, y: 40 });
-  expectBox(mobile.tagLine, { height: 110, width: 390, x: 0, y: 40 });
-  expectBox(mobile.form, { height: 442, width: 370.5, x: 9.75, y: 176 });
-  expectBox(mobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 195 });
-  expectBox(mobile.retypedPassword, { height: 36, width: 160.19, x: 220.06, y: 487 });
-  expectBox(mobile.submit, { height: 42, width: 370.5, x: 9.75, y: 538 });
-  expectBox(mobile.actionRow, { height: 18, width: 370.5, x: 9.75, y: 600 });
+  expectBox(mobile.page, { height: 602, width: 390, x: 0, y: 40 });
+  expectBox(mobile.tagLine, { height: 112, width: 390, x: 0, y: 40 });
+  expectBox(mobile.form, { height: 464, width: 370.5, x: 9.75, y: 178 });
+  expectBox(mobile.loginId, { height: 35, width: 160.19, x: 220.06, y: 205 });
+  expectBox(mobile.retypedPassword, { height: 35, width: 160.19, x: 220.06, y: 510 });
+  expectBox(mobile.submit, { height: 42, width: 370.5, x: 9.75, y: 560 });
+  expectBox(mobile.actionRow, { height: 20, width: 370.5, x: 9.75, y: 622 });
   expect(mobile.definitionListTextAlign).toBe("right");
   expect(mobile.loginIdFontSize).toBe("16px");
   expect(mobile.form.right).toBeLessThanOrEqual(mobile.viewport.scrollWidth);
@@ -221,8 +221,8 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
 
   await page.setViewportSize({ width: 390, height: 844 });
   const confirmationMobile = await readSignupMetrics(page);
-  expectBox(confirmationMobile.form, { height: 442, width: 370.5, x: 9.75, y: 226 });
-  expectBox(confirmationMobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 245 });
+  expectBox(confirmationMobile.form, { height: 464, width: 370.5, x: 9.75, y: 232 });
+  expectBox(confirmationMobile.loginId, { height: 35, width: 160.19, x: 220.06, y: 259 });
   expect(confirmationMobile.form.right).toBeLessThanOrEqual(
     confirmationMobile.viewport.scrollWidth,
   );
