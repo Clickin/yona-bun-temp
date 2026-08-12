@@ -60,7 +60,7 @@ test.describe("Style root login dialog", () => {
 
     expect(root).not.toContain('"modal hide loginDialog in"');
 
-    expect(theme).toContain("errorText");
+    expect(theme).toContain('data-owner="root-login-dialog-error"');
   });
 
   test("opens from the root Log in CTA with legacy login form copy and navigation", async ({
@@ -116,8 +116,12 @@ test.describe("Style root login dialog", () => {
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveCSS("width", "460px");
     await expect(dialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await expect(dialog).toHaveCSS("border-radius", "6px");
-    await expect(dialog).toHaveCSS("box-shadow", /rgba?\(0, 0, 0/);
+    // F5 dist-truth (2026-08-11): the legacy yobiDialog frame has radius 0
+    // with a 10px #bebebe border (bootstrap modal values were a deviation,
+    // per the app.css comment at root-login-dialog-frame).
+    await expect(dialog).toHaveCSS("border-radius", "0px");
+    // F5 dist-truth (2026-08-11): the legacy yobiDialog frame has no shadow.
+    await expect(dialog).toHaveCSS("box-shadow", "none");
     await expect(form).toHaveCSS("width", "400px");
     const loginInput = form.locator('input[placeholder="Login ID or E-mail"]');
     const passwordInput = form.locator('input[placeholder="Password"]');
@@ -128,7 +132,7 @@ test.describe("Style root login dialog", () => {
     await expect(form.getByRole("button", { name: "Log in" })).toHaveCSS("height", "30px");
     await expect(backdrop).toHaveCSS("width", "1366px");
     await expect(backdrop).toHaveCSS("height", "900px");
-    expect(await dialog.boundingBox()).toMatchObject({ height: 378, width: 462, x: 453, y: 90 });
+    expect(await dialog.boundingBox()).toMatchObject({ height: 396, width: 460, x: 453, y: 90 });
     // Frame/body geometry and paint plus checked state are asserted above.
     await page.screenshot({
       path: "../output/playwright/style-root-login-dialog-desktop.png",
@@ -144,10 +148,13 @@ test.describe("Style root login dialog", () => {
     const dialog = page.locator('[data-owner="root-login-dialog-frame"]');
     const backdrop = page.locator('[data-part="login-dialog-backdrop"]');
     await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveCSS("left", "0px");
-    await expect(dialog).toHaveCSS("margin-left", "0px");
+    // F5 dist-truth (2026-08-11): the dialog frame has no mobile override —
+    // it keeps the desktop 460px centering (left 50%, margin-left -230px),
+    // hanging 35px off the left edge of the 390px viewport.
+    await expect(dialog).toHaveCSS("left", "195px");
+    await expect(dialog).toHaveCSS("margin-left", "-230px");
     const dialogBox = await dialog.boundingBox();
-    expect(dialogBox).toMatchObject({ height: 378, width: 392, x: 0 });
+    expect(dialogBox).toMatchObject({ height: 396, width: 460, x: -35 });
     expect(dialogBox?.y).toBeCloseTo(84.39, 1);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),

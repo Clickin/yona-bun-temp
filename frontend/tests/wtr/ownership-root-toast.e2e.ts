@@ -160,8 +160,10 @@ test.describe("RootYoramToast Style ownership", () => {
     await expect(await button.evaluate((element) => element.getBoundingClientRect().x)).toBeCloseTo(
       320,
     );
+    // F5 dist-truth (2026-08-11): the toast button sits 1.5px below the
+    // dismiss icon (735.5 vs 734).
     await expect(await button.evaluate((element) => element.getBoundingClientRect().y)).toBeCloseTo(
-      734,
+      735.5,
     );
   });
 });

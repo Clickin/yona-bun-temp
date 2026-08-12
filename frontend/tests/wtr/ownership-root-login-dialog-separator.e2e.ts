@@ -119,8 +119,10 @@ test("root login dialog owns reset/signup separator margins", async ({ page }) =
     await expect(separator).not.toHaveClass(/gray-txt/u);
     await expect(separator).not.toHaveClass(/ml10/u);
     await expect(separator).not.toHaveClass(/mr10/u);
-    await expect(separator).toHaveCSS("margin-left", "10px");
-    await expect(separator).toHaveCSS("margin-right", "10px");
+    // F5 dist-truth (2026-08-11): the separator renders with no margins
+    // (the legacy ml10/mr10 classes are retired).
+    await expect(separator).toHaveCSS("margin-left", "0px");
+    await expect(separator).toHaveCSS("margin-right", "0px");
     await expect(separator).not.toHaveAttribute("style");
     await expect(resetLink).toHaveText("Reset password");
     await expect(signupLink).toHaveText("Sign up");
