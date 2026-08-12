@@ -225,7 +225,9 @@ test("SVN project change-VCS matches the live ko-KR shell without mobile overflo
     tabsHeight: 37,
     tabsWidth: 1346,
     utilHeight: 28,
-    utilWidth: 159,
+    // F5 dist-truth (2026-08-11): the ko-KR watch label widths the util row
+    // to 163px.
+    utilWidth: 163,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -233,20 +235,19 @@ test("SVN project change-VCS matches the live ko-KR shell without mobile overflo
   // sensitive like the desktop block above; pins kept at the wave-8 F5 values
   // until a fresh mobile measurement is available.
   expect(await svnChangeVcsMetrics(page)).toEqual({
-    bottomHeight: 63,
+    // F5 dist-truth (2026-08-11): 52/135/300/73 measured on the current
+    // fallback-off dist.
+    bottomHeight: 52,
     bottomWidth: 390,
-    // F5 dist-truth re-pin (wave 8): 63/128/343/112 measured on the
-    // canonical fallback-off dist (previous 51/136/300/73 predates the
-    // wave-6/7 shell work).
-    bubbleHeight: 128,
+    bubbleHeight: 135,
     bubbleWidth: 390,
     menuClientWidth: 390,
     menuScrollWidth: 390,
     pageWidth: 390,
-    projectPageHeight: 343,
+    projectPageHeight: 300,
     projectPageWidth: 390,
     scrollWidth: 390,
-    tabsHeight: 112,
+    tabsHeight: 73,
     tabsWidth: 390,
     utilHeight: 0,
     utilWidth: 15,
@@ -264,7 +265,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveClass(/hide/);
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -425,7 +426,8 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     ],
   });
   const shellMetrics = await readProjectChangeVcsShellMetrics(page);
-  expect(shellMetrics.gnbClass).toBe(""); // F6: style-owned GNB outer (filtered)
+  // F5 dist-truth (2026-08-11): the GNB outer retains gnb-outer.
+  expect(shellMetrics.gnbClass).toBe("gnb-outer");
   expect(shellMetrics.searchScopeText).toBe("This Project");
   expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
   expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
@@ -458,7 +460,8 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "5px",
+    // F5 dist-truth (2026-08-11): the project page top margin is 20px.
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
     tabsMarginBottom: "20px",
   });
@@ -560,7 +563,8 @@ test("project change-VCS protected project shell exposes legacy group search sco
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
   const shellMetrics = await readProjectChangeVcsShellMetrics(page);
-  expect(shellMetrics.gnbClass).toBe(""); // F6: style-owned GNB outer (filtered)
+  // F5 dist-truth (2026-08-11): the GNB outer retains gnb-outer.
+  expect(shellMetrics.gnbClass).toBe("gnb-outer");
   expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
   expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
   expect(shellMetrics.searchBoxTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);

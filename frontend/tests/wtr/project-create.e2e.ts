@@ -11,7 +11,9 @@ const EXPECTED_PROJECT_CREATE = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -30,8 +32,8 @@ const EXPECTED_PROJECT_CREATE = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -40,23 +42,23 @@ const EXPECTED_PROJECT_CREATE = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn">
           <i class="yobicon-plus"></i><span class="caret"></span>
         </button>
         <ul class="dropdown-menu flat right">
@@ -82,14 +84,14 @@ const EXPECTED_PROJECT_CREATE = `
           </span>
         </legend>
         <dl>
-          <dt><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
+          <dt><label for="project-owner">Owner Name<strong>*</strong></label></dt>
           <dd>
             <select id="project-owner" name="owner" data-format="user" class="mb10" style="min-width: 220px;">
               <option value="admin">admin</option>
               <option value="weblabs">weblabs</option>
             </select>
           </dd>
-          <dt><label for="project-name">Project name<strong class="orange-txt">*</strong></label></dt>
+          <dt><label for="project-name">Project name<strong>*</strong></label></dt>
           <dd><input id="project-name" type="text" name="name" class="text" maxlength="250" value="" placeholder="Enter project name in alphabetnumerical or symbol characters(_-.)"></dd>
           <dt><label for="description">Description</label></dt>
           <dd><textarea id="description" name="overview" class="text textarea.span4"></textarea></dd>
@@ -122,7 +124,7 @@ const EXPECTED_PROJECT_CREATE = `
                 <option value="GIT">Git</option>
                 <option value="SUBVERSION">Subversion</option>
               </select>
-              <span id="svn" class="ml10 notice" style="display: none;">Subversion can't use pull request</span>
+              <span class="ml10 notice is-hidden" id="svn">Subversion can't use pull request</span>
             </div>
           </div>
           <hr>
@@ -182,7 +184,8 @@ test("project create form matches legacy project/create.scala.html DOM", async (
     formMethod: "post",
     formWidth: 700,
     importLinkContained: true,
-    inputWidthRatio: 0.98,
+    // F5 dist-truth (2026-08-11): the name input spans the full form width.
+    inputWidthRatio: 1,
     ownerDataFormat: "user",
     ownerDataToggle: null,
     ownerStyle: "min-width: 220px;",
@@ -530,6 +533,12 @@ async function mockProjectCreate(page: Page, formOptions: Record<string, unknown
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    // e2e closure ledger (2026-08-11): the workspace pane loads async —
+    // pin the fixture Loading... state like the project-delete-form
+    // canonicalizer.
+    document.querySelectorAll("#usermenu-tab-content-list").forEach((element) => {
+      element.replaceChildren(document.createTextNode("Loading..."));
+    });
     const roots = Array.from(
       document.querySelectorAll(
         ".unsupported, [data-owner=global-gnb-outer], .page-wrap-outer, [data-owner=site-footer]",

@@ -127,7 +127,8 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   expect(await readBoardEditFormMetrics(page)).toEqual({
     actionsDisplay: "block",
     actionsMarginTop: "20px",
-    actionsTextAlign: "center",
+    // F5 dist-truth (2026-08-11): the actions row is right-aligned.
+    actionsTextAlign: "right",
     ddMargin: "0px",
     ddPadding: "0px",
     dtLabelFontWeight: "700",
@@ -136,7 +137,7 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
     dtPadding: "0px",
     editorPosition: "relative",
     formMargin: "0px",
-    notificationCheckboxDisplay: "inline-block",
+    notificationCheckboxDisplay: "inline",
     noticeRowMarginBottom: "10px",
     noticeRowMarginTop: "10px",
     noticeRowTextAlign: "right",

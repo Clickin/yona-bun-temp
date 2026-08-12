@@ -58,7 +58,9 @@ test("project board create form restores legacy admin project shell", async ({ p
 
   await expect(page).toHaveTitle("New - admin/sample");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    // F5 dist-truth (2026-08-11): the shell GNB header carries only
+    // gnb-outer (no project-header token).
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
@@ -102,7 +104,9 @@ test("project board create form restores legacy group-owned project shell", asyn
 
   await expect(page).toHaveTitle("New - weblabs/portal");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    // F5 dist-truth (2026-08-11): the shell GNB header carries only
+    // gnb-outer (no project-header token).
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
