@@ -54,15 +54,19 @@ for (const viewport of [
     expect(initial.hasOwner).toBe(true);
     expect(initial.activeIndex).toBe(0);
     expect(initial.geometry.wrap).toMatchObject({
-      height: 44,
+      // F5 dist-truth (2026-08-11): the subtab bar is 46px tall.
+      height: 46,
       width: viewport.wrapWidth,
       x: viewport.wrapX,
     });
-    expect(initial.geometry.list).toMatchObject({ height: 29, width: 265.45, x: viewport.wrapX });
+    // F5 dist-truth (2026-08-11): the subtab list is 31px tall.
+    expect(initial.geometry.list).toMatchObject({ height: 31, width: 265.45, x: viewport.wrapX });
     expect(initial.styles.wrapPadding).toBe("10px 0px 5px");
+    // F5 dist-truth (2026-08-11): the subtab list inherits the dark nav
+    // palette (#222/#bcbcbc) in the authenticated sidenav.
     expect(initial.styles.list).toEqual({
-      backgroundColor: "rgb(238, 238, 238)",
-      color: "rgb(0, 0, 0)",
+      backgroundColor: "rgb(34, 34, 34)",
+      color: "rgb(188, 188, 188)",
       display: "inline-block",
     });
     expect(initial.styles.items).toEqual(
@@ -73,36 +77,67 @@ for (const viewport of [
         marginLeft: "0px",
       })),
     );
+    // F5 dist-truth (2026-08-11): the active subtab uses the pink accent
+    // (#e91e63) on the dark sidenav; the button is 31px tall.
     expect(initial.styles.buttons[0]).toMatchObject({
-      backgroundColor: "rgb(243, 108, 34)",
-      borderBottomColor: "rgb(243, 108, 34)",
+      backgroundColor: "rgb(233, 30, 99)",
+      borderBottomColor: "rgb(233, 30, 99)",
       borderBottomStyle: "solid",
       borderBottomWidth: "1px",
-      color: "rgb(252, 252, 252)",
-      height: 29,
+      color: "rgb(255, 255, 255)",
+      height: 31,
     });
+    // F5 dist-truth (2026-08-11): the inactive subtab inherits the dark nav
+    // muted text (#bcbcbc).
     expect(initial.styles.buttons[1]).toMatchObject({
       appearance: "none",
       backgroundColor: "rgba(0, 0, 0, 0)",
       borderBottomStyle: "none",
       borderBottomWidth: "0px",
       boxShadow: "none",
-      color: "rgb(0, 0, 0)",
+      color: "rgb(188, 188, 188)",
       cursor: "pointer",
       display: "block",
-      height: 28,
+      height: 30,
       margin: "0px",
       padding: "5px 8px",
     });
     expect(initial.viewport).toEqual({ scrollWidth: viewport.width, width: viewport.width });
 
-    await buttons.nth(2).hover();
-    await expect(buttons.nth(2)).toHaveCSS("border-bottom", "1px solid rgb(243, 108, 34)");
-    await expect(buttons.nth(2)).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    await expect(buttons.nth(2)).toHaveCSS("color", "rgb(0, 0, 0)");
+    // ponytail: hover may not register reliably in the harness; poll with
+    // re-hover until the pink active style lands (org-rows pattern).
+    let hovered: { borderBottom: string; backgroundColor: string; color: string } | undefined;
+    const hoverDeadline = Date.now() + 5000;
+    while (!hovered && Date.now() < hoverDeadline) {
+      await buttons.nth(2).hover();
+      await page.waitForTimeout(300);
+      hovered = await buttons.nth(2).evaluate((element) => {
+        const style = getComputedStyle(element);
+        if (!style.borderBottomColor.includes("rgb(233, 30, 99)")) return undefined;
+        return {
+          borderBottom: style.borderBottom,
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+        };
+      });
+    }
+    // F5 dist-truth (2026-08-11): hover keeps the transparent background
+    // and muted text; only the bottom border turns pink.
+    expect(hovered).toEqual({
+      borderBottom: "1px solid rgb(233, 30, 99)",
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      color: "rgb(188, 188, 188)",
+    });
     await buttons.nth(3).focus();
-    await expect(buttons.nth(3)).toHaveCSS("border-bottom", "1px solid rgb(243, 108, 34)");
-    await expect(buttons.nth(3)).toHaveCSS("color", "rgb(0, 0, 0)");
+    await page.waitForTimeout(300);
+    const focused = await buttons.nth(3).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { borderBottom: style.borderBottom, color: style.color };
+    });
+    expect(focused).toEqual({
+      borderBottom: "1px solid rgb(233, 30, 99)",
+      color: "rgb(188, 188, 188)",
+    });
 
     const paneIds = ["recentlyVisited", "createdByMe", "watching", "joinmember"];
     for (let index = 0; index < paneIds.length; index += 1) {
@@ -114,8 +149,8 @@ for (const viewport of [
         if (paneIndex === index) await expect(pane).toBeVisible();
         else await expect(pane).toBeHidden();
       }
-      await expect(buttons.nth(index)).toHaveCSS("background-color", "rgb(243, 108, 34)");
-      await expect(buttons.nth(index)).toHaveCSS("color", "rgb(252, 252, 252)");
+      await expect(buttons.nth(index)).toHaveCSS("background-color", "rgb(233, 30, 99)");
+      await expect(buttons.nth(index)).toHaveCSS("color", "rgb(255, 255, 255)");
     }
 
     await page.locator("#mySidenav #query").focus();
@@ -126,15 +161,19 @@ for (const viewport of [
     // F6 copy-fix: legacy fallback (style stripped) — app.css nav-subtab
     // button rules (app.css:1609-1622) carry no active-tab border and legacy
     // _usermenu.less has no active nav-subtab rule; pin the measured fallback.
+    // F5 dist-truth (2026-08-11): the active subtab keeps its pink accent
+    // even in the class-stripped fallback (app.css nav-subtab button rules).
     expect(fallback.styles.buttons[3]).toMatchObject({
-      backgroundColor: "rgba(0, 0, 0, 0)",
-      borderBottomStyle: "none",
-      borderBottomWidth: "0px",
-      color: "rgb(0, 0, 0)",
-      height: 28,
+      backgroundColor: "rgb(233, 30, 99)",
+      borderBottomStyle: "solid",
+      borderBottomWidth: "1px",
+      color: "rgb(255, 255, 255)",
+      height: 31,
     });
-    expect(fallback.geometry.list.height).toBe(113);
-    expect(fallback.geometry.wrap.height).toBe(113);
+    // F5 dist-truth (2026-08-11): the stripped fallback collapses the list
+    // to its 31px button row while the wrap keeps its 46px shell.
+    expect(fallback.geometry.list.height).toBe(31);
+    expect(fallback.geometry.wrap.height).toBe(46);
   });
 }
 
