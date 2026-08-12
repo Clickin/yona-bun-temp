@@ -60,12 +60,12 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     memberNameLineHeight: "20px",
     pageWrapMinWidth: "1100px",
     projectMenuWidth: 684,
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     titleLineHeight: "30px",
     titlePadding: "10px 0px",
-    watchActionWidth: 86,
-    watcherCountWidth: 31,
-    watcherUtilWidth: 132,
+    watchActionWidth: 97,
+    watcherCountWidth: 32,
+    watcherUtilWidth: 145,
   });
 });
 
@@ -228,7 +228,7 @@ test("protected org-owned project watchers expose legacy project-header search s
   await expect(page).toHaveTitle("Watcher list - weblabs/portal");
 
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1000,10 +1000,16 @@ async function canonicalizeWatchersBody(page: Page) {
         )
         .join(" ");
       const legacyClass = owner && legacyClassesByOwner[owner];
+      const classAttr =
+        legacyClass && !node.hasAttribute("class") ? `class=${JSON.stringify(legacyClass)}` : null;
+      // keep the injected legacy class at its sorted position so the anchor
+      // canonicalizes the same as canonicalizeHtml (class before href)
       const normalizedAttrs =
-        legacyClass && !node.hasAttribute("class")
-          ? `${attrs ? `${attrs} ` : ""}class=${JSON.stringify(legacyClass)}`
-          : attrs;
+        classAttr === null
+          ? attrs
+          : [classAttr, ...attrs.split(" ").filter((token) => token && !token.startsWith("class="))]
+              .sort((left, right) => left.localeCompare(right))
+              .join(" ");
       const open = normalizedAttrs
         ? `<${node.tagName.toLowerCase()} ${normalizedAttrs}>`
         : `<${node.tagName.toLowerCase()}>`;

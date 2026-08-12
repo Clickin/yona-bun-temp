@@ -95,15 +95,11 @@ function ProjectWatchersBody({
           <strong>{t("project.watcher.title")}</strong>
         </h4>
         <p>{t("project.watcher.description")}</p>
-        <ul data-owner="project-watchers-list" className="members project row-fluid">
+        <ul data-owner="project-watchers-list">
           {watchers.watchers.map((watcher) => {
             const loginId = stringField(watcher.loginId, "");
             return (
-              <li
-                data-owner="project-watchers-member"
-                key={stringField(watcher.userId, loginId)}
-                className="member span6 span-hard-wrap"
-              >
+              <li data-owner="project-watchers-member" key={stringField(watcher.userId, loginId)}>
                 <Link
                   to="/$user"
                   params={{ user: loginId }}
