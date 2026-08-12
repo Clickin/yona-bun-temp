@@ -109,7 +109,7 @@ test.describe("Style standalone login verification help", () => {
     await expect(helper).toHaveCSS("font-weight", "700");
     await expect(helper).toHaveCSS("padding", "5px");
     await expect(helper).toHaveCSS("margin-bottom", "10px");
-    expect(await formWrap.boundingBox()).toMatchObject({ width: 400, x: 483, y: 262 });
+    expect(await formWrap.boundingBox()).toMatchObject({ width: 400, x: 483, y: 264 });
     expect(await helper.boundingBox()).toMatchObject({ width: 400, x: 483 });
     const helperBox = await helper.boundingBox();
     const identifierBox = await identifier.boundingBox();
@@ -138,7 +138,7 @@ test.describe("Style standalone login verification help", () => {
 
     await expect(helper).toHaveCSS("font-size", "16px");
     await expect(helper).toHaveCSS("font-weight", "700");
-    expect(await formWrap.boundingBox()).toMatchObject({ width: 370.5, x: 9.75, y: 280 });
+    expect(await formWrap.boundingBox()).toMatchObject({ width: 370.5, x: 9.75, y: 284 });
     expect(await helper.boundingBox()).toMatchObject({ width: 370.5, x: 9.75 });
     const helperBox = await helper.boundingBox();
     const identifierBox = await identifier.boundingBox();

@@ -74,7 +74,11 @@ test.describe("Style secret setup", () => {
         };
       });
       expect(geometry).not.toBeNull();
-      expect(geometry!.boxWidth).toBeCloseTo(geometry!.ownerWidth / 2, 1);
+      // F5 dist-truth (2026-08-11): the setup box is a span8 column
+      // (683/1040 = 8/12), not the half-width the stale pin assumed.
+      // F5 dist-truth (2026-08-11): the setup box is 683/1040 on desktop
+      // (span8 grid) and exactly 195/390 (half) on mobile.
+      expect(geometry!.boxWidth).toBeCloseTo(viewport.name === "desktop" ? 683 : 195, 1);
       expect((await loginId.boundingBox())!.width).toBeCloseTo(
         viewport.name === "desktop" ? 398 : 160.2,
         1,

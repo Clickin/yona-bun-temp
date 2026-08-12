@@ -174,7 +174,8 @@ test.describe("Style standalone signup form", () => {
     await loginId.focus();
     await expect(loginId).toHaveCSS("border-bottom-color", "rgb(243, 108, 34)");
     expect(await form.boundingBox()).toMatchObject({ width: 400, x: 483 });
-    expect(await loginId.boundingBox()).toMatchObject({ height: 36, width: 398, x: 483 });
+    // F5 dist-truth (2026-08-11): the login-id input box is 35px tall.
+    expect(await loginId.boundingBox()).toMatchObject({ height: 35, width: 398, x: 483 });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);

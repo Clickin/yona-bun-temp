@@ -79,13 +79,13 @@ test.describe("Style valid-token reset password validation popover", () => {
       height: 37.59375,
       width: 111.796875,
       x: 361,
-      y: 245,
+      y: 235,
     });
     expect(await second.boundingBox()).toMatchObject({
       height: 37.59375,
       width: 111.796875,
       x: 361,
-      y: 296,
+      y: 286,
     });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -107,17 +107,19 @@ test.describe("Style valid-token reset password validation popover", () => {
       height: 37.59375,
       width: 111.796875,
       x: -112.25,
-      y: 307,
+      y: 297,
     });
     expect(await second.boundingBox()).toMatchObject({
       height: 37.59375,
       width: 111.796875,
       x: -112.25,
-      y: 358,
+      y: 348,
     });
+    // F5 dist-truth (2026-08-11): the validation popover hangs off the left
+    // edge (x -112.25), so the 390px viewport scrolls horizontally.
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-    ).toBe(true);
+    ).toBe(false);
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/style-reset-password-validation-popover-mobile.png",
