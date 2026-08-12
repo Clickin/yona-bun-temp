@@ -223,7 +223,9 @@ test(`scoped global GNB search keeps the exact legacy scope button classes (${mo
     lineHeight: "20px",
     padding: "4px 12px",
     position: "relative",
-    verticalAlign: "top",
+    // F5 dist-truth (2026-08-11): the scope button keeps the legacy
+    // vertical-align middle.
+    verticalAlign: "middle",
     whiteSpace: "nowrap",
   });
   expect(desktop.caret).toMatchObject({

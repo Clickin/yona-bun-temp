@@ -143,7 +143,9 @@ test("global GNB search box has complete global-theme Style ownership", () => {
 
   // wave-33 retained-class retention (667398a04): markup keeps search-box/select
   // per legacy common/navbar.scala.html:105 <div class="search-box @if(project != null || org !=null) {select}">
-  expect(markup).toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
+  // the route renders className={`search-box${...}`} — the ${ follows the
+  // class name directly.
+  expect(markup).toMatch(/(?:^|[\s"'`])search-box(?:\$\{|[\s"'`]|$)/u);
   expect(markup).toMatch(/(?:^|[\s"'`])select(?:[\s"'`]|$)/u);
   expect(markup.indexOf('name="keyword"')).toBeLessThan(markup.indexOf('type="submit"'));
 
@@ -290,14 +292,14 @@ test("search-box DOM order and legacy GET form behavior remain intact", async ({
   await expect(form).toHaveAttribute("action", `${BASE_PATH}/admin/sample/search`);
   await box.locator('input[name="keyword"]').fill("needle");
 
-  const requestPromise = page.waitForRequest((request) => {
-    const url = new URL(request.url());
-    return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
-  });
-  await box.locator('[data-owner="global-gnb-search-submit"]').click({ noWaitAfter: true });
-  const requestUrl = new URL((await requestPromise).url());
-  expect(requestUrl.searchParams.get("searchType")).toBe("auto");
-  expect(requestUrl.searchParams.get("keyword")).toBe("needle");
+  // F5 dist-truth: the native form GET navigates the harness iframe without
+  // a request event; poll the page URL.
+  await box.locator(':scope > [type="submit"]').click({ noWaitAfter: true });
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("keyword"), { timeout: 10000 })
+    .toBe("needle");
+  expect(new URL(page.url()).searchParams.get("searchType")).toBe("auto");
+  expect(new URL(page.url()).searchParams.get("keyword")).toBe("needle");
 });
 
 test("owned wrapper is isolated after the retired search-box class is removed", async ({
