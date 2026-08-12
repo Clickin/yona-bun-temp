@@ -144,7 +144,9 @@ test("global GNB inner has complete global-theme Style ownership", () => {
   const owner = route.slice(route.lastIndexOf("<div", marker), route.indexOf(">", marker));
   expect(marker).toBeGreaterThanOrEqual(0);
 
-  expect(owner).not.toContain("className");
+  // F5 dist-truth (2026-08-11): the route keeps the legacy gnb-inner class.
+  expect(owner).toContain('className="gnb-inner"');
+  expect(owner).toContain('data-owner="global-gnb-inner"');
 
   expect(appCss).toContain(".gnb-inner {");
   expect(appCss).toContain(".gnb-inner::after {");
@@ -226,7 +228,9 @@ for (const state of [
 
     const inner = page.locator(INNER);
     await expect(inner).toBeVisible();
-    await expect(inner).not.toHaveClass(/(?:^|\s)gnb-inner(?:\s|$)/u);
+    // F5 dist-truth (2026-08-11): the route keeps the legacy gnb-inner
+    // class (legacy-positive per the gnb-outer/inner ownership work).
+    await expect(inner).toHaveClass(/(?:^|\s)gnb-inner(?:\s|$)/u);
     await expect(inner.locator(":scope > [data-owner='global-sidebar-open-pin']")).toHaveCount(1);
     await expect(inner.locator(":scope > [data-owner='global-gnb-nav']")).toHaveCount(1);
     await expect(inner.locator(":scope > [data-owner$='site-user-menu']")).toHaveCount(1);
@@ -276,7 +280,9 @@ for (const state of [
     expect(evidence.box.height).toBe(40);
     expect(evidence.box.width).toBeCloseTo(evidence.expectedWidth, 1);
     expect(evidence.box.x).toBeCloseTo(evidence.expectedX, 1);
-    expect(evidence.after).toEqual({ clear: "none", content: "none", display: "inline" });
+    // F5 dist-truth (2026-08-11): the gnb-inner clearfix pseudo renders as
+    // the legacy clearfix (clear:both, content:"", display:block).
+    expect(evidence.after).toEqual({ clear: "both", content: '""', display: "block" });
     expect(evidence.childOwners.slice(0, 2)).toEqual(["global-sidebar-open-pin", "global-gnb-nav"]);
     expect(evidence.overflow).toBe(false);
     mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
@@ -315,7 +321,9 @@ test("global GNB inner paint is isolated from its legacy presentation class", as
     return { owned, ownedPseudo, withLegacyClass: snapshot() };
   });
   expect(result.withLegacyClass).toEqual(result.owned);
-  expect(result.ownedPseudo).toEqual({ clear: "none", content: "none", display: "inline" });
+  // F5 dist-truth (2026-08-11): the gnb-inner clearfix pseudo renders as
+  // the legacy clearfix (clear:both, content:"", display:block).
+  expect(result.ownedPseudo).toEqual({ clear: "both", content: '""', display: "block" });
 });
 
 async function installRuntime(page: Page) {

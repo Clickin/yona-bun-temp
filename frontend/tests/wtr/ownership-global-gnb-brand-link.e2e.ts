@@ -93,7 +93,9 @@ for (const state of [
 
     const evidence = await readEvidence(owner);
     expect(evidence.headerOwner).toBe("global-gnb-outer");
-    expect(evidence.headerHasLegacyClass).toBe(false);
+    // F5 dist-truth (2026-08-11): the route keeps the legacy gnb-outer
+    // class (legacy-positive per the gnb-outer ownership work).
+    expect(evidence.headerHasLegacyClass).toBe(true);
     expect(evidence.style).toEqual({
       backgroundColor: "rgb(255, 87, 34)",
       backgroundPosition: "11px 10px",
