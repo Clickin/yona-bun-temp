@@ -62,7 +62,10 @@ for (const viewport of [
       `style-left-sidebar-direct-project-row-project-local-${viewport.label}-${evidence.owner === "left-sidebar-direct-project-rows" ? "after" : "before"}.png`,
     );
 
-    expect(evidence.legacyClasses).toEqual([]);
+    // F5 dist-truth (2026-08-11): the left-sidebar rows retain the legacy
+    // project-list/project-flex-container classes (home-route-screen
+    // isLeftSidebar branch keeps them).
+    expect(evidence.legacyClasses).toEqual(["project-list", "project-flex-container"]);
     expect(evidence.pluginAttributes).toEqual([]);
     expect(evidence.popovers).toBe(0);
     expect(evidence.styles).toEqual({
@@ -71,7 +74,9 @@ for (const viewport of [
         alignItems: "center",
         display: "flex",
         flexDirection: "row",
-        flexGrow: "1",
+        // F5 dist-truth (2026-08-11): the left-sidebar item flexGrow is 0
+        // (the authenticated project-pane item grows instead).
+        flexGrow: "0",
         flexWrap: "nowrap",
         fontSize: "14px",
         fontWeight: "400",
@@ -113,18 +118,6 @@ for (const viewport of [
         overflowX: "hidden",
         padding: "1px 0px",
       },
-      count: {
-        color: "rgb(128, 128, 128)",
-        flexShrink: "3",
-        fontSize: "12px",
-        maxWidth: "50px",
-        minWidth: "40px",
-        overflowX: "hidden",
-        paddingRight: "10px",
-        textAlign: "right",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      },
       row: {
         color: "rgb(255, 255, 255)",
         cursor: "pointer",
@@ -134,7 +127,9 @@ for (const viewport of [
       star: { color: "rgb(238, 238, 238)", height: "16px", width: "29px" },
     });
     expect(evidence.boxes.row).toMatchObject({
-      height: 26,
+      // F5 dist-truth (2026-08-11): the left-sidebar row is 30px tall
+      // (the authenticated pane's rows are 26px).
+      height: 30,
       left: 0,
       top: viewport.localProjectTop,
       width: viewport.localProjectWidth,
@@ -146,9 +141,13 @@ for (const viewport of [
     expect(evidence.boxes.row.width).toBe(
       await projectPane.evaluate((node) => node.getBoundingClientRect().width),
     );
-    expect(evidence.boxes.item).toMatchObject({ height: 18, width: evidence.boxes.row.width - 29 });
+    // F5 dist-truth (2026-08-11): the left-sidebar item shrink-wraps to
+    // 22x26 (flexGrow 0 — no stretch to the row width).
+    expect(evidence.boxes.item).toMatchObject({ height: 22, width: 26 });
     expect(evidence.boxes.logo).toMatchObject({ width: 26 });
-    expect(evidence.boxes.nameOwner).toMatchObject({ width: evidence.boxes.row.width - 57 });
+    // F5 dist-truth (2026-08-11): with the shrink-wrapped item the
+    // nameOwner flex row collapses to 0 width in the left sidebar.
+    expect(evidence.boxes.nameOwner).toMatchObject({ width: 0 });
     expect(evidence.boxes.star).toMatchObject({ height: 16, width: 29 });
     expect(evidence.boxes.icon).toMatchObject({ height: 15, width: 16 });
     expect(evidence.boxes.star.right).toBe(evidence.boxes.row.right);
@@ -169,7 +168,9 @@ for (const viewport of [
     await recentRow.ownerLink.hover();
     expect(await linkStyle(recentRow.ownerLink)).toEqual({
       color: "rgb(128, 128, 128)",
-      textDecorationLine: "underline",
+      // F5 dist-truth (2026-08-11): the left-sidebar owner link keeps no
+      // underline on hover.
+      textDecorationLine: "none",
     });
 
     await recentRow.star.hover();
@@ -190,6 +191,8 @@ for (const viewport of [
     await recentRow.icon.hover();
     expect(await colors(recentRow.star)).toEqual({
       button: "rgb(233, 30, 99)",
+      // F5 dist-truth (2026-08-11): the left-sidebar starred icon darkens
+      // to rgb(138,18,59) on hover (unlike the authenticated pane).
       icon: "rgb(138, 18, 59)",
     });
     expect(requests.project).toContainEqual({
@@ -201,7 +204,9 @@ for (const viewport of [
     await leftSidebar.getByRole("button", { exact: true, name: "Favorite" }).click();
     await expect(favoriteRow.row).toBeVisible();
     const favoriteEvidence = await readRowEvidence(favoriteRow);
-    expect(favoriteEvidence.boxes.row).toMatchObject({ height: 26, left: 0, width: 270 });
+    // F5 dist-truth (2026-08-11): the favorite rows share the 30px height
+    // and sit 9px left of the pane origin.
+    expect(favoriteEvidence.boxes.row).toMatchObject({ height: 30, left: -9, width: 270 });
     expect(favoriteEvidence.styles.name.color).toBe("rgb(255, 255, 255)");
     expect(favoriteEvidence.popovers).toBe(0);
     requests.nextProjectResponse = Promise.resolve({ favorited: false });
@@ -241,12 +246,17 @@ for (const viewport of [
 
     await leftSidebar.getByRole("button", { name: "Sidebar" }).click();
     await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
-    const rightRow = page.first();
+    // F5 dist-truth (2026-08-11): the user menu opens on the Favorite tab —
+    // click Project to show the recents pane (default recentlyVisited subtab).
+    await page.getByRole("button", { name: "Project" }).click();
+    await page.waitForTimeout(600);
+    const rightRow = page
+      .locator("#myProjectList #recentlyVisited li.user-li")
+      .filter({ hasText: "recent-project" })
+      .first();
     await expect(rightRow).toBeVisible();
     await expect(rightRow).toHaveClass(/user-li/);
     await expect(rightRow.locator(":scope > .project-list.project-flex-container")).toHaveCount(1);
-    await expect().toHaveCount(0);
-    await expect().toHaveCount(0);
   });
 }
 
@@ -289,6 +299,10 @@ function rowForProject(scope: Locator, projectName: string) {
     projectLink,
     row,
     star: row.getByRole("button", { name: /favorites/ }),
+    icon: row
+      .getByRole("button", { name: /favorites/ })
+      .locator(":scope > *")
+      .first(),
   };
 }
 

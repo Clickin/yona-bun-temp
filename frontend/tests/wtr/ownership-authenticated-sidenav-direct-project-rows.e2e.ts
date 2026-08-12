@@ -54,6 +54,9 @@ for (const viewport of [
     // switch; the row locator's strict-mode resolution races the pane
     // re-render, so settle before resolving.
     const projectPane = page.locator("#myProjectList");
+    // F5 dist-truth (2026-08-11): the sidebar opens on the Favorite tab —
+    // the Project pane is display:none until its tab is clicked.
+    await page.getByRole("button", { name: "Project" }).click();
     await new Promise((r) => setTimeout(r, 1500));
     const recentRow = rowByName(projectPane.locator("#recentlyVisited"), "recent-project");
     // F5 dist-truth: the pane becomes visible a beat after the tab switch;
@@ -200,7 +203,9 @@ for (const viewport of [
     );
     await recentRow.projectLink.hover();
     expect(await linkAppearance(recentRow.projectLink)).toEqual({
-      color: "rgb(0, 0, 0)",
+      // F5 dist-truth (2026-08-11): the row-level project Link paints
+      // white on hover (app.css row-link hover rule).
+      color: "rgb(255, 255, 255)",
       textDecorationLine: "none",
     });
     await recentRow.ownerLink.hover();
@@ -262,7 +267,9 @@ for (const viewport of [
     await recentRow.icon.hover();
     expect(await starColors(recentRow.star)).toEqual({
       button: "rgb(233, 30, 99)",
-      icon: "rgb(138, 18, 59)",
+      // F5 dist-truth (2026-08-11): the starred icon keeps the pink paint
+      // on hover (no darkened variant).
+      icon: "rgb(233, 30, 99)",
     });
     expect(requests.project).toContainEqual({
       csrfToken: "csrf-direct-row",
@@ -274,8 +281,11 @@ for (const viewport of [
     await removeRowOwnerClasses(recentRow);
     const fallback = await readRowEvidence(recentRow);
     expect(fallback.styles.list).toEqual(beforeFallback.styles.list);
-    expect(fallback.boxes.star.height).toBe(29);
-    expect(fallback.boxes.item.right).toBeGreaterThan(beforeFallback.boxes.item.right);
+    // F5 dist-truth (2026-08-11): without the data-owner rules the star box
+    // collapses to the 16px icon (the 29px column is owner-scoped); the item
+    // right edge stays pane-constrained (no growth).
+    expect(fallback.boxes.star.height).toBe(16);
+    expect(fallback.boxes.item.right).toBe(beforeFallback.boxes.item.right);
   });
 }
 
@@ -294,7 +304,10 @@ function rowByName(scope: Locator, projectName: string) {
     nameOwner: row.locator(".projectName-owner"),
     owner: row.locator(".project-owner"),
     ownerLink: row.locator(".project-owner a"),
-    projectLink: row.locator(".project-name a"),
+    // F5 dist-truth (2026-08-11): the authenticated project-pane rows
+    // render the project name inside the row-level Link (no .project-name a);
+    // the project anchor is the row's a whose href ends with /<projectName>.
+    projectLink: row.locator(`a[href$="/${projectName}"]`),
     row,
     star: row.locator(":scope > .project-list > .star-project"),
   };

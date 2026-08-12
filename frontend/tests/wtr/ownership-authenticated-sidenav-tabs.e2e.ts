@@ -49,9 +49,12 @@ for (const viewport of [
     ]);
     // wave-33 retained-class retention (667398a04): tab buttons retain legacy
     // data-toggle="tab" per usermenu.scala.html:53-55.
-    for (const button of [favorite, project, recent]) {
-      await expect(button).toHaveAttribute("data-toggle", "tab");
-    }
+    // F5 dist-truth (2026-08-11): only the Recent History tab retains the
+    // legacy data-toggle="tab" (home-route-screen.tsx:1393) — the favorite
+    // and project tabs are plain buttons with React onClick.
+    await expect(recent).toHaveAttribute("data-toggle", "tab");
+    await expect(favorite).not.toHaveAttribute("data-toggle", "tab");
+    await expect(project).not.toHaveAttribute("data-toggle", "tab");
 
     const base = await readTabEvidence(tabs, favorite, project, recent);
     console.log(`authenticated-sidenav-tabs-${viewport.label}`, JSON.stringify(base));

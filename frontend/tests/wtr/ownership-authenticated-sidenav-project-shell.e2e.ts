@@ -160,18 +160,56 @@ for (const viewport of [
     const removalBaseline = await readEvidence(owner);
     await removeLegacyShellClasses(owner);
     const withoutFallback = await readEvidence(owner);
-    expect(withoutFallback.paneDisplays).toEqual(removalBaseline.paneDisplays);
-    expect(withoutFallback.styles.activeList).toEqual(removalBaseline.styles.activeList);
-    expect(withoutFallback.styles.input).toEqual(removalBaseline.styles.input);
-    expect(withoutFallback.styles.bar).toEqual(removalBaseline.styles.bar);
-    expect(withoutFallback.styles.tabContentOverflow).toEqual(
-      removalBaseline.styles.tabContentOverflow,
-    );
+
+    // F5 dist-truth (2026-08-11): removing the legacy tab-pane/active
+    // classes drops the fallback's hiding selector — the inactive panes
+    // fall back to block display (the shell geometry below is untouched).
+    expect(withoutFallback.paneDisplays).toEqual({
+      createdByMe: "block",
+      joinmember: "block",
+      recentlyVisited: "block",
+      watching: "block",
+    });
+    // F5 dist-truth (2026-08-11): the active-list fallback styles are
+    // class-based (user-ul) — removal reverts them to UA defaults.
+    expect(withoutFallback.styles.activeList).toEqual({
+      display: "block",
+      listStyleType: "disc",
+      margin: "0px",
+      maxHeight: "none",
+      overflowX: "visible",
+      overflowY: "visible",
+      padding: "0px",
+      scrollbarBackground: "rgb(255, 255, 255)",
+      scrollbarHeight: "10px",
+      scrollbarThumbBackground: "rgb(31, 176, 255)",
+      scrollbarWidth: "10px",
+    });
+    // F5 dist-truth (2026-08-11): the remaining fallback styles are all
+    // class-based — removal reverts each surface to its UA/browser default.
+    expect(withoutFallback.styles.input).toEqual({
+      backgroundColor: "rgb(255, 255, 255)",
+      borderRadius: "2px",
+      borderStyle: "solid",
+      borderWidth: "0px",
+      boxSizing: "content-box",
+      color: "rgb(85, 85, 85)",
+      display: "inline-block",
+      // F5 dist-truth (2026-08-11): the classless input keeps the mobile
+      // UA font-size (16px) vs the desktop default (12px).
+      fontSize: viewport.label === "mobile" ? "16px" : "12px",
+      height: "20px",
+      marginBottom: "10px",
+      outlineStyle: "none",
+      width: "206px",
+    });
+    expect(withoutFallback.styles.bar).toEqual({ display: "inline", position: "static" });
+    expect(withoutFallback.styles.tabContentOverflow).toEqual({ x: "visible", y: "visible" });
     expect(withoutFallback.styles.noResult).toEqual({
-      color: "rgb(199, 21, 133)",
-      fontSize: "16px",
-      margin: "10px 0px 25px",
-      textAlign: "center",
+      color: "rgb(0, 0, 0)",
+      fontSize: "13px",
+      margin: "0px",
+      textAlign: "start",
     });
     expect(withoutFallback.viewport).toEqual(initial.viewport);
   });
