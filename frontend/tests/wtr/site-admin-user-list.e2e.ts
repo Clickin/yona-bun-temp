@@ -132,7 +132,7 @@ const EXPECTED_USER_LIST_SCREEN = `
               <button type="button" class="ybtn ybtn-small">Lock account</button>
               <button type="button" id="doortts" class="ybtn ybtn-small">Reset password</button>
               <button type="button" class="ybtn ybtn-small label-info">Upgrade to Site admin</button>
-              <button type="button" class="ybtn ybtn-small ybtn-danger">Delete</button>
+              <button type="button">Delete</button>
             </div>
           </li>
         </ul>
@@ -428,7 +428,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).not.toContain("data-user-id");
   expect(routeSource).not.toContain("data-user-name");
   expect(routeSource).toMatch(/<button\s+type="button"\s+id=\{user\.loginId\}/u);
-  expect(routeSource).toMatch(/className="ybtn ybtn-small ybtn-danger"/u);
+  // ownership: the delete action button is class-free (StyleX-owned); the
+  // frozen ybtn-danger cascade is out of scope for the action boundary.
+  expect(routeSource).not.toMatch(/className="ybtn ybtn-small ybtn-danger"/u);
   expect(routeSource).toContain('data-owner="site-user-list-row-avatar"');
   expect(routeSource).toContain('data-owner="site-user-list-row-avatar-image"');
   expect(routeSource).toContain('data-owner="site-user-list-row-user-name"');

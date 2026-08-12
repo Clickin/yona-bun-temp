@@ -724,7 +724,6 @@ function UserListItem({
           </button>
           <button
             type="button"
-            className="ybtn ybtn-small ybtn-danger"
             disabled={user.id === initialUserId}
             title={
               user.id === initialUserId
