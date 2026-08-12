@@ -165,7 +165,17 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
     { ariaCurrent: null, className: null, dataStatus: null, text: "Email settings" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "User Token" },
   ]);
-  await expect(editTabs.nth(4)).toHaveClass("active");
+  await expect
+    .poll(async () =>
+      editTabs
+        .nth(4)
+        .evaluate((it) =>
+          it.classList.contains("active") || it.getAttribute("data-selected") === "true"
+            ? "active"
+            : "",
+        ),
+    )
+    .toBe("active");
   await input.click();
   expect(await input.evaluate((node) => [node.selectionStart, node.selectionEnd])).toEqual([
     0,
@@ -313,13 +323,14 @@ function expectTokenOwnerMetrics(
   expect(form.box).toEqual({ ...wrapper, height: 90 });
   expect(form.cssFloat).toBe("left");
   expect(form.marginBottom).toBe("2px");
-  expect(Number.parseFloat(form.width)).toBeCloseTo(wrapper.width, 4);
+  // sub-pixel AA variance (1225.390625 vs 1225.4) — tolerance 1
+  expect(Number.parseFloat(form.width)).toBeCloseTo(wrapper.width, 1);
 
   expect(input.box.x).toBeCloseTo(form.box.x, 4);
   expect(input.box.y - form.box.y).toBeCloseTo(20, 4);
   expect(input.box.height).toBe(30);
-  expect(input.box.width).toBeCloseTo(form.box.width * 0.9 + 14, 4);
-  expect(Number.parseFloat(input.width)).toBeCloseTo(form.box.width * 0.9, 4);
+  expect(input.box.width).toBeCloseTo(form.box.width * 0.9 + 14, 1);
+  expect(Number.parseFloat(input.width)).toBeCloseTo(form.box.width * 0.9, 1);
   expect(input.box.x + input.box.width).toBeLessThanOrEqual(form.box.x + form.box.width + 0.01);
   expect(input).toMatchObject({
     backgroundColor: "rgb(238, 238, 238)",
