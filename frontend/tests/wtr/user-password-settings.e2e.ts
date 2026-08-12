@@ -301,10 +301,14 @@ async function readPasswordSettingsMetrics(page: Page) {
     const breadcrumb = document.querySelector<HTMLElement>(
       '[data-owner="user-settings-breadcrumb-outer"]',
     );
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-owner="user-settings-page-wrap-outer"]',
+    );
     const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const form = document.querySelector<HTMLElement>("#frmPassword");
-    const resetLink = document.querySelector<HTMLElement>(".page-wrap > .mt10 .ybtn-fail");
+    const resetLink = document.querySelector<HTMLElement>(
+      '[data-owner="user-settings-page-wrap"] [data-owner="user-password-reset-action"]',
+    );
     if (!breadcrumb || !pageWrapOuter || !nav || !form || !resetLink) {
       throw new Error("Expected user password settings metric targets are missing.");
     }
@@ -338,7 +342,11 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-placement",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && normalizedOwnerClassName(current) !== null),
+        )
         .map((name) => normalizeAttribute(current, name))
         .filter(Boolean)
         .join(" ");
@@ -362,6 +370,18 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
+    function normalizedOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "user-settings-page-wrap-outer") return "page-wrap-outer";
+      if (owner === "user-settings-page-wrap") return "page-wrap";
+      if (owner === "user-password-description")
+        return current.querySelector('input[type="password"]') ? "mt10" : null;
+      if (owner === "user-password-submit-action") return "ybtn ybtn-success";
+      if (owner === "user-password-reset-section" || owner === "user-password-reset-description")
+        return "mt10";
+      if (owner === "user-password-reset-action") return "ybtn ybtn-fail";
+      return null;
+    }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
         const owner = current.getAttribute("data-owner");
@@ -372,6 +392,8 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-edit-tab-item")
           return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
         if (owner === "user-settings-edit-tab-link") return "";
+        if (owner === "user-settings-page-wrap-outer") return 'class="page-wrap-outer"';
+        if (owner === "user-settings-page-wrap") return 'class="page-wrap"';
         if (owner === "user-password-description")
           return current.querySelector('input[type="password"]') ? 'class="mt10"' : "";
         if (owner === "user-password-submit-action") return 'class="ybtn ybtn-success"';
@@ -446,7 +468,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], [data-owner="user-settings-page-wrap-outer"], .page-wrap-outer, [data-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

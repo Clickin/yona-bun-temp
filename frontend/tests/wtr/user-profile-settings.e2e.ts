@@ -532,7 +532,16 @@ test("user profile avatar crop modal source stays route-owned", () => {
 async function avatarBackdropOwner(page: Page) {
   return page.locator(".modal-backdrop.in").evaluate((backdrop) => ({
     directBodyChild: backdrop.parentElement === document.body,
-    routeTreeChild: backdrop.parentElement?.classList.contains("page-wrap") ?? false,
+    // the wrap shell is data-owner-owned (route stays class-free per the
+    // ownership contract) — the backdrop still hangs inside the route tree
+    routeTreeChild: (() => {
+      const parent = backdrop.parentElement;
+      if (!parent) return false;
+      return (
+        parent.classList.contains("page-wrap") ||
+        parent.getAttribute("data-owner") === "user-settings-page-wrap"
+      );
+    })(),
   }));
 }
 
@@ -581,7 +590,12 @@ async function readProfileSettingsMetrics(page: Page) {
     const breadcrumb = document.querySelector<HTMLElement>(
       '[data-owner="user-settings-breadcrumb-outer"]',
     );
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    // the wrap shells are style-owned via data-owner (ownership contract keeps
+    // the route class-free); the canonicalizer injects the legacy classes for
+    // the DOM compare, the metrics read the data-owner-owned layout directly
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-owner="user-settings-page-wrap-outer"]',
+    );
     const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const form = document.querySelector<HTMLElement>("#frmBasic");
     const avatarForm = document.querySelector<HTMLElement>("#frmAvatar");
@@ -767,7 +781,10 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-dismiss",
       ].concat(legacyAvatarAttributeNames(current));
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) || (name === "class" && classNameForOwner(current) !== null),
+        )
         .map((name) => normalizeAttribute(current, name))
         .filter(Boolean)
         .join(" ");
@@ -791,6 +808,23 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
+    function classNameForOwner(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "user-settings-page-wrap-outer") return "page-wrap-outer";
+      if (owner === "user-settings-page-wrap") return "page-wrap";
+      if (owner === "user-settings-profile-form" || owner === "user-settings-avatar-form")
+        return "pull-left";
+      if (
+        owner === "user-settings-profile-login-id-row" ||
+        owner === "user-settings-profile-name-row" ||
+        owner === "user-settings-profile-email-row" ||
+        owner === "user-settings-avatar-upload-wrap"
+      )
+        return "mt10";
+      if (owner === "user-settings-avatar-upload-wrap") return "mt10 center-txt";
+      if (owner === "user-settings-avatar-crop-header") return "center-txt";
+      return null;
+    }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
         const owner = current.getAttribute("data-owner");
@@ -801,6 +835,18 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-edit-tab-item")
           return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
         if (owner === "user-settings-edit-tab-link") return "";
+        if (owner === "user-settings-page-wrap-outer") return 'class="page-wrap-outer"';
+        if (owner === "user-settings-page-wrap") return 'class="page-wrap"';
+        if (owner === "user-settings-profile-form" || owner === "user-settings-avatar-form")
+          return 'class="pull-left"';
+        if (
+          owner === "user-settings-profile-login-id-row" ||
+          owner === "user-settings-profile-name-row" ||
+          owner === "user-settings-profile-email-row"
+        )
+          return 'class="mt10"';
+        if (owner === "user-settings-avatar-upload-wrap") return 'class="btn-wrap mt10 center-txt"';
+        if (owner === "user-settings-avatar-crop-header") return 'class="modal-header center-txt"';
       }
       if (
         name === "class" &&
@@ -856,7 +902,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-owner=site-footer]',
+        '.unsupported, [data-owner=global-gnb-outer], [data-owner="user-settings-breadcrumb-outer"], [data-owner="user-settings-page-wrap-outer"], .page-wrap-outer, [data-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

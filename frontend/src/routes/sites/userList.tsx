@@ -207,8 +207,8 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <>
       <LegacySiteUserListTitle />
-      <div className="site-breadcrumb-outer" data-owner="site-user-list-breadcrumb-outer">
-        <div className="site-breadcrumb-inner" data-owner="site-user-list-breadcrumb-inner">
+      <div data-owner="site-user-list-breadcrumb-outer">
+        <div data-owner="site-user-list-breadcrumb-inner">
           <h3 data-owner="site-user-list-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>

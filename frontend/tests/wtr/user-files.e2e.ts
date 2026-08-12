@@ -210,26 +210,40 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
   const pagination = page.locator("#pagination");
-  await expect(pagination).toHaveClass(/page-navigation-wrap/);
-  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
-  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  // the pagination is style-owned (data-owner, no legacy classes in the real
+  // DOM — ownership contract); canonicalizeScreenRoots injects the legacy
+  // classes for the DOM-parity compare. Behavior pins use the owners.
+  await expect(pagination).not.toHaveClass(/page-navigation-wrap/);
+  await expect(pagination.locator('[data-owner="user-files-pagination-list"]')).toHaveCount(1);
+  await expect(pagination.locator('[data-owner="user-files-pagination-item"]')).toHaveCount(5);
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "2");
-  await expect(pagination.locator(".page-num.delimiter")).toHaveText("/");
-  await expect(pagination.locator(".page-num").nth(3)).toHaveText("2");
-  await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
-  await expect(pagination.locator("span.off")).toHaveText("Next page");
+  await expect(
+    pagination.locator(
+      '[data-owner="user-files-pagination-item"][data-pagination-variant="delimiter"]',
+    ),
+  ).toHaveText("/");
+  await expect(pagination.locator('[data-owner="user-files-pagination-item"]').nth(3)).toHaveText(
+    "2",
+  );
+  await expect(
+    pagination.locator('[data-owner="user-files-pagination-icon"][data-disabled]'),
+  ).toHaveCount(1);
+  await expect(
+    pagination.locator('[data-owner="user-files-pagination-label"][data-disabled]'),
+  ).toHaveText("Next page");
   const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
   expect(prevHref).not.toBeNull();
   const prevUrl = new URL(prevHref ?? "", page.url());
   expect(prevUrl.pathname).toBe(`${basePath}/user/files`);
   expect(prevUrl.searchParams.get("filter")).toBe("avatar");
   expect(prevUrl.searchParams.get("pageNum")).toBe("1");
-  await expect(pagination.locator("li.page-num.ikon").first()).toHaveClass(/page-num ikon/);
+  await expect(pagination.locator("a[href][aria-current]")).toHaveCount(0);
   await expectLegacyPlainAnchor(pagination.locator("a", { hasText: "Previous page" }));
-  await expect(pagination.locator("li.page-num.ikon").nth(1)).toHaveClass(/page-num ikon/);
-  await expect(pagination.locator("li.page-num.ikon").nth(1).locator("a")).toHaveCount(0);
+  await expect(
+    pagination.locator('[data-owner="user-files-pagination-item"]').nth(1).locator("a"),
+  ).toHaveCount(0);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-page-1";
   });
@@ -239,16 +253,21 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("files-page-1");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
-  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  await expect(
+    pagination.locator('[data-owner="user-files-pagination-icon"][data-disabled]'),
+  ).toHaveCount(1);
   const nextHref = await pagination.locator("a", { hasText: "Next page" }).getAttribute("href");
   expect(nextHref).not.toBeNull();
   const nextUrl = new URL(nextHref ?? "", page.url());
   expect(nextUrl.pathname).toBe(`${basePath}/user/files`);
   expect(nextUrl.searchParams.get("filter")).toBe("avatar");
   expect(nextUrl.searchParams.get("pageNum")).toBe("2");
-  await expect(pagination.locator("li.page-num.ikon").first()).toHaveClass(/page-num ikon/);
-  await expect(pagination.locator("li.page-num.ikon").first().locator("a")).toHaveCount(0);
-  await expect(pagination.locator("li.page-num.ikon").nth(1)).toHaveClass(/page-num ikon/);
+  await expect(
+    pagination.locator('[data-owner="user-files-pagination-item"]').first(),
+  ).not.toHaveClass(/page-num/);
+  await expect(
+    pagination.locator('[data-owner="user-files-pagination-item"]').first().locator("a"),
+  ).toHaveCount(0);
   await expectLegacyPlainAnchor(pagination.locator("a", { hasText: "Next page" }));
 
   await pagination.locator('input[name="pageNum"]').click();
@@ -457,7 +476,11 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-placement",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && filesOwnerClassName(current) !== null),
+        )
         .map((name) => normalizeAttribute(current, name))
         .filter(Boolean)
         .join(" ");
@@ -481,7 +504,38 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
+    function filesOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "user-files-search") return "user-file-search search search-bar";
+      if (owner === "user-files-search-input") return "textbox";
+      if (owner === "user-files-search-action") return "search-btn";
+      if (owner === "user-files-pagination") return "page-navigation-wrap";
+      if (owner === "user-files-pagination-list") return "page-nums";
+      if (owner === "user-files-pagination-item") {
+        const variant = current.getAttribute("data-pagination-variant");
+        if (variant === "icon") return "page-num ikon";
+        if (variant === "delimiter") return "page-num delimiter";
+        return "page-num";
+      }
+      if (owner === "user-files-pagination-input") return "input-mini nospinner";
+      if (owner === "user-files-pagination-icon") {
+        const disabled = current.hasAttribute("data-disabled");
+        const isNext =
+          current.closest("li")?.querySelector("span") !== null &&
+          current.previousElementSibling?.tagName === "SPAN";
+        const base = isNext ? "ico btn-pg-next" : "ico btn-pg-prev";
+        return disabled ? `${base} off` : base;
+      }
+      if (owner === "user-files-pagination-label") {
+        return current.hasAttribute("data-disabled") ? "off" : null;
+      }
+      return null;
+    }
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class") {
+        const className = filesOwnerClassName(current);
+        if (className !== null) return `class="${className}"`;
+      }
       if (
         name === "class" &&
         (current.matches('[data-owner="global-gnb-inner"]') ||

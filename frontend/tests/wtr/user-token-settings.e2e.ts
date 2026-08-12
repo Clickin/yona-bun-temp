@@ -297,7 +297,9 @@ async function readTokenMetrics(page: Page) {
     const breadcrumb = document.querySelector<HTMLElement>(
       '[data-owner="user-settings-breadcrumb-outer"]',
     );
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-owner="user-settings-page-wrap-outer"]',
+    );
     const nav = document.querySelector<HTMLElement>('[data-owner="user-settings-edit-tabs"]');
     const form = document.querySelector<HTMLElement>("#frmBasic");
     if (!breadcrumb || !pageWrapOuter || !nav || !form) {

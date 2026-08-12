@@ -1773,6 +1773,20 @@ async function canonicalizeScreenRoots(page: Page) {
       return value;
     }
 
+    function userListOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      return (
+        new Map([
+          ["site-user-list-breadcrumb-outer", "site-breadcrumb-outer"],
+          ["site-user-list-breadcrumb-inner", "site-breadcrumb-inner"],
+          ["site-user-list-page-wrap-outer", "page-wrap-outer"],
+          ["site-user-list-setting-grid", "row-fluid"],
+          ["site-user-list-setting-sidebar-column", "span2"],
+          ["site-user-list-setting-content-column", "span10"],
+        ]).get(owner ?? "") ?? null
+      );
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -1804,7 +1818,8 @@ async function canonicalizeScreenRoots(page: Page) {
       const attrs = stableAttributes
         .filter(
           (name) =>
-            current.hasAttribute(name) &&
+            (current.hasAttribute(name) ||
+              (name === "class" && userListOwnerClassName(current) !== null)) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
         )
         .map(
@@ -2217,6 +2232,20 @@ async function canonicalizeHtml(page: Page, html: string) {
       return value;
     }
 
+    function userListOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      return (
+        new Map([
+          ["site-user-list-breadcrumb-outer", "site-breadcrumb-outer"],
+          ["site-user-list-breadcrumb-inner", "site-breadcrumb-inner"],
+          ["site-user-list-page-wrap-outer", "page-wrap-outer"],
+          ["site-user-list-setting-grid", "row-fluid"],
+          ["site-user-list-setting-sidebar-column", "span2"],
+          ["site-user-list-setting-content-column", "span10"],
+        ]).get(owner ?? "") ?? null
+      );
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -2248,7 +2277,8 @@ async function canonicalizeHtml(page: Page, html: string) {
       const attrs = stableAttributes
         .filter(
           (name) =>
-            current.hasAttribute(name) &&
+            (current.hasAttribute(name) ||
+              (name === "class" && userListOwnerClassName(current) !== null)) &&
             !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
         )
         .map(

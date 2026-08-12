@@ -79,7 +79,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     <>
       <form
         action={prefixBasePath(runtimeConfig.basePath, "/user/email")}
-        className="form-inline inner-bubble"
         method="post"
         data-owner="user-email-add-form"
         onSubmit={(event) => {
@@ -91,12 +90,11 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       >
         <input
           type="text"
-          className="text uname"
           placeholder={t("user.email.new")}
           name="email"
           data-owner="user-email-add-input"
         />{" "}
-        <button type="submit" className="ybtn ybtn-success" data-owner="user-email-add-action">
+        <button type="submit" data-owner="user-email-add-action">
           {t("button.add")}
         </button>
       </form>
@@ -109,7 +107,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         {t("emails.sub.email.descr")}
       </p>
 
-      <table className="table mt20" data-owner="user-email-table">
+      <table data-owner="user-email-table">
         <tbody>
           <tr>
             <td data-owner="user-email-table-identity-cell">
@@ -120,12 +118,10 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                 height="40"
                 data-owner="user-email-primary-avatar"
               />{" "}
-              <strong className="ml10" data-owner="user-email-primary-address">
+              <strong data-owner="user-email-primary-address">
                 {profile?.primaryEmailAddress ?? ""}
               </strong>{" "}
-              <span className="label-head vmiddle ml10" data-owner="user-email-primary-badge">
-                {t("emails.main.email")}
-              </span>
+              <span data-owner="user-email-primary-badge">{t("emails.main.email")}</span>
             </td>
             <td data-owner="user-email-table-action-cell"></td>
           </tr>
@@ -143,14 +139,13 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                     height="40"
                     data-owner="user-email-secondary-avatar"
                   />{" "}
-                  <span className="ml10" data-owner="user-email-secondary-address">
+                  <span data-owner="user-email-secondary-address">
                     {stringValue(row.emailAddress)}
                   </span>
                 </td>
                 <td data-owner="user-email-table-action-cell">
                   <button
                     type="button"
-                    className="ybtn ybtn-small ybtn-danger"
                     data-owner="user-email-secondary-delete-action"
                     onClick={() => deleteMutation.mutate(id)}
                   >
@@ -159,7 +154,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   {valid ? (
                     <button
                       type="button"
-                      className="ybtn ybtn-small"
                       data-owner="user-email-primary-action"
                       onClick={() => setMainMutation.mutate(id)}
                     >
@@ -168,14 +162,10 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   ) : (
                     <button
                       type="button"
-                      className="ybtn ybtn-small"
                       data-owner="user-email-secondary-verification-action"
                       onClick={() => sendValidationMutation.mutate(id)}
                     >
-                      <i
-                        className="yobicon-error2 orange-txt mr5"
-                        data-owner="user-email-secondary-warning-icon"
-                      ></i>
+                      <i data-owner="user-email-secondary-warning-icon"></i>
                       {t("emails.send.validatino.mail")}
                     </button>
                   )}

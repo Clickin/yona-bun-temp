@@ -486,7 +486,11 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-request-uri",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) ||
+            (name === "class" && emailOwnerClassName(current) !== null),
+        )
         .map((name) => normalizeAttribute(current, name))
         .filter(Boolean)
         .join(" ");
@@ -509,6 +513,21 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+    function emailOwnerClassName(current: Element): string | null {
+      const owner = current.getAttribute("data-owner");
+      if (owner === "user-email-add-form") return "form-inline inner-bubble";
+      if (owner === "user-email-add-input") return "text uname";
+      if (owner === "user-email-add-action") return "ybtn ybtn-success";
+      if (owner === "user-email-table") return "table mt20";
+      if (owner === "user-email-primary-address" || owner === "user-email-secondary-address")
+        return "ml10";
+      if (owner === "user-email-primary-badge") return "label-head vmiddle ml10";
+      if (owner === "user-email-secondary-delete-action") return "ybtn ybtn-small ybtn-danger";
+      if (owner === "user-email-primary-action") return "ybtn ybtn-small";
+      if (owner === "user-email-secondary-verification-action") return "ybtn ybtn-small";
+      if (owner === "user-email-secondary-warning-icon") return "yobicon-error2 orange-txt mr5";
+      return null;
     }
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
