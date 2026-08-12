@@ -21,7 +21,9 @@ const EXPECTED_VERIFIED_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -35,14 +37,14 @@ const EXPECTED_VERIFIED_SCREEN = `
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/anonymous">Profile</a></span>
           <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
+          <li class="myRecentIssueList"><button type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -51,10 +53,10 @@ const EXPECTED_VERIFIED_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
       </li>
       <li class="divider"></li>
-      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+      <li><a href="__BASE_PATH__/users/signupform">Sign up</a></li>
     </ul>
   </div>
 </header>
@@ -116,7 +118,7 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
     logoLineHeight: "40px",
     logoPadding: "6px 10px",
     pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
+    pageFooterOuterPadding: "10px",
     providerColor: "rgb(51, 51, 51)",
     providerFontSize: "9px",
     providerMarginLeft: "4px",
