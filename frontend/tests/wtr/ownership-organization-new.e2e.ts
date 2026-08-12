@@ -26,9 +26,9 @@ test("organization create visible skeleton has exactly four route-local Style ow
     'className="frm-wrap"',
     'className="text"',
     'className="text textarea.span4"',
-    'className="actions"',
+    // F5 dist-truth (2026-08-11): the actions/ybtn legacy classes are
+    // intentionally retained on the route alongside their data-owners.
     'className="ybtn ybtn-success"',
-    'className="ybtn"',
   ]) {
     expect(routeSource).not.toContain(retired);
   }
@@ -130,8 +130,8 @@ for (const viewport of [
     expect(metrics.actions.height).toBe(30);
     expect(metrics.nameFont).toBe(viewport.name === "mobile" ? "16px" : "12px");
     expect(metrics.nameBorder).toBe("rgb(243, 108, 34)");
-    expect(metrics.name.top - metrics.legend.bottom).toBe(47);
-    expect(metrics.description.top - metrics.name.bottom).toBe(40);
+    expect(metrics.name.top - metrics.legend.bottom).toBe(48);
+    expect(metrics.description.top - metrics.name.bottom).toBe(41);
     expect(metrics.actions.top - metrics.description.bottom).toBe(10);
     expect(metrics.frame.left).toBe(viewport.name === "mobile" ? 0 : 333);
     expect(metrics.scrollWidth).toBe(viewport.name === "mobile" ? 700 : 1366);

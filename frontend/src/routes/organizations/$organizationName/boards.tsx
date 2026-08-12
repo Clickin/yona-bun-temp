@@ -78,9 +78,15 @@ const stripLegacyBoardSearchDefaults = (ctx: SearchMiddlewareContext<Organizatio
   // Sort links pass only orderBy/orderDir; pagination/filter navigation keeps
   // its explicit params. Strip keys absent from the navigation's own search
   // (legacy sort links carry ONLY orderBy/orderDir; yobi.Pagination.js never
-  // drops explicitly navigated pageNum).
-  if (!("filter" in explicit)) Reflect.deleteProperty(result, "filter");
-  if (!("pageNum" in explicit)) Reflect.deleteProperty(result, "pageNum");
+  // drops explicitly navigated pageNum). pageNum is value-based: the legacy
+  // bare boards href has none (page 1), but any navigated pageNum > 1 must
+  // survive — TanStack's meta.explicit does not reliably reflect the Link's
+  // own search here, so presence checks would drop the next/prev pageNum.
+  // Same value-based rationale as pageNum: the legacy bare/sort links have an
+  // empty filter, but an actively filtered boards URL must keep it across
+  // pagination navigation (TanStack explicit does not reflect the Link search).
+  if ((result.filter ?? "") === "") Reflect.deleteProperty(result, "filter");
+  if ((result.pageNum ?? 1) === 1) Reflect.deleteProperty(result, "pageNum");
   if (!("projectNames" in explicit) && !("projectNames[]" in explicit)) {
     Reflect.deleteProperty(result, "projectNames");
   }

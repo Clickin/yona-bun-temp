@@ -1,223 +1,223 @@
 {
- "schemaVersion": 1,
- "artifact": "legacy-assets/stylesheets/legacy-fallback.css",
- "artifactSha256": "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
- "layer": "legacy",
- "activeFrozen": [
-  "bootstrap",
-  "usermenu",
-  "yobi"
- ],
- "pluginPassthrough": [
-  "yobicon",
-  "select2",
-  "pikaday",
-  "nprogress",
-  "viewer",
-  "magnific-popup"
- ],
- "layeredViteInputs": [
-  {
-   "id": "react-app",
-   "input": "frontend/src/app.css",
-   "layer": "legacy",
-   "role": "react-parity",
-   "sourceFiles": [
+  "schemaVersion": 1,
+  "artifact": "legacy-assets/stylesheets/legacy-fallback.css",
+  "artifactSha256": "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
+  "layer": "legacy",
+  "activeFrozen": [
+    "bootstrap",
+    "usermenu",
+    "yobi"
+  ],
+  "pluginPassthrough": [
+    "yobicon",
+    "select2",
+    "pikaday",
+    "nprogress",
+    "viewer",
+    "magnific-popup"
+  ],
+  "layeredViteInputs": [
     {
-     "path": "frontend/src/app.css",
-     "sha256": "2087c98c1888e7052aac883c003bec171ca5cf29dfa37de45a41789f04e47e17"
+      "id": "react-app",
+      "input": "frontend/src/app.css",
+      "layer": "legacy",
+      "role": "react-parity",
+      "sourceFiles": [
+        {
+          "path": "frontend/src/app.css",
+          "sha256": "2087c98c1888e7052aac883c003bec171ca5cf29dfa37de45a41789f04e47e17"
+        }
+      ]
+    },
+    {
+      "id": "dynatree",
+      "input": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
+      "layer": "legacy",
+      "role": "plugin",
+      "sourceFiles": [
+        {
+          "path": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
+          "sha256": "3021579fe5b158720a46bca736b54aa768c88dbac2738b82be08c643e34b8558"
+        },
+        {
+          "path": "yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css",
+          "sha256": "5448638e232bc7b1c8f9f536434e85d02d588a07248ee0adc668285498f915d8"
+        }
+      ]
     }
-   ]
-  },
-  {
-   "id": "dynatree",
-   "input": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
-   "layer": "legacy",
-   "role": "plugin",
-   "sourceFiles": [
+  ],
+  "referenceOnly": [
     {
-     "path": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
-     "sha256": "3021579fe5b158720a46bca736b54aa768c88dbac2738b82be08c643e34b8558"
-    },
-    {
-     "path": "yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css",
-     "sha256": "5448638e232bc7b1c8f9f536434e85d02d588a07248ee0adc668285498f915d8"
+      "id": "bootstrap-responsive",
+      "path": "yona-original/public/bootstrap/css/bootstrap-responsive.css",
+      "reason": "inactive in legacy layout.scala.html and retained as parity evidence",
+      "sha256": "a0baa7fb81cfe06b3bfe4489cb15c998ad3afc7cf7eb77e36f356278d247f440"
     }
-   ]
-  }
- ],
- "referenceOnly": [
-  {
-   "id": "bootstrap-responsive",
-   "path": "yona-original/public/bootstrap/css/bootstrap-responsive.css",
-   "reason": "inactive in legacy layout.scala.html and retained as parity evidence",
-   "sha256": "a0baa7fb81cfe06b3bfe4489cb15c998ad3afc7cf7eb77e36f356278d247f440"
-  }
- ],
- "sources": [
-  {
-   "cascadeIndex": 0,
-   "id": "bootstrap",
-   "role": "frozen",
-   "runtimePath": "legacy-assets/bootstrap/css/bootstrap.css",
-   "sourceFiles": [
+  ],
+  "sources": [
     {
-     "path": "yona-original/public/bootstrap/css/bootstrap.css",
-     "sha256": "a1878fdc8822d0e2419d823bfa1b87276233038857416a31737445502a51e8f9"
+      "cascadeIndex": 0,
+      "id": "bootstrap",
+      "role": "frozen",
+      "runtimePath": "legacy-assets/bootstrap/css/bootstrap.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/bootstrap/css/bootstrap.css",
+          "sha256": "a1878fdc8822d0e2419d823bfa1b87276233038857416a31737445502a51e8f9"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 1,
+      "id": "yobicon",
+      "role": "plugin",
+      "runtimePath": "legacy-assets/stylesheets/yobicon/style.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/stylesheets/yobicon/style.css",
+          "sha256": "7261dbeadd9de8dabe4abb347dba245d1427bac855f787f962d6446caccdf229"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 2,
+      "id": "select2",
+      "role": "plugin",
+      "runtimePath": "legacy-assets/javascripts/lib/select2/select2.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/javascripts/lib/select2/select2.css",
+          "sha256": "098b72da8a72f92e6393aaacb7d7ebb2a8ebc83315c3f8c864da9c233a00c58b"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 3,
+      "id": "pikaday",
+      "role": "plugin",
+      "runtimePath": "legacy-assets/javascripts/lib/pikaday/pikaday.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/javascripts/lib/pikaday/pikaday.css",
+          "sha256": "df4da881091b8c0f4849e3418578f9ec540be12cbc7413ff3738cbc4587de00e"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 4,
+      "id": "usermenu",
+      "role": "frozen",
+      "runtimePath": "legacy-assets/stylesheets/usermenu.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/app/assets/stylesheets/usermenu.less",
+          "sha256": "3b77f96f9f5514d560f67f411c1cce906bf4edf04058cdcfaa2194084371e4fb"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_usermenu.less",
+          "sha256": "3ff23f692f508c250f359161380b48503b1f637044333d72e53a675ba02894b2"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 5,
+      "id": "yobi",
+      "role": "frozen",
+      "runtimePath": "legacy-assets/stylesheets/yobi.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/app/assets/stylesheets/yobi.less",
+          "sha256": "b80c78edc2f66b3e14d7087d6c689c387195c06c2e5352d111fb406796d3ca62"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_variables.less",
+          "sha256": "d6c1cf8d2ba55984b9da59f61295b11d3fd13db43140936712d93f606cd845c8"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_mixins.less",
+          "sha256": "fe0ae11cb70ab9aab748361e76ffcd69339f7dbf692c11a9590d58174313513d"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_common.less",
+          "sha256": "25dc11ea11ebaa41c687b6ae3ea2c92d25c9d78102331dedd113432f3e86ee65"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_sprites.less",
+          "sha256": "672ccebc6020a54ad05ae84e76dcbe75debdd13993e70a44e3f95e173959e0cb"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_page.less",
+          "sha256": "2124a6efd122029ff51d26e5b513fbd3945d1020487101a19a5aaa00448d4aa3"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_tippy.less",
+          "sha256": "bb02bfdc2763c21921c21561bce154df45f0e6de4b8f6c6273d691a8004042de"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_scrollbar.less",
+          "sha256": "f0fe369aa88938d24054b5a93a56116af86f210609dd80028db6e33eae6546d6"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_responsive.less",
+          "sha256": "3b8038e9e3f9fb2067d506794e342bf0aca81071d94128c6cc1a3214c0812105"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_yobiUI.less",
+          "sha256": "8c8fd4427b7a26a9a4ba2d5e7f73c1b779d031015f1da0bc4c506baacefc422d"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_temporary.less",
+          "sha256": "018a12a4eadb3fcc636772ffb1526b18274d5305a8bc50ee4ada2a7a057dee31"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_markdown.less",
+          "sha256": "d540cfd3af3ef81154e878a05ce00229804c648181e5ad5140f515273b829fd5"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_migration.less",
+          "sha256": "a7fc167487e69a51f62b331b17189865bed4c3e8de1d5fc07559755810430364"
+        },
+        {
+          "path": "yona-original/app/assets/stylesheets/less/_override.less",
+          "sha256": "8ec625ab5547bc501192c968273b6924e1cd5072461f81c658a0717d23dd5518"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 6,
+      "id": "nprogress",
+      "role": "plugin",
+      "runtimePath": "legacy-assets/javascripts/lib/nprogress/nprogress.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/javascripts/lib/nprogress/nprogress.css",
+          "sha256": "a64a3a8f317d773e9fecfc0e73664e68b9f4d20105456738b329ff364d8b4bb2"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 7,
+      "id": "viewer",
+      "role": "plugin",
+      "runtimePath": "legacy-assets/javascripts/lib/viewerjs/viewer.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/javascripts/lib/viewerjs/viewer.css",
+          "sha256": "7cfa319b7dbb3238e95532a23dbaa3310a27de640a78b104cd1cab845d9b038a"
+        }
+      ]
+    },
+    {
+      "cascadeIndex": 8,
+      "id": "magnific-popup",
+      "role": "plugin",
+      "runtimePath": "legacy-assets/javascripts/lib/magnific-popup/magnific-popup.css",
+      "sourceFiles": [
+        {
+          "path": "yona-original/public/javascripts/lib/magnific-popup/magnific-popup.css",
+          "sha256": "3b9e2cd4511fb94eda69a937add369d18b7b0e6a67b40b1751254fa94a1a9f58"
+        }
+      ]
     }
-   ]
-  },
-  {
-   "cascadeIndex": 1,
-   "id": "yobicon",
-   "role": "plugin",
-   "runtimePath": "legacy-assets/stylesheets/yobicon/style.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/public/stylesheets/yobicon/style.css",
-     "sha256": "7261dbeadd9de8dabe4abb347dba245d1427bac855f787f962d6446caccdf229"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 2,
-   "id": "select2",
-   "role": "plugin",
-   "runtimePath": "legacy-assets/javascripts/lib/select2/select2.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/public/javascripts/lib/select2/select2.css",
-     "sha256": "098b72da8a72f92e6393aaacb7d7ebb2a8ebc83315c3f8c864da9c233a00c58b"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 3,
-   "id": "pikaday",
-   "role": "plugin",
-   "runtimePath": "legacy-assets/javascripts/lib/pikaday/pikaday.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/public/javascripts/lib/pikaday/pikaday.css",
-     "sha256": "df4da881091b8c0f4849e3418578f9ec540be12cbc7413ff3738cbc4587de00e"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 4,
-   "id": "usermenu",
-   "role": "frozen",
-   "runtimePath": "legacy-assets/stylesheets/usermenu.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/app/assets/stylesheets/usermenu.less",
-     "sha256": "3b77f96f9f5514d560f67f411c1cce906bf4edf04058cdcfaa2194084371e4fb"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_usermenu.less",
-     "sha256": "3ff23f692f508c250f359161380b48503b1f637044333d72e53a675ba02894b2"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 5,
-   "id": "yobi",
-   "role": "frozen",
-   "runtimePath": "legacy-assets/stylesheets/yobi.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/app/assets/stylesheets/yobi.less",
-     "sha256": "b80c78edc2f66b3e14d7087d6c689c387195c06c2e5352d111fb406796d3ca62"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_variables.less",
-     "sha256": "d6c1cf8d2ba55984b9da59f61295b11d3fd13db43140936712d93f606cd845c8"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_mixins.less",
-     "sha256": "fe0ae11cb70ab9aab748361e76ffcd69339f7dbf692c11a9590d58174313513d"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_common.less",
-     "sha256": "25dc11ea11ebaa41c687b6ae3ea2c92d25c9d78102331dedd113432f3e86ee65"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_sprites.less",
-     "sha256": "672ccebc6020a54ad05ae84e76dcbe75debdd13993e70a44e3f95e173959e0cb"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_page.less",
-     "sha256": "2124a6efd122029ff51d26e5b513fbd3945d1020487101a19a5aaa00448d4aa3"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_tippy.less",
-     "sha256": "bb02bfdc2763c21921c21561bce154df45f0e6de4b8f6c6273d691a8004042de"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_scrollbar.less",
-     "sha256": "f0fe369aa88938d24054b5a93a56116af86f210609dd80028db6e33eae6546d6"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_responsive.less",
-     "sha256": "3b8038e9e3f9fb2067d506794e342bf0aca81071d94128c6cc1a3214c0812105"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_yobiUI.less",
-     "sha256": "8c8fd4427b7a26a9a4ba2d5e7f73c1b779d031015f1da0bc4c506baacefc422d"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_temporary.less",
-     "sha256": "018a12a4eadb3fcc636772ffb1526b18274d5305a8bc50ee4ada2a7a057dee31"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_markdown.less",
-     "sha256": "d540cfd3af3ef81154e878a05ce00229804c648181e5ad5140f515273b829fd5"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_migration.less",
-     "sha256": "a7fc167487e69a51f62b331b17189865bed4c3e8de1d5fc07559755810430364"
-    },
-    {
-     "path": "yona-original/app/assets/stylesheets/less/_override.less",
-     "sha256": "8ec625ab5547bc501192c968273b6924e1cd5072461f81c658a0717d23dd5518"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 6,
-   "id": "nprogress",
-   "role": "plugin",
-   "runtimePath": "legacy-assets/javascripts/lib/nprogress/nprogress.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/public/javascripts/lib/nprogress/nprogress.css",
-     "sha256": "a64a3a8f317d773e9fecfc0e73664e68b9f4d20105456738b329ff364d8b4bb2"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 7,
-   "id": "viewer",
-   "role": "plugin",
-   "runtimePath": "legacy-assets/javascripts/lib/viewerjs/viewer.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/public/javascripts/lib/viewerjs/viewer.css",
-     "sha256": "7cfa319b7dbb3238e95532a23dbaa3310a27de640a78b104cd1cab845d9b038a"
-    }
-   ]
-  },
-  {
-   "cascadeIndex": 8,
-   "id": "magnific-popup",
-   "role": "plugin",
-   "runtimePath": "legacy-assets/javascripts/lib/magnific-popup/magnific-popup.css",
-   "sourceFiles": [
-    {
-     "path": "yona-original/public/javascripts/lib/magnific-popup/magnific-popup.css",
-     "sha256": "3b9e2cd4511fb94eda69a937add369d18b7b0e6a67b40b1751254fa94a1a9f58"
-    }
-   ]
-  }
- ]
+  ]
 }

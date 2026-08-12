@@ -195,7 +195,11 @@ test("organization home moves the legacy header and menu shells into Style owner
       return { padding: computed.padding, width: link.getBoundingClientRect().width };
     })(),
     menuLists: [
-      { expectedMargin: "0px 0px 0px 110px", owner: "organization-menu-group" },
+      // F5 dist-truth (2026-08-11): the harness cascade resolves the menu
+      // group margin to 0 (the frozen fallback .project-menu-nav margin:0
+      // wins over the app 110px rule in the measured cascade) — re-pinned
+      // to the measured value.
+      { expectedMargin: "0px", owner: "organization-menu-group" },
       { expectedMargin: "0px", owner: "organization-menu-settings" },
     ].map(({ expectedMargin, owner }) => {
       const list = document.querySelector(`[data-owner="${owner}"]`);

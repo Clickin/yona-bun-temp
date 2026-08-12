@@ -110,13 +110,13 @@ test("organization home project filter uses conditional Style visibility", async
   expect(route).toContain('data-owner="organization-home-project-card-description"');
   expect(route).toContain('data-owner="organization-home-project-card-name-tag"');
   expect(route).toContain('data-owner="organization-home-project-card-stats"');
-  expect(style).toContain("projectCardOwnerAvatar:");
+  expect(style).toContain('data-owner="organization-home-project-card-owner-avatar"');
 
-  expect(style).toContain("projectCardHeader:");
+  expect(style).toContain('data-owner="organization-home-project-card-header"');
 
-  expect(style).toContain("projectCardDescription:");
+  expect(style).toContain('data-owner="organization-home-project-card-description"');
 
-  expect(style).toContain("projectCardNameTag:");
+  expect(style).toContain('data-owner="organization-home-project-card-name-tag"');
 
   expect(legacy).toContain('<div class="stats-wrap pull-right">');
   expect(bootstrap).toContain(".pull-right {\n  float: right;\n}");
@@ -139,11 +139,11 @@ test("organization home project filter uses conditional Style visibility", async
   expect(route).toContain('data-owner="organization-home-search-bar"');
   expect(route).toContain('data-owner="organization-home-search-input"');
   expect(route).toContain('data-owner="organization-home-search-button"');
-  expect(style).toContain("searchBar:");
+  expect(style).toContain('data-owner="organization-home-search-bar"');
 
-  expect(style).toContain("searchTextbox:");
+  expect(style).toContain('data-owner="organization-home-search-input"');
 
-  expect(style).toContain("searchButton:");
+  expect(style).toContain('data-owner="organization-home-search-button"');
 
   expect(yobiUi).toContain(".search-bar {");
   expect(yobiUi).toContain("border:1px solid #ccc;");
