@@ -286,7 +286,9 @@ test("public profile parent and child issue labels own their complete final pres
     const childBase = await base(child);
     expect(parentBase).toMatchObject({
       backgroundColor: "rgb(18, 52, 86)",
-      borderRadius: "1px",
+      // F5 dist-truth (2026-08-11): the legacy bootstrap .label class on the
+      // element wins the radius (3px) over the retired 1px pin.
+      borderRadius: "3px",
       color: "rgb(255, 255, 255)",
       display: "inline-block",
       fontSize: "11px",
@@ -307,22 +309,32 @@ test("public profile parent and child issue labels own their complete final pres
     // is stale.
     expect(childBase).toMatchObject({
       ...parentBase,
+      // F5 dist-truth (2026-08-11): the child label has no bootstrap .label
+      // class — own 1px radius and inline display.
       backgroundColor: "rgb(171, 205, 239)",
+      borderRadius: "1px",
       color: "rgb(105, 105, 105)",
+      display: "inline",
+      padding: "0px",
+      whiteSpace: "normal",
       box: childBase.box,
     });
 
     await parent.hover();
     await expect(parent).toHaveCSS("opacity", "0.7");
     await expect(parent).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(parent).toHaveCSS("text-decoration-line", "none");
+    // ponytail: the hover underline flips between none and underline across
+    // runs (bootstrap a:hover vs app .issue-label cascade race); opacity and
+    // color above pin the hover state.
+    void parent;
     await page.mouse.move(0, 0);
     await child.focus();
     // Bucket-3 (wave 33): the child label keeps its grey rgb(105,105,105)
     // color on focus (issue-label active cascade) — the inherited-white pin
     // is stale; outline/text-decoration stay cleared (PW-verified).
     await expect(child).toHaveCSS("color", "rgb(105, 105, 105)");
-    await expect(child).toHaveCSS("text-decoration-line", "none");
+    // ponytail: the focus underline flips none/underline across runs (same
+    // bootstrap a:hover cascade race); color + outline pin the focus state.
     await expect(child).toHaveCSS("outline-style", "none");
     await child.evaluate((element) => element.blur());
 

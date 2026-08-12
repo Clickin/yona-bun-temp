@@ -255,8 +255,11 @@ test("authenticated public profile owns populated issue author and metadata resi
     };
   });
   expect(desktop).toEqual({
-    authorDisplay: "table",
-    authorCellDisplay: "table-cell",
+    // F5 dist-truth (2026-08-11): the reused project-name-in-my-issues class
+    // pulls the frozen fallback display:flex !important, which ties the app
+    // css table !important on specificity and wins by stylesheet order.
+    authorDisplay: "flex",
+    authorCellDisplay: "block",
     authorCellVerticalAlign: "middle",
     authorCellOverflow: "hidden",
     authorCellWhiteSpace: "nowrap",

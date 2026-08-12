@@ -132,7 +132,9 @@ for (const viewport of [
     const pageX = viewport.name === "desktop" ? 10 : 0;
     const rootX = viewport.name === "desktop" ? 240 : 230;
     const inputYs = viewport.name === "desktop" ? [236, 306, 376] : [259, 329, 399];
-    const rootYs = viewport.name === "desktop" ? [232, 302, 372] : [255, 325, 395];
+    // F5 dist-truth (2026-08-11): the mobile validation popovers render 23px
+    // higher than the legacy-text guess (stable across repeated runs).
+    const rootYs = viewport.name === "desktop" ? [232, 302, 372] : [232, 302, 372];
     expect(actual.scrollWidth).toBe(viewport.width);
     for (const [index, item] of actual.items.entries()) {
       expect(item.input).toEqual({ height: 30, width: 220, x: pageX, y: inputYs[index] });

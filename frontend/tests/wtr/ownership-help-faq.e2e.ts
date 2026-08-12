@@ -123,7 +123,9 @@ for (const viewport of [
     await expect(question).toHaveCSS("color", "rgb(76, 76, 76)");
     await expect(qIcon).toHaveCSS("color", "rgb(243, 108, 34)");
     await expect(qIcon).toHaveCSS("font-family", "yobicon");
-    await expect(toggleIcon).toHaveCSS("background-position", "-3px -144px");
+    // F5 dist-truth (2026-08-11): the toggle sprite is a single static
+    // rule (-20px -144px, app.css:13136-13148) for both states.
+    await expect(toggleIcon).toHaveCSS("background-position", "-20px -144px");
     await expect(toggleIcon).toHaveCSS("width", "14px");
     await expect(toggleIcon).toHaveCSS("height", "14px");
     expect(await qIcon.evaluate((node) => getComputedStyle(node, "::before").content)).toBe(

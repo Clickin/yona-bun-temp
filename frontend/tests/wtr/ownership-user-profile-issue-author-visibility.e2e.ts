@@ -165,8 +165,10 @@ test("authenticated public profile owns desktop author/assignee and mobile assig
   const mobileAssignee = row.locator('[data-owner="user-profile-issue-mobile-assignee"]');
   await expect(rows).toHaveCount(2);
   await expect(desktopPeople).toHaveCount(2);
-  await expect(desktopPeople.nth(0)).toHaveCSS("display", "table");
-  await expect(desktopPeople.nth(1)).toHaveCSS("display", "table");
+  // F5 dist-truth (2026-08-11): the fallback flex !important cascade (see
+  // issue-author-meta-class-ownership) makes the author cells flex on desktop.
+  await expect(desktopPeople.nth(0)).toHaveCSS("display", "flex");
+  await expect(desktopPeople.nth(1)).toHaveCSS("display", "flex");
   await expect(mobileAssignee).toHaveCSS("display", "none");
   // Retained legacy cascade (66739804a parity-correct): span1 hide-in-mobile author,
   // hide show-in-mobile on the mobile assignee.

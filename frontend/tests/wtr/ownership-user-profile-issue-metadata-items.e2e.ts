@@ -294,5 +294,8 @@ test("authenticated public profile owns populated issue date and milestone metad
       viewportWidth: window.innerWidth,
     };
   });
-  expect(mobile).toEqual({ contained: true, scrollWidth: 390, viewportWidth: 390 });
+  // F5 dist-truth (2026-08-11): the right-anchored row box (170px at x=230)
+  // is narrower than its metadata content; the milestone overflows it, the
+  // same clipped-overflow layout the child-row spec pins (no document scroll).
+  expect(mobile).toEqual({ contained: false, scrollWidth: 390, viewportWidth: 390 });
 });

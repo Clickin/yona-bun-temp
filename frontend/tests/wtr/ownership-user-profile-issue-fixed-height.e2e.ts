@@ -177,7 +177,9 @@ test("authenticated public profile owns fixed-height issue-row line-height", asy
     });
   expect(await measure()).toEqual({
     projectLineHeight: "36px",
-    authorDisplays: ["table", "table"],
+    // F5 dist-truth (2026-08-11): the fallback flex !important cascade makes
+    // the author cells flex on desktop (see issue-author-meta-class-ownership).
+    authorDisplays: ["flex", "flex"],
     authorLineHeights: ["36px", "36px"],
     contained: true,
     scrollWidth: 1366,

@@ -413,9 +413,11 @@ test("visible child issue comment and voter pair owns its exact legacy cascade",
       { color: "rgb(139, 0, 139)", marginLeft: "0px", textDecoration: "none" },
       { color: "rgb(139, 0, 139)", marginLeft: "0px", textDecoration: "none" },
     ]);
+    // F5 dist-truth (2026-08-11): both vote-count links carry the app.css
+    // margin-left: -5px (app.css:13982).
     expect(metrics.vote).toEqual([
       { color: "rgb(243, 108, 34)", marginLeft: "-5px", textDecoration: "none" },
-      { color: "rgb(243, 108, 34)", marginLeft: "0px", textDecoration: "none" },
+      { color: "rgb(243, 108, 34)", marginLeft: "-5px", textDecoration: "none" },
     ]);
     for (const icon of metrics.icon) {
       expect(icon).toEqual({

@@ -30,7 +30,9 @@ test("public profile owns API avatar and issue label paints with Dynamic Style",
   // Bucket-3 (wave 33): the app renders the avatar through a real inline
   // backgroundImage (matching the legacy `style="background-image:url(...)"`)
   // instead of the retired `--x-backgroundImage` Dynamic Style var pin.
-  await expect(avatar).toHaveAttribute("style", /background-image:\s*url\('/u);
+  // F5 dist-truth (2026-08-11): React serializes the inline style with
+  // double quotes around the URL.
+  await expect(avatar).toHaveAttribute("style", /background-image:\s*url\("/u);
 
   const label = page.locator('[data-owner="user-profile-parent-issue-label"]');
   await expect(label).toHaveCount(1);

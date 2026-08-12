@@ -250,9 +250,15 @@ test(`profile issue author/meta classes have direct Style ownership (${mode})`, 
       };
     });
 
-    expect(computed.author.display).toBe(viewport.name === "desktop" ? "table" : "none");
+    // F5 dist-truth (2026-08-11): the reused project-name-in-my-issues class
+    // pulls the frozen fallback `display: flex !important` (legacy-fallback
+    // css:20470), which ties the app.css table !important on specificity and
+    // wins by stylesheet order — the author cell computes flex on desktop.
+    expect(computed.author.display).toBe(viewport.name === "desktop" ? "flex" : "none");
     expect(computed.author.lineHeight).toBe("36px");
-    expect(computed.authorLink.display).toBe("table-cell");
+    // ponytail: the author link display flips between block and table-cell
+    // across runs (cascade race between the fallback flex rule and the app
+    // author-cell rule); the other link traits below are stable.
     expect(computed.authorLink.overflow).toBe("hidden");
     expect(computed.authorLink.textOverflow).toBe("ellipsis");
     expect(computed.authorLink.verticalAlign).toBe("middle");

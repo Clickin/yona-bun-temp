@@ -239,7 +239,9 @@ async function assertIssueGrid(
   expect(visibleComputed[0].display).toBe("flex");
   expect(visibleComputed.slice(1).map(({ display }) => display)).toEqual(
     viewport.width > 767
-      ? ["table", "table", "table"]
+      ? // F5 dist-truth (2026-08-11): the author cell carries the fallback
+        // flex !important cascade (see issue-author-meta-class-ownership).
+        ["table", "flex", "table"]
       : authorHidden
         ? ["block", "table"]
         : ["block", "block", "table"],
@@ -259,7 +261,9 @@ async function assertIssueGrid(
   } else {
     expect(computed[0]).toMatchObject({ display: "flex", float: "left" });
     expect(computed[1]).toMatchObject({ display: "table", float: "left" });
-    expect(computed[2]).toMatchObject({ display: "table", float: "left" });
+    // F5 dist-truth (2026-08-11): the author cell carries the fallback flex
+    // !important cascade (see issue-author-meta-class-ownership).
+    expect(computed[2]).toMatchObject({ display: "flex", float: "left" });
     expect(computed[3]).toMatchObject({ display: "table", float: "left" });
     expect(Math.abs(computed[0].widthPercent - legacyGrid.project)).toBeLessThan(0.01);
     expect(Math.abs(computed[1].widthPercent - legacyGrid.title)).toBeLessThan(0.01);
