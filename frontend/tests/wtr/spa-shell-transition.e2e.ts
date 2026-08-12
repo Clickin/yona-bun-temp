@@ -13,12 +13,13 @@ test("authenticated home notification keeps the cross-shell post handoff SPA-nat
 
   const documentToken = await page.evaluate(() => window.__spaShellTransitionDocumentToken);
   const documentRequests: string[] = [];
+  // wtr's fetch-level request facade exposes resourceType() but not
+  // isNavigationRequest(); filter document navigations by resourceType only.
   page.on("request", (request) => {
-    if (request.isNavigationRequest() && request.resourceType() === "document") {
+    if (request.resourceType() === "document") {
       documentRequests.push(request.url());
     }
   });
-
   await page.getByRole("link", { name: "Seed notes" }).click();
   await expect(page.locator("#comment-1")).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(notificationTarget)}$`));
@@ -82,6 +83,7 @@ async function mockHomeToPost(page: Page) {
       route.fulfill({ contentType: "application/json", json: session }),
     );
   }
+
   await page.route("**/api/v1/notifications?*", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
