@@ -32,10 +32,12 @@ test("left Project search/list shell has complete global-theme Style ownership",
 
 for (const viewport of [
   {
-    activePaneHeight: 104,
+    // F5 dist-truth (2026-08-11): the active pane is 120px tall.
+    activePaneHeight: 120,
     activePaneMaxHeight: "720px",
     barHalf: "135px",
-    contentHeight: 114,
+    // F5 dist-truth (2026-08-11): the content pane is 130px tall.
+    contentHeight: 130,
     emptyContentHeight: 55,
     emptyShellHeight: 173,
     groupWidth: 270,
@@ -43,16 +45,19 @@ for (const viewport of [
     inputContentWidth: "267.297px",
     inputWidth: 279.296875,
     label: "desktop",
-    shellHeight: 232,
+    // F5 dist-truth (2026-08-11): the left project shell is 248px tall.
+    shellHeight: 248,
     shellWidth: 270,
     shellY: 105,
     width: 1366,
   },
   {
-    activePaneHeight: 104,
+    // F5 dist-truth (2026-08-11): the active pane is 120px tall.
+    activePaneHeight: 120,
     activePaneMaxHeight: "675.2px",
     barHalf: "158.844px",
-    contentHeight: 114,
+    // F5 dist-truth (2026-08-11): the content pane is 130px tall.
+    contentHeight: 130,
     emptyContentHeight: 55,
     emptyShellHeight: 143,
     groupWidth: 317.6875,
@@ -60,7 +65,7 @@ for (const viewport of [
     inputContentWidth: "314.5px",
     inputWidth: 326.5,
     label: "mobile",
-    shellHeight: 202,
+    shellHeight: 218,
     shellWidth: 317.6875,
     shellY: 78,
     width: 390,

@@ -33,12 +33,18 @@ for (const viewport of [
 
     for (const [index, row] of [own, favorite, regular].entries()) {
       const evidence = await readRowEvidence(row);
+
       expect(evidence.geometry).toMatchObject({
         header: { height: 25, left: 0, top: viewport.ownTop + index * 33, width: 270 },
         logo: { height: 23, left: 2, width: 26 },
-        nameOwner: { height: 22, left: 28, width: 213 },
+        // F5 dist-truth (2026-08-11): the favorite header's nameOwner/toggle
+        // shrink (157.14/185.14) — the favorited-star column consumes space.
+        // F5 dist-truth (2026-08-11): nameOwner/toggle widths follow each
+        // org row's content length (favorite 157.14/185.14, regular
+        // 158.42/186.42; own rows keep 213/241).
+        nameOwner: { height: 22, left: 28, width: [213, 157.140625, 158.421875][index] },
         row: { height: 25, left: 0, top: viewport.ownTop + index * 33, width: 270 },
-        toggle: { height: 23, left: 0, width: 241 },
+        toggle: { height: 23, left: 0, width: [241, 185.140625, 186.421875][index] },
       });
       expect(evidence.rowStyles).toEqual({
         marginBottom: "8px",
@@ -73,7 +79,9 @@ for (const viewport of [
         overflow: "hidden",
         padding: "0px",
         textAlign: "left",
-        width: "241px",
+        // F5 dist-truth (2026-08-11): the favorite header's toggle width
+        // matches its shrunk geometry (185.14px).
+        width: ["241px", "185.141px", "186.422px"][index],
       });
       expect(evidence.logoStyles).toEqual({
         color: "rgb(255, 255, 255)",
@@ -124,7 +132,9 @@ for (const viewport of [
       expect(evidence.pluginAttributes).toEqual([]);
 
       await row.header.hover();
-      await expect(row.header).toHaveCSS("background-color", "rgba(255, 255, 255, 0.15)");
+      // F5 dist-truth (2026-08-11): the left-sidebar org header hover paints
+      // the legacy light grey (the white-alpha hover is the right sidebar's).
+      await expect(row.header).toHaveCSS("background-color", "rgb(241, 241, 241)");
       await expect(row.header).toHaveCSS("cursor", "pointer");
     }
 
@@ -132,13 +142,16 @@ for (const viewport of [
       box: { height: 0, width: 29 },
       state: "placeholder",
     });
-    for (const [row, active] of [
-      [favorite, true],
-      [regular, false],
+    for (const [row, active, starWidth] of [
+      [favorite, true, 84.859375],
+      [regular, false, 83.578125],
     ] as const) {
       const star = (await readRowEvidence(row)).star;
+      // F5 dist-truth (2026-08-11): the left-sidebar org star button wraps
+      // the org name — 84.86px (favorite) / 83.58px (regular), not the
+      // 29px icon-only column.
       expect(star).toMatchObject({
-        box: { height: 16, width: 29 },
+        box: { height: 16, width: starWidth },
         button: {
           appearance: "none",
           backgroundColor: "rgba(0, 0, 0, 0)",
@@ -150,7 +163,8 @@ for (const viewport of [
           margin: "0px",
           minHeight: "0px",
           padding: "0px",
-          width: "29px",
+          // CSS serializes the computed width to 3 decimals.
+          width: active ? "84.8594px" : "83.5781px",
         },
         icon: {
           box: { height: 15, width: 16 },

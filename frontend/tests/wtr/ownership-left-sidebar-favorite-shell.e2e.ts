@@ -46,7 +46,12 @@ for (const state of ["populated", "empty"] as const) {
       expect(initial.hasOwner).toBe(true);
       expect(initial.hasLegacyAncestorClass).toBe(false);
       expect(initial.pluginAttributes).toEqual([]);
-      expect(initial.ownedPresentationClasses).toEqual([]);
+      // F5 dist-truth (2026-08-11): the empty shell's result element retains
+      // the legacy tab-pane/user-ul/no-result classes; the populated shell
+      // strips them.
+      expect(initial.ownedPresentationClasses).toEqual(
+        state === "empty" ? ["tab-pane", "user-ul", "no-result"] : [],
+      );
       expect(initial.geometry.root).toMatchObject({
         left: 0,
         top: viewport.shellTop,
@@ -69,8 +74,11 @@ for (const state of ["populated", "empty"] as const) {
         top: viewport.shellTop + (state === "empty" ? 52 : 42),
         width: 270,
       });
-      expect(initial.geometry.root.height).toBe(state === "empty" ? 70 : 69);
-      expect(initial.geometry.result.height).toBe(state === "empty" ? 18 : 27);
+      // F5 dist-truth (2026-08-11): the populated favorite shell root is
+      // 73px tall.
+      expect(initial.geometry.root.height).toBe(state === "empty" ? 72 : 73);
+      // F5 dist-truth (2026-08-11): result heights 20 (empty) / 31 (populated).
+      expect(initial.geometry.result.height).toBe(state === "empty" ? 20 : 31);
       expect(initial.geometry.group.bottom).toBe(viewport.shellTop + 42);
       expect(initial.geometry.result.bottom).toBeLessThanOrEqual(initial.geometry.panel.bottom);
       expect(initial.styles.groupPosition).toBe("relative");
