@@ -19,7 +19,7 @@ const EXPECTED_RESTRICTED_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul>
-      <li><a href="__BASE_PATH__">Y</a></li>
+      <li><a class="logo" href="__BASE_PATH__">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
