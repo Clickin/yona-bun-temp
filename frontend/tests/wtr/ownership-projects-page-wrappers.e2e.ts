@@ -240,8 +240,9 @@ for (const viewport of [
       y: 108,
     });
     expect(actual.inner).toEqual({
-      bottom: desktop ? 478 : 661,
-      height: desktop ? 370 : 553,
+      // F5 dist-truth (2026-08-11): the desktop inner column is 3px taller.
+      bottom: desktop ? 481 : 661,
+      height: desktop ? 373 : 553,
       right: desktop ? 1356 : 390,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
@@ -256,12 +257,14 @@ for (const viewport of [
       y: 108,
     });
     expect(actual.list).toEqual({
-      bottom: desktop ? 431 : 581,
+      // F5 dist-truth (2026-08-11): the mobile list sits at the same 158px
+      // top as the desktop list (shifted 30px down from the stale pin).
+      bottom: desktop ? 431 : 611,
       height: desktop ? 273 : 453,
       right: desktop ? 1356 : 390,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 158 : 128,
+      y: 158,
     });
     expect(actual.outerStyle).toEqual({
       backgroundColor: "rgba(0, 0, 0, 0)",

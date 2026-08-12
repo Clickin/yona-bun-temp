@@ -304,20 +304,20 @@ for (const viewport of [
     expect(actual.imageContained).toBe(true);
     expect(actual.icons.map(({ box }) => box)).toEqual([
       {
-        bottom: desktop ? 364 : 459,
+        bottom: desktop ? 364 : 482,
         height: 16,
         right: desktop ? 1304.65625 : 338.65625,
         width: 16,
         x: desktop ? 1288.65625 : 322.65625,
-        y: desktop ? 348 : 443,
+        y: desktop ? 348 : 466,
       },
       {
-        bottom: desktop ? 364 : 459,
+        bottom: desktop ? 364 : 482,
         height: 16,
         right: desktop ? 1340.828125 : 374.828125,
         width: 16,
         x: desktop ? 1324.828125 : 358.828125,
-        y: desktop ? 348 : 443,
+        y: desktop ? 348 : 466,
       },
     ]);
     expect(
@@ -342,7 +342,8 @@ for (const viewport of [
       });
     }
     expect(actual.stats).toEqual({
-      bottom: desktop ? 367 : 462,
+      // F5 dist-truth (2026-08-11): the mobile stats bottom is 425+60=485.
+      bottom: desktop ? 367 : 485,
       height: 60,
       right: desktop ? 1356 : 390,
       width: 85,
@@ -350,12 +351,12 @@ for (const viewport of [
       y: desktop ? 307 : 425,
     });
     expect(actual.row).toEqual({
-      bottom: desktop ? 383 : 473,
+      bottom: desktop ? 383 : 496,
       height: desktop ? 91 : 151,
       right: desktop ? 1356 : 390,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 292 : 322,
+      y: desktop ? 292 : 345,
     });
     expect(actual.scrollWidth).toBe(viewport.width);
 

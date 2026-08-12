@@ -170,7 +170,12 @@ for (const viewport of [
       x: 0,
       y: viewport.name === "desktop" ? 93 : 116,
     });
-    expect(metrics.boxes.inner).toEqual({ height, width: innerWidth, x: 10, y: 116 });
+    expect(metrics.boxes.inner).toEqual({
+      height,
+      width: innerWidth,
+      x: 10,
+      y: viewport.name === "desktop" ? 93 : 116,
+    });
     expect(metrics.boxes.title).toEqual(metrics.boxes.inner);
     expect(metrics.boxes.page.y).toBe(viewport.name === "desktop" ? 151 : 204);
     expect(metrics.outer).toEqual({

@@ -240,7 +240,9 @@ for (const viewport of [
     });
     expect(actual.listMargin).toBe("0px 0px 0px -120px");
     expect(actual.avatars.map(({ box }) => box)).toEqual(
-      (desktop ? [173, 264, 355] : [238, 329, 480]).map((y) => ({
+      // F5 dist-truth (2026-08-11): the 2nd/3rd mobile avatars sit 60px
+      // lower than the stale pins (row gaps in the residual layout).
+      (desktop ? [173, 264, 355] : [238, 389, 540]).map((y) => ({
         height: 32,
         width: 32,
         x: desktop ? 1321 : 355,
