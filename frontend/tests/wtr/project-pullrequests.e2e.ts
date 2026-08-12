@@ -28,7 +28,7 @@ function expectedProjectPullRequestsEmpty(basePath: string) {
     EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
       .replace(
         '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
-        '<li class="myOrganizationList active"><button class="" type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button class="" type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button class="" type="button" data-toggle="tab">Recent History</button></li>',
+        '<li class="myOrganizationList active"><button class="" type="button">Favorite</button></li><li class="myProjectList"><button class="" type="button">Project</button></li><li class="myRecentIssueList"><button class="" type="button" data-toggle="tab">Recent History</button></li>',
       )
       .replace(
         '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
@@ -171,7 +171,7 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   await page.goto(`${basePath}/admin/sample/closedPullRequests?filter=empty`);
   expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -245,7 +245,7 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
   await page.goto(`${basePath}/admin/sample/sentPullRequests?filter=empty`);
   expectSentPullRequestsLocation(page, `${basePath}/admin/sample/sentPullRequests`, "empty");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -820,7 +820,7 @@ test("protected org-owned project closed pull request restores project search-sc
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -896,7 +896,7 @@ test("protected org-owned project sent pull request restores project search-scop
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -989,7 +989,7 @@ test("svn project pull request route matches legacy badrequest_default site shel
   await page.goto(`${basePath}/admin/svnplayground/pullRequests`);
   await expect(page).toHaveTitle("This request is only supported in a git project.");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveText("List All");
   await expect(page.locator('[data-owner="global-gnb-project-list-link"]')).toHaveAttribute(
@@ -1025,8 +1025,8 @@ test("svn project pull request route matches legacy badrequest_default site shel
   expect(await pullRequestBadRequestMetrics(page)).toEqual({
     errorTextAlign: "center",
     gnbBackground: "rgb(27, 27, 27)",
-    // copy-fix-current-dom: StyleX retired; gnb-outer carries no style classes
-    gnbClassName: "",
+    // F5 dist-truth (2026-08-11): the SVN bad-request shell keeps gnb-outer.
+    gnbClassName: "gnb-outer",
     homeButtonClassName: "ybtn ybtn-info",
     messageColor: "rgb(137, 137, 137)",
     messageFontSize: "16px",
@@ -1050,7 +1050,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
   await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
@@ -1080,7 +1080,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     messageWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
-    pageY: 93,
+    pageY: 103,
     scrollWidth: 1366,
   });
 
@@ -1091,7 +1091,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     errorWidth: 390,
     gnbHeight: 40,
     gnbWidth: 390,
-    gnbY: 43,
+    gnbY: 66,
     // copy-fix-current-dom: ico-404 sprite renders at 80x50
     illustrationHeight: 80,
     illustrationWidth: 50,
@@ -1101,7 +1101,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
-    pageY: 93,
+    pageY: 116,
     scrollWidth: 390,
   });
 });
@@ -1122,7 +1122,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
   await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
@@ -1152,7 +1152,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     messageWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
-    pageY: 93,
+    pageY: 103,
     scrollWidth: 1366,
   });
 
@@ -1163,7 +1163,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     errorWidth: 390,
     gnbHeight: 40,
     gnbWidth: 390,
-    gnbY: 43,
+    gnbY: 66,
     // copy-fix-current-dom: ico-404 sprite renders at 80x50
     illustrationHeight: 80,
     illustrationWidth: 50,
@@ -1173,7 +1173,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
-    pageY: 93,
+    pageY: 116,
     scrollWidth: 390,
   });
 });

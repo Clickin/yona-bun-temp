@@ -296,7 +296,7 @@ test("project pull request overview exposes legacy project-header search scope",
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",

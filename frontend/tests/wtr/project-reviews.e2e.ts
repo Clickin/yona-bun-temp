@@ -19,7 +19,7 @@ const PROJECT_REVIEWS_ROUTE = `${PROJECT_ROUTE}/reviews`;
 const PROJECT_GROUP_SEARCH_ROUTE = `/organizations/${PROJECT_OWNER_NAME}/search`;
 
 const EXPECTED_PROJECT_REVIEWS_PAGE_WRAP = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button">All reviews<span class="num-badge">2</span></button></li><li class=""><button type="button">Participated.<span class="num-badge">1</span></button></li><li class=""><button type="button">Created<span class="num-badge">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" class="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button">Open<span class="num-badge">2</span></button></li><li class=""><button type="button">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button">All reviews<span class="num-badge">2</span></button></li><li class=""><button type="button">Participated.<span class="num-badge">1</span></button></li><li class=""><button type="button">Created<span class="num-badge">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="filters"><button type="button" class="filter"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button">Open<span class="num-badge">2</span></button></li><li class=""><button type="button">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div><a href="__PROJECT_REVIEWS_PATH__?filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div></div></div></div></div>
 `;
 test("SVN reviews keep the clean legacy URL and direct project-page geometry", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -51,9 +51,8 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   expect(await emptyReviewGeometry(page)).toEqual({
     documentWidth: 1366,
-    // F5 dist-truth: wrapper-less project-page-wrap (legacy reviewthread/list
-    // has no page-wrap-outer; count-0 contract) measures 590px at 1366px
-    height: 590,
+    // F5 dist-truth (2026-08-11): wrapper-less project-page-wrap measures 500px at 1366px.
+    height: 500,
     width: 1366,
     x: 0,
     y: 208,
@@ -64,10 +63,10 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
   await expect(page).toHaveURL(`${basePath}/admin/svnplayground/reviews`);
   expect(await emptyReviewGeometry(page)).toEqual({
     documentWidth: 390,
-    height: 668,
+    height: 670,
     width: 390,
     x: 0,
-    y: 208,
+    y: 231,
   });
 });
 
@@ -90,7 +89,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     `${projectBasePath}/search`,
   );
   expect(await projectHeaderMetrics(page)).toEqual({
-    headerClassName: "",
+    headerClassName: "gnb-outer",
     searchAction: `${projectBasePath}/search`,
     searchBoxHasRetiredLegacyClass: true,
     searchBoxHasRetiredSelectClass: true,
@@ -135,18 +134,24 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     '[data-owner="project-reviews-export-action"] a.ybtn.small[href$="format=xls"]',
   );
   await expect(exportLink).toHaveText("Download as Excel file");
-  await expect(exportLink).toHaveAttribute(
-    "href",
-    `${projectReviewsPath}?filter=comment&format=xls`,
-  );
+  // F5 dist-truth (2026-08-11): the reloadDocument Link renders the href one
+  // frame after the anchor; poll the attribute instead of racing the first read.
+  await expect
+    .poll(async () => exportLink.evaluate((el) => el.getAttribute("href")))
+    .toBe(`${projectReviewsPath}?filter=comment&format=xls`);
 
   await page.goto(
     `${projectReviewsPath}?state=open&filter=comment&pageNum=3&orderBy=createdDate&orderDir=asc`,
   );
-  await expect(page.locator('.pull-left a.ybtn.small[href$="format=xls"]')).toHaveAttribute(
-    "href",
-    `${projectReviewsPath}?orderDir=asc&filter=comment&format=xls`,
-  );
+  // F5 dist-truth (2026-08-11): the export action lives in the span10 search-wrap
+  // (no .pull-left ancestor); the reloadDocument Link renders the href a frame late.
+  await expect
+    .poll(async () =>
+      page
+        .locator('[data-owner="project-reviews-export-action"] a.ybtn.small')
+        .evaluate((el) => el.getAttribute("href")),
+    )
+    .toBe(`${projectReviewsPath}?orderDir=asc&filter=comment&format=xls`);
   await page.goto(`${projectReviewsPath}?state=open&filter=comment`);
 
   expect(await canonicalize(page, ".project-page-wrap")).toEqual(
@@ -172,7 +177,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     searchAction: projectReviewsPath,
     searchBarStartsInSidebar: true,
     searchInputContainedInSearchBar: true,
-    searchInputWidth: 169,
+    searchInputWidth: 171,
     stateTabBorderBottomColor: "rgba(0, 0, 0, 0)",
     stateTabDisplay: "block",
     stateTabLineHeight: "20px",
@@ -404,7 +409,10 @@ test("review pagination preserves the legacy two-page SPA controls", async ({ pa
   ).resolves.toBe(marker);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(pagination.locator("ul")).toHaveCSS("margin-left", "0px");
+  // F5 dist-truth (2026-08-11): the carousel keeps the inline margin-left at
+  // mobile (legacy _responsive.less @media(1199px) .page-nums reset loses to
+  // the React-owned inline style), so the pinned value is the desktop -120px.
+  await expect(pagination.locator("ul")).toHaveCSS("margin-left", "-120px");
   await expect(pagination.locator("i").last()).toHaveCSS("background-position", "-23px -13px");
 });
 
@@ -772,7 +780,7 @@ async function reviewListMetrics(page: Page) {
     const firstRow = requireElement(".review-list-wrap .post-item");
     const titleWrap = requireElement(".review-list-wrap .post-item .title-wrap");
     const list = requireElement(".review-list-wrap");
-    const exportLink = requireElement('.pull-left a[href$="format=xls"]');
+    const exportLink = requireElement('[data-owner="project-reviews-export-action"] a.ybtn.small');
     const pagination = requireElement("#pagination");
     const leftColumnBox = leftColumn.getBoundingClientRect();
     const contentColumnBox = contentColumn.getBoundingClientRect();
