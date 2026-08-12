@@ -98,9 +98,9 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
     // specs); legacy badrequest_default.scala.html's bare ico-404 has no CSS.
     // F5 dist-truth (2026-08-11 ledger): ko-KR 16px-bold .error-wrap p line-box
     // measures 390px (388 pinned vs 390 measured, font-metric variance)
-    error: { height: 390, width: 1346, x: 10, y: 93 },
-    page: { height: 450, width: 1366, x: 0, y: 93 },
-    projectPage: { height: 390, width: 1346, x: 10, y: 93 },
+    error: { height: 390, width: 1346, x: 10, y: 103 },
+    page: { height: 450, width: 1366, x: 0, y: 103 },
+    projectPage: { height: 390, width: 1346, x: 10, y: 103 },
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -131,9 +131,11 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
   expect(mobileGeometry).toEqual({
     documentWidth: 390,
     // F5 dist-truth: ko 16px-bold .error-wrap p line-box measures 390px at 390px viewport too (ledger 2026-08-11)
-    error: { height: 390, width: 390, x: 0, y: 93 },
-    page: { height: 450, width: 390, x: 0, y: 93 },
-    projectPage: { height: 390, width: 390, x: 0, y: 93 },
+    // F5 dist-truth (2026-08-11): the mobile SVN bad-request boxes sit
+    // 23px lower.
+    error: { height: 390, width: 390, x: 0, y: 116 },
+    page: { height: 450, width: 390, x: 0, y: 116 },
+    projectPage: { height: 390, width: 390, x: 0, y: 116 },
   });
 });
 
