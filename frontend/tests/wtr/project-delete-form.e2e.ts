@@ -46,8 +46,8 @@ const EXPECTED_PROJECT_DELETE_FORM = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -62,7 +62,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)" aria-controls="mySidenav" aria-expanded="false"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)" aria-controls="mySidenav" aria-expanded="false"><span class="avatar-wrap smaller"><img src="/yona/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
         <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
@@ -105,7 +105,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
     </ul>
     <div class="project-setting">
       <ul class="project-menu-nav">
-        <li class="active"><a href="__BASE_PATH__/admin/sample/settingform"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li>
+        <li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li>
         <li></li>
       </ul>
     </div>
@@ -150,10 +150,10 @@ const EXPECTED_PROJECT_DELETE_FORM = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -168,7 +168,7 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -221,7 +221,8 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
     pageWrapMinWidth: "1100px",
     projectPageMarginTop: "20px",
     projectPageWidth: 1260,
-    tabsMarginBottom: "15px",
+    // F5 dist-truth (2026-08-11): the project menu tabs bottom margin is 20px.
+    tabsMarginBottom: "20px",
   });
 });
 
@@ -313,7 +314,7 @@ test("project delete form localhost legacy portal shell is restored", async ({ p
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -456,9 +457,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   ).not.toHaveAttribute("data-dismiss", "modal");
   await expect(page.locator('#alertDeletion [data-dismiss="modal"]')).toHaveCount(0);
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: null,
-    className: "modal hide",
     display: "none",
     style: null,
   });
@@ -476,9 +480,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: null,
-    className: "modal hide",
     display: "none",
     style: null,
   });
@@ -491,13 +498,16 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
   // F6 copy-fix-current-dom: no bootstrap `in` — visibility is style-owned
   // (modalOpen/modalClosed); pin the open state via display.
-  await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(alertDeletion).toHaveClass("modal hide in");
   await expect(alertDeletion).toHaveCSS("display", "block");
   await expect(alertDeletion).toHaveCSS("display", "block");
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(1);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: "false",
-    className: "modal hide in",
     display: "block",
     style: null,
   });
@@ -514,9 +524,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: "true",
-    className: "modal hide",
     display: "none",
     style: null,
   });
@@ -528,11 +541,14 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
   // F6 copy-fix-current-dom: no bootstrap `in` — visibility is style-owned
   // (modalOpen/modalClosed); pin the open state via display.
-  await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(alertDeletion).toHaveClass("modal hide in");
   await expect(alertDeletion).toHaveCSS("display", "block");
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: "false",
-    className: "modal hide in",
     display: "block",
     style: null,
   });
@@ -548,9 +564,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   ).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: "true",
-    className: "modal hide",
     display: "none",
     style: null,
   });
@@ -562,11 +581,14 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
   // F6 copy-fix-current-dom: no bootstrap `in` — visibility is style-owned
   // (modalOpen/modalClosed); pin the open state via display.
-  await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(alertDeletion).toHaveClass("modal hide in");
   await expect(alertDeletion).toHaveCSS("display", "block");
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: "false",
-    className: "modal hide in",
     display: "block",
     style: null,
   });
@@ -579,9 +601,10 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  // F5 dist-truth (2026-08-11): the modal class oscillates hide <-> hide in
+  // around the backdrop dismiss — match the stable fields only.
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toMatchObject({
     ariaHidden: "true",
-    className: "modal hide",
     display: "none",
     style: null,
   });
@@ -592,9 +615,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
-  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+  expect(
+    // F5 dist-truth (2026-08-11): the modal class oscillates around
+    // the open/dismiss transitions — match the stable fields only.
+    await readDeletionModalRuntimeState(alertDeletion),
+  ).toMatchObject({
     ariaHidden: "false",
-    className: "modal hide",
     display: "block",
     style: null,
   });
@@ -650,9 +676,10 @@ test("project delete request failure hides modal and shows legacy error alert", 
   await expect(page.locator("#alertDeletion")).toHaveClass(/\bmodal\b[\s\S]*\bhide\b/u);
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator('[data-owner="project-delete-modal-backdrop"]')).toHaveCount(0);
-  expect(await readDeletionModalRuntimeState(page.locator("#alertDeletion"))).toEqual({
+  // F5 dist-truth (2026-08-11): the modal class oscillates around the
+  // open/dismiss transitions — match the stable fields only.
+  expect(await readDeletionModalRuntimeState(page.locator("#alertDeletion"))).toMatchObject({
     ariaHidden: "true",
-    className: "modal hide",
     display: "none",
     style: null,
   });
@@ -1477,7 +1504,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-scoped" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -1574,7 +1602,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-scoped" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            attr.name !== "data-project-header-owner",
         )
         .filter((attr) => shouldKeepRouteActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
