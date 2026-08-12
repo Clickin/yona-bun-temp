@@ -3002,7 +3002,14 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
                   ? actual === expected
                   : expected instanceof RegExp
                     ? expected.test(actual)
-                    : String(actual) === String(expected);
+                    : typeof expected === "object" &&
+                        expected !== null &&
+                        typeof (expected as { asymmetricMatch?: unknown }).asymmetricMatch ===
+                          "function"
+                      ? (
+                          expected as { asymmetricMatch: (value: unknown) => boolean }
+                        ).asymmetricMatch(actual)
+                      : String(actual) === String(expected);
           return negate ? !matches : matches;
         },
         `toHaveAttribute(${name}) — actual: ${await describeAttribute()}`,
