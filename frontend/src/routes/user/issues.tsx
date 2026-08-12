@@ -642,6 +642,7 @@ function MySeriesMenuTabs({
           id="setDefaultLoginPage"
           title={defaultLoginPageTitle}
           className={`ybtn hide-in-mobile${hideDefaultLoginPageButton ? " hide" : ""}`.trim()}
+          style={hideDefaultLoginPageButton ? { display: "none" } : undefined}
           data-owner="user-issues-default-login-button"
           onBlur={hideDefaultLoginPagePopover}
           onClick={() => {
