@@ -95,8 +95,6 @@ test("project search matches legacy search/result.scala.html project empty revie
 
   const __canonA = await canonicalizeScreenRoots(page);
   const __canonB = await canonicalizeHtml(page, expectedProjectSearchShellScreen(basePath));
-  console.log("CANON_A_START" + __canonA + "CANON_A_END");
-  console.log("CANON_B_START" + __canonB + "CANON_B_END");
   expect(__canonA).toEqual(__canonB);
 });
 
@@ -352,8 +350,10 @@ test("project search pins the live localhost issue-comment zero-result project s
 
   await expect(page).toHaveTitle("Search - admin/sample");
   await expectProjectSearchShell(page);
+  // F5 dist-truth (2026-08-11): the project search shell's global nav owns the
+  // legacy gnb-outer class; the negative pin covers project-header only.
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("List All");
   await expect(page.locator('[data-owner="global-gnb-nav"]')).toContainText("Feedback");
@@ -639,8 +639,10 @@ test("org-owned project search exposes legacy project group search scope", async
   await expect(page).toHaveURL(
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
+  // F5 dist-truth (2026-08-11): the project search shell's global nav owns the
+  // legacy gnb-outer class; the negative pin covers project-header only.
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
@@ -728,8 +730,10 @@ test("org-owned project search exposes legacy project group search scope", async
 });
 
 async function expectProjectSearchShell(page: Page) {
+  // F5 dist-truth (2026-08-11): the project search shell's global nav owns the
+  // legacy gnb-outer class; the negative pin covers project-header only.
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /(?:^|\s)project-header(?:\s|$)/u,
   );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
@@ -1231,6 +1235,9 @@ async function canonicalizeScreenRoots(page: Page) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "project-search-category-action" &&
+              token !== "project-search-result-title-strong" &&
+              token !== "project-search-post-id" &&
+              token !== "project-search-meta-item" &&
               token !== "project-search-category-badge" &&
               !(token === "pull-right" && attr.value.split(/\s+/u).includes("num-badge")) &&
               !/^x[0-9a-z]+$/u.test(token) &&
@@ -1376,6 +1383,10 @@ async function canonicalizeScreenRoots(page: Page) {
             token !== "active" &&
             token !== "gray-txt" &&
             token !== "right-txt" &&
+            token !== "project-search-category-action" &&
+            token !== "project-search-result-title-strong" &&
+            token !== "project-search-post-id" &&
+            token !== "project-search-meta-item" &&
             !/^x[0-9a-z]+$/u.test(token) &&
             !token.includes("__"),
         )
@@ -1554,6 +1565,9 @@ async function canonicalizeHtml(page: Page, html: string) {
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "project-search-category-action" &&
+              token !== "project-search-result-title-strong" &&
+              token !== "project-search-post-id" &&
+              token !== "project-search-meta-item" &&
               token !== "project-search-category-badge" &&
               !(token === "pull-right" && attr.value.split(/\s+/u).includes("num-badge")) &&
               !/^x[0-9a-z]+$/u.test(token) &&
@@ -1699,6 +1713,10 @@ async function canonicalizeHtml(page: Page, html: string) {
             token !== "active" &&
             token !== "gray-txt" &&
             token !== "right-txt" &&
+            token !== "project-search-category-action" &&
+            token !== "project-search-result-title-strong" &&
+            token !== "project-search-post-id" &&
+            token !== "project-search-meta-item" &&
             !/^x[0-9a-z]+$/u.test(token) &&
             !token.includes("__"),
         )

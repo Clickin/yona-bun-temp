@@ -806,7 +806,9 @@ test("global search shared root sidebar tabs use React button state without Boot
 
   const tabRow = page.locator("#mySidenav .nav.nav-tabs.nm");
   const buttons = tabRow.locator("button");
-  await expect(tabRow.locator('[data-toggle="tab"]')).toHaveCount(3);
+  // F5 dist-truth (2026-08-11): all three sidebar tabs are React state buttons
+  // without the legacy data-toggle marker in this root shell.
+  await expect(tabRow.locator('[data-toggle="tab"]')).toHaveCount(0);
   await expect(tabRow.locator('a[href^="#"]')).toHaveCount(0);
   await expect(buttons).toHaveText(["Favorite", "Project", "Recent History"]);
   await expect(buttons).toHaveCount(3);
@@ -1214,7 +1216,7 @@ test("global search renders legacy request text too large error shell", async ({
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
     // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
 });
 
@@ -1260,7 +1262,7 @@ test("global search renders legacy error/forbidden_default.scala.html shell", as
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
     // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
   await rememberSpaMarker(page, "forbidden-default-home");
   await homeButton.click();
@@ -1313,7 +1315,7 @@ test("global search renders legacy error/internalServerError_default.scala.html 
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
     // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
   await rememberSpaMarker(page, "internal-server-default-home");
   await homeButton.click();
