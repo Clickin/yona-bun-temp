@@ -152,16 +152,17 @@ function UserFilesScreen({
               searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
             }}
           >
-            <div data-owner="user-files-search">
+            <div className="user-file-search search search-bar" data-owner="user-files-search">
               <input
                 key={`${filter}:${pageNum}`}
                 name="filter"
                 type="text"
+                className="textbox"
                 placeholder={t("search.title")}
                 defaultValue=""
                 data-owner="user-files-search-input"
               />
-              <button type="submit" data-owner="user-files-search-action">
+              <button type="submit" className="search-btn" data-owner="user-files-search-action">
                 <i className="yobicon-search"></i>
               </button>
             </div>
@@ -266,9 +267,13 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
     "--user-files-pagination-sprite": `url(${legacySpriteUrl})`,
   } as CSSProperties;
   return (
-    <div id="pagination" data-owner="user-files-pagination">
-      <ul data-owner="user-files-pagination-list">
-        <li data-pagination-variant="icon" data-owner="user-files-pagination-item">
+    <div id="pagination" className="page-navigation-wrap" data-owner="user-files-pagination">
+      <ul className="page-nums" data-owner="user-files-pagination-list">
+        <li
+          className="page-num ikon"
+          data-pagination-variant="icon"
+          data-owner="user-files-pagination-item"
+        >
           {hasPrev ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
@@ -276,24 +281,30 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
               search={pageSearch(currentPage - 1)}
               to="/user/files"
             >
-              <i style={paginationSpriteStyle} data-owner="user-files-pagination-icon"></i>
+              <i
+                className="ico btn-pg-prev"
+                style={paginationSpriteStyle}
+                data-owner="user-files-pagination-icon"
+              ></i>
               <span data-owner="user-files-pagination-label">{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i
+                className="ico btn-pg-prev off"
                 style={paginationSpriteStyle}
                 data-disabled="true"
                 data-owner="user-files-pagination-icon"
               ></i>
-              <span data-disabled="true" data-owner="user-files-pagination-label">
+              <span className="off" data-disabled="true" data-owner="user-files-pagination-label">
                 {t("button.prevPage")}
               </span>
             </>
           )}
         </li>
-        <li data-owner="user-files-pagination-item">
+        <li className="page-num" data-owner="user-files-pagination-item">
           <input
+            className="input-mini nospinner"
             defaultValue={currentPage}
             key={`${currentPage}-${files.totalPages}`}
             max={files.totalPages}
@@ -323,11 +334,21 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
             data-owner="user-files-pagination-input"
           />
         </li>
-        <li data-pagination-variant="delimiter" data-owner="user-files-pagination-item">
+        <li
+          className="page-num delimiter"
+          data-pagination-variant="delimiter"
+          data-owner="user-files-pagination-item"
+        >
           /
         </li>
-        <li data-owner="user-files-pagination-item">{files.totalPages}</li>
-        <li data-pagination-variant="icon" data-owner="user-files-pagination-item">
+        <li className="page-num" data-owner="user-files-pagination-item">
+          {files.totalPages}
+        </li>
+        <li
+          className="page-num ikon"
+          data-pagination-variant="icon"
+          data-owner="user-files-pagination-item"
+        >
           {hasNext ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
@@ -336,14 +357,19 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
               to="/user/files"
             >
               <span data-owner="user-files-pagination-label">{t("button.nextPage")}</span>
-              <i style={paginationSpriteStyle} data-owner="user-files-pagination-icon"></i>
+              <i
+                className="ico btn-pg-next"
+                style={paginationSpriteStyle}
+                data-owner="user-files-pagination-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span data-disabled="true" data-owner="user-files-pagination-label">
+              <span className="off" data-disabled="true" data-owner="user-files-pagination-label">
                 {t("button.nextPage")}
               </span>
               <i
+                className="ico btn-pg-next off"
                 style={paginationSpriteStyle}
                 data-disabled="true"
                 data-owner="user-files-pagination-icon"

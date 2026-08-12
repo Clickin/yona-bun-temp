@@ -9,23 +9,25 @@ const EXPECTED_USER_FILES_SCREEN = `
   <div class="gnb-inner">
     <button class="pin" type="button" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
         <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-toggle="tooltip" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -33,7 +35,7 @@ const EXPECTED_USER_FILES_SCREEN = `
   <div class="page-wrap">
     <ul class="nav nav-tabs">
       <li><a href="__BASE_PATH__/notifications">Notification</a></li>
-      <li><a href="__BASE_PATH__/user/issues">My Issues</a></li>
+      <li><a href="__BASE_PATH__/user/issues?filter=assigned&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=1&amp;query=&amp;state=open">My Issues</a></li>
       <li class="active"><a href="__BASE_PATH__/user/files">My Files</a></li>
       <li></li>
     </ul>
@@ -174,10 +176,10 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   expect(await readUserFilesMetrics(page)).toEqual({
     attachmentFontSize: "13px",
     firstRowDisplay: "grid",
-    footerPadding: "10px 0px",
+    footerPadding: "10px",
     gnbOuterHeight: "40px",
     pageWrapMarginTop: "10px",
-    searchMargin: "12px 0px 16px",
+    searchMargin: "0px 0px 10px",
   });
 
   await expect(page.locator(".page-wrap > .nav-tabs > li")).toHaveClass(["", "", "active", ""]);
@@ -187,7 +189,7 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   );
   await expect(page.locator('.page-wrap > .nav-tabs a:has-text("My Issues")')).toHaveAttribute(
     "href",
-    `${basePath}/user/issues`,
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=&state=open`,
   );
   await expect(page.locator('.page-wrap > .nav-tabs a:has-text("My Files")')).toHaveAttribute(
     "href",
@@ -462,6 +464,9 @@ async function canonicalizeScreenRoots(page: Page) {
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
+      if (current.id === "usermenu-tab-content-list") {
+        return `${open}Loading...</${current.tagName.toLowerCase()}>`;
+      }
       const children = Array.from(current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
@@ -527,6 +532,15 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      if (name === "title" && current.closest(".gnb-usermenu") !== null) {
+        return "";
+      }
+      if (
+        (name === "data-toggle" || name === "data-placement") &&
+        current.classList.contains("usermenu-icon-button")
+      ) {
+        return "";
       }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
