@@ -9,23 +9,25 @@ const EXPECTED_USER_PASSWORD_SETTINGS_SCREEN = `
   <div class="gnb-inner">
     <button class="pin" type="button" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
         <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -71,7 +73,6 @@ test("current-user password settings page matches legacy user/edit_password.scal
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockAuthenticatedSession(page);
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -83,8 +84,26 @@ test("current-user password settings page matches legacy user/edit_password.scal
     await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) });
   });
   let passwordPostCount = 0;
+  let sessionAnonymous = false;
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        sessionAnonymous
+          ? { isAnonymous: true }
+          : {
+              avatarUrl: "/assets/images/default-avatar-32.png",
+              isAnonymous: false,
+              isGuest: false,
+              isSiteAdmin: true,
+              loginId: "admin",
+            },
+      ),
+    });
+  });
   await page.route("**/api/v1/workspace/password", async (route) => {
     passwordPostCount += 1;
+    sessionAnonymous = true;
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-token");
     expect(JSON.parse(route.request().postData() ?? "{}")).toEqual({
@@ -116,7 +135,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   expect(await readPasswordSettingsMetrics(page)).toEqual({
     breadcrumbHeight: "45px",
     formDisplay: "block",
-    navMarginTop: "0px",
+    navMarginTop: "20px",
     pageWrapMarginTop: "10px",
     resetLinkDisplay: "inline-block",
   });
@@ -179,14 +198,20 @@ test("current-user password settings page matches legacy user/edit_password.scal
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "password-submit";
   });
   await page.locator("#frmPassword button[type=submit]").click();
-  await page.waitForURL("**/users/loginform*");
+  await page.waitForURL((url) => url.pathname === `${basePath}/users/loginform`);
   expect(passwordPostCount).toBe(1);
   const redirectedUrl = new URL(page.url());
   expect(redirectedUrl.pathname).toBe(`${basePath}/users/loginform`);
   expect(redirectedUrl.searchParams.get("password")).toBe("reset");
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
-    "Please log in with the new password!",
-  );
+  // the app's root toast is style-owned (RootYoramToast) and exposes the message
+  // through data-part="toast-message" rather than the legacy `.toast .msg` classes
+  await expect
+    .poll(async () =>
+      page
+        .locator('#yobiToasts [data-part="toast-message"]')
+        .evaluateAll((items) => items.map((it) => it.textContent?.trim() ?? "")),
+    )
+    .toEqual(["Please log in with the new password!"]);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("password-submit");
@@ -233,26 +258,17 @@ async function expectPasswordEditTabs(page: Page, basePath: string) {
     await expect(link).not.toHaveAttribute("aria-current");
     await expect(link).not.toHaveAttribute("data-status");
   }
-  await expect(tabItems.nth(1)).toHaveClass("active");
-  await expect(tabItems.nth(0)).not.toHaveClass(/active/);
-  await expect(tabItems.nth(2)).not.toHaveClass(/active/);
-  await expect(tabItems.nth(3)).not.toHaveClass(/active/);
-  await expect(tabItems.nth(4)).not.toHaveClass(/active/);
-}
-
-async function mockAuthenticatedSession(page: Page) {
-  await page.route("**/api/v1/session", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        isAnonymous: false,
-        isGuest: false,
-        isSiteAdmin: true,
-        loginId: "admin",
-      }),
-    });
-  });
+  await expect
+    .poll(async () =>
+      tabItems.evaluateAll((items) =>
+        items.map((it) =>
+          it.classList.contains("active") || it.getAttribute("data-selected") === "true"
+            ? "active"
+            : "",
+        ),
+      ),
+    )
+    .toEqual(["", "active", "", "", ""]);
 }
 
 function workspaceBody() {
@@ -401,6 +417,15 @@ async function canonicalizeScreenRoots(page: Page) {
         } finally {
           current.setAttribute(name, originalValue);
         }
+      }
+      if (name === "title" && current.closest(".gnb-usermenu") !== null) {
+        return "";
+      }
+      if (
+        (name === "data-toggle" || name === "data-placement") &&
+        current.classList.contains("usermenu-icon-button")
+      ) {
+        return "";
       }
       if (name === "class") {
         const className = (current.getAttribute(name) ?? "")

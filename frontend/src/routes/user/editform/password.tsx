@@ -77,7 +77,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
         <input type="hidden" name="loginId" value={loginId} />
         <dl data-owner="user-password-list">
           <dt data-owner="user-password-term">{t("user.currentPassword")}</dt>
-          <dd data-owner="user-password-description">
+          <dd className="mt10" data-owner="user-password-description">
             <input
               type="password"
               id="oldPassword"
@@ -90,7 +90,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
             <FieldPopover message={fieldErrors.oldPassword} field="oldPassword" />
           </dd>
           <dt data-owner="user-password-term">{t("user.newPassword")}</dt>
-          <dd data-owner="user-password-description">
+          <dd className="mt10" data-owner="user-password-description">
             <input
               type="password"
               id="password"
@@ -103,7 +103,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
             <FieldPopover message={fieldErrors.password} field="password" />
           </dd>
           <dt data-owner="user-password-term">{t("validation.retypePassword")}</dt>
-          <dd data-owner="user-password-description">
+          <dd className="mt10" data-owner="user-password-description">
             <input
               type="password"
               id="retypedPassword"
@@ -115,19 +115,27 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
             />
             <FieldPopover message={fieldErrors.retypedPassword} field="retypedPassword" />
           </dd>
-          <dd data-owner="user-password-description">
-            <button type="submit" data-owner="user-password-submit-action">
+          <dd className="mt10" data-owner="user-password-description">
+            <button
+              type="submit"
+              className="ybtn ybtn-success"
+              data-owner="user-password-submit-action"
+            >
               {t("userinfo.changePassword")}
             </button>
           </dd>
         </dl>
       </form>
       <hr data-owner="user-password-separator" />
-      <div data-owner="user-password-reset-section">
+      <div className="mt10" data-owner="user-password-reset-section">
         <dl data-owner="user-password-reset-list">
           <dt data-owner="user-password-reset-term">{t("site.resetPasswordEmail.desc")}</dt>
-          <dd data-owner="user-password-reset-description">
-            <Link to="/lostPassword" data-owner="user-password-reset-action">
+          <dd className="mt10" data-owner="user-password-reset-description">
+            <Link
+              to="/lostPassword"
+              className="ybtn ybtn-fail"
+              data-owner="user-password-reset-action"
+            >
               {t("site.resetPasswordEmail.title")}
             </Link>
           </dd>
