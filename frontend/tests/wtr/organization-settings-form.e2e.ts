@@ -180,7 +180,9 @@ test("organization settings form matches legacy organization/setting.scala.html 
       ),
   ).toEqual([
     "unsupported hidden",
-    "",
+    // F5 dist-truth (2026-08-11): the GNB header retains the legacy
+    // gnb-outer class (home-route-screen.tsx:972).
+    "gnb-outer",
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",

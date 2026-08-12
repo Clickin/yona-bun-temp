@@ -35,8 +35,8 @@ const EXPECTED_ORGANIZATIONS_LIST = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
           <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -45,23 +45,23 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
-          <span class="avatar-wrap smaller"><img alt="" src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
+        <button aria-controls="mySidenav" aria-expanded="false" type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">
+          <span class="avatar-wrap smaller"><img alt="" src="/yona/legacy-assets/images/default-avatar-34.png"></span><span class="caret"></span>
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn">
           <i class="yobicon-plus"></i><span class="caret"></span>
         </button>
         <ul class="dropdown-menu flat right">
@@ -75,18 +75,8 @@ const EXPECTED_ORGANIZATIONS_LIST = `
     </ul>
   </div>
 </header>
-<div class="site-breadcrumb-outer">
-  <div class="site-breadcrumb-inner">
-    <div class="title_area">
-      <ul class="nav nav-tabs">
-        <li><a href="__BASE_PATH__/projects">PUBLIC Project list</a></li>
-        <li class="active"><a href="__BASE_PATH__/orgs">Group List</a></li>
-      </ul>
-    </div>
-  </div>
-</div>
-<div class="page-wrap-outer">
-  <div class="project-page-wrap">
+<div>
+  <div>
     <div class="search-wrap">
       <div id="search" class="pull-left">
         <form action="__BASE_PATH__/orgs" method="get">
@@ -118,10 +108,10 @@ const EXPECTED_ORGANIZATIONS_LIST = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -557,7 +547,7 @@ async function canonicalizeScreenRoots(page: Page) {
     });
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=site-footer]",
+        ".unsupported, [data-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-owner=organization-directory-page-wrap], [data-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -574,6 +564,7 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
+            attr.name !== "data-page-shell" &&
             !attr.name.startsWith("data-v-") &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )

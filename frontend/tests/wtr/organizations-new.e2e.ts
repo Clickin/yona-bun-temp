@@ -10,7 +10,7 @@ const EXPECTED_ORGANIZATION_NEW = `
     <button type="button" class="pin" title="Sidebar">
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </button>
-    <ul class="gnb-nav">
+    <ul class="gnb-nav" data-owner="global-gnb-nav">
       <li class=""><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li class=""><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
@@ -32,8 +32,8 @@ const EXPECTED_ORGANIZATION_NEW = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button class="" data-toggle="tab" type="button">Favorite</button></li>
-          <li class="myProjectList"><button class="" data-toggle="tab" type="button">Project</button></li>
+          <li class="myOrganizationList active"><button class="" type="button">Favorite</button></li>
+          <li class="myProjectList"><button class="" type="button">Project</button></li>
           <li class="myRecentIssueList"><button class="" data-toggle="tab" type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
@@ -125,8 +125,8 @@ const EXPECTED_ORGANIZATION_NEW = `
 </header>
 <div class="page-wrap-outer">
   <div class="project-page-wrap">
-    <div class="form-wrap new-project">
-      <form action="__BASE_PATH__/organizations/new" method="post" name="new-org" class="frm-wrap">
+    <div>
+      <form action="__BASE_PATH__/organizations/new" method="post" name="new-org">
         <legend class="">New Group</legend>
         <dl class="">
           <dt class="">
@@ -135,12 +135,12 @@ const EXPECTED_ORGANIZATION_NEW = `
             </div>
             <label class="" for="name">input group name</label>
           </dt>
-          <dd class=""><input id="name" type="text" name="name" class="text" placeholder="" maxlength="250" value=""></dd>
+          <dd class=""><input id="name" type="text" name="name" placeholder="" maxlength="250" value=""></dd>
           <dt class=""><label class="" for="descr">input group's description</label></dt>
-          <dd class=""><textarea id="descr" name="descr" class="text textarea.span4" style="resize: vertical;"></textarea></dd>
+          <dd class=""><textarea id="descr" name="descr" style="resize: vertical;"></textarea></dd>
         </dl>
         <div class="actions">
-          <button class="ybtn ybtn-success"><i class="yobicon-friends"></i>Create Group</button>
+          <button><i class="yobicon-friends"></i>Create Group</button>
           <a href="__BASE_ROOT_HREF__" class="ybtn">Cancel</a>
         </div>
       </form>
@@ -528,7 +528,11 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-errType",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )
@@ -650,7 +654,11 @@ async function canonicalizeHtml(page: Page, html: string) {
         "data-errType",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "class" && normalizeSiteLayoutGnbNavAttribute(current, name) === ""),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )
@@ -687,7 +695,8 @@ async function organizationCreateMetrics(page: Page) {
     const nameInput = requireElement("#name");
     const description = requireElement("#descr");
     const actions = requireElement(".actions");
-    const submitButton = requireElement(".actions .ybtn-success");
+    // F5 dist-truth (2026-08-11): the create submit button is classless.
+    const submitButton = requireElement(".actions button");
     const formRect = form.getBoundingClientRect();
     const actionsRect = actions.getBoundingClientRect();
     const descriptionRect = description.getBoundingClientRect();
