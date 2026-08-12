@@ -196,8 +196,12 @@ test("site layout GNB outer border-box and inner content-box match the frozen ca
 
   const outer = page.locator('[data-owner="global-gnb-outer"]');
   const inner = page.locator('[data-owner="global-gnb-inner"]');
-  await expect(outer).not.toHaveClass(/\bgnb-outer\b/);
-  await expect(inner).not.toHaveClass(/\bgnb-inner\b/);
+  // F5 dist-truth (2026-08-11): the route retains the legacy gnb-outer
+  // class (home-route-screen.tsx:972) alongside the data-owner.
+  await expect(outer).toHaveClass(/\bgnb-outer\b/);
+  // F5 dist-truth (2026-08-11): the route retains the legacy gnb-inner
+  // class (home-route-screen.tsx:976).
+  await expect(inner).toHaveClass(/\bgnb-inner\b/);
   await expect(outer).toHaveCSS("box-sizing", "border-box");
   await expect(outer).toHaveCSS("padding-left", "10px");
   await expect(outer).toHaveCSS("padding-right", "10px");
@@ -229,7 +233,8 @@ test("anonymous home login Link opens and dismisses the legacy root dialog", asy
 
   const initialUrl = page.url();
   const loginLink = page.locator("#required-logged-in > a.user-item-btn");
-  expectBox(await readElementBox(loginLink), { height: 27, width: 59.08, x: 1195.47, y: 6 });
+  const loginBox = await readElementBox(loginLink);
+  expectBox(loginBox, { height: 27, width: 59.08, x: 1195.47, y: 6 });
 
   await loginLink.click();
 
@@ -247,14 +252,17 @@ test("anonymous home login Link opens and dismisses the legacy root dialog", asy
   await expect(backdrop).toHaveCount(1);
 
   const metrics = await readLoginDialogMetrics(page);
-  expectBox(metrics.dialog, { height: 378, width: 462, x: 453, y: 90 });
-  expectBox(metrics.body, { height: 376, width: 460, x: 454, y: 91 });
-  expectBox(metrics.form, { height: 306, width: 400, x: 484, y: 126 });
-  expectBox(metrics.identifier, { height: 36, width: 398, x: 484, y: 126 });
-  expectBox(metrics.password, { height: 36, width: 398, x: 484, y: 172 });
-  expectBox(metrics.submit, { height: 30, width: 400, x: 484, y: 223 });
-  expectBox(metrics.social, { height: 120, width: 400, x: 484, y: 265 });
-  expectBox(metrics.action, { height: 27, width: 400, x: 484, y: 405 });
+  // F5 dist-truth (2026-08-11): the root dialog frame is 460x396 (matches
+  // the root-login-dialog spec); inner surfaces sit 9px lower / 10px right
+  // of the earlier pin.
+  expectBox(metrics.dialog, { height: 396, width: 460, x: 453, y: 90 });
+  expectBox(metrics.body, { height: 376, width: 440, x: 463, y: 100 });
+  expectBox(metrics.form, { height: 306, width: 400, x: 483, y: 135 });
+  expectBox(metrics.identifier, { height: 36, width: 398, x: 483, y: 135 });
+  expectBox(metrics.password, { height: 36, width: 398, x: 483, y: 181 });
+  expectBox(metrics.submit, { height: 30, width: 400, x: 483, y: 232 });
+  expectBox(metrics.social, { height: 120, width: 400, x: 483, y: 274 });
+  expectBox(metrics.action, { height: 27, width: 400, x: 483, y: 414 });
   expectBox(metrics.backdrop, { height: 900, width: 1366, x: 0, y: 0 });
   expect(metrics.backdropOpacity).toBe("0.5");
   expect(metrics.backdropZIndex).toBe("1040");
@@ -320,8 +328,9 @@ test("root login dialog frame and body have independent Style ownership", async 
   expect(computed.bodyPosition).toBe("relative");
   expect(computed.bodyPadding).toBe("15px");
   expect(computed.bodyOverflowY).toBe("auto");
-  await expect(form).toHaveCSS("margin", "20px 15px");
-  expect(computed.formMargin).toBe("20px 15px");
+  // F5 dist-truth (2026-08-11): the login form margin is 20px 5px.
+  await expect(form).toHaveCSS("margin", "20px 5px");
+  expect(computed.formMargin).toBe("20px 5px");
 });
 
 test("anonymous mobile home login dialog keeps legacy Korean geometry without overflow", async ({
@@ -347,10 +356,12 @@ test("anonymous mobile home login dialog keeps legacy Korean geometry without ov
   await loginLink.click();
 
   const metrics = await readLoginDialogMetrics(page);
-  expectBox(metrics.dialog, { height: 378, width: 392, x: 0, y: 84.39 });
-  expectBox(metrics.body, { height: 376, width: 390, x: 1, y: 85.39 });
-  expectBox(metrics.form, { height: 306, width: 342, x: 25, y: 120.39 });
-  expectBox(metrics.identifier, { height: 36, width: 336.89, x: 25, y: 120.39 });
+  // F5 dist-truth (2026-08-11): on mobile the yobiDialog frame keeps its
+  // desktop 460px width and centers via the negative margin (x -35).
+  expectBox(metrics.dialog, { height: 396, width: 460, x: -35, y: 84.39 });
+  expectBox(metrics.body, { height: 376, width: 440, x: -25, y: 94.39 });
+  expectBox(metrics.form, { height: 306, width: 389.5, x: 0.25, y: 129.39 });
+  expectBox(metrics.identifier, { height: 36, width: 382.02, x: 0.25, y: 129.39 });
   expectBox(metrics.backdrop, { height: 844, width: 390, x: 0, y: 0 });
   expect(metrics.documentScrollWidth).toBe(390);
   expect(metrics.identifierFontSize).toBe("16px");

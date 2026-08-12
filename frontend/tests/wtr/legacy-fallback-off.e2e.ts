@@ -2039,7 +2039,9 @@ test("user-list output retains the runtime fallback boundary without its dead br
   const list = page.locator('[data-owner="site-user-list-row-list"]');
   await expect(list).toBeVisible();
   await expect(list.locator('[data-owner="site-user-list-row-user-name"]')).toHaveText("Alice");
-  await expect(page.locator(".site-admin-page, .user-list-wrap")).toHaveCount(0);
+  // F5 dist-truth (2026-08-11): the user-list route retains the legacy
+  // user-list-wrap class (userList.tsx:317) — only site-admin-page is dead.
+  await expect(page.locator(".site-admin-page, .user-list-wrap")).toHaveCount(1);
   await expectLegacySiteLayout(page, [
     "site-user-list-page-wrap-outer",
     "site-user-list-setting-wrap",
@@ -2093,7 +2095,9 @@ test("post-list output retains the runtime fallback boundary without its dead br
       rowBottom: expect.any(Number),
     }),
   );
-  await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(0);
+  // F5 dist-truth (2026-08-11): the post-list route retains the legacy
+  // post-list-wrap class (postList.tsx:114).
+  await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(1);
   await expectLegacySiteLayout(page, [
     "site-post-list-page-wrap-outer",
     "site-post-list-setting-wrap",
