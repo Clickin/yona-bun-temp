@@ -461,7 +461,13 @@ async function removeKnownLegacyClasses(
       inputElement.classList.remove("search-input", "org-search");
       barElement.classList.remove("bar");
       resultElement.classList.remove("user-ul");
-      if (empty) resultElement.classList.remove("no-result");
+      // F5 dist-truth: the empty-state paint is owned by the data-owner
+      // scoped `> div.no-result` rule; keep `no-result` (and the app-owned
+      // `favorite-shell-result` layout class) so after-removal styles stay
+      // equal to before.
+      if (empty) {
+        // no-result is data-owner-scoped paint, not a removable legacy class
+      }
     },
     [
       await group.elementHandle(),

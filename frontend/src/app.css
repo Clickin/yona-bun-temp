@@ -25306,7 +25306,7 @@ label[data-owner="organization-new-label"] {
   padding: 1px 0;
 }
 [data-owner="left-sidebar-favorite-organization-rows"] > div:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: #f1f1f1;
   cursor: pointer;
 }
 [data-owner="left-sidebar-favorite-organization-rows"] > div > button {
@@ -25475,12 +25475,13 @@ label[data-owner="organization-new-label"] {
   align-items: center;
   display: flex;
   flex-direction: row;
-  flex-grow: 1;
   flex-wrap: nowrap;
   font-size: 14px;
   font-weight: 400;
   justify-content: space-between;
+  margin-right: 29px;
   overflow: hidden;
+  width: calc(100% - 29px);
 }
 [data-owner="left-sidebar-direct-project-rows"] > div > div > div:nth-child(1) {
   flex-shrink: 0;
@@ -27075,7 +27076,7 @@ label[data-owner="organization-new-label"] {
   padding: 1px 0;
 }
 [data-owner="left-sidebar-favorite-organization-rows"] > div:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: #f1f1f1;
   cursor: pointer;
 }
 [data-owner="left-sidebar-favorite-organization-rows"] > div > button {

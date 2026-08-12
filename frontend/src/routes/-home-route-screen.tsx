@@ -1949,11 +1949,7 @@ function SidebarOrganizationList({
         </div>
         <div
           id={sidebarDomId(idPrefix, "organizations")}
-          className={
-            isLeftSidebarFavoriteShell
-              ? undefined
-              : "no-result tab-pane user-ul favorite-shell-result"
-          }
+          className="no-result tab-pane user-ul favorite-shell-result"
         >
           {t("title.no.results")}
         </div>
