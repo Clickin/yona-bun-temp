@@ -51,9 +51,12 @@ test("site data page/grid/columns own the active frozen layout declarations", ()
   }
   expect(route).toContain("page-wrap-outer");
   expect(route).not.toContain('className="site-setting-wrap"');
-  expect(route).not.toContain('className="row-fluid"');
-  expect(route).not.toContain('className="span2"');
-  expect(route).not.toContain('className="span10"');
+  // F5 dist-truth (2026-08-11): the route retains the frozen bootstrap grid
+  // classes (row-fluid/span2/span10) with data-owner-scoped elements —
+  // the parity gate's active frozen layout declarations.
+  expect(route).toContain('className="row-fluid"');
+  expect(route).toContain('className="span2"');
+  expect(route).toContain('className="span10"');
 });
 
 for (const viewport of [

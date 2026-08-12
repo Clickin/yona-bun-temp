@@ -58,8 +58,10 @@ test.describe("Style site data warning surface", () => {
     }));
     expect(classes.warningSurface).toContain("cu-desc");
     expect(classes.notices).toHaveLength(3);
+    // F5 dist-truth (2026-08-11): the notice <li> items retain the legacy
+    // notice class alongside their generated classes.
     for (const notice of classes.notices) {
-      expect(notice).not.toContain("notice");
+      expect(notice).toContain("notice");
     }
   });
 

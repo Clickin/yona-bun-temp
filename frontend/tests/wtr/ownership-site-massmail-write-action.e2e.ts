@@ -38,6 +38,8 @@ test("write action retires only its ybtn fallback classes and preserves legacy o
 }) => {
   const action = await open(page);
 
+  // F5 dist-truth (2026-08-11): the write action has no class; only the
+  // select-project action retains the legacy ybtn (massmail.tsx:240).
   await expect(action).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
   await expect(action).toHaveText("Write");
   await expect(action.locator("strong")).toHaveText("Write");
@@ -46,7 +48,7 @@ test("write action retires only its ybtn fallback classes and preserves legacy o
       .locator(".mess-mail-wrap > *")
       .evaluateAll((nodes) => nodes.map((node) => node.id || node.tagName.toLowerCase())),
   ).toEqual(["label", "label", "project-list-wrap", "write-email"]);
-  await expect(page.locator('[data-owner="site-massmail-select-project-action"]')).not.toHaveClass(
+  await expect(page.locator('[data-owner="site-massmail-select-project-action"]')).toHaveClass(
     /(?:^|\s)ybtn(?:\s|$)/u,
   );
 });

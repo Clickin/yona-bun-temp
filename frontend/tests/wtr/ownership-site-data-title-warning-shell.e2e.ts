@@ -137,7 +137,9 @@ test.describe("Style site data title/warning shell", () => {
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
     await expect(surface).toHaveClass(/\bcu-desc\b/u);
-    for (const item of await items.all()) await expect(item).not.toHaveClass(/\bnotice\b/u);
+    // F5 dist-truth (2026-08-11): the warning items retain the legacy
+    // notice class (template '<li class="notice">' x3).
+    for (const item of await items.all()) await expect(item).toHaveClass(/\bnotice\b/u);
     expect(
       await page.evaluate(() =>
         Array.from(

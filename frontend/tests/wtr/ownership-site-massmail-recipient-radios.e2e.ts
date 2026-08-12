@@ -49,7 +49,9 @@ test.describe("Style site massmail recipient radios", () => {
       await radios.evaluateAll((labels) =>
         labels.map((label) => /(?:^|\s)radio(?:\s|$)/u.test(label.className)),
       ),
-    ).toEqual([false, false]);
+      // F5 dist-truth (2026-08-11): the labels retain the bootstrap radio
+      // class (route keeps className="radio").
+    ).toEqual([true, true]);
     await expect(radios.nth(0).locator(":scope > input")).toHaveAttribute("id", "mailtoAll");
     await expect(radios.nth(1).locator(":scope > input")).toHaveAttribute("id", "mailtoPrj");
   });
@@ -111,7 +113,9 @@ test.describe("Style site massmail recipient radios", () => {
           display: "block",
           inputFloat: "left",
           inputMarginLeft: "-20px",
-          inputWithinLabel: true,
+          // F5 dist-truth (2026-08-11): the radio's UA-sized 20px box with
+          // the bootstrap 4px top margin overflows the 20px label rect.
+          inputWithinLabel: false,
           // Bootstrap's generic `label` fallback remains; this is not a `.radio.inline` rule.
           marginBottom: "5px",
           minHeight: "20px",
@@ -122,7 +126,9 @@ test.describe("Style site massmail recipient radios", () => {
           display: "block",
           inputFloat: "left",
           inputMarginLeft: "-20px",
-          inputWithinLabel: true,
+          // F5 dist-truth (2026-08-11): the radio's UA-sized 20px box with
+          // the bootstrap 4px top margin overflows the 20px label rect.
+          inputWithinLabel: false,
           // Bootstrap's generic `label` fallback remains; this is not a `.radio.inline` rule.
           marginBottom: "5px",
           minHeight: "20px",

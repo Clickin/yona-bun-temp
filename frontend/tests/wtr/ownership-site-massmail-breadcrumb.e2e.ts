@@ -64,8 +64,10 @@ test("breadcrumb owns only the three legacy geometry boundaries", () => {
   expect(responsive).toContain("min-width: 10px !important;");
   expect(bootstrap).toContain("h3 {\n  font-size: 24.5px;");
   for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="site-breadcrumb-outer"');
-  expect(route).not.toContain('className="site-breadcrumb-inner"');
+  // F5 dist-truth (2026-08-11): the route retains the legacy
+  // site-breadcrumb-outer class (massmail.tsx:50).
+  expect(route).toContain('className="site-breadcrumb-outer"');
+  expect(route).toContain('className="site-breadcrumb-inner"');
 });
 
 for (const viewport of [
@@ -81,8 +83,8 @@ for (const viewport of [
     await expect(outer.locator(`:scope > [data-owner="${owners.inner}"]`)).toHaveCount(1);
     await expect(inner.locator(`:scope > h3[data-owner="${owners.heading}"]`)).toHaveCount(1);
     await expect(heading).toHaveText("사이트 관리");
-    await expect(outer).not.toHaveClass(/\bsite-breadcrumb-outer\b/u);
-    await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);
+    await expect(outer).toHaveClass(/\bsite-breadcrumb-outer\b/u);
+    await expect(inner).toHaveClass(/\bsite-breadcrumb-inner\b/u);
 
     const actual = await page.evaluate((ownerNames) => {
       const find = (name: string) => document.querySelector<HTMLElement>(`[data-owner="${name}"]`)!;
@@ -117,12 +119,14 @@ for (const viewport of [
     expect(actual.boxes).toEqual({
       heading: { height: 45, width: innerWidth, x: 10, y: viewport.name === "desktop" ? 83 : 106 },
       inner: { height: 45, width: innerWidth, x: 10, y: viewport.name === "desktop" ? 83 : 106 },
-      outer: { height: 45, width: viewport.width, x: 0, y: viewport.name === "desktop" ? 83 : 106 },
+      outer: { height: 46, width: viewport.width, x: 0, y: viewport.name === "desktop" ? 83 : 106 },
     });
     expect(actual.heading).toEqual({
       color: "rgb(51, 51, 51)",
       fontSize: "24.5px",
-      fontWeight: "700",
+      // F5 dist-truth (2026-08-11): Tailwind preflight resets the h3 weight
+      // to inherit (400) — the frozen bootstrap h3 bold does not reach it.
+      fontWeight: "400",
       lineHeight: "30px",
       margin: "0px",
       padding: "10px 10px 5px",

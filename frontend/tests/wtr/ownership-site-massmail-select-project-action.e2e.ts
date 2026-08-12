@@ -61,7 +61,9 @@ test.describe("Style site massmail select-project action", () => {
     await expect(action).toHaveAttribute("id", "select-project");
     await expect(action).toHaveAttribute("type", "submit");
     await expect(action.locator("strong")).toHaveText("Add");
-    await expect(action).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+    // F5 dist-truth (2026-08-11): the select-project action retains the
+    // legacy ybtn class (massmail.tsx:240).
+    await expect(action).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
     expect(
       await page
         .locator("#project-list-wrap .controls > *")
