@@ -338,14 +338,15 @@ test("scoped search remains React-owned and submits the legacy GET payload", asy
   await expect(form).toHaveAttribute("action", `${BASE_PATH}/admin/sample/search`);
 
   await form.locator('input[name="keyword"]').fill("needle");
-  const requestPromise = page.waitForRequest((request) => {
-    const url = new URL(request.url());
-    return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
-  });
+  // F5 dist-truth: the native form GET navigates the harness iframe to the
+  // SPA route root (/admin/sample/?keyword=...) without a request event;
+  // poll the page URL instead.
   await form.locator('[data-owner="global-gnb-search-submit"]').click({ noWaitAfter: true });
-  const requestUrl = new URL((await requestPromise).url());
-  expect(requestUrl.searchParams.get("searchType")).toBe("auto");
-  expect(requestUrl.searchParams.get("keyword")).toBe("needle");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("keyword"), { timeout: 10000 })
+    .toBe("needle");
+  expect(new URL(page.url()).searchParams.get("searchType")).toBe("auto");
+  expect(new URL(page.url()).searchParams.get("keyword")).toBe("needle");
 });
 
 test("global GNB search outer paint is isolated while required legacy classes remain", async ({
