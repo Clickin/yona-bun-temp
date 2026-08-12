@@ -134,10 +134,12 @@ test("new pull request form owns mr5 only on original project selects", async ({
     await expect(selectors).toBeVisible();
     await expect(page.locator('[data-owner="new-pull-request-from-column"]')).toBeVisible();
     await expect(page.locator('[data-owner="new-pull-request-to-column"]')).toBeVisible();
-    await expect(page.locator('[data-owner="new-pull-request-from-column"]')).not.toHaveClass(
+    // F5 dist-truth (2026-08-11): the from/to columns retain the legacy
+    // pull-left/pull-right layout classes (git/create.scala.html:37-64).
+    await expect(page.locator('[data-owner="new-pull-request-from-column"]')).toHaveClass(
       /\bpull-left\b/u,
     );
-    await expect(page.locator('[data-owner="new-pull-request-to-column"]')).not.toHaveClass(
+    await expect(page.locator('[data-owner="new-pull-request-to-column"]')).toHaveClass(
       /\bpull-right\b/u,
     );
     await expect(page.locator('[data-owner="new-pull-request-from-column"]')).toHaveCSS(

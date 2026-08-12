@@ -253,8 +253,15 @@ test("label edit preview color uses Dynamic Style", async ({ page }) => {
   await category.locator("button.ybtn-small").last().click();
   const editLabel = page.locator('[data-owner="project-labels-edit-label-modal"]');
   const nameInput = editLabel.locator('input[name="name"]');
+  // The edit modal prefills the input with the label color via the React-owned
+  // CSS var paint (legacy JS did the same inline).
   await expect(nameInput).toHaveCSS("background-color", "rgb(63, 81, 181)");
-  expect(await nameInput.getAttribute("style")).not.toMatch(/(?:^|;)\s*background(?:-color)?\s*:/i);
+  expect(await nameInput.getAttribute("style")).toMatch(
+    /(?:^|;)\s*--project-labels-edit-label-name-bg\s*:/i,
+  );
+  // Browser serializes the inline color as rgb — pick preset #FF7770 by index.
+  await editLabel.locator('[data-owner="project-labels-preset-color"]').nth(0).click();
+  await expect(nameInput).toHaveCSS("background-color", "rgb(255, 119, 112)");
 
   const box = await editLabel.boundingBox();
   expect(box).not.toBeNull();

@@ -149,8 +149,10 @@ test("project labels form keeps legacy mr5 input owners and source evidence", ()
   }
 
   expect(routeSource.match(/\.\.\.inputWithTrailingMarginStyleProps/g)?.length).toBe(2);
-  expect(routeSource.match(/inputWithTrailingMarginStyleProps\.className/g)?.length).toBe(2);
-  expect(routeSource).toContain("className={`${inputWithTrailingMarginStyleProps.className} mr5`}");
+  // F5 dist-truth (2026-08-11): the mr5 inputs carry the literal
+  // "input-label mr5" className (2 occurrences) alongside the spread props.
+  expect(routeSource.match(/className="input-label mr5"/g)?.length).toBe(2);
+  expect(routeSource).toContain('className="input-label mr5"');
   expect(routeSource).not.toContain("data-provider");
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("addEventListener");

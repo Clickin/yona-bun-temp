@@ -8511,7 +8511,9 @@
   text-align: center;
 }
 
-.project-labels-edit-label-name {
+[data-owner="project-labels-edit-label-modal"] .input-label-name {
+  /* legacy rule yona-original/app/assets/stylesheets/less/_page.less:6752
+     (margins) + React-owned var paint for the label color preview */
   margin-bottom: 0;
   margin-left: 20px;
   background-color: var(--project-labels-edit-label-name-bg, transparent);

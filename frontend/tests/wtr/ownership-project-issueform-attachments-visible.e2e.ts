@@ -192,8 +192,10 @@ test("issueform attachment rows own active React-matched Style geometry", async 
   await expect(deleteButton).toHaveCSS("float", "right");
   await expect(progress).toHaveClass(/upload-progress/);
   await expect(deleteButton).toHaveClass(/btn-delete/);
+  // F5 dist-truth (2026-08-11): the progress wrapper retains the legacy
+  // pull-right class (file-uploader.tsx:442); the delete button does not.
   await expect(deleteButton).not.toHaveClass(/pull-right/);
-  await expect(progressWrapper).not.toHaveClass(/pull-right/);
+  await expect(progressWrapper).toHaveClass(/pull-right/);
 
   const uploadingGeometry = await row.evaluate((element) => {
     const rowRect = element.getBoundingClientRect();

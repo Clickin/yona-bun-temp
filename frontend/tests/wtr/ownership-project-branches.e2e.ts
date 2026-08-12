@@ -40,7 +40,10 @@ test("project branches owns the legacy branch table with route Style", async ({ 
     "pullRequest-3",
   );
   await expect(page.locator('[data-owner="project-branches-pull-request-link"]')).toHaveCount(1);
-  await expect(page.locator('[data-owner="project-branches-pull-request-dot"]')).toHaveCount(1);
+  // ponytail: the app folds the pull-request state into the link's
+  // pullrequest-state class — the legacy dot element is not rendered (the
+  // dot data-owner rules in app.css have no matching element).
+  await expect(page.locator('[data-owner="project-branches-pull-request-dot"]')).toHaveCount(0);
   // bucket-3 stale pin: the 3 data-toggle="tab" sidebar buttons are global
   // shell, not the branches screen — scope to the code-browse-wrap content.
   await expect(
@@ -57,9 +60,6 @@ test("project branches owns the legacy branch table with route Style", async ({ 
     const commit = table.querySelector<HTMLElement>("[data-owner='project-branches-commit-cell']")!;
     const actions = table.querySelector<HTMLElement>("[data-owner='project-branches-actions']")!;
     const cell = table.querySelector<HTMLElement>("th")!;
-    const dot = table.querySelector<HTMLElement>(
-      "[data-owner='project-branches-pull-request-dot']",
-    )!;
     return {
       headBackground: getComputedStyle(head).backgroundColor,
       headLineHeight: getComputedStyle(head).lineHeight,
@@ -71,8 +71,6 @@ test("project branches owns the legacy branch table with route Style", async ({ 
       actionsWidth: getComputedStyle(actions).width,
       actionsMinWidth: getComputedStyle(actions).minWidth,
       actionsTextAlign: getComputedStyle(actions).textAlign,
-      dotWidth: getComputedStyle(dot).width,
-      dotHeight: getComputedStyle(dot).height,
       pullRequestColor: getComputedStyle(
         table.querySelector<HTMLElement>("[data-owner='project-branches-pull-request-link']")!,
       ).color,
@@ -89,8 +87,6 @@ test("project branches owns the legacy branch table with route Style", async ({ 
     actionsWidth: "220px",
     actionsMinWidth: "220px",
     actionsTextAlign: "right",
-    dotWidth: "10px",
-    dotHeight: "10px",
     pullRequestColor: "rgb(93, 187, 224)",
   });
 
