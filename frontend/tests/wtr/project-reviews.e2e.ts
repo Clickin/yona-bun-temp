@@ -169,7 +169,10 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     contentStartsAfterSidebar: true,
     exportTopAfterList: true,
     filterRightAligned: true,
-    leftColumnWidth: 191,
+    // F5 (2026-08-13): the span2 sidebar resolves to 188px with the
+    // page-wrap-outer shell (bootstrap span2 = 14.89% of the 1260 content);
+    // the 191 pin predates the shell restoration.
+    leftColumnWidth: 188,
     listStartsBelowTabs: true,
     paginationAfterExport: true,
     rowCount: 2,
@@ -177,7 +180,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     searchAction: projectReviewsPath,
     searchBarStartsInSidebar: true,
     searchInputContainedInSearchBar: true,
-    searchInputWidth: 171,
+    searchInputWidth: 168,
     stateTabBorderBottomColor: "rgba(0, 0, 0, 0)",
     stateTabDisplay: "block",
     stateTabLineHeight: "20px",

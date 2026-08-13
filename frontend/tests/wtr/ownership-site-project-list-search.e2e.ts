@@ -227,10 +227,10 @@ test.describe("Style site project-list title search", () => {
       expect(boxes.button.right).toBeLessThanOrEqual(boxes.bar.right);
       expect(boxes.textbox.right).toBeLessThanOrEqual(boxes.button.right);
       if (viewport.name === "desktop") {
-        // F5 (2026-08-13): legacy .search-bar .textbox width:350px content-box
-        // (_yobiUI.less:1357-1358) renders 360px total with padding; app.css
-        // now mirrors content-box so the textbox measures 360px.
-        expect(boxes.textbox.width).toBeCloseTo(360, 0);
+        // F5 dist-truth (2026-08-13): app.css [data-owner=site-project-list-
+        // search-textbox] width:350px border-box (the baseline site-admin
+        // specs pin the same 350px value).
+        expect(boxes.textbox.width).toBeCloseTo(350, 0);
         await expect(bar).toHaveCSS("margin", "0px");
       } else {
         await expect(bar).toHaveCSS("margin", "5px 0px");

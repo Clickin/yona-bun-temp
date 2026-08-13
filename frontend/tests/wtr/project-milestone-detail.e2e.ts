@@ -171,7 +171,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                     <span class="infos-item item-count-groups">
                       <a class="comments-count comments-count-color" href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a>
                       <a class="vote-count vote-color" href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a>
-                      <button class="sharer-color" title="Issue Sharer" type="button"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">1</span></button>
+                      <span class="sharer-color" title="Issue Sharer"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">1</span></span>
                     </span>
                     <button class="label issue-label list-label active" data-category-id="3" data-label-id="8" type="button">bug</button>
                     <div class="child-issue-list hide">${MILESTONE_DETAIL_CHILD_ISSUES}</div>
@@ -834,7 +834,10 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     page.locator("#issue-item-41 .vote-count[href$='/issue/11#vote'] .item-count"),
   ).toHaveText("1");
   await expect(page.locator("#issue-item-41 .sharer-color .item-count")).toHaveText("1");
-  await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute("type", "button");
+  // F5 (2026-08-13): the sharer count renders as a span (legacy href-less
+  // anchor → the scala-html-goal guard forbids raw route anchors); no button
+  // type attribute, and a click stays route-local (legacy non-interactive).
+  await expect(page.locator("#issue-item-41 .sharer-color")).not.toHaveAttribute("type");
   await expect(page.locator("#issue-item-41 .sharer-color")).not.toHaveAttribute("data-toggle");
   await expect(page.locator("#issue-item-41 .sharer-color")).not.toHaveAttribute("data-placement");
   await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute(

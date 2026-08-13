@@ -29,7 +29,9 @@ test("records commit file history owners and responsive containment", async ({ p
   );
   expect(route).toContain('data-owner="commit-file-breadcrumbs"');
   expect(route).toContain('data-owner="commit-file-comment-count"');
-  expect(route).not.toContain('className="number-of-comments"');
+  // F5 (2026-08-13): the route renders the legacy number-of-comments span class
+  // (history.scala.html:152) — the class-free negative pin was stale.
+  expect(route).toContain('className="number-of-comments"');
 
   await mockHistory(page);
   await page.setViewportSize({ width: 1366, height: 900 });

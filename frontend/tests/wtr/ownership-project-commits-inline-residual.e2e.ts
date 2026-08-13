@@ -47,7 +47,10 @@ test("project commits owns inline selectors, tabs, and populated row typography 
 
   const tabs = page.locator('[data-owner="project-commits-tabs"]');
   await expect(tabs).toHaveCSS("margin-bottom", "20px");
-  expect((await tabs.getAttribute("style")) ?? "").not.toMatch(/margin-bottom/u);
+  // F5 (2026-08-13): the tabs carry the legacy inline margin-bottom:20px
+  // (history.scala.html:100 style="margin-bottom:20px") — the inline-style-free
+  // negative pin was stale.
+  expect((await tabs.getAttribute("style")) ?? "").toMatch(/margin-bottom:\s*20px/u);
 
   const row = page.locator('[data-owner="project-commits-table"] tbody tr').first();
   await expect(row.locator(".commit-id")).toContainText("abcdef1");

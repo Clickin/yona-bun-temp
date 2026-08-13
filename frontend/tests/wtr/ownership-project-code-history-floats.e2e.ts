@@ -46,9 +46,10 @@ test("project code-history float ownership has legacy source provenance", () => 
   expect(routeSource).toContain('data-owner="project-commits-branch-picker"');
   expect(routeSource).toContain('data-owner="project-commits-newer"');
   expect(routeSource).toContain('data-owner="project-commits-older"');
-  expect(routeSource).not.toMatch(/project-commits-branch-picker[\s\S]{0,260}pull-right/u);
-  expect(routeSource).not.toMatch(/project-commits-newer[\s\S]{0,220}pull-left/u);
-  expect(routeSource).not.toMatch(/project-commits-older[\s\S]{0,220}pull-left/u);
+  // F5 (2026-08-13): the route renders the legacy float classes —
+  // history.scala.html:203/207 (Newer/Older class="ybtn pull-left").
+  expect(routeSource).toMatch(/project-commits-newer[\s\S]{0,220}pull-left/u);
+  expect(routeSource).toMatch(/project-commits-older[\s\S]{0,220}pull-left/u);
 });
 
 test("project code-history branch and pagination floats preserve interaction and containment", async ({
@@ -99,8 +100,8 @@ test("project code-history branch and pagination floats preserve interaction and
     ).toEqual({ linksInsideShell: true, noOverflow: true });
     await expect(newer).toHaveText("Newer");
     await expect(older).toHaveText("Older");
-    await expect(newer).not.toHaveClass(/pull-left/u);
-    await expect(older).not.toHaveClass(/pull-left/u);
+    await expect(newer).toHaveClass(/pull-left/u);
+    await expect(older).toHaveClass(/pull-left/u);
     await expect(newer).toHaveAttribute("href", `${basePath}/admin/sample/commits?page=0`);
     await expect(older).toHaveAttribute("href", `${basePath}/admin/sample/commits?page=2`);
     await older.click();
