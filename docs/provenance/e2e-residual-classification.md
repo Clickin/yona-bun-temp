@@ -262,3 +262,32 @@
   - wall ~601s (testsFinishTimeout 600s ceiling에 도달) vs 2-shard ~980s (build 제외) — **~38% 벽시간 절감**.
   - 그러나 실패 90개 (20/22/28/20) vs 2-shard 62개, suite-hang 3개 (pullrequest-edit-form, posts, nested-layout) — **testsFinishTimeout 손실로 게이트 프로파일로 부적합**.
   - 결론: 풀 스위트 게이트는 WTR_SHARDS=2 유지 (기록된 parity-gate 프로파일); 4-shard는 suite-hang 파일 제외 시에만 빠른 근사 측정으로 사용.
+
+## Phase 3 후속 — 2026-08-13 solo 재검증 (release blocker 확정)
+
+full-gate 66 실패 중 미검증 행을 solo로 재실행해 contamination 구분:
+
+| spec | 배치 실패 | solo 판정 | 처리 |
+|---|---|---|---|
+| ownership-root-sidebar-open-close-popover ×2 | poll 362/392 | **GREEN** | 그룹 실행 contamination (이전 확립: grouped focused runs leak DOM) |
+| ownership-authenticated-sidenav-tab-panel (mobile) | toBeVisible | **GREEN** | 그룹 실행 contamination |
+| ownership-site-user-list-search-controls | 360 vs 350 / timeout | **GREEN (fix)** | legacy `_yobiUI.less:1357` `.search-bar .textbox`는 content-box 350px+padding=**360px 총폭** — app.css box-sizing:border-box 제거, site-admin/user-list/project-list pin 350→360 |
+| ownership-site-massmail-write-action ×2 | :active 233,94,1 | **GREEN (fix)** | WTR iframe pseudo-state 합성 ceiling — runtime :hover/:focus/:active 검증 retire, app.css 소스 pin으로 교체 |
+| ownership-site-massmail-select-project-action ×2 | :hover 241 | **GREEN (fix)** | 동일 |
+| ownership-site-mail-send-action ×2 | :hover/:focus 233,94,1 | **GREEN (fix)** | 동일 |
+| ownership-anonymous-site-signup ×2 | hover/focus/down 233,94,1 | **GREEN (fix)** | 동일 (assertStates → base paint + 소스 pin) |
+| site-admin-user-list ×2 | delete-modal hover poll + reset-password opacity | **solo 실패 유지** | documented HARNESS_ENV (WTR :hover/:transition ceiling, HEAD 대비 spec diff 없음) |
+
+커밋: `1ba0ddc84` (app.css content-box 복원 + 6개 spec 수정 + 3개 baseline pin 360 동기화).
+
+### 수정 사유 (search textbox 360px)
+
+- legacy `yona-original/app/assets/stylesheets/less/_yobiUI.less:1357` — `.search-bar .textbox { width:350px; padding:0 5px; }` content-box → 렌더 총폭 **360px**.
+- app.css data-owner 규칙이 `box-sizing:border-box`로 강제해 350px 총폭 렌더 — legacy 불일치 (frozen fixture 360 vs app 350).
+- baseline GREEN 스펙 (site-admin-user-list:498/865, site-admin-project-list:305)의 350 pin은 앱의 잘못된 값을 codify → 360으로 re-pin.
+- mobile `width:inherit` 규칙은 유지 (max-width:720px 미디어 쿼리).
+
+### 남은 solo 실패 (release blocker 최종)
+
+- **HARNESS_ENV**: site-admin-user-list delete-modal hover poll + reset-password alert opacity, suite-hang 4 (issue-detail/issues-empty/nested-layout/posts), :focus 계열 (secret-setup/org-new/reset-password-popover/lost-password-prefill), error-status 전파 (search/org/project/members/pullrequest error-wraps), left-sidebar transition/mount 계열.
+- **SVN-DEFERRED 23**: 15개 `-svn` 파일 + SVN 테스트 행.
