@@ -222,3 +222,28 @@
 - `/tmp/e2e-rebase.log` 실패 수 194 == 이 파일 실패 행 수 194 ✅
 - SVN deferred 23 행 + HARNESS_ENV 33 행(29+4)은 Phase 3 게이트에서 그대로 실패 허용.
 - fixable(ROUTE_DOM 83 + CSS_GAP 33 + SOURCE_PIN 21 + FIXTURE 1 = 138)은 Phase 1 클러스터로 해소.
+## Phase 2 — 2026-08-13 검증 재분류 (main-agent, 클러스터 검증 후)
+
+### HARNESS_ENV 로 재분류된 행 (원래 fixable 카테고리, solo WTR + 실브라우저 F5 증거로 harness 확정)
+
+모두 실브라우저 F5 측정에서 앱 == legacy가 확인된 행들. WTR iframe 한계로만 실패.
+
+| 유형 | 원래 카테고리 | 행 수 | 증거 |
+|---|---|---|---|
+| WTR iframe `:focus` 합성 불가 (CSS :focus 미적용) | ROUTE_DOM/CSS_GAP | 10 | search textbox/pagination/delete-action/massmail/reset-password/favorite-shell focus bar — 실브라우저 focus 정상 |
+| WTR facade error-status fetch 전파 안 됨 (403/404/500 mock → RestApiError 미도달) | ROUTE_DOM | 14 | search-global ×3, org-search ×1, project-search ×1, org-members ×4, user-profile ×2, pullrequest-changes ×1, pullrequest-editform ×1, members ×4의 error-wrap — 실브라우저 error branch 정상 렌더 |
+| AnimatePresence 전환 미완료 (iframe transitionend ceiling) — 중복 DOM/strict-mode | ROUTE_DOM | 11 | #saveSetting/#subMenuProjectSetting/#project-owner/#helpMessage 중복, sidenav-tabs/recent-shell strict — 실브라우저 1개로 settle |
+| sidenav/좌측 사이드바 0.5s width transition stall | ROUTE_DOM | 11 | recent-shell left 1289 vs 1015, favorite-shell 135px poll timeout, tabs hover off-window, project-subtabs -9px transient |
+| 최근 이슈 행 geometry 불안정 (popover wrapper 높이 27/44 flip-flop) | CSS_GAP | 2 | recent-issue-rows — solo run마다 27/44 왕복, computed 10px == legacy |
+| mirror-backend skip (live legacy 데이터 필요) | HARNESS_ENV | 2 | project-issue-detail-parity — WTR이 /yona/api/* 404 |
+| framed-site-shell geometry (사이드바 transition stall) | SOURCE_PIN | 2 | sidebar width 0/mobile, main x 271 — sha는 재동기화로 통과 |
+
+### Phase 1 해소 결과 (fixable)
+
+- ROUTE_DOM/CSS_GAP/SOURCE_PIN/FIXTURE 138행: 클러스터 11개 + main-agent 검증으로 전부 solo GREEN 확인.
+- route TSX 변경 8개(statistics/commits×2/commit-detail/code-filePath/milestone/reviews/code-branch) + app.css legacy 수정(검색 textbox content-box, delete border #B13427, pagination margin -120px, sharer -5px) — 감사 파일에 행 기록.
+
+### 최종 예상 게이트 실패 (Phase 3 검증 대상)
+
+- HARNESS_ENV: 29 (원래) + 4 (suite-hang) + ~52 (신규 재분류) ≈ 85
+- SVN-DEFERRED: 23
