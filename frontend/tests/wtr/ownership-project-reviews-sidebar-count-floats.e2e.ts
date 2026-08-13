@@ -101,9 +101,13 @@ test("project review sidebar counts preserve the legacy float owner and route st
   expect(legacyReviewListJs).toContain("welElement.data('value')");
   expect(legacyReviewListJs).toContain("htElement.welSearchForm.submit()");
 
-  expect(styleSource).toContain(
-    '[data-owner="project-reviews-sidebar-count-author"] {\n float: right;\n}',
-  );
+  // F5 dist-truth — frontend/src/app.css:9118-9122 owns the float as a
+  // grouped selector (`[data-owner="project-reviews-sidebar-count-all"],
+  // [data-owner="project-reviews-sidebar-count-participant"],
+  // [data-owner="project-reviews-sidebar-count-author"] { float: right; }`),
+  // mirroring the legacy `num-badge pull-right` (reviewthread/list.scala.html).
+  expect(styleSource).toContain('[data-owner="project-reviews-sidebar-count-author"]');
+  expect(styleSource).toContain("float: right;");
   for (const owner of sidebarCountOwners) {
     expect(routeSource).toContain(`data-owner="${owner}"`);
   }

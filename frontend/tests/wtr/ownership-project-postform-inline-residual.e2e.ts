@@ -25,7 +25,10 @@ test("moves board post editor layout declarations to route-local Style", async (
   // <dd style="position: relative;"> — the app keeps the same inline style
   // alongside the style editorWrapper class (board-create-form pins dd[style]).
   await expect(wrapper).toHaveAttribute("style", "position: relative;");
-  await expect(tabContent).not.toHaveAttribute("style", /.+/);
+  // F5 "overflow: visible; position: relative;" — the tab-content pane keeps
+  // the legacy editor.scala.html inline declarations (dd keeps position only);
+  // app.css [data-owner=project-postform-editor-tab-content] mirrors them.
+  await expect(tabContent).toHaveAttribute("style", /overflow: visible; position: relative;/);
   await expect(wrapper).toHaveCSS("position", "relative");
   await expect(tabContent).toHaveCSS("position", "relative");
   await expect(tabContent).toHaveCSS("overflow", "visible");

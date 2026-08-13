@@ -60,7 +60,8 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     memberNameLineHeight: "20px",
     pageWrapMinWidth: "1100px",
     projectMenuWidth: 684,
-    projectPageMarginTop: "20px",
+    // F5 5px — yona-original/app/assets/stylesheets/less/_responsive.less:617-619
+    projectPageMarginTop: "5px",
     titleLineHeight: "30px",
     titlePadding: "10px 0px",
     watchActionWidth: 97,

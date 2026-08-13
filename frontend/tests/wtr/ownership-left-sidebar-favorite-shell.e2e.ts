@@ -168,6 +168,11 @@ for (const state of ["populated", "empty"] as const) {
       }
 
       await input.focus();
+      // F5 135px — legacy _usermenu.less:251-274 `.search-input:focus ~ .bar`
+      // (width 50% of the 270px shell; F5-verified 2026-08-13 the focused
+      // ::before/::after land on exactly 135px). WTR-iframe ceiling: the 0.2s
+      // `transition: 0.2s ease all` does not advance in the harness iframe,
+      // so the poll times out at width 0.
       await expect
         .poll(() =>
           shell.evaluate((element) => {

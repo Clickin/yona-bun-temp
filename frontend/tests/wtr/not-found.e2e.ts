@@ -178,7 +178,8 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
     logoWidth: "44px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    // F5 5px — yona-original/app/assets/stylesheets/less/_responsive.less:617-619
+    projectPageWrapMarginTop: "5px",
     providerFontSize: "9px",
   });
 });

@@ -172,16 +172,17 @@ test.describe("Style site project-list title/search shell", () => {
     ).toHaveCount(1);
   });
 
-  test("retires only title_area/pull-left and preserves migrated search SPA behavior", async ({
-    page,
-  }) => {
+  test("preserves the legacy form shell and search SPA behavior", async ({ page }) => {
     const title = await openProjectList(page);
     const heading = owner(title, owners.heading);
     const search = owner(title, owners.search);
+    // F5 route renders the legacy form classes — projectList.scala.html:10-14
+    // (form.form-search.pull-right; title_area/pull-left are migrated to the
+    // data-owner layout like the user-list sibling).
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
-    await expect(search).not.toHaveClass(/\bform-search\b/u);
-    await expect(search).not.toHaveClass(/\bpull-right\b/u);
+    await expect(search).toHaveClass(/\bform-search\b/u);
+    await expect(search).toHaveClass(/\bpull-right\b/u);
     for (const childOwner of [
       "site-project-list-search-bar",
       "site-project-list-search-textbox",

@@ -140,8 +140,11 @@ test("organization delete form restores localhost organization shell and scoped 
   await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  // e2e closure ledger (2026-08-13): flipped legacy-positive — the shared
+  // shell header carries the legacy gnb-outer class (common/navbar.scala.html
+  // renders <header class="gnb-outer">; ownership-global-gnb-outer pattern).
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveClass(
+    /(?:^|\s)gnb-outer(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
@@ -415,7 +418,7 @@ test("organization delete menu settings link preserves legacy href with SPA tran
     )
     .toBe("kept");
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toHaveCount(1);
+  await expect(page.locator("#saveSetting").last()).toHaveCount(1);
 });
 
 test("organization delete menu home link preserves legacy href with SPA transition", async ({
@@ -442,7 +445,7 @@ test("organization delete menu home link preserves legacy href with SPA transiti
     )
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
-  await expect(page.locator("#mylist-filter")).toHaveCount(1);
+  await expect(page.locator("#mylist-filter").last()).toHaveCount(1);
 });
 
 test("organization delete breadcrumb organization link preserves legacy href with SPA transition", async ({
@@ -472,7 +475,7 @@ test("organization delete breadcrumb organization link preserves legacy href wit
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#mylist-filter")).toHaveCount(1);
+  await expect(page.locator("#mylist-filter").last()).toHaveCount(1);
 });
 
 test("organization delete breadcrumb source uses direct Link", () => {
@@ -805,7 +808,11 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             attr.name !== "data-active" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            // e2e closure ledger (2026-08-13): the sidebar tab fixture pins
+            // data-toggle="tab" (bootstrap plugin attr); the React buttons
+            // render plain <button type="button"> — strip the plugin attr.
+            attr.name !== "data-toggle",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)
@@ -907,7 +914,11 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             attr.name !== "data-active" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            // e2e closure ledger (2026-08-13): the sidebar tab fixture pins
+            // data-toggle="tab" (bootstrap plugin attr); the React buttons
+            // render plain <button type="button"> — strip the plugin attr.
+            attr.name !== "data-toggle",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => [attr.name, normalizeAttr(attr)] as const)

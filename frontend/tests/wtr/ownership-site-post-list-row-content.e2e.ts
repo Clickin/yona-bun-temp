@@ -203,9 +203,11 @@ test.describe("Style site post-list populated row content", () => {
     await expect(separator).toHaveAttribute("data-owner", owners.separator);
     await expect(title).toHaveAttribute("data-owner", owners.title);
 
-    await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
-    await expect(row).not.toHaveClass(/\brow-fluid\b/u);
-    await expect(row).not.toHaveClass(/\blistitem\b/u);
+    // F5 shared row classes retained — post-list-wrap postList.scala.html:30,
+    // row-fluid listitem postList.scala.html:33.
+    await expect(container).toHaveClass(/\bpost-list-wrap\b/u);
+    await expect(row).toHaveClass(/\brow-fluid\b/u);
+    await expect(row).toHaveClass(/\blistitem\b/u);
     for (const [element, retiredClass] of [
       [info, "post-info-wrap"],
       [project, "post-project"],

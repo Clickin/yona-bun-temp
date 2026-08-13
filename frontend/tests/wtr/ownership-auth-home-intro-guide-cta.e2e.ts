@@ -51,6 +51,11 @@ for (const viewport of [
 
 async function assertStates(page: Page, expectedBox: Box) {
   const cta = page.locator(CTA).first();
+  // F5 rgb(233, 94, 1) — legacy _yobiUI.less:814-820 `.ybtn-success:hover`
+  // (`@yobi-btn-primary-hover` = #E95E01); the dist applies it on hover/focus
+  // (F5-verified 2026-08-13). WTR-iframe ceiling: the 0.3s `transition: all`
+  // does not advance in the harness iframe, so the polled color stays at the
+  // base #ff7332; a real browser reaches this exact value.
   await cta.hover();
   await expect(cta).toHaveCSS("background-color", "rgb(233, 94, 1)");
   expect(await state(cta)).toEqual({ box: expectedBox, ...interactivePaint() });

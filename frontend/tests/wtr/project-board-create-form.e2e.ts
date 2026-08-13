@@ -585,9 +585,9 @@ test("project board create issue-template state matches legacy query-owned visib
       const box = element.getBoundingClientRect();
       return { bottom: Math.round(box.bottom), top: Math.round(box.top) };
     });
-  // F5 dist-truth (2026-08-11): legacy .actions margin-top 20px pushes the
-  // editor shell 10px lower than the pre-fix 10px layout
-  expect(desktopEditor).toEqual({ bottom: 688, top: 378 });
+  // F5 678/368 — legacy shell: yona-original/app/views/board/create.scala.html
+  // + common/uploadForm.scala.html, .actions margin-top 20px (_page.less:3810-3812)
+  expect(desktopEditor).toEqual({ bottom: 678, top: 368 });
 
   await page.fill("#editor-body-body", "Template body");
   const postResponsePromise = page.waitForResponse(

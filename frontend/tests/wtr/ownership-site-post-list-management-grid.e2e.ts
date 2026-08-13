@@ -36,13 +36,16 @@ test("direct management grid owns only the active frozen base declarations", () 
   expect(bootstrap).toContain(".row-fluid .span2 {\n  width: 14.893617021276595%;");
   expect(responsive).toContain('[class*="span"]');
   for (const owner of owners) expect(route).toContain(`data-owner="${owner}"`);
-  for (const retired of [
+  // F5 route renders the legacy grid classes — siteMngLayout.scala.html:39-42,72.
+  // e2e closure ledger (2026-08-11): ROUTE_DOM parity restores the siteMngLayout
+  // classes on the React-owned elements; the frozen fallback styles them.
+  for (const legacyClass of [
     'className="site-setting-wrap"',
     'className="row-fluid"',
     'className="span2"',
     'className="span10"',
   ])
-    expect(route).not.toContain(retired);
+    expect(route).toContain(legacyClass);
   expect(route).not.toContain('"@media (max-width: 767px)"');
 });
 
@@ -62,10 +65,11 @@ test("direct management grid preserves the active desktop and mobile proportions
     const sidebar = get(owners[2]);
     const content = get(owners[3]);
     const expectedGridWidth = viewport.name === "desktop" ? 1346 : 390;
-    await expect(wrap).not.toHaveClass(/site-setting-wrap/u);
-    await expect(grid).not.toHaveClass(/row-fluid/u);
-    await expect(sidebar).not.toHaveClass(/span2/u);
-    await expect(content).not.toHaveClass(/span10/u);
+    // F5 grid classes present — siteMngLayout.scala.html:40-42,72.
+    await expect(wrap).toHaveClass(/site-setting-wrap/u);
+    await expect(grid).toHaveClass(/row-fluid/u);
+    await expect(sidebar).toHaveClass(/span2/u);
+    await expect(content).toHaveClass(/span10/u);
     await expect(wrap).toHaveCSS("margin", "0px");
     await expect(grid).toHaveCSS("width", `${expectedGridWidth}px`);
     for (const column of [sidebar, content]) {
@@ -131,7 +135,8 @@ test("direct management grid preserves the active desktop and mobile proportions
       "site-post-list-container",
       "site-post-list-pagination",
     ]);
-    expect(evidence.nestedClass.split(/\s+/u)).not.toContain("row-fluid");
+    // F5 row renders row-fluid listitem — postList.scala.html:33.
+    expect(evidence.nestedClass.split(/\s+/u)).toContain("row-fluid");
     expect(evidence.scrollWidth).toBe(viewport.width);
     mkdirSync(resolve("..", "output", "playwright"), { recursive: true });
     await page.screenshot({

@@ -75,13 +75,13 @@ test.describe("Style site project-list populated rows", () => {
     for (const owner of ["name", "description", "created", "action"])
       expect(route).toContain(`data-owner="site-project-list-row-${owner}-column"`);
 
-    for (const retired of [
+    for (const legacyClass of [
       "span5 listitem-col",
       "span4 listitem-col",
       "span2 listitem-col",
       "span1 listitem-col",
     ])
-      expect(route).not.toContain(retired);
+      expect(route).toContain(legacyClass);
   });
 
   test("keeps populated project link, copy, column, and action order", async ({ page }) => {
@@ -149,14 +149,18 @@ test.describe("Style site project-list populated rows", () => {
       row: Array.from(row.classList),
     }));
 
-    expect(classes.row).not.toContain("row-fluid");
-    expect(classes.row).not.toContain("listitem");
+    // F5 route renders the legacy row classes — projectList.scala.html:32,38-41
+    // (row-fluid listitem + spanN listitem-col).
+    expect(classes.row).toContain("row-fluid");
+    expect(classes.row).toContain("listitem");
 
+    // Route renders data-owner avatar links without the legacy
+    // avatar-wrap/list-avatar classes (geometry is data-owner driven).
     expect(classes.avatar).not.toContain("avatar-wrap");
     expect(classes.avatar).not.toContain("list-avatar");
 
     for (const column of classes.columns) {
-      expect(column).not.toContain("listitem-col");
+      expect(column).toContain("listitem-col");
     }
     await expect(rows.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(rows.nth(1)).toHaveCSS("background-color", "rgb(249, 249, 249)");

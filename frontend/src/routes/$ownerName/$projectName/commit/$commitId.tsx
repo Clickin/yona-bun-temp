@@ -448,7 +448,11 @@ function ProjectCommitDetailBody({
                   >
                     <i className="yobicon-maximize"></i>
                   </button>
-                  <ul className={` nav nav-tabs`} data-owner="commit-detail-review-tabs">
+                  <ul
+                    className={` nav nav-tabs`}
+                    data-owner="commit-detail-review-tabs"
+                    style={{ marginBottom: "10px" }}
+                  >
                     <li className={reviewCardTab === "open" ? "active" : undefined}>
                       <button type="button" onClick={() => setReviewCardTab("open")}>
                         {`${t("issue.state.open")} ${openThreads.length}`}
@@ -1162,8 +1166,33 @@ function CodeCommentThreadView({
       data-range-endside={isNonRanged ? undefined : thread.endSide}
       data-range-endline={isNonRanged ? undefined : thread.endLine}
       data-range-endcolumn={isNonRanged ? undefined : thread.endColumn}
+      style={
+        // F5 static/0px — yona-original/app/assets/stylesheets/less/_page.less:6098-6104:
+        // the frozen .comment-thread-wrap.fold flattening loses to the app.css
+        // .diff-container tr.comments .comment-thread-wrap (0,3,2) block on
+        // specificity, so the route pins the legacy fold output inline.
+        isClosedRangedFold
+          ? {
+              position: "static",
+              padding: 0,
+              margin: 0,
+              background: "transparent",
+              border: "none",
+              boxShadow: "none",
+            }
+          : // F5 margin-top 0 — _page.less:6131 (.fold + .comment-thread-wrap).
+            previousThreadFolded
+            ? { marginTop: 0 }
+            : undefined
+      }
     >
-      <div className="btn-thread-here btn-thread-minimize">
+      {/* F5 right:0 — _page.less:6105-6110 (.fold .btn-thread-here right:0px);
+          the frozen .fold rule loses to app.css .btn-thread-minimize right:10px
+          on cascade order, so the folded state pins the legacy right inline. */}
+      <div
+        className="btn-thread-here btn-thread-minimize"
+        style={isClosedRangedFold ? { right: "0px" } : undefined}
+      >
         <button
           type="button"
           className="ybtn ybtn-default ybtn-small"
@@ -1618,7 +1647,18 @@ function CommitMessage({ message, shortMessage }: { message: string; shortMessag
   const detail = lines.slice(1).join("\n");
   return (
     <>
-      <span className={` commitMsg short`} data-owner="commit-detail-short-message">
+      {/* F5 18px/normal — yona-original/app/assets/stylesheets/less/_page.less:4608
+          (legacy commit message wrapper .commitMsg.short). The route owns the
+          message DOM without the legacy wrapper element, so the frozen fallback
+          arm (.code-browse-wrap .commitInfo ... .commitMsg.short) never matches
+          and app.css's [data-owner=commit-detail-short-message] override loses
+          to the base .commitMsg.short (14px/pre-line) on specificity; the
+          inline style pins the legacy output. */}
+      <span
+        className={` commitMsg short`}
+        data-owner="commit-detail-short-message"
+        style={{ fontSize: "18px", whiteSpace: "normal" }}
+      >
         {shortMessage || t("code.commitMsg.empty")}
       </span>
       {detail ? (

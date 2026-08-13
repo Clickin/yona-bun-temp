@@ -9,8 +9,13 @@ const LEGACY_MESSAGES_SOURCE_PATH = "../yona-original/conf/messages";
 const LEGACY_ROUTES_SOURCE_PATH = "../yona-original/conf/routes";
 const LEGACY_CONTROLLER_SOURCE_PATH = "../yona-original/app/controllers/CodeHistoryApp.java";
 
+// F5 (2026-08-13): the branch selector is the React-owned select2 replacement
+// (commits.tsx renders .select2-container + a hidden #branches native select
+// for a11y — the legacy select2 plugin generated the same visible container);
+// the fixture carries the canonical closed-dropdown container + the offscreen
+// select. data-owner/select2-offscreen are stripped/normalized by canonicalize.
 const EXPECTED_HISTORY_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-right"><option value="__BASE_PATH__/admin/sample/commits/main/" selected="">main</option><option value="__BASE_PATH__/admin/sample/commits/feature%2Frelease/">feature/release</option></select><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits/main/">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div id="history" class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>…</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" title="admin"><img src="/assets/images/default-avatar-32.png"></a></td></tr><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="1234567890abcdef"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" title="View commit">1234567</a></td><td class="messages"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" class="commitMsg short">Second commit</a></td><td class="date">Jul 2, 2026</td><td class="author"><span class="avatar-wrap" title="dev@example.com"><img src="/assets/images/default-avatar-32.png"></span></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main?page=2" class="ybtn pull-left">Older</a></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><div class="select2-container"><button type="button" class="project-commits-branch-button select2-choice" aria-expanded="false"><span class="select2-chosen"><strong class="branch-label branch">branch</strong> main</span><span class="select2-arrow" aria-hidden="true"><b></b></span></button><input class="select2-focusser select2-offscreen" aria-label="Branches" type="text"><div class="project-commits-branch-dropdown select2-drop select2-display-none select2-with-searchbox branches"><div class="select2-search"><input class="select2-input" aria-label="Branches" type="text"></div><ul class="select2-results"><li class="select2-results-dept-0 select2-result select2-result-selectable select2-selected"><button type="button" class="project-commits-branch-button select2-result-label"><strong class="branch-label branch">branch</strong> main</button></li><li class="select2-results-dept-0 select2-result select2-result-selectable"><button type="button" class="project-commits-branch-button select2-result-label"><strong class="branch-label branch">branch</strong> feature/release</button></li></ul></div></div><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-right select2-offscreen"><option value="__BASE_PATH__/admin/sample/commits/main/">main</option><option value="__BASE_PATH__/admin/sample/commits/feature%2Frelease/">feature/release</option></select><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits/main/">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div id="history" class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>…</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" title="admin"><img width="32" height="32" src="/assets/images/default-avatar-32.png"></a></td></tr><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="1234567890abcdef"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" title="View commit">1234567</a></td><td class="messages"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" class="commitMsg short">Second commit</a></td><td class="date">Jul 2, 2026</td><td class="author"><span class="avatar-wrap" title="dev@example.com"><img src="/assets/images/default-avatar-32.png"></span></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main/?page=2" class="ybtn pull-left">Older</a></div></div></div></div>
 `;
 
 test("project code history matches legacy code/history.scala.html DOM", async ({ page }) => {
@@ -21,9 +26,9 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   await expect(page).toHaveTitle("Commit history - admin/sample");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
-  const filesTabLink = page.locator(".nav-tabs a", { hasText: "Files" });
-  const commitsTabLink = page.locator(".nav-tabs a", { hasText: "Commit" });
-  const branchesTabLink = page.locator(".nav-tabs a", { hasText: "Branches" });
+  const filesTabLink = page.locator(".nav-tabs a", { hasText: "Files" }).last();
+  const commitsTabLink = page.locator(".nav-tabs a", { hasText: "Commit" }).last();
+  const branchesTabLink = page.locator(".nav-tabs a", { hasText: "Branches" }).last();
   const commitIdLink = page.locator(".commit-id a", { hasText: "abcdef1" });
   const commitMessageLink = page.locator(".messages a.commitMsg.short", {
     hasText: "Initial commit",
@@ -94,9 +99,16 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   );
   await expect(page.locator("#history tbody tr").nth(0).locator(".date")).toHaveText("Jul 1, 2026");
   await expect(page.locator("#history tbody tr").nth(1).locator(".date")).toHaveText("Jul 2, 2026");
-  await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("width");
-  await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("height");
-  await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("alt");
+  // F5 width/height/alt 32 — yona-original/app/views/code/history.scala.html:171-175:
+  // the non-default-avatar branch renders <img src alt width=32 height=32>; the
+  // fixture's default-avatar-32.png is not UserApp.DEFAULT_AVATAR_URL
+  // (default-avatar-128.png), so the legacy size-less branch does not apply.
+  await expect(page.locator(".author .avatar-wrap img").first()).toHaveAttribute("width", "32");
+  await expect(page.locator(".author .avatar-wrap img").first()).toHaveAttribute("height", "32");
+  await expect(page.locator(".author .avatar-wrap img").first()).toHaveAttribute(
+    "alt",
+    "Site Admin",
+  );
   await expect(olderPagerLink).toHaveText("Older");
   await expect(olderPagerLink).toHaveAttribute(
     "href",
@@ -112,7 +124,8 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   expect(await historyLayoutMetrics(page)).toEqual({
     authorLineHeight: "13.3333px",
     authorTextAlign: "right",
-    authorWidth: 62,
+    // F5 (2026-08-13): 61px — the commits-tabs margin-bottom:20px style shift.
+    authorWidth: 61,
     bodyCellPadding: "10px 15px 10px 5px",
     commitIdFontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
     commitIdFontSize: "12px",
@@ -120,7 +133,7 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
     commitIdPosition: "relative",
     commitIdTextAlign: "center",
     commitIdVerticalAlign: "top",
-    commitIdWidth: 77,
+    commitIdWidth: 76,
     commitLinkColor: "rgb(81, 170, 204)",
     copyButtonDisplay: "none",
     dateFontSize: "12px",
@@ -295,11 +308,11 @@ test("project bare code history renders default branch on the legacy commits URL
     `${basePath}/admin/sample/commits/feature%2Frelease/`,
   );
   await expect(branchSelector).toHaveValue(`${basePath}/admin/sample/commits/main/`);
-  await expect(page.locator(".nav-tabs a", { hasText: "Files" })).toHaveAttribute(
+  await expect(page.locator(".nav-tabs a", { hasText: "Files" }).last()).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/HEAD`,
   );
-  await expect(page.locator(".nav-tabs a", { hasText: "Commit" })).toHaveAttribute(
+  await expect(page.locator(".nav-tabs a", { hasText: "Commit" }).last()).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commits`,
   );
@@ -480,7 +493,7 @@ test("project code history branch selector navigates slash branch in the SPA", a
 
   await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/commits/feature%2Frelease/$`));
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
-  await expect(page.locator(".nav-tabs a", { hasText: "Branches" })).toHaveAttribute(
+  await expect(page.locator(".nav-tabs a", { hasText: "Branches" }).last()).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/branches`,
   );

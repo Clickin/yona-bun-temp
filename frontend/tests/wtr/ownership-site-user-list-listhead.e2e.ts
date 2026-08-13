@@ -29,13 +29,17 @@ test("listhead owns only the direct row and four repeated columns", () => {
   expect(appCss).not.toContain(".site-setting-wrap .listhead {");
   expect(route).toContain('data-owner="site-user-list-listhead"');
   expect(route).toContain('data-owner="site-user-list-listhead-column"');
-  for (const retired of [
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy
+  // site/userList.scala.html:53-68 renders the listhead row and its four
+  // span3/span2/span4 listhead-title columns; the route owns them (the old
+  // class-free pin predates the ROUTE_DOM restoration).
+  for (const owned of [
     "row-fluid listhead",
     "span3 listhead-title",
     "span2 listhead-title",
     "span4 listhead-title",
   ])
-    expect(route).not.toContain(`className="${retired}"`);
+    expect(route).toContain(`className="${owned}"`);
 
   expect(readFileSync("src/routes/$ownerName/$projectName/code/$branch.tsx", "utf8")).toContain(
     "row-fluid listhead",
@@ -57,11 +61,15 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
     // fixture's inherited line-height (20px) against the React root's committed
     // line-height:30px (legacy _page.less:5311 .listhead); the fixture inheritance
     // shifted with the site grid classes (span10/row-fluid) restored per ROUTE_DOM.
+    // ROUTE_DOM: legacy site/userList.scala.html:53 renders
+    // <div class="row-fluid listhead"> — the route owns the class.
     expect(
       await root.evaluate((element) =>
         ["row-fluid", "listhead"].filter((token) => element.classList.contains(token)),
       ),
-    ).toEqual([]);
+    ).toEqual(["row-fluid", "listhead"]);
+    // ROUTE_DOM: legacy site/userList.scala.html:54-68 renders the four
+    // span3/span3/span2/span4 listhead-title columns — the route owns them.
     expect(
       await columns.evaluateAll((elements) =>
         elements.flatMap((element) =>
@@ -70,7 +78,16 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
             .map((token) => `${element.tagName}:${token}`),
         ),
       ),
-    ).toEqual([]);
+    ).toEqual([
+      "DIV:span3",
+      "DIV:listhead-title",
+      "DIV:span3",
+      "DIV:listhead-title",
+      "DIV:span2",
+      "DIV:listhead-title",
+      "DIV:span4",
+      "DIV:listhead-title",
+    ]);
     await expect(columns.locator(":scope > strong").nth(0)).toHaveText("Name");
     await expect(columns.locator(":scope > strong").nth(1)).toHaveText("Email address");
     await expect(columns.locator(":scope > strong").nth(2)).toHaveText("Member since");
@@ -153,26 +170,34 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
         column[4],
         column[5],
         column[6],
-        "20px",
+        // F5 (2026-08-13): the class-added fixture line-height 30px matches the
+        // legacy .listhead line-height:30px (_page.less:5310); the 20px pin was
+        // the unstyled-fixture measurement.
+        "30px",
         column[8],
         column[9],
         column[10],
-        "0px",
+        // F5 (2026-08-13): the class-added fixture padding 0px 20px matches the
+        // legacy .listhead-title { padding: 0 20px } (_page.less:5313).
+        "0px 20px",
         column[12],
       ]),
       root: [
-        "rgba(0, 0, 0, 0)",
-        "rgb(51, 51, 51)",
-        "none",
-        "0px",
+        // F5 (2026-08-13): the class-added fixture root carries the legacy
+        // cascade (bg #f7f7f7, border-bottom #efefef, padding 5px 0px,
+        // line-height 30px — _page.less:5306-5313), same as the actual.
+        evidence.actual.root[0],
+        evidence.actual.root[1],
+        evidence.actual.root[2],
+        evidence.actual.root[3],
         evidence.actual.root[4],
         evidence.actual.root[5],
         evidence.actual.root[6],
-        "20px",
-        "0px",
+        "30px",
+        evidence.actual.root[8],
         evidence.actual.root[9],
         evidence.actual.root[10],
-        "0px",
+        "5px 0px",
         evidence.actual.root[12],
       ],
     });
@@ -211,7 +236,10 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
     // page stack above the listhead (site-setting-wrap header/tabs) renders
     // taller in dist; the relational pin below (root.top == tabsBottom + 20)
     // still holds and is the legacy contract.
-    if (viewport.name === "desktop") expect(evidence.boxes.root.top).toBeCloseTo(284, 2);
+    // F5 dist-truth (2026-08-13): listhead top 264 = row-shell list top 310
+    // minus the listhead height 41 + margin 5 (consistent with the measured
+    // cascade); the 284 pin was measured against a taller title strip.
+    if (viewport.name === "desktop") expect(evidence.boxes.root.top).toBeCloseTo(264, 2);
     expect(evidence.boxes.root.top).toBe(evidence.tabsBottom + 20);
     const [span3a, span3b, span2, span4] = evidence.boxes.columns;
     if (viewport.name === "desktop") {

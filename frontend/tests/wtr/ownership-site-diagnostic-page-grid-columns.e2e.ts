@@ -61,8 +61,10 @@ test("site diagnostic page/grid/columns own the active frozen layout declaration
   expect(route).toContain('className="span2"');
   expect(route).toContain('className="span10"');
 
-  expect(route).not.toContain('className="pull-left"');
-  expect(route).not.toContain('className="title_area"');
+  // F5 className="pull-left" — yona-original/app/views/site/diagnostic.scala.html:28
+  expect(route).toContain('className="pull-left"');
+  // F5 className="title_area" — yona-original/app/views/site/diagnostic.scala.html:27
+  expect(route).toContain('className="title_area"');
 });
 
 for (const diagnostic of [

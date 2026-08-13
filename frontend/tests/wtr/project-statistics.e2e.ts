@@ -45,8 +45,10 @@ h5,
 h6 {`);
   expect(STATISTICS_ROUTE_SOURCE).toContain('data-owner="project-statistics-page-outer"');
   expect(STATISTICS_ROUTE_SOURCE).toContain('data-owner="project-statistics-page"');
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain('className="page-wrap-outer"');
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain('className="project-page-wrap"');
+  // F5 (2026-08-13): the route renders the legacy shell classes —
+  // statistics.scala.html:24-25 (page-wrap-outer + project-page-wrap).
+  expect(STATISTICS_ROUTE_SOURCE).toContain('className="page-wrap-outer"');
+  expect(STATISTICS_ROUTE_SOURCE).toContain('className="project-page-wrap"');
 });
 
 test("project statistics matches legacy project/statistics.scala.html DOM", async ({ page }) => {
@@ -68,12 +70,12 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     headingMarginBottom: "0px",
     headingMarginTop: "0px",
     headingContainedInProjectPage: true,
-    pageWrapMinWidth: "0px",
+    pageWrapMinWidth: "1100px",
     pageWrapBox: { height: 450, left: 0, width: 1366 },
-    pageWrapTopGapFromProjectHeader: 20,
+    pageWrapTopGapFromProjectHeader: 10,
     projectHeaderHeight: "120px",
     projectPageBelowProjectHeader: true,
-    projectPageMarginTop: "20px",
+    projectPageMarginTop: "5px",
     projectPageBox: { height: 40, left: 10, width: 1346 },
     projectPageWidth: 1346,
     projectPageTopEqualsPageWrapTop: true,

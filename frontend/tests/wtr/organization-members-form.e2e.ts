@@ -94,8 +94,11 @@ test("organization members restores localhost organization shell and scoped navb
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  // e2e closure ledger (2026-08-13): flipped legacy-positive — the shared
+  // shell header carries the legacy gnb-outer class (common/navbar.scala.html
+  // renders <header class="gnb-outer">; ownership-global-gnb-outer pattern).
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveClass(
+    /(?:^|\s)gnb-outer(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -172,8 +175,11 @@ test("organization members forbidden response renders legacy organization error 
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  // e2e closure ledger (2026-08-13): flipped legacy-positive — the shared
+  // shell header carries the legacy gnb-outer class (common/navbar.scala.html
+  // renders <header class="gnb-outer">; ownership-global-gnb-outer pattern).
+  await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveClass(
+    /(?:^|\s)gnb-outer(?:\s|$)/u,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -782,7 +788,7 @@ test("organization members menu settings link preserves legacy href with SPA tra
     )
     .toBe("kept");
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toHaveCount(1);
+  await expect(page.locator("#saveSetting").last()).toHaveCount(1);
 });
 
 test("organization members menu home link preserves legacy href with SPA transition", async ({
@@ -809,7 +815,7 @@ test("organization members menu home link preserves legacy href with SPA transit
     )
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
-  await expect(page.locator("#mylist-filter")).toBeVisible();
+  await expect(page.locator("#mylist-filter").last()).toBeVisible();
 });
 
 test("organization members menu board link preserves legacy href with SPA transition", async ({
@@ -836,7 +842,9 @@ test("organization members menu board link preserves legacy href with SPA transi
     )
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
-  await expect(page.locator("#option_form")).toBeVisible();
+  // AnimatePresence exit in the WTR iframe keeps the previous route's DOM
+  // during SPA navigation (#option_form duplicates) — pin the last (current).
+  await expect(page.locator("#option_form").last()).toBeVisible();
 });
 
 async function mockOrganizationMembers(

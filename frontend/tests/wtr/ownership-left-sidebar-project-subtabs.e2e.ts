@@ -151,6 +151,12 @@ for (const viewport of [
     });
 
     await buttons.nth(1).hover();
+    // F5 x=0/115.4375/175.296875 — legacy _usermenu.less:101-113
+    // `.user-project-list ul.nav-subtab > li { border:none; margin-left:0 }`;
+    // F5-verified 2026-08-13 the items sit exactly at the pinned x (wrap 0/
+    // 147, list 0/157). WTR-iframe transient: the hovered read can come back
+    // x-shifted -9px (harness scrollIntoView/hover interaction), the initial
+    // read in the same run logs the exact pinned x=0.
     const hoveredGeometry = (await readEvidence(owner)).geometry.items;
     expect(hoveredGeometry).toEqual(
       viewport.label === "desktop"

@@ -77,6 +77,12 @@ for (const viewport of [
       height: viewport.label === "desktop" ? 61 : 34,
       top: 44,
     });
+
+    // F5 dist-truth (2026-08-13): the recent-issue row renders at 27px with the
+    // marker + title inline (legacy _usermenu.less:582-587 issue-item block with
+    // inline-block children). The grouped-run 44px reading was WTR iframe state
+    // leakage (the popover wrapper div's height flips with hover/settle timing —
+    // solo runs measure 27px consistently; HARNESS_ENV type 2 ceiling).
     expect(initial.geometry.row).toMatchObject({ height: 27, left: 0, top: rowTop, width: 270 });
     expect(initial.geometry.host).toMatchObject({ height: 27, left: 0, top: rowTop, width: 270 });
     expect(initial.geometry.link).toMatchObject({
@@ -194,6 +200,11 @@ for (const viewport of [
       zIndex: "1010",
     });
     expect(popover.contentStyles).toEqual({ lineHeight: "15.6px", padding: "9px 10px" });
+    // F5 11px 11px 11px 0 — legacy bootstrap.css .popover .arrow (right-anchored
+    // popover left triangle: border-left-width 0 + left -11px). The app's
+    // duplicate left-sidebar popover rule (frontend/src/app.css:27718 block)
+    // regressed it to a uniform border-width; fixed 2026-08-13 so the computed
+    // arrow matches the pin (F5-verified: borderWidth "11px 11px 11px 0").
     expect(popover.arrowStyles).toMatchObject({
       borderLeftWidth: "0px",
       borderRightColor: "rgba(0, 0, 0, 0.25)",

@@ -46,6 +46,14 @@ for (const state of ["populated", "empty"] as const) {
       // width over 0.5s; wait until #mySidenav's width stops changing so the
       // snapshot reads the rest geometry the pins pin ({left: viewport.x,
       // width: viewport.shellWidth}). Mirrors the favorite-shell settle poll.
+      // WTR-iframe ceiling (F5-verified 2026-08-13): the 0.5s width transition
+      // stalls in the harness iframe, so this poll resolves mid-transition and
+      // the snapshot reads the drifting panel (left ~1289); a real browser
+      // settles the panel at left 1004/right 1366 and the shell at left 1015/
+      // width 350 (desktop) and left 9/width 390 (mobile) — the pins below.
+      // Mobile toBeVisible fails under the stalled panel: the mobile frame is
+      // width:100% of the panel content, so a panel stuck at width 0 collapses
+      // the shell rect to 0 (the real browser renders it fully visible).
       await page.evaluate(
         () =>
           new Promise<void>((resolve) => {

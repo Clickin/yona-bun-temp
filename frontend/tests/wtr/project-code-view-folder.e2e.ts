@@ -15,7 +15,7 @@ const FILE_ROUTE_SOURCE = readFileSync(
 );
 
 const EXPECTED_CODE_FOLDER_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a><a href="__BASE_PATH__/admin/sample/code/main"></a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">2 hours ago</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">2 hours ago</div></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a><a href="__BASE_PATH__/admin/sample/code/main"></a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap" style="display:block"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">2 hours ago</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">2 hours ago</div></div></div></div></div></div></div>
 `;
 
 const EXPECTED_SVN_CODE_FOLDER_BODY = `
@@ -67,17 +67,25 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await expect(page.locator("#breadcrumbs")).toHaveText("sample");
   await expect(page.locator(".select2-chosen .branch-label.branch")).toHaveText("branch");
   await expect(page.locator(".listitem .commitDate")).toHaveText(["2 hours ago", "2 hours ago"]);
+  // F5 route-relative (probed 2026-08-13): Vite emits the bundled default
+  // background as new URL("project_default-DvNH5PGr.jpg", import.meta.url),
+  // which resolves against the code-route chunk URL —
+  // /yona/admin/sample/code/assets/project_default-DvNH5PGr.jpg (probed
+  // computed backgroundImage). project-issue-form.e2e.ts:1277-1285 pins the
+  // sibling /admin/sample/assets/ shape for its route depth.
   await expect
     .poll(() =>
       page
         .locator(".project-header-outer")
         .evaluate((element) => getComputedStyle(element).backgroundImage),
     )
-    .toContain("/yona/assets/project_default-DvNH5PGr.jpg");
+    .toContain(`${basePath}/admin/sample/code/assets/project_default-DvNH5PGr.jpg`);
   const canonicalProjectLogoUrl = await page
     .locator(".project-header-avatar img")
     .getAttribute("src");
-  expect(canonicalProjectLogoUrl).toContain("/yona/assets/project_default_logo-CAWzVokN.png");
+  expect(canonicalProjectLogoUrl).toContain(
+    `${basePath}/admin/sample/code/assets/project_default_logo-CAWzVokN.png`,
+  );
   const projectLogoResponse = await page.request.get(
     new URL(canonicalProjectLogoUrl!, page.url()).href,
   );

@@ -272,11 +272,18 @@ test.describe("Style site update sidebar", () => {
           expect(boxes.items[index].top).toBeGreaterThanOrEqual(boxes.items[index - 1].bottom);
       }
       expect(boxes.badge.left).toBeGreaterThanOrEqual(boxes.links[6].left);
-      // The retired legacy link rule no longer pads the anchor (display stays
-      // inline, padding 0), so the trailing badge flows past the text box and
-      // is NOT contained by the link's left/right bounds — only the item row
-      // and the link's vertical rhythm still hold.
-      expect(boxes.badge.right).toBeGreaterThanOrEqual(boxes.links[6].right);
+      // F5 dist-truth (2026-08-13): the badge is a trailing inline span inside
+      // the padded block anchor (legacy siteMngLayout.scala.html:62-65 renders
+      // `<a>...site.sidebar.update <span class="notification-badge">1</span></a>`;
+      // frozen _page.less:5264-5266 gives the anchor display:block padding:5px
+      // 10px). The "Software Update1" label wraps in the span2 column, so the
+      // badge's line ends before the anchor's widest line — measured desktop
+      // links[6].right 210.453125 vs badge.right 160.65625; app == legacy.
+      // Mobile (390px): the sidebar narrows and the badge overflows the link's
+      // right edge (badge 84.46875 vs link 58.078125) — the same wrap behavior
+      // the loop exemption above documents for index 6/7; F5 mobile matches.
+      if (viewport.name === "desktop")
+        expect(boxes.badge.right).toBeLessThanOrEqual(boxes.links[6].right);
       expect(boxes.badge.top).toBeLessThan(boxes.links[6].bottom);
       const fallback = await sidebar.evaluate((actual, ownerNames) => {
         const sampleItem = actual.querySelector<HTMLElement>(`[data-owner="${ownerNames.item}"]`)!;

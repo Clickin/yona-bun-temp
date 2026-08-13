@@ -121,6 +121,11 @@ for (const routePath of ["/", "/notifications"] as const) {
       await expect(pagination).toHaveCSS("z-index", "2");
       await expect(pagination).toHaveCSS("text-decoration-line", "none");
       await expect(pagination).toHaveCSS("padding", "4px 12px");
+      // F5 rgb(241, 241, 241)/rgba(0,0,0,0.25)/rgb(41, 41, 41) — legacy
+      // _yobiUI.less:741-750 `.ybtn:hover` (#f1f1f1 border/color); the dist
+      // applies it on hover/focus/active (F5-verified 2026-08-13). WTR-iframe
+      // ceiling: the 0.3s `transition: all` does not advance in the harness
+      // iframe, so the polled color stays at the base white.
       await pagination.hover();
       await expect(pagination).toHaveCSS("background-color", "rgb(241, 241, 241)");
       await expect(pagination).toHaveCSS("border", "1px solid rgba(0, 0, 0, 0.25)");
@@ -222,7 +227,11 @@ for (const viewport of [
           }
         : {
             // F5 dist-truth (2026-08-11): the admin affix wraps to two lines
-            // at 390px (66px vs 43px), shifting the list/button down 23px
+            // at 390px (66px vs 43px), shifting the list/button down 23px.
+            // F5-verified 2026-08-13 with the intro guide hidden (yobi-intro
+            // = false): button/item/list land on 349/329/204 exactly — the
+            // WTR-iframe failure (583.58) comes from the intro guide staying
+            // visible there (init-script localStorage timing), not the app.
             button: { height: 30, width: 396.5, x: 0, y: 349 },
             item: { height: 50, width: 390, x: 0, y: 329 },
             list: { height: 175, width: 390, x: 0, y: 204 },

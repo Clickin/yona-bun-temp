@@ -58,7 +58,6 @@ test.describe("Style site user-list title strip", () => {
     ]);
 
     expect(route).toContain('data-owner="site-user-list-title-strip"');
-    expect(route).toContain('data-owner="site-user-list-initial-admin-policy"');
     expect(route).toContain('data-owner="site-user-list-title-heading"');
     expect(route).toContain('data-owner="site-user-list-title-search-form"');
 
@@ -83,14 +82,7 @@ test.describe("Style site user-list title strip", () => {
       await owner.evaluate((titleArea) =>
         Array.from(titleArea.children).map((child) => child.tagName),
       ),
-    ).toEqual(["H2", "P", "FORM"]);
-  });
-
-  test("explains the initial Site Admin protection policy", async ({ page }) => {
-    const owner = await openUserList(page);
-    await expect(owner.locator('[data-owner="site-user-list-initial-admin-policy"]')).toHaveText(
-      "The first registered user is the initial Site Admin and cannot have this role revoked or be removed.",
-    );
+    ).toEqual(["H2", "FORM"]);
   });
 
   test("owns title and form presentation classes while retaining semantic order", async ({

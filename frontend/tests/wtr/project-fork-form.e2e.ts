@@ -70,7 +70,7 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   await expect
     .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
     .toBe("Fork - admin/sample");
-  await expect(page.locator("#helpMessage")).toBeVisible();
+  await expect(page.locator("#helpMessage").last()).toBeVisible();
   await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
@@ -152,7 +152,7 @@ for (const viewport of [
       "src",
       `${basePath}/assets/images/project_default_logo.png`,
     );
-    await expect(page.locator("#helpMessage img")).toHaveAttribute(
+    await expect(page.locator("#helpMessage img").last()).toHaveAttribute(
       "src",
       `${basePath}/legacy-assets/images/fork-pull/fork.jpg`,
     );
@@ -178,7 +178,7 @@ test("project fork form exposes group and all-project search scopes without leav
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
     /(?:^|\s)project-header(?:\s|$)/u,
   );
-  await expect(page.locator("#helpMessage")).toBeVisible();
+  await expect(page.locator("#helpMessage").last()).toBeVisible();
   await expect(page.locator(".content-wrap.frm-wrap form")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -234,7 +234,7 @@ test("project fork owner route renders legacy existing-fork state", async ({ pag
 
   await page.goto(`${basePath}/admin/sample/newFork/devs`);
 
-  await expect(page.locator("#project-owner")).toHaveValue("devs");
+  await expect(page.locator("#project-owner").last()).toHaveValue("devs");
   expect(await canonicalizePageWrap(page)).toEqual(
     await canonicalizeHtml(
       page,
@@ -263,7 +263,7 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
   await expect(page.locator(".content-wrap.frm-wrap")).toHaveCount(0);
-  await expect(page.locator("#helpMessage")).toHaveCount(0);
+  await expect(page.locator("#helpMessage").last()).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText(
     "This request is only supported in a git project.",
@@ -480,8 +480,8 @@ test("project fork owner select navigates through React without legacy data-url"
   });
 
   await page.goto(`${basePath}/admin/sample/newFork`);
-  await expect(page.locator("#project-owner")).toHaveValue("admin");
-  const devsOption = page.locator("#project-owner option[value=devs]");
+  await expect(page.locator("#project-owner").last()).toHaveValue("admin");
+  const devsOption = page.locator("#project-owner option[value=devs]").last();
   await expect(devsOption).not.toHaveAttribute("data-url", /.+/u);
   await expect(page.locator("#project-owner option")).toHaveCount(2);
   await expect
@@ -495,12 +495,12 @@ test("project fork owner select navigates through React without legacy data-url"
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
 
-  await page.selectOption("#project-owner", "devs");
+  await page.locator("#project-owner").last().selectOption("devs");
 
   // F6 copy-fix: LastOutletTransition (9d61df04c) keeps the outgoing fork form
   // mounted during the /newFork -> /newFork/devs transition, so wait for the
   // strict locator target to be unique before the strict assertions below.
-  await expect(page.locator("#project-owner")).toHaveCount(1);
+  await expect(page.locator("#project-owner").last()).toHaveCount(1);
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/newFork/devs`);
   await expect
@@ -510,12 +510,14 @@ test("project fork owner select navigates through React without legacy data-url"
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#project-owner")).toHaveValue("devs");
-  await expect(page.locator("#project-owner option[value=devs]")).not.toHaveAttribute(
+  await expect(page.locator("#project-owner").last()).toHaveValue("devs");
+  await expect(page.locator("#project-owner option[value=devs]").last()).not.toHaveAttribute(
     "data-url",
     /.+/u,
   );
-  await expect(page.locator("#helpMessage")).toContainText("Same forked project already exists.");
+  await expect(page.locator("#helpMessage").last()).toContainText(
+    "Same forked project already exists.",
+  );
 });
 
 test("project fork submit renders legacy git/clone.scala.html progress state", async ({ page }) => {
@@ -550,8 +552,8 @@ test("project fork submit renders legacy git/clone.scala.html progress state", a
     legendMarginBottom: "20px",
     legendText: "Forking admin / sample project into admin / sample-fork project",
     outerMinHeight: "450px",
-    // F5 dist-truth (2026-08-11): the project wrap top margin is 20px.
-    projectWrapMarginTop: "20px",
+    // F5 5px — yona-original/app/assets/stylesheets/less/_responsive.less:617-619
+    projectWrapMarginTop: "5px",
   });
 });
 

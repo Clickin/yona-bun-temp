@@ -265,7 +265,12 @@ export function ProjectCodeHistoryBody({
               ))}
             </select>
 
-            <ul className="nav nav-tabs" data-owner="project-commits-tabs">
+            {/* F5 style margin-bottom:20px — history.scala.html:100. */}
+            <ul
+              className="nav nav-tabs"
+              data-owner="project-commits-tabs"
+              style={{ marginBottom: "20px" }}
+            >
               <li>
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
@@ -359,7 +364,10 @@ export function ProjectCodeHistoryBody({
                             </button>
                             <Link
                               to={showCommitPath}
-                              search={selectedBranch ? { branch: selectedBranch } : {}}
+                              // F5 no ?branch — yona-original/app/views/code/history.scala.html:46-55
+                              // (getShowCommitURL adds ?branch only for the selectedBranch
+                              // route; the bare /commits URL renders plain commit links).
+                              search={requestedBranch ? { branch: requestedBranch } : {}}
                               activeOptions={legacyCodeHistoryLinkActiveOptions}
                               activeProps={legacyCodeHistoryLinkActiveProps}
                               title={t("code.showCommit")}
@@ -369,13 +377,16 @@ export function ProjectCodeHistoryBody({
                           </td>
                           <td className="messages" data-owner="project-commits-messages">
                             {commit.commentCount > 0 ? (
-                              <span data-owner="project-commits-comment-count">
+                              <span
+                                className="number-of-comments"
+                                data-owner="project-commits-comment-count"
+                              >
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}
                             <CommitMessage
                               message={commit.message}
-                              search={selectedBranch ? { branch: selectedBranch } : {}}
+                              search={requestedBranch ? { branch: requestedBranch } : {}}
                               shortMessage={commit.shortMessage}
                               to={showCommitPath}
                             />
@@ -404,7 +415,7 @@ export function ProjectCodeHistoryBody({
                   search={{ page: Math.max(0, history.page - 1) }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className="ybtn"
+                  className="ybtn pull-left"
                   data-owner="project-commits-newer"
                 >
                   {t("code.newer")}
@@ -416,7 +427,7 @@ export function ProjectCodeHistoryBody({
                   search={{ page: Math.max(0, history.page - 1) }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className="ybtn"
+                  className="ybtn pull-left"
                   data-owner="project-commits-newer"
                 >
                   {t("code.newer")}
@@ -431,7 +442,7 @@ export function ProjectCodeHistoryBody({
                   search={{ page: history.page + 1 }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className="ybtn"
+                  className="ybtn pull-left"
                   data-owner="project-commits-older"
                 >
                   {t("code.older")}
@@ -443,7 +454,7 @@ export function ProjectCodeHistoryBody({
                   search={{ page: history.page + 1 }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
-                  className="ybtn"
+                  className="ybtn pull-left"
                   data-owner="project-commits-older"
                 >
                   {t("code.older")}

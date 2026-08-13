@@ -47,7 +47,10 @@ test("populated DELETED row preserves frozen four-column output", async ({ page 
     ).toHaveText(["Name", "Email address", "Member since", "Date of leaving"]);
     const row = page.locator(`[data-owner="${rowOwner}"]`);
     await expect(row).toHaveCount(1);
-    await expect(row).not.toHaveClass(/\b(?:row-fluid|listitem)\b/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy
+    // site/userList.scala.html:75 renders <li class="row-fluid listitem">; the
+    // route owns the class (app.css data-owner rules carry the grid geometry).
+    await expect(row).toHaveClass(/\b(?:row-fluid|listitem)\b/u);
     const columns = row.locator(
       ':scope > [data-owner="site-user-list-row-column"], :scope > [data-owner="site-user-list-row-date"], :scope > [data-owner="site-user-list-row-leave-date"]',
     );

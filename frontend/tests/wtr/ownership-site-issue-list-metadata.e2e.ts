@@ -167,7 +167,11 @@ test.describe("Style site issue-list metadata", () => {
     ]) {
     }
 
-    expect(route).not.toContain("yobicon-comments");
+    // F5 dist-truth (2026-08-13): the route owns the comments glyph class —
+    // legacy yona-original/app/views/site/issueList.scala.html:70 renders
+    // `<i class="yobicon-comments"></i>` for the issue comment count; the app
+    // renders the same class on the owned icon (issueList.tsx), app == legacy.
+    expect(route).toContain('className="yobicon-comments"');
     for (const variable of [
       "siteIssueListMetadataFontSize",
       "siteIssueListMetadataLineHeight",
@@ -262,7 +266,11 @@ test.describe("Style site issue-list metadata", () => {
     await expect(avatar).not.toHaveClass(/\bavatar-wrap\b/u);
     await expect(first.locator(".post-meta-item")).toHaveCount(0);
     await expect(first.locator(".post-comments")).toHaveCount(0);
-    await expect(icon).not.toHaveClass(/\byobicon-comments\b/u);
+    // F5 dist-truth (2026-08-13): the owned comments icon keeps the legacy
+    // yobicon-comments glyph class (issueList.scala.html:70); the glyph font,
+    // ::before content, and geometry come from the frozen yobicon.css and the
+    // app.css [data-owner="site-issue-list-comments-icon"] rules.
+    await expect(icon).toHaveClass(/\byobicon-comments\b/u);
     await expect(icon).not.toHaveClass(/\bpost-comments\b/u);
     for (const element of [
       first,

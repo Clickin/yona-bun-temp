@@ -106,9 +106,12 @@ test("sidebar copy, navigation, variants, and frozen output survive desktop/mobi
         lineHeight: "20px",
         padding: "0px 5px",
       });
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy siteMngLayout.scala.html:44
+    // renders the current screen's li with class="@isActiveMenu(...)" (only the
+    // active item carries "active"); the route renders it via the shared sidebar.
     expect(
       await items.evaluateAll((nodes) => nodes.map((node) => node.classList.contains("active"))),
-    ).toEqual(Array.from({ length: 8 }, () => false));
+    ).toEqual([true, false, false, false, false, false, false, false]);
     const evidence = await page.evaluate((owners) => {
       const root = document.querySelector<HTMLElement>(`[data-owner="${owners.root}"]`)!;
       const items = Array.from(root.children) as HTMLElement[];

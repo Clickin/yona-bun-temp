@@ -460,8 +460,8 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
     pageWrapMinWidth: "1100px",
-    // F5 dist-truth (2026-08-11): the project page top margin is 20px.
-    projectPageMarginTop: "20px",
+    // F5 5px — yona-original/app/assets/stylesheets/less/_responsive.less:617-619
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     tabsMarginBottom: "20px",
   });
@@ -930,8 +930,9 @@ test("project change-VCS internal project links keep legacy hrefs without route-
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass("active");
+  // AnimatePresence exit keeps the prior route's form during SPA nav — last().
+  await expect(page.locator("#saveSetting").last()).toBeVisible();
 });
 
 test("project change-VCS shared project menu follows the canonical menu settings", async ({

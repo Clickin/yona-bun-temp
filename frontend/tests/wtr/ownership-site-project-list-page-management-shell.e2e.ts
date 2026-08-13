@@ -116,16 +116,18 @@ test("management shell directly owns only the five legacy layout boundaries", ()
     "inactive in legacy layout.scala.html and retained as parity evidence",
   );
   for (const owner of owners) expect(route).toContain(`data-owner="${owner}"`);
-  const settingWrap = route.match(/settingWrap:\s*\{(?<body>[\s\S]*?)\n  \},/u)?.groups?.body;
 
-  expect(settingWrap).not.toContain("width:");
-  expect(route).not.toContain('<div className="page-wrap-outer">');
-  expect(route).not.toContain("site-setting-wrap ${");
-  for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
-    expect(route).not.toContain(retired);
-  expect(route).not.toContain("listitem-col");
+  // F5 route renders the legacy shell classes — siteMngLayout.scala.html:39-42,72
+  // (page-wrap-outer + site-setting-wrap + row-fluid + span2/span10) and
+  // projectList.scala.html:36-38 (row-fluid listhead + spanN listhead-title).
+  expect(route).toContain('<div className="page-wrap-outer"');
+  expect(route).toContain('className="site-setting-wrap"');
+  expect(route).toContain('className="row-fluid"');
+  expect(route).toContain('className="span2"');
+  expect(route).toContain('className="span10"');
+  expect(route).toContain("listitem-col");
   expect(route).toContain('data-owner="site-project-list-listhead"');
-  expect(route).not.toContain("row-fluid listhead");
+  expect(route).toContain("row-fluid listhead");
 });
 
 for (const viewport of [
@@ -143,11 +145,12 @@ for (const viewport of [
     const grid = get(owners[2]);
     const sidebar = get(owners[3]);
     const content = get(owners[4]);
-    await expect(pageWrap).not.toHaveClass(/\bpage-wrap-outer\b/u);
-    await expect(setting).not.toHaveClass(/\bsite-setting-wrap\b/u);
-    await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
-    await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
-    await expect(content).not.toHaveClass(/\bspan10\b/u);
+    // F5 route renders the legacy shell — siteMngLayout.scala.html:39-42,72.
+    await expect(pageWrap).toHaveClass(/\bpage-wrap-outer\b/u);
+    await expect(setting).toHaveClass(/\bsite-setting-wrap\b/u);
+    await expect(grid).toHaveClass(/\brow-fluid\b/u);
+    await expect(sidebar).toHaveClass(/\bspan2\b/u);
+    await expect(content).toHaveClass(/\bspan10\b/u);
     await expect(content.locator(':scope > [data-owner="site-project-list-listhead"]')).toHaveCount(
       1,
     );
@@ -245,9 +248,12 @@ for (const viewport of [
     // _responsive.less:611 + bootstrap fluid grid bootstrap.css:4927+).
     const { minWidth: actualMinWidth } = evidence.actual.page;
     const { minWidth: fallbackMinWidth } = evidence.fallback.page;
+    // F5: route renders the legacy page-wrap-outer (siteMngLayout.scala.html:39,
+    // _page.less:617) so the actual carries min-width:1100px; the class-added
+    // fallback fixture reproduces the same 1100px (app.css:2076).
     expect({ actualMinWidth, fallbackMinWidth }).toEqual(
       viewport.name === "desktop"
-        ? { actualMinWidth: "0px", fallbackMinWidth: "1100px" }
+        ? { actualMinWidth: "1100px", fallbackMinWidth: "1100px" }
         : { actualMinWidth: "10px", fallbackMinWidth: "10px" },
     );
     const [pageBox, settingBox, gridBox, sidebarBox, contentBox] = evidence.actual.boxes;
@@ -260,7 +266,7 @@ for (const viewport of [
       boxSizing: "border-box",
       marginTop: "10px",
       minHeight: "450px",
-      minWidth: viewport.name === "desktop" ? "0px" : "10px",
+      minWidth: viewport.name === "desktop" ? "1100px" : "10px",
       padding: viewport.name === "desktop" ? "0px 10px" : "0px",
       width: `${viewport.width}px`,
     });
@@ -288,12 +294,12 @@ for (const viewport of [
       x: viewport.name === "desktop" ? 10 : 0,
       y: viewport.name === "desktop" ? 138 : 161,
     });
-    // F5 dist-truth: content column measures 610 on mobile (1px shorter than the
-    // 611 shell — the listhead row's 1px border-bottom, _page.less:5318) and 457 on
-    // desktop (content-driven listhead+16-row column == legacy); pin the measured
-    // dist truth.
+    // F5 dist-truth (2026-08-13): with the legacy classes restored on the
+    // project-list route, the content column measures 611 on mobile (equal to
+    // the 611 shell — the listhead row's border-bottom is inside the column,
+    // _page.less:5318) and 460 on desktop; pin the measured dist truth.
     expect(contentBox).toMatchObject({
-      height: viewport.name === "desktop" ? 460 : 610,
+      height: viewport.name === "desktop" ? 460 : 611,
       width: viewport.name === "desktop" ? 1116.890625 : 323.609375,
       x: viewport.name === "desktop" ? 239.078125 : 66.375,
       y: viewport.name === "desktop" ? 138 : 161,

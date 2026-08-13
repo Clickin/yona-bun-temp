@@ -375,7 +375,11 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap" data-owner="project-code-branch-list">
+    // F5 display:block — yona-original/app/assets/stylesheets/less/_page.less:4671
+    // hides .list-wrap for the legacy dynatree renderer; the React route renders
+    // the list itself, so it must re-show it (the frozen fallback display:none
+    // wins over the generic .list-wrap rules otherwise).
+    <div className="list-wrap" style={{ display: "block" }} data-owner="project-code-branch-list">
       <div className="row-fluid listhead" data-owner="project-code-branch-list-header">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>

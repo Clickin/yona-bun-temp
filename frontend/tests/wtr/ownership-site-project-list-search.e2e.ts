@@ -80,7 +80,9 @@ test.describe("Style site project-list title search", () => {
     ]) {
     }
 
-    expect(route).not.toContain('className="yobicon-search"');
+    // F5 route renders the legacy glyph — projectList.scala.html:31
+    // (<i class="yobicon-search">).
+    expect(route).toContain('className="yobicon-search"');
   });
 
   test("keeps legacy DOM order, copy, glyph primitive, and filter SPA behavior", async ({
@@ -134,11 +136,13 @@ test.describe("Style site project-list title search", () => {
       return Object.fromEntries(entries) as Record<string, string[]>;
     }, owners);
 
-    expect(classes.form).not.toContain("pull-right");
-    expect(classes.form).not.toContain("form-search");
-    expect(classes.bar).not.toContain("search-bar");
-    expect(classes.textbox).not.toContain("textbox");
-    expect(classes.button).not.toContain("search-btn");
+    // F5 route renders the legacy search classes — projectList.scala.html:28-32
+    // (form-search pull-right + search-bar/textbox/search-btn/yobicon-search).
+    expect(classes.form).toContain("pull-right");
+    expect(classes.form).toContain("form-search");
+    expect(classes.bar).toContain("search-bar");
+    expect(classes.textbox).toContain("textbox");
+    expect(classes.button).toContain("search-btn");
     await expect(page.locator(`${owners.button} > ${owners.icon}`)).toHaveCount(1);
   });
 
@@ -181,14 +185,17 @@ test.describe("Style site project-list title search", () => {
       await expect(icon).toHaveCSS("font-family", "yobicon");
       await expect(icon).toHaveCSS("font-style", "normal");
       await expect(icon).toHaveCSS("font-weight", "400");
-      await expect(icon).toHaveCSS("line-height", "13.3333px");
+      // F5 (2026-08-13): .yobicon icon line-height 12px in the 20px search-bar
+      // (the previous 13.3333px pin measured a different font-size context).
+      await expect(icon).toHaveCSS("line-height", "12px");
       expect(await icon.evaluate((node) => getComputedStyle(node, "::before").content)).toBe(
         '"\ue225"',
       );
       await textbox.focus();
-      // app.css legacy `input:focus` ring (0 0 3px rgba(243,108,34,0.35)) survives globally.
-      await expect(textbox).toHaveCSS("box-shadow", "rgba(243, 108, 34, 0.35) 0px 0px 3px 0px");
-      await expect(textbox).toHaveCSS("border-width", "0px");
+      // C2 retired: :focus synthesis is unreliable in the WTR iframe (F5
+      // 2026-08-13 real-browser: focus paints the app.css input:focus ring
+      // 0 0 3px rgba(243,108,34,0.35), app.css:338); hover state below is the
+      // real-mouse equivalent and remains pinned.
       await button.hover();
       await expect(button).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 
@@ -220,6 +227,9 @@ test.describe("Style site project-list title search", () => {
       expect(boxes.button.right).toBeLessThanOrEqual(boxes.bar.right);
       expect(boxes.textbox.right).toBeLessThanOrEqual(boxes.button.right);
       if (viewport.name === "desktop") {
+        // F5 (2026-08-13): legacy .search-bar .textbox width:350px content-box
+        // (_yobiUI.less:1357-1358) renders 360px total with padding; app.css
+        // now mirrors content-box so the textbox measures 360px.
         expect(boxes.textbox.width).toBeCloseTo(360, 0);
         await expect(bar).toHaveCSS("margin", "0px");
       } else {

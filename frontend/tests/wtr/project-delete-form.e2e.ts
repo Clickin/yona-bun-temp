@@ -219,7 +219,8 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "20px",
+    // F5 5px — yona-original/app/assets/stylesheets/less/_responsive.less:617-619
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     // F5 dist-truth (2026-08-11): the project menu tabs bottom margin is 20px.
     tabsMarginBottom: "20px",
@@ -709,7 +710,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   ]);
   expect(await readProjectDeleteSettingsTabAnchorAudit(page)).toEqual([]);
 
-  const settingsLink = page.locator("#subMenuProjectSetting a");
+  const settingsLink = page.locator("#subMenuProjectSetting a").last();
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/settingform`);
   await expect(page.locator("#subMenuIssueLabel a")).toHaveAttribute(
     "href",
@@ -729,7 +730,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/\bactive\b/);
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass(/\bactive\b/);
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 

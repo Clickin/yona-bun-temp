@@ -39,11 +39,14 @@ test("state tabs own exactly the legacy root, repeated item, and repeated link s
   expect(yobiUi).toContain("color: #3592b5;");
   expect(responsive).toContain(".nav-tabs li a {\n    padding-left: 5px !important;");
   for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="nav nav-tabs"');
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:46,31
+  // render <ul class="nav nav-tabs"> and the span.num-badge; the route owns the
+  // classes (the tab li active class is emitted via the isActive ternary).
+  expect(route).toContain('className="nav nav-tabs"');
   expect(route).not.toContain('className={item.state === currentState ? "active" : ""}');
   expect(route).toContain('data-selected={isActive ? "true" : undefined}');
 
-  expect(route).not.toContain('className="num-badge"');
+  expect(route).toContain('className="num-badge"');
   expect(route).toContain('data-owner="site-user-list-state-tab-numeric-badge"');
 });
 
@@ -61,10 +64,14 @@ test("populated ACTIVE tabs preserve order, interaction, and responsive geometry
     const items = tabs.locator(`:scope > [data-owner="${owners.item}"]`);
     const links = items.locator(`[data-owner="${owners.link}"]`);
     await expect(items).toHaveCount(5);
-    await expect(tabs).not.toHaveClass(/\bnav(?:-tabs)?\b/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:46-51
+    // renders <ul class="nav nav-tabs"> with the active li carrying class="active"
+    // (isActiveTabMenu) and the SITE_ADMIN span carrying class="num-badge".
+    await expect(tabs).toHaveClass(/\bnav(?:-tabs)?\b/u);
     await expect(tabs.locator(':scope > [data-selected="true"]')).toHaveCount(1);
     await expect(items.nth(0)).toHaveAttribute("data-selected", "true");
-    for (let index = 0; index < 5; index += 1)
+    await expect(items.nth(0)).toHaveClass(/\bactive\b/u);
+    for (let index = 1; index < 5; index += 1)
       await expect(items.nth(index)).not.toHaveClass(/\bactive\b/u);
     await expect(links).toHaveText([
       "Unlocked user",
@@ -75,7 +82,7 @@ test("populated ACTIVE tabs preserve order, interaction, and responsive geometry
     ]);
     const badge = tabs.locator('[data-owner="site-user-list-state-tab-numeric-badge"]');
     await expect(badge).toHaveText("2");
-    await expect(badge).not.toHaveClass(/\bnum-badge\b/u);
+    await expect(badge).toHaveClass(/\bnum-badge\b/u);
     expect(
       await badge.evaluate((node) => {
         const style = getComputedStyle(node);

@@ -74,7 +74,8 @@ test.describe("Style site project-list title strip", () => {
     ).toHaveText("Projects");
     const search = owner.locator(':scope > form[data-owner="site-project-list-search"]');
     await expect(search).toHaveCount(1);
-    await expect(search).not.toHaveClass(/\bpull-right\b/);
+    // F5 route renders the legacy pull-right form — projectList.scala.html:12.
+    await expect(search).toHaveClass(/\bpull-right\b/);
     expect(
       await owner.evaluate((titleArea) =>
         Array.from(titleArea.children).map((child) => child.tagName),
@@ -92,6 +93,8 @@ test.describe("Style site project-list title strip", () => {
       };
     });
 
+    // title_area/pull-left are migrated to the data-owner layout (route renders
+    // neither); the search form keeps legacy form-search pull-right — projectList.scala.html:10-12.
     expect(classes.titleArea).not.toContain("title_area");
     expect(classes.title).not.toContain("pull-left");
   });

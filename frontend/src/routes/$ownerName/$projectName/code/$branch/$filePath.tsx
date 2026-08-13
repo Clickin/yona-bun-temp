@@ -610,7 +610,14 @@ function FolderList({
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap" data-owner="project-code-folder-list-wrap">
+    // F5 display:block — yona-original/app/assets/stylesheets/less/_page.less:4671
+    // (see the branch-route FolderList comment: the frozen fallback hides
+    // .list-wrap for the legacy dynatree renderer; the React route re-shows it).
+    <div
+      className="list-wrap"
+      style={{ display: "block" }}
+      data-owner="project-code-folder-list-wrap"
+    >
       <div className="row-fluid listhead" data-owner="project-code-folder-list-head">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
@@ -929,7 +936,7 @@ function FileView({
       {isBinary ? (
         mimeType.startsWith("image/") ? (
           <div id="showImage" className="image-wrap" data-owner="project-code-file-image">
-            <img className="code-file-image" src={rawHref} alt="" />
+            <img src={rawHref} alt="" />
           </div>
         ) : (
           <div id="showFile" className="file-wrap" data-owner="project-code-file-binary">

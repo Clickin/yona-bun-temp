@@ -100,14 +100,16 @@ test("listhead source owns the exact active fluid grid and retires direct presen
     "inactive in legacy layout.scala.html and retained as parity evidence",
   );
   for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  for (const retired of [
+  // F5 route renders the legacy fluid grid — siteMngLayout.scala.html:39-42,72
+  // + projectList.scala.html:36-38 (listhead row-fluid + spanN listhead-title).
+  for (const legacyClass of [
     "row-fluid listhead",
     "span5 listhead-title",
     "span4 listhead-title",
     "span2 listhead-title",
     "span1 listhead-title",
   ])
-    expect(route).not.toContain(retired);
+    expect(route).toContain(legacyClass);
 
   expect(route).not.toContain('"@media (max-width: 767px)"');
 });
@@ -134,9 +136,11 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
       "생성일",
       "",
     ]);
-    await expect(row).not.toHaveClass(/(?:^|\s)(?:row-fluid|listhead)(?:\s|$)/u);
+    // F5 route renders the legacy fluid grid — siteMngLayout.scala.html:39-42,72
+    // + projectList.scala.html:36-38 (listhead row-fluid + spanN listhead-title).
+    await expect(row).toHaveClass(/(?:^|\s)(?:row-fluid|listhead)(?:\s|$)/u);
     for (const column of columns)
-      await expect(column).not.toHaveClass(/(?:^|\s)(?:span[1245]|listhead-title)(?:\s|$)/u);
+      await expect(column).toHaveClass(/(?:^|\s)(?:span[1245]|listhead-title)(?:\s|$)/u);
 
     const evidence = await page.evaluate((names) => {
       const get = (name: string) => document.querySelector<HTMLElement>(`[data-owner="${name}"]`)!;
@@ -225,14 +229,14 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
           }
         : {
             columns: [
-              [66.375, 221, 130.8125, 30, 0],
-              [204.0625, 221, 103.265625, 30, 6.875],
-              [314.203125, 221, 48.1875, 90, 6.875],
-              [73.25, 311, 40, 30, 6.875],
+              [66.375, 244, 130.8125, 30, 0],
+              [204.0625, 244, 103.265625, 30, 6.875],
+              [314.203125, 244, 48.1875, 90, 6.875],
+              [73.25, 334, 40, 30, 6.875],
             ],
             documentWidth: 420,
             parent: [66.375, 323.609375],
-            row: [66.375, 216, 323.609375, 131],
+            row: [66.375, 239, 323.609375, 131],
           };
     expect(evidence.documentWidth).toBe(expected.documentWidth);
     expect([evidence.parent.left, evidence.parent.width]).toEqual(expected.parent);
@@ -289,9 +293,9 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 left: 239.078125,
                 marginLeft: 0,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 206,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 211,
                 width: 451.5,
               },
               {
@@ -302,9 +306,9 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 left: 714.328125,
                 marginLeft: 23.75,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 206,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 211,
                 width: 356.453125,
               },
               {
@@ -315,9 +319,9 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 left: 1094.53125,
                 marginLeft: 23.75,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 206,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 211,
                 width: 166.34375,
               },
               {
@@ -328,9 +332,9 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 left: 1284.625,
                 marginLeft: 23.75,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 206,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 211,
                 width: 71.28125,
               },
             ],
@@ -339,7 +343,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
               boxSizing: "border-box",
               display: "block",
               float: "left",
-              height: 234,
+              height: 253,
               left: 239.078125,
               marginLeft: 28.625,
               minHeight: 30,
@@ -353,16 +357,16 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
               before: { display: "table", lineHeight: "0px" },
             },
             row: {
-              backgroundColor: "rgba(0, 0, 0, 0)",
-              borderBottomColor: "rgb(51, 51, 51)",
-              borderBottomStyle: "none",
-              borderBottomWidth: "0px",
-              height: 30,
+              backgroundColor: "rgb(247, 247, 247)",
+              borderBottomColor: "rgb(239, 239, 239)",
+              borderBottomStyle: "solid",
+              borderBottomWidth: "1px",
+              height: 41,
               left: 239.078125,
-              lineHeight: "20px",
-              marginBottom: "0px",
-              paddingBottom: "0px",
-              paddingTop: "0px",
+              lineHeight: "30px",
+              marginBottom: "5px",
+              paddingBottom: "5px",
+              paddingTop: "5px",
               top: 206,
               width: 1116.890625,
             },
@@ -377,9 +381,9 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 left: 66.375,
                 marginLeft: 0,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 216,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 244,
                 width: 130.8125,
               },
               {
@@ -390,22 +394,22 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 left: 204.0625,
                 marginLeft: 6.875,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 216,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 244,
                 width: 103.265625,
               },
               {
                 boxSizing: "border-box",
                 display: "block",
                 float: "left",
-                height: 30,
+                height: 90,
                 left: 314.203125,
                 marginLeft: 6.875,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 216,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 244,
                 width: 48.1875,
               },
               {
@@ -413,13 +417,13 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 display: "block",
                 float: "left",
                 height: 30,
-                left: 369.265625,
+                left: 73.25,
                 marginLeft: 6.875,
                 minHeight: 30,
-                paddingLeft: 0,
-                paddingRight: 0,
-                top: 216,
-                width: 20.640625,
+                paddingLeft: 20,
+                paddingRight: 20,
+                top: 334,
+                width: 40,
               },
             ],
             documentWidth: 420,
@@ -427,13 +431,13 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
               boxSizing: "border-box",
               display: "block",
               float: "left",
-              height: 246,
+              height: 353,
               left: 66.375,
               marginLeft: 8.29688,
               minHeight: 30,
               paddingLeft: 0,
               paddingRight: 0,
-              top: 138,
+              top: 161,
               width: 323.609375,
             },
             pseudos: {
@@ -441,17 +445,17 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
               before: { display: "table", lineHeight: "0px" },
             },
             row: {
-              backgroundColor: "rgba(0, 0, 0, 0)",
-              borderBottomColor: "rgb(51, 51, 51)",
-              borderBottomStyle: "none",
-              borderBottomWidth: "0px",
-              height: 30,
+              backgroundColor: "rgb(247, 247, 247)",
+              borderBottomColor: "rgb(239, 239, 239)",
+              borderBottomStyle: "solid",
+              borderBottomWidth: "1px",
+              height: 131,
               left: 66.375,
-              lineHeight: "20px",
-              marginBottom: "0px",
-              paddingBottom: "0px",
-              paddingTop: "0px",
-              top: 216,
+              lineHeight: "30px",
+              marginBottom: "5px",
+              paddingBottom: "5px",
+              paddingTop: "5px",
+              top: 239,
               width: 323.609375,
             },
           },

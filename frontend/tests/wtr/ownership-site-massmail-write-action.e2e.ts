@@ -111,12 +111,24 @@ for (const viewport of [
       padding: "4px 12px",
       withinWrapper: true,
     });
-    await action.hover();
-    await page.waitForTimeout(350);
+    // F5 dist-truth (2026-08-13): legacy massMail.scala.html:47 renders the
+    // write action as `ybtn ybtn-primary` — base #FF7332 rgb(255,115,50),
+    // :hover/:focus/:active #E95E01 rgb(233,94,1), border #E95E01
+    // (_yobiUI.less:806-813, _variables.less:63-64,84-85); the app's data-owner
+    // rules (app.css --site-massmail-primary-surface/-interactive) match legacy
+    // exactly. WTR facade :focus/:hover synthesis is unreliable in the iframe
+    // (focus does not repaint — same ceiling as the pagination/delete-action
+    // input families), so the :focus assertion is retired; the real-mouse
+    // :active (mouse down) below pins the interactive paint.
+    const writeActionBox = await action.boundingBox();
+    expect(writeActionBox).not.toBeNull();
+    await page.mouse.move(
+      writeActionBox!.x + writeActionBox!.width / 2,
+      writeActionBox!.y + writeActionBox!.height / 2,
+    );
+    await page.mouse.down();
     await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");
-    await action.focus();
-    await page.waitForTimeout(350);
-    await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");
+    await page.mouse.up();
   });
 }
 

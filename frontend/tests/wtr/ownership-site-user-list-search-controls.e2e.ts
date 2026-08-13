@@ -39,8 +39,14 @@ test("title search controls retire the bounded legacy fallback", () => {
   expect(bootstrap).toContain(".form-search input,");
   expect(bootstrap).toContain("float: right;");
   for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  for (const retired of ["form-search", "pull-right", "search-bar", "textbox", "search-btn"])
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:38-44
+  // renders form.form-search.pull-right > .search-bar > input.textbox +
+  // button.search-btn; the route owns the inner search-bar/textbox/search-btn
+  // classes (form-search/pull-right stay retired — data-owner form surface).
+  for (const retired of ["form-search", "pull-right"])
     expect(route).not.toContain(`className="${retired}"`);
+  for (const owned of ["search-bar", "textbox", "search-btn"])
+    expect(route).toContain(`className="${owned}"`);
   expect(yobicon).toContain('[class^="yobicon-"]');
 
   expect(route).not.toContain('className="yobicon-search"');
@@ -74,8 +80,12 @@ test("title search controls preserve frozen desktop and mobile output and submit
     await expect(
       form.locator("[data-toggle], [data-request-method], [data-request-uri]"),
     ).toHaveCount(0);
-    for (const retired of ["form-search", "pull-right", "search-bar", "textbox", "search-btn"])
+    for (const retired of ["form-search", "pull-right"])
       await expect(form.locator(`.${retired}`)).toHaveCount(0);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — the search-bar/textbox/search-btn
+    // classes are route-owned (legacy site/userList.scala.html:40-44), one node each.
+    for (const owned of ["search-bar", "textbox", "search-btn"])
+      await expect(form.locator(`.${owned}`)).toHaveCount(1);
 
     const geometry = await form.evaluate((formNode) => {
       const title = formNode.parentElement!.getBoundingClientRect();
@@ -95,6 +105,8 @@ test("title search controls preserve frozen desktop and mobile output and submit
     expect(geometry.input.left).toBeCloseTo(geometry.wrapper.left + 1, 2);
     expect(geometry.button.right).toBeLessThanOrEqual(geometry.wrapper.right);
     expect(geometry.button.top).toBeGreaterThanOrEqual(geometry.wrapper.top);
+    // F5 (2026-08-13): legacy .search-bar .textbox width:350px content-box
+    // (_yobiUI.less:1357-1358) renders 360px total with the 5px padding.
     if (viewport.name === "desktop") expect(geometry.input.width).toBe(360);
     else expect(geometry.wrapper.top - geometry.form.top).toBe(5);
 

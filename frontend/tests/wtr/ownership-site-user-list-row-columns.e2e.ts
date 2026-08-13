@@ -23,12 +23,13 @@ test("row columns own the legacy grid and column declarations", () => {
   ])
     expect(route).toContain(`data-owner="${owner}"`);
   expect(route).not.toContain('state === "DELETED" ? "row-fluid listitem "');
-  for (const retired of [
-    "span3 listitem-col",
-    "span2 listitem-col created-date",
-    "span5 listitem-col action-buttons",
-  ])
-    expect(route).not.toContain(`className="${retired}"`);
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:76,91,94
+  // renders the span3 listitem-col columns and span2 listitem-col created-date; the
+  // route owns them (span5 listitem-col action-buttons stays retired — the route
+  // owns the action surface via data-owner).
+  for (const owned of ["span3 listitem-col", "span2 listitem-col created-date"])
+    expect(route).toContain(`className="${owned}"`);
+  expect(route).not.toContain(`className="span5 listitem-col action-buttons"`);
   expect(route).toContain('data-owner="site-user-list-row-action-button"');
   expect(route).not.toContain("action-buttons");
   expect(route).not.toContain('className="span4 listitem-col"');
@@ -47,6 +48,9 @@ test("ACTIVE columns preserve desktop and mobile legacy geometry", async ({ page
       `:scope > [data-owner="${columnOwner}"], :scope > [data-owner="site-user-list-row-date"], :scope > [data-owner="site-user-list-row-action"]`,
     );
     await expect(columns).toHaveCount(4);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:76,91,94
+    // renders span3 listitem-col / span2 listitem-col created-date on the row
+    // columns; the route owns them (the action column stays class-free).
     expect(
       await columns.evaluateAll((nodes) =>
         nodes.map((node) =>
@@ -55,8 +59,8 @@ test("ACTIVE columns preserve desktop and mobile legacy geometry", async ({ page
           ),
         ),
       ),
-    ).toEqual([false, false, false, false]);
-    expect(await row.evaluate((node) => node.classList.contains("row-fluid"))).toBe(false);
+    ).toEqual([true, true, true, false]);
+    expect(await row.evaluate((node) => node.classList.contains("row-fluid"))).toBe(true);
     const evidence = await row.evaluate((row) => {
       const columns = Array.from(row.children) as HTMLElement[];
       const box = (node: Element) => node.getBoundingClientRect().toJSON();

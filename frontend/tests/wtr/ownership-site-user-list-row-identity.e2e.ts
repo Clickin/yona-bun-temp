@@ -29,7 +29,12 @@ test("identity descendants own the complete legacy avatar, name, and ID surface"
 
   expect(route).toContain('data-owner="site-user-list-row-avatar-image"');
 
-  for (const retired of ["user-list-wrap", "avatar-wrap", "list-avatar", "user-name", "user-id"])
+  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:73
+  // renders <ul class="user-list-wrap">; the route owns it. The identity
+  // descendants (avatar-wrap/list-avatar/user-name/user-id) stay class-free —
+  // the data-owner identity surface owns them.
+  expect(route).toContain('className="user-list-wrap"');
+  for (const retired of ["avatar-wrap", "list-avatar", "user-name", "user-id"])
     expect(route).not.toContain(`className="${retired}"`);
 });
 
@@ -63,11 +68,14 @@ test("ACTIVE identity preserves links, complete avatar output, and desktop/mobil
     await expect(avatar).toHaveAttribute("href", /\/alice$/u);
     await expect(name).toHaveAttribute("href", /\/alice$/u);
     await expect(id).toHaveAttribute("href", /\/alice$/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:75
+    // renders <li class="row-fluid listitem">; the route owns listitem (the avatar
+    // link stays class-free — data-owner surface).
     expect(
       await row.evaluate((node) =>
         Array.from(node.classList).some((token) => token === "listitem"),
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(await avatar.evaluate((node) => node.classList.contains("avatar-wrap"))).toBe(false);
     const evidence = await row.evaluate((row, owners) => {
       const get = (owner: string) => row.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
@@ -151,7 +159,12 @@ test("ACTIVE identity preserves links, complete avatar output, and desktop/mobil
     });
     expect(evidence.matchedImageRules.some((rule) => /width:\s*100%/u.test(rule))).toBe(true);
     expect(evidence.boxes.avatar.width).toBe(45);
-    expect(evidence.image).toMatchObject({ verticalAlign: "top", width: "45px" });
+    // F5 (2026-08-13): the avatar img is forced to 32px by the frozen app.css
+    // [data-owner=site-user-list-row-avatar-image] rule (height/width 32px
+    // !important, vertical-align top — app.css:20494-20500), matching legacy
+    // userList.scala.html:81 width="32" height="32"; the 45px is the
+    // avatar-wrap container (boxes.avatar above), not the img.
+    expect(evidence.image).toMatchObject({ verticalAlign: "top", width: "32px" });
     expect(evidence.before.name).toMatchObject({
       color: "rgb(0, 136, 204)",
       display: "block",

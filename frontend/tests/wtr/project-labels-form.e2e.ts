@@ -136,10 +136,10 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     pageWrapMinWidth: "1100px",
     presetColorHeight: "24px",
     presetColorWidth: "auto",
-    // F5 dist-truth (2026-08-11): legacy .project-page-wrap margin:20px auto 0 at
-    // desktop; the fallback `@media all` 5px !important leak is overridden by
-    // the app.css .page-wrap-outer > .project-page-wrap 20px rule (not-found parity)
-    projectPageMarginTop: "20px",
+    // F5 dist-truth (2026-08-13): legacy .project-page-wrap margin-top 5px —
+    // _responsive.less:617-620 @media all (unconditional) overrides _page.less:728;
+    // app.css renders 5px (bb6a0c6ed fixed the shell margin).
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     tabsMarginBottom: "20px",
     categoryInputWidth: "214px",
@@ -426,7 +426,11 @@ test("project labels internal links preserve legacy hrefs with SPA transition", 
     )
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  // HARNESS_ENV — the AnimatePresence exit (popLayout) never completes in the
+  // WTR iframe (transitionend ceiling), so the exiting m.div keeps rendering
+  // the current route: #saveSetting duplicates after the SPA transition and
+  // the unindexed locator hits strict mode (reads null). .last() = the newest.
+  await expect(page.locator("#saveSetting").last()).toBeVisible();
 });
 
 test("project labels category option icon drops route-local tooltip marker only", async ({

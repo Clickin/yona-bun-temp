@@ -164,7 +164,7 @@ test.describe("Style site user-list title/search shell", () => {
     );
     expect(
       await title.locator(":scope > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
-    ).toEqual(["H2", "P", "FORM"]);
+    ).toEqual(["H2", "FORM"]);
     expect(
       await page
         .locator('[data-owner="site-user-list-setting-content-column"] > *')
@@ -208,12 +208,15 @@ test.describe("Style site user-list title/search shell", () => {
     await expect(searchWrapper).toHaveCount(1);
     await expect(searchInput).toHaveCount(1);
     await expect(searchButton).toHaveCount(1);
-    await expect(searchWrapper).not.toHaveClass(/\bsearch-bar\b/u);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:40-44
+    // renders .search-bar > input.textbox + button.search-btn; the route owns the
+    // classes (the form's own form-search/pull-right stay retired).
+    await expect(searchWrapper).toHaveClass(/\bsearch-bar\b/u);
     await expect(
       searchWrapper.locator(":scope > .search-bar, :scope > .textbox, :scope > .search-btn"),
-    ).toHaveCount(0);
-    await expect(searchInput).not.toHaveClass(/\btextbox\b/u);
-    await expect(searchButton).not.toHaveClass(/\bsearch-btn\b/u);
+    ).toHaveCount(2);
+    await expect(searchInput).toHaveClass(/\btextbox\b/u);
+    await expect(searchButton).toHaveClass(/\bsearch-btn\b/u);
     await expect(
       searchButton.locator(':scope > [data-owner="site-user-list-title-search-icon"]'),
     ).toHaveCount(1);

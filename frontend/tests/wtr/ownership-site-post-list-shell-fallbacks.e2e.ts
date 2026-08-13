@@ -213,17 +213,19 @@ test.describe("Style site post-list shell fallback retirement", () => {
     const container = owner(page, owners.container);
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
-    await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
+    // F5 post-list-wrap retained — postList.scala.html:30.
+    await expect(container).toHaveClass(/\bpost-list-wrap\b/u);
     const settingWrap = page.locator('[data-owner="site-post-list-setting-wrap"]');
     await expect(settingWrap).toHaveAttribute("data-owner-page", "site-post-list-page");
     const settingGrid = page.locator('[data-owner="site-post-list-setting-grid"]');
     const sidebarColumn = page.locator('[data-owner="site-post-list-setting-sidebar-column"]');
     const contentColumn = page.locator('[data-owner="site-post-list-setting-content-column"]');
-    await expect(settingWrap).not.toHaveClass(/site-setting-wrap/u);
-    await expect(settingGrid).not.toHaveClass(/row-fluid/u);
-    await expect(sidebarColumn).not.toHaveClass(/span2/u);
-    await expect(contentColumn).not.toHaveClass(/span10/u);
-    await expect(container.locator('[data-owner="site-post-list-row"]')).not.toHaveClass(
+    // F5 shell classes retained — siteMngLayout.scala.html:40-42,72; rows postList.scala.html:33.
+    await expect(settingWrap).toHaveClass(/site-setting-wrap/u);
+    await expect(settingGrid).toHaveClass(/row-fluid/u);
+    await expect(sidebarColumn).toHaveClass(/span2/u);
+    await expect(contentColumn).toHaveClass(/span10/u);
+    await expect(container.locator('[data-owner="site-post-list-row"]')).toHaveClass(
       /\brow-fluid\b/u,
     );
 

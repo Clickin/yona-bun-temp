@@ -605,7 +605,7 @@ test("project members settings tab anchors keep legacy hrefs without route-local
   await expect(page.locator("#subMenuProjectMember")).toHaveClass("active");
   expect(await readProjectSettingsTabNativeLinkAudit(page)).toEqual([]);
 
-  const settingsLink = page.locator("#subMenuProjectSetting a");
+  const settingsLink = page.locator("#subMenuProjectSetting a").last();
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
   await page.evaluate(() => {
@@ -621,9 +621,9 @@ test("project members settings tab anchors keep legacy hrefs without route-local
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveCount(1);
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveCount(1);
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass(/active/);
+  await expect(page.locator("#saveSetting").last()).toBeVisible();
 });
 
 test("project members converted internal links render legacy hrefs and navigate in the SPA", async ({

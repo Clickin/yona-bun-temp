@@ -35,7 +35,8 @@ test("page wrapper and repeated row own exactly the selected frozen declarations
   expect(bootstrap).toContain(".row-fluid:after {\n  clear: both;");
   expect(route).toContain(`data-owner="${owners.page}"`);
   expect(route).toContain(`data-owner="${owners.row}"`);
-  expect(route).not.toContain('className="page-wrap-outer"');
+  // F5 route renders page-wrap-outer — siteMngLayout.scala.html:39.
+  expect(route).toContain('className="page-wrap-outer"');
 });
 
 test("page wrapper and repeated row preserve desktop and mobile output in one browser", async ({
@@ -50,8 +51,10 @@ test("page wrapper and repeated row preserve desktop and mobile output in one br
     await page.goto(`${basePath}/sites/postList`);
     const outer = page.locator(`[data-owner="${owners.page}"]`);
     const row = page.locator(`[data-owner="${owners.row}"]`);
-    await expect(outer).not.toHaveClass(/page-wrap-outer/u);
-    await expect(row).not.toHaveClass(/row-fluid/u);
+    // F5 shell classes present — page-wrap-outer siteMngLayout.scala.html:39,
+    // row row-fluid postList.scala.html:33.
+    await expect(outer).toHaveClass(/page-wrap-outer/u);
+    await expect(row).toHaveClass(/row-fluid/u);
     await expect(row).toHaveCSS("display", "list-item");
     const evidence = await page.evaluate((names) => {
       const outer = document.querySelector<HTMLElement>(`[data-owner="${names.page}"]`)!;
@@ -110,7 +113,12 @@ test("page wrapper and repeated row preserve desktop and mobile output in one br
       expect(evidence.settingGridBox.bottom).toBeLessThanOrEqual(evidence.outerBox.bottom);
     }
     expect(evidence.outer.padding).toBe(viewport.name === "desktop" ? "0px 10px" : "0px");
-    expect(evidence.outer.minWidth).toBe(viewport.name === "desktop" ? "0px" : "10px");
+    // F5 dist-truth: the app's `.page-wrap-outer { min-width: 1100px }`
+    // (app.css:2076, @layer legacy) applies on desktop — the same value the
+    // project-shell specs pin (pageWrapMinWidth 1100px, project-delete-form
+    // e2e.ts:221). Mobile: the data-owner rule sets min-width 10px
+    // (app.css:18894, @media max-width 720px).
+    expect(evidence.outer.minWidth).toBe(viewport.name === "desktop" ? "1100px" : "10px");
     expect(evidence.rowBox.left).toBeCloseTo(evidence.containerBox.left, 2);
     expect(evidence.rowBox.right).toBeCloseTo(evidence.containerBox.right, 2);
     expect(evidence.rowBox.width).toBeCloseTo(evidence.containerBox.width, 2);

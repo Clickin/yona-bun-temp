@@ -48,8 +48,10 @@ test.describe("Style site diagnostic no-error title", () => {
     ]);
 
     expect(route).toContain('"site-diagnostic-no-error-title"');
-    expect(route).not.toContain('className="pull-left"');
-    expect(route).not.toContain('className="title_area"');
+    // F5 className="pull-left" — yona-original/app/views/site/diagnostic.scala.html:28
+    expect(route).toContain('className="pull-left"');
+    // F5 className="title_area" — yona-original/app/views/site/diagnostic.scala.html:27
+    expect(route).toContain('className="title_area"');
   });
 
   test("preserves the legacy diagnostics heading and no-error paragraph order", async ({

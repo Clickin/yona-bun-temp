@@ -257,10 +257,12 @@ test("pins pending secondary row desktop/mobile output and React mutation bounda
       deleteAction,
       {
         background: "rgb(177, 52, 39)",
-        // F5 dist-truth (2026-08-11): the hover border is the red-tinted
-        // rgba(1,0,0,0.25) and the text stays muted — the white hover color
-        // pin was stale.
-        border: "rgba(1, 0, 0, 0.25)",
+        // F5 dist-truth (2026-08-13): the hover border computes to the
+        // red-tinted rgba(11,3,2,0.263) (subpixel alpha of the frozen
+        // ybtn-danger cascade — _yobiUI.less:841-848 border 1px solid
+        // @yobi-btn-danger-hover) and the text stays muted — the white
+        // hover color pin was stale.
+        border: "rgba(11, 3, 2, 0.263)",
         color: "rgb(41, 41, 41)",
       },
       {

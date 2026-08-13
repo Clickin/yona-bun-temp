@@ -165,7 +165,9 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     pageWrapMinWidth: "1100px",
     payloadHeight: "20px",
     payloadWidth: "355px",
-    projectPageMarginTop: "20px",
+    // F5 (2026-08-13): legacy @media all .project-page-wrap margin-top 5px
+    // (_responsive.less:617-619); the 20px pin was stale.
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     radioDisplay: "inline",
     secretWidth: "214px",
@@ -503,7 +505,7 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
     .toBe("kept");
 
   await page.goto(`${basePath}/admin/sample/webhooks`);
-  const settingsLink = page.locator("#subMenuProjectSetting a");
+  const settingsLink = page.locator("#subMenuProjectSetting a").last();
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
   await page.evaluate(() => {
@@ -519,8 +521,9 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass("active");
+  // AnimatePresence exit keeps the prior route's form during SPA nav — last().
+  await expect(page.locator("#saveSetting").last()).toBeVisible();
 });
 
 test("project webhooks fork origin link preserves legacy class without active markers", async ({

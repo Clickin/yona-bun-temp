@@ -163,7 +163,7 @@ function ProjectCodeFileHistoryBody({
               ))}
             </div>
 
-            <div data-owner="commit-file-history" id="history">
+            <div className="commit-wrap" data-owner="commit-file-history" id="history">
               <table className="code-table commits mt10" data-owner="commit-file-history-table">
                 <thead className="thead">
                   <tr>
@@ -236,7 +236,10 @@ function ProjectCodeFileHistoryBody({
                           </td>
                           <td className="messages">
                             {commit.commentCount > 0 ? (
-                              <span data-owner="commit-file-comment-count">
+                              <span
+                                className="number-of-comments"
+                                data-owner="commit-file-comment-count"
+                              >
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}
@@ -287,7 +290,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: Math.max(0, history.page - 1) }}
-                className="ybtn"
+                className="ybtn pull-left"
                 data-owner="commit-file-history-pagination-newer"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
@@ -299,7 +302,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: history.page + 1 }}
-                className="ybtn"
+                className="ybtn pull-left"
                 data-owner="commit-file-history-pagination-older"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}

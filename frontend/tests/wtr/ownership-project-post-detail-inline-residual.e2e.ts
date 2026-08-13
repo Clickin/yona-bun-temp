@@ -169,7 +169,10 @@ test("moves board post detail static residuals to route-local Style", async ({ p
     const progress = tasklistProgress.nth(index);
     await expect(progress).toHaveAttribute("class", /bar/);
     await expect(progress).toHaveAttribute("class", /red/);
-    await expect(progress).not.toHaveAttribute("style", /.+/);
+    // F5 width: 0px — yona-original/app/views/common/tasklistBar.scala.html
+    // renders `style="width: 0;"` inline; the app keeps the equivalent
+    // inline `width: 0px` (route-local Style does not own this declaration).
+    await expect(progress).toHaveAttribute("style", /width:\s*0/);
     await expect(progress).toHaveCSS("width", "0px");
   }
 

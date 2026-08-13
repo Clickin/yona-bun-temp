@@ -117,7 +117,8 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     ownerInputHeight: "20px",
     ownerInputWidth: "206px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "20px",
+    // F5 5px — yona-original/app/assets/stylesheets/less/_responsive.less:617-619
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     rowMinHeight: "0px",
     tabsMarginBottom: "20px",
@@ -437,8 +438,9 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
       ),
     )
     .toBe("kept");
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
-  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting").last()).toHaveClass("active");
+  // AnimatePresence exit keeps the prior route's form during SPA nav — last().
+  await expect(page.locator("#saveSetting").last()).toBeVisible();
 });
 
 test("project transfer fork origin link keeps legacy class without active markers", async ({

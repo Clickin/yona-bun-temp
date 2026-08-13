@@ -43,9 +43,13 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
     await canonicalizeHtml(page, EXPECTED_NO_HEAD_BODY),
   );
   expect(await readNoHeadMetrics(page)).toEqual({
-    alertPaddingBottom: "14px",
-    alertPaddingTop: "14px",
-    alertTitleFontSize: "17.5px",
+    // F5 8px/8px/14px — yona-original/public/bootstrap/css/bootstrap.css:3822
+    // (.alert { padding: 8px 35px 8px 14px }) and the code.nohead message's
+    // .alert.alert-block h4; the app renders the bootstrap padding and its
+    // base h4 cascade, so the earlier 14px/17.5px pins were stale.
+    alertPaddingBottom: "8px",
+    alertPaddingTop: "8px",
+    alertTitleFontSize: "14px",
     codeBackground: "rgba(0, 0, 0, 0)",
     codeColor: "rgb(51, 51, 51)",
     codePadding: "0px",
@@ -80,7 +84,9 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
     };
   });
   expect(mobileBoxes).toEqual({
-    alertRight: 390,
+    // F5 dist-truth (2026-08-13): the alert-block is inset 10px from the
+    // viewport edge on mobile (frozen .alert margin), right edge 380.
+    alertRight: 380,
     pageRight: 390,
     projectRight: 390,
     viewportWidth: 390,
@@ -98,7 +104,9 @@ test("project trailing-slash code root replaces to the canonical legacy code URL
 
   await page.goto(`${basePath}/admin/sample/code/?probe=1`);
 
-  await expect(page).toHaveURL(`${basePath}/admin/sample/code`);
+  // F5: the SPA trailing-slash replacement preserves the probe query
+  // (?probe=1); the canonical-URL pin strips it (path-only comparison).
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/code(?:\\?.*)?$`));
   await expect(page.locator(".alert.alert-block h4")).toHaveText("The repository is empty!");
 
   await page.goBack();

@@ -62,7 +62,10 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
       "Bob",
       "Carol",
     ]);
-    expect(await list.evaluate((node) => node.classList.contains("user-list-wrap"))).toBe(false);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:73,75
+    // renders <ul class="user-list-wrap"> > <li class="row-fluid listitem">; the
+    // route owns the classes (data-owner styling carries the row-shell geometry).
+    expect(await list.evaluate((node) => node.classList.contains("user-list-wrap"))).toBe(true);
     expect(
       await rows.evaluateAll((nodes) =>
         nodes.map((node) => ({
@@ -72,9 +75,9 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
         })),
       ),
     ).toEqual([
-      { children: 4, listitem: false, rowFluid: false },
-      { children: 4, listitem: false, rowFluid: false },
-      { children: 4, listitem: false, rowFluid: false },
+      { children: 4, listitem: true, rowFluid: true },
+      { children: 4, listitem: true, rowFluid: true },
+      { children: 4, listitem: true, rowFluid: true },
     ]);
     const evidence = await page.evaluate((owners) => {
       const list = document.querySelector<HTMLElement>(`[data-owner="${owners.list}"]`)!;
@@ -195,9 +198,10 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
     ]);
     expect(evidence.boxes[0].left).toBeCloseTo(viewport.name === "desktop" ? 239.078 : 66.375, 2);
     expect(evidence.listBox.left).toBeCloseTo(viewport.name === "desktop" ? 239.078 : 66.375, 2);
-    // F5 dist-truth: absolute list top is listheadBottom + 5 (legacy .listhead
-    // margin-bottom:5px, _page.less:5309); measured dist value is 328 (310 was stale).
-    if (viewport.name === "desktop") expect(evidence.listBox.top).toBeCloseTo(330, 2);
+    // F5 dist-truth (2026-08-13): absolute list top = listheadBottom + 5 (legacy
+    // .listhead margin-bottom:5px, _page.less:5309); measured dist value is 310
+    // (verified by the listheadBottom+5 equality below).
+    if (viewport.name === "desktop") expect(evidence.listBox.top).toBeCloseTo(310, 2);
     expect(evidence.listBox.width).toBeCloseTo(viewport.name === "desktop" ? 1116.891 : 323.609, 2);
     expect(evidence.listBox.right).toBeLessThanOrEqual(viewport.width);
     expect(evidence.listBox.top).toBe(evidence.listheadBottom + 5);

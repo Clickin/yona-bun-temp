@@ -91,7 +91,9 @@ test("project code file history matches legacy code/history.scala.html path DOM"
   await expect(
     page.evaluate(() => (window as typeof window & { __copiedCommitId?: string }).__copiedCommitId),
   ).resolves.toBe("abcdef1234567890");
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("Commit ID is copied");
+  await expect(page.locator('#yobiToasts [data-part="toast-message"]')).toHaveText(
+    "Commit ID is copied",
+  );
   await assertLegacyAnchorNoActiveMarkers(page.locator(".actrow a", { hasText: "Newer" }), {
     className: "ybtn pull-left",
     href: `${basePath}/admin/sample/commits/main/README.md?page=1`,

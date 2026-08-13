@@ -1190,8 +1190,12 @@ function MilestoneIssueRow({
                   </Link>
                 ) : null}
                 {numberField(issue.sharerCount) ? (
-                  <button
-                    type="button"
+                  // Legacy sharerCount.scala.html renders the sharer count as a
+                  // href-less anchor (no navigation) — the scala-html-goal guard
+                  // forbids raw route anchors, so the count renders as a span
+                  // with the data-owner styling carrying the legacy -5px
+                  // a:nth-child(3) margin (app.css rule below).
+                  <span
                     className="sharer-color"
                     data-owner="milestone-detail-issue-sharer-count"
                     title={t("issue.sharer")}
@@ -1208,7 +1212,7 @@ function MilestoneIssueRow({
                     >
                       {numberField(issue.sharerCount)}
                     </span>
-                  </button>
+                  </span>
                 ) : null}
               </span>
             ) : null}

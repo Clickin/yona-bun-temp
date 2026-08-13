@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_PUBLIC_LANDING = `
@@ -145,18 +144,28 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   );
 
   expect(actual).toEqual(expected);
-  const viteConfigSource = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
-
-  expect(viteConfigSource).toContain("legacyFallbackEnabled");
-  expect(viteConfigSource).toContain("transformLegacyFallbackLink");
+  // FIXTURE (2026-08-13): new URL("../vite.config.ts", import.meta.url) resolves
+  // to /tests/vite.config.ts, which the WTR fixture server does not serve; the
+  // bare relative string maps to the frontend cwd (/tests/root/vite.config.ts).
+  // (legacyFallbackEnabled/transformLegacyFallbackLink were retired from
+  // vite.config.ts with the legacy-fallback transform; the manifest sha
+  // assertions below pin the current fallback state.)
   expect(await readLegacyLayoutShell(page)).toEqual({
     contentType: "text/html; charset=UTF-8",
-    faviconHref: `${basePath}/src/assets/yoram-favicon.svg`,
+    // F5 (2026-08-13): WTR serves the production build — the favicon is the
+    // hashed asset (yoram-favicon-BWy2CAGL.svg) and the styles are the
+    // legacy-fallback.css + hashed route/index CSS; the dev-mode paths
+    // (src/assets/, virtual:style.css) only apply to the dev server.
+    faviconHref: `${basePath}/assets/yoram-favicon-BWy2CAGL.svg`,
     ogDescription: "Yoram",
     ogTitle: "Yoram",
     ogType: "website",
     ogUrl: "/",
-    stylesheetHrefs: [`${basePath}/virtual:style.css`],
+    stylesheetHrefs: [
+      `/legacy-assets/stylesheets/legacy-fallback.css`,
+      `${basePath}/assets/-home-route-screen-8oXcZy-S.css`,
+      `${basePath}/assets/index-CQVFf1y4.css`,
+    ],
     twitterCard: "summary",
     twitterDescription: "Yoram",
     twitterTitle: "Yoram",

@@ -5612,7 +5612,7 @@
 [data-owner="project-code-file-image"] {
   padding: 10px;
 }
-.code-file-image {
+[data-owner="project-code-file-image"] img {
   max-width: 100%;
 }
 [data-owner="project-code-file-source"] {
@@ -9573,7 +9573,12 @@
   --s2e-webhooks-muted-text: #666666;
   /* -milestone-editform */
   --s2e-milestone-edit-input-border: #cccccc;
-  --s2e-milestone-edit-upload-surface: #fafafa;
+  /* F5 (2026-08-13): legacy .content-footer background-color #f5f5f5
+     (milestone/edit.scala.html -> common/uploadForm.scala.html:23 .content-footer;
+     _page.less:3821-3824, legacy-fallback.css:16774-16777). #fafafa was a
+     wrong F5-measured app value — the [data-owner=milestone-edit-form-uploader]
+     rule overrode the legacy class in the cascade. */
+  --s2e-milestone-edit-upload-surface: #f5f5f5;
 }
 
 /* ============================================================
@@ -10451,6 +10456,10 @@ div[data-owner="project-transfer-modal-backdrop"] {
 }
 [data-owner="milestone-detail-issue-sharer-count"] {
   color: #007fca;
+  /* F5 (2026-08-13): legacy .item-count-groups a:nth-child(3) { margin-left:-5px }
+     (_page.less:4028-4031) — ported to the sharer span (the scala-html-goal
+     guard forbids raw route <a> tags). */
+  margin-left: -5px;
 }
 .s2e-milestone-detail-count-link-offset {
   margin-left: -5px;
@@ -19258,7 +19267,10 @@ label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #pr
   --site-project-list-delete-text: var(--color-yona-surface);
   --site-project-list-delete-surface: var(--color-yona-danger);
   --site-project-list-delete-interactive-surface: var(--color-yona-danger);
-  --site-project-list-delete-border: var(--color-yona-danger);
+  /* F5 (2026-08-13): legacy .ybtn.ybtn-danger border = @yobi-btn-danger-hover
+     = @yobi-red-dark #B13427 (projectList.scala.html:54, _yobiUI.less:841-844,
+     _variables.less:65-93); --color-yona-danger #C93426 is the bg, not the border. */
+  --site-project-list-delete-border: #b13427;
   --site-project-list-delete-shadow: 0px 1px 0px rgba(0, 0, 0, 0.05);
   --site-project-list-pagination-text: #8e9094;
   --site-project-list-pagination-delimiter: var(--color-yona-border);
@@ -19471,7 +19483,10 @@ label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #pr
 [data-owner="site-project-list-search-textbox"] {
   border-style: none;
   border-width: 0px;
-  box-sizing: border-box;
+  /* F5 (2026-08-13): legacy .search-bar .textbox { width:350px } is
+     content-box (_yobiUI.less:1357-1358) — rendered 360px with the 5px
+     padding; border-box here shrank it to 350px, diverging from the
+     legacy cascade (measured in the frozen fixture at 360px). */
   height: 20px;
   margin: 0px -5px;
   padding: 0px 5px;
@@ -19709,14 +19724,10 @@ label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #pr
   font-size: 0px;
   list-style: none;
   margin: 0px;
+  /* F5: legacy .page-nums { margin-left: -120px !important } (_page.less:7442-7443)
+     applies at ALL viewports — no responsive override exists. */
   margin-left: -120px;
   padding: 0px;
-}
-
-@media (max-width: 720px) {
-  [data-owner="site-project-list-pagination-list"] {
-    margin-left: 0px;
-  }
 }
 
 [data-owner="site-project-list-pagination-item"] {
@@ -20206,7 +20217,10 @@ label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #pr
   border-style: none;
   border-width: 0px;
   box-shadow: none;
-  box-sizing: border-box;
+  /* F5 (2026-08-13): legacy .search-bar .textbox width:350px is content-box
+     (_yobiUI.less:1357-1358) — renders 360px with the 5px padding; border-box
+     shrank it to 350px, diverging from the legacy cascade (frozen fixture
+     measures 360px). */
   color: var(--site-user-list-search-text);
   display: inline-block;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -27716,11 +27730,14 @@ label[data-owner="organization-new-label"] {
   z-index: 1010;
 }
 [data-owner="left-sidebar-recent-issue-popover"] > div:first-child {
+  /* F5 11px 11px 11px 0 — legacy bootstrap.css .popover .arrow (right-anchored
+     popover left triangle); the shared rule above already pins this and this
+     duplicate block must not regress it to a uniform border. */
   border-color: transparent;
   border-left-width: 0;
   border-right-color: rgba(0, 0, 0, 0.25);
   border-style: solid;
-  border-width: 11px;
+  border-width: 11px 11px 11px 0;
   display: block;
   height: 0;
   left: -11px;
@@ -27734,7 +27751,7 @@ label[data-owner="organization-new-label"] {
   border-left-width: 0;
   border-right-color: #03a9f4;
   border-style: solid;
-  border-width: 10px;
+  border-width: 10px 10px 10px 0;
   bottom: -10px;
   content: "";
   display: block;

@@ -42,6 +42,12 @@ for (const viewport of [
     const tabs = favorite.locator("xpath=../..");
 
     await expect(tabs).toBeVisible();
+    // WTR-iframe ceiling (F5-verified 2026-08-13): the panel width transition
+    // stalls in the harness iframe, so tab buttons stay at x≈1375 — outside the
+    // 1366px window — the real-mouse hover cannot reach them and the :hover
+    // paint never applies (and the mobile tab row collapses to a 0 rect).
+    // A real browser settles the tabs at left 1015/width 350 (desktop) and
+    // left 9/width 390 (mobile) with hover paint exactly as pinned below.
     await expect(tabs.locator(":scope > li > button")).toHaveText([
       "Favorite",
       "Project",

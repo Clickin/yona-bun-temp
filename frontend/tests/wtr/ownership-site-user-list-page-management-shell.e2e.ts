@@ -100,6 +100,8 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
       '[data-owner="site-user-list-row-list"] > [data-owner="site-user-list-row"]',
     );
     await expect(userRows).toHaveCount(3);
+    // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:75
+    // renders <li class="row-fluid listitem"> per row; the route owns the classes.
     expect(
       await userRows.evaluateAll((nodes) =>
         nodes.map((node) => ({
@@ -108,9 +110,9 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
         })),
       ),
     ).toEqual([
-      { listitem: false, rowFluid: false },
-      { listitem: false, rowFluid: false },
-      { listitem: false, rowFluid: false },
+      { listitem: true, rowFluid: true },
+      { listitem: true, rowFluid: true },
+      { listitem: true, rowFluid: true },
     ]);
     await expect(userRows.locator(':scope > [data-owner="site-user-list-row-column"]')).toHaveCount(
       6,
@@ -188,7 +190,7 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
       boxSizing: "border-box",
       marginTop: "10px",
       minHeight: "450px",
-      minWidth: viewport.name === "mobile" ? "10px" : "0px",
+      minWidth: viewport.name === "mobile" ? "10px" : "1100px",
       padding: viewport.name === "mobile" ? "0px" : "0px 10px",
       width: `${viewport.width}px`,
     });
