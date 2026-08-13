@@ -164,7 +164,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     stylesheetHrefs: [
       `/legacy-assets/stylesheets/legacy-fallback.css`,
       `${basePath}/assets/-home-route-screen-8oXcZy-S.css`,
-      `${basePath}/assets/index-CQVFf1y4.css`,
+      `${basePath}/assets/index-DZzsAkIE.css`,
     ],
     twitterCard: "summary",
     twitterDescription: "Yoram",

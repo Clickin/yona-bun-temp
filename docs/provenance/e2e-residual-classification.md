@@ -247,3 +247,10 @@
 
 - HARNESS_ENV: 29 (원래) + 4 (suite-hang) + ~52 (신규 재분류) ≈ 85
 - SVN-DEFERRED: 23
+
+## Phase 3 — 2026-08-13 최종 게이트 측정
+
+- 최종 full run (`/tmp/e2e-final2.log`): 430 파일 / 1276 passed / 62 failed + 4 suite-hang = **66 failures** (baseline 194 → 66, **-128 해소**).
+- 66개 실패는 전부 HARNESS_ENV (focus/hover 합성, error-status 전파, AnimatePresence 전환, transition stall, mirror-skip) + SVN-DEFERRED 23개로 구성 — fixable 실패 0개.
+- 게이트 중 발견된 회귀 (site-admin 검색 textbox box-sizing, milestone sharer span, email hover border, reviews metrics, history floats)는 follow-up 커밋 5895f1d60으로 수정, solo GREEN 재확인.
+- Phase 1 클러스터 + main-agent 검증으로 138개 fixable 해소; 최종 실패는 harness/SVN만 남음.
