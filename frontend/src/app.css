@@ -19483,7 +19483,6 @@ label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #pr
 [data-owner="site-project-list-search-textbox"] {
   border-style: none;
   border-width: 0px;
-  box-sizing: border-box;
   height: 20px;
   margin: 0px -5px;
   padding: 0px 5px;
@@ -20214,7 +20213,6 @@ label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #pr
   border-style: none;
   border-width: 0px;
   box-shadow: none;
-  box-sizing: border-box;
   color: var(--site-user-list-search-text);
   display: inline-block;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;

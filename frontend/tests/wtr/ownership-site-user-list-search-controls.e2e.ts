@@ -106,8 +106,10 @@ test("title search controls preserve frozen desktop and mobile output and submit
     expect(geometry.button.right).toBeLessThanOrEqual(geometry.wrapper.right);
     expect(geometry.button.top).toBeGreaterThanOrEqual(geometry.wrapper.top);
     // F5 dist-truth (2026-08-13): the site-admin search textbox resolves to
-    // 350px border-box (the baseline site-admin specs pin the same value).
-    if (viewport.name === "desktop") expect(geometry.input.width).toBe(350);
+    // 360px total — legacy _yobiUI.less:1357 .search-bar .textbox is
+    // content-box width:350px + padding:0 5px (the baseline site-admin specs
+    // pin the same 360px total).
+    if (viewport.name === "desktop") expect(geometry.input.width).toBe(360);
     else expect(geometry.wrapper.top - geometry.form.top).toBe(5);
 
     mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });

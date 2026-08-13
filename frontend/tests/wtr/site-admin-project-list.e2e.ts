@@ -302,7 +302,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     avatarWidth: 45,
     contentWidthRatio: 0.83,
     deleteButtonHeight: 30,
-    filterInputWidth: 350,
+    filterInputWidth: 360,
     firstHeaderColumnRatio: 0.4,
     firstRowColumnRatio: 0.4,
     firstRowLineHeight: 70,

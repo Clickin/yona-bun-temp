@@ -495,7 +495,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     userNameFontSize: 14,
     userNameFontWeight: "700",
     userNameMarginTop: 8,
-    userSearchInputWidth: 350,
+    userSearchInputWidth: 360,
   });
 
   await page.evaluate(() => {
@@ -862,7 +862,7 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
     contentWidthRatio: 0.83,
     sidebarWidthRatio: 0.15,
     tabHeight: 38,
-    userSearchInputWidth: 350,
+    userSearchInputWidth: 360,
   });
   expect(await siteAdminStateLayoutFlags(page)).toEqual({
     actionColumnInsideRow: true,
