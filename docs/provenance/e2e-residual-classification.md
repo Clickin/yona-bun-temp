@@ -254,3 +254,11 @@
 - 66개 실패는 전부 HARNESS_ENV (focus/hover 합성, error-status 전파, AnimatePresence 전환, transition stall, mirror-skip) + SVN-DEFERRED 23개로 구성 — fixable 실패 0개.
 - 게이트 중 발견된 회귀 (site-admin 검색 textbox box-sizing, milestone sharer span, email hover border, reviews metrics, history floats)는 follow-up 커밋 5895f1d60으로 수정, solo GREEN 재확인.
 - Phase 1 클러스터 + main-agent 검증으로 138개 fixable 해소; 최종 실패는 harness/SVN만 남음.
+
+## Phase 4 — 2026-08-13 WTR 가속 측정
+
+- **WTR_SKIP_BUILD=1** (runner `scripts/run-wtr-e2e.mjs`): focused 반복 실행에서 production build 생략 (~90s 절약). dist가 현재 상태일 때만 사용 — 소스 수정 후에는 반드시 build.
+- **WTR_SHARDS=4 실험** (`/tmp/e2e-shard4.log`): 4 병렬 인스턴스 (포트 8128-8131), 214+215+216+215 파일.
+  - wall ~601s (testsFinishTimeout 600s ceiling에 도달) vs 2-shard ~980s (build 제외) — **~38% 벽시간 절감**.
+  - 그러나 실패 90개 (20/22/28/20) vs 2-shard 62개, suite-hang 3개 (pullrequest-edit-form, posts, nested-layout) — **testsFinishTimeout 손실로 게이트 프로파일로 부적합**.
+  - 결론: 풀 스위트 게이트는 WTR_SHARDS=2 유지 (기록된 parity-gate 프로파일); 4-shard는 suite-hang 파일 제외 시에만 빠른 근사 측정으로 사용.

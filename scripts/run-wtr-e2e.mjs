@@ -29,19 +29,24 @@ async function run(command, args, options = {}) {
 
 const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--");
 
-// Always rebuild: the WTR config serves the production bundle (frontend/dist)
-// statically — no vite dev server / HMR in the e2e loop — so one explicit
-// build absorbs all dev-server runtime costs and guarantees the suite never
-// runs against a stale dist (source edits are picked up every run).
-console.log("[wtr] building production frontend");
-const buildCode = await run("pnpm", [
-  "--config.store-dir=/Users/senghyunjo/.pnpm-store",
-  "--dir",
-  "frontend",
-  "build",
-]);
-if (buildCode !== 0) {
-  process.exit(buildCode);
+// Build once unless WTR_SKIP_BUILD=1 (fast iteration against a current dist):
+// the WTR config serves the production bundle (frontend/dist) statically — no
+// vite dev server / HMR in the e2e loop — so one explicit build absorbs all
+// dev-server runtime costs and guarantees the suite never runs against a
+// stale dist (source edits are picked up every run).
+if (process.env.WTR_SKIP_BUILD !== "1") {
+  console.log("[wtr] building production frontend");
+  const buildCode = await run("pnpm", [
+    "--config.store-dir=/Users/senghyunjo/.pnpm-store",
+    "--dir",
+    "frontend",
+    "build",
+  ]);
+  if (buildCode !== 0) {
+    process.exit(buildCode);
+  }
+} else {
+  console.log("[wtr] WTR_SKIP_BUILD=1 — skipping production build (dist must be current)");
 }
 
 const hasExplicitFiles = forwardedArgs.some((arg) => arg.endsWith(".e2e.ts"));
@@ -64,8 +69,9 @@ if (hasExplicitFiles) {
 
 // Full suite default: ONE instance (the recorded parity-gate profile —
 // sharded runs lose tests to testsFinishTimeout and would mask regressions).
-// Set WTR_SHARDS=2 to split evenly by total bytes across two parallel WTR
-// instances (~25 min instead of ~38 min) for fast iteration.
+// Set WTR_SHARDS=2..4 to split evenly by total bytes across parallel WTR
+// instances (ports 8128+index) for fast iteration: 2 shards ~25 min vs the
+// single-instance ~38 min; 4 shards ~18-20 min on a 4+ core machine.
 const wtrDir = resolve(repoRoot, "frontend", "tests", "wtr");
 const specFiles = readdirSync(wtrDir)
   .filter((name) => name.endsWith(".e2e.ts"))
