@@ -4379,7 +4379,7 @@ function issueDetailMarkdownEditorProps(
     notificationRevealStyle: { style: { display: "block" } },
     notificationOwner: "project-issue-detail-markdown-editor-notification-receiver",
     notificationInstance: wrapId,
-    notificationTitleStyleProps: { style: { color: "#999" } },
+    // color #999 is owned by the data-owner rule (app.css) — no inline style
     notificationTitleOwner: "project-issue-detail-markdown-editor-notification-receiver-title",
   };
 }

@@ -43,9 +43,7 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
   // F5 gnb-outer — yona-original/app/views/common/navbar.scala.html:37: the
   // shared GNB renders the legacy gnb-outer class on project routes.
-  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
-  );
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveClass(/\bgnb-outer\b/u);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,

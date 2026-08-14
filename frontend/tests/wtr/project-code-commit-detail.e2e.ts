@@ -711,9 +711,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
   // (<header class="gnb-outer @if(project != null || org != null) {project-header}">):
   // the shared GNB renders the legacy gnb-outer class on project routes; the
   // earlier negative pin predates the GNB class restoration.
-  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
-  );
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveClass(/\bgnb-outer\b/u);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,

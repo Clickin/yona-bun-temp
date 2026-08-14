@@ -42,7 +42,7 @@ function modernizeBoardListExpected(html: string) {
   return html
     .replace(
       '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
-      '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
+      '<li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li>',
     )
     .replace(
       '<li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>',
@@ -699,7 +699,7 @@ test("project board list renders protected org-owned localhost shell state", asy
   await expect(page).toHaveTitle("portal - Board - weblabs/portal");
 
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /\bproject-header\b/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -739,7 +739,7 @@ test("project board list renders protected org-owned localhost shell state", asy
 
   expect(await protectedProjectPostsShellMetrics(page)).toEqual({
     boardTopAtOrBelowMenu: true,
-    gnbClassName: "", // F6 dist-truth: GNB outer is style-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
+    gnbClassName: "gnb-outer", // F5 (2026-08-14): GNB outer retains the legacy gnb-outer class for the frozen-CSS cascade (global-shell-geometry pins toHaveClass(/\bgnb-outer\b/))
     scopeBottomWithinNavbar: true,
     scopeTopWithinNavbar: true,
     searchBottomWithinNavbar: true,
@@ -1500,7 +1500,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     )
     .toContain("<title>Release note</title>");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /\bproject-header\b/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1607,7 +1607,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     deleteTransportMarkerCount: 0,
     documentTitle: "Release note",
     footerKeyboardTarget: null,
-    gnbClassName: "", // F6 dist-truth: GNB outer is style-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
+    gnbClassName: "gnb-outer", // F5 (2026-08-14): GNB outer retains the legacy gnb-outer class for the frozen-CSS cascade (global-shell-geometry pins toHaveClass(/\bgnb-outer\b/))
     gnbSearchAction: `${basePath}/admin/sample/search`,
     gnbSearchScopeDataActions: [null, null],
     gnbSearchScopeLabels: ["This Project", "All Projects"],
@@ -1738,7 +1738,7 @@ test("project board detail renders protected org-owned localhost shell state", a
   await expect(page).toHaveTitle("Release note");
 
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /\bproject-header\b/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1795,7 +1795,7 @@ test("project board detail renders protected org-owned localhost shell state", a
   expect(await boardDetailMetrics(page)).toMatchObject({
     boardTopAtOrBelowMenu: true,
     deleteTransportMarkerCount: 0,
-    gnbClassName: "", // F6 dist-truth: GNB outer is style-owned (line 674 asserts not.toHaveClass(gnb-outer|project-header)); sibling specs pin ""
+    gnbClassName: "gnb-outer", // F5 (2026-08-14): GNB outer retains the legacy gnb-outer class for the frozen-CSS cascade (global-shell-geometry pins toHaveClass(/\bgnb-outer\b/))
     gnbSearchAction: `${basePath}/weblabs/portal/search`,
     gnbSearchScopeDataActions: [null, null, null],
     gnbSearchScopeLabels: ["This Project", "This Group", "All Projects"],

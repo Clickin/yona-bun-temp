@@ -1552,7 +1552,7 @@ test("project issue detail renders protected org-owned localhost shell state", a
   await expect(page).toHaveTitle("Portal protected project smoke check");
 
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /\bproject-header\b/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1621,7 +1621,7 @@ test("project issue detail renders protected org-owned localhost shell state", a
 
   expect(await protectedIssueShellMetrics(page)).toEqual({
     boardTopAtOrBelowMenu: true,
-    gnbClassName: "",
+    gnbClassName: "gnb-outer", // F5 (2026-08-14): GNB outer retains the legacy gnb-outer class for the frozen-CSS cascade
     searchBottomWithinNavbar: true,
     searchLeftWithinNavbar: true,
     searchRightWithinNavbar: true,
