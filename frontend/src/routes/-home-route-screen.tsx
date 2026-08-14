@@ -1390,7 +1390,7 @@ function AuthenticatedSiteUserMenu({
               </button>
             </li>
             <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
-              <button type="button" data-toggle="tab" onClick={() => setActiveSidebarTab("recent")}>
+              <button type="button" onClick={() => setActiveSidebarTab("recent")}>
                 {t("title.recently.visited.issue")}
               </button>
             </li>

@@ -42,6 +42,8 @@ function modernizeBoardListExpected(html: string) {
   return html
     .replace(
       '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
+      // F5 (2026-08-14): sidebar tab buttons carry no data-toggle — React
+      // state owns the tab behavior (AGENTS.md plugin-attribute rule).
       '<li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li>',
     )
     .replace(
