@@ -370,7 +370,9 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
     'data-container-css-class="issue-labels bordered fullsize"',
   );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="usf-group"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    'className="usf-group project-issues-mass-update-option-button"',
+  );
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.title");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("globalThis.document");
@@ -603,8 +605,12 @@ test("protected org-owned project issue list exposes legacy group search scope a
 
   await page.goto(`${basePath}/weblabs/portal/issues`);
   await expect(page).toHaveTitle("portal - Issue - weblabs/portal");
+  // F5 (2026-08-14): the React header keeps `gnb-outer` for the frozen-CSS
+  // cascade (app.css .gnb-outer[data-owner] selectors) and never renders the
+  // legacy `project-header` pairing; assert that contract instead of absence.
+  await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveClass(/\bgnb-outer\b/u);
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
-    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+    /\bproject-header\b/u,
   );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -763,7 +769,9 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
 
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="popover top"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    'className="popover top project-issues-two-column-popover"',
+  );
   expect(PROJECT_ISSUES_ROUTE_SOURCE.split("}, 100);").length - 1).toBeGreaterThanOrEqual(4);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="popover"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-trigger="hover"');
@@ -2077,10 +2085,12 @@ test("project issue row hover matches legacy issue.List hover effect", async ({ 
   // synthesis (bridge cannot apply it here); base-state + no-native-listener
   // contract below stays pinned.
   await page.mouse.move(0, 0);
-  // base-state paint pin: legacy .post-item (yona-original/.../_page.less:3851)
-  // declares no background, so the measured base is transparent — the white
-  // hover-state pin was retired with the C2 hover block
-  await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  // F5 (2026-08-14): after hover+leave the row carries the inline mouseout
+  // background — legacy yobi.issue.List.js:271-275 sets #fff on mouseout
+  // (the React onMouseLeave mirrors it); the retired C2 CSS :hover block left
+  // no CSS background, so the measured value is the inline #fff, not
+  // transparent. rgb(255,255,255) is the legacy-correct base state here.
+  await expect(row).toHaveCSS("background-color", "rgb(255, 255, 255)");
   const nativeHoverListenerTypes = await page.evaluate(
     () =>
       (window as unknown as { __issueListNativeHoverListenerTypes: string[] })
@@ -5288,6 +5298,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-action",
         "data-dismiss",
         "data-placement",
+        "data-scoped",
         "data-target",
         "data-toggle",
       ]);
@@ -5479,6 +5490,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         "data-action",
         "data-dismiss",
         "data-placement",
+        "data-scoped",
         "data-target",
         "data-toggle",
       ]);

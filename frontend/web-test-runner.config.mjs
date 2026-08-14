@@ -470,7 +470,7 @@ esbuild.transform = async (context) => {
   return originalTransform(context);
 };
 
-// Real CSS :hover/:active require a real mouse. Expose Chrome's Puppeteer
+    // Real CSS :hover/:active require a real mouse. Expose Chrome's Puppeteer
 // mouse to the test page via a bridge; wtr-compat's Locator.hover()/mouse
 // down()/up() call it after their synthetic dispatch.
 const { ChromeLauncher } = await import("@web/test-runner-chrome");
@@ -510,8 +510,19 @@ export default {
   mimeTypes: { "**/*.ts": "text/javascript" },
   port: 8128,
   nodeResolve: false,
-  concurrency: 8,
-  testsFinishTimeout: 600000,
+  // concurrency=1: WTR creates one browser tab per test file; in headless
+  // Chrome only the active tab reports visibilityState "visible" — every
+  // other concurrent tab is hidden (rAF fully paused, image fetches deferred,
+  // TanStack Query retries paused via focusManager.visibilityState). That
+  // hidden state made group runs fail specs that pass solo. Serializing per
+  // WTR instance keeps the single tab always active, so every test runs in
+  // the solo-visible state. Shards (WTR_SHARDS=2..4) restore parallelism at
+  // the instance level.
+  concurrency: 1,
+  // Serial per instance (see concurrency note): a shard of ~100 files takes
+  // well over 10 min, so the default testsFinishTimeout would abort long
+  // shards as false suite-hangs.
+  testsFinishTimeout: 3600000,
   testFramework: { config: { timeout: 60000 } },
   browserLogs: true,
   logBrowserLogs: true,
@@ -528,7 +539,7 @@ export default {
         browser.defaultBrowserContext(),
       ({ context }) => context.newPage(),
       undefined,
-      8,
+      1,
     ),
   ],
 };

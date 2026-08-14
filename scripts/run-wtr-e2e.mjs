@@ -73,8 +73,12 @@ if (hasExplicitFiles) {
 // instances (ports 8128+index) for fast iteration: 2 shards ~25 min vs the
 // single-instance ~38 min; 4 shards ~18-20 min on a 4+ core machine.
 const wtrDir = resolve(repoRoot, "frontend", "tests", "wtr");
+// `_diag-*.e2e.ts` files are deliberately-failing diagnostic probes (they
+// throw to dump DOM/request output); they are not gate assertions, so exclude
+// them from the suite file list (explicit `-- file.e2e.ts` args still work).
 const specFiles = readdirSync(wtrDir)
   .filter((name) => name.endsWith(".e2e.ts"))
+  .filter((name) => !name.startsWith("_diag-"))
   .sort();
 const shardCount = Number(process.env.WTR_SHARDS ?? 1);
 if (shardCount <= 1) {

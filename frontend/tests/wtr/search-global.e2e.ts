@@ -1216,7 +1216,7 @@ test("global search renders legacy request text too large error shell", async ({
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
     // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
   });
 });
 
@@ -1262,7 +1262,7 @@ test("global search renders legacy error/forbidden_default.scala.html shell", as
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
     // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
   });
   await rememberSpaMarker(page, "forbidden-default-home");
   await homeButton.click();
@@ -1315,7 +1315,7 @@ test("global search renders legacy error/internalServerError_default.scala.html 
     footerPaddingTop: "10px",
     pageWrapOuterMinHeight: "450px",
     // F5 dist-truth: legacy @media all _responsive.less:617-619 pins .project-page-wrap margin-top 5px !important at all viewports
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
   });
   await rememberSpaMarker(page, "internal-server-default-home");
   await homeButton.click();

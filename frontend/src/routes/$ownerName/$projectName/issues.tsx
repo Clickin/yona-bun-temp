@@ -1081,6 +1081,10 @@ function IssueSortFilter({
     <button
       type="button"
       className={active ? "filter active" : "filter"}
+      /* oxlint-disable-next-line react/no-unknown-property -- legacy partial_searchform filter links carry orderBy/orderDir attributes (my_partial_search.scala.html:19-21) */
+      orderBy={field}
+      /* oxlint-disable-next-line react/no-unknown-property -- legacy partial_searchform filter links carry orderBy/orderDir attributes */
+      orderDir={orderDir}
       onClick={selectIssueSortFilter}
     >
       {children}
@@ -2036,7 +2040,7 @@ function ProjectIssueItem({
             data-owner="project-issues-due-date"
             {...dueDateAttrs}
           >
-            <i className="yobicon-clock2 vmiddle" data-owner="project-issues-due-date-icon"></i>
+            <i className="yobicon-clock2 mr3 vmiddle" data-owner="project-issues-due-date-icon"></i>
             <span className="vmiddle">
               {issue.state === "open" && issue.dueDateOverdue
                 ? t("issue.dueDate.overdue")
@@ -2742,8 +2746,10 @@ function IssueSearchForm({
                 search.assigneeId === "0"
                   ? t("issue.noAssignee")
                   : search.assigneeId
-                    ? (assignees.find((assignee) => assignee.id === search.assigneeId)?.label ??
-                      t("issue.list.assignedToMe"))
+                    ? search.assigneeId === currentUserId && showAssigneeCurrentUserOption
+                      ? t("issue.list.assignedToMe")
+                      : (assignees.find((assignee) => assignee.id === search.assigneeId)?.label ??
+                        t("issue.list.assignedToMe"))
                     : t("common.order.all")
               }
             />
