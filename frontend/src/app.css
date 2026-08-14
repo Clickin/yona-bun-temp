@@ -5413,10 +5413,8 @@
 
 /* ---------- code.tsx: no-head state (code/view.scala.html) + code search panel ---------- */
 [data-owner="project-code-nohead-page"] {
-  margin: 20px auto 0px;
-}
-[data-owner="project-code-nohead-column"] {
-  padding: 0px 10px;
+  /* legacy .page-wrap-outer margin-top 10px (frozen _page.less:617-620) */
+  margin: 10px auto 0px;
 }
 [data-owner="project-code-nohead-alert"] {
   background-color: #fcf8e3;
@@ -5424,12 +5422,14 @@
   border-style: solid;
   border-width: 1px;
   color: #c09853;
-  padding: 8px 35px 8px 14px;
+  /* legacy bootstrap .alert 8px + .alert-block 14px top/bottom override */
+  padding: 14px 35px 14px 14px;
 }
 [data-owner="project-code-nohead-heading"] {
   color: var(--color-yona-text);
-  font-size: 14px;
-  line-height: 20px;
+  /* legacy bootstrap h4 17.5px; line-height 30px + padding from the layered
+     .project-page-wrap h4 rule (frozen _page.less) — alert height 80 contract */
+  font-size: 17.5px;
 }
 
 .code-search-container {
@@ -5545,7 +5545,12 @@
   display: block;
   width: 220px;
 }
-[data-owner="project-code-branch-list"] {
+/* F5 display:block — legacy _page.less:4671 hides .list-wrap for the legacy
+   dynatree renderer; the React route renders the list itself. .list-wrap[data-owner=…]
+   (0-2-0) ties the frozen .code-browse-wrap .list-wrap (0-2-0) and app.css loads
+   later in @layer legacy, so the re-show wins without a route inline style. */
+.list-wrap[data-owner="project-code-branch-list"] {
+  display: block;
   overflow: auto;
   width: 100%;
 }
@@ -5923,7 +5928,6 @@
 /* ---------- compare/$revisionRange.tsx (code/compare.scala.html) ---------- */
 [data-owner="project-compare-page"] {
   margin: 20px auto 0px;
-  padding: 0px 10px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -5932,7 +5936,10 @@
 }
 [data-owner="project-compare-commit-info"] {
   color: var(--color-yona-text);
-  margin: 10px 0px;
+  /* unlayered (after @layer legacy:17-5336) — must carry the legacy contract
+     itself: the layered `.code-browse-wrap > .commitInfo` 16px rule loses to
+     any unlayered rule, so pin 16px here (compare_svn.scala.html + spec pin). */
+  margin: 0px 0px 16px;
 }
 [data-owner="project-compare-empty"] {
   background-color: var(--color-yona-surface-muted);

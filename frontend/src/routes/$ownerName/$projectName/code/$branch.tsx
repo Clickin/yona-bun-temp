@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router";
+import { redirect } from "@tanstack/react-router";
 import "./legacy-dynatree.css";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -11,6 +12,26 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { ProjectCodeSearchPanel } from "../code";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
+  beforeLoad: ({ location, params }) => {
+    // legacy code/CodeApp stripTrailingSlash replaces the bare pathname
+    // (query+hash dropped); /code/{branch}/ matches this file route, not the
+    // code/$branch/$ splat route (TanStack Router drops the trailing empty
+    // segment), so the canonical redirect lives here.
+    if (location.pathname.endsWith("/")) {
+      throw redirect({
+        params: {
+          branch: params.branch,
+          ownerName: params.ownerName,
+          projectName: params.projectName,
+        },
+        replace: true,
+        statusCode: 303,
+        to: "/$ownerName/$projectName/code/$branch",
+        search: {},
+        hash: "",
+      });
+    }
+  },
   component: ProjectCodeBranchRoute,
 });
 
@@ -126,8 +147,8 @@ function ProjectCodeFolderBody({
                   className: undefined,
                   "data-status": undefined,
                 }}
-                to="/$ownerName/$projectName/commits/$branch"
-                params={{ branch: selectedBranch, ownerName, projectName }}
+                to="/$ownerName/$projectName/commits/$branch/$"
+                params={{ _splat: "/", branch: selectedBranch, ownerName, projectName }}
                 search={{ page: undefined as never }}
               >
                 {t("code.commits")}
@@ -377,9 +398,11 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
   return (
     // F5 display:block — yona-original/app/assets/stylesheets/less/_page.less:4671
     // hides .list-wrap for the legacy dynatree renderer; the React route renders
-    // the list itself, so it must re-show it (the frozen fallback display:none
-    // wins over the generic .list-wrap rules otherwise).
-    <div className="list-wrap" style={{ display: "block" }} data-owner="project-code-branch-list">
+    // the list itself, so it must re-show it. app.css:
+    // .list-wrap[data-owner="project-code-branch-list"] { display: block } —
+    // 0-2-0 ties the frozen .code-browse-wrap .list-wrap (0-2-0) and app.css
+    // loads later in @layer legacy, so the re-show wins without an inline style.
+    <div className="list-wrap" data-owner="project-code-branch-list">
       <div className="row-fluid listhead" data-owner="project-code-branch-list-header">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>

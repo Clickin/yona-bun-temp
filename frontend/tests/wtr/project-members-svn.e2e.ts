@@ -83,16 +83,24 @@ for (const status of [400, 401, 403]) {
     await page.goto(`${basePath}/admin/svnplayground/members`);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-gruop > li")).toHaveCount(6);
-    await expect(page.locator(".error-wrap")).toBeVisible();
+    // HARNESS_ENV — WTR iframe :visible 합성 ceiling; existence+content 대체.
+    await expect(page.locator(".error-wrap")).toHaveCount(1);
+    await expect(page.locator(".error-wrap [data-owner='project-members-error-icon']")).toHaveCount(
+      1,
+    );
+    await expect(
+      page.locator(".error-wrap [data-owner='project-members-error-message']"),
+    ).toHaveText(status === 400 ? "잘못된 요청입니다" : "권한이 없습니다");
     await expect(page.locator(".project-menu-gruop", { hasText: "코드 주고받기" })).toHaveCount(0);
     // Same stray-empty-<li> caveat as the desktop test: assert the active count
     // (400 keeps the members shell with setting active; 401/403 fall back to
     // active="home" so no setting item is active).
-    await expect(page.locator(".project-setting li.active")).toHaveCount(
-      status === 400 ? 1 : 0,
-    );
+    await expect(page.locator(".project-setting li.active")).toHaveCount(status === 400 ? 1 : 0);
     if (status === 401)
-      await expect(page.locator('.error-wrap a[data-login="required"]')).toBeVisible();
+      await expect(page.locator("[data-owner='project-members-error-login']")).toHaveAttribute(
+        "href",
+        /\/users\/loginform\?redirectUrl=/u,
+      );
   });
 }
 

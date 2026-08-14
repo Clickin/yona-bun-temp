@@ -1080,7 +1080,9 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     messageWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
-    pageY: 103,
+    // F5 (2026-08-13): pageY 93 = gnb 40 + admin affix 43 + _page.less:617-620
+    // margin-top 10 (the affix wraps to 66 at mobile -> pageY 106).
+    pageY: 93,
     scrollWidth: 1366,
   });
 
@@ -1152,7 +1154,9 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     messageWidth: 1346,
     pageHeight: 450,
     pageWidth: 1366,
-    pageY: 103,
+    // F5 (2026-08-13): pageY 93 = gnb 40 + admin affix 43 + _page.less:617-620
+    // margin-top 10 (the affix wraps to 66 at mobile -> pageY 106).
+    pageY: 93,
     scrollWidth: 1366,
   });
 

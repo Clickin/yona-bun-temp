@@ -21,7 +21,10 @@ test("SVN labels form uses the canonical legacy project shell on desktop", async
   await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
   await expect(page.locator(".project-util-wrap .down-arrow")).toHaveText("그만 지켜보기 ");
-  await expect(page.locator(".project-setting > .project-menu-nav > li")).toHaveClass("active");
+  // F5 (2026-08-13): legacy projectMenu.scala.html:116-121 malformed trailing
+  // <li> — the stray empty li is legacy parity preserved, so resolve strict
+  // mode by narrowing to the active item.
+  await expect(page.locator(".project-setting > .project-menu-nav > li.active")).toHaveCount(1);
 
   const projectMenuLinks = page.locator(".project-menu-gruop > li > a");
   await expect(projectMenuLinks).toHaveCount(6);
@@ -75,14 +78,25 @@ test("SVN labels form preserves the legacy mobile flow without horizontal overfl
   expect(geometry.documentScrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
 });
 
-test("SVN labels route imports the canonical project menu without legacy asset literals", () => {
+test("SVN labels route delegates the project shell to the parent route", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
     "utf8",
   );
-  expect(source).toContain('import { ProjectHeader, ProjectMenu } from "../../$projectName";');
-  expect(source).toContain('active="setting"');
-  expect(source).toContain("basePath={runtimeConfig.basePath}");
+  const parentSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+    "utf8",
+  );
+  // The labels route renders with renderProjectShell={false} — the shared
+  // header/menu/title shell is owned by the parent $projectName route
+  // (labels title branch + shared ProjectHeader/ProjectMenu).
+  expect(source).toContain("renderProjectShell={false}");
+  expect(parentSource).toContain('active === "labels"');
+  expect(parentSource).toContain('`${t("label")} - ${ownerName}/${projectName}`');
+  expect(parentSource).toContain(
+    "<ProjectHeader basePath={runtimeConfig.basePath} project={project} />",
+  );
+  expect(parentSource).toContain("<ProjectMenu");
   expect(source).not.toMatch(/function ProjectMenu\b/u);
   expect(source).not.toContain("/legacy-assets");
   expect(source).not.toMatch(/<a\b/u);
@@ -138,6 +152,34 @@ async function mockSvnLabelsForm(page: Page) {
           loginId: OWNER,
           name: "관리자",
         },
+      }),
+    });
+  });
+  await page.route(`**/api/v1/owners/${OWNER}/projects/${PROJECT}/container**`, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        enrolledUsers: [],
+        id: 9,
+        isPrivate: false,
+        isProtected: false,
+        isWatching: true,
+        menuSetting: { board: true, code: true, issue: true, milestone: true, review: true },
+        openIssueCount: 1,
+        openPullRequestCount: 1,
+        ownerName: OWNER,
+        postCount: 1,
+        projectName: PROJECT,
+        showBoard: true,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        vcs: "SVN",
+        viewerCanUpdate: true,
+        viewerCanWatch: true,
+        watchCount: 1,
       }),
     });
   });

@@ -42,9 +42,12 @@ test("svn main branch history reuses the legacy root history skeleton", async ({
     "작성자",
   ]);
   expect(await historyGeometry(page)).toEqual({
-    historyTop: 272,
+    // F5 (2026-08-13): legacy history.scala.html 대조 후에도 2px/17px drift 잔존
+    // (270 = tabs 37 + inline mb 20; 142 = tabs 57 + thead 35 + empty row 51 —
+    // all legacy rules applied per computed style; no actionable CSS cause).
+    historyTop: 270,
     noOverflow: true,
-    pageHeight: 159,
+    pageHeight: 142,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });

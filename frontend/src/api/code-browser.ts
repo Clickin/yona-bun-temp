@@ -111,10 +111,15 @@ export function codeBrowserQueryOptions(
   input: ProjectScopeInput & { branch?: string; path?: string },
 ) {
   return queryOptions({
+    // retry: 0 — legacy CodeApp answers 404 immediately; also the TanStack
+    // Query retryer pauses between attempts while the document is unfocused,
+    // so a retrying 404 never reaches isError in hidden WTR iframes (missing
+    // svn README title gate).
     queryFn: () => readCodeBrowser(runtimeConfig, input),
     queryKey: apiQueryKeys.project.codeBrowser(input.ownerName, input.projectName, {
       branch: input.branch ?? "",
       path: input.path ?? "",
     }),
+    retry: 0,
   });
 }

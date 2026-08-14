@@ -912,9 +912,14 @@ export function readProjectMembersQueryOptions(
   input: ProjectPathInput,
 ) {
   return queryOptions({
+    // retry: 0 — legacy members error responses answer immediately; also the
+    // TanStack Query retryer pauses between attempts while the document is
+    // unfocused, so a retrying 400/401/403 never reaches isError in hidden
+    // WTR iframes (members-svn error shell gate).
     queryFn: () =>
       readProjectMemberDirectoryRest(runtimeConfig, input.ownerName, input.projectName),
     queryKey: apiQueryKeys.project.members(input.ownerName, input.projectName),
+    retry: 0,
   });
 }
 

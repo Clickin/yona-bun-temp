@@ -98,9 +98,11 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
     // specs); legacy badrequest_default.scala.html's bare ico-404 has no CSS.
     // F5 dist-truth (2026-08-11 ledger): ko-KR 16px-bold .error-wrap p line-box
     // measures 390px (388 pinned vs 390 measured, font-metric variance)
-    error: { height: 390, width: 1346, x: 10, y: 103 },
-    page: { height: 450, width: 1366, x: 0, y: 103 },
-    projectPage: { height: 390, width: 1346, x: 10, y: 103 },
+    // F5 (2026-08-13): y 93 = gnb 40 + admin affix 43 + _page.less:617-620
+    // margin-top 10 (SVN Git-only badrequest shell; same as pullrequests pageY).
+    error: { height: 390, width: 1346, x: 10, y: 93 },
+    page: { height: 450, width: 1366, x: 0, y: 93 },
+    projectPage: { height: 390, width: 1346, x: 10, y: 93 },
   });
 
   await page.setViewportSize({ width: 390, height: 844 });

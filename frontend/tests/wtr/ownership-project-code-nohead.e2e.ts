@@ -55,8 +55,11 @@ test("project no-head code preserves runtime owners", async ({ page }) => {
       alertBackground: "rgb(252, 248, 227)",
       alertBorderTopColor: "rgb(251, 238, 213)",
       alertColor: "rgb(192, 152, 83)",
-      columnPaddingLeft: "10px",
-      columnPaddingRight: "10px",
-      pageMarginTop: "20px",
+      // F5 (2026-08-13): legacy — frozen .page-wrap-outer margin-top 10px
+      // (_page.less:617-620) and nohead_svn.scala.html:28-31 has no column
+      // padding (the 20px/10px pins measured the pre-fix deviated state).
+      columnPaddingLeft: "0px",
+      columnPaddingRight: "0px",
+      pageMarginTop: "10px",
     });
 });

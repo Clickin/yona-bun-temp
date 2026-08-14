@@ -43,7 +43,10 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
 
   await page.goto(`${basePath}/admin/svnplayground/reviews`);
   await expect(page).toHaveURL(`${basePath}/admin/svnplayground/reviews`);
-  await expect(page.locator(".page-wrap-outer")).toHaveCount(0);
+  // F5 (2026-08-13): the route restored its page-wrap-outer in the 2026-08-11
+  // reviews-shell closure (ownership-project-reviews-batch6 geometry); the
+  // wrapper-less count-0 pin predates that route change.
+  await expect(page.locator(".page-wrap-outer")).toHaveCount(1);
   await expect(page.locator(".project-page-wrap")).toHaveCount(1);
   await expect(page.locator(".review-list-wrap .error-wrap")).toBeVisible();
   await expect(page.locator("#pagination.page-navigation-wrap")).toHaveCount(1);
@@ -51,11 +54,13 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   expect(await emptyReviewGeometry(page)).toEqual({
     documentWidth: 1366,
-    // F5 dist-truth (2026-08-11): wrapper-less project-page-wrap measures 500px at 1366px.
+    // F5 (2026-08-13): with the restored page-wrap-outer the project-page-wrap
+    // insets to x 10 / width 1346 (10px page-wrap-outer padding) at y 213
+    // (page-wrap-outer margin-top 10 + project-page-wrap margin-top 5).
     height: 500,
-    width: 1366,
-    x: 0,
-    y: 208,
+    width: 1346,
+    x: 10,
+    y: 213,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -66,7 +71,9 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
     height: 670,
     width: 390,
     x: 0,
-    y: 231,
+    // F5 (2026-08-13): +5px — project-page-wrap margin-top 5 inside the
+    // restored page-wrap-outer.
+    y: 236,
   });
 });
 

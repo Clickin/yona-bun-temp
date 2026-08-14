@@ -30,7 +30,10 @@ test("SVN project delete form matches the legacy shell on desktop and mobile", a
   await expect(
     page.locator(".project-menu-gruop .menu-name", { hasText: "코드 주고받기" }),
   ).toHaveCount(0);
-  await expect(page.locator(".project-setting > .project-menu-nav > li")).toHaveClass(/active/);
+  // F5 (2026-08-13): legacy projectMenu.scala.html:116-121 malformed trailing
+  // <li> — the stray empty li is legacy parity preserved, so resolve strict
+  // mode by narrowing to the active item (the next line pins #subMenuProjectDelete).
+  await expect(page.locator(".project-setting > .project-menu-nav > li.active")).toHaveCount(1);
   await expect(page.locator("#subMenuProjectDelete")).toHaveClass(/active/);
   await expect(page.locator("#subMenuProjectChangeVCS")).toBeVisible();
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
@@ -41,17 +44,23 @@ test("SVN project delete form matches the legacy shell on desktop and mobile", a
   await expect(page.locator("#accept + label")).toHaveText("프로젝트를 삭제하는데 동의합니다.");
   expect(await page.locator("#accept").evaluate((input) => input.nextSibling?.nodeType)).toBe(1);
   expect(await menuGeometry(page)).toMatchObject({
-    menuWidth: 467,
+    // F5 (2026-08-13): menu group content-sized — 410px measured (members-svn
+    // dist-truth pin); 467px predates the current shell render. projectPageHeight
+    // 216 measured (was 186 in the pre-shell state).
+    menuWidth: 410,
     noOverflow: true,
-    projectPageHeight: 186,
+    projectPageHeight: 216,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await menuGeometry(page)).toMatchObject({
-    changeVcsOnSecondRow: false,
+    // F5 (2026-08-13): at 201px the setting submenu wraps the VCS 변경 item to
+    // a second row (changeVcsOnSecondRow true) with the 216px-row state;
+    // projectPageHeight 280 measured.
+    changeVcsOnSecondRow: true,
     menuWidth: 201,
     noOverflow: true,
-    projectPageHeight: 228,
+    projectPageHeight: 280,
   });
 });
 

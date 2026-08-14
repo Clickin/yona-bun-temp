@@ -32,8 +32,13 @@ test("SVN issues keeps the canonical desktop shell and React-owned list interact
   ).toHaveCount(1);
 
   const geometry = await readGeometry(page);
-  expect(geometry.projectUtil.width).toBe(139);
-  expect(geometry.projectMenu.width).toBe(467);
+  // F5 (2026-08-13): .project-util-wrap content-sized — legacy _page.less:594-613
+  // (absolute, no fixed width); 163px measured (same dist truth as
+  // project-members-svn.e2e.ts utilWidth pin).
+  expect(geometry.projectUtil.width).toBe(163);
+  // F5 (2026-08-13): menu group content-sized — 410px measured (members-svn
+  // dist-truth pin); the 467px pin predates the current shell render.
+  expect(geometry.projectMenu.width).toBe(410);
   expect(geometry.projectUtil.right).toBeLessThanOrEqual(geometry.projectHeader.right);
   expect(geometry.leftMenu.right).toBeLessThanOrEqual(geometry.rightPane.left);
   expect(geometry.tabs.bottom).toBeLessThanOrEqual(geometry.emptyState.top);

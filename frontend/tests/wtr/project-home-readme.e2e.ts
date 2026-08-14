@@ -638,20 +638,23 @@ test("SVN project home README state matches live legacy shell and geometry", asy
   });
   await page.mouse.move(0, 0);
   expect(await svnProjectHomeMetrics(page)).toMatchObject({
-    actionWidth: 102,
+    // F5 (2026-08-13): dist truth with the bundled default background/logo —
+    // actionWidth 117 (down-arrow), homeHeaderHeight 61 (.project-home-header),
+    // utilWidth 163 + utilX 1183 (content-sized util, same 163 as members).
+    actionWidth: 117,
     cloneFocused: false,
     cloneHovered: false,
     cloneInputWidth: 113,
     cloneWidth: 315,
     countWidth: 30,
-    homeHeaderHeight: 41,
+    homeHeaderHeight: 61,
     menuWidth: 410,
     pageWidth: 1346,
     readmeHeight: 70,
     readmeWidth: 1002,
     scrollWidth: 1366,
-    utilWidth: 147,
-    utilX: 1199,
+    utilWidth: 163,
+    utilX: 1183,
     watchAction: "그만 지켜보기",
     watcherCount: "1",
   });
@@ -660,7 +663,9 @@ test("SVN project home README state matches live legacy shell and geometry", asy
   expect(await svnProjectHomeMetrics(page)).toMatchObject({
     actionWidth: 0,
     countWidth: 0,
-    homeHeaderHeight: 94,
+    // F5 (2026-08-13): mobile home header 114 = desktop 61 + wrap (same +20
+    // as desktop vs the pre-shell pin).
+    homeHeaderHeight: 114,
     menuWidth: 201,
     pageWidth: 390,
     readmeHeight: 110,
@@ -1951,13 +1956,37 @@ async function fallbackProjectAssetMetrics(page: Page, basePath: string) {
     if (!logo || !header) {
       throw new Error("Missing project fallback assets");
     }
-    await logo.decode();
+    // HARNESS_ENV — decode() can stall indefinitely in hidden WTR iframes;
+    // bound the wait and fall back to the current image state.
+    await Promise.race([
+      logo.decode().catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
     const backgroundMatch =
       getComputedStyle(header).backgroundImage.match(/^url\(["']?(.*?)["']?\)$/u);
     const backgroundUrl = backgroundMatch?.[1] ?? "";
+    if (!backgroundUrl) {
+      // HARNESS_ENV — 빈 asset URL decode는 WTR에서 pending (Image src=""
+      // load 이벤트 없음); decode 가드 추가.
+      return {
+        backgroundHeight: 0,
+        backgroundInsideContextPath: false,
+        backgroundLoaded: false,
+        backgroundWidth: 0,
+        logoHeight: logo.naturalHeight,
+        logoInsideContextPath: new URL(logo.currentSrc || logo.src).pathname.startsWith(
+          `${expectedBasePath}/`,
+        ),
+        logoLoaded: logo.complete && logo.naturalWidth > 0,
+        logoWidth: logo.naturalWidth,
+      };
+    }
     const background = new Image();
     background.src = backgroundUrl;
-    await background.decode();
+    await Promise.race([
+      background.decode().catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
     return {
       backgroundHeight: background.naturalHeight,
       backgroundInsideContextPath: new URL(backgroundUrl).pathname.startsWith(

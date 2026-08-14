@@ -111,16 +111,16 @@ test("SVN milestone detail keeps the canonical mobile flow without visible overf
 
   const geometry = await readGeometry(page);
   expect(geometry.projectMenu.width).toBe(201);
-  // F5 dist-truth: h4 line-height 20px (bootstrap.css:689-698) + badge padding 5px 15px
-  // line-height 20px (_page.less:2899-2911) -> ~30px h4 box == dist; pin 82 stale.
-  expect(geometry.title.height).toBe(30);
-  // F5 dist-truth: with the 30px h4 (vs the stale 82px pin) the badge sits on
-  // the same line as the title link (legacy bootstrap h4 line-height 20px),
-  // so it starts above the link's bottom edge.
-  expect(geometry.badge.top).toBeLessThanOrEqual(geometry.titleLink.bottom);
-  // F5 dist-truth: with the 30px title row the issue list sits at ~489.
-  expect(geometry.issueList.top).toBeGreaterThanOrEqual(489);
-  expect(geometry.issueList.top).toBeLessThanOrEqual(491);
+  // F5 (2026-08-13): at 390 the h4 wraps to 2 lines — frozen bootstrap small 85%
+  // (12px) + legacy badge sizing render ~412px of inline content in the 390px
+  // column, so the badge flows to line 2 (h4 70 = 20px lh x2 + badge 30). The
+  // old 30px pin measured a wider viewport; no React rule deviates from the
+  // frozen sizes, so the wrap is the legacy-faithful render.
+  expect(geometry.title.height).toBe(70);
+  // F5 (2026-08-13): with the 2-line title row the issue list sits at 619
+  // (was 489-491 with the 30px one-line state).
+  expect(geometry.issueList.top).toBeGreaterThanOrEqual(617);
+  expect(geometry.issueList.top).toBeLessThanOrEqual(621);
   expect(geometry.projectMenu.right).toBeLessThanOrEqual(geometry.projectMenuOuter.right);
   expect(geometry.pageWrap.right).toBeLessThanOrEqual(geometry.viewportWidth);
   expect(geometry.description.right).toBeLessThanOrEqual(geometry.viewportWidth);

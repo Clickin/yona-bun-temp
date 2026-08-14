@@ -43,13 +43,13 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
     await canonicalizeHtml(page, EXPECTED_NO_HEAD_BODY),
   );
   expect(await readNoHeadMetrics(page)).toEqual({
-    // F5 8px/8px/14px — yona-original/public/bootstrap/css/bootstrap.css:3822
-    // (.alert { padding: 8px 35px 8px 14px }) and the code.nohead message's
-    // .alert.alert-block h4; the app renders the bootstrap padding and its
-    // base h4 cascade, so the earlier 14px/17.5px pins were stale.
-    alertPaddingBottom: "8px",
-    alertPaddingTop: "8px",
-    alertTitleFontSize: "14px",
+    // F5 (2026-08-13): bootstrap .alert 8px + .alert-block { padding-top/bottom
+    // 14px } (bootstrap.css) + h4 17.5px — the app's unlayered nohead rules now
+    // carry the legacy contract (same as project-code-nohead-svn.e2e.ts); the
+    // earlier 8px/14px pins measured the pre-fix deviated state.
+    alertPaddingBottom: "14px",
+    alertPaddingTop: "14px",
+    alertTitleFontSize: "17.5px",
     codeBackground: "rgba(0, 0, 0, 0)",
     codeColor: "rgb(51, 51, 51)",
     codePadding: "0px",
@@ -84,9 +84,10 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
     };
   });
   expect(mobileBoxes).toEqual({
-    // F5 dist-truth (2026-08-13): the alert-block is inset 10px from the
-    // viewport edge on mobile (frozen .alert margin), right edge 380.
-    alertRight: 380,
+    // F5 (2026-08-13): the alert-block now spans the full column — the
+    // route's column padding rule was retired (legacy nohead_svn.scala.html
+    // has no column padding; the 380 pin measured the pre-fix inset).
+    alertRight: 390,
     pageRight: 390,
     projectRight: 390,
     viewportWidth: 390,

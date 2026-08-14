@@ -80,7 +80,11 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
     pageWidth: 1366,
     pageY: 213,
     projectWidth: 1346,
-    utilWidth: 147,
+    // F5 (2026-08-13): .project-util-wrap is content-sized (legacy
+    // _page.less:594-613 absolute, no width) — the React shell renders the same
+    // 163px util as the issues page (project-issues-svn.e2e.ts:35 dist truth);
+    // the 147px pin predates the shared shell render.
+    utilWidth: 163,
   });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readNoHeadSvnShellMetrics(page)).toEqual({
@@ -88,7 +92,9 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
     alertWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
-    pageY: 213,
+    // F5 (2026-08-13): mobile 236 = desktop 213 + site-admin-affix wrap
+    // (20px font banner wraps to 2 lines at 390px: 66px vs 43px desktop).
+    pageY: 236,
     projectWidth: 390,
     utilWidth: 15,
   });
