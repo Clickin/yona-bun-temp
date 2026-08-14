@@ -304,3 +304,54 @@ full-gate 66 실패 중 미검증 행을 solo로 재실행해 contamination 구�
   - Cluster F: pullrequests/create-form pageY 103 → 93 (gnb 40 + affix 43 + margin 10); home-readme decode race bound (HARNESS_ENV — hidden iframe decode stall) + home geometry F5 re-pins.
   - 보조: project-reviews SVN wrapper re-pin (2026-08-11 shell 복원 반영), GIT nohead/ownership nohead legacy re-pin, legacy-fallback.manifest.json app.css sha 재동기화.
 - 남은 66 실패: HARNESS_ENV (focus/hover 합성, error-status 전파, AnimatePresence 전환, transition stall, 사이드바 motion) 62 + suite-hang 4 — fixable/SVN 실패 0개.
+
+## Phase 6 — 2026-08-14 HARNESS_ENV 카테고리 제거
+
+### 루트 원인 (실측 확정)
+
+WTR `concurrency: 8`로 여러 테스트 파일이 한 Chrome 인스턴스의 여러 탭에서 실행될 때,
+headless Chrome에서 **마지막 생성 탭만 `visibilityState: visible`** — 나머지 탭은 hidden:
+- rAF 완전 정지 (프로브 실측: hidden 탭 1.5s 동안 rAF 0 tick; bringToFront 후 61 tick/505ms)
+- 이미지 fetch 지연, CSS 전환 미진행
+- TanStack Query v5 `retryer.canContinue()` = `focusManager.isFocused()` = `visibilityState !== "hidden"` → 재시도 무한 pause
+- `img.decode()` 무한 대기
+
+solo(파일 1개)는 항상 visible이라 통과 → "solo GREEN / 그룹 실패" 대비가 그룹 전용 실패의 전부로
+오인됨. 실제로는 그룹에서 hidden이 **파일 전체 suite-hang**을 만들어 그 안의 결정적 parity 실패를
+가렸음: gate-2의 "허용된 suite-hang 4개" = `project-issues-empty`(84테스트 중 20 실패),
+`project-issue-detail`, `project-posts`, `project-nested-layout` 등 — hang으로 실행 자체가 중단돼
+내부 실패 수백 건이 감춰져 있었다.
+
+### 하니스 수정 (커밋 1d049947b)
+
+- `web-test-runner.config.mjs`: `concurrency: 8 → 1` — 인스턴스당 탭 1개가 항상 active → 모든 테스트가
+  solo-visible 상태로 실행. `testsFinishTimeout` 600000 → 3600000 (시리얼 샤드 소요 상향).
+- `scripts/run-wtr-e2e.mjs`: `_diag-*.e2e.ts` 게이트 제외 (의도적으로 항상 fail하는 진단 프로브).
+- 검증: 프로브 스펙이 그룹 실행에서 `parentVs:"visible"`, `rafTicks:61` 실측; victim 배치
+  (left-sidebar 모션, Style delete-modal, lost-password, intro-guide CTA, user-issues) 52/56 통과.
+
+### 노출된 실제 parity 부채 (fixable 클래스별)
+
+gate-2 66건 + gate-4 부분(25%) 85건 합산 클래스:
+1. **canonical diff — React 소유 속성 잔존**: `data-scoped` (gnb-outer, hasScopedSearch) —
+   canonicalizer strip으로 해소 (issues-empty 10건) ✓; `data-toggle="tab"` (board-list 3건) ✓.
+2. **stale 클래스 어서션**: `not.toHaveClass(/gnb-outer|project-header/)` 6건 — 앱은 frozen-CSS
+   cascade를 위해 `gnb-outer` 유지 (global-shell-geometry F5 계약), `project-header`만 부재 →
+   `\bproject-header\b`로 좁힘 ✓ + `gnbClassName` metric 4건 re-pin ✓.
+3. **StyleX→app.css 마이그레이션 잔재**: `styleSource.toMatch(/name: {...}/)` 객체 정규식
+   ~20건 (project-issue-detail) — app.css data-owner 규칙 형태로 재작성 필요 (진행 중).
+4. **inline style → data-owner 규칙**: notification-receiver title `color:#999` inline 제거 ✓.
+5. **앱 parity 갭 (소스)**: clock icon `mr3` 누락 ✓, sort filter `orderBy`/`orderDir` 속성 ✓,
+   assignee shortcut label 우선순위 ✓, hover base-state re-pin (legacy `yobi.issue.List.js:271-275`
+   mouseout inline #fff) ✓.
+6. **spec 충돌**: milestone progress — ownership 스펙 100px 트랙 vs frozen `width:100%` vs
+   F5 187.656px — 측정 후 단일 계약으로 정리 필요.
+7. **geometry F5 re-pin** (모바일 state-tab 폭 등): 실측 후 re-pin.
+
+### 진행 상태
+
+- 커밋: `1d049947b` (하니스 + issues-empty + search-global), `92ca73312` (receiver color +
+  gnb-outer/data-toggle 스펙 배치).
+- 미완: StyleX pin ~20건, milestone-progress 측정, 모바일 geometry re-pin, gate-2 잔여
+  HARNESS_ENV 행 전수 재검증 (visible 모드에서 다수 자동 해소 — left-sidebar 모션 등
+  victim 배치 52/56 통과로 확인), 전체 인벤토리 (8-shard 게이트 진행 중).
