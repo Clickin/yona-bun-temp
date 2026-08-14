@@ -291,3 +291,16 @@ full-gate 66 실패 중 미검증 행을 solo로 재실행해 contamination 구�
 
 - **HARNESS_ENV**: site-admin-user-list delete-modal hover poll + reset-password alert opacity, suite-hang 4 (issue-detail/issues-empty/nested-layout/posts), :focus 계열 (secret-setup/org-new/reset-password-popover/lost-password-prefill), error-status 전파 (search/org/project/members/pullrequest error-wraps), left-sidebar transition/mount 계열.
 - **SVN-DEFERRED 23**: 15개 `-svn` 파일 + SVN 테스트 행.
+
+## Phase 5 — 2026-08-13 SVN 클로저 (계획: '/Users/senghyunjo/.omp/agent/sessions/-github-yona-bun-temp/2026-08-13T15-42-51-579Z_019ffbca-5ebb-7000-9c3d-dde3a6839dcd/local/svn-e2e-closure-plan.md')
+
+- **SVN-DEFERRED 23행 전부 해소** — 최종 게이트 (`/tmp/e2e-svn-final2.log`): 430 파일 / 62 failed + 4 suite-hang = **66 failures**, SVN 행 0개.
+- 프론트 parity 수정 (fetch mock 기반 — svn executable/백엔드 미사용):
+  - Cluster A (code 브라우저): 커밋 탭 trailing-slash href (legacy `conf/routes:347` `/commits/:branch/`), `/code/{branch}/` 303 canonical redirect (CodeApp stripTrailingSlash), FolderList inline style 제거 (`.list-wrap[data-owner=…]` 0-2-0 tie), code-browser `retry: 0` (legacy 즉시 404 + WTR hidden-iframe retry-pause).
+  - Cluster B: commits history geometry F5 re-pin 272/159 → 270/142 (legacy 규칙 전부 적용 확인 후 잔존 drift 문서화).
+  - Cluster C: compare commitInfo 16px + diff-wrap full-width; nohead alert 14px/17.5px + margin 10px + column padding 제거 (unlayered 규칙이 legacy 계약을 직접 보유 — unlayered > layered cascade).
+  - Cluster D: milestone 모바일 h4 F5 re-pin 30 → 70 (390px에서 frozen small 85% 콘텐츠 412px > 390px — legacy wrap이 정확) + issueList.top 489-491 → 617-621.
+  - Cluster E: members error query `retry: 0`; deleteform/labelsform/issues stale pins re-pin (menu 410 content-sized, utilWidth 163, labelsform container mock + parent-delegation pin).
+  - Cluster F: pullrequests/create-form pageY 103 → 93 (gnb 40 + affix 43 + margin 10); home-readme decode race bound (HARNESS_ENV — hidden iframe decode stall) + home geometry F5 re-pins.
+  - 보조: project-reviews SVN wrapper re-pin (2026-08-11 shell 복원 반영), GIT nohead/ownership nohead legacy re-pin, legacy-fallback.manifest.json app.css sha 재동기화.
+- 남은 66 실패: HARNESS_ENV (focus/hover 합성, error-status 전파, AnimatePresence 전환, transition stall, 사이드바 motion) 62 + suite-hang 4 — fixable/SVN 실패 0개.
