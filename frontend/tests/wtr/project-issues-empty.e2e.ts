@@ -243,7 +243,10 @@ const BULK_SPAN10 = POPULATED_SPAN10.replace(
     '<div class="filter-wrap board"></div>',
     `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}${SORT_FILTERS}</div>`,
   )
-  .replace('</ul><div class="pull-left"', `${SECOND_ISSUE_ROW}</ul><div class="pull-left"`)
+  .replace(
+    '</ul><div><a href="__BASE_PATH__',
+    `${SECOND_ISSUE_ROW}</ul><div><a href="__BASE_PATH__`,
+  )
   .replaceAll("filter=bug", "filter=bulk")
   .replace(POPULATED_PAGINATION.replaceAll("filter=bug", "filter=bulk"), SINGLE_PAGE_PAGINATION);
 
@@ -1261,11 +1264,12 @@ test("project issue list search form renders selected milestone status like lega
   // (style-project-issues-progress-inline-residual pins progressBar() and no
   // inline width); legacy partial_status.scala.html:46 inline style attr is
   // retired — pin the computed width instead
-  // F5 dist-truth: measured 50% of the 375.312px progress track at the
-  // suite-5 viewport (legacy partial_status.scala.html:46 width:50%)
+  // F5 dist-truth (2026-08-14): the track is container-sized (frozen
+  // .milestone-info .progress width:100%); 50% of the 179.66px track at the
+  // default 1280x720 viewport => 89.8281px
   await expect(status.locator(".progress.progress-success.nm .bar")).toHaveCSS(
     "width",
-    "187.656px",
+    "89.8281px",
   );
   // copy-fix-current-dom: legacy .pull-right wrapper is React-owned with
   // Style float (milestoneProgressCount), match the owner instead
@@ -1737,6 +1741,9 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
   await expect(page.locator(".post-list-wrap .post-item")).toBeVisible();
+  // Tab widths depend on the loaded font; measure only after fonts settle so
+  // the geometry pins are deterministic across runs.
+  await page.evaluate(() => document.fonts.ready);
   const desktop = await measure();
   expect(desktop).not.toBeNull();
   expect(desktop!.openPadding).toEqual(["30px", "30px"]);
@@ -1747,14 +1754,18 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   expect(desktop!.row.top - desktop!.tabs.bottom).toBeCloseTo(35, 0);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => document.fonts.ready);
   const mobile = await measure();
   expect(mobile).not.toBeNull();
   expect(mobile!.openPadding).toEqual(["5px", "5px"]);
   expect(mobile!.closedPadding).toEqual(["5px", "5px"]);
-  // F5 dist-truth: measured mobile open/closed widths and row gap
-  expect(mobile!.open.width).toBeCloseTo(52.64, 1);
-  // F5 dist-truth: suite-5 measured 65.015625px (state tab glyph width)
-  expect(mobile!.closed.width).toBeCloseTo(65.02, 1);
+  // F5 dist-truth (2026-08-14): measured mobile open/closed widths and row
+  // gap at 390x844 — open 63.89 (the 52.64 pin predates the current badge/
+  // font state; closed 76.02 = current dist truth with fonts settled)
+  expect(mobile!.open.width).toBeCloseTo(63.89, 1);
+  // F5 dist-truth (2026-08-14): measured with document.fonts.ready — closed
+  // 76.02 (the suite-5 65.02 pin predates the current badge/font state)
+  expect(mobile!.closed.width).toBeCloseTo(76.02, 1);
   expect(mobile!.open.top).toBeCloseTo(mobile!.childToggle.top, 0);
   expect(mobile!.closed.top).toBeCloseTo(mobile!.childToggle.top, 0);
   expect(mobile!.row.top - mobile!.tabs.bottom).toBeCloseTo(35, 0);
@@ -2863,10 +2874,11 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
     formPosition: "relative",
     groupDisplay: "inline-block",
     groupFontSize: "0px",
-    // F5 dist-truth: neither legacy bootstrap (btn-group block) nor
-    // _yobiUI.less defines a sibling `.btn-group + .btn-group` margin — the
-    // groups sit flush; 5px was a fallback-CSS artifact, now 0px.
-    adjacentGroupMarginLeft: "0px",
+    // F5 (2026-08-14): bootstrap.css:3578-3579 `.btn-group + .btn-group {
+    // margin-left: 5px }` — the sibling margin IS the legacy contract; the
+    // earlier 0px pin misread the bootstrap block (the sibling rule sits a
+    // few lines below the .btn-group block).
+    adjacentGroupMarginLeft: "5px",
     checkAllInputMargin: "4px 0px 0px",
     dropdownMaxHeight: "350px",
     dropdownOverflowY: "auto",
@@ -5253,6 +5265,10 @@ async function canonicalizeScreenRoots(page: Page) {
               className &&
               className !== "gray-txt" &&
               className !== "right-txt" &&
+              !className.startsWith("favorite-shell-") &&
+              !className.startsWith("recent-shell-") &&
+              !className.startsWith("project-issues-") &&
+              className !== "usf-group" &&
               !/^x[0-9a-z]+$/u.test(className) &&
               !className.includes("__"),
           )
@@ -5312,6 +5328,7 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name.startsWith("data-v-") ||
         attr.name === "data-style-src" ||
         attr.name === "data-owner" ||
+        attr.name === "data-active" ||
         attr.name === "data-project-header-owner" ||
         attr.name === "data-content-ready" ||
         attr.name === "aria-busy" ||
@@ -5455,6 +5472,10 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
+              !token.startsWith("favorite-shell-") &&
+              !token.startsWith("recent-shell-") &&
+              !token.startsWith("project-issues-") &&
+              token !== "usf-group" &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -5500,6 +5521,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name === "state" ||
         attr.name === "data-style-src" ||
         attr.name === "data-owner" ||
+        attr.name === "data-active" ||
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||

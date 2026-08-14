@@ -34,7 +34,12 @@ test("project issues owns server-derived subtask and milestone widths with Dynam
   await expect(subtask).toHaveCount(1);
   await expect(milestone).toHaveCount(1);
   await expect(subtask).toHaveCSS("width", "15px");
-  await expect(milestone).toHaveCSS("width", "50px");
+  // F5 (2026-08-14): the search-sidebar milestone track is width:100% per
+  // frozen `.milestone-info .progress` (legacy partial_status.scala.html) —
+  // the earlier 100px override deviated from the frozen contract; the bar is
+  // 50% of the 179.66px track at the default viewport => 89.8281px (same pin
+  // as project-issues-empty).
+  await expect(milestone).toHaveCSS("width", "89.8281px");
   await expect(subtask).toHaveClass(/\bbar\b/);
   await expect(milestone).toHaveClass(/\bbar\b/);
 

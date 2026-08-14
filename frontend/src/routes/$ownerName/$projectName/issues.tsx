@@ -2040,7 +2040,7 @@ function ProjectIssueItem({
             data-owner="project-issues-due-date"
             {...dueDateAttrs}
           >
-            <i className="yobicon-clock2 mr3 vmiddle" data-owner="project-issues-due-date-icon"></i>
+            <i className="yobicon-clock2 vmiddle" data-owner="project-issues-due-date-icon"></i>
             <span className="vmiddle">
               {issue.state === "open" && issue.dueDateOverdue
                 ? t("issue.dueDate.overdue")

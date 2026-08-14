@@ -6709,8 +6709,15 @@
   margin-right: 20px;
   margin-top: 10px;
 }
-[data-owner="project-issues-due-date"].closed {
+[data-owner="project-issues-due-date"].closed,
+[data-owner="project-issues-due-date"].project-issues-due-date-closed {
   color: #999;
+}
+/* legacy partial_list.scala.html:107 clock icon carries `mr3` (frozen
+   _common.less .mr3 { margin-right:3px }) — owned here so the route source
+   never hardcodes the legacy class string. */
+[data-owner="project-issues-due-date-icon"] {
+  margin-right: 3px;
 }
 
 [data-owner="project-issues-mass-update-check"] {
@@ -24977,12 +24984,6 @@ label[data-owner="organization-new-label"] {
 }
 
 /* Fix2ProjectIssue round-2 additions (unlayered, keyed by distinct data-owner values) */
-
-/* ownership-project-issues-progress-inline-residual: legacy search-sidebar milestone
-   progress is a 100px track (partial_status bar = 50% => 50px). */
-[data-owner="project-issues-search-advanced"] .milestone-info .progress {
-  width: 100px;
-}
 
 /* ownership-project-issue-detail-disabled-comment-actions-mt10: legacy commentForm
    keeps cursor:text on the disabled textarea via inline style; owner rule replaces it. */
