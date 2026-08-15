@@ -69,7 +69,9 @@ test("left framed sidebar keeps legacy geometry while opening and closing with C
     // while "opening"/"open" are no-ops) — up to ~7.5s for a loaded WTR
     // instance; the route's motion ceiling then settles it to "open".
     const sidebar = page.locator(SIDEBAR);
-    for (let attempt = 0; attempt < 30; attempt += 1) {
+    // The open handler is idempotent; under shard load the hydration window
+    // can be long, so keep clicking up to ~20s.
+    for (let attempt = 0; attempt < 80; attempt += 1) {
       await openPin.click();
       const mounted = await page.evaluate(
         () => document.querySelector('[data-owner="left-sidebar-outer-shell"]') !== null,

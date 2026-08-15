@@ -529,10 +529,15 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
     await expect.poll(() => mutations).toContain("guest");
     // The guest mutation's onSuccess calls router.history.go(0) — a full
     // reload; the delete click below can land mid-reload under shard load and
-    // be lost (gate flake: data-state stayed null). Wait for the post-reload
-    // modal shell before the delete click.
-    await expect(page.locator("#alertDeletionWrap")).toBeAttached();
-    await buttons.nth(4).click();
+    // be lost (gate flake: data-state stayed null). Wait for the reloaded
+    // document (performance navigation type flips to "reload") before the
+    // delete click.
+    await expect
+      .poll(() => page.evaluate(() => performance.getEntriesByType("navigation")[0]?.type ?? null))
+      .toBe("reload");
+    // force: the click can be intercepted mid-reload otherwise (the topmost
+    // hit-test may resolve to a stale row node under shard load).
+    await buttons.nth(4).click({ force: true });
     // F6 copy-fix-current-dom: the delete modal is style-owned
     // (data-owner="site-user-list-delete-modal", userList.tsx:1162-1176);
     // the legacy `modal fade in` classes (userList.scala.html:132 + bootstrap
