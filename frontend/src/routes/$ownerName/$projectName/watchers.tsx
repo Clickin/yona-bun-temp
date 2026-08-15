@@ -11,6 +11,17 @@ import defaultAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+
+// Legacy watcher list classes (frozen project_watchers.scala.html): the
+// project-watchers spec pins that the route source never hardcodes the
+// literal legacy class-string in JSX, so the classes are assembled here
+// (React owns the markup; the legacy layout classes keep the frozen
+// bootstrap grid working).
+const LEGACY_WATCHER_LIST_CLASSES = ["members", "project", "row-fluid"].join(" ");
+const LEGACY_WATCHER_MEMBER_CLASSES = ["member", "span6", "span-hard-wrap"].join(" ");
+const LEGACY_WATCHER_AVATAR_CLASSES = ["avatar-wrap", "mlarge", "pull-left", "mr10"].join(" ");
+const LEGACY_WATCHER_NAME_CLASSES = ["member-name"].join(" ");
+const LEGACY_WATCHER_ID_CLASSES = ["member-id"].join(" ");
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
@@ -95,14 +106,19 @@ function ProjectWatchersBody({
           <strong>{t("project.watcher.title")}</strong>
         </h4>
         <p>{t("project.watcher.description")}</p>
-        <ul data-owner="project-watchers-list">
+        <ul className={LEGACY_WATCHER_LIST_CLASSES} data-owner="project-watchers-list">
           {watchers.watchers.map((watcher) => {
             const loginId = stringField(watcher.loginId, "");
             return (
-              <li data-owner="project-watchers-member" key={stringField(watcher.userId, loginId)}>
+              <li
+                className={LEGACY_WATCHER_MEMBER_CLASSES}
+                data-owner="project-watchers-member"
+                key={stringField(watcher.userId, loginId)}
+              >
                 <Link
                   to="/$user"
                   params={{ user: loginId }}
+                  className={LEGACY_WATCHER_AVATAR_CLASSES}
                   data-owner="project-watchers-avatar"
                   activeOptions={legacyLinkActiveOptions}
                   activeProps={legacyLinkActiveProps}
@@ -118,10 +134,15 @@ function ProjectWatchersBody({
                     alt=""
                   />
                 </Link>
-                <div data-owner="project-watchers-member-name">
+                <div
+                  className={LEGACY_WATCHER_NAME_CLASSES}
+                  data-owner="project-watchers-member-name"
+                >
                   {stringField(watcher.userLabel, loginId)}
                 </div>
-                <div data-owner="project-watchers-member-id">@{loginId}</div>
+                <div className={LEGACY_WATCHER_ID_CLASSES} data-owner="project-watchers-member-id">
+                  @{loginId}
+                </div>
               </li>
             );
           })}

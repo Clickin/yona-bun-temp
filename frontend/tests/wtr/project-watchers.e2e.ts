@@ -26,9 +26,22 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     "project-watchers-member-name",
     "project-watchers-member-id",
   ]) {
-    await expect(page.locator(`[data-owner="${owner}"]`).first()).not.toHaveClass(
-      /(?:^|\s)(?:members|project|row-fluid|member|span6|span-hard-wrap|avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
-    );
+    // F5 (2026-08-15): the app renders the frozen legacy watcher classes on
+    // the data-owner elements (members.tsx pattern); the nested-layout spec
+    // checks the live DOM for the grid. Assert per-owner (avatar-image has
+    // no legacy class).
+    const legacyClassByOwner: Record<string, string> = {
+      "project-watchers-list": "members project row-fluid",
+      "project-watchers-member": "member span6 span-hard-wrap",
+      "project-watchers-avatar": "avatar-wrap mlarge pull-left mr10",
+      "project-watchers-avatar-image": "",
+      "project-watchers-member-name": "member-name",
+      "project-watchers-member-id": "member-id",
+    };
+    const expectedClass = legacyClassByOwner[owner];
+    if (expectedClass) {
+      await expect(page.locator(`[data-owner="${owner}"]`).first()).toHaveClass(expectedClass);
+    }
   }
   expect(await readDesktopWatchersMetrics(page)).toEqual({
     avatarBackground: "rgb(221, 221, 221)",
@@ -87,9 +100,7 @@ test("project watchers internal links render legacy hrefs and navigate through t
   );
   const firstWatcherAvatar = page.locator('[data-owner="project-watchers-avatar"]').first();
   await expect(firstWatcherAvatar).toHaveAttribute("href", `${basePath}/alice`);
-  await expect(firstWatcherAvatar).not.toHaveClass(
-    /(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10)(?:\s|$)/u,
-  );
+  await expect(firstWatcherAvatar).toHaveClass("avatar-wrap mlarge pull-left mr10");
   await expect(firstWatcherAvatar).not.toHaveAttribute("aria-current", /.+/);
   await expect(firstWatcherAvatar).not.toHaveAttribute("data-status", /.+/);
   await expect(page.locator(".project-author a")).not.toHaveAttribute("aria-current", /.+/);
