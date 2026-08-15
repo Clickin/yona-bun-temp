@@ -290,7 +290,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: Math.max(0, history.page - 1) }}
-                className="ybtn pull-left"
+                className="ybtn"
                 data-owner="commit-file-history-pagination-newer"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}
@@ -302,7 +302,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={historyPath}
                 search={{ page: history.page + 1 }}
-                className="ybtn pull-left"
+                className="ybtn"
                 data-owner="commit-file-history-pagination-older"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={legacyActiveMarkerSuppressionProps}

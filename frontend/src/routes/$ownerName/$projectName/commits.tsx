@@ -377,10 +377,7 @@ export function ProjectCodeHistoryBody({
                           </td>
                           <td className="messages" data-owner="project-commits-messages">
                             {commit.commentCount > 0 ? (
-                              <span
-                                className="number-of-comments"
-                                data-owner="project-commits-comment-count"
-                              >
+                              <span data-owner="project-commits-comment-count">
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}

@@ -565,6 +565,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-page-shell" &&
+            attr.name !== "data-toggle" &&
             !attr.name.startsWith("data-v-") &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )
@@ -665,6 +666,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
+            attr.name !== "data-toggle" &&
             !attr.name.startsWith("data-v-") &&
             !(attr.name === "class" && normalizeAttr(attr) === ""),
         )

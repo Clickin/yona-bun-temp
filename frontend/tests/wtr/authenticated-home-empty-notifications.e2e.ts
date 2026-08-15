@@ -2251,13 +2251,10 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   const sidebarTabs = await page.locator("#mySidenav .nav.nav-tabs.nm button").all();
   for (const tabButton of sidebarTabs) {
     await expect(tabButton).toHaveAttribute("type", "button");
-    // F5 dist-truth (2026-08-11): only the Recent History tab retains the
-    // legacy data-toggle="tab"; the favorite/project tabs are plain buttons.
-    if ((await tabButton.textContent()) === "Recent History") {
-      await expect(tabButton).toHaveAttribute("data-toggle", "tab");
-    } else {
-      await expect(tabButton).not.toHaveAttribute("data-toggle");
-    }
+    // F5 (2026-08-15): the Recent History tab also dropped data-toggle="tab" —
+    // React state owns the tab behavior app-wide (AGENTS.md plugin-attribute
+    // rule; batch 4 dropped the last data-toggle=tab on this sidebar).
+    await expect(tabButton).not.toHaveAttribute("data-toggle");
     await expect(tabButton).not.toHaveAttribute("href");
   }
 

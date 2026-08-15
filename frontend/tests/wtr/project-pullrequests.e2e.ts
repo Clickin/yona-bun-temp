@@ -28,7 +28,7 @@ function expectedProjectPullRequestsEmpty(basePath: string) {
     EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
       .replace(
         '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
-        '<li class="myOrganizationList active"><button class="" type="button">Favorite</button></li><li class="myProjectList"><button class="" type="button">Project</button></li><li class="myRecentIssueList"><button class="" type="button" data-toggle="tab">Recent History</button></li>',
+        '<li class="myOrganizationList active"><button class="" type="button">Favorite</button></li><li class="myProjectList"><button class="" type="button">Project</button></li><li class="myRecentIssueList"><button class="" type="button">Recent History</button></li>',
       )
       .replace(
         '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
@@ -1966,6 +1966,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
             attr.name !== "data-active" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
@@ -2161,6 +2162,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-content-ready" &&
             attr.name !== "data-active" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none

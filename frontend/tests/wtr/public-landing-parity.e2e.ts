@@ -164,7 +164,10 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     stylesheetHrefs: [
       `/legacy-assets/stylesheets/legacy-fallback.css`,
       `${basePath}/assets/-home-route-screen-8oXcZy-S.css`,
-      `${basePath}/assets/index-DZzsAkIE.css`,
+      // F5 (2026-08-15): index CSS asset hash re-pinned after the app.css
+      // comment reword (source-less mr3 utility bridge note no longer contains
+      // the literal `.mr3 {` selector string).
+      `${basePath}/assets/index-C2rQFO7r.css`,
     ],
     twitterCard: "summary",
     twitterDescription: "Yoram",

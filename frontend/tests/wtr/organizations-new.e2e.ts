@@ -523,7 +523,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "target",
         "title",
         "style",
-        "data-toggle",
         "data-placement",
         "data-errType",
       ];
@@ -649,7 +648,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         "target",
         "title",
         "style",
-        "data-toggle",
         "data-placement",
         "data-errType",
       ];

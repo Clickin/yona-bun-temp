@@ -1504,7 +1504,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "href",
         "target",
         "title",
-        "data-toggle",
         "data-placement",
         "role",
       ];
@@ -1656,7 +1655,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         "href",
         "target",
         "title",
-        "data-toggle",
         "data-placement",
         "role",
       ];

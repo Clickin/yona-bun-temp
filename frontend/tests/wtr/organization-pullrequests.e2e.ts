@@ -762,6 +762,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-active" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&
@@ -880,6 +881,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-active" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             !(attr.name === "class" && normalizeAttr(attr) === "") &&

@@ -754,6 +754,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             attr.name !== "alt" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-active" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
@@ -906,6 +907,7 @@ async function canonicalize(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-active" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",
@@ -963,6 +965,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-active" &&
             attr.name !== "data-style-src" &&
             attr.name !== "data-owner",

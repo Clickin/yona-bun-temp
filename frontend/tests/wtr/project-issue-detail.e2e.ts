@@ -167,9 +167,11 @@ test("project issue detail restores live Korean metadata controls and editor geo
   await expect(page.locator(".span-right-pane #comment-77 .ago").first()).toHaveText("4일 전");
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
-    // copy-fix-current-dom: Vite-managed hashed asset (project_default-DvNH5PGr.jpg);
-    // relative vite base resolves it against the route path at nested SPA routes
-    /--x-backgroundImage:\s*url\(['"](?:https?:\/\/[^'"]*)?\/yona\/(?:[^\/]+\/)*assets\/project_default-[A-Za-z0-9]{8}\.jpg['"]\)/u,
+    // F5 (2026-08-15): the app renders the header background via a direct
+    // background-image style with the Vite-managed hashed asset
+    // (project_default-HASH.jpg) — the earlier --x-backgroundImage CSS-var
+    // mechanism was retired; the image URL contract is unchanged.
+    /background-image:\s*url\(['"](?:https?:\/\/[^'"]*)?\/yona\/(?:[^\/]+\/)*assets\/project_default-[A-Za-z0-9]{8}\.jpg['"]\)/u,
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
@@ -1124,9 +1126,11 @@ test("project issue detail owns edit/delete action spacing in both legacy rows",
   expect(componentSource).not.toContain("pt5px");
   expect(componentSource).not.toContain("ml6");
   expect(styleSource).toMatch(
-    /issueActionEdit:\s*\{[\s\S]*?marginLeft:\s*["']10px["'][\s\S]*?paddingTop:\s*["']5px["']/u,
+    /\[data-owner="project-issue-detail-action-edit"\]\s*\{[\s\S]*?margin-left:\s*10px[\s\S]*?padding-top:\s*5px/u,
   );
-  expect(styleSource).toMatch(/issueActionDelete:\s*\{[\s\S]*?marginLeft:\s*["']6px["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-action-delete"\]\s*\{[\s\S]*?margin-left:\s*6px/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
@@ -1240,7 +1244,9 @@ test("project issue detail owns board action group float with route Style", asyn
   expect(legacyYobi).toContain('@import "less/_page.less";');
 
   expect(routeSource).toContain('data-owner="project-issue-detail-board-action-group"');
-  expect(styleSource).toMatch(/boardActionGroup:\s*\{\s*float:\s*["']left["']\s*,?\s*\}/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-board-action-group"\]\s*\{\s*float:\s*left\s*\}?/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
@@ -1317,7 +1323,9 @@ test("project issue detail owns mobile new-subtask spacing with route Style", as
   // ml4 token (view.scala.html:191 <span class="project-btn-item hide
   // show-in-mobile-inline ml4">) alongside style mobileNewSubtask spacing.
   expect(routeSource).toContain("show-in-mobile-inline ml4");
-  expect(styleSource).toMatch(/mobileNewSubtask:\s*\{[\s\S]*?marginLeft:\s*['"]4px['"]/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-mobile-new-subtask"\]\s*\{[\s\S]*?margin-left:\s*4px/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
@@ -1382,7 +1390,7 @@ test("project issue detail owns desktop header metadata spacing with route Style
   // copy-fix-current-dom: route composes the legacy class string alongside style
   expect(routeSource).toContain("pull-right mr10 mt10 hide-in-mobile");
   expect(styleSource).toMatch(
-    /desktopMetadata:\s*\{[\s\S]*?marginRight:\s*["']10px["'][\s\S]*?marginTop:\s*["']10px["']/u,
+    /\[data-owner="project-issue-detail-desktop-metadata"\]\s*\{[\s\S]*?margin-right:\s*10px[\s\S]*?margin-top:\s*10px/u,
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1449,7 +1457,9 @@ test("project issue detail owns sidebar bottom spacing with route Style", async 
   expect(routeSource).toContain('data-owner="project-issue-detail-sidebar"');
   expect(routeSource).toContain("span3 span-right-pane");
   expect(routeSource).not.toContain("span3 span-right-pane mb20");
-  expect(styleSource).toMatch(/sidebar:\s*\{[\s\S]*?marginBottom:\s*["']20px["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-sidebar"\]\s*\{[\s\S]*?margin-bottom:\s*20px/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
@@ -2015,7 +2025,7 @@ test("project issue detail owns generic MarkdownEditor notification receiver tit
   expect(legacyYobi).toContain('@import "less/_page.less";');
 
   expect(styleSource).toMatch(
-    /markdownEditorNotificationReceiverTitle:\s*\{\s*color:\s*["']#999["']/u,
+    /\[data-owner="project-issue-detail-markdown-editor-notification-receiver-title"\]\s*\{\s*color:\s*#999/u,
   );
 
   await mockProjectIssueDetail(page, { viewerCanComment: true });
@@ -2167,14 +2177,22 @@ test("project issue detail owns the child reply form declarations and geometry",
   }
   expect(routeSource).toContain('data-owner="project-issue-detail-child-comment-form"');
 
-  expect(styleSource).toMatch(/childCommentFormHidden:\s*\{\s*display:\s*["']none["']/u);
+  // F5 (2026-08-15): app owns the hidden state via the state class
+  // [data-owner="project-issue-detail-child-comment-form"].issue-detail-child-comment-form-hidden
+  // (legacy _page.less .child-comment-input-form { display:none } base moved to the
+  // class; visible = UA default because no base rule pins display).
   expect(styleSource).toMatch(
-    /childCommentFormVisible:\s*\{\s*display:\s*["']block["'],\s*visibility:\s*["']visible["']/u,
+    /\[data-owner="project-issue-detail-child-comment-form"\]\.issue-detail-child-comment-form-hidden\s*\{\s*display:\s*none/u,
+  );
+  expect(styleSource).not.toMatch(
+    /\[data-owner="project-issue-detail-child-comment-form"\]\s*\{\s*display:\s*none/u,
   );
   expect(styleSource).toMatch(
-    /childCommentFormTextarea:\s*\{[\s\S]*marginTop:\s*["']5px["'][\s\S]*border:\s*["']none["'][\s\S]*borderBottom:\s*["']1px solid #ccc["'][\s\S]*borderRadius:\s*["']0 !important["'][\s\S]*marginBottom:\s*["']0["'][\s\S]*resize:\s*["']none["'][\s\S]*overflow:\s*["']hidden["'][\s\S]*paddingLeft:\s*["']10px["']/u,
+    /\.issue-detail-child-comment-textarea\s*\{[\s\S]*margin-top:\s*5px[\s\S]*border:\s*none[\s\S]*border-bottom:\s*1px solid #ccc[\s\S]*border-radius:\s*0 !important[\s\S]*margin-bottom:\s*0[\s\S]*resize:\s*none[\s\S]*overflow:\s*hidden[\s\S]*padding-left:\s*10px/u,
   );
-  expect(styleSource).toMatch(/childCommentFormSubmit:\s*\{\s*display:\s*["']inline-block["']/u);
+  expect(styleSource).toMatch(
+    /\.issue-detail-child-comment-submit\s*\{\s*display:\s*inline-block/u,
+  );
 
   await mockProjectIssueDetail(page);
   for (const viewport of [
@@ -2339,17 +2357,20 @@ test("project issue detail owns the child notification receiver declarations and
     'data-owner="project-issue-detail-child-comment-notification-receiver-title"',
   );
 
+  // F5 (2026-08-15): app owns receiver hidden state via
+  // .issue-detail-notification-receiver-hidden (legacy base display:none moved to
+  // the class; visible = UA default, no base display pin).
   expect(styleSource).toMatch(
-    /childCommentNotificationReceiver:\s*\{[\s\S]*marginLeft:\s*["']12px["'][\s\S]*borderBottomLeftRadius:\s*["']3px["'][\s\S]*borderBottomRightRadius:\s*["']3px["'][\s\S]*backgroundColor:\s*["']#F7F7F7["'][\s\S]*textAlign:\s*["']start["'][\s\S]*padding:\s*["']5px 5px 5px 10px["']/u,
+    /\[data-owner="project-issue-detail-child-comment-notification-receiver"\]\s*\{[\s\S]*margin-left:\s*12px[\s\S]*border-bottom-left-radius:\s*3px[\s\S]*border-bottom-right-radius:\s*3px[\s\S]*background-color:\s*#f7f7f7[\s\S]*text-align:\s*start[\s\S]*padding:\s*5px 5px 5px 10px/u,
   );
   expect(styleSource).toMatch(
-    /childCommentNotificationReceiverHidden:\s*\{\s*display:\s*["']none["']/u,
+    /\[data-owner="project-issue-detail-child-comment-notification-receiver"\]\.issue-detail-notification-receiver-hidden\s*\{\s*display:\s*none/u,
+  );
+  expect(styleSource).not.toMatch(
+    /\[data-owner="project-issue-detail-child-comment-notification-receiver"\]\s*\{\s*display:\s*none/u,
   );
   expect(styleSource).toMatch(
-    /childCommentNotificationReceiverVisible:\s*\{\s*display:\s*["']block["']/u,
-  );
-  expect(styleSource).toMatch(
-    /childCommentNotificationReceiverTitle:\s*\{\s*color:\s*["']#999["']/u,
+    /\[data-owner="project-issue-detail-child-comment-notification-receiver-title"\][\s\S]*?\{\s*color:\s*#999/u,
   );
 
   await mockProjectIssueDetail(page);
@@ -2507,11 +2528,17 @@ test("project issue detail owns the child reply float across desktop and mobile"
   expect(routeSource).toContain('data-owner="project-issue-detail-child-comment-reply"');
 
   expect(routeSource).not.toContain("add-a-comment pull-right");
+  // F5 (2026-08-15): app owns reply paint via [data-owner=...child-comment-reply]
+  // (background resolves to #fff via --color-yona-surface) + :hover + hidden class.
   expect(styleSource).toMatch(
-    /childCommentReply:\s*\{[\s\S]*fontSize:\s*["']12px["'][\s\S]*backgroundColor:\s*["']#fff["'][\s\S]*position:\s*["']relative["'][\s\S]*right:\s*["']10px["'][\s\S]*color:\s*["']#00b0e8["'][\s\S]*border:\s*["']1px solid #00b0e8["'][\s\S]*marginTop:\s*["']-32px["'][\s\S]*padding:\s*["']0 5px["'][\s\S]*borderRadius:\s*["']3px["'][\s\S]*float:\s*["']right["'][\s\S]*zIndex:\s*2[\s\S]*["']?:hover["']?:[\s\S]*boxShadow:\s*["']1px 1px 2px #e0e0e0["'][\s\S]*cursor:\s*["']pointer["'][\s\S]*display:\s*["']block["']/u,
+    /\[data-owner="project-issue-detail-child-comment-reply"\]\s*\{[\s\S]*font-size:\s*12px[\s\S]*background-color:\s*var\(--color-yona-surface\)[\s\S]*position:\s*relative[\s\S]*right:\s*10px[\s\S]*color:\s*#00b0e8[\s\S]*border:\s*1px solid #00b0e8[\s\S]*margin-top:\s*-32px[\s\S]*padding:\s*0 5px[\s\S]*border-radius:\s*3px[\s\S]*float:\s*right[\s\S]*z-index:\s*2\s*\}[\s\S]*\[data-owner="project-issue-detail-child-comment-reply"\]:hover\s*\{[\s\S]*box-shadow:\s*1px 1px 2px #e0e0e0[\s\S]*cursor:\s*pointer[\s\S]*display:\s*block/u,
   );
-  expect(styleSource).toMatch(/childCommentReplyHidden:\s*\{\s*display:\s*["']none["']/u);
-  expect(styleSource).toMatch(/childCommentReplyVisible:\s*\{\s*display:\s*["']block["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-child-comment-reply"\]\.issue-detail-child-comment-reply-hidden\s*\{\s*display:\s*none/u,
+  );
+  expect(styleSource).not.toMatch(
+    /\[data-owner="project-issue-detail-child-comment-reply"\]\s*\{\s*display:\s*none/u,
+  );
   expect(routeSource).not.toContain("childAttachment");
 
   await mockProjectIssueDetail(page);
@@ -2706,8 +2733,12 @@ test("project issue detail toggles legacy comment update form through React-owne
   expect(parentActionEmitter).toContain('data-owner="project-issue-detail-comment-action-delete"');
   expect(parentActionEmitter).not.toContain("ml10");
   expect(parentActionEmitter).not.toContain("ml6");
-  expect(styleSource).toMatch(/commentActionEdit:\s*\{[\s\S]*?marginLeft:\s*["']10px["']/u);
-  expect(styleSource).toMatch(/commentActionDelete:\s*\{[\s\S]*?marginLeft:\s*["']6px["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-comment-action-edit"\]\s*\{[\s\S]*?margin-left:\s*10px/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-comment-action-delete"\]\s*\{[\s\S]*?margin-left:\s*6px/u,
+  );
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
@@ -2857,7 +2888,9 @@ test("project issue detail owns the parent comment action-row float with Style",
   expect(routeSource).toContain('data-owner="project-issue-detail-comment-action-row"');
   // copy-fix-current-dom: route composes the legacy action-row class alongside style
 
-  expect(styleSource).toMatch(/commentActionRow:\s*\{[\s\S]*?float:\s*["']right["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-comment-action-row"\]\s*\{[\s\S]*?float:\s*right/u,
+  );
   expect(styleSource).not.toContain("pull-right");
 
   await mockProjectIssueDetail(page);
@@ -3324,7 +3357,9 @@ test("project issue detail owns sharer title spacing with route Style", async ({
 
   expect(routeSource).toContain('data-owner="project-issue-detail-sharer-title"');
   expect(routeSource).not.toContain('className="issue-share-title mb10"');
-  expect(styleSource).toMatch(/sharerTitle:\s*\{\s*marginBottom:\s*["']10px["']\s*\}/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-sharer-title"\]\s*\{\s*margin-bottom:\s*10px\s*\}/u,
+  );
 
   await mockProjectIssueDetail(page, { sharers: [] });
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
@@ -3478,7 +3513,9 @@ test("project issue detail renders legacy translation button when translation AP
 
   expect(translationEmitter).toContain('data-owner="project-issue-detail-translation-button"');
   expect(translationEmitter).not.toContain("ml10");
-  expect(styleSource).toMatch(/issueTranslationButton:\s*\{[\s\S]*?marginLeft:\s*["']10px["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-translation-button"\]\s*\{[\s\S]*?margin-left:\s*10px/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const translationRequests: Array<{
@@ -3580,7 +3617,9 @@ test("project issue detail renders legacy comment translation button when transl
 
   expect(routeEmitter).toContain('data-owner="project-issue-detail-comment-translation-button"');
   expect(routeEmitter).not.toContain("ml10");
-  expect(styleSource).toMatch(/commentTranslationButton:\s*\{[\s\S]*?marginLeft:\s*["']10px["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-comment-translation-button"\]\s*\{[\s\S]*?margin-left:\s*10px/u,
+  );
   expect(routeSource).toContain('data-owner="project-issue-detail-translation-button"');
   expect(routeSource).toContain('title="Edit comment"');
   expect(routeSource).toContain('title="Delete comment"');
@@ -4510,17 +4549,34 @@ test("project issue detail owns active vote controls and voter list declarations
   expect(legacyIcon).toContain("line-height: 1;");
   expect(legacyIcon).toContain("display: inline-block;");
 
-  expect(styleSource).toContain("issueVoteWrap:");
+  // F5 (2026-08-15): app owns vote paint via data-owner rules; the yobicon
+  // base font (font-weight normal = 400, line-height 1) lives in the frozen
+  // legacy fallback ([class^="yobicon-"] block).
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-vote-wrap"\]\s*\{[\s\S]*?display:\s*inline-block/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-vote-heart"\]\s*\{[\s\S]*?display:\s*inline-block[\s\S]*?font-size:\s*17px/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-voter-list-wrap"\]\s*\{[\s\S]*?display:\s*inline-block/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-voter-list"\]\s*\{[\s\S]*?display:\s*block/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-voter-list-item"\]\s*\{[\s\S]*?float:\s*left/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-voter-avatar"\]\s*\{[\s\S]*?display:\s*inline-block/u,
+  );
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-vote-heart-icon"\]::before\s*\{[\s\S]*?content:\s*"\\e4b0"/u,
+  );
 
-  expect(styleSource).toContain("issueVoteHeart:");
-  expect(styleSource).toContain("issueVoterListWrap:");
-  expect(styleSource).toContain("issueVoterList:");
-  expect(styleSource).toContain("issueVoterListItem:");
-  expect(styleSource).toContain("issueVoterAvatar:");
-  expect(styleSource).toContain("issueVoteIcon:");
-
-  expect(styleSource).toContain("fontWeight: 400");
-  expect(styleSource).toContain("lineHeight: 1");
+  expect(styleSource).toMatch(
+    /\[class\^="yobicon-"\][\s\S]*?font-weight:\s*normal[\s\S]*?line-height:\s*1/u,
+  );
 
   expect(routeSource).toContain('data-owner="project-issue-detail-vote-wrap"');
   expect(routeSource).toContain('data-owner="project-issue-detail-voter-list-wrap"');
@@ -4942,7 +4998,9 @@ test("project issue detail owns the authenticated parent comment attachment floa
   expect(legacyYobi).toContain('@import "less/_common.less";');
 
   expect(routeSource).toContain('data-owner="project-issue-detail-comment-attachments"');
-  expect(styleSource).toMatch(/commentAttachments:\s*\{[\s\S]*?float:\s*["']left["']/u);
+  expect(styleSource).toMatch(
+    /\[data-owner="project-issue-detail-comment-attachments"\]\s*\{[\s\S]*?float:\s*left/u,
+  );
 
   await mockProjectIssueDetail(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -7666,6 +7724,16 @@ async function canonicalize(page: Page, selector: string) {
               // partial_voters.scala.html:19 plain <li>)
               token !== "issue-detail-page" &&
               token !== "voter-list-item" &&
+              // issue-detail-modal-header/issue-detail-modal-section:
+              // React-owned modal chrome (ModalDialog); legacy modals render a
+              // plain modal-header div (partial_voters.scala.html,
+              // postingHistory.scala.html)
+              token !== "issue-detail-modal-header" &&
+              token !== "issue-detail-modal-section" &&
+              // issue-detail-task-done-counter: React-owned tasklist marker
+              // (TasklistBar); legacy tasklistBar.scala.html renders a plain
+              // done-counter span
+              token !== "issue-detail-task-done-counter" &&
               // ml10/ml6/pt5px/mb10: app owns issue/comment action spacing via
               // style (issueActionEdit/commentActionEdit/sharerTitle in
               // -issue-detail.style.ts:293-313); legacy view.scala.html:237,
@@ -7696,6 +7764,14 @@ async function canonicalize(page: Page, selector: string) {
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replace(/--x-width:([^;]+)/gu, "width:$1")
+        // copy-fix-current-dom: subtask progress bars paint via
+        // --x-subtask-progress-width (SubtaskListBar); legacy
+        // common/tasklistBar.scala.html:6 pins style="width: N%"
+        .replace(/--x-subtask-progress-width:([^;]+)/gu, "width:$1")
+        // copy-fix-current-dom: TasklistBar's task-title carries React-owned
+        // font-weight:500 inline (legacy tasklistBar.scala.html:4-6 pins only
+        // style="width: N%") — strip it on both sides
+        .replace(/^font-weight:500;/u, "")
         // copy-fix-current-dom: TasklistBar paints via dynamic style props
         // (taskProgressBar in -issue-detail.style.ts:480); legacy
         // common/tasklistBar.scala.html:6 pins a bare `style="width: N;"`.
@@ -7822,6 +7898,16 @@ async function canonicalizeAll(page: Page, selector: string) {
               // partial_voters.scala.html:19 plain <li>)
               token !== "issue-detail-page" &&
               token !== "voter-list-item" &&
+              // issue-detail-modal-header/issue-detail-modal-section:
+              // React-owned modal chrome (ModalDialog); legacy modals render a
+              // plain modal-header div (partial_voters.scala.html,
+              // postingHistory.scala.html)
+              token !== "issue-detail-modal-header" &&
+              token !== "issue-detail-modal-section" &&
+              // issue-detail-task-done-counter: React-owned tasklist marker
+              // (TasklistBar); legacy tasklistBar.scala.html renders a plain
+              // done-counter span
+              token !== "issue-detail-task-done-counter" &&
               // ml10/ml6/pt5px/mb10: app owns issue/comment action spacing via
               // style (issueActionEdit/commentActionEdit/sharerTitle in
               // -issue-detail.style.ts:293-313); legacy view.scala.html:237,
@@ -7852,6 +7938,14 @@ async function canonicalizeAll(page: Page, selector: string) {
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replace(/--x-width:([^;]+)/gu, "width:$1")
+        // copy-fix-current-dom: subtask progress bars paint via
+        // --x-subtask-progress-width (SubtaskListBar); legacy
+        // common/tasklistBar.scala.html:6 pins style="width: N%"
+        .replace(/--x-subtask-progress-width:([^;]+)/gu, "width:$1")
+        // copy-fix-current-dom: TasklistBar's task-title carries React-owned
+        // font-weight:500 inline (legacy tasklistBar.scala.html:4-6 pins only
+        // style="width: N%") — strip it on both sides
+        .replace(/^font-weight:500;/u, "")
         // copy-fix-current-dom: TasklistBar paints via dynamic style props
         // (taskProgressBar in -issue-detail.style.ts:480); legacy
         // common/tasklistBar.scala.html:6 pins a bare `style="width: N;"`.
@@ -7988,6 +8082,16 @@ async function canonicalizeHtml(page: Page, html: string) {
               // partial_voters.scala.html:19 plain <li>)
               token !== "issue-detail-page" &&
               token !== "voter-list-item" &&
+              // issue-detail-modal-header/issue-detail-modal-section:
+              // React-owned modal chrome (ModalDialog); legacy modals render a
+              // plain modal-header div (partial_voters.scala.html,
+              // postingHistory.scala.html)
+              token !== "issue-detail-modal-header" &&
+              token !== "issue-detail-modal-section" &&
+              // issue-detail-task-done-counter: React-owned tasklist marker
+              // (TasklistBar); legacy tasklistBar.scala.html renders a plain
+              // done-counter span
+              token !== "issue-detail-task-done-counter" &&
               // ml10/ml6/pt5px/mb10: app owns issue/comment action spacing via
               // style (issueActionEdit/commentActionEdit/sharerTitle in
               // -issue-detail.style.ts:293-313); legacy view.scala.html:237,
@@ -8018,6 +8122,14 @@ async function canonicalizeHtml(page: Page, html: string) {
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replace(/--x-width:([^;]+)/gu, "width:$1")
+        // copy-fix-current-dom: subtask progress bars paint via
+        // --x-subtask-progress-width (SubtaskListBar); legacy
+        // common/tasklistBar.scala.html:6 pins style="width: N%"
+        .replace(/--x-subtask-progress-width:([^;]+)/gu, "width:$1")
+        // copy-fix-current-dom: TasklistBar's task-title carries React-owned
+        // font-weight:500 inline (legacy tasklistBar.scala.html:4-6 pins only
+        // style="width: N%") — strip it on both sides
+        .replace(/^font-weight:500;/u, "")
         // copy-fix-current-dom: TasklistBar paints via dynamic style props
         // (taskProgressBar in -issue-detail.style.ts:480); legacy
         // common/tasklistBar.scala.html:6 pins a bare `style="width: N;"`.

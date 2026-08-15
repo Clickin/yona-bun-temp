@@ -1469,6 +1469,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
             attr.name !== "rel" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
@@ -1549,6 +1550,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "rel" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",
@@ -1664,6 +1666,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "rel" &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-toggle" &&
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "data-wtr-click-selected",

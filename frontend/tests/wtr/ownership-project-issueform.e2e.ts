@@ -43,9 +43,10 @@ test("project issue form preserves legacy editor layout with Style owners", asyn
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator("#button-save")).toBeVisible();
   await expect(page.locator("#draft-save-btn")).toBeVisible();
-  // F5 dist-truth (2026-08-11): one legacy plugin attribute remains on the
-  // form (the rest converted to React events).
-  await expect(page.locator("[data-toggle], [data-request-method], [data-dismiss]")).toHaveCount(1);
+  // F5 (2026-08-15): all legacy plugin attributes are gone — React owns the
+  // form's behaviors (AGENTS.md plugin-attribute rule); the 2026-08-11 pin
+  // counted one remaining data-toggle that has since been converted.
+  await expect(page.locator("[data-toggle], [data-request-method], [data-dismiss]")).toHaveCount(0);
 
   const geometry = await page
     .locator('[data-owner="project-issue-form-columns"]')

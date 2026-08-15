@@ -359,7 +359,12 @@
     color: #292929;
     text-decoration: none;
     background-color: #f1f1f1;
-    border-color: rgba(0, 0, 0, 0.25);
+    /* border-color intentionally omitted: the frozen fallback
+       .ybtn:hover/:focus/:active border (rgba(0,0,0,0.25)) precedes
+       .ybtn.ybtn-success/.ybtn-info in source order, so the colored variants
+       keep their legacy borders on hover/focus; an app-side border-color here
+       would re-order the cascade and override them (project-posts createSubmit
+       border pin). */
   }
 
   .ybtn-primary,
@@ -371,10 +376,29 @@
 
   .ybtn-primary:hover,
   .ybtn-primary:focus,
+  .ybtn-primary:active,
   .ybtn-success:hover,
-  .ybtn-success:focus {
+  .ybtn-success:focus,
+  .ybtn-success:active {
     color: #fff;
     background-color: #e95e01;
+  }
+
+  /* legacy .ybtn-info: base #3A7EE5, hover/focus/active #206EE5 (fallback
+     _yobiUI.less @yobi-btn-info / @yobi-btn-info-hover); the generic
+     .ybtn:hover color (#292929) would otherwise win on hover/focus/active,
+     but the save-button pins white text. */
+  .ybtn-info {
+    color: #fff;
+    background-color: #3a7ee5;
+    border-color: #206ee5;
+  }
+
+  .ybtn-info:hover,
+  .ybtn-info:focus,
+  .ybtn-info:active {
+    color: #fff;
+    background-color: #206ee5;
   }
 
   .ybtn-danger {
@@ -3430,6 +3454,14 @@
     display: inline-block;
   }
 
+  .board-view .board-comment-wrap .comments .resp-comment-avatar .avatar-wrap {
+    /* F5 (2026-08-15): compiled legacy .avatar-wrap base is vertical-align
+       top (frozen fallback _common.less:144-148); the app base rule keeps
+       middle for other owners, so the board-comment responsive avatar pins
+       the legacy top contract here (project-posts identity test). */
+    vertical-align: top;
+  }
+
   .board-view .board-comment-wrap .comments .add-a-comment,
   .issue-detail-page .board-comment-wrap .comments .add-a-comment {
     position: relative;
@@ -3644,6 +3676,15 @@
   @media (max-width: 720px) {
     .write-comment-box {
       padding: 0;
+    }
+
+    /* legacy _responsive.less: .board-comment-wrap .comments .comment
+       .subcomment-media-body { margin-left: 0 } at max-width 720px — the
+       frozen fallback override loses to app.css:3555 (same layer, later
+       source order), so the app owns the mobile contract here. */
+    .board-view .board-comment-wrap .comments .subcomment-media-body,
+    .issue-detail-page .board-comment-wrap .comments .subcomment-media-body {
+      margin-left: 0;
     }
 
     .span-left-pane {
@@ -6713,9 +6754,9 @@
 [data-owner="project-issues-due-date"].project-issues-due-date-closed {
   color: #999;
 }
-/* legacy partial_list.scala.html:107 clock icon carries `mr3` (frozen
-   _common.less .mr3 { margin-right:3px }) — owned here so the route source
-   never hardcodes the legacy class string. */
+/* legacy partial_list.scala.html:107 clock icon carries the frozen mr3
+   utility (margin-right: 3px) — owned here so the route source never
+   hardcodes the legacy class string. */
 [data-owner="project-issues-due-date-icon"] {
   margin-right: 3px;
 }
@@ -7860,7 +7901,11 @@
 }
 
 [data-owner="project-issue-detail-sidebar-meta"] {
-  padding: 15px 0 0 52px;
+  /* F5 (2026-08-15): frozen _responsive.less:553-687 `@media all` unconstrained
+     override pins 15px 0 0 10px at every width (legacy .issue-info); the
+     earlier 52px desktop padding had no legacy source — the gutters spec pins
+     the 10px contract at 1366 and 720. */
+  padding: 15px 0 0 10px;
 }
 
 @media (max-width: 720px) {
@@ -8697,6 +8742,10 @@
 }
 [data-owner="post-detail-content"] {
   background-color: var(--color-yona-surface);
+  /* F5 (2026-08-15): board body content line-height — legacy board/view.scala.html
+     body renders at 18px (spec pins 18px; frozen bootstrap body 20px would
+     override :root, so the app owns 18px here). */
+  line-height: 18px;
 }
 /* legacy retired: -post-detail sidebar — beats layered @media all .issue-info 10px override */
 [data-owner="post-detail-sidebar"] {
@@ -8745,6 +8794,15 @@
   border-color: rgba(0, 0, 0, 0.25);
   color: #292929;
   text-decoration: none;
+}
+/* F5 (2026-08-15): watching state border — frozen fallback
+   .ybtn.ybtn-watching border:1px solid #C9C5C1 is non-!important and loses to
+   the unlayered base rule above; app owns the watching border here
+   (legacy _yobiUI.less &: .ybtn-watching { border:1px solid #C9C5C1 }).
+   :not(:hover/:focus/:active) so the hover/focus border (rgba(0,0,0,0.25))
+   and the poll pins below keep winning in those states. */
+[data-owner="post-detail-watch"].ybtn-watching:not(:hover):not(:focus):not(:active) {
+  border-color: #c9c5c1;
 }
 [data-owner="post-detail-post-edit-action"] {
   margin-left: 10px;
@@ -8846,6 +8904,18 @@
 [data-owner="post-detail-comment-media"]:hover {
   box-shadow: 2px 2px 1px 0 rgb(220, 220, 220);
 }
+/* F5 (2026-08-15): :target highlight — the layered legacy rule
+   (.board-view .board-comment-wrap .comments .comment:target .media-body,
+   app.css:3415) loses to this unlayered data-owner border/pointer block, so
+   the target state is owned unlayered here (legacy board/view.scala.html
+   #comment-21 anchor; frozen _page.less :target rule). */
+:target > [data-owner="post-detail-comment-media"] {
+  border: 2px solid #03a9f4;
+}
+:target > [data-owner="post-detail-comment-media"]::before {
+  border-color: #03a9f4;
+  border-width: 0 0 2px 2px;
+}
 [data-owner="post-detail-comment-editor"].is-editing {
   display: block;
 }
@@ -8853,6 +8923,14 @@
   text-align: right;
 }
 /* comment textareas: legacy covers radius/width/resize/font; focus + create radius are style-only */
+[data-owner="post-detail-comment-create-textarea"],
+[data-owner="post-detail-comment-update-textarea"] {
+  /* F5 (2026-08-15): legacy _yobiUI.less label,input,button,select,textarea
+     { font-size:12px } — the app :root 13px + .textarea-box textarea 1em would
+     resolve 13px; the app pins the 12px contract here (mobile 16px !important
+     layered rule still wins ≤767px). */
+  font-size: 12px;
+}
 [data-owner="post-detail-comment-create-textarea"] {
   border-radius: 2px;
 }
@@ -8976,9 +9054,17 @@
 [data-owner="post-detail-comment-update-save"]:focus,
 [data-owner="post-detail-comment-update-save"]:active {
   background-color: #f1f1f1;
-  border-color: rgba(0, 0, 0, 0.25);
-  color: #292929;
+  /* color intentionally omitted: the unlayered #292929 would override the
+     layered .ybtn-success/.ybtn-info focus/active white (colored variants
+     keep their legacy text; plain buttons get #292929 from the layered
+     fallback .ybtn:focus/:active). */
   text-decoration: none;
+}
+[data-owner="post-detail-comment-update-file-upload-label"] {
+  /* F5 (2026-08-15): legacy _page.less .upload-button-line .file-upload__label
+     transition: background .3s — the shared button transition (all 0.3s ease)
+     would override the frozen fallback's label rule (unlayered beats layered). */
+  transition: background 0.3s;
 }
 /* childCommentReply: legacy .add-a-comment covers base; float+visibility are style-only */
 [data-owner="post-detail-child-comment-reply"] {
@@ -8998,16 +9084,34 @@
   margin: 0;
   padding: 0;
 }
+/* F5 (2026-08-15): Tailwind's unlayered `.contents{display:contents}` utility
+   collides with the legacy markdown `.contents` wrapper (child-comment rows);
+   unlayered beats layered, so own display:block unlayered here
+   (board/view.scala.html + _page.less .contents block contract). */
+.board-view .board-comment-wrap .comments .one-line-comment .contents,
+.issue-detail-page .board-comment-wrap .comments .one-line-comment .contents {
+  display: block;
+}
 [data-owner="post-detail-child-comment-strong"],
 [data-owner="post-detail-child-comment-author-strong"] {
   font-weight: bold;
 }
-/* child comment links: style color:inherit beats bootstrap a color */
+/* child comment links: base color inherits the markdown paragraph (#202020,
+   app-owned color:inherit contract); hover/focus use the legacy bootstrap
+   link hover (#005580) — the global app `a:hover { color: #f36c22 }` would
+   otherwise win. */
 [data-owner="post-detail-child-comment-author-link"],
 [data-owner="post-detail-child-comment-ago-link"] {
   color: inherit;
   outline: none;
   text-decoration: none;
+}
+[data-owner="post-detail-child-comment-author-link"]:hover,
+[data-owner="post-detail-child-comment-author-link"]:focus,
+[data-owner="post-detail-child-comment-ago-link"]:hover,
+[data-owner="post-detail-child-comment-ago-link"]:focus {
+  color: #005580;
+  text-decoration: underline;
 }
 [data-owner="post-detail-child-comment-no-text-decoration"] {
   text-decoration: none !important;
