@@ -228,8 +228,10 @@ test("project settings mobile menu labels preserve legacy wrapping whitespace", 
   });
   expect(metrics.boardWrapped).toBe(true);
   // e2e closure ledger (2026-08-11): ko-KR 390px wrap measures 813px in the
-  // rebase full run (font-metric delta, +6px from the earlier 807 pin).
-  expect(metrics.bubbleHeight).toBe(813);
+  // rebase full run (font-metric delta, +6px from the earlier 807 pin);
+  // 2026-08-15 the Select2 container height fix (28 -> 30px legacy border +
+  // choice) adds the +2px (815) — the settings form contains the select2.
+  expect(metrics.bubbleHeight).toBe(815);
   test.info().annotations.push({
     type: "mobile-width-evidence",
     description: JSON.stringify({
@@ -2607,9 +2609,16 @@ test("project settings default branch uses the legacy Select2 shell and syncs it
     };
   });
   expect(geometry.containerWidth).toBeCloseTo(220, 0);
-  expect(geometry.containerHeight).toBeCloseTo(28, 0); // F5 dist-truth: select2 choice 26px + 2x1px border (select2.css:29-33)
-  expect(geometry.choiceWidth).toBeCloseTo(125.578125, 0);
-  expect(geometry.choiceHeight).toBeCloseTo(30, 0);
+  // F5 dist-truth (2026-08-15, frozen fallback CSS render): the select2
+  // container is 30px tall (1px border top+bottom + the 28px choice) and the
+  // choice fills the 218px content box (fill-available: content 206 + 12px
+  // padding-left, borderless per the frozen yobi override). The pre-fix app
+  // shrank the choice to its content (125.6px, <button> appearance:auto) and
+  // pinned a fixed 28px container.
+  expect(geometry.containerHeight).toBeCloseTo(30, 0);
+  expect(geometry.choiceWidth).toBeCloseTo(218, 0);
+  // choice border-box 28px (app height:28 + border-box; F5 frozen render = 28).
+  expect(geometry.choiceHeight).toBeCloseTo(28, 0);
   expect(geometry.nativeSelectPosition).toBe("absolute");
   expect(geometry.nativeSelectClip).not.toBe("auto");
 

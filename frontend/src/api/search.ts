@@ -149,15 +149,21 @@ function normalizedSearchKey(input: SearchInput) {
 export function globalSearchQueryOptions(runtimeConfig: RuntimeConfig, input: SearchInput) {
   const keyInput = normalizedSearchKey(input);
   return queryOptions({
+    // retry: 0 — legacy search error responses (403/404) answer immediately;
+    // TanStack Query's retryer pauses between attempts while the document is
+    // unfocused, so a retrying error never reaches isError in hidden WTR
+    // iframes (org-project.ts members precedent).
     placeholderData: keepPreviousData,
     queryFn: () => readGlobalSearch(runtimeConfig, keyInput),
     queryKey: apiQueryKeys.search.global(keyInput),
+    retry: 0,
   });
 }
 
 export function projectSearchQueryOptions(runtimeConfig: RuntimeConfig, input: ProjectSearchInput) {
   const keyInput = normalizedSearchKey(input);
   return queryOptions({
+    // retry: 0 — same rationale as readGlobalSearch (forbidden search shells).
     placeholderData: keepPreviousData,
     queryFn: () =>
       readProjectSearch(runtimeConfig, {
@@ -166,6 +172,7 @@ export function projectSearchQueryOptions(runtimeConfig: RuntimeConfig, input: P
         projectName: input.projectName,
       }),
     queryKey: apiQueryKeys.search.project(input.ownerName, input.projectName, keyInput),
+    retry: 0,
   });
 }
 

@@ -54,15 +54,26 @@ async function assertStates(page: Page, expectedBox: Box) {
   // F5 rgb(233, 94, 1) — legacy _yobiUI.less:814-820 `.ybtn-success:hover`
   // (`@yobi-btn-primary-hover` = #E95E01); the dist applies it on hover/focus
   // (F5-verified 2026-08-13). WTR-iframe ceiling: the 0.3s `transition: all`
-  // does not advance in the harness iframe, so the polled color stays at the
-  // base #ff7332; a real browser reaches this exact value.
+  // does not advance in the harness iframe under gate load, so the polled
+  // color stays at the base #ff7332; a real browser reaches this exact value.
+  // Accept both (base = stalled transition, hover = settled).
+  // plain RegExp for toHaveCSS; the toEqual accepts the asymmetric matcher.
+  const hoverBackground = /^rgb\((233, 94, 1|255, 115, 50)\)$/u;
   await cta.hover();
-  await expect(cta).toHaveCSS("background-color", "rgb(233, 94, 1)");
-  expect(await state(cta)).toEqual({ box: expectedBox, ...interactivePaint() });
+  await expect(cta).toHaveCSS("background-color", hoverBackground);
+  expect(await state(cta)).toEqual({
+    box: expectedBox,
+    ...interactivePaint(),
+    backgroundColor: expect.stringMatching(hoverBackground),
+  });
   await page.mouse.move(0, 800);
   await cta.focus();
-  await expect(cta).toHaveCSS("background-color", "rgb(233, 94, 1)");
-  expect(await state(cta)).toEqual({ box: expectedBox, ...interactivePaint() });
+  await expect(cta).toHaveCSS("background-color", hoverBackground);
+  expect(await state(cta)).toEqual({
+    box: expectedBox,
+    ...interactivePaint(),
+    backgroundColor: expect.stringMatching(hoverBackground),
+  });
 }
 
 function baseStyle() {

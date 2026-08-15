@@ -217,8 +217,9 @@ function translateHasText(
     let hasInside: string | null = null;
     let hasScope: string | null = null;
     let base = part.trim();
-    // :has(A:text('X')) -> :has(A) + filter on the A descendant's exact text.
-    const hasTextMatch = /:has\(([^)]*):text\(["']([^"']*)["']\)\)/u.exec(base);
+    // :has(A:text('X')) / :has(A:has-text("X")) -> :has(A) + filter on the A
+    // descendant's text.
+    const hasTextMatch = /:has\(([^)]*):(?:text|has-text)\(["']([^"']*)["']\)\)/u.exec(base);
     if (hasTextMatch) {
       hasInside = hasTextMatch[1].trim();
       text = hasTextMatch[2];

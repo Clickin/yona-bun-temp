@@ -1,4 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignore": ["web-test-runner.config.mjs", "tests/wtr-compat.ts"]
+  "ignore": [
+    "web-test-runner.config.mjs",
+    "tests/wtr-compat.ts",
+    "tests/wtr/project-issue-detail-shared.ts"
+  ]
 }

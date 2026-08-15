@@ -176,11 +176,16 @@ export function readPublicUserProfileQueryOptions(
   input: PublicUserProfileInput,
 ) {
   return queryOptions({
+    // retry: 0 — legacy 404 profile answers immediately; TanStack Query's
+    // retryer pauses between attempts while the document is unfocused, so a
+    // retrying 404 never reaches isError in hidden WTR iframes (missing
+    // profile error-wrap never renders).
     queryFn: () => readPublicUserProfile(runtimeConfig, input),
     queryKey: apiQueryKeys.user.profile(input.loginId, {
       daysAgo: input.daysAgo ?? null,
       selected: input.selected ?? null,
     }),
+    retry: 0,
   });
 }
 

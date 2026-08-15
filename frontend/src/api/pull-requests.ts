@@ -1090,12 +1090,17 @@ export function pullRequestEditFormOptionsQueryOptions(
 ) {
   const pullRequestNumber = toNumber(input.pullRequestNumber);
   return queryOptions({
+    // retry: 0 — legacy editform error responses (403) answer immediately;
+    // TanStack Query's retryer pauses between attempts while the document is
+    // unfocused, so a retrying 403 never reaches isError in hidden WTR
+    // iframes (org-project.ts members precedent).
     queryFn: () => readPullRequestEditFormOptions(runtimeConfig, input),
     queryKey: apiQueryKeys.project.pullRequestEditFormOptions(
       input.ownerName,
       input.projectName,
       pullRequestNumber,
     ),
+    retry: 0,
   });
 }
 
@@ -1162,6 +1167,9 @@ export function pullRequestChangesQueryOptions(
       pullRequestNumber,
       { commitId: input.commitId },
     ),
+    // retry: 0 — legacy changes error responses (403/404) answer immediately;
+    // a retrying error never reaches isError in hidden WTR iframes.
+    retry: 0,
   });
 }
 

@@ -42,8 +42,13 @@ function OrganizationMembersRoute() {
 function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
   const query = useQuery({
+    // retry: 0 — legacy members error responses (403) answer immediately;
+    // TanStack Query's retryer pauses between attempts while the document is
+    // unfocused, so a retrying 403 never reaches isError in hidden WTR
+    // iframes (org-project.ts members precedent).
     queryFn: () => readOrganizationAdminRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "admin"],
+    retry: 0,
   });
 
   if (query.error instanceof RestApiError && query.error.status === 403) {

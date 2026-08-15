@@ -47,6 +47,7 @@ const FETCH_MOCK_SCRIPT = `<script>
       open(method, url, asyncFlag, username, password) {
         this.__wtrMethod = method;
         this.__wtrUrl = url;
+        this.__wtrAsync = asyncFlag !== false;
         return super.open(method, url, asyncFlag, username, password);
       }
       setRequestHeader(name, value) {
@@ -57,6 +58,11 @@ const FETCH_MOCK_SCRIPT = `<script>
       }
       send(body) {
         const xhr = this;
+        // Sync XHR (readFileSync fixtures use open(..., false)) cannot wait
+        // on the async mock registry; pass through to the native sync path.
+        if (xhr.__wtrAsync === false) {
+          return super.send(body);
+        }
         parent.__wtrMockFetch(this.__wtrUrl, { method: this.__wtrMethod, body, headers: this.__wtrHeaders ?? {} })
           .then((response) => {
             return response.text().then((text) => {

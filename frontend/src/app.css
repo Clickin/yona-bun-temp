@@ -7581,9 +7581,14 @@
 
 [data-owner="project-issue-detail-label-geometry"] {
   display: inline-block;
-  margin: 0 4px 4px 0;
-  padding: 2px 6px;
-  border-radius: 3px;
+  /* Legacy cascade for the read-only <a class="label issue-label active
+     static"> chip: .issue-label.active radius 1px + :last-of-type margin 0
+     (frozen _yobiUI.less) + bootstrap .label padding 2px 4px. This rule is
+     unlayered, so it beats the @layer legacy rules — carry the legacy values
+     here instead of relying on the layered cascade. */
+  margin: 0;
+  padding: 2px 4px;
+  border-radius: 1px;
 }
 
 [data-owner="project-issue-detail-delete-danger-button"],
@@ -7864,6 +7869,17 @@
 [data-owner="project-issue-detail-child-comment-reply"].issue-detail-child-comment-reply-hidden {
   display: none;
 }
+/* childCommentReply reveal: legacy .add-a-comment{display:none}
+   (.issue-detail-page .board-comment-wrap .comments .add-a-comment, 0,4,0)
+   hides the reply even after React removes the hidden class. Match the
+   legacy context specificity so the revealed state renders; the hidden
+   rule must come last to win the tie. */
+.issue-detail-page .board-comment-wrap .comments [data-owner="project-issue-detail-child-comment-reply"] {
+  display: block;
+}
+.issue-detail-page .board-comment-wrap .comments [data-owner="project-issue-detail-child-comment-reply"].issue-detail-child-comment-reply-hidden {
+  display: none;
+}
 
 [data-owner="project-issue-detail-disabled-comment-actions"] {
   text-align: right;
@@ -8027,6 +8043,15 @@
 [data-owner="project-issue-detail-child-comment-form"].issue-detail-child-comment-form-hidden {
   display: none;
 }
+/* childCommentForm reveal: legacy .child-comment-input-form{display:none}
+   (0,4,0) hides the form even after React removes the hidden class; match
+   the legacy context specificity (same as the reply reveal above). */
+.issue-detail-page .board-comment-wrap .comments [data-owner="project-issue-detail-child-comment-form"] {
+  display: block;
+}
+.issue-detail-page .board-comment-wrap .comments [data-owner="project-issue-detail-child-comment-form"].issue-detail-child-comment-form-hidden {
+  display: none;
+}
 
 /* child comment textarea carries no data-owner */
 .issue-detail-child-comment-textarea {
@@ -8054,6 +8079,17 @@
   padding: 5px 5px 5px 10px;
 }
 [data-owner="project-issue-detail-child-comment-notification-receiver"].issue-detail-notification-receiver-hidden {
+  display: none;
+}
+/* childCommentForm notification receiver reveal: legacy
+   .notification-receiver{display:none} (app.css + frozen fallback) hides it
+   even after React removes the hidden class; match the legacy context
+   specificity so the focused-form reveal renders (no inline style — the
+   spec pins not.toHaveAttribute("style")). */
+.issue-detail-page .board-comment-wrap .comments .child-comment-input-form [data-owner="project-issue-detail-child-comment-notification-receiver"] {
+  display: block;
+}
+.issue-detail-page .board-comment-wrap .comments .child-comment-input-form [data-owner="project-issue-detail-child-comment-notification-receiver"].issue-detail-notification-receiver-hidden {
   display: none;
 }
 

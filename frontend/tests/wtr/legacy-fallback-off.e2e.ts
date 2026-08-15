@@ -784,7 +784,9 @@ test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
   expect(appCss).not.toContain(".btn-primary:hover,");
   expect(appCss).not.toContain(".btn-primary:focus");
   expect(appCss).toContain(".ybtn-primary,\n  .ybtn-success {");
-  expect(appCss).toContain(".ybtn-success:focus {");
+  // the app groups hover/focus/active in one rule (fallback cascade gives the
+  // colored variants their borders/text), so the focus arm is a group member.
+  expect(appCss).toContain(".ybtn-success:focus,\n  .ybtn-success:active {");
 });
 
 test("milestone mass-update button bridge has no app.css arms", () => {

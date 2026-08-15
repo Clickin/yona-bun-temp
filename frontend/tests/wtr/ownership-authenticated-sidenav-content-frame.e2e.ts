@@ -40,6 +40,10 @@ for (const viewport of [
     await expect(account).toBeVisible();
     await expect(favoriteTab).toBeVisible();
     await expect(favorite).toBeVisible();
+    // The frame width animates 0 -> target; the children become visible
+    // before the expansion finishes, so the mid-animation read swings the
+    // favorite.right <= frame.right pin. Settle on the target width first.
+    await expect(frame).toHaveCSS("width", viewport.width > 720 ? "350px" : "390px");
 
     const evidence = await readFrameEvidence(frame, profile, favoriteTab, favorite);
     console.log(`authenticated-sidenav-content-frame-${viewport.label}`, JSON.stringify(evidence));

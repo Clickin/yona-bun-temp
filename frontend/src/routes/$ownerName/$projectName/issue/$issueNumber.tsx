@@ -1163,7 +1163,8 @@ function IssueDetailBody({
                     </LegacyHoverPopover>
                   ) : null}
                   <span
-                    className="project-btn-item hide show-in-mobile-inline"
+                    // wave-33 retained-class: legacy view.scala.html:191
+                    className="project-btn-item hide show-in-mobile-inline ml4"
                     data-owner="project-issue-detail-mobile-new-subtask"
                   >
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
@@ -1211,7 +1212,11 @@ function IssueDetailBody({
                 projectName={projectName}
               />
             </div>
-            <dl className={sharerListClassName} data-owner="issue-detail-sharer-list">
+            <dl
+              className={sharerListClassName}
+              data-owner="issue-detail-sharer-list"
+              style={sharerListOpen ? { display: "block" } : undefined}
+            >
               <dt className="issue-share-title" data-owner="project-issue-detail-sharer-title">
                 {t("issue.sharer")}{" "}
                 <span className="num issue-sharer-count">
@@ -2136,7 +2141,7 @@ function IssueLabelSelect({
   return (
     <dl>
       <dt>
-        {t("issue.label")}{" "}
+        {t("label")}{" "}
         {canManageLabels ? (
           <Link
             {...LEGACY_LINK_PROPS}
@@ -2881,7 +2886,11 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div data-owner="issue-detail-keymap-wrapper">
+    <div
+      className="pull-left"
+      style={{ padding: "10px 0px", marginLeft: "55px" }}
+      data-owner="issue-detail-keymap-wrapper"
+    >
       <button type="button" className="ybtn ybtn-inverse ybtn-mini" onClick={openKeymap}>
         {t("title.keymap")}
       </button>

@@ -248,15 +248,19 @@ test(`project issue action owners preserve float, action, and responsive parity 
     await expect(owner).not.toHaveAttribute("data-action");
     await expect(owner).not.toHaveAttribute("data-url");
   }
+  // Legacy my_partial_search.scala.html:19-21 sort filter links carry
+  // orderBy/orderDir attributes; the route renders them (documented in
+  // issues.tsx IssueSortFilter) — the app owns the click behavior but keeps
+  // the legacy attributes for DOM parity.
   expect(
     await filters
       .locator("button")
-      .evaluateAll((buttons) => buttons.every((button) => !button.hasAttribute("orderby"))),
+      .evaluateAll((buttons) => buttons.every((button) => button.hasAttribute("orderby"))),
   ).toBe(true);
   expect(
     await filters
       .locator("button")
-      .evaluateAll((buttons) => buttons.every((button) => !button.hasAttribute("orderdir"))),
+      .evaluateAll((buttons) => buttons.every((button) => button.hasAttribute("orderdir"))),
   ).toBe(true);
   await expect(newIssue).toHaveCSS("float", "right");
   await expect(filters).toHaveCSS("float", "right");
