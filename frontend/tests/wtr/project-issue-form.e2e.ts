@@ -554,7 +554,9 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await title.fill("Implement [b");
   await expect.poll(() => state.titleQueries.at(-1)).toBe("b");
   await expect(page.locator(".title-head-options")).toBeVisible();
-  await page.locator("#issueDueDate").focus();
+  // Native focus: the harness focus() dispatches a synthetic focusin first,
+  // which the title's blur handler can miss under load — the options stay.
+  await page.locator("#issueDueDate").evaluate((element) => (element as HTMLInputElement).focus());
   await expect(page.locator(".title-head-options")).toHaveCount(0);
   await title.focus();
   await title.press("u");
