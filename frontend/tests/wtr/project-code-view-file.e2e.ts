@@ -520,7 +520,7 @@ test("project code folder entry links keep classes and SPA navigation without da
     .toBe("alive");
   expect(documentRequests).toEqual([]);
   expect(codeRequests[0]).toBe("branch=main&path=src");
-  expect(codeRequests).toContain("branch=main&path=src%2Fdocs");
+  await expect.poll(() => codeRequests).toContain("branch=main&path=src%2Fdocs");
 });
 
 test("project code file normalizes refs branch names like legacy branchItemName", async ({

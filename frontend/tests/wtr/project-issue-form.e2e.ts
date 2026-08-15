@@ -402,9 +402,9 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(6, 6));
   await page.getByRole("button", { name: "Add checklist", exact: true }).click();
   await expect(body).toHaveValue(`Before${CHECKLIST}After`);
-  expect(await body.evaluate((textarea: HTMLTextAreaElement) => textarea.selectionStart)).toBe(
-    6 + CHECKLIST.length,
-  );
+  await expect
+    .poll(() => body.evaluate((textarea: HTMLTextAreaElement) => textarea.selectionStart))
+    .toBe(6 + CHECKLIST.length);
 
   await body.fill("Existing body");
   await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(0, 0));

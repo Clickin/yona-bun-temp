@@ -228,10 +228,15 @@ for (const viewport of [
 
     await page.reload();
     await expect(outer).toBeVisible();
-    const pageTop = await page
-      .locator('[data-owner="site-project-list-page-wrap-outer"]')
-      .evaluate((node) => node.getBoundingClientRect().top);
-    expect(pageTop - actualBoxes.outer.y).toBe(55);
+    // The reload restores scroll (the page is short here, but a shard-load
+    // reload can settle the viewport mid-restore); poll the settled delta.
+    await expect
+      .poll(() =>
+        page
+          .locator('[data-owner="site-project-list-page-wrap-outer"]')
+          .evaluate((node) => node.getBoundingClientRect().top),
+      )
+      .toBe(actualBoxes.outer.y + 55);
     mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
     const screenshot = await outer.screenshot({
       path: resolve(

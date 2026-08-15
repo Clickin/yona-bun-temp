@@ -535,9 +535,24 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
     await expect
       .poll(() => page.evaluate(() => performance.getEntriesByType("navigation")[0]?.type ?? null))
       .toBe("reload");
-    // force: the click can be intercepted mid-reload otherwise (the topmost
-    // hit-test may resolve to a stale row node under shard load).
-    await buttons.nth(4).click({ force: true });
+    // The reloaded document's buttons are SSR'd before React hydrates; a
+    // force-dispatch click in that window hits no handler and the modal never
+    // opens (gate flake: data-state stayed null). Wait for the delete button
+    // to be React-owned before clicking.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const button = document.querySelectorAll(
+            '[data-owner="site-user-list-row-action-button"]',
+          )[4];
+          return (
+            button !== undefined &&
+            Object.keys(button).some((key) => key.startsWith("__reactProps"))
+          );
+        }),
+      )
+      .toBe(true);
+    await buttons.nth(4).click();
     // F6 copy-fix-current-dom: the delete modal is style-owned
     // (data-owner="site-user-list-delete-modal", userList.tsx:1162-1176);
     // the legacy `modal fade in` classes (userList.scala.html:132 + bootstrap
