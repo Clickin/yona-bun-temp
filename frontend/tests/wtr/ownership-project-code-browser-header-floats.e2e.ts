@@ -73,7 +73,16 @@ test("project code-browser header preserves branch/actions and stays contained",
     const breadcrumbs = page.locator('[data-owner="project-code-branch-breadcrumbs"]');
     const download = page.locator('[data-owner="project-code-branch-download-action"]');
     const newFile = page.locator('[data-owner="project-code-branch-new-file-action"]');
-    await expect(picker).toBeVisible();
+    // The header renders after the branch data; under shard load the paint
+    // can lag the commit navigation (gate flake: toBeVisible).
+    await expect
+      .poll(() =>
+        picker.evaluate(
+          (element) =>
+            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+        ),
+      )
+      .toBe(true);
     await expect(breadcrumbs).toBeVisible();
     await expect(download).toBeVisible();
     await expect(newFile).toBeVisible();

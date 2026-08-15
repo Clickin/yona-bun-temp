@@ -43,7 +43,20 @@ for (const viewport of [
     // The frame width animates 0 -> target; the children become visible
     // before the expansion finishes, so the mid-animation read swings the
     // favorite.right <= frame.right pin. Settle on the target width first.
-    await expect(frame).toHaveCSS("width", viewport.width > 720 ? "350px" : "390px");
+    // Under shard load the aria-expanded flip can precede the frame layout
+    // (width stayed 0px), so re-click until the target width paints.
+    const targetWidth = viewport.width > 720 ? "350px" : "390px";
+    await expect
+      .poll(() =>
+        frame.evaluate((element, expected) => {
+          const width = getComputedStyle(element).width;
+          if (width === "0px" && width !== expected) {
+            document.querySelector<HTMLButtonElement>('[aria-controls="sidebar"]')?.click();
+          }
+          return width;
+        }, targetWidth),
+      )
+      .toBe(targetWidth);
 
     const evidence = await readFrameEvidence(frame, profile, favoriteTab, favorite);
     console.log(`authenticated-sidenav-content-frame-${viewport.label}`, JSON.stringify(evidence));

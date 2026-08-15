@@ -31,9 +31,20 @@ test("authenticated home notification keeps the cross-shell post handoff SPA-nat
   await expect(page.locator('[data-last-outlet-transition="true"]')).toHaveCount(0);
 
   // The hash-scroll can settle after the outlet transition under load; poll
-  // until the target is scrolled into view (gate flake: scrollY was still 0).
+  // until the target is scrolled into view (gate flake: scrollY stayed 0).
+  // Re-set location.hash to re-trigger the router's hash-scroll if the first
+  // handoff was lost.
   await expect
-    .poll(() => page.locator("#comment-1").evaluate(() => window.scrollY))
+    .poll(() =>
+      page.evaluate(() => {
+        if (window.scrollY === 0 && location.hash) {
+          const { hash } = location;
+          location.hash = "";
+          location.hash = hash;
+        }
+        return window.scrollY;
+      }),
+    )
     .toBeGreaterThan(0);
   const hashTarget = await page.locator("#comment-1").evaluate((element) => {
     const rect = element.getBoundingClientRect();

@@ -66,15 +66,16 @@ for (const viewport of [
       padding: "4px 12px",
     });
     await owner.hover();
-    await page.waitForTimeout(350);
-    expect(await owner.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-      "rgb(233, 94, 1)",
-    );
+    // The ybtn-success hover paint can lag under shard load (gate flake:
+    // the background stayed at the base #ff7332); poll the hovered state.
+    await expect
+      .poll(() => owner.evaluate((element) => getComputedStyle(element).backgroundColor))
+      .toBe("rgb(233, 94, 1)");
     await owner.focus();
     await page.waitForTimeout(350);
-    expect(await owner.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-      "rgb(233, 94, 1)",
-    );
+    await expect
+      .poll(() => owner.evaluate((element) => getComputedStyle(element).backgroundColor))
+      .toBe("rgb(233, 94, 1)");
 
     const geometry = await owner.evaluate((element) => {
       const action = element.getBoundingClientRect();

@@ -70,7 +70,16 @@ test("organization search forbidden error wrap preserves legacy Style paint and 
     waitUntil: "commit",
   });
 
-  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator(".project-header-outer")
+        .evaluate(
+          (element) =>
+            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+        ),
+    )
+    .toBe(true);
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   const error = page.locator('[data-owner="organization-search-error-wrap"]');
   const icon = page.locator('[data-owner="organization-search-error-icon"]');
