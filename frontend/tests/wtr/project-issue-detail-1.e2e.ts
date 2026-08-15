@@ -1122,9 +1122,11 @@ test("project issue detail owns mobile new-subtask spacing with route Style", as
   expect(routeSource).toContain('data-owner="project-issue-detail-mobile-new-subtask"');
 
   // wave-33 retained-class retention (667398a04): route retains the legacy
-  // ml4 token (view.scala.html:191 <span class="project-btn-item hide
-  // show-in-mobile-inline ml4">) alongside style mobileNewSubtask spacing.
-  expect(routeSource).toContain("show-in-mobile-inline ml4");
+  // legacy view.scala.html:191 <span class="project-btn-item hide
+  // show-in-mobile-inline ml4">; the ml4 token is retired (legacy-fallback-off
+  // gate) — spacing is owned by the data-owner rule below.
+  expect(routeSource).toContain("show-in-mobile-inline");
+  expect(routeSource).not.toContain("ml4");
   expect(styleSource).toMatch(
     /\[data-owner="project-issue-detail-mobile-new-subtask"\]\s*\{[\s\S]*?margin-left:\s*4px/u,
   );
@@ -1157,9 +1159,10 @@ test("project issue detail owns mobile new-subtask spacing with route Style", as
     await expect(mobile).toHaveClass(/project-btn-item/);
     await expect(mobile).toHaveClass(/hide/);
     await expect(mobile).toHaveClass(/show-in-mobile-inline/);
-    // wave-33 retained-class retention (667398a04): ml4 retained for legacy
-    // DOM parity (view.scala.html:191); spacing owned via style.
-    await expect(mobile).toHaveClass(/ml4/);
+    // wave-33 retained-class retention (667398a04): project-btn-item/hide/
+    // show-in-mobile-inline retained for legacy DOM parity (view.scala.html:
+    // 191); the ml4 token is retired — spacing owned via the data-owner rule.
+    await expect(mobile).not.toHaveClass(/(?:^|\s)ml4(?:\s|$)/u);
     await expect(mobile).toHaveCSS("margin-left", "4px");
     await expect(mobile).toHaveCSS("display", "inline-block");
   }

@@ -1247,7 +1247,10 @@ test("legacy validation uses alert and toast, server errors stay in the form, an
   });
   await page.getByRole("button", { name: "Cancel" }).click();
   expect(await cancelAcceptMessage).toBe(beforeUnloadCopy);
-  expect(new URL(page.url()).pathname).toBe(`${basePath}/projects`);
+  // history.back() resolves asynchronously — poll the pathname (the legacy
+  // Cancel navigates to the projects list; the app's router.history.back()
+  // races a sync read in the WTR harness).
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/projects`);
 });
 
 test("form capability branches preserve empty milestones, label ACL, blank labels, and mounted asset fallbacks", async ({
@@ -1577,7 +1580,7 @@ type RecordedRequest = {
   pathname: string;
 };
 
-async function mockIssueForm(page: Page, options: MockOptions = {}) {
+export async function mockIssueForm(page: Page, options: MockOptions = {}) {
   const state = {
     assigneeQueries: [] as string[],
     createBodies: [] as Array<Record<string, unknown>>,

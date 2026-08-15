@@ -1164,7 +1164,9 @@ function IssueDetailBody({
                   ) : null}
                   <span
                     // wave-33 retained-class: legacy view.scala.html:191
-                    className="project-btn-item hide show-in-mobile-inline ml4"
+                    // (the margin utility class is retired — legacy-fallback
+                    // gate; the margin-left is owned by the data-owner rule)
+                    className="project-btn-item hide show-in-mobile-inline"
                     data-owner="project-issue-detail-mobile-new-subtask"
                   >
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
@@ -2886,11 +2888,7 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div
-      className="pull-left"
-      style={{ padding: "10px 0px", marginLeft: "55px" }}
-      data-owner="issue-detail-keymap-wrapper"
-    >
+    <div data-owner="issue-detail-keymap-wrapper">
       <button type="button" className="ybtn ybtn-inverse ybtn-mini" onClick={openKeymap}>
         {t("title.keymap")}
       </button>

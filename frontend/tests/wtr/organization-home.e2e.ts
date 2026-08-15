@@ -187,6 +187,11 @@ test("organization home header renders and posts legacy enrollment utility for g
   await expect(enrollmentItem).not.toHaveClass(/open/);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   expect(await readOrganizationHomeDropdownDocumentBridgeAudit(page)).toEqual([]);
+  // The mutation's onSuccess re-renders the toggle with ybtn-info; a sync
+  // canonicalize read can race the render under shard load (gate flake).
+  await expect
+    .poll(() => page.locator(".project-util .dropdown-toggle").getAttribute("class"))
+    .toContain("ybtn-info");
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,

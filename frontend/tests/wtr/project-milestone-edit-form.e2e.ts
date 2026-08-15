@@ -225,8 +225,14 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     .locator("#title")
     .evaluate((element) => getComputedStyle(element).borderBottomColor);
   // F5 (2026-08-13): the focused title border oscillates in the orange family
-  // across renders (241,11x,4x/5x subpixel blend) — match loosely.
-  expect(titleBorder).toMatch(/rgb\(24[0-9], 1[01][0-9], [345][0-9]\)/u);
+  // (241,118,50 … 238,136,81 subpixel blend of the frozen #f36c22 focus
+  // cascade) — assert the orange family numerically (red 220+, green 90+,
+  // blue 140-).
+  const borderMatch = titleBorder.match(/rgb\((\d+), (\d+), (\d+)\)/u);
+  expect(borderMatch).not.toBeNull();
+  expect(Number(borderMatch![1])).toBeGreaterThanOrEqual(220);
+  expect(Number(borderMatch![2])).toBeGreaterThanOrEqual(90);
+  expect(Number(borderMatch![3])).toBeLessThanOrEqual(140);
   await page.locator('#datepicker [data-pika-day="15"]').click();
   await expect(page.locator("#dueDate")).toHaveValue("2026-08-15");
   await expect(page.locator('#datepicker .is-selected [data-pika-day="15"]')).toBeVisible();
