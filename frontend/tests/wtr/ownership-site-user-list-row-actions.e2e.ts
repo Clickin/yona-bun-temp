@@ -527,6 +527,11 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
       });
     await buttons.nth(0).click();
     await expect.poll(() => mutations).toContain("guest");
+    // The guest mutation's onSuccess calls router.history.go(0) — a full
+    // reload; the delete click below can land mid-reload under shard load and
+    // be lost (gate flake: data-state stayed null). Wait for the post-reload
+    // modal shell before the delete click.
+    await expect(page.locator("#alertDeletionWrap")).toBeAttached();
     await buttons.nth(4).click();
     // F6 copy-fix-current-dom: the delete modal is style-owned
     // (data-owner="site-user-list-delete-modal", userList.tsx:1162-1176);

@@ -141,6 +141,27 @@ async function installAuthenticatedHome(page: Page) {
       supportedLanguages: ["en-US"],
     };
   }, BASE_PATH);
+  // Both session endpoints: the auth-workspace boot (/api/auth/session) and
+  // the API client query (/api/v1/session) — the sidebar availability gate
+  // reads the query data.
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        actorId: 1,
+        avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+        preferredLanguage: "en-US",
+        userLabel: "Site Admin",
+      },
+    }),
+  );
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({
       contentType: "application/json",
