@@ -2707,9 +2707,16 @@ function SidebarRecentIssueItem({
   const issueNumberLabel = issueNumber ? `${projectName} #${issueNumber}` : "";
   const title = valueString(issue.title, "");
   const issueContent = (
-    <div className={"issue-item projectName-owner flex-item"}>
-      <div className={"issue-title-start"}>-</div>
-      <div className={"issue-title flex-item"}>{title}</div>
+    <div
+      className={"issue-item projectName-owner flex-item"}
+      data-owner="sidebar-recent-issue-item"
+    >
+      <div className={"issue-title-start"} data-owner="sidebar-recent-issue-marker">
+        -
+      </div>
+      <div className={"issue-title flex-item"} data-owner="sidebar-recent-issue-title">
+        {title}
+      </div>
     </div>
   );
 

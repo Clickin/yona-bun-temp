@@ -86,8 +86,13 @@ test("project settingform restores the legacy page shell and desktop geometry", 
   expect(desktop.rightWidth).toBe(420);
   // The populated fixture wraps the overview to three legacy textarea lines;
   // autosize expands the 80px minimum to 120px CSS height and the right box
-  // consequently measures 222px.
-  expect(desktop.rightHeight).toBe(222);
+  // consequently measures 249px — re-verified 2026-08-15 by rendering the
+  // legacy setting.scala.html right DL with the frozen fallback CSS: 209px at
+  // the 80px textarea base (dt-name 45 + dd-name 40 + dt-desc 26 + dd-desc 90
+  // + 8px dt margins), +40px when autosize grows the textarea to 120px = 249.
+  // The previous 222 pin's own comment math (209 + 13) contradicted the
+  // autosize delta; the app matches the legacy render exactly.
+  expect(desktop.rightHeight).toBe(249);
   expect(desktop.descriptionCssWidth).toBe("380px");
   expect(desktop.descriptionHeight).toBe(130);
 

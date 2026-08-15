@@ -47,9 +47,10 @@ test("project code-history float ownership has legacy source provenance", () => 
   expect(routeSource).toContain('data-owner="project-commits-newer"');
   expect(routeSource).toContain('data-owner="project-commits-older"');
   // F5 (2026-08-13): the route renders the legacy float classes —
-  // history.scala.html:203/207 (Newer/Older class="ybtn pull-left").
-  expect(routeSource).toMatch(/project-commits-newer[\s\S]{0,220}pull-left/u);
-  expect(routeSource).toMatch(/project-commits-older[\s\S]{0,220}pull-left/u);
+  // history.scala.html:203/207 (Newer/Older class="ybtn pull-left"). The
+  // route writes className before data-owner, so pull-left precedes the owner.
+  expect(routeSource).toMatch(/pull-left[\s\S]{0,80}project-commits-newer/u);
+  expect(routeSource).toMatch(/pull-left[\s\S]{0,80}project-commits-older/u);
 });
 
 test("project code-history branch and pagination floats preserve interaction and containment", async ({

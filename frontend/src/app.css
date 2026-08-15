@@ -11070,20 +11070,21 @@ div[data-owner="project-transfer-modal-backdrop"] {
 }
 [data-owner="project-setting-default-branch-container"] {
   background-color: var(--color-yona-surface);
-  border-color: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
-  border-style: solid;
-  border-width: 1px;
   box-sizing: border-box;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
   display: inline-block;
-  height: 28px;
   margin: 0;
   position: relative;
   text-align: left;
   transition: all 0.3s ease;
   vertical-align: middle;
   width: 220px;
+  /* e2e closure ledger (2026-08-15): height stays auto — the frozen legacy
+    .select2-container border (1px rgba(0,0,0,0.15)) + the 28px choice make the
+    container 30px tall, so the drop's top:100% lands exactly at the choice
+    bottom (belowChoice pin). A fixed 28px border-box height squeezes the
+    content box to 26px and lifts the drop 3px. */
 }
 [data-owner="project-setting-default-branch-drop"] {
   background-color: var(--color-yona-surface);
@@ -11105,9 +11106,10 @@ div[data-owner="project-transfer-modal-backdrop"] {
   display: block;
 }
 [data-owner="project-setting-default-branch-choice"] {
+  appearance: none;
   background-color: transparent;
   background-image: none;
-  box-sizing: content-box;
+  box-sizing: border-box;
   border-radius: 3px;
   border-style: solid;
   border-width: 1px;
@@ -11117,7 +11119,7 @@ div[data-owner="project-transfer-modal-backdrop"] {
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
-  height: 26px;
+  height: 28px;
   line-height: 26px;
   overflow: hidden;
   padding: 1px 0 1px 12px;
@@ -11126,10 +11128,14 @@ div[data-owner="project-transfer-modal-backdrop"] {
   text-decoration: none;
   user-select: none;
   white-space: nowrap;
+  width: 100%;
   /* e2e closure ledger (2026-08-11): legacy select2.css .select2-choice is
-    display:block auto-width (content-box + padding + border fills the container
-    content box); a content-box `width: 100%` here adds padding+border on top and
-    overflows the 220px container by 12px (choice 232 vs container 220). */
+    display:block auto-width; select2.css forces the container to border-box
+    220px, so the choice fills the 218px content box. The route uses a <button>,
+    whose UA appearance:auto shrinks width to fit-content (126px) — appearance:
+    none + width:100% + border-box restores the fill (218px total = 220 - 2px
+    borders; the containerWidth - choiceWidth = 2 pin). A content-box width:100%
+    would add padding+border on top and overflow by 12px (232 vs 220). */
 }
 [data-owner="project-setting-default-branch-chosen"] {
   display: block;
@@ -26109,13 +26115,15 @@ label[data-owner="organization-new-label"] {
     padding-left: 0 !important;
   }
 }
-[data-owner="left-sidebar-recent-issue-rows"] .issue-title-start {
+[data-owner="left-sidebar-recent-issue-rows"] .issue-title-start,
+[data-owner="left-sidebar-recent-issue-rows"] [data-owner="sidebar-recent-issue-marker"] {
   color: darkgray;
   display: inline-block;
   vertical-align: top;
   width: 10px;
 }
-[data-owner="left-sidebar-recent-issue-rows"] .issue-title {
+[data-owner="left-sidebar-recent-issue-rows"] .issue-title,
+[data-owner="left-sidebar-recent-issue-rows"] [data-owner="sidebar-recent-issue-title"] {
   color: #ffffff;
   display: inline-block;
   font-size: 13px;
@@ -27794,13 +27802,15 @@ label[data-owner="organization-new-label"] {
 [data-owner="left-sidebar-recent-issue-rows"] .issue-item {
   padding-left: 0 !important;
 }
-[data-owner="left-sidebar-recent-issue-rows"] .issue-title-start {
+[data-owner="left-sidebar-recent-issue-rows"] .issue-title-start,
+[data-owner="left-sidebar-recent-issue-rows"] [data-owner="sidebar-recent-issue-marker"] {
   color: darkgray;
   display: inline-block;
   vertical-align: top;
   width: 10px;
 }
-[data-owner="left-sidebar-recent-issue-rows"] .issue-title {
+[data-owner="left-sidebar-recent-issue-rows"] .issue-title,
+[data-owner="left-sidebar-recent-issue-rows"] [data-owner="sidebar-recent-issue-title"] {
   color: #ffffff;
   display: inline-block;
   font-size: 13px;

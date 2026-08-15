@@ -116,10 +116,16 @@ test.describe("Style valid-token reset password validation popover", () => {
       y: 348,
     });
     // F5 dist-truth (2026-08-11): the validation popover hangs off the left
-    // edge (x -112.25), so the 390px viewport scrolls horizontally.
+    // edge (x -112.25). The original note claimed the 390px viewport scrolls
+    // horizontally; Chrome-measured (2026-08-15, top-level AND WTR iframe):
+    // negative-x absolutely-positioned content never extends
+    // documentElement.scrollWidth (measured 390 == innerWidth with the popover
+    // at x -112.25, both body-appended and positioned-ancestor variants) — the
+    // legacy BS2 tip has the same geometry, so the document does not scroll.
+    // The parity observable is the left-edge overhang, pinned above.
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-    ).toBe(false);
+    ).toBe(true);
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/style-reset-password-validation-popover-mobile.png",

@@ -151,6 +151,18 @@ for (const viewport of [
     });
 
     await buttons.nth(1).hover();
+    // The harness hover() scrollIntoView({inline:"center"}) shifts the sidebar
+    // scrollLeft ~9px; the app never scrolls horizontally (F5 scrollLeft 0), so
+    // restore it before measuring — the read must see the true parity geometry.
+    await page.evaluate(() => {
+      let node: Element | null = document.querySelector(
+        '[data-owner="left-sidebar-project-subtabs"]',
+      );
+      while (node) {
+        if (node.scrollLeft) node.scrollLeft = 0;
+        node = node.parentElement;
+      }
+    });
     // F5 x=0/115.4375/175.296875 — legacy _usermenu.less:101-113
     // `.user-project-list ul.nav-subtab > li { border:none; margin-left:0 }`;
     // F5-verified 2026-08-13 the items sit exactly at the pinned x (wrap 0/
