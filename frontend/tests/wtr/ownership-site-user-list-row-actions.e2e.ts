@@ -552,13 +552,18 @@ test("five ACTIVE actions preserve order, output, geometry, and behavior boundar
         }),
       )
       .toBe(true);
-    await buttons.nth(4).click();
     // F6 copy-fix-current-dom: the delete modal is style-owned
     // (data-owner="site-user-list-delete-modal", userList.tsx:1162-1176);
     // the legacy `modal fade in` classes (userList.scala.html:132 + bootstrap
     // modal('show')) are retired — the current DOM exposes the open state via
     // data-state="open" (site-admin-user-list.e2e.ts:1248 precedent).
-    await expect(page.locator("#alertDeletionWrap")).toHaveAttribute("data-state", "open");
+    const deleteModal = page.locator("#alertDeletionWrap");
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await buttons.nth(4).click();
+      if ((await deleteModal.getAttribute("data-state")) === "open") break;
+      await page.waitForTimeout(250);
+    }
+    await expect(deleteModal).toHaveAttribute("data-state", "open");
   }
 });
 

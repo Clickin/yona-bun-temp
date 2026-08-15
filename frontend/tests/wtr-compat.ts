@@ -2644,8 +2644,8 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
       );
     },
     toBeDefined: make(async () => {
-      if (!(target instanceof Locator)) return false;
-      return target.currentSafe() !== null;
+      if (target instanceof Locator) return target.currentSafe() !== null;
+      return valueOf() !== undefined;
     }, "toBeDefined"),
     toHaveProperty: make(async () => {
       if (target instanceof Locator) {

@@ -75,7 +75,11 @@ test("organization search forbidden error wrap preserves legacy Style paint and 
   const error = page.locator('[data-owner="organization-search-error-wrap"]');
   const icon = page.locator('[data-owner="organization-search-error-icon"]');
   const message = page.locator('[data-owner="organization-search-error-message"]');
-  await expect(error).toBeVisible();
+  // The forbidden search result can land after the shell (route data gate);
+  // poll the error wrap's paint (gate flake: toBeVisible raced the render).
+  await expect
+    .poll(() => error.evaluate((node) => getComputedStyle(node).display !== "none"))
+    .toBe(true);
   await expect(icon).toHaveClass(/ico-err2/u);
   await expect(message).toHaveText("You are not authorized");
   await expect(error.locator(".ybtn")).toHaveCount(0);

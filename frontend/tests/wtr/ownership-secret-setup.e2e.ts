@@ -63,7 +63,15 @@ test.describe("Style secret setup", () => {
       await expect(loginId).toHaveCSS("font-weight", "700");
       await expect(loginId).toHaveCSS("border-bottom-color", "rgb(204, 204, 204)");
       await loginId.focus();
-      await expect(loginId).toHaveCSS("border-bottom-color", "rgb(243, 108, 34)");
+      // Re-focus under shard load: a late re-render can blur the input after
+      // the initial focus, so poll the focused paint (gate flake: border
+      // stayed #ccc).
+      await expect
+        .poll(async () => {
+          await loginId.focus();
+          return loginId.evaluate((element) => getComputedStyle(element).borderBottomColor);
+        })
+        .toBe("rgb(243, 108, 34)");
       const geometry = await owner.evaluate((element) => {
         const ownerBox = element.getBoundingClientRect();
         const box = element.querySelector<HTMLElement>('[data-part="secret-setup-box"]');

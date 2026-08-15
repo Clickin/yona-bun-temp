@@ -30,6 +30,11 @@ test("authenticated home notification keeps the cross-shell post handoff SPA-nat
     .toBe(documentToken);
   await expect(page.locator('[data-last-outlet-transition="true"]')).toHaveCount(0);
 
+  // The hash-scroll can settle after the outlet transition under load; poll
+  // until the target is scrolled into view (gate flake: scrollY was still 0).
+  await expect
+    .poll(() => page.locator("#comment-1").evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
   const hashTarget = await page.locator("#comment-1").evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return {

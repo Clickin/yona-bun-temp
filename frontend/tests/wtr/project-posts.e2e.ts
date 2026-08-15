@@ -2246,6 +2246,30 @@ test("project board detail owns the final ml6 delete-action spacing in Style", a
     ).toBe(true);
     await expect(commentDelete).not.toHaveClass(/\bml6\b/u);
 
+    // The pane/comment regions can paint after the buttons under shard load
+    // (gate flake: the find returned undefined on both viewports); poll until
+    // every delete button — pane rows AND the #comment-21 row — sits in its
+    // region, then capture the geometry.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const buttons = Array.from(
+            document.querySelectorAll<HTMLElement>(
+              '[data-owner="post-detail-post-delete-action"], #comment-21 [data-owner="post-detail-comment-delete-action"]',
+            ),
+          );
+          return (
+            buttons.length >= 3 &&
+            buttons.every(
+              (button) =>
+                button.closest<HTMLElement>("li.comment") !== null ||
+                button.closest<HTMLElement>(".span-left-pane") !== null ||
+                button.closest<HTMLElement>(".span-right-pane") !== null,
+            )
+          );
+        }),
+      )
+      .toBe(true);
     const geometry = await page.evaluate(() => {
       const postButtons = Array.from(
         document.querySelectorAll<HTMLElement>('[data-owner="post-detail-post-delete-action"]'),

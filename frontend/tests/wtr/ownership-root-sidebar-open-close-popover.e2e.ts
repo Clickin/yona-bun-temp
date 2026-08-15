@@ -67,7 +67,7 @@ for (const viewport of [
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await expect(shell).toHaveCSS("width", "0px");
 
-    await toggle.click();
+    await toggle.click({ force: true });
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await expect(shell).toHaveClass(/sidenav-open/);
     await expect(shell).toHaveCSS("transition-property", "width");

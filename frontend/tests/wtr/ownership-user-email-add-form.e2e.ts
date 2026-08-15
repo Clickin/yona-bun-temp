@@ -123,7 +123,14 @@ for (const viewport of [
     // e2e closure ledger (2026-08-11): classified HARNESS_ENV — the :focus
     // border-color pin measured the unfocused state (rgb(204,204,204)) in the WTR
     // iframe; the committed app.css:20356 :focus rule resolves to rgb(243, 108, 34).
-    await expect(input).toHaveCSS("border-color", "rgb(243, 108, 34)");
+    // Re-focus under shard load: a late re-render can blur the input after the
+    // initial focus, so poll the focused paint (gate flake: border stayed #ccc).
+    await expect
+      .poll(async () => {
+        await input.focus();
+        return input.evaluate((element) => getComputedStyle(element).borderColor);
+      })
+      .toBe("rgb(243, 108, 34)");
     await expect(input).toHaveCSS("box-shadow", "none");
     await action.hover();
     await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");

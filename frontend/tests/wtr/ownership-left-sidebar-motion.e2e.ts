@@ -70,9 +70,11 @@ test("left framed sidebar keeps legacy geometry while opening and closing with C
     // instance; the route's motion ceiling then settles it to "open".
     const sidebar = page.locator(SIDEBAR);
     // The open handler is idempotent; under shard load the hydration window
-    // can be long, so keep clicking up to ~20s.
+    // can be long, so keep clicking up to ~20s. Use the native click (the
+    // harness synthetic pointerdown/focus/click dispatch has been observed to
+    // drop the handler under load — the shell never mounts).
     for (let attempt = 0; attempt < 80; attempt += 1) {
-      await openPin.click();
+      await openPin.evaluate((button) => (button as HTMLButtonElement).click());
       const mounted = await page.evaluate(
         () => document.querySelector('[data-owner="left-sidebar-outer-shell"]') !== null,
       );
