@@ -158,7 +158,14 @@ test(`scoped global GNB search keeps the exact legacy scope button classes (${mo
   const menu = page.locator('[data-owner="global-gnb-search-scope-menu"]');
   const items = page.locator('[data-owner="global-gnb-search-scope-item"] > button');
 
-  await expect(form).toBeVisible();
+  await expect
+    .poll(() =>
+      form.evaluate(
+        (element) =>
+          getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+      ),
+    )
+    .toBe(true);
   await expect(toggle).toHaveText("This Project");
   await expect(toggle).not.toHaveAttribute("data-toggle");
   await expect(items).toHaveText(["This Project", "All Projects"]);
@@ -239,7 +246,14 @@ test(`scoped global GNB search keeps the exact legacy scope button classes (${mo
 
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(menu).toBeVisible();
+  await expect
+    .poll(() =>
+      menu.evaluate(
+        (element) =>
+          getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+      ),
+    )
+    .toBe(true);
   await items.nth(1).click();
   await expect(toggle).toHaveText("All Projects");
   await expect(form).toHaveAttribute("action", `${basePath}/search`);

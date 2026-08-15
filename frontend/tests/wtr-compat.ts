@@ -2789,7 +2789,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         options?.timeout,
       );
     },
-    toBe: (expected, options) => {
+    toBe: async (expected, options) => {
       if (stringTarget !== null) {
         const actual = stringTarget();
         syncAssert(actual === expected, `toBe(${String(expected)}) — actual: ${String(actual)}`);
@@ -2800,7 +2800,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
           const matches = (await textOf()) === expected;
           return negate ? !matches : matches;
         },
-        `toBe(${String(expected)})`,
+        `toBe(${String(expected)}) — actual: ${await textOf()}`,
         options?.timeout,
       );
     },

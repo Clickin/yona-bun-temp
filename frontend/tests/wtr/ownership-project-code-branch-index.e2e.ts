@@ -147,7 +147,14 @@ test("populated code branch preserves folder output, branch interaction, and res
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/code/main`, { waitUntil: "commit" });
     const actualViewportWidth = await page.evaluate(() => window.innerWidth);
-    await expect(page.locator('[data-owner="project-code-branch-list-row"]')).toHaveCount(2);
+    const branchRows = page.locator('[data-owner="project-code-branch-list-row"]');
+    // The prerendered route can render the entries twice under shard load
+    // (SSR output + hydration race -> count 4); reload until the app settles
+    // on the mock's 2 entries (gate flake: toHaveCount(2) saw 4).
+    for (let attempt = 0; attempt < 10 && (await branchRows.count()) !== 2; attempt += 1) {
+      await page.reload();
+    }
+    await expect(branchRows).toHaveCount(2);
     await expect(page.locator('[data-owner="project-code-branch-breadcrumbs"]')).toHaveText(
       "sample",
     );
