@@ -65,12 +65,15 @@ test.describe("Style secret setup", () => {
       await loginId.focus();
       // Re-focus under shard load: a late re-render can blur the input after
       // the initial focus, so poll the focused paint (gate flake: border
-      // stayed #ccc).
+      // stayed #ccc). Use the native focus() (the harness focus dispatches a
+      // synthetic focusin first, which the app's re-render can clear).
       await expect
-        .poll(async () => {
-          await loginId.focus();
-          return loginId.evaluate((element) => getComputedStyle(element).borderBottomColor);
-        })
+        .poll(() =>
+          loginId.evaluate((element) => {
+            (element as HTMLInputElement).focus();
+            return getComputedStyle(element).borderBottomColor;
+          }),
+        )
         .toBe("rgb(243, 108, 34)");
       const geometry = await owner.evaluate((element) => {
         const ownerBox = element.getBoundingClientRect();

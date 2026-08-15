@@ -125,11 +125,15 @@ for (const viewport of [
     // iframe; the committed app.css:20356 :focus rule resolves to rgb(243, 108, 34).
     // Re-focus under shard load: a late re-render can blur the input after the
     // initial focus, so poll the focused paint (gate flake: border stayed #ccc).
+    // Use the native focus() (the harness focus dispatches a synthetic focusin
+    // first, which the app's re-render can clear).
     await expect
-      .poll(async () => {
-        await input.focus();
-        return input.evaluate((element) => getComputedStyle(element).borderColor);
-      })
+      .poll(() =>
+        input.evaluate((element) => {
+          (element as HTMLInputElement).focus();
+          return getComputedStyle(element).borderColor;
+        }),
+      )
       .toBe("rgb(243, 108, 34)");
     await expect(input).toHaveCSS("box-shadow", "none");
     await action.hover();

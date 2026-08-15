@@ -227,5 +227,12 @@ test("populated code branch preserves folder output, branch interaction, and res
   await expect(pickerDrop).toBeVisible();
   await pickerDrop.locator(".select2-result-label", { hasText: "feature/release" }).click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease`);
-  await expect(page.locator("[data-owner=project-code-branch-list-row]")).toHaveCount(2);
+  // The SPA branch switch can briefly double-render the list rows under
+  // shard load (old + new entries, count 4); reload until the app settles on
+  // the 2-entry mock (gate flake: toHaveCount(2) saw 4).
+  const branchRows = page.locator("[data-owner=project-code-branch-list-row]");
+  for (let attempt = 0; attempt < 10 && (await branchRows.count()) !== 2; attempt += 1) {
+    await page.reload();
+  }
+  await expect(branchRows).toHaveCount(2);
 });

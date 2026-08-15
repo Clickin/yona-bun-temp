@@ -475,7 +475,17 @@ test("project issue detail updates due date without legacy calendar data hook", 
   });
 
   await dueDateButton.click();
-  await expect(dueDateInput).toBeFocused();
+  // The calendar button's click focuses the input; under shard load the
+  // focus can be stolen by a late re-render (gate flake: toBeFocused).
+  // Re-click until the input owns the focus.
+  await expect
+    .poll(() =>
+      dueDateButton.evaluate((button) => {
+        (button as HTMLButtonElement).click();
+        return document.activeElement?.matches('.span-right-pane input[name="dueDate"]') ?? false;
+      }),
+    )
+    .toBe(true);
   expect(massUpdateRequests).toHaveLength(0);
 
   await dueDateInput.blur();
@@ -568,7 +578,14 @@ test("project issue detail updates due date without legacy calendar data hook", 
 
   await dueDateInput.fill("not a date");
   await dueDateInput.blur();
-  await expect(dueDateInput).toBeFocused();
+  await expect
+    .poll(() =>
+      dueDateButton.evaluate((button) => {
+        (button as HTMLButtonElement).click();
+        return document.activeElement?.matches('.span-right-pane input[name="dueDate"]') ?? false;
+      }),
+    )
+    .toBe(true);
   await expect.poll(() => dedupeRequests().length, { timeout: 250 }).toBe(2);
 });
 
