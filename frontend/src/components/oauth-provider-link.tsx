@@ -76,7 +76,17 @@ export function OAuthProviderLogo({
   if (normalized === "kakao") {
     return <img alt="login with Kakao" data-owner={`${owner}-image`} src={kakaoLogoUrl} />;
   }
-  return <img alt="login with Naver" data-owner={`${owner}-image`} src={naverLogoUrl} />;
+  // The supplied naver logo is a 224px square icon; render it at the same
+  // size as the other provider logos (github svg is 24px tall).
+  return (
+    <img
+      alt="login with Naver"
+      data-owner={`${owner}-image`}
+      height={24}
+      src={naverLogoUrl}
+      width={24}
+    />
+  );
 }
 
 export function OAuthProviderLink({

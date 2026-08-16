@@ -619,6 +619,10 @@ test("kakao and naver providers render oauth-login-btn links", async ({ page }) 
     "src",
     /NAVER_login_Dark_KR_green_icon_H56/,
   );
+  // The supplied 224px naver icon renders at the same 24px height as the
+  // other provider logos.
+  await expect(naver.locator("img[alt='login with Naver']")).toHaveAttribute("height", "24");
+  await expect(naver.locator("img[alt='login with Naver']")).toHaveAttribute("width", "24");
   // github/google keep their legacy logo/name layout.
   await expect(page.locator('.oauth-login-btn[href*="/authenticate/github"]')).toContainText(
     "Sign in with github",
