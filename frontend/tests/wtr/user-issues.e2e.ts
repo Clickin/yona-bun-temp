@@ -279,7 +279,9 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
       "my-files-tab";
   });
   await myFilesTab.click();
-  await expect(page).toHaveURL(`${basePath}/user/files?filter=&pageNum=1`);
+  // Empty search values are omitted from URLs (legacy URL style; the
+  // userFiles view carries no query params of its own).
+  await expect(page).toHaveURL(`${basePath}/user/files?pageNum=1`);
   await expect
     .poll(() =>
       page.evaluate(

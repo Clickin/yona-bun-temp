@@ -957,7 +957,7 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
   await gnbMyIssues.click();
   await expect(page).toHaveURL(
-    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=&state=open`,
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
   );
   await expect
     .poll(() =>
@@ -2739,7 +2739,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   });
   await myIssuesTab.click();
   await expect(page).toHaveURL(
-    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=&state=open`,
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
   );
   await expect
     .poll(() =>
@@ -2759,7 +2759,8 @@ test("direct notifications route matches legacy Application.notifications empty 
       "notifications-my-files-tab";
   });
   await myFilesTab.click();
-  await expect(page).toHaveURL(`${basePath}/user/files?filter=&pageNum=1`);
+  // Empty search values are omitted from URLs (legacy URL style).
+  await expect(page).toHaveURL(`${basePath}/user/files?pageNum=1`);
   await expect(page.locator(".attachment-files")).toBeVisible();
   await expect
     .poll(() =>

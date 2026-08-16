@@ -35,7 +35,7 @@ const EXPECTED_USER_FILES_SCREEN = `
   <div class="page-wrap">
     <ul class="nav nav-tabs">
       <li><a href="__BASE_PATH__/notifications">Notification</a></li>
-      <li><a href="__BASE_PATH__/user/issues?filter=assigned&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=1&amp;query=&amp;state=open">My Issues</a></li>
+      <li><a href="__BASE_PATH__/user/issues?filter=assigned&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=1&amp;state=open">My Issues</a></li>
       <li class="active"><a href="__BASE_PATH__/user/files">My Files</a></li>
       <li></li>
     </ul>
@@ -189,7 +189,7 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   );
   await expect(page.locator('.page-wrap > .nav-tabs a:has-text("My Issues")')).toHaveAttribute(
     "href",
-    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&query=&state=open`,
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
   );
   await expect(page.locator('.page-wrap > .nav-tabs a:has-text("My Files")')).toHaveAttribute(
     "href",
