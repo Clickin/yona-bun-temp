@@ -1062,12 +1062,12 @@ function nextPostLabelIds(
 }
 
 // Legacy `BoardApp.posts` filter links carry a plain `labelIds` value, never a JSON array.
-function postsLabelFilterRoutePath(
-  ownerName: string,
-  projectName: string,
-  labelId: string,
-): string {
-  return `/${ownerName}/${projectName}/posts?labelIds=${labelId}`;
+function postsLabelFilterRoutePath(ownerName: string, projectName: string, labelId: string) {
+  return {
+    params: { ownerName, projectName },
+    search: { labelIds: labelId },
+    to: "/$ownerName/$projectName/posts" as const,
+  };
 }
 
 function PostSelectedLabels({
@@ -1092,7 +1092,7 @@ function PostSelectedLabels({
         {labels.map((label) => {
           return (
             <Link
-              to={postsLabelFilterRoutePath(ownerName, projectName, label.id)}
+              {...postsLabelFilterRoutePath(ownerName, projectName, label.id)}
               activeProps={legacyRouteLocalActiveProps}
               style={{ "--x-backgroundColor": label.color } as CSSProperties}
               className="label issue-label active static"

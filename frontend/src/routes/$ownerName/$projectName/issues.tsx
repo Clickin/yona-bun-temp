@@ -362,13 +362,13 @@ function ProjectIssuesWireframe({
                 active={search.state === "open"}
                 count={0}
                 label="열림"
-                to={projectIssuesRoutePath(ownerName, projectName, { ...search, state: "open" })}
+                search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "open" })}
               />
               <StateTab
                 active={search.state === "closed"}
                 count={0}
                 label="닫힘"
-                to={projectIssuesRoutePath(ownerName, projectName, { ...search, state: "closed" })}
+                search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "closed" })}
               />
               <li>
                 <TwoColumnModeCheckbox checked={false} onToggle={() => undefined} />
@@ -510,39 +510,32 @@ function ProjectIssuesBody({
   const handleSortChange = (orderBy: string, orderDir: string) => {
     void runLocked(() =>
       navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
-          ...search,
-          orderBy,
-          orderDir,
-          pageNum: 1,
-        }),
+        params: { ownerName, projectName },
+        search: toIssueNavigationSearch({ ...search, orderBy, orderDir, pageNum: 1 }),
+        to: "/$ownerName/$projectName/issues",
       }),
     );
   };
   const handleTitlePrefixSearch = (filter: string) => {
     void runLocked(() =>
       navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
-          ...search,
-          filter,
-          pageNum: 1,
-        }),
+        params: { ownerName, projectName },
+        search: toIssueNavigationSearch({ ...search, filter, pageNum: 1 }),
+        to: "/$ownerName/$projectName/issues",
       }),
     );
   };
-  const titlePrefixRoute = (filter: string) =>
-    projectIssuesRoutePath(ownerName, projectName, {
-      ...search,
-      filter,
-      pageNum: 1,
-    });
+  const titlePrefixRoute = (filter: string) => ({
+    params: { ownerName, projectName },
+    search: toIssueNavigationSearch({ ...search, filter, pageNum: 1 }),
+    to: "/$ownerName/$projectName/issues" as const,
+  });
   const handlePageChange = (pageNum: number) => {
     void runLocked(() =>
       navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
-          ...search,
-          pageNum,
-        }),
+        params: { ownerName, projectName },
+        search: toIssueNavigationSearch({ ...search, pageNum }),
+        to: "/$ownerName/$projectName/issues",
       }),
     );
   };
@@ -569,11 +562,13 @@ function ProjectIssuesBody({
   const handleIssueLabelSearch = (labelId: string) => {
     void runLocked(() =>
       navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
+        params: { ownerName, projectName },
+        search: toIssueNavigationSearch({
           ...search,
           labelIds: [...search.labelIds, labelId],
           pageNum: 1,
         }),
+        to: "/$ownerName/$projectName/issues",
       }),
     );
   };
@@ -651,7 +646,9 @@ function ProjectIssuesBody({
               onQuickSearch={(nextSearch) => {
                 void runLocked(() =>
                   navigate({
-                    to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
+                    params: { ownerName, projectName },
+                    search: toIssueNavigationSearch(nextSearch),
+                    to: "/$ownerName/$projectName/issues",
                   }),
                 );
               }}
@@ -677,7 +674,9 @@ function ProjectIssuesBody({
               onSearchSubmit={(nextSearch) => {
                 void runLocked(() =>
                   navigate({
-                    to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
+                    params: { ownerName, projectName },
+                    search: toIssueNavigationSearch(nextSearch),
+                    to: "/$ownerName/$projectName/issues",
                   }),
                 );
               }}
@@ -704,21 +703,13 @@ function ProjectIssuesBody({
                 active={search.state === "open"}
                 count={countField(issues, "openIssueCount")}
                 label={t("issue.state.open")}
-                to={projectIssuesRoutePath(ownerName, projectName, {
-                  ...search,
-                  pageNum: 1,
-                  state: "open",
-                })}
+                search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "open" })}
               />
               <StateTab
                 active={search.state === "closed"}
                 count={countField(issues, "closedIssueCount")}
                 label={t("issue.state.closed")}
-                to={projectIssuesRoutePath(ownerName, projectName, {
-                  ...search,
-                  pageNum: 1,
-                  state: "closed",
-                })}
+                search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "closed" })}
               />
               <li>
                 <TwoColumnModeCheckbox
@@ -912,11 +903,11 @@ function IssuePagination({
 
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
-  const pageRoutePath = (pageNum: number) =>
-    projectIssuesRoutePath(ownerName, projectName, {
-      ...search,
-      pageNum,
-    });
+  const pageRoutePath = (pageNum: number) => ({
+    params: { ownerName, projectName },
+    search: toIssueNavigationSearch({ ...search, pageNum }),
+    to: "/$ownerName/$projectName/issues" as const,
+  });
   const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
       return;
@@ -944,7 +935,7 @@ function IssuePagination({
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
               activeProps={legacyRouteLocalActiveProps}
-              to={pageRoutePath(currentPage - 1)}
+              {...pageRoutePath(currentPage - 1)}
             >
               <i className="ico btn-pg-prev" data-owner="project-issues-pagination-prev-icon"></i>
               <span data-owner="project-issues-pagination-prev-label">{t("button.prevPage")}</span>
@@ -989,7 +980,7 @@ function IssuePagination({
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
               activeProps={legacyRouteLocalActiveProps}
-              to={pageRoutePath(currentPage + 1)}
+              {...pageRoutePath(currentPage + 1)}
             >
               <span data-owner="project-issues-pagination-next-label">{t("button.nextPage")}</span>
               <i className="ico btn-pg-next" data-owner="project-issues-pagination-next-icon"></i>
@@ -1698,7 +1689,11 @@ function ProjectIssueItem({
   showMassUpdateControls: boolean;
   showMilestone: boolean;
   showSubtasksAlways: boolean;
-  titlePrefixRoute: (filter: string) => string;
+  titlePrefixRoute: (filter: string) => {
+    params: { ownerName: string; projectName: string };
+    search: ProjectIssuesSearch;
+    to: "/$ownerName/$projectName/issues";
+  };
   useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -1878,7 +1873,7 @@ function ProjectIssueItem({
                       ? "title-prefix title-prefix-hover"
                       : "title-prefix"
                   }
-                  to={titlePrefixRoute(prefix)}
+                  {...titlePrefixRoute(prefix)}
                   onClick={(event) => {
                     event.preventDefault();
                     onTitlePrefixSearch(prefix);
@@ -2130,8 +2125,23 @@ function IssueChildRow({
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const isClosed = issue.state === "closed";
   const labels = issue.labels.slice().sort(compareIssueLabels);
-  const childLabelRoutePath = (labelId: string) =>
-    `/${ownerName}/${projectName}/issues?state=open&labelIds=${labelId}`;
+  const childLabelRoutePath = (labelId: string) => ({
+    params: { ownerName, projectName },
+    search: {
+      assigneeId: "",
+      authorId: "",
+      commenterId: "",
+      dueDate: "",
+      filter: "",
+      labelIds: [labelId],
+      milestoneId: "",
+      orderBy: "updatedDate",
+      orderDir: "desc",
+      pageNum: 1,
+      state: "open",
+    } satisfies ProjectIssuesSearch,
+    to: "/$ownerName/$projectName/issues" as const,
+  });
   const childLabelHref = (labelId: string) =>
     `${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${labelId}`;
   const handleChildTargetClick = (event: ReactMouseEvent<HTMLElement>) => {
@@ -2199,7 +2209,7 @@ function IssueChildRow({
       {labels.map((label) => (
         <Link
           activeProps={legacyRouteLocalActiveProps}
-          to={childLabelRoutePath(String(label.id))}
+          {...childLabelRoutePath(String(label.id))}
           className="label issue-label list-label active twoColumeModeTarget"
           data-label-id={String(label.id)}
           data-category-id={label.categoryId ?? ""}
@@ -2464,29 +2474,27 @@ function QuickSearch({
   );
 }
 
-function projectIssuesRoutePath(
-  ownerName: string,
-  projectName: string,
-  search: ProjectIssuesSearch,
-) {
-  const queryPairs: string[] = [];
-  pushSearchParam(queryPairs, "assigneeId", search.assigneeId);
-  pushSearchParam(queryPairs, "authorId", search.authorId);
-  pushSearchParam(queryPairs, "commenterId", search.commenterId);
-  pushSearchParam(queryPairs, "dueDate", search.dueDate);
-  pushSearchParam(queryPairs, "filter", search.filter);
-  for (const labelId of search.labelIds) {
-    pushSearchParam(queryPairs, "labelIds", labelId);
-  }
-  pushSearchParam(queryPairs, "milestoneId", search.milestoneId);
-  pushSearchParam(queryPairs, "orderBy", search.orderBy);
-  pushSearchParam(queryPairs, "orderDir", search.orderDir);
-  pushSearchParam(queryPairs, "pageNum", String(search.pageNum));
-  pushSearchParam(queryPairs, "state", search.state);
-
-  const queryString = queryPairs.join("&");
-  const path = `/${ownerName}/${projectName}/issues`;
-  return queryString ? `${path}?${queryString}` : path;
+/**
+ * Router-standard navigation search for this screen. Undefined values are
+ * omitted by the router's search serializer, matching the legacy
+ * `projectIssuesRoutePath` URL shape (no empty params, no `labelIds=[]`).
+ * Plain strings serialize raw via the app's custom stringifySearch, so
+ * numeric ids (`assigneeId=1`) round-trip without JSON wrapping.
+ */
+function toIssueNavigationSearch(search: ProjectIssuesSearch) {
+  return {
+    assigneeId: search.assigneeId || undefined,
+    authorId: search.authorId || undefined,
+    commenterId: search.commenterId || undefined,
+    dueDate: search.dueDate || undefined,
+    filter: search.filter || undefined,
+    labelIds: search.labelIds.length > 0 ? search.labelIds : undefined,
+    milestoneId: search.milestoneId || undefined,
+    orderBy: search.orderBy,
+    orderDir: search.orderDir,
+    pageNum: search.pageNum,
+    state: search.state,
+  } as ProjectIssuesSearch;
 }
 
 function projectIssuesSearchFromForm(
@@ -3045,11 +3053,9 @@ function IssueSearchLabelSelect({
     setOpen(false);
     void runLocked(() =>
       navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
-          ...search,
-          labelIds,
-          pageNum: 1,
-        }),
+        params: { ownerName, projectName },
+        search: toIssueNavigationSearch({ ...search, labelIds, pageNum: 1 }),
+        to: "/$ownerName/$projectName/issues",
       }),
     );
   };
@@ -3260,15 +3266,16 @@ function StateTab({
   active,
   count,
   label,
-  to,
+  search: tabSearch,
 }: {
   active: boolean;
   count: number;
   label: string;
-  to: string;
+  search: ProjectIssuesSearch;
 }) {
   const lockedLinkClick = useLockedLinkClick();
   const { armTransitionLock } = useRootProgressStatusBar();
+  const { ownerName, projectName } = Route.useParams();
   return (
     <TabButton
       as={Link}
@@ -3284,7 +3291,9 @@ function StateTab({
           armTransitionLock();
         }
       }}
-      to={to}
+      to="/$ownerName/$projectName/issues"
+      params={{ ownerName, projectName }}
+      search={tabSearch}
     >
       {label}
       <span className="num-badge">{count}</span>

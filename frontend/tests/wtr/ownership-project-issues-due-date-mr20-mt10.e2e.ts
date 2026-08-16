@@ -409,6 +409,34 @@ function dueDateIssueResponse(state: DueDateCase["state"]) {
   return response;
 }
 
+test("project issue state tabs keep navigating across repeated switches", async ({ page }) => {
+  await mockProjectIssues(page, "populated");
+  await page.goto(`${basePath}/admin/sample/issues?state=open`);
+
+  const openTab = page.locator('a[href*="state=open"]').first();
+  const closedTab = page.locator('a[href*="state=closed"]').first();
+  await expect(openTab).toBeVisible();
+  await expect(closedTab).toBeVisible();
+
+  // Repeated open/closed switches must not deadlock the router: the first
+  // switch starts a real fetch, later ones hit the query cache. A stale
+  // transition lock used to preventDefault the third click onward (see
+  // route-fetch-lock.tsx fallback release counting disabled queries as
+  // pending), freezing every later navigation.
+  for (let i = 0; i < 3; i += 1) {
+    await closedTab.click();
+    await expect(page).toHaveURL(new RegExp(`state=closed(?:&|$)`));
+    await openTab.click();
+    await expect(page).toHaveURL(new RegExp(`state=open(?:&|$)`));
+  }
+
+  // Navigation must still work after the switches: open an issue detail page.
+  const issueLink = page.locator('[data-owner="project-issues-title"]').first();
+  await expect(issueLink).toBeVisible();
+  await issueLink.click();
+  await expect(page).toHaveURL(/\/issue\/\d+(?:[?#]|$)/u);
+});
+
 function populatedIssueResponse() {
   return {
     closedIssueCount: 2,

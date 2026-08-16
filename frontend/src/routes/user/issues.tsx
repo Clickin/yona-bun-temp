@@ -424,7 +424,10 @@ function IssuePagination({
     display: "inline-block",
     verticalAlign: "middle",
   } as CSSProperties;
-  const pageRoutePath = (pageNum: number) => userIssuesRoutePath({ ...search, pageNum });
+  const pageRoutePath = (pageNum: number) => ({
+    search: { ...search, pageNum },
+    to: "/user/issues" as const,
+  });
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
       return;
@@ -455,7 +458,7 @@ function IssuePagination({
                 className: undefined,
                 "data-status": undefined,
               }}
-              to={pageRoutePath(currentPage - 1)}
+              {...pageRoutePath(currentPage - 1)}
             >
               <i
                 style={paginationIconStyle}
@@ -508,7 +511,7 @@ function IssuePagination({
                 className: undefined,
                 "data-status": undefined,
               }}
-              to={pageRoutePath(currentPage + 1)}
+              {...pageRoutePath(currentPage + 1)}
             >
               <span data-owner="user-issues-pagination-next-label">{t("button.nextPage")}</span>
               <i
@@ -533,19 +536,6 @@ function IssuePagination({
       </ul>
     </div>
   );
-}
-
-function userIssuesRoutePath(search: UserIssuesSearch) {
-  const params = new URLSearchParams();
-  params.set("filter", search.filter);
-  params.set("orderBy", search.orderBy);
-  params.set("orderDir", search.orderDir);
-  params.set("pageNum", String(search.pageNum));
-  if (search.query) {
-    params.set("query", search.query);
-  }
-  params.set("state", search.state);
-  return `/user/issues?${params.toString()}`;
 }
 
 function clampPageNum(pageNum: number, totalPages: number) {

@@ -159,7 +159,10 @@ export function RootProgressStatusBarProvider({ children }: { children: React.Re
           registeredPrefixesRef.current.some((prefix) =>
             keyStartsWithPrefix(query.queryKey, prefix),
           ) &&
-          (query.state.fetchStatus === "fetching" || query.state.status === "pending"),
+          // Only in-flight fetches hold the transition lock. Disabled queries
+          // stay `status: "pending"` forever (fetchStatus "idle") and would
+          // otherwise wedge the lock shut.
+          query.state.fetchStatus === "fetching",
       });
       if (pending.length === 0) {
         setTransitionLock(false);
