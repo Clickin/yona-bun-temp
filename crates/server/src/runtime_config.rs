@@ -723,7 +723,7 @@ fn oauth_providers_from_env_and_file(
     file_providers: Option<BTreeMap<String, OAuthProviderConfigFile>>,
 ) -> Option<BTreeMap<String, OAuthProviderConfigFile>> {
     let mut providers = file_providers.unwrap_or_default();
-    for provider in ["github", "google"] {
+    for provider in ["github", "google", "kakao", "naver"] {
         let prefix = format!("YONA_OAUTH_{}", provider.to_ascii_uppercase());
         let mut config = providers
             .remove(provider)

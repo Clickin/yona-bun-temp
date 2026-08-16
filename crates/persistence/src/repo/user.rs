@@ -369,9 +369,11 @@ impl AppRepositoryImpl<'_> {
         if !self.user_login_id_exists(&candidate).await? {
             return Ok(candidate);
         }
-        let yona_candidate = format!("{candidate}-yona");
-        if !self.user_login_id_exists(&yona_candidate).await? {
-            return Ok(yona_candidate);
+        // Branding: legacy Yona used a "-yona" suffix (UserApp.java:572);
+        // Yoram uses "-yoram".
+        let yoram_candidate = format!("{candidate}-yoram");
+        if !self.user_login_id_exists(&yoram_candidate).await? {
+            return Ok(yoram_candidate);
         }
         let mut index = 2;
         loop {

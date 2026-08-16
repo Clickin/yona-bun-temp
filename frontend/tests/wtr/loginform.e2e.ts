@@ -595,6 +595,33 @@ test("social-login-only form matches legacy user/login.scala.html screen DOM", a
   expect(actual).toEqual(expected);
 });
 
+test("kakao and naver providers render oauth-login-btn links", async ({ page }) => {
+  // Yoram adds kakao/naver (Korean apps standard today; not in legacy Yona).
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    enabledSocialProviders: ["github", "google", "kakao", "naver"],
+    socialLoginOnly: false,
+  });
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await expect(page.locator(".oauth-login-btn")).toHaveCount(4);
+  const kakao = page.locator('.oauth-login-btn[href*="/authenticate/kakao"]');
+  await expect(kakao).toHaveClass(/(?:^|\s)ybtn oauth-login-btn(?:\s|$)/u);
+  await expect(kakao).toContainText("Sign in with Kakao");
+  await expect(kakao.locator(".provider-text-logo")).toHaveText("Kakao");
+  const naver = page.locator('.oauth-login-btn[href*="/authenticate/naver"]');
+  await expect(naver).toHaveClass(/(?:^|\s)ybtn oauth-login-btn(?:\s|$)/u);
+  await expect(naver).toContainText("Sign in with Naver");
+  await expect(naver.locator(".provider-text-logo")).toHaveText("NAVER");
+  // github/google keep their legacy logo/name layout.
+  await expect(page.locator('.oauth-login-btn[href*="/authenticate/github"]')).toContainText(
+    "Sign in with github",
+  );
+  await expect(page.locator('.oauth-login-btn[href*="/authenticate/google"]')).toContainText(
+    "Sign in with Google",
+  );
+});
+
 test("configured social provider login form matches legacy user/login.scala.html screen DOM", async ({
   page,
 }) => {
@@ -629,10 +656,15 @@ test("configured social provider login form matches legacy user/login.scala.html
     svgVerticalAlign: "middle",
   });
   const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  expect(source).toContain("const providerLoginPath: string = `/authenticate/${normalized}`;");
-  expect(source).toContain("to={providerLoginPath}");
-  expect(source).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
-  expect(source).toContain("reloadDocument");
+  // The provider button shell lives in the shared oauth-provider-link.
+  const sharedProviderSource = readFileSync("src/components/oauth-provider-link.tsx", "utf8");
+  expect(sharedProviderSource).toContain(
+    "const providerLoginPath: string = `/authenticate/${normalized}`;",
+  );
+  expect(sharedProviderSource).toContain("to={providerLoginPath}");
+  expect(sharedProviderSource).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
+  expect(sharedProviderSource).toContain("reloadDocument");
+  expect(source).toContain("OAuthProviderLink");
   expect(source).not.toContain("as never");
   expect(source).not.toMatch(/<a\s+href=\{[^}]*\/authenticate\/\$\{normalized\}[^}]*\}/);
 });
@@ -691,11 +723,16 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   expect(source).toMatch(
     /<Link\s+to="\/users\/signupform">\s*\{t\("title\.signup"\)\}\s*<\/Link>/u,
   );
-  expect(source).toContain("const providerLoginPath: string = `/authenticate/${normalized}`;");
-  expect(source).toContain("to={providerLoginPath}");
-  expect(source).not.toContain("href={prefixBasePath(basePath, providerLoginPath)}");
-  expect(source).toContain("reloadDocument");
-  expect(source).toContain("GITHUB_OAUTH_LOGO_PATH");
+  // The OAuth provider link moved to the shared oauth-provider-link
+  // component (used by root dialog, standalone login, user profile).
+  const sharedProviderSource = readFileSync("src/components/oauth-provider-link.tsx", "utf8");
+  expect(sharedProviderSource).toContain(
+    "const providerLoginPath: string = `/authenticate/${normalized}`;",
+  );
+  expect(sharedProviderSource).toContain("to={providerLoginPath}");
+  expect(sharedProviderSource).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
+  expect(sharedProviderSource).toContain("reloadDocument");
+  expect(sharedProviderSource).toContain("GITHUB_OAUTH_LOGO_PATH");
   expect(source).not.toContain("as never");
   expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/lostPassword"\)\}/u);
   expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/users\/signupform"\)\}/u);

@@ -23,14 +23,13 @@ use crate::persistence::{AppUserRecord, CreateUserInput, OAuthUserInput};
 use crate::resolve_current_session_response;
 use crate::{
     anonymous_current_session_response, append_response_headers, attach_session_headers,
-    auth_ui_capabilities_from_config, base_path_href, headers_with_form_csrf, normalize_identifier,
-    percent_encode_uri_component, random_storage_token, require_session, require_valid_csrf,
-    rest_json_response, rest_owned_view, rest_read_current_session, send_password_reset_mail,
-    AssetMode, AuthUiConfig,
+    auth_ui_capabilities_from_config, base_path_href, hash_password_with_argon2id,
+    headers_with_form_csrf, normalize_identifier, percent_encode_uri_component,
+    random_storage_token, require_session, require_valid_csrf, rest_json_response, rest_owned_view,
+    rest_read_current_session, send_password_reset_mail, verify_password, AssetMode, AuthUiConfig,
     BrowserRuntimeConfig, ConnectError, Context, ErrorCode, LdapFixtureUser, LdapRuntimeConfig,
     PasswordVerification, PilotBackend, PilotRepository, PilotServiceImpl, RestRouteError,
-    hash_password_with_argon2id, verify_password, LEGACY_LOGIN_INVALID_MESSAGE,
-    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
+    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
 };
 
 use super::send_signup_verification_mail;
@@ -1123,15 +1122,6 @@ pub(crate) async fn direct_unsupported_authenticate_provider(
     Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response()
 }
 
-fn legacy_oauth_provider_display_name(provider: &str) -> String {
-    match provider {
-        "github" => "GitHub",
-        "google" => "Google",
-        _ => provider,
-    }
-    .to_string()
-}
-
 fn oauth_provider_configured<'a>(
     service: &'a PilotServiceImpl,
     provider: &str,
@@ -1152,6 +1142,8 @@ fn oauth_provider_configured<'a>(
     Some(config)
 }
 
+/// Test/dev callback shortcut: a callback carrying explicit identity query
+/// params skips the token exchange (used by contract tests).
 fn oauth_callback_identity(query: &HashMap<String, String>) -> Option<(String, String, String)> {
     let provider_user_id = query
         .get("providerUserId")
@@ -1161,7 +1153,7 @@ fn oauth_callback_identity(query: &HashMap<String, String>) -> Option<(String, S
         .filter(|value| !value.is_empty())?;
     let email = query
         .get("email")
-        .map(|value| normalize_identifier(value))
+        .map(|value| value.trim().to_ascii_lowercase())
         .filter(|value| !value.is_empty())?;
     let name = query
         .get("name")
@@ -1172,99 +1164,14 @@ fn oauth_callback_identity(query: &HashMap<String, String>) -> Option<(String, S
     Some((provider_user_id, email, name))
 }
 
-#[derive(Debug)]
-struct OAuthProviderIdentity {
-    provider_user_id: String,
-    email: String,
-    name: String,
-}
-
-fn json_string_field(value: &Value, key: &str) -> Option<String> {
-    value
-        .get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-}
-
-fn json_id_field(value: &Value, key: &str) -> Option<String> {
-    value.get(key).and_then(|field| match field {
-        Value::String(value) => {
-            let value = value.trim();
-            (!value.is_empty()).then(|| value.to_string())
-        }
-        Value::Number(value) => Some(value.to_string()),
-        _ => None,
-    })
-}
-
-fn github_primary_email(value: &Value) -> Option<String> {
-    let emails = value.as_array()?;
-    emails
-        .iter()
-        .find(|entry| {
-            entry
-                .get("primary")
-                .and_then(Value::as_bool)
-                .unwrap_or(false)
-                && entry
-                    .get("verified")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(true)
-        })
-        .or_else(|| emails.first())
-        .and_then(|entry| json_string_field(entry, "email"))
-        .map(|email| normalize_identifier(&email))
-        .filter(|email| !email.is_empty())
-}
-
-fn oauth_provider_identity_from_userinfo(
-    provider: &str,
-    userinfo: &Value,
-    email_response: Option<&Value>,
-) -> Option<OAuthProviderIdentity> {
-    match provider {
-        "github" => {
-            let provider_user_id = json_id_field(userinfo, "id")?;
-            let email = json_string_field(userinfo, "email")
-                .map(|email| normalize_identifier(&email))
-                .filter(|email| !email.is_empty())
-                .or_else(|| github_primary_email(email_response?))?;
-            let name = json_string_field(userinfo, "name")
-                .or_else(|| json_string_field(userinfo, "login"))
-                .unwrap_or_else(|| email.clone());
-            Some(OAuthProviderIdentity {
-                provider_user_id,
-                email,
-                name,
-            })
-        }
-        "google" => {
-            let provider_user_id =
-                json_id_field(userinfo, "sub").or_else(|| json_id_field(userinfo, "id"))?;
-            let email = json_string_field(userinfo, "email")
-                .map(|email| normalize_identifier(&email))
-                .filter(|email| !email.is_empty())?;
-            let name = json_string_field(userinfo, "name")
-                .or_else(|| json_string_field(userinfo, "displayName"))
-                .unwrap_or_else(|| email.clone());
-            Some(OAuthProviderIdentity {
-                provider_user_id,
-                email,
-                name,
-            })
-        }
-        _ => None,
-    }
-}
-
 async fn fetch_oauth_provider_identity(
-    provider: &str,
+    kind: crate::oauth::OAuthProviderKind,
     config: &crate::OAuthProviderRuntimeConfig,
     code: &str,
     redirect_uri: &str,
-) -> Result<OAuthProviderIdentity, String> {
+    state: Option<&str>,
+) -> Result<crate::oauth::OAuthProviderIdentity, String> {
+    let provider = kind.provider();
     if config.client_secret.trim().is_empty()
         || config.access_token_url.trim().is_empty()
         || config.user_info_url.trim().is_empty()
@@ -1276,26 +1183,50 @@ async fn fetch_oauth_provider_identity(
         .user_agent("Yoram OAuth")
         .build()
         .map_err(|error| error.to_string())?;
-    let token_response: Value = client
-        .post(config.access_token_url.trim())
-        .header(reqwest::header::ACCEPT, "application/json")
-        .form(&[
-            ("client_id", config.client_id.trim()),
-            ("client_secret", config.client_secret.trim()),
-            ("code", code.trim()),
-            ("grant_type", "authorization_code"),
-            ("redirect_uri", redirect_uri),
-        ])
-        .send()
-        .await
-        .map_err(|error| error.to_string())?
-        .error_for_status()
-        .map_err(|error| error.to_string())?
-        .json()
-        .await
-        .map_err(|error| error.to_string())?;
-    let access_token = json_string_field(&token_response, "access_token")
-        .ok_or_else(|| "oauth token response did not include access_token".to_string())?;
+    let mut token_form = vec![
+        ("client_id", config.client_id.trim().to_string()),
+        ("client_secret", config.client_secret.trim().to_string()),
+        ("code", code.trim().to_string()),
+        ("grant_type", "authorization_code".to_string()),
+        ("redirect_uri", redirect_uri.to_string()),
+    ];
+    if provider.token_request_requires_state() {
+        token_form.push(("state", state.unwrap_or_default().to_string()));
+    }
+    let token_response: Value = if provider.token_request_is_get() {
+        // Naver's token endpoint is a GET with query params.
+        let mut url = reqwest::Url::parse(config.access_token_url.trim())
+            .map_err(|error| error.to_string())?;
+        for (key, value) in &token_form {
+            url.query_pairs_mut().append_pair(key, value);
+        }
+        client
+            .get(url)
+            .header(reqwest::header::ACCEPT, "application/json")
+            .send()
+            .await
+            .map_err(|error| error.to_string())?
+    } else {
+        client
+            .post(config.access_token_url.trim())
+            .header(reqwest::header::ACCEPT, "application/json")
+            .form(&token_form)
+            .send()
+            .await
+            .map_err(|error| error.to_string())?
+    }
+    .error_for_status()
+    .map_err(|error| error.to_string())?
+    .json()
+    .await
+    .map_err(|error| error.to_string())?;
+    let access_token = token_response
+        .get("access_token")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "oauth token response did not include access_token".to_string())?
+        .to_string();
     let userinfo: Value = client
         .get(config.user_info_url.trim())
         .bearer_auth(&access_token)
@@ -1308,7 +1239,7 @@ async fn fetch_oauth_provider_identity(
         .json()
         .await
         .map_err(|error| error.to_string())?;
-    let email_response = if provider == "github" && !config.email_url.trim().is_empty() {
+    let email_response = if provider.fetch_email() && !config.email_url.trim().is_empty() {
         Some(
             client
                 .get(config.email_url.trim())
@@ -1326,7 +1257,8 @@ async fn fetch_oauth_provider_identity(
     } else {
         None
     };
-    oauth_provider_identity_from_userinfo(provider, &userinfo, email_response.as_ref())
+    provider
+        .parse_identity(&userinfo, email_response.as_ref())
         .ok_or_else(|| "oauth provider identity response was incomplete".to_string())
 }
 
@@ -1356,7 +1288,10 @@ fn oauth_state_cookie_value(
     public_origin: &str,
     max_age: Option<i64>,
 ) -> String {
-    let secure = public_origin.trim().to_ascii_lowercase().starts_with("https://");
+    let secure = public_origin
+        .trim()
+        .to_ascii_lowercase()
+        .starts_with("https://");
     let secure_suffix = if secure { "; Secure" } else { "" };
     let max_age_suffix = max_age
         .map(|seconds| format!("; Max-Age={seconds}"))
@@ -1477,7 +1412,16 @@ pub(crate) async fn direct_authenticate_provider(
             service.public_origin,
             base_path_href(&service.base_path, &format!("/authenticate/{provider}"))
         );
-        match fetch_oauth_provider_identity(&provider, &config, code, &redirect_uri).await {
+        let Some(kind) = crate::oauth::OAuthProviderKind::from_str(&provider) else {
+            return direct_unsupported_authenticate_provider(provider, service).await;
+        };
+        let state = query
+            .get("state")
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        match fetch_oauth_provider_identity(kind, &config, code, &redirect_uri, state.as_deref())
+            .await
+        {
             Ok(identity) => (identity.provider_user_id, identity.email, identity.name),
             Err(error) => {
                 tracing::warn!(provider = %provider, error = %error, "OAuth provider callback exchange failed");
@@ -1502,7 +1446,9 @@ pub(crate) async fn direct_authenticate_provider(
             login_id_hint,
             password_hash,
             provider: provider.clone(),
-            provider_display_name: legacy_oauth_provider_display_name(&provider),
+            provider_display_name: crate::oauth::OAuthProviderKind::from_str(&provider)
+                .map(|kind| kind.display_name().to_string())
+                .unwrap_or_else(|| provider.clone()),
             provider_user_id,
         })
         .await
@@ -1536,9 +1482,15 @@ pub(crate) async fn direct_authenticate_provider(
         Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response();
     response.headers_mut().append(
         axum::http::header::SET_COOKIE,
-        oauth_state_cookie_value(&provider, "", &service.base_path, &service.public_origin, Some(0))
-            .parse()
-            .expect("set-cookie header"),
+        oauth_state_cookie_value(
+            &provider,
+            "",
+            &service.base_path,
+            &service.public_origin,
+            Some(0),
+        )
+        .parse()
+        .expect("set-cookie header"),
     );
     for cookie in service
         .session_manager

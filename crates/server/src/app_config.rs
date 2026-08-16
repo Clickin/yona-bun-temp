@@ -111,72 +111,51 @@ impl OAuthRuntimeConfig {
                 if provider.is_empty() {
                     return None;
                 }
+                let kind = crate::oauth::OAuthProviderKind::from_str(&provider);
+                let defaults = kind.map(|kind| kind.provider());
                 Some((
                     provider.clone(),
                     OAuthProviderRuntimeConfig {
                         access_token_url: trimmed_option(config.access_token_url.as_deref())
-                            .unwrap_or_else(|| default_oauth_access_token_url(&provider)),
+                            .or_else(|| {
+                                defaults
+                                    .map(|provider| provider.default_access_token_url().to_string())
+                            })
+                            .unwrap_or_default(),
                         authorization_url: trimmed_option(config.authorization_url.as_deref())
-                            .unwrap_or_else(|| default_oauth_authorization_url(&provider)),
+                            .or_else(|| {
+                                defaults.map(|provider| {
+                                    provider.default_authorization_url().to_string()
+                                })
+                            })
+                            .unwrap_or_default(),
                         client_id: trimmed_option(config.client_id.as_deref()).unwrap_or_default(),
                         client_secret: trimmed_option(config.client_secret.as_deref())
                             .unwrap_or_default(),
                         email_url: trimmed_option(config.email_url.as_deref())
-                            .unwrap_or_else(|| default_oauth_email_url(&provider)),
+                            .or_else(|| {
+                                defaults
+                                    .and_then(|provider| provider.default_email_url())
+                                    .map(ToString::to_string)
+                            })
+                            .unwrap_or_default(),
                         scope: trimmed_option(config.scope.as_deref())
-                            .unwrap_or_else(|| default_oauth_scope(&provider)),
+                            .or_else(|| {
+                                defaults.map(|provider| provider.default_scope().to_string())
+                            })
+                            .unwrap_or_default(),
                         user_info_url: trimmed_option(config.user_info_url.as_deref())
-                            .unwrap_or_else(|| default_oauth_user_info_url(&provider)),
+                            .or_else(|| {
+                                defaults
+                                    .map(|provider| provider.default_user_info_url().to_string())
+                            })
+                            .unwrap_or_default(),
                     },
                 ))
             })
             .collect();
         Self { providers }
     }
-}
-
-fn default_oauth_access_token_url(provider: &str) -> String {
-    match provider {
-        "google" => "https://oauth2.googleapis.com/token",
-        "github" => "https://github.com/login/oauth/access_token",
-        _ => "",
-    }
-    .to_string()
-}
-
-fn default_oauth_authorization_url(provider: &str) -> String {
-    match provider {
-        "google" => "https://accounts.google.com/o/oauth2/auth",
-        "github" => "https://github.com/login/oauth/authorize",
-        _ => "",
-    }
-    .to_string()
-}
-
-fn default_oauth_email_url(provider: &str) -> String {
-    match provider {
-        "github" => "https://api.github.com/user/emails",
-        _ => "",
-    }
-    .to_string()
-}
-
-fn default_oauth_scope(provider: &str) -> String {
-    match provider {
-        "google" => "profile email",
-        "github" => "user:email",
-        _ => "",
-    }
-    .to_string()
-}
-
-fn default_oauth_user_info_url(provider: &str) -> String {
-    match provider {
-        "google" => "https://www.googleapis.com/oauth2/v3/userinfo",
-        "github" => "https://api.github.com/user",
-        _ => "",
-    }
-    .to_string()
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -241,6 +241,55 @@ async fn spawn_oauth_provider_stub(provider: &str) -> String {
                     }))
                 }),
             ),
+        "kakao" => axum::Router::new()
+            .route(
+                "/token",
+                axum::routing::post(|| async {
+                    axum::Json(serde_json::json!({
+                        "access_token": "kakao-access-token",
+                        "token_type": "bearer"
+                    }))
+                }),
+            )
+            .route(
+                "/userinfo",
+                axum::routing::get(|| async {
+                    axum::Json(serde_json::json!({
+                        "id": 777,
+                        "kakao_account": {
+                            "email": "kakao-user@example.com",
+                            "profile": {
+                                "nickname": "카카오 사용자"
+                            }
+                        }
+                    }))
+                }),
+            ),
+        "naver" => axum::Router::new()
+            .route(
+                // Naver's token endpoint is a GET with query params.
+                "/token",
+                axum::routing::get(|| async {
+                    axum::Json(serde_json::json!({
+                        "access_token": "naver-access-token",
+                        "token_type": "bearer"
+                    }))
+                }),
+            )
+            .route(
+                "/me",
+                axum::routing::get(|| async {
+                    axum::Json(serde_json::json!({
+                        "resultcode": "00",
+                        "message": "success",
+                        "response": {
+                            "id": "naver-provider-3",
+                            "email": "naver-user@example.com",
+                            "nickname": "네이버 사용자"
+                        }
+                    }))
+                }),
+            ),
         _ => panic!("unsupported oauth stub provider: {provider}"),
     };
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -626,9 +675,18 @@ async fn legacy_oauth_start_redirects_to_configured_github_authorization_endpoin
     );
     let set_cookies = set_cookie_headers(&response);
     let state_cookie = named_cookie(&set_cookies, "oauth_state_github=");
-    assert!(state_cookie.contains("HttpOnly"), "state cookie: {state_cookie}");
-    assert!(state_cookie.contains("SameSite=Lax"), "state cookie: {state_cookie}");
-    assert!(state_cookie.contains("Max-Age=600"), "state cookie: {state_cookie}");
+    assert!(
+        state_cookie.contains("HttpOnly"),
+        "state cookie: {state_cookie}"
+    );
+    assert!(
+        state_cookie.contains("SameSite=Lax"),
+        "state cookie: {state_cookie}"
+    );
+    assert!(
+        state_cookie.contains("Max-Age=600"),
+        "state cookie: {state_cookie}"
+    );
     let state = state_cookie
         .split(';')
         .next()
@@ -841,7 +899,9 @@ async fn legacy_oauth_callback_exchanges_github_code_for_provider_identity() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri(format!("/yona/authenticate/github?code=real-provider-code&state={state}"))
+                .uri(format!(
+                    "/yona/authenticate/github?code=real-provider-code&state={state}"
+                ))
                 .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
@@ -907,7 +967,9 @@ async fn legacy_oauth_callback_exchanges_google_code_for_provider_identity() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri(format!("/yona/authenticate/google?code=real-provider-code&state={state}"))
+                .uri(format!(
+                    "/yona/authenticate/google?code=real-provider-code&state={state}"
+                ))
                 .header(http::header::COOKIE, state_cookie_header)
                 .body(Body::empty())
                 .unwrap(),
@@ -932,6 +994,136 @@ async fn legacy_oauth_callback_exchanges_google_code_for_provider_identity() {
     assert_eq!(
         provider_rows[0].provider_user_id.as_deref(),
         Some("google-provider-7")
+    );
+}
+
+#[tokio::test]
+// Guards the Kakao OAuth callback: token exchange + userinfo mapping
+// ({ id, kakao_account: { email, profile: { nickname } } }) without external
+// network. Kakao is not in legacy Yona (2010s-era provider list) but is
+// standard for Korean apps today.
+async fn legacy_oauth_callback_exchanges_kakao_code_for_provider_identity() {
+    let provider_base = spawn_oauth_provider_stub("kakao").await;
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["kakao".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+                "kakao",
+                yoram_server::OAuthProviderRuntimeConfig {
+                    access_token_url: format!("{provider_base}/token"),
+                    authorization_url: "https://kauth.example/oauth/authorize".to_string(),
+                    client_id: "kakao-client".to_string(),
+                    client_secret: "kakao-secret".to_string(),
+                    scope: "account_email profile_nickname".to_string(),
+                    user_info_url: format!("{provider_base}/userinfo"),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "kakao").await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/authenticate/kakao?code=real-provider-code&state={state}"
+                ))
+                .header(http::header::COOKIE, state_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    let user = repository
+        .find_user_by_identifier("kakao-user@example.com")
+        .await
+        .unwrap()
+        .expect("oauth-created Kakao user");
+    assert_eq!(user.login_id, "kakao-user");
+    assert_eq!(user.display_name, "카카오 사용자");
+    let provider_rows = linked_account::Entity::find()
+        .filter(linked_account::Column::ProviderKey.eq("kakao"))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(provider_rows.len(), 1);
+    assert_eq!(provider_rows[0].provider_user_id.as_deref(), Some("777"));
+}
+
+#[tokio::test]
+// Guards the Naver OAuth callback: token exchange is a GET with the state
+// echoed back, and userinfo maps { resultcode: "00", response: { id, email,
+// nickname } }. Naver is not in legacy Yona but is standard for Korean apps.
+async fn legacy_oauth_callback_exchanges_naver_code_for_provider_identity() {
+    let provider_base = spawn_oauth_provider_stub("naver").await;
+    let (app, repository, db) = build_auth_router_with_anonymous_access_and_app_config(
+        true,
+        AppRuntimeConfig {
+            auth_ui: AuthUiConfig {
+                enabled_social_providers: vec!["naver".to_string()],
+                ..AuthUiConfig::default()
+            },
+            oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+                "naver",
+                yoram_server::OAuthProviderRuntimeConfig {
+                    access_token_url: format!("{provider_base}/token"),
+                    authorization_url: "https://nid.example/oauth2.0/authorize".to_string(),
+                    client_id: "naver-client".to_string(),
+                    client_secret: "naver-secret".to_string(),
+                    scope: String::new(),
+                    user_info_url: format!("{provider_base}/me"),
+                    ..Default::default()
+                },
+            )]),
+            ..AppRuntimeConfig::default()
+        },
+    )
+    .await;
+    let (state, state_cookie_header) = oauth_start_state(&app, "naver").await;
+
+    let callback = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/authenticate/naver?code=real-provider-code&state={state}"
+                ))
+                .header(http::header::COOKIE, state_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    let user = repository
+        .find_user_by_identifier("naver-user@example.com")
+        .await
+        .unwrap()
+        .expect("oauth-created Naver user");
+    assert_eq!(user.login_id, "naver-user");
+    assert_eq!(user.display_name, "네이버 사용자");
+    let provider_rows = linked_account::Entity::find()
+        .filter(linked_account::Column::ProviderKey.eq("naver"))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(provider_rows.len(), 1);
+    assert_eq!(
+        provider_rows[0].provider_user_id.as_deref(),
+        Some("naver-provider-3")
     );
 }
 

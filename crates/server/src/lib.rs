@@ -6,8 +6,9 @@ mod ldap;
 mod mailbox;
 mod markdown;
 mod notification_mail;
-pub mod persistence;
+mod oauth;
 mod password;
+pub mod persistence;
 mod router;
 mod routes;
 mod service;
@@ -20,14 +21,12 @@ pub use app_config::{
     SiteUpdateConfig, SmtpRuntimeConfig, TranslationProxyConfig,
 };
 pub(crate) use markdown::{
-    issue_reference_metadata_from_resolved, markdown_issue_references_for_project,
-    markdown_commit_references_for_project, markdown_mention_references,
-    mention_reference_metadata_from_resolved,
-    rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    rewrite_code_browser_markdown_image_links, rewrite_project_readme_markdown_links,
-    MarkdownCommitReference, MarkdownIssueReference, MarkdownMentionReference,
-    RestIssueReferenceMetadata,
-    RestMentionReferenceMetadata,
+    issue_reference_metadata_from_resolved, markdown_commit_references_for_project,
+    markdown_issue_references_for_project, markdown_mention_references,
+    mention_reference_metadata_from_resolved, rest_issue_reference_metadata_from_resolved,
+    rest_mention_reference_metadata_from_resolved, rewrite_code_browser_markdown_image_links,
+    rewrite_project_readme_markdown_links, MarkdownCommitReference, MarkdownIssueReference,
+    MarkdownMentionReference, RestIssueReferenceMetadata, RestMentionReferenceMetadata,
 };
 pub use notification_mail::{
     deliver_due_notification_mails, deliver_due_notification_mails_with_config,
@@ -84,14 +83,14 @@ pub(crate) use routes::{
     require_session, require_valid_csrf, resolve_current_session_response,
     resolve_issue_reference_search_project, rest_actor_id, rest_board_label_from_record,
     rest_commit_thread_from_record, rest_json_response, rest_json_response_with_etag,
-    rest_list_user_issues, rest_owned_view,
+    rest_list_user_issues, rest_migration_actor_from_user_id, rest_owned_view,
     rest_project_issue_filter_from_query, rest_project_menu_settings, rest_read_current_session,
-    rest_read_direct_issue_form_options, rest_migration_actor_from_user_id,
-    rest_require_migration_actor, rest_repository, rest_require_project_code_read,
-    rest_review_thread_filter, rest_update_commit_discussion_thread_state,
-    send_password_reset_mail, send_project_transfer_request_mail,
-    send_workspace_email_validation_mail, site_export_filename_stamp, site_name_from_option,
-    supported_languages_from_option, trimmed_option, user_issue_filter_name, user_issue_state,
+    rest_read_direct_issue_form_options, rest_repository, rest_require_migration_actor,
+    rest_require_project_code_read, rest_review_thread_filter,
+    rest_update_commit_discussion_thread_state, send_password_reset_mail,
+    send_project_transfer_request_mail, send_workspace_email_validation_mail,
+    site_export_filename_stamp, site_name_from_option, supported_languages_from_option,
+    trimmed_option, user_issue_filter_name, user_issue_state,
     visible_code_projects_for_organization, visible_projects_for_organization,
     visible_user_issue_items, workspace_avatar_url, workspace_invalid_argument,
     workspace_profile_from_record, ProjectCreatableResource, RestBoardLabel,

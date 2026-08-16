@@ -35,16 +35,19 @@ test("OAuth provider logos use route-local Style owners", async () => {
   expect(legacyLogin).toContain("providerWithLogo");
   expect(legacyDialog).toContain("providerWithLogo");
 
+  // Shared oauth-provider-link owns the legacy shell now.
+  const sharedSource = readFileSync("src/components/oauth-provider-link.tsx", "utf8");
+  expect(sharedSource).toContain("auth-provider-logo");
   for (const source of [rootSource, loginSource]) {
-    expect(source).toContain("auth-provider-logo");
+    expect(source).toContain("OAuthProviderLink");
   }
   expect(userSource).not.toContain("} github`}");
-  expect(rootSource).toContain('data-owner="root-provider-logo"');
-  expect(rootSource).toContain('data-owner="root-provider-github"');
-  expect(loginSource).toContain('data-owner="standalone-login-provider-logo"');
-  expect(loginSource).toContain('data-owner="standalone-login-provider-github"');
-  expect(userSource).toContain('data-owner="user-profile-provider-logo"');
-  expect(userSource).toContain('data-owner="user-profile-provider-github"');
+  // data-owner strings are built in the shared component from the prefix prop.
+  expect(sharedSource).toContain("`${dataOwnerPrefix}-provider-logo`");
+  expect(sharedSource).toContain("`${dataOwnerPrefix}-provider-${normalized}`");
+  expect(rootSource).toContain('dataOwnerPrefix="root"');
+  expect(loginSource).toContain('dataOwnerPrefix="standalone-login"');
+  expect(userSource).toContain('dataOwnerPrefix="user-profile"');
 
   for (const style of [rootStyle, loginStyle, userSource]) {
   }
