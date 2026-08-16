@@ -5,6 +5,8 @@
  * kakao/naver render as text chips until official logo assets are added.
  */
 import { Link } from "@tanstack/react-router";
+import kakaoLogoUrl from "../assets/legacy/provider-logo/kakaotalk_sharing_btn_small.png?no-inline";
+import naverLogoUrl from "../assets/legacy/provider-logo/NAVER_login_Dark_KR_green_icon_H56.png?no-inline";
 import { prefixBasePath } from "../runtime-config";
 
 export const OAUTH_PROVIDER_KINDS = ["github", "google", "kakao", "naver"] as const;
@@ -71,12 +73,10 @@ export function OAuthProviderLogo({
       />
     );
   }
-  // ponytail: text chips until official kakao/naver logo assets land.
-  return (
-    <span data-owner={owner} className="provider-text-logo">
-      {normalized === "kakao" ? "Kakao" : "NAVER"}
-    </span>
-  );
+  if (normalized === "kakao") {
+    return <img alt="login with Kakao" data-owner={`${owner}-image`} src={kakaoLogoUrl} />;
+  }
+  return <img alt="login with Naver" data-owner={`${owner}-image`} src={naverLogoUrl} />;
 }
 
 export function OAuthProviderLink({

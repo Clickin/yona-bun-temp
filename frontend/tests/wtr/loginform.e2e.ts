@@ -608,11 +608,17 @@ test("kakao and naver providers render oauth-login-btn links", async ({ page }) 
   const kakao = page.locator('.oauth-login-btn[href*="/authenticate/kakao"]');
   await expect(kakao).toHaveClass(/(?:^|\s)ybtn oauth-login-btn(?:\s|$)/u);
   await expect(kakao).toContainText("Sign in with Kakao");
-  await expect(kakao.locator(".provider-text-logo")).toHaveText("Kakao");
+  await expect(kakao.locator("img[alt='login with Kakao']")).toHaveAttribute(
+    "src",
+    /kakaotalk_sharing_btn_small/,
+  );
   const naver = page.locator('.oauth-login-btn[href*="/authenticate/naver"]');
   await expect(naver).toHaveClass(/(?:^|\s)ybtn oauth-login-btn(?:\s|$)/u);
   await expect(naver).toContainText("Sign in with Naver");
-  await expect(naver.locator(".provider-text-logo")).toHaveText("NAVER");
+  await expect(naver.locator("img[alt='login with Naver']")).toHaveAttribute(
+    "src",
+    /NAVER_login_Dark_KR_green_icon_H56/,
+  );
   // github/google keep their legacy logo/name layout.
   await expect(page.locator('.oauth-login-btn[href*="/authenticate/github"]')).toContainText(
     "Sign in with github",
