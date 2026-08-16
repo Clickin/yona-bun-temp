@@ -28,7 +28,7 @@ test("SVN issues keeps the canonical desktop shell and React-owned list interact
   await expect(page.locator("#span10")).toBeVisible();
   await expect(page.locator(".error-wrap")).toContainText("등록된 이슈가 없습니다.");
   await expect(
-    page.locator(`link[href="${basePath}/${OWNER}/${PROJECT}/issue/labels.css"]`),
+    page.locator(`link[rel="stylesheet"][href="${basePath}/${OWNER}/${PROJECT}/issue/labels.css"]`),
   ).toHaveCount(1);
 
   const geometry = await readGeometry(page);
@@ -86,7 +86,7 @@ test("SVN issues renders only dynamic label CSS and no legacy static calendar sc
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/issues`);
 
   await expect(
-    page.locator(`link[href="${basePath}/${OWNER}/${PROJECT}/issue/labels.css"]`),
+    page.locator(`link[rel="stylesheet"][href="${basePath}/${OWNER}/${PROJECT}/issue/labels.css"]`),
   ).toHaveCount(1);
   await expect(
     page.locator(
@@ -98,10 +98,17 @@ test("SVN issues renders only dynamic label CSS and no legacy static calendar sc
     new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
     "utf8",
   );
+  // The project shell (layout) owns the labels.css link so issue screens do
+  // not re-fetch it on back navigation (label-color flash fix).
+  const layoutSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+    "utf8",
+  );
   expect(source).not.toContain("IssueListAssets");
   expect(source).not.toMatch(/\/assets\/javascripts\//u);
   expect(source).not.toMatch(/<script\b/u);
-  expect(source).toContain("issue/labels.css");
+  expect(source).not.toContain("issue/labels.css");
+  expect(layoutSource).toContain("issue/labels.css");
 });
 
 async function readGeometry(page: Page) {

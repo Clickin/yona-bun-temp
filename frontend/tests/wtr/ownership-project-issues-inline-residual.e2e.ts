@@ -10,7 +10,7 @@ test("project issues owns static residual spacing with route-local Style", async
 
   expect(routeSource).toContain('data-owner="project-issues-excel-download"');
   expect(routeSource).toContain('data-owner="project-issues-manage-label"');
-  expect(routeSource).toContain('data-owner="project-issues-two-column-anchor"');
-  expect(routeSource).toContain('data-owner="project-issues-subtasks-anchor"');
+  expect(routeSource).toContain('anchorOwner="project-issues-two-column-anchor"');
+  expect(routeSource).toContain('anchorOwner="project-issues-subtasks-anchor"');
   expect(routeSource).toContain('data-owner="project-issues-keymap"');
 });

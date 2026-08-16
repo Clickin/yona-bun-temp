@@ -997,16 +997,17 @@ function ProjectLayoutScreen({
           project={project}
         />
       )}
-      {active === "milestone" || active === "milestoneDetail" ? (
-        <link
-          rel="stylesheet"
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${ownerName}/${projectName}/issue/labels.css`,
-          )}
-          type="text/css"
-        />
-      ) : null}
+      {/* Project labels.css stays mounted for the whole project shell so
+          issue/post/milestone screens never re-fetch it on back navigation
+          (the per-screen <link> duplicates caused a label-color flash). */}
+      <link
+        rel="stylesheet"
+        href={prefixBasePath(
+          runtimeConfig.basePath,
+          `/${ownerName}/${projectName}/issue/labels.css`,
+        )}
+        type="text/css"
+      />
       <ProjectNestedShellContext value>
         <ProjectLayoutContext value={project}>
           <ProjectHomeTabContext value={homeTabId ?? null}>

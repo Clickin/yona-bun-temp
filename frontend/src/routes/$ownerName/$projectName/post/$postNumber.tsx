@@ -467,6 +467,7 @@ function ProjectPostDetailBody({
           basePath,
           "/legacy-assets/javascripts/lib/elevator/jquery.elevator.css",
         )}
+        precedence="legacy-elevator"
       />
       <div className="project-page-wrap board-view" data-owner="post-detail-shell">
         <div className="board-header issue" data-owner="post-detail-header">

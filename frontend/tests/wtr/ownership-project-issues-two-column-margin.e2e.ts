@@ -90,8 +90,8 @@ test("project issues owns legacy mr10 on both mode-control wrappers", async ({ p
 
   expect(routeSource).toContain("two-column-icon mr10 hide-in-mobile");
   expect(routeSource).toContain("show-subtasks mr10");
-  expect(routeSource).toContain('data-owner="project-issues-two-column-anchor"');
-  expect(routeSource).toContain('data-owner="project-issues-subtasks-anchor"');
+  expect(routeSource).toContain('anchorOwner="project-issues-two-column-anchor"');
+  expect(routeSource).toContain('anchorOwner="project-issues-subtasks-anchor"');
   expect(routeSource).not.toContain('data-toggle="popover"');
   expect(routeSource).not.toContain('data-trigger="hover"');
 

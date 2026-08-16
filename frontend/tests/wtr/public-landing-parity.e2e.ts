@@ -167,7 +167,7 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
       // F5 (2026-08-16): index CSS asset hash re-pinned after the issue-label
       // button border reset + markdown code-block copy button rules
       // (sha d13b2c98a74d…).
-      `${basePath}/assets/index-BFS7ocHw.css`,
+      `${basePath}/assets/index-Bcv6kJXb.css`,
     ],
     twitterCard: "summary",
     twitterDescription: "Yoram",

@@ -9,6 +9,10 @@ const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
   "utf8",
 );
+const HOVER_POPOVER_SOURCE = readFileSync(
+  new URL("../src/components/hover-popover.tsx", import.meta.url),
+  "utf8",
+);
 const PROJECT_ISSUES_STYLE_SOURCE =
   readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
   readFileSync(
@@ -363,7 +367,7 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("params={issueParams}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="comments"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="vote"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("to={childLabelRoutePath(String(label.id))}");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("{...childLabelRoutePath(String(label.id))}");
 
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="btn dropdown-toggle medium"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-format="user"');
@@ -730,13 +734,13 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator(".error-wrap")).toContainText("No issue found");
   await expect(
-    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+    page.locator(`link[rel="stylesheet"][href="${basePath}/admin/sample/issue/labels.css"]`),
   ).toHaveAttribute("rel", "stylesheet");
   await expect(
-    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+    page.locator(`link[rel="stylesheet"][href="${basePath}/admin/sample/issue/labels.css"]`),
   ).toHaveAttribute("type", "text/css");
   await expect(
-    page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`),
+    page.locator(`link[rel="stylesheet"][href="${basePath}/admin/sample/issue/labels.css"]`),
   ).toHaveAttribute("href", `${basePath}/admin/sample/issue/labels.css`);
   await expect(page.locator("#advanced-search-form #milestoneId")).toHaveAttribute(
     "data-format",
@@ -773,9 +777,13 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
 
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'className="popover top project-issues-two-column-popover"',
+    'popoverClassName="project-issues-two-column-popover"',
   );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE.split("}, 100);").length - 1).toBeGreaterThanOrEqual(4);
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    'popoverClassName="project-issues-subtasks-popover"',
+  );
+  expect(HOVER_POPOVER_SOURCE).toContain("popover fade top in");
+  expect(HOVER_POPOVER_SOURCE).toContain("setTimeout");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="popover"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-trigger="hover"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(

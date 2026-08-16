@@ -854,11 +854,6 @@ function ProjectLabelsList({
           </div>
         </div>
       ))}
-      <link
-        rel="stylesheet"
-        type="text/css"
-        href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labels.css`)}
-      />
     </>
   );
 }

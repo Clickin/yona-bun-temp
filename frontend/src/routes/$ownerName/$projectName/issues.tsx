@@ -17,6 +17,7 @@ import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
+import { HoverPopover } from "../../../components/hover-popover";
 import { IssueLabel } from "../../../components/issue-label";
 import { IssueDueDateInput } from "../../../components/issue-due-date-input";
 import {
@@ -237,14 +238,6 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
   return (
     <>
-      <link
-        rel="stylesheet"
-        href={prefixBasePath(
-          runtimeConfig.basePath,
-          `/${ownerName}/${projectName}/issue/labels.css`,
-        )}
-        type="text/css"
-      />
       <ProjectIssuesBody
         assignableUsers={assignableUsersQuery.data?.items ?? []}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
@@ -482,6 +475,17 @@ function ProjectIssuesBody({
   );
   const [selectedIssueIds, setSelectedIssueIds] = useState<ReadonlySet<string>>(() => new Set());
   const [highlightedIssueId, setHighlightedIssueId] = useState(readTwoColumnHighlightedIssueId);
+  const highlightedIssueNumber = (() => {
+    if (highlightedIssueId) {
+      const found = currentPageItems.find(
+        (issue) => stringField(issue.id, String(issue.issueNumber)) === highlightedIssueId,
+      );
+      if (found) {
+        return stringField(found.issueNumber, "");
+      }
+    }
+    return readTwoColumnHighlightedIssueNumber();
+  })();
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -540,10 +544,12 @@ function ProjectIssuesBody({
     );
   };
   const applyTwoColumnLocation = (issueId: string, href: string, title: string) => {
+    const issueNumber = href.split("/issue/")[1]?.replace(/[?#].*$/u, "") ?? "";
     const nextState = {
       ...(history.state as Record<string, unknown> | null),
       startPath: location.pathname,
       yonaIssueListHighlightedIssueId: issueId,
+      yonaIssueListHighlightedIssueNumber: issueNumber,
     };
     // ponytail: bypass the router's patched pushState/replaceState (TanStack
     // BrowserHistory notifies the router and would remount the list); legacy
@@ -877,6 +883,18 @@ function ProjectIssuesBody({
           </div>
         </div>
       </div>
+      {useTwoColumnMode && highlightedIssueNumber ? (
+        <div id="pageslide" data-owner="project-issues-two-column-panel">
+          <iframe
+            frameBorder="0"
+            src={prefixBasePath(
+              runtimeConfig.basePath,
+              `/${ownerName}/${projectName}/issue/${highlightedIssueNumber}`,
+            )}
+            title={`${ownerName}/${projectName}/issue/${highlightedIssueNumber}`}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1729,22 +1747,10 @@ function ProjectIssueItem({
     onRevealChildIssueList(issueId);
   };
   const titleHistoryLabel = `${issueNumber} ${titleParts.title}`;
-  const handleTitleClick = (event: ReactMouseEvent<HTMLElement>) => {
-    if (useTwoColumnMode) {
-      onTwoColumnIssueTarget(issueId, issueHref, titleHistoryLabel);
-      event.preventDefault();
-    }
-  };
   const handleIssueLabelClick = (event: ReactMouseEvent<HTMLElement>, labelId: string) => {
     event.preventDefault();
     event.stopPropagation();
     onIssueLabelSearch(labelId);
-  };
-  const handleTitleWrapClick = (event: ReactMouseEvent<HTMLElement>) => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest(".title")) {
-      handleTitleClick(event);
-    }
   };
   const handleIssueItemClick = (event: ReactMouseEvent<HTMLLIElement>) => {
     const target = event.target instanceof Element ? event.target : null;
@@ -1761,14 +1767,18 @@ function ProjectIssueItem({
       return;
     }
     const target = event.target instanceof Element ? event.target : null;
-    if (
-      target?.closest(".mass-update-check") ||
-      target?.closest(".issue-label") ||
-      target?.closest(".title-wrap > .title")
-    ) {
+    if (target?.closest(".mass-update-check") || target?.closest(".issue-label")) {
       return;
     }
-    onTwoColumnIssueTarget(issueId, issueHref, event.currentTarget.textContent ?? "");
+    const titleTarget = target?.closest(".title-wrap > .title");
+    // Title clicks open the pageslide panel instead of navigating (same
+    // capture-phase pattern as pullRequests.tsx); preventing default here
+    // stops the title Link's own click handler from navigating.
+    onTwoColumnIssueTarget(
+      issueId,
+      issueHref,
+      titleTarget ? titleHistoryLabel : (event.currentTarget.textContent ?? ""),
+    );
     event.preventDefault();
     event.stopPropagation();
   };
@@ -1827,11 +1837,7 @@ function ProjectIssueItem({
           </label>
         ) : null}
         <div {...issueRowLegacyForAttrs} className="issue-item-row">
-          <div
-            className="title-wrap"
-            onClickCapture={handleTitleWrapClick}
-            data-owner="project-issues-title-wrap"
-          >
+          <div className="title-wrap" data-owner="project-issues-title-wrap">
             <Link
               activeProps={legacyRouteLocalActiveProps}
               onClick={lockedLinkClick}
@@ -2127,19 +2133,9 @@ function IssueChildRow({
   const labels = issue.labels.slice().sort(compareIssueLabels);
   const childLabelRoutePath = (labelId: string) => ({
     params: { ownerName, projectName },
-    search: {
-      assigneeId: "",
-      authorId: "",
-      commenterId: "",
-      dueDate: "",
-      filter: "",
-      labelIds: [labelId],
-      milestoneId: "",
-      orderBy: "updatedDate",
-      orderDir: "desc",
-      pageNum: 1,
-      state: "open",
-    } satisfies ProjectIssuesSearch,
+    // Legacy child-label links carry only `?state=open&labelIds=N`; the
+    // remaining fields default via validateSearch.
+    search: { state: "open", labelIds: [labelId] } as ProjectIssuesSearch,
     to: "/$ownerName/$projectName/issues" as const,
   });
   const childLabelHref = (labelId: string) =>
@@ -3309,43 +3305,14 @@ function TwoColumnModeCheckbox({
   onToggle: (checked: boolean) => void;
 }) {
   const { t } = useLegacyMessages();
-  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = useRef<number | null>(null);
-  const popoverTitle = t("common.two.column.mode");
-  const popoverContent = t("common.two.column.mode.desc");
-  const clearPopoverTimer = () => {
-    if (popoverTimer.current !== null) {
-      window.clearTimeout(popoverTimer.current);
-      popoverTimer.current = null;
-    }
-  };
-  const showPopover = () => {
-    clearPopoverTimer();
-    popoverTimer.current = window.setTimeout(() => {
-      setIsPopoverVisible(true);
-      popoverTimer.current = null;
-    }, 100);
-  };
-  const hidePopover = () => {
-    clearPopoverTimer();
-    popoverTimer.current = window.setTimeout(() => {
-      setIsPopoverVisible(false);
-      popoverTimer.current = null;
-    }, 100);
-  };
-
-  useEffect(() => clearPopoverTimer, []);
-
   return (
-    <div
-      className="two-column-icon mr10 hide-in-mobile"
-      id="two-column-mode-checkbox"
-      title={popoverTitle}
-      data-owner="project-issues-two-column-anchor"
-      onBlur={hidePopover}
-      onFocus={showPopover}
-      onMouseEnter={showPopover}
-      onMouseLeave={hidePopover}
+    <HoverPopover
+      anchorClassName="two-column-icon mr10 hide-in-mobile"
+      anchorId="two-column-mode-checkbox"
+      anchorOwner="project-issues-two-column-anchor"
+      title={t("common.two.column.mode")}
+      content={t("common.two.column.mode.desc")}
+      popoverClassName="project-issues-two-column-popover"
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
@@ -3361,16 +3328,7 @@ function TwoColumnModeCheckbox({
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
-      {isPopoverVisible ? (
-        <div className="popover top project-issues-two-column-popover" role="tooltip">
-          <div className="arrow" />
-          <h3 className="popover-title">{popoverTitle}</h3>
-          <div className="popover-content">
-            <p>{popoverContent}</p>
-          </div>
-        </div>
-      ) : null}
-    </div>
+    </HoverPopover>
   );
 }
 
@@ -3382,43 +3340,14 @@ function ShowSubtasksCheckbox({
   onToggle: (checked: boolean) => void;
 }) {
   const { t } = useLegacyMessages();
-  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = useRef<number | null>(null);
-  const popoverTitle = t("common.show.subtasks");
-  const popoverContent = t("common.show.subtasks.desc");
-  const clearPopoverTimer = () => {
-    if (popoverTimer.current !== null) {
-      window.clearTimeout(popoverTimer.current);
-      popoverTimer.current = null;
-    }
-  };
-  const showPopover = () => {
-    clearPopoverTimer();
-    popoverTimer.current = window.setTimeout(() => {
-      setIsPopoverVisible(true);
-      popoverTimer.current = null;
-    }, 100);
-  };
-  const hidePopover = () => {
-    clearPopoverTimer();
-    popoverTimer.current = window.setTimeout(() => {
-      setIsPopoverVisible(false);
-      popoverTimer.current = null;
-    }, 100);
-  };
-
-  useEffect(() => clearPopoverTimer, []);
-
   return (
-    <div
-      className="show-subtasks mr10"
-      id="two-column-mode-checkbox"
-      title={popoverTitle}
-      data-owner="project-issues-subtasks-anchor"
-      onBlur={hidePopover}
-      onFocus={showPopover}
-      onMouseEnter={showPopover}
-      onMouseLeave={hidePopover}
+    <HoverPopover
+      anchorClassName="show-subtasks mr10"
+      anchorId="two-column-mode-checkbox"
+      anchorOwner="project-issues-subtasks-anchor"
+      title={t("common.show.subtasks")}
+      content={t("common.show.subtasks.desc")}
+      popoverClassName="project-issues-subtasks-popover"
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
@@ -3434,14 +3363,7 @@ function ShowSubtasksCheckbox({
           <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
         </div>
       </label>
-      {isPopoverVisible ? (
-        <div className="popover top project-issues-subtasks-popover" role="tooltip">
-          <div className="arrow" />
-          <h3 className="popover-title">{popoverTitle}</h3>
-          <div className="popover-content">{popoverContent}</div>
-        </div>
-      ) : null}
-    </div>
+    </HoverPopover>
   );
 }
 
@@ -4026,6 +3948,16 @@ function readTwoColumnHighlightedIssueId() {
   }
   return stringField(
     (history.state as Record<string, unknown>).yonaIssueListHighlightedIssueId,
+    "",
+  );
+}
+
+function readTwoColumnHighlightedIssueNumber() {
+  if (typeof history === "undefined" || !history.state || typeof history.state !== "object") {
+    return "";
+  }
+  return stringField(
+    (history.state as Record<string, unknown>).yonaIssueListHighlightedIssueNumber,
     "",
   );
 }

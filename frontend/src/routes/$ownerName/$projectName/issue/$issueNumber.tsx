@@ -622,12 +622,6 @@ function IssueDetailAssets({
         rel="stylesheet"
         type="text/css"
         media="screen"
-        href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labels.css`)}
-      />
-      <link
-        rel="stylesheet"
-        type="text/css"
-        media="screen"
         href={prefixBasePath(basePath, "/assets/javascripts/lib/atjs/jquery.atwho.css")}
       />
       <link

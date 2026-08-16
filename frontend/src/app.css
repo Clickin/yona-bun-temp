@@ -6871,6 +6871,27 @@
 }
 
 /* two-column / subtasks popovers carry no data-owner */
+/* Legacy `#pageslide` (jquery.pageslide.js) two-column detail panel: fixed
+   right-half overlay; the app renders it as a data-owner div + iframe instead
+   of the plugin's dynamically-appended body node. The id selector matches the
+   legacy fallback `#pageslide` (display:none) so this wins by specificity. */
+#pageslide[data-owner="project-issues-two-column-panel"] {
+  background: #fff;
+  box-shadow: 2px 2px 8px #000;
+  display: block;
+  height: 100%;
+  padding: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 50%;
+  z-index: 999999;
+}
+#pageslide[data-owner="project-issues-two-column-panel"] iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
 .project-issues-two-column-popover {
   bottom: 100%;
   display: block;
@@ -6879,6 +6900,9 @@
   min-width: 276px;
   pointer-events: none;
   position: absolute;
+  /* bootstrap .popover sets top:0; together with bottom:100% that fixes the
+     height to 0 (top+bottom both resolve). top:auto lets the content size it. */
+  top: auto;
   transform: translateX(-50%);
   z-index: 1010;
 }
@@ -6890,6 +6914,7 @@
   min-width: 150px;
   pointer-events: none;
   position: absolute;
+  top: auto;
   transform: translateX(-50%);
 }
 
