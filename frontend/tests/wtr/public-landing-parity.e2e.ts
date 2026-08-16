@@ -164,10 +164,10 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     stylesheetHrefs: [
       `/legacy-assets/stylesheets/legacy-fallback.css`,
       `${basePath}/assets/-home-route-screen-8oXcZy-S.css`,
-      // F5 (2026-08-15): index CSS asset hash re-pinned after the app.css
-      // reply/form/receiver reveal rules + label-geometry re-pin (issue-detail
-      // suite split closure; sha 1911e26e3fb0…).
-      `${basePath}/assets/index-BTzP41HQ.css`,
+      // F5 (2026-08-16): index CSS asset hash re-pinned after the issue-label
+      // button border reset + markdown code-block copy button rules
+      // (sha d13b2c98a74d…).
+      `${basePath}/assets/index-BFS7ocHw.css`,
     ],
     twitterCard: "summary",
     twitterDescription: "Yoram",

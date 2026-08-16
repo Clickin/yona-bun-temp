@@ -5,6 +5,7 @@ import {
   cloneElement,
   Fragment,
   isValidElement,
+  type ComponentPropsWithoutRef,
   type CSSProperties,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -15,8 +16,82 @@ import {
   use,
   useState,
 } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { type Options as RehypeSanitizeOptions } from "rehype-sanitize";
+import { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+
+// Post body/history markdown carries legacy HTML (history-made-by diff wraps,
+// video/iframe embeds) — legacy Markdown.render sanitizes and emits the HTML.
+// Reuse the issue-detail sanitize contract so issue/post history parity holds.
+const POST_LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES: Record<string, true> = {
+  className: true,
+  height: true,
+  id: true,
+  width: true,
+};
+const POST_MARKDOWN_BASE_ATTRIBUTES = Object.fromEntries(
+  Object.entries(defaultSchema.attributes ?? {}).map(([tagName, attributes]) => [
+    tagName,
+    attributes.filter(
+      (attribute) =>
+        !Array.isArray(attribute) ||
+        !(String(attribute[0]) in POST_LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES),
+    ),
+  ]),
+) as NonNullable<RehypeSanitizeOptions["attributes"]>;
+const POST_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
+  ...defaultSchema,
+  clobber: [],
+  attributes: {
+    ...POST_MARKDOWN_BASE_ATTRIBUTES,
+    "*": [...(POST_MARKDOWN_BASE_ATTRIBUTES["*"] ?? []), "className", "id", "width", "height"],
+    a: [...(POST_MARKDOWN_BASE_ATTRIBUTES.a ?? []), "href", "name", "target"],
+    iframe: [
+      ...(POST_MARKDOWN_BASE_ATTRIBUTES.iframe ?? []),
+      "width",
+      "height",
+      "src",
+      "frameBorder",
+      "allow",
+      "allowFullScreen",
+    ],
+    input: [...(POST_MARKDOWN_BASE_ATTRIBUTES.input ?? []), "type", "disabled", "checked"],
+    ol: [...(POST_MARKDOWN_BASE_ATTRIBUTES.ol ?? []), "start"],
+    source: [...(POST_MARKDOWN_BASE_ATTRIBUTES.source ?? []), "src", "type"],
+    video: [
+      ...(POST_MARKDOWN_BASE_ATTRIBUTES.video ?? []),
+      "dataSetup",
+      "controls",
+      "preload",
+      "type",
+      "autoPlay",
+      "height",
+      "width",
+      "src",
+    ],
+  },
+  protocols: {
+    ...defaultSchema.protocols,
+    href: ["http", "https", "mailto", "file", "zpl"],
+    src: ["http", "https", "file", "zpl"],
+  },
+  tagNames: [
+    ...new Set([
+      ...(defaultSchema.tagNames ?? []),
+      "video",
+      "source",
+      "iframe",
+      "input",
+      "pre",
+      "br",
+      "hr",
+      "ol",
+      "span",
+    ]),
+  ],
+};
 import {
   createPostCommentRest,
   deleteProjectPostRest,
@@ -39,6 +114,7 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import type { CommitReferenceMetadata } from "../../../../api/issue-meta";
 import { useLegacyMessages } from "../../../../i18n";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
+import { MarkdownCodeBlock } from "../../../../components/markdown-code-block";
 import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
@@ -472,7 +548,13 @@ function ProjectPostDetailBody({
                     data-owner="post-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.bodyMarkdown}</ReactMarkdown>
+                    <ReactMarkdown
+                      components={POST_BODY_MARKDOWN_COMPONENTS}
+                      rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
+                      remarkPlugins={[remarkGfm]}
+                    >
+                      {post.bodyMarkdown}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </>
@@ -746,7 +828,13 @@ function PostingHistory({
           <h5 className="nm">{t("change.history")}</h5>
         </div>
         <div className="modal-body">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
+          <ReactMarkdown
+            components={POST_BODY_MARKDOWN_COMPONENTS}
+            rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
+            remarkPlugins={[remarkGfm]}
+          >
+            {historyMarkdown}
+          </ReactMarkdown>
         </div>
         <div className="modal-footer">
           <button
@@ -1539,7 +1627,11 @@ function OriginalMessageMarkdown({
 
   if (!originalMessage) {
     return (
-      <ReactMarkdown components={components} remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}>
+      <ReactMarkdown
+        components={components}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
+        remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}
+      >
         {contentsMarkdown}
       </ReactMarkdown>
     );
@@ -1547,7 +1639,11 @@ function OriginalMessageMarkdown({
 
   return (
     <>
-      <ReactMarkdown components={components} remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}>
+      <ReactMarkdown
+        components={components}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
+        remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}
+      >
         {originalMessage.visibleMarkdown}
       </ReactMarkdown>
       <button
@@ -1562,7 +1658,11 @@ function OriginalMessageMarkdown({
         ...
       </button>
       <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
-        <ReactMarkdown components={components} remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}>
+        <ReactMarkdown
+          components={components}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
+          remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}
+        >
           {originalMessage.hiddenMarkdown}
         </ReactMarkdown>
       </div>
@@ -1590,8 +1690,43 @@ function createParentCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
   return createChildCommentMarkdownAutoLinkPlugin(comment);
 }
 
+const POST_BODY_MARKDOWN_COMPONENTS: Components = {
+  code: ({ className, node: _node, ...props }) => {
+    return <code {...props} className={className ?? ""} />;
+  },
+  pre: PostMarkdownPre,
+};
+
+function PostMarkdownPre({
+  children,
+  className,
+  node: _node,
+  ...props
+}: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
+  const code = Array.isArray(children) ? children[0] : children;
+  if (isValidElement<{ children?: ReactNode; className?: string }>(code)) {
+    const language = code.props.className?.match(/(?:^|\s)language-([^\s]+)/u)?.[1];
+    if (language) {
+      return (
+        <MarkdownCodeBlock className={code.props.className} language={language}>
+          {code.props.children}
+        </MarkdownCodeBlock>
+      );
+    }
+  }
+  return (
+    <pre {...props} className={className ?? ""} data-owner="post-detail-markdown-pre">
+      {children}
+    </pre>
+  );
+}
+
 function createParentCommentMarkdownComponents(): Components {
   return {
+    code: ({ className, node: _node, ...props }) => {
+      return <code {...props} className={className ?? ""} />;
+    },
+    pre: PostMarkdownPre,
     span: ({ children, className, node: _node, ...props }) => {
       if (className === "issue-state open") {
         return (

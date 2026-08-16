@@ -1408,6 +1408,15 @@
     margin-right: 3px;
   }
 
+  /* Legacy renders issue labels as <a>/<span> chips — no border. React row
+     labels are <button> (clickable label search), whose UA default border
+     (2px outset) would otherwise paint around the chip. The legacy dynamic
+     label colors arrive via the labels.css data-label-id rules, so the
+     border reset must live here (not inline on the button). */
+  button.issue-label {
+    border: 0;
+  }
+
   .issue-label.active {
     border-radius: 1px;
   }
@@ -27913,4 +27922,37 @@ label[data-owner="organization-new-label"] {
 [data-owner="left-sidebar-recent-issue-popover"] > div:last-child {
   line-height: 120%;
   padding: 9px 10px;
+}
+
+/* MarkdownCodeBlock (shared issue/post markdown code renderer): prism
+   highlighting + floating copy button — modern improvement, not legacy
+   parity (legacy Yona renders a plain <pre>). The copy button floats at the
+   block's top-right and appears on hover. */
+[data-owner="markdown-code-block"] pre {
+  position: relative;
+}
+[data-owner="markdown-code-copy"] {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 16px;
+  color: #555;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+[data-owner="markdown-code-block"]:hover [data-owner="markdown-code-copy"],
+[data-owner="markdown-code-copy"]:focus-visible {
+  opacity: 1;
+}
+[data-owner="markdown-code-copy"]:hover {
+  background-color: #fff;
+  color: #333;
+  border-color: #ccc;
 }

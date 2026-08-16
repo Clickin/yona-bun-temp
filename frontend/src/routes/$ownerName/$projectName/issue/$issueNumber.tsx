@@ -26,9 +26,8 @@ import ReactMarkdown, {
   type Components,
   type ExtraProps,
 } from "react-markdown";
-import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism";
-import { ghcolors } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
+import { MarkdownCodeBlock } from "../../../../components/markdown-code-block";
 import { type IssueAssignableUserItem } from "../../../../api/issue-meta";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { listProjectMilestonesQueryOptions } from "../../../../api/milestones";
@@ -144,12 +143,6 @@ const ISSUE_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
     ]),
   ],
 };
-const issueMarkdownSyntaxTheme = {
-  ...ghcolors,
-  'pre[class*="language-"]': {},
-  'code[class*="language-"]': {},
-};
-
 type IssueMarkdownLinkProps = ComponentPropsWithoutRef<"a"> &
   ExtraProps & {
     basePath: string;
@@ -236,17 +229,9 @@ function IssueMarkdownPre({
     const language = code.props.className?.match(/(?:^|\s)language-([^\s]+)/u)?.[1];
     if (language) {
       return (
-        <SyntaxHighlighter
-          language={language}
-          style={issueMarkdownSyntaxTheme}
-          PreTag="pre"
-          codeTagProps={{
-            className: code.props.className,
-          }}
-          data-owner="project-issue-detail-markdown-code-block"
-        >
-          {String(code.props.children ?? "").replace(/\n$/u, "")}
-        </SyntaxHighlighter>
+        <MarkdownCodeBlock className={code.props.className} language={language}>
+          {code.props.children}
+        </MarkdownCodeBlock>
       );
     }
   }
