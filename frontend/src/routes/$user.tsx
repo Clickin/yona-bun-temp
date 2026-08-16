@@ -400,14 +400,16 @@ function PublicProfileBody({
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>
                 <div className={"auth-provider-logo"} data-owner="user-profile-provider-logo">
-                  {profile.connectedSocialProviders.map((provider) => (
-                    <OAuthProviderLogo
-                      basePath={runtimeConfig.basePath}
-                      dataOwnerPrefix="user-profile"
-                      key={provider}
-                      provider={provider}
-                    />
-                  ))}
+                  {profile.connectedSocialProviders.map((provider) =>
+                    typeof provider === "string" ? (
+                      <OAuthProviderLogo
+                        basePath={runtimeConfig.basePath}
+                        dataOwnerPrefix="user-profile"
+                        key={provider}
+                        kind={provider}
+                      />
+                    ) : null,
+                  )}
                 </div>
               </div>
             </div>

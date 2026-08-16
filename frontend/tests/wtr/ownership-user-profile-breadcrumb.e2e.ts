@@ -60,6 +60,60 @@ async function openProfile(page: Page) {
   await expect(page.locator(`[data-owner="${owners.outer}"]`)).toBeVisible();
 }
 
+test("public profile renders connected OAuth provider logos without crashing on null entries", async ({
+  page,
+}) => {
+  // OAuth-created users have linked accounts; a defensive filter must skip
+  // null/undefined entries instead of throwing in normalizeOAuthProviderKind.
+  await page.addInitScript((runtimeBasePath) => {
+    (
+      window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      supportedLanguages: ["en-US"],
+    };
+  }, basePath);
+  await mockSession(page);
+  await page.route("**/api/v1/users/door-oauth/profile**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        daysAgo: 14,
+        selected: "issues",
+        viewerCanEditProfile: false,
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [null, "naver", "google"],
+          displayName: "Door OAuth User",
+          englishName: "Door English",
+          isBlocked: false,
+          isGuest: false,
+          isSiteAdmin: false,
+          loginId: "door-oauth",
+          primaryEmailAddress: "",
+          sinceLabel: "2026-06-30",
+        },
+        issueItems: [],
+        memberProjects: [],
+        pullRequestItems: [],
+      },
+    }),
+  );
+  await page.goto(`${basePath}/door-oauth`);
+  await expect(page.locator('[data-owner="user-profile-provider-logo"]')).toBeVisible();
+  await expect(
+    page.locator('[data-owner^="user-profile-provider-"][data-owner$="-image"]'),
+  ).toHaveCount(2);
+  await expect(page.locator('[data-owner="user-profile-provider-naver-image"]')).toHaveAttribute(
+    "alt",
+    "login with Naver",
+  );
+  await expect(page.locator('[data-owner="user-profile-provider-google-image"]')).toHaveAttribute(
+    "alt",
+    "login with Google",
+  );
+});
+
 test("public-profile breadcrumb records the frozen legacy ownership boundary", () => {
   const route = readFileSync("src/routes/$user.tsx", "utf8");
   const styles =

@@ -28,7 +28,10 @@ function providerDisplayName(kind: OAuthProviderKind) {
   }
 }
 
-export function normalizeOAuthProviderKind(value: string): OAuthProviderKind | null {
+export function normalizeOAuthProviderKind(value: unknown): OAuthProviderKind | null {
+  if (typeof value !== "string") {
+    return null;
+  }
   const normalized = value.trim().toLowerCase();
   return OAUTH_PROVIDER_KINDS.includes(normalized as OAuthProviderKind)
     ? (normalized as OAuthProviderKind)
