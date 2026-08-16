@@ -10,7 +10,7 @@ test("post detail modal states use conditional Style visibility", async () => {
   ]);
   expect(legacy).toContain('href="#-yona-posting-history"');
   expect(legacy).toContain("commentDeleteModal");
-  expect(route).toContain('data-owner="post-detail-history-modal"');
+  expect(route).toContain('dataOwner="post-detail-history-modal"');
   expect(route).toContain('data-owner="post-detail-comment-delete-modal"');
 
   expect(appCss).not.toContain('.board-view .posting-history > button[data-toggle="modal"]');

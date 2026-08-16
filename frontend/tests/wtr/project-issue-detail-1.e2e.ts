@@ -783,7 +783,12 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   expect(routeSource).not.toMatch(/data-target=\{`#(?:edit|preview)-\$\{wrapId\}`\}/u);
   expect(routeSource).toContain("setCommentEditOpen((current) => !current)");
   expect(routeSource).toContain("event.stopPropagation();");
-  expect(routeSource).toContain(
+  // The shared posting history modal owns the helper now.
+  const sharedModalSource = readFileSync(
+    new URL("../src/components/posting-history-modal.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(sharedModalSource).toContain(
     "function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
   );
   expect(
@@ -1477,7 +1482,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
     historyHtml: "Server HTML should not render",
-    historyMarkdown: "Previous **body**",
+    historyMarkdown: "<!-- XML comment should not render -->\nPrevious **body**",
     updatedByAuthorLabel: "Site Admin",
     updatedLabel: "Jul 3, 2026",
   });
@@ -1485,6 +1490,10 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#-yona-posting-history .modal-body")).not.toContainText(
     "Server HTML should not render",
+  );
+  // History markdown strips XML comments like the issue body render.
+  await expect(page.locator("#-yona-posting-history .modal-body")).not.toContainText(
+    "XML comment should not render",
   );
   await expect(page.locator("#-yona-posting-history .close")).toHaveAttribute(
     "aria-hidden",
@@ -1496,7 +1505,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   );
 
   const history =
-    '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Confirm</button></div></div></div>';
+    '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></button><div id="-yona-posting-history" class="modal hide" role="dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Confirm</button></div></div></div>';
   const expected = EXPECTED_ISSUE_DETAIL.replaceAll(' aria-hidden="true"', "")
     .replace('</span></a></div><div id="issue-11"', `</span></a>${history}</div><div id="issue-11"`)
     .replace(
@@ -1539,8 +1548,9 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#-yona-posting-history")).toBeVisible();
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/modal in/);
-  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
-  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  // Legacy partial_history.scala.html has no backdrop; the old React
+  // modal-backdrop darkened the whole screen on issue detail.
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("posting-history-modal");
@@ -1561,9 +1571,8 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
   await trigger.click();
-  await page.locator(".modal-backdrop.in").dispatchEvent("click");
+  await page.keyboard.press("Escape");
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/modal hide/);
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 test("project issue detail renders legacy anonymous posting history login link", async ({

@@ -19,12 +19,13 @@ test("issue detail modal consumers own route-scoped geometry in Style", async ()
   expect(legacy).toContain('id="deleteConfirm"');
   expect(legacy).toContain('@help.keymap("issueDetail"');
   expect(voters).toContain("modal");
-  expect(route).toContain('data-owner="issue-detail-history-modal"');
+  // History modal is the shared PostingHistoryModal (dataOwner prop).
+  expect(route).toContain('dataOwner="issue-detail-history-modal"');
   expect(route).toContain('data-owner="issue-detail-voters-modal"');
   expect(route).toContain('data-owner="issue-detail-keymap-modal"');
   expect(route).toContain('data-owner="issue-detail-delete-confirm-modal"');
   expect(route).toContain('data-owner="issue-detail-comment-delete-modal"');
-  expect((route.match(/data-owner="issue-detail-[^"]*-modal"/g) ?? []).length).toBe(5);
+  expect((route.match(/data-owner="issue-detail-[^"]*-modal"/g) ?? []).length).toBe(4);
 
   expect(less).toContain(".keymap-help");
   expect(less).toContain("line-height:30px");

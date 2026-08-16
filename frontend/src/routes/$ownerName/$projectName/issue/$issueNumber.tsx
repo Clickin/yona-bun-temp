@@ -28,6 +28,13 @@ import ReactMarkdown, {
 } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MarkdownCodeBlock } from "../../../../components/markdown-code-block";
+import {
+  PostingHistoryModal,
+  closeOnEscape,
+  insulateModalButtonClick,
+  stripMarkdownComments,
+  useModalFocus,
+} from "../../../../components/posting-history-modal";
 import { type IssueAssignableUserItem } from "../../../../api/issue-meta";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { listProjectMilestonesQueryOptions } from "../../../../api/milestones";
@@ -305,10 +312,6 @@ function markdownInternalPath(href: string, basePath: string) {
   return href;
 }
 
-function stripMarkdownComments(markdown: string) {
-  return markdown.replace(/<!--[\s\S]*?-->/gu, "");
-}
-
 type LegacyPopoverTriggerProps = {
   onBlur?: (event: FocusEvent<HTMLElement>) => void;
   onFocus?: (event: FocusEvent<HTMLElement>) => void;
@@ -364,29 +367,6 @@ function LegacyHoverPopover({
       ) : null}
     </>
   );
-}
-
-function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
-  event.preventDefault();
-  event.stopPropagation();
-}
-
-function closeOnEscape(event: KeyboardEvent<HTMLElement>, close: () => void) {
-  if (event.key === "Escape") {
-    event.preventDefault();
-    event.stopPropagation();
-    close();
-  }
-}
-
-function useModalFocus(open: boolean) {
-  const modalRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (open) {
-      modalRef.current?.focus();
-    }
-  }, [open]);
-  return modalRef;
 }
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber")({
@@ -616,6 +596,7 @@ function IssueDetailAssets({
       <link
         rel="stylesheet"
         type="text/css"
+        media="screen"
         href={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/styles/default.css")}
       />
       <link
@@ -1514,8 +1495,7 @@ function IssuePostingHistory({
     insulateModalButtonClick(event);
     setOpen(true);
   };
-  const closeHistory = (event: MouseEvent<HTMLButtonElement>) => {
-    insulateModalButtonClick(event);
+  const closeHistory = () => {
     setOpen(false);
   };
 
@@ -1542,37 +1522,13 @@ function IssuePostingHistory({
         ) : null}
         <span>{t("change.edited")}</span>
       </button>
-      <div
-        ref={modalRef}
-        id="-yona-posting-history"
-        className={open ? "modal in" : "modal hide"}
-        data-owner="issue-detail-history-modal"
-        tabIndex={open ? -1 : undefined}
-        onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
+      <PostingHistoryModal
+        dataOwner="issue-detail-history-modal"
+        onClose={closeHistory}
+        open={open}
       >
-        <div className="modal-header issue-detail-modal-section issue-detail-modal-header">
-          <button
-            type="button"
-            className="close issue-detail-modal-close"
-            aria-hidden="true"
-            onClick={closeHistory}
-          >
-            ×
-          </button>
-          <h5 className="nm">{t("change.history")}</h5>
-        </div>
-        <div className="modal-body issue-detail-modal-section">
-          <IssueMarkdown basePath={basePath}>
-            {stripMarkdownComments(historyMarkdown)}
-          </IssueMarkdown>
-        </div>
-        <div className="modal-footer issue-detail-modal-section issue-detail-modal-footer">
-          <button className="ybtn ybtn-info ybtn-small" aria-hidden="true" onClick={closeHistory}>
-            {t("button.confirm")}
-          </button>
-        </div>
-      </div>
-      {open ? <div className="modal-backdrop in" onClick={() => setOpen(false)}></div> : null}
+        <IssueMarkdown basePath={basePath}>{stripMarkdownComments(historyMarkdown)}</IssueMarkdown>
+      </PostingHistoryModal>
     </div>
   );
 }

@@ -1007,6 +1007,7 @@ function ProjectLayoutScreen({
           `/${ownerName}/${projectName}/issue/labels.css`,
         )}
         type="text/css"
+        media="screen"
       />
       <ProjectNestedShellContext value>
         <ProjectLayoutContext value={project}>

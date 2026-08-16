@@ -17,6 +17,11 @@ import {
   useState,
 } from "react";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
+import {
+  PostingHistoryModal,
+  insulateModalButtonClick,
+  stripMarkdownComments,
+} from "../../../../components/posting-history-modal";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { type Options as RehypeSanitizeOptions } from "rehype-sanitize";
 import { defaultSchema } from "rehype-sanitize";
@@ -801,55 +806,21 @@ function PostingHistory({
       <button
         type="button"
         onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
+          insulateModalButtonClick(event);
           onOpen();
         }}
       >
         {t("change.history")}
       </button>
-      <div
-        id="-yona-posting-history"
-        className={`modal ${open ? "in" : "hide"}`.trim()}
-        data-owner="post-detail-history-modal"
-        aria-hidden={open ? "false" : undefined}
-      >
-        <div className="modal-header">
-          <button
-            type="button"
-            className="close"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onClose();
-            }}
-          >
-            ×
-          </button>
-          <h5 className="nm">{t("change.history")}</h5>
-        </div>
-        <div className="modal-body">
-          <ReactMarkdown
-            components={POST_BODY_MARKDOWN_COMPONENTS}
-            rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
-            remarkPlugins={[remarkGfm]}
-          >
-            {historyMarkdown}
-          </ReactMarkdown>
-        </div>
-        <div className="modal-footer">
-          <button
-            className="ybtn ybtn-info ybtn-small"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onClose();
-            }}
-          >
-            {t("button.confirm")}
-          </button>
-        </div>
-      </div>
+      <PostingHistoryModal dataOwner="post-detail-history-modal" onClose={onClose} open={open}>
+        <ReactMarkdown
+          components={POST_BODY_MARKDOWN_COMPONENTS}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
+          remarkPlugins={[remarkGfm]}
+        >
+          {stripMarkdownComments(historyMarkdown)}
+        </ReactMarkdown>
+      </PostingHistoryModal>
     </div>
   );
 }
