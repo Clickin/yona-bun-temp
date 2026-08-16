@@ -1,18 +1,22 @@
 // Runs the in-browser @web/test-runner e2e suite against the production build.
-// Mirrors the style final-profile flow: build the app (the WTR config serves
-// frontend/dist with the runtime-config + fetch-mock injection), then run WTR.
-// The suite is split across two parallel WTR instances (ports 8128/8129) —
-// a single instance saturates around 8 browser pages, and two instances
-// finish the ~860-file suite in ~23 min instead of ~38 min.
 // Usage: node scripts/run-wtr-e2e.mjs [-- <web-test-runner args>]
-//   Pass explicit file args to run a focused subset on ONE instance instead.
+// Explicit file args always run on one WTR instance. Full-suite sharding is
+// opt-in with WTR_SHARDS=2..4; WTR_METRICS=1 writes ignored JSON diagnostics.
 import { spawn } from "node:child_process";
-import { readdirSync, statSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDirectory, "..");
+const frontendRoot = resolve(repoRoot, "frontend");
+const wtrDir = resolve(frontendRoot, "tests", "wtr");
+const metricsEnabled = process.env.WTR_METRICS === "1";
+const metricsDir = resolve(repoRoot, ".agent", "wtr-metrics");
+const timingProfilePath = join(metricsDir, "wtr-timing-profile.json");
+const runId = `${Date.now().toString(36)}-${process.pid}`;
+const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--");
+const startedAt = Date.now();
 
 async function run(command, args, options = {}) {
   const { env = process.env, cwd = repoRoot } = options;
@@ -27,32 +31,24 @@ async function run(command, args, options = {}) {
   return code;
 }
 
-const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--");
-
-// Build once unless WTR_SKIP_BUILD=1 (fast iteration against a current dist):
-// the WTR config serves the production bundle (frontend/dist) statically — no
-// vite dev server / HMR in the e2e loop — so one explicit build absorbs all
-// dev-server runtime costs and guarantees the suite never runs against a
-// stale dist (source edits are picked up every run).
-if (process.env.WTR_SKIP_BUILD !== "1") {
-  console.log("[wtr] building production frontend");
-  const buildCode = await run("pnpm", [
-    "--config.store-dir=/Users/senghyunjo/.pnpm-store",
-    "--dir",
-    "frontend",
-    "build",
-  ]);
-  if (buildCode !== 0) {
-    process.exit(buildCode);
-  }
-} else {
-  console.log("[wtr] WTR_SKIP_BUILD=1 — skipping production build (dist must be current)");
+function currentMetricPath(label) {
+  return join(metricsDir, `${runId}-${label}.json`);
 }
 
-const hasExplicitFiles = forwardedArgs.some((arg) => arg.endsWith(".e2e.ts"));
-if (hasExplicitFiles) {
-  console.log("[wtr] running web-test-runner (focused files)");
-  const wtrCode = await run(
+function childEnv(label, outputPath) {
+  if (!metricsEnabled) return process.env;
+  return {
+    ...process.env,
+    WTR_METRICS_RUN_ID: runId,
+    WTR_METRICS_SHARD: label,
+    WTR_METRICS_OUTPUT: outputPath,
+  };
+}
+
+async function runWtr(args, label) {
+  const outputPath = metricsEnabled ? currentMetricPath(label) : undefined;
+  const runStartedAt = Date.now();
+  const code = await run(
     "pnpm",
     [
       "--config.store-dir=/Users/senghyunjo/.pnpm-store",
@@ -60,68 +56,231 @@ if (hasExplicitFiles) {
       "web-test-runner",
       "--config",
       "web-test-runner.config.mjs",
-      ...forwardedArgs,
+      ...args,
     ],
-    { cwd: resolve(repoRoot, "frontend") },
+    {
+      cwd: frontendRoot,
+      env: metricsEnabled ? childEnv(label, outputPath) : process.env,
+    },
   );
-  process.exit(wtrCode);
+  return { code, label, elapsedMs: Date.now() - runStartedAt, outputPath };
 }
 
-// Full suite default: ONE instance (the recorded parity-gate profile —
-// sharded runs lose tests to testsFinishTimeout and would mask regressions).
-// Set WTR_SHARDS=2..4 to split evenly by total bytes across parallel WTR
-// instances (ports 8128+index) for fast iteration: 2 shards ~25 min vs the
-// single-instance ~38 min; 4 shards ~18-20 min on a 4+ core machine.
-const wtrDir = resolve(repoRoot, "frontend", "tests", "wtr");
-// `_diag-*.e2e.ts` files are deliberately-failing diagnostic probes (they
-// throw to dump DOM/request output); they are not gate assertions, so exclude
-// them from the suite file list (explicit `-- file.e2e.ts` args still work).
-const specFiles = readdirSync(wtrDir)
-  .filter((name) => name.endsWith(".e2e.ts"))
-  .filter((name) => !name.startsWith("_diag-"))
-  .sort();
-const shardCount = Number(process.env.WTR_SHARDS ?? 1);
-if (shardCount <= 1) {
-  console.log(`[wtr] running web-test-runner (${specFiles.length} files, single instance)`);
-  const wtrCode = await run("pnpm", [
+function specFiles() {
+  return readdirSync(wtrDir)
+    .filter((name) => name.endsWith(".e2e.ts"))
+    .filter((name) => !name.startsWith("_diag-"))
+    .sort();
+}
+
+function fileRevision(name) {
+  const info = statSync(resolve(wtrDir, name));
+  return `${info.mtimeMs}:${info.size}`;
+}
+
+function readTimingProfile(files) {
+  if (!existsSync(timingProfilePath)) return undefined;
+  try {
+    const profile = JSON.parse(readFileSync(timingProfilePath, "utf8"));
+    const entries = new Map((profile.files ?? []).map((entry) => [basename(entry.file), entry]));
+    const timings = files.map((name) => entries.get(name));
+    if (timings.some((entry) => !entry || entry.revision !== fileRevision(basename(entry.file)))) {
+      return undefined;
+    }
+    return new Map(files.map((name, index) => [name, timings[index].elapsedMs]));
+  } catch {
+    return undefined;
+  }
+}
+
+function writeTimingProfile(files, metricPath) {
+  if (!metricPath || !existsSync(metricPath)) return false;
+  try {
+    const metrics = JSON.parse(readFileSync(metricPath, "utf8"));
+    const byFile = new Map((metrics.files ?? []).map((entry) => [basename(entry.file), entry]));
+    const entries = files.map((name) => {
+      const result = byFile.get(name);
+      return {
+        file: `tests/wtr/${name}`,
+        revision: fileRevision(name),
+        elapsedMs: result?.elapsedMs,
+      };
+    });
+    if (entries.some((entry) => typeof entry.elapsedMs !== "number")) return false;
+    mkdirSync(metricsDir, { recursive: true });
+    writeFileSync(
+      timingProfilePath,
+      `${JSON.stringify({ schemaVersion: 1, generatedAt: new Date().toISOString(), files: entries }, null, 2)}\n`,
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function writeRunMetrics({ buildMs, buildCode, wtrRuns, exitCode, mode, files, shardCount }) {
+  if (!metricsEnabled) return;
+  mkdirSync(metricsDir, { recursive: true });
+  const childMetrics = wtrRuns.flatMap((runResult) => {
+    if (!runResult.outputPath || !existsSync(runResult.outputPath)) return [];
+    try {
+      return [JSON.parse(readFileSync(runResult.outputPath, "utf8"))];
+    } catch {
+      return [];
+    }
+  });
+  const wtrWallClockMs = wtrRuns.reduce((total, runResult) => total + runResult.elapsedMs, 0);
+  writeFileSync(
+    join(metricsDir, `${runId}-run.json`),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: new Date().toISOString(),
+        runId,
+        mode,
+        shardCount,
+        files: files.length,
+        exitCode,
+        wallClockMs: Date.now() - startedAt,
+        build: { elapsedMs: buildMs, exitCode: buildCode },
+        wtr: {
+          wallClockMs: wtrWallClockMs,
+          processCount: childMetrics.length,
+          chromiumLaunches: childMetrics.reduce(
+            (total, item) => total + (item.wtr?.chromiumLaunches ?? 0),
+            0,
+          ),
+          sessionStarts: childMetrics.reduce(
+            (total, item) => total + (item.wtr?.sessionStarts ?? 0),
+            0,
+          ),
+          sessionStops: childMetrics.reduce(
+            (total, item) => total + (item.wtr?.sessionStops ?? 0),
+            0,
+          ),
+          peakRssBytes: childMetrics.reduce(
+            (peak, item) => Math.max(peak, item.wtr?.peakRssBytes ?? 0),
+            0,
+          ),
+        },
+        shards: wtrRuns.map((runResult, index) => ({
+          label: runResult.label,
+          elapsedMs: runResult.elapsedMs,
+          exitCode: runResult.code,
+          metrics: childMetrics[index] ?? null,
+        })),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+}
+
+// Build once unless WTR_SKIP_BUILD=1 (fast iteration against a current dist).
+let buildCode = 0;
+let buildMs = 0;
+if (process.env.WTR_SKIP_BUILD !== "1") {
+  console.log("[wtr] building production frontend");
+  const buildStartedAt = Date.now();
+  buildCode = await run("pnpm", [
     "--config.store-dir=/Users/senghyunjo/.pnpm-store",
-    "exec",
-    "web-test-runner",
-    "--config",
-    "web-test-runner.config.mjs",
-    ...forwardedArgs,
-  ], { cwd: resolve(repoRoot, "frontend") });
-  process.exit(wtrCode);
+    "--dir",
+    "frontend",
+    "build",
+  ]);
+  buildMs = Date.now() - buildStartedAt;
+  if (buildCode !== 0) {
+    writeRunMetrics({
+      buildMs,
+      buildCode,
+      wtrRuns: [],
+      exitCode: buildCode,
+      mode: "build",
+      files: [],
+      shardCount: 1,
+    });
+    process.exit(buildCode);
+  }
+} else {
+  console.log("[wtr] WTR_SKIP_BUILD=1 — skipping production build (dist must be current)");
 }
 
-// Sharded: greedy largest-first round-robin keeps both shards ~equal bytes.
-const bySize = specFiles
+const explicitFiles = forwardedArgs.some((arg) => arg.endsWith(".e2e.ts"));
+if (explicitFiles) {
+  console.log("[wtr] running web-test-runner (focused files)");
+  const result = await runWtr(forwardedArgs, "focused");
+  writeRunMetrics({
+    buildMs,
+    buildCode,
+    wtrRuns: [result],
+    exitCode: result.code,
+    mode: "focused",
+    files: forwardedArgs.filter((arg) => arg.endsWith(".e2e.ts")),
+    shardCount: 1,
+  });
+  process.exit(result.code);
+}
+
+const files = specFiles();
+const requestedShards = process.env.WTR_SHARDS;
+const shardCount = /^[234]$/u.test(requestedShards ?? "") ? Number(requestedShards) : 1;
+if (requestedShards && shardCount === 1 && requestedShards !== "1") {
+  console.log(
+    `[wtr] ignoring invalid WTR_SHARDS=${requestedShards}; allowed values are 2, 3, or 4`,
+  );
+}
+
+if (shardCount === 1) {
+  console.log(`[wtr] running web-test-runner (${files.length} files, single instance)`);
+  const result = await runWtr(forwardedArgs, "1");
+  if (metricsEnabled && result.code === 0 && writeTimingProfile(files, result.outputPath)) {
+    console.log(`[wtr] refreshed timing profile (${files.length} files)`);
+  }
+  writeRunMetrics({
+    buildMs,
+    buildCode,
+    wtrRuns: [result],
+    exitCode: result.code,
+    mode: "full",
+    files,
+    shardCount: 1,
+  });
+  process.exit(result.code);
+}
+
+const timingProfile = readTimingProfile(files);
+const orderedFiles = files
   .map((name) => ({
     name,
     size: statSync(resolve(wtrDir, name)).size,
+    elapsedMs: timingProfile?.get(name),
   }))
-  .sort((x, y) => y.size - x.size);
+  .sort((left, right) => {
+    const leftWeight = typeof left.elapsedMs === "number" ? left.elapsedMs : left.size;
+    const rightWeight = typeof right.elapsedMs === "number" ? right.elapsedMs : right.size;
+    return (
+      rightWeight - leftWeight || (left.name < right.name ? -1 : left.name > right.name ? 1 : 0)
+    );
+  });
+if (timingProfile) console.log("[wtr] using revision-validated timing profile");
+else console.log("[wtr] timing profile unavailable or stale; using file-size scheduling");
+
 const shards = Array.from({ length: shardCount }, () => []);
 const totals = Array.from({ length: shardCount }, () => 0);
-for (const { name, size } of bySize) {
+for (const file of orderedFiles) {
   const slot = totals.indexOf(Math.min(...totals));
-  shards[slot].push(`tests/wtr/${name}`);
-  totals[slot] += size;
+  shards[slot].push(`tests/wtr/${file.name}`);
+  totals[slot] += typeof file.elapsedMs === "number" ? file.elapsedMs : file.size;
 }
 
-console.log(`[wtr] running web-test-runner across ${shardCount} parallel instances (${shards.map((s) => s.length).join(" + ")} files)`);
-const shardCodes = await Promise.all(
+console.log(
+  `[wtr] running web-test-runner across ${shardCount} parallel instances (${shards.map((shard) => shard.length).join(" + ")} files)`,
+);
+const wtrRuns = await Promise.all(
   shards.map((shard, index) =>
-    run("pnpm", [
-      "--config.store-dir=/Users/senghyunjo/.pnpm-store",
-      "exec",
-      "web-test-runner",
-      "--config",
-      "web-test-runner.config.mjs",
-      "--port",
-      String(8128 + index),
-      ...shard,
-    ], { cwd: resolve(repoRoot, "frontend") }),
+    runWtr(["--port", String(8128 + index), ...shard], String(index + 1)),
   ),
 );
-process.exit(shardCodes.some((code) => code !== 0) ? 1 : 0);
+const exitCode = wtrRuns.some((result) => result.code !== 0) ? 1 : 0;
+writeRunMetrics({ buildMs, buildCode, wtrRuns, exitCode, mode: "full", files, shardCount });
+process.exit(exitCode);

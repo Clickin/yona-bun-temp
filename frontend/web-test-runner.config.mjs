@@ -4,8 +4,9 @@
 // in a same-origin iframe via the compat harness; this server serves the
 // legacy fixture sources + route sources the specs read via readFileSync.
 import { esbuildPlugin } from "@web/dev-server-esbuild";
-import { readFileSync, existsSync, statSync, globSync } from "node:fs";
-import { resolve, join, extname } from "node:path";
+import { defaultReporter } from "@web/test-runner";
+import { readFileSync, existsSync, statSync, globSync, mkdirSync, writeFileSync } from "node:fs";
+import { resolve, join, extname, basename, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -14,6 +15,8 @@ const srcDir = join(repoRoot, "frontend", "src");
 const frontendDir = join(repoRoot, "frontend");
 const legacyDir = join(repoRoot, "yona-original");
 const basePath = "/yona";
+const metricsEnabled = process.env.WTR_METRICS === "1";
+const metricsMarker = "__WTR_METRICS__";
 
 const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:"/yona"};</script>';
 
@@ -218,6 +221,27 @@ function contentTypeFor(filePath) {
   }
 }
 
+function fixtureRevision(filePath) {
+  try {
+    const info = statSync(filePath);
+    return `${info.mtimeMs}:${info.size}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function serveFixture(filePath) {
+  if (!existsSync(filePath)) return undefined;
+  const info = statSync(filePath);
+  if (!info.isFile()) return undefined;
+  const revision = fixtureRevision(filePath);
+  return {
+    body: readFileSync(filePath),
+    type: fixtureContentTypeFor(filePath),
+    ...(revision ? { headers: { "x-wtr-fixture-revision": revision } } : {}),
+  };
+}
+
 // The built index.html uses relative asset URLs (vite base "./"). At nested
 // SPA routes the browser resolves ./assets/* and ./legacy-assets/* against the
 // route path (e.g. /yona/users/loginform -> /yona/users/assets/index.js). The
@@ -315,7 +339,11 @@ const fixturePlugin = {
       if (existsSync(sourcePath) && statSync(sourcePath).isFile()) {
         return { body: readFileSync(sourcePath), type: contentTypeFor(sourcePath) };
       }
-      const distPath = join(distDir, "legacy-assets", ...rel.map((part) => part.replace(/\.\./g, "")));
+      const distPath = join(
+        distDir,
+        "legacy-assets",
+        ...rel.map((part) => part.replace(/\.\./g, "")),
+      );
       if (existsSync(distPath) && statSync(distPath).isFile()) {
         return { body: readFileSync(distPath), type: contentTypeFor(distPath) };
       }
@@ -336,10 +364,7 @@ const fixturePlugin = {
           .filter(Boolean),
       );
       const diskPath = join(frontendDir, ...rel.map((part) => part.replace(/\.\./g, "")));
-      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
-      }
-      return undefined;
+      return serveFixture(diskPath);
     }
     if (pathname.startsWith("/tests/root/")) {
       let rel = pathname
@@ -348,10 +373,7 @@ const fixturePlugin = {
         .filter(Boolean);
       rel = stripTxtSuffix(rel);
       const diskPath = join(frontendDir, ...rel.map((part) => part.replace(/\.\./g, "")));
-      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
-      }
-      return undefined;
+      return serveFixture(diskPath);
     }
     if (pathname.startsWith("/tests/") && pathname.includes("/src/")) {
       const srcMarker = pathname.indexOf("/src/");
@@ -361,10 +383,7 @@ const fixturePlugin = {
         .filter(Boolean);
       rel = stripTxtSuffix(rel);
       const diskPath = join(srcDir, ...rel.map((part) => part.replace(/\.\./g, "")));
-      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
-      }
-      return undefined;
+      return serveFixture(diskPath);
     }
     if (pathname.startsWith("/docs/")) {
       const rel = stripTxtSuffix(
@@ -374,10 +393,7 @@ const fixturePlugin = {
           .filter(Boolean),
       );
       const diskPath = join(repoRoot, "docs", ...rel.map((part) => part.replace(/\.\./g, "")));
-      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
-      }
-      return undefined;
+      return serveFixture(diskPath);
     }
     if (pathname.startsWith("/yona-original/")) {
       const rel = stripTxtSuffix(
@@ -387,10 +403,7 @@ const fixturePlugin = {
           .filter(Boolean),
       );
       const diskPath = join(legacyDir, ...rel.map((part) => part.replace(/\.\./g, "")));
-      if (existsSync(diskPath) && statSync(diskPath).isFile()) {
-        return { body: readFileSync(diskPath), type: fixtureContentTypeFor(diskPath) };
-      }
-      return undefined;
+      return serveFixture(diskPath);
     }
     // globSync support: /__wtr_glob__/<url-encoded pattern> -> JSON line list.
     if (pathname.startsWith("/__wtr_glob__/")) {
@@ -467,7 +480,14 @@ esbuild.transform = async (context) => {
   const pathname = context.path ?? context.url.split("?")[0];
   if (pathname.startsWith("/yona/")) {
     // eslint-disable-next-line no-console
-    console.log("WTRTRANSFORM-SKIP", (pathname.slice(0, 50)), "type:", context.response?.type, "bodyLen:", (context.body ?? "").length);
+    console.log(
+      "WTRTRANSFORM-SKIP",
+      pathname.slice(0, 50),
+      "type:",
+      context.response?.type,
+      "bodyLen:",
+      (context.body ?? "").length,
+    );
     // The built app is served verbatim under /yona/ (dist bundles + SPA
     // fallback HTML whose last URL segment may look like a .ts file).
     // Never esbuild-transform it — the HTML would crash the ts loader.
@@ -476,12 +496,173 @@ esbuild.transform = async (context) => {
   return originalTransform(context);
 };
 
-    // Real CSS :hover/:active require a real mouse. Expose Chrome's Puppeteer
+let chromiumLaunches = 0;
+let sessionStarts = 0;
+let sessionStops = 0;
+const sessionTimings = new Map();
+
+function flattenTestResults(suite, output = []) {
+  if (!suite) return output;
+  for (const test of suite.tests ?? []) output.push(test);
+  for (const child of suite.suites ?? []) flattenTestResults(child, output);
+  return output;
+}
+
+function metricPayloads(session) {
+  const payloads = [];
+  for (const log of session.logs ?? []) {
+    for (const value of log ?? []) {
+      if (typeof value !== "string" || !value.startsWith(metricsMarker)) continue;
+      try {
+        const payload = JSON.parse(value.slice(metricsMarker.length));
+        if (payload?.kind === "test") payloads.push(payload);
+      } catch {
+        // A malformed diagnostic must not change the WTR outcome.
+      }
+    }
+  }
+  return payloads;
+}
+
+function sumMetricRecords(records) {
+  const total = {};
+  for (const record of records) {
+    for (const [key, value] of Object.entries(record ?? {})) {
+      if (
+        key === "kind" ||
+        key === "name" ||
+        key === "status" ||
+        key === "durationMs" ||
+        key === "teardown"
+      )
+        continue;
+      if (typeof value === "number") total[key] = (total[key] ?? 0) + value;
+    }
+    if (record.teardown) {
+      total.teardownChecks = (total.teardownChecks ?? 0) + 1;
+      if (record.teardown.ok) total.teardownOk = (total.teardownOk ?? 0) + 1;
+    }
+  }
+  return total;
+}
+
+function metricsReporter() {
+  let startedAt = Date.now();
+  let peakRssBytes = process.memoryUsage().rss;
+  let rssTimer;
+
+  const sampleRss = () => {
+    peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss);
+  };
+
+  return {
+    start({ startTime }) {
+      startedAt = startTime || Date.now();
+      sampleRss();
+      rssTimer = setInterval(sampleRss, 250);
+      rssTimer.unref?.();
+    },
+    async stop({ sessions }) {
+      if (rssTimer) clearInterval(rssTimer);
+      sampleRss();
+      const fileResults = sessions.map((session) => {
+        const tests = flattenTestResults(session.testResults);
+        const metrics = metricPayloads(session);
+        const metricsByName = new Map();
+        for (const metric of metrics) {
+          const list = metricsByName.get(metric.name) ?? [];
+          list.push(metric);
+          metricsByName.set(metric.name, list);
+        }
+        const testResults = tests.map((test) => {
+          const list = metricsByName.get(test.name) ?? [];
+          const metric = list.shift();
+          return {
+            name: test.name,
+            passed: test.passed,
+            skipped: test.skipped,
+            durationMs: test.duration ?? null,
+            ...(metric ? { harness: metric } : {}),
+          };
+        });
+        const timing = sessionTimings.get(session.id);
+        return {
+          file: relative(repoRoot, session.testFile),
+          passed: session.passed ?? false,
+          testCount: tests.length,
+          elapsedMs: timing ? timing.end - timing.start : null,
+          tests: testResults,
+          harness: sumMetricRecords(metrics),
+        };
+      });
+      const allTests = fileResults.flatMap((file) => file.tests);
+      const unassignedMetricRecords = sessions.flatMap((session) => {
+        const knownNames = new Map();
+        for (const test of fileResults.find(
+          (file) => file.file === relative(repoRoot, session.testFile),
+        )?.tests ?? []) {
+          knownNames.set(test.name, (knownNames.get(test.name) ?? 0) + 1);
+        }
+        return metricPayloads(session).filter((metric) => {
+          const remaining = knownNames.get(metric.name) ?? 0;
+          if (remaining === 0) return true;
+          knownNames.set(metric.name, remaining - 1);
+          return false;
+        });
+      });
+      const output = {
+        schemaVersion: 1,
+        generatedAt: new Date().toISOString(),
+        runId: process.env.WTR_METRICS_RUN_ID ?? null,
+        shard: process.env.WTR_METRICS_SHARD ?? null,
+        pid: process.pid,
+        wtr: {
+          wallClockMs: Math.max(0, Date.now() - startedAt),
+          chromiumLaunches,
+          sessionStarts,
+          sessionStops,
+          peakRssBytes,
+          testsFinishTimeoutMs: 3600000,
+        },
+        tests: {
+          runnableSpecs: sessions.length,
+          runnableTests: allTests.length,
+          passed: allTests.filter((test) => test.passed && !test.skipped).length,
+          failed: allTests.filter((test) => !test.passed && !test.skipped).length,
+          skipped: allTests.filter((test) => test.skipped).length,
+        },
+        files: fileResults,
+        harness: {
+          ...fileResults.reduce((total, file) => {
+            for (const [key, value] of Object.entries(file.harness))
+              total[key] = (total[key] ?? 0) + value;
+            return total;
+          }, {}),
+          ...sumMetricRecords(unassignedMetricRecords),
+        },
+      };
+      const outputPath = process.env.WTR_METRICS_OUTPUT
+        ? resolve(process.env.WTR_METRICS_OUTPUT)
+        : join(repoRoot, ".agent", "wtr-metrics", `${Date.now()}-${process.pid}-wtr.json`);
+      mkdirSync(resolve(outputPath, ".."), { recursive: true });
+      writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
+    },
+  };
+}
+
+// Real CSS :hover/:active require a real mouse. Expose Chrome's Puppeteer
 // mouse to the test page via a bridge; wtr-compat's Locator.hover()/mouse
 // down()/up() call it after their synthetic dispatch.
 const { ChromeLauncher } = await import("@web/test-runner-chrome");
 class RealMouseLauncher extends ChromeLauncher {
+  launchBrowser(options = {}) {
+    chromiumLaunches += 1;
+    return super.launchBrowser(options);
+  }
+
   async startSession(sessionId, url) {
+    sessionStarts += 1;
+    sessionTimings.set(sessionId, { start: Date.now() });
     await super.startSession(sessionId, url);
     const page = this.activePages.get(sessionId).puppeteerPage;
     try {
@@ -508,11 +689,25 @@ class RealMouseLauncher extends ChromeLauncher {
       if (!String(error?.message ?? error).includes("already exists")) throw error;
     }
   }
+
+  async stopSession(sessionId) {
+    sessionStops += 1;
+    const timing = sessionTimings.get(sessionId);
+    if (timing) timing.end = Date.now();
+    return super.stopSession(sessionId);
+  }
 }
 
 export default {
   plugins: [fixturePlugin, esbuild],
   files: ["tests/wtr/**/*.e2e.ts"],
+  ...(metricsEnabled
+    ? {
+        reporters: [defaultReporter(), metricsReporter()],
+        testRunnerHtml: (testRunnerImport) =>
+          `<!DOCTYPE html><html><head></head><body><script>globalThis.__WTR_METRICS__=true;</script><script type="module" src="${testRunnerImport}"></script></body></html>`,
+      }
+    : {}),
   mimeTypes: { "**/*.ts": "text/javascript" },
   port: 8128,
   nodeResolve: false,
@@ -541,8 +736,7 @@ export default {
         // every text assertion mismatches.
         args: ["--no-first-run", "--lang=en-US"],
       },
-      ({ browser }) =>
-        browser.defaultBrowserContext(),
+      ({ browser }) => browser.defaultBrowserContext(),
       ({ context }) => context.newPage(),
       undefined,
       1,

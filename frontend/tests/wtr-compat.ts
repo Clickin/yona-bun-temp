@@ -31,6 +31,75 @@ export type Page = PageFacade;
   cwd: () => "/",
 };
 
+const metricsEnabled = (globalThis as { __WTR_METRICS__?: unknown }).__WTR_METRICS__ === true;
+const metricsMarker = "__WTR_METRICS__";
+const metricCounterNames = [
+  "gotoCalls",
+  "gotoReadyMounts",
+  "gotoFallbacks",
+  "iframeCreates",
+  "iframeRemoves",
+  "screenshotCalls",
+  "fixtureSyncReads",
+  "fixtureAsyncReads",
+  "fixtureCacheHits",
+  "fixtureSyncCacheHits",
+  "fixtureAsyncCacheHits",
+  "mockRequests",
+  "routeRegistrations",
+  "routeUnregistrations",
+  "requestEvents",
+  "frameNavigations",
+  "eventListenersAdded",
+  "eventListenersRemoved",
+  "storageCleanups",
+  "initHooksAdded",
+  "responseWatchersAdded",
+  "responseWatchersRemoved",
+] as const;
+type MetricCounter = (typeof metricCounterNames)[number];
+type MetricRecord = Record<string, unknown> & { kind: "test"; name: string; status: string };
+
+const pendingMetric = Object.fromEntries(metricCounterNames.map((name) => [name, 0])) as Record<
+  MetricCounter,
+  number
+>;
+const reportedPendingMetric = { ...pendingMetric };
+let activeMetric: MetricRecord | null = null;
+
+function metricIncrement(name: MetricCounter, amount = 1): void {
+  if (!metricsEnabled) return;
+  if (activeMetric) {
+    activeMetric[name] = Number(activeMetric[name] ?? 0) + amount;
+  } else {
+    pendingMetric[name] += amount;
+  }
+}
+
+function takePendingMetric(record: MetricRecord): void {
+  if (!metricsEnabled) return;
+  for (const name of metricCounterNames) {
+    const delta = pendingMetric[name] - reportedPendingMetric[name];
+    if (delta !== 0) record[name] = Number(record[name] ?? 0) + delta;
+    reportedPendingMetric[name] = pendingMetric[name];
+  }
+}
+
+function emitMetric(record: MetricRecord): void {
+  if (!metricsEnabled) return;
+  console.log(`${metricsMarker}${JSON.stringify(record)}`);
+}
+
+function createMetricRecord(name: string): MetricRecord {
+  return {
+    kind: "test",
+    name,
+    status: "passed",
+    durationMs: 0,
+    ...Object.fromEntries(metricCounterNames.map((counter) => [counter, 0])),
+  } as MetricRecord;
+}
+
 // Minimal Buffer polyfill: specs call Buffer.from(...) for upload fixtures.
 class WtrBuffer {
   static alloc(size: number): Uint8Array {
@@ -64,15 +133,37 @@ export async function readFile(source: URL | string): Promise<string> {
   const raw =
     typeof resolved === "string" ? resolved.replace(/\.(ts|tsx|js|mjs)$/i, ".$1.txt") : resolved;
   const href = typeof raw === "string" ? new URL(raw, import.meta.url).href : raw.href;
+  const cacheable = /^https?:\/\/[^/]+\/(tests|yona-original|docs)\//u.test(href);
+  const knownRevision = asyncFixtureRevisions.get(href);
+  if (cacheable && knownRevision) {
+    const cached = asyncFileCache.get(`${href}|${knownRevision}`);
+    if (cached !== undefined) {
+      metricIncrement("fixtureCacheHits");
+      metricIncrement("fixtureAsyncCacheHits");
+      return cached as string;
+    }
+  }
+  metricIncrement("fixtureAsyncReads");
   const response = await fetch(href);
   if (!response.ok) throw new Error(`wtr readFile: ${response.status} for ${href}`);
+  const revision = response.headers.get("x-wtr-fixture-revision") ?? "unknown";
   // Binary fixtures (PNG etc.) return bytes so `byteLength` assertions work
   // like Playwright's node:fs Buffer.
   if (/\.(png|jpe?g|gif|webp|ico|woff2?|eot|ttf|otf|svg)$/i.test(href)) {
     const buffer = await response.arrayBuffer();
-    return new Uint8Array(buffer) as unknown as string;
+    const value = new Uint8Array(buffer);
+    if (cacheable && revision !== "unknown") {
+      asyncFixtureRevisions.set(href, revision);
+      asyncFileCache.set(`${href}|${revision}`, value);
+    }
+    return value as unknown as string;
   }
-  return response.text();
+  const value = await response.text();
+  if (cacheable && revision !== "unknown") {
+    asyncFixtureRevisions.set(href, revision);
+    asyncFileCache.set(`${href}|${revision}`, value);
+  }
+  return value;
 }
 
 // Cross-realm event bus: the injected iframe script emits dialog/request/console
@@ -82,6 +173,8 @@ const eventListeners = new Map<WtrEventName, Array<(payload: unknown) => void>>(
 const eventWaiters = new Map<WtrEventName, Array<(payload: unknown) => void>>();
 
 function emitWtrEvent(name: WtrEventName, payload: unknown): void {
+  if (name === "request") metricIncrement("requestEvents");
+  if (name === "framenavigated") metricIncrement("frameNavigations");
   for (const listener of eventListeners.get(name) ?? []) listener(payload);
   const waiters = eventWaiters.get(name) ?? [];
   eventWaiters.delete(name);
@@ -122,6 +215,7 @@ function checkResponseWatchers(facade: ResponseFacade): void {
     const watcher = responseWatchers[index];
     if (watcher.predicate(facade)) {
       responseWatchers.splice(index, 1);
+      metricIncrement("responseWatchersRemoved");
       watcher.resolve(facade);
     }
   }
@@ -141,6 +235,9 @@ wireCrossRealmBridge();
 // ---------------------------------------------------------------------------
 
 const fileCache = new Map<string, string>();
+const fixtureRevisions = new Map<string, string>();
+const asyncFileCache = new Map<string, string | Uint8Array>();
+const asyncFixtureRevisions = new Map<string, string>();
 
 // Synchronous glob over the fixture server (mirrors node:fs globSync; the
 // server-side endpoint returns the matched paths as JSON lines).
@@ -181,8 +278,14 @@ export function readFileSync(source: URL | string): string {
   const raw =
     typeof resolved === "string" ? resolved.replace(/\.(ts|tsx|js|mjs)$/i, ".$1.txt") : resolved;
   const href = typeof raw === "string" ? new URL(raw, import.meta.url).href : raw.href;
-  const cached = fileCache.get(href);
-  if (cached !== undefined) return cached;
+  const knownRevision = fixtureRevisions.get(href);
+  const cached = knownRevision ? fileCache.get(`${href}|${knownRevision}`) : fileCache.get(href);
+  if (cached !== undefined) {
+    metricIncrement("fixtureCacheHits");
+    metricIncrement("fixtureSyncCacheHits");
+    return cached;
+  }
+  metricIncrement("fixtureSyncReads");
   const request = new XMLHttpRequest();
   request.open("GET", href, false);
   // NOTE: sync XHR forbids responseType != "" (InvalidAccessError), so binary
@@ -192,7 +295,13 @@ export function readFileSync(source: URL | string): string {
     throw new Error(`wtr readFileSync: ${request.status} for ${href}`);
   }
   const text = request.responseText;
-  fileCache.set(href, text);
+  const revision = request.getResponseHeader("x-wtr-fixture-revision") ?? "unknown";
+  if (revision !== "unknown") {
+    fixtureRevisions.set(href, revision);
+    fileCache.set(`${href}|${revision}`, text);
+  } else {
+    fileCache.set(href, text);
+  }
   return text;
 }
 
@@ -353,6 +462,7 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
     for (let index = mockRegistry.length - 1; index >= 0; index -= 1) {
       const { regex, handler } = mockRegistry[index];
       if (regex.test(url)) {
+        metricIncrement("mockRequests");
         const top = typeof window !== "undefined" ? window : null;
         if (top) {
           const counter = ((top as unknown as Record<string, number>).__wtrMockHits ?? 0) + 1;
@@ -1698,6 +1808,7 @@ class PageFacade {
         // actual state reset.
       }
     }
+    if (this.iframeElement) metricIncrement("iframeRemoves");
     this.iframeElement?.remove();
     this.iframeElement = null;
   }
@@ -1921,6 +2032,7 @@ class PageFacade {
   }
 
   async goto(url: string, options?: { waitUntil?: string }): Promise<void> {
+    metricIncrement("gotoCalls");
     if (!this.iframeElement) {
       this.iframeElement = document.createElement("iframe");
       this.iframeElement.id = "wtr-app-frame";
@@ -1931,6 +2043,7 @@ class PageFacade {
       this.iframeElement.style.left = "0";
       this.iframeElement.style.top = "0";
       document.body.appendChild(this.iframeElement);
+      metricIncrement("iframeCreates");
     }
     // Park the real mouse before navigation: the cursor persists across
     // goto/setViewportSize within a test, so without this a fresh document
@@ -1986,8 +2099,25 @@ class PageFacade {
       method: () => "GET",
       resourceType: () => "document",
     });
-    // Let the SPA boot past its first fetch round-trips before assertions poll.
-    await sleep(250);
+    const readyDeadline = Date.now() + 250;
+    let ready = false;
+    while (Date.now() < readyDeadline) {
+      const document = this.iframeElement?.contentDocument;
+      ready =
+        document?.readyState === "complete" && document.querySelector("#root > #main") !== null;
+      if (ready) break;
+      await sleep(10);
+    }
+    if (ready) {
+      metricIncrement("gotoReadyMounts");
+      // Allow one event-loop turn for the first Query effect and its mock.
+      await sleep(0);
+    } else {
+      metricIncrement("gotoFallbacks");
+      // Preserve the old bounded readiness delay for non-React fixture routes.
+      const remaining = Math.max(0, readyDeadline - Date.now());
+      await sleep(remaining);
+    }
   }
 
   async goBack(): Promise<void> {
@@ -2063,6 +2193,7 @@ class PageFacade {
 
   // Artifact-only: screenshots are not part of assertion outcomes.
   async screenshot(_options?: Record<string, unknown>): Promise<Uint8Array> {
+    metricIncrement("screenshotCalls");
     return new Uint8Array(1);
   }
 
@@ -2099,6 +2230,7 @@ class PageFacade {
   }
 
   async addInitScript(fn: (arg: never) => void, arg?: unknown): Promise<void> {
+    metricIncrement("initHooksAdded");
     initHooks.push({
       source: fn.toString(),
       argJson: arg === undefined ? "" : JSON.stringify(arg),
@@ -2125,6 +2257,7 @@ class PageFacade {
         }`,
         argJson: "",
       });
+      metricIncrement("initHooksAdded");
     },
     // Playwright clock.runFor(ms) advances fake timers; under WTR the app's
     // real timers drive the state, so runFor waits out the real interval.
@@ -2141,6 +2274,7 @@ class PageFacade {
   async waitForResponse(predicate: ResponseWatcher): Promise<ResponseFacade> {
     const { promise, resolve } = Promise.withResolvers<ResponseFacade>();
     responseWatchers.push({ predicate, resolve: resolve as (facade: unknown) => void });
+    metricIncrement("responseWatchersAdded");
     return promise;
   }
 
@@ -2168,6 +2302,7 @@ class PageFacade {
         "request",
         (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
       );
+      metricIncrement("eventListenersRemoved");
       reject(new Error(`waitForRequest: no matching request within ${timeout}ms`));
     }, timeout);
     const matcher =
@@ -2199,6 +2334,7 @@ class PageFacade {
           "request",
           (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
         );
+        metricIncrement("eventListenersRemoved");
         clearTimeout(timeoutHandle);
         resolve({
           url: urlValue,
@@ -2213,6 +2349,7 @@ class PageFacade {
       }
     };
     eventListeners.set("request", [...(eventListeners.get("request") ?? []), check]);
+    metricIncrement("eventListenersAdded");
     return promise;
   }
 
@@ -2262,6 +2399,7 @@ class PageFacade {
     for (let index = mockRegistry.length - 1; index >= 0; index -= 1) {
       if (mockRegistry[index].regex.source === regex.source) {
         mockRegistry.splice(index, 1);
+        metricIncrement("routeUnregistrations");
       }
     }
   }
@@ -2270,6 +2408,7 @@ class PageFacade {
     const listeners = eventListeners.get(name) ?? [];
     listeners.push(listener);
     eventListeners.set(name, listeners);
+    metricIncrement("eventListenersAdded");
   }
 
   once(name: WtrEventName, listener: (payload: unknown) => void): void {
@@ -2280,6 +2419,7 @@ class PageFacade {
         name,
         listeners.filter((entry) => entry !== wrapped),
       );
+      metricIncrement("eventListenersRemoved");
     };
     this.on(name, wrapped);
   }
@@ -2325,6 +2465,7 @@ class PageFacade {
       this.iframeElement.style.left = "0";
       this.iframeElement.style.top = "0";
       document.body.appendChild(this.iframeElement);
+      metricIncrement("iframeCreates");
     }
     installFetchMock(this.iframeElement, window.fetch);
     this.applyMediaEmulation();
@@ -2366,9 +2507,11 @@ class PageFacade {
     // Playwright accepts a string glob OR a RegExp.
     const regex = typeof pattern === "string" ? globToRegExp(pattern) : pattern;
     mockRegistry.push({ regex, handler });
+    metricIncrement("routeRegistrations");
   }
 
   async unrouteAll(): Promise<void> {
+    metricIncrement("routeUnregistrations", mockRegistry.length);
     mockRegistry.length = 0;
   }
 
@@ -3548,35 +3691,84 @@ if (typeof originalAfterEach === "function") {
 function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
   return async function (this: MochaContext) {
     const fixturePage = new PageFacade();
+    const metric = metricsEnabled ? createMetricRecord(String(this?.test?.title ?? "")) : null;
+    const metricStartedAt = performance.now();
     if (configuredViewport) {
       void fixturePage.setViewportSize(configuredViewport);
     }
     currentPage = fixturePage;
+    activeMetric = metric;
     installDefaultMocks(fixturePage);
     try {
       await fn({ page: fixturePage as unknown as Page });
     } catch (error) {
       if (error instanceof Error && error.message === "__WTR_SKIP__") {
+        if (metric) metric.status = "skipped";
         this.skip();
         return;
       }
+      if (metric) metric.status = "failed";
       throw error;
     } finally {
       // Clear registrations at the END (not the start): mocha runs
       // beforeEach BEFORE the body, so start-of-body clears would wipe the
       // hook-registered mocks/initHooks right before they're needed.
+      const teardownBefore = metricsEnabled
+        ? {
+            mockRoutes: mockRegistry.length,
+            initHooks: initHooks.length,
+            eventListeners: Array.from(eventListeners.values()).reduce(
+              (total, listeners) => total + listeners.length,
+              0,
+            ),
+            eventWaiters: Array.from(eventWaiters.values()).reduce(
+              (total, waiters) => total + waiters.length,
+              0,
+            ),
+            responseWatchers: responseWatchers.length,
+          }
+        : null;
       mockRegistry.length = 0;
       initHooks.length = 0;
       eventListeners.clear();
       eventWaiters.clear();
       responseWatchers.length = 0;
+      if (teardownBefore?.responseWatchers) {
+        metricIncrement("responseWatchersRemoved", teardownBefore.responseWatchers);
+      }
       try {
         window.localStorage.clear();
         window.sessionStorage.clear();
+        metricIncrement("storageCleanups");
       } catch {
         // Storage may be unavailable in some contexts.
       }
       await fixturePage.removeIframe();
+      if (metric) {
+        const teardownAfter = {
+          mockRoutes: mockRegistry.length,
+          initHooks: initHooks.length,
+          eventListeners: Array.from(eventListeners.values()).reduce(
+            (total, listeners) => total + listeners.length,
+            0,
+          ),
+          eventWaiters: Array.from(eventWaiters.values()).reduce(
+            (total, waiters) => total + waiters.length,
+            0,
+          ),
+          responseWatchers: responseWatchers.length,
+        };
+        metric.durationMs = performance.now() - metricStartedAt;
+        metric.teardown = {
+          before: teardownBefore,
+          after: teardownAfter,
+          iframeRemoved: true,
+          ok: Object.values(teardownAfter).every((value) => value === 0),
+        };
+        takePendingMetric(metric);
+        emitMetric(metric);
+      }
+      activeMetric = null;
       currentPage = null;
     }
   };
