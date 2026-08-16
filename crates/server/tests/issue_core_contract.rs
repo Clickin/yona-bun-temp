@@ -188,7 +188,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 }
 
 #[tokio::test]
-async fn project_issue_list_reports_legacy_sidebar_counts_independent_of_search_and_page() {
+async fn project_issue_list_reports_legacy_sidebar_counts_following_search_filter() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     response_json(
@@ -251,7 +251,10 @@ async fn project_issue_list_reports_legacy_sidebar_counts_independent_of_search_
     )
     .await;
 
-    let open = response_json(
+    // Legacy Issue.countIssuesBy(project.id, param.clone().setState(state))
+    // counts every tab with the current search params, so a non-matching
+    // filter zeroes the counts too (partial_list_wrap.scala.html:53).
+    let no_match = response_json(
         rest(
             app.clone(),
             Method::GET,
@@ -263,12 +266,53 @@ async fn project_issue_list_reports_legacy_sidebar_counts_independent_of_search_
         .await,
     )
     .await;
-    assert_eq!(open["totalCount"], 0);
+    assert_eq!(no_match["totalCount"], 0);
+    assert_eq!(no_match["openIssueCount"], 0);
+    assert_eq!(no_match["closedIssueCount"], 0);
+    assert_eq!(no_match["assignedToMeCount"], 0);
+    assert_eq!(no_match["authoredByMeCount"], 0);
+    assert_eq!(no_match["commentedByMeCount"], 0);
+
+    // A matching filter keeps the counts scoped to it: only "Open issue"
+    // matches, so the closed tab count drops to 0.
+    let open = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open&filter=Open",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(open["totalCount"], 1);
     assert_eq!(open["openIssueCount"], 1);
-    assert_eq!(open["closedIssueCount"], 1);
+    assert_eq!(open["closedIssueCount"], 0);
     assert_eq!(open["assignedToMeCount"], 1);
     assert_eq!(open["authoredByMeCount"], 1);
     assert_eq!(open["commentedByMeCount"], 1);
+
+    // Without a filter the counts are the project totals again.
+    let all = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(all["totalCount"], 1);
+    assert_eq!(all["openIssueCount"], 1);
+    assert_eq!(all["closedIssueCount"], 1);
+    assert_eq!(all["assignedToMeCount"], 1);
+    assert_eq!(all["authoredByMeCount"], 1);
+    assert_eq!(all["commentedByMeCount"], 1);
 
     let closed = response_json(
         rest(
@@ -283,10 +327,10 @@ async fn project_issue_list_reports_legacy_sidebar_counts_independent_of_search_
     )
     .await;
     assert_eq!(closed["totalCount"], 0);
-    assert_eq!(closed["openIssueCount"], 1);
-    assert_eq!(closed["closedIssueCount"], 1);
+    assert_eq!(closed["openIssueCount"], 0);
+    assert_eq!(closed["closedIssueCount"], 0);
     assert_eq!(closed["assignedToMeCount"], 0);
-    assert_eq!(closed["authoredByMeCount"], 1);
+    assert_eq!(closed["authoredByMeCount"], 0);
     assert_eq!(closed["commentedByMeCount"], 0);
 }
 
@@ -1915,7 +1959,9 @@ async fn project_issue_list_sql_filters_labels_assignee_commenter() {
         rest(
             app.clone(),
             Method::GET,
-            &format!("/yona/api/v1/projects/owner/projectYobi/issues?state=open&labelIds[]={label_id}"),
+            &format!(
+                "/yona/api/v1/projects/owner/projectYobi/issues?state=open&labelIds[]={label_id}"
+            ),
             None,
             None,
             None,

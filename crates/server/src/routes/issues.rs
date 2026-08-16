@@ -35,10 +35,9 @@ use crate::{
     project_update_allowed, redirect_to, require_authenticated_user, require_project_authorization,
     require_project_read, require_project_resource_create, require_session, require_valid_csrf,
     rest_json_response, rest_json_response_with_etag, rest_owned_view, user_issue_filter_name,
-    user_issue_state,
-    visible_projects_for_organization, ConnectError, Context, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
-    ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
+    user_issue_state, visible_projects_for_organization, ConnectError, Context,
+    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
 };
 
 mod comments;
@@ -2801,13 +2800,23 @@ async fn rest_list_project_issues(
             .map_err(RestRouteError::from_connect_error)?
             .map(|user| user.login_id);
     }
-    let (record, (open_issue_count, closed_issue_count, assigned_to_me_count, authored_by_me_count, commented_by_me_count)) = tokio::try_join!(
-        repository.list_project_issues_filtered(&owner_name, &project_name, filter),
+    let (
+        record,
+        (
+            open_issue_count,
+            closed_issue_count,
+            assigned_to_me_count,
+            authored_by_me_count,
+            commented_by_me_count,
+        ),
+    ) = tokio::try_join!(
+        repository.list_project_issues_filtered(&owner_name, &project_name, filter.clone()),
         repository.count_project_issue_summary(
             &owner_name,
             &project_name,
             count_state,
             actor_id,
+            filter,
         ),
     )
     .map_err(internal_error)

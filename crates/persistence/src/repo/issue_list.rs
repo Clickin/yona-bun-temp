@@ -63,6 +63,7 @@ impl AppRepositoryImpl<'_> {
         project_name: &str,
         state: &str,
         actor_id: Option<i64>,
+        filter: IssueListFilter,
     ) -> Result<(u32, u32, u32, u32, u32), DbErr> {
         let Some(project) = self
             .read_project_by_owner_and_name(owner_name, project_name)
@@ -71,52 +72,52 @@ impl AppRepositoryImpl<'_> {
             return Ok((0, 0, 0, 0, 0));
         };
 
+        // Legacy Issue.countIssuesBy(project.id, param.clone().setState(state))
+        // counts each tab with the current search params (filter, labels,
+        // milestone, due date, assignee/author/commenter). Reuse the list
+        // query's condition builder so tab counts always match the filtered
+        // list; the quicksearch variants swap their actor field the same way
+        // partial_list_quicksearch.scala.html does.
+        let backend = self.db.get_database_backend();
+        let mut open_filter = filter.clone();
+        open_filter.state = Some("open".to_string());
+        let mut closed_filter = filter.clone();
+        closed_filter.state = Some("closed".to_string());
         let open_condition = Condition::all()
-            .add(issue::Column::State.eq(Some(issue_state_to_raw(
-                self.db.get_database_backend(),
-                "open",
-            ))))
-            .add(issue::Column::ParentId.is_null());
+            .add(project_issue_list_condition(
+                project.id,
+                &open_filter,
+                backend,
+            ))
+            .add(Expr::col((issue::Entity, issue::Column::ParentId)).is_null());
         let closed_condition = Condition::all()
-            .add(issue::Column::State.eq(Some(issue_state_to_raw(
-                self.db.get_database_backend(),
-                "closed",
-            ))))
-            .add(issue::Column::ParentId.is_null());
+            .add(project_issue_list_condition(
+                project.id,
+                &closed_filter,
+                backend,
+            ))
+            .add(Expr::col((issue::Entity, issue::Column::ParentId)).is_null());
         let assigned_condition = actor_id
             .map(|actor_id| {
-                Condition::all()
-                    .add(issue::Column::State.eq(Some(issue_state_to_raw(
-                        self.db.get_database_backend(),
-                        state,
-                    ))))
-                    .add(assignee::Column::UserId.eq(Some(actor_id)))
-                    .add(assignee::Column::ProjectId.eq(Some(project.id)))
+                let mut assigned_filter = filter.clone();
+                assigned_filter.assignee_id = Some(actor_id);
+                assigned_filter.assignee_login_id = None;
+                project_issue_list_condition(project.id, &assigned_filter, backend)
             })
             .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
         let authored_condition = actor_id
             .map(|actor_id| {
-                Condition::all()
-                    .add(issue::Column::State.eq(Some(issue_state_to_raw(
-                        self.db.get_database_backend(),
-                        state,
-                    ))))
-                    .add(issue::Column::AuthorId.eq(Some(actor_id)))
+                let mut authored_filter = filter.clone();
+                authored_filter.author_id = Some(actor_id);
+                authored_filter.author_login_id = None;
+                project_issue_list_condition(project.id, &authored_filter, backend)
             })
             .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
         let commented_condition = actor_id
             .map(|actor_id| {
-                let issue_ids = issue_comment::Entity::find()
-                    .select_only()
-                    .column(issue_comment::Column::IssueId)
-                    .filter(issue_comment::Column::AuthorId.eq(Some(actor_id)))
-                    .into_query();
-                Condition::all()
-                    .add(issue::Column::State.eq(Some(issue_state_to_raw(
-                        self.db.get_database_backend(),
-                        state,
-                    ))))
-                    .add(issue::Column::Id.in_subquery(issue_ids))
+                let mut commented_filter = filter.clone();
+                commented_filter.commenter_id = Some(actor_id);
+                project_issue_list_condition(project.id, &commented_filter, backend)
             })
             .unwrap_or_else(|| Condition::all().add(Expr::val(false).eq(true)));
 
