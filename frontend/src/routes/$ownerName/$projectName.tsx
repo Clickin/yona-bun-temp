@@ -333,6 +333,8 @@ function ProjectHomeRouteShell({
     enabled: active === "issueform",
     queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
     queryKey: ["project", ownerName, projectName, "issues", "form-options"],
+    retry: false,
+    retryOnMount: false,
   });
   const issueDetailNumber = exactProjectIssueNumber(
     useRouterState({ select: (state) => state.location.pathname }),

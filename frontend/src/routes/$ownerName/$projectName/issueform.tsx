@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Link,
+  Navigate,
   createFileRoute,
   useBlocker,
   useNavigate,
@@ -340,6 +341,8 @@ function ProjectIssueFormRoute() {
   const formOptionsQuery = useQuery({
     queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
     queryKey: ["project", ownerName, projectName, "issues", "form-options"],
+    retry: false,
+    retryOnMount: false,
   });
 
   return (
@@ -449,6 +452,8 @@ export function ProjectIssueFormProjectScreen({
   const formOptionsQuery = useQuery({
     queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
     queryKey: ["project", ownerName, projectName, "issues", "form-options"],
+    retry: false,
+    retryOnMount: false,
   });
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -575,22 +580,11 @@ export function ProjectIssueFormProjectScreen({
 }
 
 function IssueFormLoginRedirect({ redirectUrl }: { redirectUrl: string }) {
-  const { t } = useLegacyMessages();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    void navigate({
-      replace: true,
-      search: { redirectUrl },
-      to: "/users/loginform",
-    });
-  }, [navigate, redirectUrl]);
-
-  return (
-    <div className="issue-form-login-redirect" role="status">
-      {t("error.auth.unauthorized.waringMessage")}
-    </div>
-  );
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  if (pathname === "/users/loginform") {
+    return null;
+  }
+  return <Navigate replace search={{ redirectUrl }} to="/users/loginform" />;
 }
 
 function ProjectIssueFormBody({

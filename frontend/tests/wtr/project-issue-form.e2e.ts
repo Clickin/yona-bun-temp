@@ -1387,15 +1387,8 @@ test("issue form keeps the legacy responsive stacked columns at 800px", async ({
 test("anonymous project form response redirects to the typed mounted login route", async ({
   page,
 }) => {
-  // HARNESS_ENV: the wtr fetch facade leaves the app's in-flight form-options
-  // query permanently pending on a mocked 401 (a direct fetch probe resolves,
-  // but the app's restFetch during the initial SPA load races the iframe
-  // navigation and never settles) — the redirect cannot be observed in the
-  // mock harness. The route branch (IssueFormLoginRedirect) is exercised by
-  // the 401 path in real-instance runs; skip here.
-  test.skip(true, "HARNESS_ENV: mocked-401 query never settles in the wtr facade");
   const basePath = appBasePath();
-  await mockIssueForm(page, { formOptionsStatus: 401 });
+  await mockIssueForm(page, { anonymous: true, formOptionsStatus: 401 });
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page).toHaveURL(
     `${basePath}/users/loginform?redirectUrl=%2Fadmin%2Fsample%2Fissueform`,
@@ -1553,6 +1546,7 @@ test("issue form matches observed 390px stacking and removes legacy implementati
 });
 
 type MockOptions = {
+  anonymous?: boolean;
   createDelayMs?: number;
   createStatus?: number;
   deleteFailures?: number;
@@ -1609,7 +1603,10 @@ export async function mockIssueForm(page: Page, options: MockOptions = {}) {
 
   await page.route("**/api/v1/session", (route) => {
     record(route);
-    return route.fulfill({ contentType: "application/json", body: JSON.stringify(session()) });
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(session(options.anonymous)),
+    });
   });
   await page.route("**/api/auth/session", (route) => {
     record(route);
@@ -1634,7 +1631,7 @@ export async function mockIssueForm(page: Page, options: MockOptions = {}) {
         profile: null,
         pullRequestItems: [],
         recentProjects: [],
-        session: session(),
+        session: session(options.anonymous),
         watchedProjects: [],
       }),
     });
@@ -1989,17 +1986,17 @@ export async function mockIssueForm(page: Page, options: MockOptions = {}) {
   return state;
 }
 
-function session() {
+function session(anonymous = false) {
   return {
-    actorId: 1,
+    actorId: anonymous ? null : 1,
     avatarUrl: `${appBasePath()}/assets/images/default-avatar-32.png`,
     defaultLandingPath: "/",
-    emailAddress: "admin@example.com",
-    isAnonymous: false,
-    isConfirmed: true,
-    isSiteAdmin: true,
-    loginId: "admin",
-    userLabel: "Site Admin",
+    emailAddress: anonymous ? "" : "admin@example.com",
+    isAnonymous: anonymous,
+    isConfirmed: !anonymous,
+    isSiteAdmin: !anonymous,
+    loginId: anonymous ? "" : "admin",
+    userLabel: anonymous ? "" : "Site Admin",
   };
 }
 
