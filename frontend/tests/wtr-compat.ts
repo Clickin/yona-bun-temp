@@ -33,6 +33,7 @@ export type Page = PageFacade;
 
 const metricsEnabled = (globalThis as { __WTR_METRICS__?: unknown }).__WTR_METRICS__ === true;
 const metricsMarker = "__WTR_METRICS__";
+const DEFAULT_HARNESS_WAIT_TIMEOUT_MS = 30_000;
 const metricCounterNames = [
   "gotoCalls",
   "gotoReadyMounts",
@@ -56,6 +57,14 @@ const metricCounterNames = [
   "initHooksAdded",
   "responseWatchersAdded",
   "responseWatchersRemoved",
+  "eventWaitersAdded",
+  "eventWaitersRemoved",
+  "gotoLoadTimeouts",
+  "realMouseTimeouts",
+  "responseTimeouts",
+  "eventTimeouts",
+  "requestTimeouts",
+  "teardownFailures",
 ] as const;
 type MetricCounter = (typeof metricCounterNames)[number];
 type MetricRecord = Record<string, unknown> & { kind: "test"; name: string; status: string };
@@ -170,7 +179,12 @@ export async function readFile(source: URL | string): Promise<string> {
 // events through parent.__wtrEmit; watchers live here.
 type WtrEventName = "dialog" | "request" | "console" | "framenavigated";
 const eventListeners = new Map<WtrEventName, Array<(payload: unknown) => void>>();
-const eventWaiters = new Map<WtrEventName, Array<(payload: unknown) => void>>();
+type EventWaiter = {
+  resolve: (payload: unknown) => void;
+  reject: (error: unknown) => void;
+  timeoutHandle: ReturnType<typeof setTimeout>;
+};
+const eventWaiters = new Map<WtrEventName, EventWaiter[]>();
 
 function emitWtrEvent(name: WtrEventName, payload: unknown): void {
   if (name === "request") metricIncrement("requestEvents");
@@ -178,14 +192,35 @@ function emitWtrEvent(name: WtrEventName, payload: unknown): void {
   for (const listener of eventListeners.get(name) ?? []) listener(payload);
   const waiters = eventWaiters.get(name) ?? [];
   eventWaiters.delete(name);
-  for (const resolve of waiters) resolve(payload);
+  for (const waiter of waiters) {
+    clearTimeout(waiter.timeoutHandle);
+    metricIncrement("eventWaitersRemoved");
+    waiter.resolve(payload);
+  }
 }
 
-function waitForWtrEvent(name: WtrEventName): Promise<unknown> {
-  const { promise, resolve } = Promise.withResolvers<unknown>();
+function waitForWtrEvent(
+  name: WtrEventName,
+  timeout = DEFAULT_HARNESS_WAIT_TIMEOUT_MS,
+): Promise<unknown> {
+  const { promise, resolve, reject } = Promise.withResolvers<unknown>();
+  const waiter = {} as EventWaiter;
+  waiter.timeoutHandle = setTimeout(() => {
+    const waiters = eventWaiters.get(name) ?? [];
+    const index = waiters.indexOf(waiter);
+    if (index === -1) return;
+    waiters.splice(index, 1);
+    if (waiters.length === 0) eventWaiters.delete(name);
+    metricIncrement("eventWaitersRemoved");
+    metricIncrement("eventTimeouts");
+    reject(new Error(`waitForEvent: no "${name}" event within ${timeout}ms`));
+  }, timeout);
+  waiter.resolve = resolve;
+  waiter.reject = reject;
   const waiters = eventWaiters.get(name) ?? [];
-  waiters.push(resolve);
+  waiters.push(waiter);
   eventWaiters.set(name, waiters);
+  metricIncrement("eventWaitersAdded");
   return promise;
 }
 
@@ -207,18 +242,78 @@ type ResponseFacade = {
   json: () => Promise<unknown>;
 };
 type ResponseWatcher = (facade: ResponseFacade) => boolean;
-const responseWatchers: Array<{ predicate: ResponseWatcher; resolve: (facade: unknown) => void }> =
-  [];
+type ResponsePredicate = ResponseWatcher | string | RegExp;
+type ResponseWaiter = {
+  predicate: ResponseWatcher;
+  resolve: (facade: ResponseFacade) => void;
+  reject: (error: unknown) => void;
+  timeoutHandle: ReturnType<typeof setTimeout>;
+};
+const responseWatchers: ResponseWaiter[] = [];
+type RequestWaiter = {
+  check: (payload: unknown) => void;
+  timeoutHandle: ReturnType<typeof setTimeout>;
+};
+const requestWaiters = new Set<RequestWaiter>();
+
+function describeWaitTarget(target: unknown): string {
+  if (typeof target === "string") return target;
+  if (target instanceof RegExp) return target.toString();
+  if (typeof target === "function") {
+    const source = target.toString().replace(/\s+/gu, " ").trim();
+    return source.length > 160 ? `${source.slice(0, 157)}...` : source;
+  }
+  return String(target);
+}
+
+function removeResponseWatcher(watcher: ResponseWaiter): boolean {
+  const index = responseWatchers.indexOf(watcher);
+  if (index === -1) return false;
+  responseWatchers.splice(index, 1);
+  clearTimeout(watcher.timeoutHandle);
+  metricIncrement("responseWatchersRemoved");
+  return true;
+}
 
 function checkResponseWatchers(facade: ResponseFacade): void {
   for (let index = responseWatchers.length - 1; index >= 0; index -= 1) {
     const watcher = responseWatchers[index];
     if (watcher.predicate(facade)) {
-      responseWatchers.splice(index, 1);
-      metricIncrement("responseWatchersRemoved");
+      removeResponseWatcher(watcher);
       watcher.resolve(facade);
     }
   }
+}
+
+function clearRequestWaiters(): void {
+  for (const waiter of requestWaiters) clearTimeout(waiter.timeoutHandle);
+  requestWaiters.clear();
+}
+
+function clearEventWaiters(): void {
+  let count = 0;
+  for (const waiters of eventWaiters.values()) {
+    count += waiters.length;
+    for (const waiter of waiters) clearTimeout(waiter.timeoutHandle);
+  }
+  eventWaiters.clear();
+  if (count) metricIncrement("eventWaitersRemoved", count);
+}
+
+function clearResponseWatchers(): void {
+  const count = responseWatchers.length;
+  for (const watcher of responseWatchers) clearTimeout(watcher.timeoutHandle);
+  responseWatchers.length = 0;
+  if (count) metricIncrement("responseWatchersRemoved", count);
+}
+
+function clearEventListeners(): void {
+  const count = Array.from(eventListeners.values()).reduce(
+    (total, listeners) => total + listeners.length,
+    0,
+  );
+  eventListeners.clear();
+  if (count) metricIncrement("eventListenersRemoved", count);
 }
 
 function wireCrossRealmBridge(): void {
@@ -793,6 +888,42 @@ function sleep(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, ms);
   return promise;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeout: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutHandle = setTimeout(() => reject(new Error(message)), timeout);
+    promise.then(
+      (value) => {
+        clearTimeout(timeoutHandle);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutHandle);
+        reject(error);
+      },
+    );
+  });
+}
+
+function callRealMouseBridge(
+  operation: string,
+  x: number,
+  y: number,
+  message: string,
+): Promise<void> {
+  const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
+  if (typeof bridge !== "function") return Promise.resolve();
+  return withTimeout(
+    Promise.resolve().then(() =>
+      (bridge as (op: string, x: number, y: number) => Promise<void>)(operation, x, y),
+    ),
+    DEFAULT_HARNESS_WAIT_TIMEOUT_MS,
+    message,
+  ).catch((error) => {
+    if (error instanceof Error && error.message === message) metricIncrement("realMouseTimeouts");
+    throw error;
+  });
 }
 
 function normalizeText(text: string): string {
@@ -1672,10 +1803,11 @@ export class Locator {
       const rect = element.getBoundingClientRect();
       lastMouseX = rect.left + rect.width / 2;
       lastMouseY = rect.top + rect.height / 2;
-      await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+      await callRealMouseBridge(
         "move",
         iframeRect.left + lastMouseX,
         iframeRect.top + lastMouseY,
+        `hover: real-mouse bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
       );
     }
     await sleep(30);
@@ -1800,17 +1932,25 @@ class PageFacade {
   // next test, then drop the iframe.
   async removeIframe(): Promise<void> {
     const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
-    if (typeof bridge === "function") {
-      try {
-        await (bridge as (op: string, x: number, y: number) => Promise<void>)("move", -5, -5);
-      } catch {
-        // Bridge teardown is best-effort; the iframe removal below is the
-        // actual state reset.
+    const iframe = this.iframeElement;
+    if (!iframe) return;
+    try {
+      if (typeof bridge === "function") {
+        await callRealMouseBridge(
+          "move",
+          -5,
+          -5,
+          `removeIframe: real-mouse bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
+        );
       }
+    } catch {
+      // Bridge teardown is best-effort; the iframe removal below is the
+      // actual state reset.
+    } finally {
+      if (iframe) metricIncrement("iframeRemoves");
+      iframe?.remove();
+      if (this.iframeElement === iframe) this.iframeElement = null;
     }
-    if (this.iframeElement) metricIncrement("iframeRemoves");
-    this.iframeElement?.remove();
-    this.iframeElement = null;
   }
   private requestedViewport: { width: number; height: number } | null = null;
   private mediaEmulation: { reducedMotion?: "reduce" | "no-preference" | "light" } = {};
@@ -1894,10 +2034,11 @@ class PageFacade {
     if (typeof bridge !== "function") return;
     const iframeRect = this.iframeElement?.getBoundingClientRect();
     if (!iframeRect) return;
-    await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+    await callRealMouseBridge(
       op,
       iframeRect.left + x,
       iframeRect.top + y,
+      `mouse-${op}: real-mouse bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
     );
   }
 
@@ -2057,10 +2198,11 @@ class PageFacade {
     if (typeof bridge === "function") {
       const width = this.requestedViewport?.width ?? 1280;
       const height = this.requestedViewport?.height ?? 720;
-      await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+      await callRealMouseBridge(
         "setViewport",
         width,
         height,
+        `goto: viewport bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
       );
     }
     const absolute = url.startsWith("http") ? url : new URL(url, location.origin).href;
@@ -2071,12 +2213,29 @@ class PageFacade {
     // loaded (no load event → hang); Playwright's same-URL goto reloads.
     // The navigation is triggered AFTER the load listeners register below.
     const sameDocument = currentHref === absolute;
-    const { promise, resolve } = Promise.withResolvers<void>();
-    const onLoad = () => {
-      this.iframeElement?.removeEventListener("load", onLoad);
-      resolve();
+    const iframe = this.iframeElement;
+    const { promise, resolve, reject } = Promise.withResolvers<void>();
+    let settled = false;
+    let timeoutHandle: ReturnType<typeof setTimeout>;
+    let onLoad: () => void;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutHandle);
+      iframe.removeEventListener("load", onLoad);
+      if (error) reject(error);
+      else resolve();
     };
-    this.iframeElement.addEventListener("load", onLoad);
+    onLoad = () => finish();
+    timeoutHandle = setTimeout(() => {
+      metricIncrement("gotoLoadTimeouts");
+      finish(
+        new Error(
+          `goto-load: iframe did not load ${absolute} within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
+        ),
+      );
+    }, DEFAULT_HARNESS_WAIT_TIMEOUT_MS);
+    iframe.addEventListener("load", onLoad);
     if (sameDocument) {
       this.iframeElement.contentWindow?.location.reload();
     } else {
@@ -2271,9 +2430,29 @@ class PageFacade {
     },
   };
 
-  async waitForResponse(predicate: ResponseWatcher): Promise<ResponseFacade> {
-    const { promise, resolve } = Promise.withResolvers<ResponseFacade>();
-    responseWatchers.push({ predicate, resolve: resolve as (facade: unknown) => void });
+  async waitForResponse(
+    predicate: ResponsePredicate,
+    options?: { timeout?: number },
+  ): Promise<ResponseFacade> {
+    const { promise, resolve, reject } = Promise.withResolvers<ResponseFacade>();
+    const target = describeWaitTarget(predicate);
+    const matcher: ResponseWatcher =
+      typeof predicate === "string"
+        ? (response) => globToRegExp(predicate).test(response.url())
+        : predicate instanceof RegExp
+          ? (response) => predicate.test(response.url())
+          : predicate;
+    const timeout = options?.timeout ?? DEFAULT_HARNESS_WAIT_TIMEOUT_MS;
+    const waiter = {} as ResponseWaiter;
+    waiter.predicate = matcher;
+    waiter.resolve = resolve;
+    waiter.reject = reject;
+    waiter.timeoutHandle = setTimeout(() => {
+      if (!removeResponseWatcher(waiter)) return;
+      metricIncrement("responseTimeouts");
+      reject(new Error(`waitForResponse: no matching response for ${target} within ${timeout}ms`));
+    }, timeout);
+    responseWatchers.push(waiter);
     metricIncrement("responseWatchersAdded");
     return promise;
   }
@@ -2297,21 +2476,15 @@ class PageFacade {
     // timeout — the "assert no request fires" pattern relies on the rejection
     // (tests call .then(() => true).catch(() => false) with a short timeout).
     const timeout = options?.timeout ?? 30000;
-    const timeoutHandle = setTimeout(() => {
-      eventListeners.set(
-        "request",
-        (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
-      );
-      metricIncrement("eventListenersRemoved");
-      reject(new Error(`waitForRequest: no matching request within ${timeout}ms`));
-    }, timeout);
+    const constOf = (value: unknown): (() => string) =>
+      typeof value === "function" ? (value as () => string) : () => String(value);
     const matcher =
       typeof predicate === "string"
         ? (request: { url: string | (() => string) }) =>
             globToRegExp(predicate).test(constOf(request.url)())
         : predicate;
-    const constOf = (value: unknown): (() => string) =>
-      typeof value === "function" ? (value as () => string) : () => String(value);
+    const target = describeWaitTarget(predicate);
+    const waiter = {} as RequestWaiter;
     const check = (payload: unknown) => {
       const request = payload as {
         url: string | (() => string);
@@ -2330,12 +2503,13 @@ class PageFacade {
             request.resourceType === undefined ? () => "fetch" : constOf(request.resourceType),
         })
       ) {
+        if (!requestWaiters.delete(waiter)) return;
         eventListeners.set(
           "request",
           (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
         );
         metricIncrement("eventListenersRemoved");
-        clearTimeout(timeoutHandle);
+        clearTimeout(waiter.timeoutHandle);
         resolve({
           url: urlValue,
           method: request.method === undefined ? () => "GET" : constOf(request.method),
@@ -2348,6 +2522,18 @@ class PageFacade {
         });
       }
     };
+    waiter.check = check;
+    waiter.timeoutHandle = setTimeout(() => {
+      if (!requestWaiters.delete(waiter)) return;
+      eventListeners.set(
+        "request",
+        (eventListeners.get("request") ?? []).filter((entry) => entry !== check),
+      );
+      metricIncrement("eventListenersRemoved");
+      metricIncrement("requestTimeouts");
+      reject(new Error(`waitForRequest: no matching request for ${target} within ${timeout}ms`));
+    }, timeout);
+    requestWaiters.add(waiter);
     eventListeners.set("request", [...(eventListeners.get("request") ?? []), check]);
     metricIncrement("eventListenersAdded");
     return promise;
@@ -2424,8 +2610,8 @@ class PageFacade {
     this.on(name, wrapped);
   }
 
-  waitForEvent(name: WtrEventName): Promise<unknown> {
-    return waitForWtrEvent(name);
+  waitForEvent(name: WtrEventName, options?: { timeout?: number }): Promise<unknown> {
+    return waitForWtrEvent(name, options?.timeout ?? DEFAULT_HARNESS_WAIT_TIMEOUT_MS);
   }
 
   title(): string {
@@ -2442,10 +2628,11 @@ class PageFacade {
     // fixed at (0,0) sized to the requested viewport, so coords map 1:1.
     const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
     if (typeof bridge === "function") {
-      await (bridge as (op: string, x: number, y: number) => Promise<void>)(
+      await callRealMouseBridge(
         "setViewport",
         size.width,
         size.height,
+        `setViewportSize: viewport bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
       );
     }
   }
@@ -3726,16 +3913,15 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
               0,
             ),
             responseWatchers: responseWatchers.length,
+            requestWaiters: requestWaiters.size,
           }
         : null;
       mockRegistry.length = 0;
       initHooks.length = 0;
-      eventListeners.clear();
-      eventWaiters.clear();
-      responseWatchers.length = 0;
-      if (teardownBefore?.responseWatchers) {
-        metricIncrement("responseWatchersRemoved", teardownBefore.responseWatchers);
-      }
+      clearRequestWaiters();
+      clearEventWaiters();
+      clearResponseWatchers();
+      clearEventListeners();
       try {
         window.localStorage.clear();
         window.sessionStorage.clear();
@@ -3743,7 +3929,15 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
       } catch {
         // Storage may be unavailable in some contexts.
       }
-      await fixturePage.removeIframe();
+      let iframeRemoved = false;
+      let teardownError: unknown = null;
+      try {
+        await fixturePage.removeIframe();
+        iframeRemoved = true;
+      } catch (error) {
+        teardownError = error;
+        metricIncrement("teardownFailures");
+      }
       if (metric) {
         const teardownAfter = {
           mockRoutes: mockRegistry.length,
@@ -3757,14 +3951,19 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
             0,
           ),
           responseWatchers: responseWatchers.length,
+          requestWaiters: requestWaiters.size,
         };
         metric.durationMs = performance.now() - metricStartedAt;
+        const teardownOk =
+          iframeRemoved && Object.values(teardownAfter).every((value) => value === 0);
         metric.teardown = {
           before: teardownBefore,
           after: teardownAfter,
-          iframeRemoved: true,
-          ok: Object.values(teardownAfter).every((value) => value === 0),
+          iframeRemoved,
+          ok: teardownOk,
+          ...(teardownError ? { error: String(teardownError) } : {}),
         };
+        if (!teardownOk && !teardownError) metricIncrement("teardownFailures");
         takePendingMetric(metric);
         emitMetric(metric);
       }

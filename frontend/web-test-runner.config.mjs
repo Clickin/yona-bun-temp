@@ -546,6 +546,22 @@ function sumMetricRecords(records) {
   return total;
 }
 
+const timeoutMetricFields = [
+  ["goto-load", "gotoLoadTimeouts"],
+  ["real-mouse", "realMouseTimeouts"],
+  ["response", "responseTimeouts"],
+  ["event", "eventTimeouts"],
+  ["request", "requestTimeouts"],
+];
+
+function timeoutSummary(records) {
+  return Object.fromEntries(
+    timeoutMetricFields
+      .map(([kind, field]) => [kind, records.reduce((total, record) => total + (record[field] ?? 0), 0)])
+      .filter(([, count]) => count > 0),
+  );
+}
+
 function metricsReporter() {
   let startedAt = Date.now();
   let peakRssBytes = process.memoryUsage().rss;
@@ -583,6 +599,7 @@ function metricsReporter() {
             skipped: test.skipped,
             durationMs: test.duration ?? null,
             ...(metric ? { harness: metric } : {}),
+            ...(metric ? { timeouts: timeoutSummary([metric]) } : {}),
           };
         });
         const timing = sessionTimings.get(session.id);
@@ -592,6 +609,7 @@ function metricsReporter() {
           testCount: tests.length,
           elapsedMs: timing ? timing.end - timing.start : null,
           tests: testResults,
+          timeouts: timeoutSummary(metrics),
           harness: sumMetricRecords(metrics),
         };
       });
