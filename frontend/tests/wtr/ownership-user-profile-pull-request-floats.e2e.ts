@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -19,7 +19,7 @@ test("populated public profile pull-request row owns receiver and state floats",
     messages,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",

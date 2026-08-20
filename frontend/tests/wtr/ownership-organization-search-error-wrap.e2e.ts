@@ -1,11 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const route = readFileSync("src/routes/organizations/$organizationName/search.tsx", "utf8");
-const styles =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styles = readFileSync("src/app.css", "utf8");
 const forbiddenView = readFileSync(
   "../yona-original/app/views/error/forbidden_organization.scala.html",
   "utf8",
@@ -70,17 +68,42 @@ test("organization search forbidden error wrap preserves legacy Style paint and 
     waitUntil: "commit",
   });
 
-  await expect
-    .poll(() =>
-      page
-        .locator(".project-header-outer")
-        .evaluate(
+  {
+    let headerVisible = false;
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      const header = page.locator(".project-header-outer");
+      if ((await header.count()) > 0) {
+        headerVisible = await header.evaluate(
           (element) =>
             getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
-        ),
-    )
-    .toBe(true);
-  await expect(page.locator(".project-menu-outer")).toBeVisible();
+        );
+        if (headerVisible) break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(headerVisible).toBe(true);
+  }
+  // Same paint-poll as the header: toBeVisible raced the shell render under
+  // shard load (gate flake: 25s timeout with the header settled but the menu
+  // still hidden). Poll with an explicit 30s window, tolerating the
+  // pre-render absence of the menu node.
+  let menuVisible = false;
+  {
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      const menu = page.locator(".project-menu-outer");
+      if ((await menu.count()) > 0) {
+        menuVisible = await menu.evaluate(
+          (element) =>
+            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+        );
+        if (menuVisible) break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  expect(menuVisible).toBe(true);
   const error = page.locator('[data-owner="organization-search-error-wrap"]');
   const icon = page.locator('[data-owner="organization-search-error-icon"]');
   const message = page.locator('[data-owner="organization-search-error-message"]');
@@ -133,7 +156,7 @@ test("organization search forbidden error wrap preserves legacy Style paint and 
   }
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+  await expect(fallback).toHaveCount(0);
 });
 
 async function mockForbiddenOrganizationSearch(page: Page) {

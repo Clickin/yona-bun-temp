@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, curatedAppCss } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -9,7 +9,7 @@ test("organization home moves the legacy header and menu shells into Style owner
   const [legacyHeader, legacyMenu, style, route] = await Promise.all([
     readFile("../yona-original/app/views/organization/header.scala.html", "utf8"),
     readFile("../yona-original/app/views/organization/menu.scala.html", "utf8"),
-    readFile("src/app.css", "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile("src/routes/organizations/$organizationName.tsx", "utf8"),
   ]);
 

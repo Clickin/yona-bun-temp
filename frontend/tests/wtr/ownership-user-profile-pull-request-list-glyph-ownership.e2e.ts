@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -67,14 +67,7 @@ test("populated profile pull-request pane owns its list root and comments glyph"
   const [route, styles, view, partial, pageLess, responsiveLess, bootstrap, responsive, iconCss] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-        readFileSync(
-          new URL(
-            "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-            import.meta.url,
-          ),
-          "utf8",
-        ),
+      curatedAppCss(),
       readFile(
         new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
         "utf8",
@@ -149,7 +142,7 @@ test("populated profile pull-request pane owns its list root and comments glyph"
   );
   expect(rowSource).toContain("yobicon-comments");
 
-  const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+  const mode = "normal";
   const output = `output/playwright/style-user-profile-pull-request-list-glyph/${mode}`;
   await mkdir(output, { recursive: true });
 

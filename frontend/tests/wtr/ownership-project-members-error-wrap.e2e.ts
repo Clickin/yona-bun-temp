@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -15,7 +15,7 @@ test("project members error-wrap preserves forbidden and bad-request parity", as
   const [route, styles, members, projectMenu, forbidden, badRequest, pageLess, sprites, messages] =
     await Promise.all([
       readFile(new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url), "utf8"),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(
         new URL("../../yona-original/app/views/project/members.scala.html", import.meta.url),
         "utf8",
@@ -139,7 +139,7 @@ test("project members error-wrap preserves forbidden and bad-request parity", as
       expect(geometry.wrapBottom).toBeGreaterThan(geometry.wrapTop);
 
       const fallback = page.locator('link[href*="legacy-fallback.css"]');
-      await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+      await expect(fallback).toHaveCount(0);
       if (await fallback.count()) await fallback.evaluate((element) => element.remove());
       await expect(wrap).toHaveCSS("padding-top", "100px");
       await expect(icon).toHaveCSS("background-position", "-80px -160px");

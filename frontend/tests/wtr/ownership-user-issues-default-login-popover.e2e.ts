@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -12,7 +12,7 @@ const legacySource = new URL(
 test("user issues default-login popover uses static Style", async () => {
   const [route, style, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacySource, "utf8"),
   ]);
   expect(legacy).toContain('id="setDefaultLoginPage"');

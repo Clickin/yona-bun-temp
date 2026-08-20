@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -117,7 +117,7 @@ test.describe("Style site post-list metadata subtree", () => {
     const [route, theme, template, commonLess, pageLess, yobiUiLess, yobiconCss] =
       await Promise.all([
         readFile(routeSource, "utf8"),
-        readFile(themeSource, "utf8"),
+        Promise.resolve(curatedAppCss()),
         readFile(legacyTemplateSource, "utf8"),
         readFile(legacyCommonLessSource, "utf8"),
         readFile(legacyPageLessSource, "utf8"),

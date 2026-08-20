@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -98,14 +98,7 @@ test("authenticated public-profile pull-request avatars own the frozen avatar ca
     messages,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -246,7 +239,7 @@ test("authenticated public-profile pull-request avatars own the frozen avatar ca
   await page.goto(`${basePath}/admin?selected=pullRequests`, { waitUntil: "networkidle" });
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+  await expect(fallback).toHaveCount(0);
 
   const rows = page.locator('[data-owner="user-profile-pull-request-row"]');
   await expect(rows).toHaveCount(2);

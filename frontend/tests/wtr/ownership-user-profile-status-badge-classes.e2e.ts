@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -109,14 +109,7 @@ async function assertSourceEvidence() {
     ...lessChain
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -145,7 +138,7 @@ async function assertSourceEvidence() {
       new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     ...lessNames.map((name) =>
       readFile(
         new URL(`../../yona-original/app/assets/stylesheets/less/${name}`, import.meta.url),

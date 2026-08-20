@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -60,10 +60,8 @@ async function openEmptyProjects(page: Page) {
 
 test("filtered-empty project directory records exactly three route owners from frozen sources", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const variables = readFileSync(

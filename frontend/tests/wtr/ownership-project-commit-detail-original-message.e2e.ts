@@ -1,9 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("commit detail owns the generated original-message toggle border in Style", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/commit/$commitId.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+  const style = curatedAppCss();
   const legacyScript = readFileSync(
     "../yona-original/public/javascripts/common/yobi.OriginalMessage.js",
     "utf8",

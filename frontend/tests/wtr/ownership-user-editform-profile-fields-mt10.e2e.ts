@@ -6,10 +6,9 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-user-editform-profile-fields-mt10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
@@ -99,7 +98,7 @@ async function assertProfileRows(page: Page, viewportName: "desktop" | "mobile")
   await expect(page.locator("dt").filter({ hasText: "이메일" })).toHaveCount(1);
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  await expect(fallback).toHaveCount(fallbackOff ? 0 : 1);
+  await expect(fallback).toHaveCount(0);
   await page.screenshot({
     fullPage: true,
     path: resolve(screenshotDirectory, `${viewportName}.png`),

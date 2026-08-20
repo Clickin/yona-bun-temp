@@ -4,8 +4,7 @@ import { readFile } from "../wtr-compat.ts";
 // the WTR runner launches the same installed Chrome used by the parity sweep.
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
-const mode = fallbackOff ? "fallback-off" : "normal";
+const mode = "normal";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/v1/session", (route) =>

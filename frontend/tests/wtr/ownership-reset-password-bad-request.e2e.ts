@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -10,7 +10,7 @@ const readFile = (path: string | URL, encoding?: string | null): Promise<string>
 const route = "../src/routes/resetPassword.tsx";
 const routeTheme = "../src/app.css";
 const theme = "../src/app.css";
-const fallback = "public/legacy-assets/stylesheets/legacy-fallback.css";
+
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockAnonymous(page: Page) {
@@ -31,7 +31,7 @@ test.describe("Style reset-password bad request", () => {
       readFile(route, "utf8"),
       readFile(routeTheme, "utf8"),
       readFile(theme, "utf8"),
-      readFile(fallback, "utf8"),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
     expect(source).toContain('data-owner="reset-password-bad-request"');
     expect(source).toContain('className="ico-404"');

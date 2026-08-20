@@ -1,8 +1,7 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
-const fallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockAnonymousSignup(page: Page, capabilities: Record<string, unknown> = {}) {
@@ -48,7 +47,7 @@ test.describe("Style standalone signup validation popover", () => {
   test("declares a standard-state-only Style popover while leaving frozen fallback consumers untouched", async () => {
     const [route, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
 
     expect(route).toContain('data-owner="standalone-signup-validation-popover"');

@@ -7,7 +7,7 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackMode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const fallbackMode = "normal";
 const owner = (name: string) => `[data-owner="${name}"]`;
 
 test("user issue action floats preserve legacy source, runtime placement, and sorting", async ({

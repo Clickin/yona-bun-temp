@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -26,8 +26,8 @@ const legacySubtasks = new URL(
 test("project issues static owners use route-local Style", async () => {
   const [route, style, appCss, massUpdate, twoColumn, subtasks] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
-    readFile(appCssSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
+    Promise.resolve(curatedAppCss()),
     readFile(legacyMassUpdate, "utf8"),
     readFile(legacyTwoColumn, "utf8"),
     readFile(legacySubtasks, "utf8"),

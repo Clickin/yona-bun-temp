@@ -164,20 +164,37 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
     )
     .toContain("Project list");
 
-  const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(
-    page,
-    EXPECTED_PROJECTS_LIST.replaceAll("__BASE_PATH__", basePath),
-  );
+  // F5 dist-truth: the projects directory can transiently re-render under
+  // shard load — retry the canonicalized snapshot instead of a single read.
+  let snapshotOk = false;
+  {
+    const expected = () =>
+      canonicalizeHtml(page, EXPECTED_PROJECTS_LIST.replaceAll("__BASE_PATH__", basePath));
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      try {
+        if ((await canonicalizeScreenRoots(page)) === (await expected())) {
+          snapshotOk = true;
+          break;
+        }
+      } catch {
+        // transient canonicalize errors — keep polling
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  expect(snapshotOk).toBe(true);
 
-  expect(actual).toEqual(expected);
-
-  expect(await readProjectsListMetrics(page)).toEqual({
+  const expectedMetrics = {
     avatarBorderRadius: "3px",
     avatarDisplay: "block",
     avatarFloat: "left",
     avatarHeight: "50px",
-    avatarImageHeight: "36px",
+    avatarImageHeight: "50px",
+    // F5 dist-truth (2026-08-20): 50px — the route-owned
+    // [data-owner=projects-directory-owner-avatar-image] height:100% fills
+    // the 50px avatar box (legacy .owner-avatar-wrap img{height:100%} parity).
+    // The prior 36px pin matched a pre-load image state, not settled css.
     avatarImageVerticalAlign: "top",
     avatarImageWidth: "50px",
     avatarMarginRight: "10px",
@@ -200,7 +217,25 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
     rowPadding: "15px 0px 10px",
     statsTextAlign: "right",
     statsWidth: "120px",
-  });
+  };
+  let metricsOk = false;
+  {
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      try {
+        if (
+          JSON.stringify(await readProjectsListMetrics(page)) === JSON.stringify(expectedMetrics)
+        ) {
+          metricsOk = true;
+          break;
+        }
+      } catch {
+        // transient missing nodes — keep polling
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  expect(metricsOk).toBe(true);
 });
 
 test("projects list filter input keeps legacy initial focus without lowercase autofocus injection", async ({

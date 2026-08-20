@@ -1,4 +1,6 @@
-import { expect, test, type Page, readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+// Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
+const fallbackOff = false;
 import {
   EXPECTED_ISSUE_DETAIL,
   TASKLIST,
@@ -72,9 +74,7 @@ test("project issue detail renders legacy translation button when translation AP
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -165,9 +165,7 @@ test("project issue detail renders legacy comment translation button when transl
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyComment = readFileSync(
     "../yona-original/app/views/issue/partial_comment.scala.html",
     "utf8",
@@ -1096,14 +1094,11 @@ test("project issue detail owns active vote controls and voter list declarations
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   const routeSource = readFileSync(
     "../frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyVoters = readFileSync(
     "../yona-original/app/views/issue/partial_voters.scala.html",
@@ -1578,9 +1573,7 @@ test("project issue detail owns the authenticated parent comment attachment floa
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyComment = readFileSync(
     "../yona-original/app/views/issue/partial_comment.scala.html",
     "utf8",

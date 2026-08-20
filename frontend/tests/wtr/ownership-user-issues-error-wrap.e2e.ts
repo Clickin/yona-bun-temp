@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -6,9 +6,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("current-user issues empty state keeps legacy error-wrap Style parity", async ({ page }) => {
   const route = readFileSync("src/routes/user/issues.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacyList = readFileSync("../yona-original/app/views/issue/my_list.scala.html", "utf8");
   const legacySearch = readFileSync(
     "../yona-original/app/views/issue/my_partial_search.scala.html",
@@ -90,11 +88,8 @@ test("current-user issues empty state keeps legacy error-wrap Style parity", asy
   }
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    await expect(fallback).toHaveCount(0);
-  } else {
-    await expect(fallback).toHaveCount(1);
-  }
+  // Post-merge: the fallback link no longer exists in index.html.
+  await expect(fallback).toHaveCount(0);
 });
 
 async function mockEmptyUserIssues(page: Page) {

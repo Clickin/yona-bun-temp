@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -23,14 +23,7 @@ test("new pull request 400 error-wrap preserves legacy Style parity", async ({ p
       new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
       "utf8",
     ),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/git/create.scala.html", import.meta.url),
       "utf8",
@@ -124,7 +117,7 @@ test("new pull request 400 error-wrap preserves legacy Style parity", async ({ p
     expect(geometry.wrapLeft).toBeGreaterThanOrEqual(geometry.pageLeft);
     expect(geometry.wrapRight).toBeLessThanOrEqual(geometry.pageRight);
     const fallback = page.locator('link[href*="legacy-fallback.css"]');
-    await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+    await expect(fallback).toHaveCount(0);
     if (await fallback.count()) await fallback.evaluate((element) => element.remove());
     await expect(wrap).toHaveCSS("padding-top", "100px");
     await expect(icon).toHaveCSS("background-position", "-80px -160px");

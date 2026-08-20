@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -99,8 +99,10 @@ test.describe("Style site mail sidebar", () => {
     expect(variables).toContain("@yobi-orange : #FF7332;");
     expect(variables).toContain("@primary         : @orange;");
     expect(mixins).toContain(".border-radius(@radius: 5px)");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav {");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
+    expect(curatedAppCss()).not.toContain(".site-setting-wrap .site-setting-nav {");
+    expect(curatedAppCss()).not.toContain(
+      ".site-setting-wrap .site-setting-nav li.active a:hover {",
+    );
     // Owners are passed to SiteAdminSidebar as props (badgeOwner/navOwner/
     // ownerPrefix) which the component turns into data-owner attributes.
     expect(route).toContain('badgeOwner="site-mail-sidebar-badge"');

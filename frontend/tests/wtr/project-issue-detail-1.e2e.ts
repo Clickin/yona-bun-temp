@@ -1,4 +1,6 @@
-import { expect, test, type Page, readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+// Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
+const fallbackOff = false;
 import {
   EXPECTED_ISSUE_DETAIL,
   TASKLIST,
@@ -891,9 +893,7 @@ test("project issue detail owns edit/delete action spacing in both legacy rows",
     routeSource.indexOf("function IssueActionButtons"),
     routeSource.indexOf("type IssueComment"),
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -940,7 +940,6 @@ test("project issue detail owns edit/delete action spacing in both legacy rows",
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockProjectIssueDetail(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issue/11`);
@@ -1024,9 +1023,7 @@ test("project issue detail owns board action group float with route Style", asyn
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyBootstrap = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
@@ -1056,7 +1053,6 @@ test("project issue detail owns board action group float with route Style", asyn
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockProjectIssueDetail(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -1113,9 +1109,7 @@ test("project issue detail owns mobile new-subtask spacing with route Style", as
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -1137,7 +1131,6 @@ test("project issue detail owns mobile new-subtask spacing with route Style", as
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockProjectIssueDetail(page);
   const mobile = page.locator('[data-owner="project-issue-detail-mobile-new-subtask"]');
   const link = mobile.locator("a").filter({ hasText: "New subtask" });
@@ -1181,9 +1174,7 @@ test("project issue detail owns desktop header metadata spacing with route Style
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -1204,7 +1195,6 @@ test("project issue detail owns desktop header metadata spacing with route Style
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockProjectIssueDetail(page);
   const metadata = page.locator('[data-owner="project-issue-detail-desktop-metadata"]');
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -1253,9 +1243,7 @@ test("project issue detail owns sidebar bottom spacing with route Style", async 
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -1272,7 +1260,6 @@ test("project issue detail owns sidebar bottom spacing with route Style", async 
   );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockProjectIssueDetail(page);
   const sidebar = page.locator('[data-owner="project-issue-detail-sidebar"]');
   const issueInfo = sidebar.locator(".issue-info");
@@ -1524,9 +1511,32 @@ test("project issue detail renders legacy posting history modal", async ({ page 
     .replaceAll("__CHILD_REPLY_PLACEHOLDER__", await childReplyPlaceholder(page))
     .replaceAll("__BASE_PATH__", basePath);
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, expected),
-  );
+  // F5 dist-truth: the comment timeline hydrates after the modal asserts —
+  // snapshot the page only once the comment count lands (gate flake: the
+  // canonicalize raced the comments fetch under shard load).
+  await expect(page.locator("#numOfComments")).toHaveAttribute("value", "1");
+
+  // F5 dist-truth: the full-page snapshot can still transiently re-render
+  // (timeline/tasklist hydration) — retry the canonicalized compare.
+  {
+    let snapshotOk = false;
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      try {
+        if (
+          (await canonicalize(page, ".page-wrap-outer")) ===
+          (await canonicalizeHtml(page, expected))
+        ) {
+          snapshotOk = true;
+          break;
+        }
+      } catch {
+        // transient canonicalize errors — keep polling
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(snapshotOk).toBe(true);
+  }
 
   await expect(
     page.locator('.posting-history a[href="#-yona-posting-history"][data-toggle="modal"]'),

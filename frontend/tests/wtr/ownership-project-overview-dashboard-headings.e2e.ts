@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project overview dashboard headings use one Style owner", async () => {
@@ -6,7 +6,7 @@ test("project overview dashboard headings use one Style owner", async () => {
     new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
     "utf8",
   );
-  const style = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const style = curatedAppCss();
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/project/partial_dashboard.scala.html", import.meta.url),
     "utf8",
@@ -15,7 +15,7 @@ test("project overview dashboard headings use one Style owner", async () => {
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   expect(legacy).toContain("project-overview-home");
   expect(less).toContain(".project-overview-home");
   expect(route.match(/<h5[\s\S]*?data-owner="project-home-overview-heading"/g)).toHaveLength(4);

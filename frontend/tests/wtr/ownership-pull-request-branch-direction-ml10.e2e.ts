@@ -8,10 +8,9 @@ const fileURLToPath = (u: URL) => u.pathname;
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-pull-request-branch-direction-ml10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 const source = (relativePath: string) =>
   readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
@@ -51,9 +50,7 @@ test("pull-request branch direction preserves the legacy ml10 icon boundary", as
     await expect(direction).toHaveCSS("color", "rgb(42, 127, 143)");
     await expect(direction).toHaveCSS("font-family", /yobicon/u);
     await expect(direction).not.toHaveAttribute("style", /.+/u);
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const geometry = await page.evaluate(() => {
       const branch = document.querySelector<HTMLElement>(".pullRequest-branchInfo");

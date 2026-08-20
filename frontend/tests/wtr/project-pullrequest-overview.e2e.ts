@@ -1,6 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -583,10 +581,8 @@ test("project pull request overview retires the overridden branch start ml0 fall
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCssSource = readFileSync("src/app.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
+  const appCssSource = curatedAppCss();
   const legacyPartial = readFileSync(
     "../yona-original/app/views/git/partial_branch.scala.html",
     "utf8",
@@ -751,22 +747,17 @@ test("project pull request overview badge maps the legacy partial to a condition
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacySource = readFileSync(
     "../yona-original/app/views/git/partial_info.scala.html",
     "utf8",
   );
-  const appCssSource = readFileSync("src/app.css", "utf8");
+  const appCssSource = curatedAppCss();
   const pageLessSource = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_page.less",
     "utf8",
   );
-  const generatedFallbackSource = readFileSync(
-    "public/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const generatedFallbackSource = mergedLegacyBlock();
 
   expect(legacySource).toContain(
     '<span class="badge nm @if(pull.isConflict == true) {badge-issue-conflict} else {badge-issue-@pull.state.state.toLowerCase}">',

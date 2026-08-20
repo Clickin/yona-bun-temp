@@ -1,4 +1,4 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -7,12 +7,10 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK ? "fallback-off" : "normal";
+const mode = "normal";
 const outputDir = resolve(`output/playwright/style-project-issues-row-action-floats/${mode}`);
 const routeSource = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const legacy = readFileSync("../yona-original/app/views/issue/partial_list.scala.html", "utf8");
 
 test("project issue row rails preserve legacy float ownership", async ({ page }) => {

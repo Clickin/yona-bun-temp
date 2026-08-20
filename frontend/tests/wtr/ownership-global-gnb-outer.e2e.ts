@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no node:crypto — sync SHA-256 (byte-verified against
@@ -116,10 +116,8 @@ test.use({ locale: "en-US" });
 
 test("global GNB outer has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   const marker = route.indexOf('data-owner="global-gnb-outer"');
   const owner = route.slice(route.lastIndexOf("<header", marker), route.indexOf(">", marker));

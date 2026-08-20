@@ -1,13 +1,11 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = readFileSync(
   "../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
   "utf8",
 );
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const appCss = readFileSync("../src/app.css", "utf8");
 const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
 const legacyLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");

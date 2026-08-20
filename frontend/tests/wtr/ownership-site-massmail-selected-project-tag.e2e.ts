@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -55,8 +55,8 @@ test.describe("Style site massmail selected-project tag", () => {
   }) => {
     const [route, theme, appCss, legacyScript] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(appCssSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
       readFile(legacyMassMailScript, "utf8"),
     ]);
     expect(route).toContain('data-owner="site-massmail-selected-project-tag"');

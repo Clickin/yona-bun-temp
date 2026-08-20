@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const ROUTE_SOURCE = readFileSync(
@@ -15,7 +15,7 @@ const LEGACY_THREAD_FORM_SOURCE = readFileSync(
   ),
   "utf8",
 );
-const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const APP_CSS_SOURCE = curatedAppCss();
 
 test("pull request changes owns static review and editor declarations in Style", async ({
   page,

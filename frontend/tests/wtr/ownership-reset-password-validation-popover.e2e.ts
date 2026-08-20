@@ -1,10 +1,9 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/resetPassword.tsx", import.meta.url);
 const routeThemeSource = new URL("../src/app.css", import.meta.url);
 const themeSource = new URL("../src/app.css", import.meta.url);
-const legacyFallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -34,7 +33,7 @@ test.describe("Style valid-token reset password validation popover", () => {
       readFile(routeSource, "utf8"),
       readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
-      readFile(legacyFallbackSource, "utf8"),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
 
     expect(route).toContain('data-owner="reset-password-validation-popover"');

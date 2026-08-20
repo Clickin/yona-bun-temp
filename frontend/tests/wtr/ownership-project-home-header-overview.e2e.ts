@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project home header overview uses route-local Style", async () => {
@@ -6,7 +6,7 @@ test("project home header overview uses route-local Style", async () => {
     new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
     "utf8",
   );
-  const style = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const style = curatedAppCss();
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/project/home.scala.html", import.meta.url),
     "utf8",
@@ -15,7 +15,7 @@ test("project home header overview uses route-local Style", async () => {
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   for (const token of [
     "project-home-header",
     "project-overview",

@@ -46,9 +46,8 @@ test("milestone routes keep legacy wrappers during async data resolution", async
     viewportWidth: window.innerWidth,
   }));
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.viewportWidth);
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
-  }
+  // Post-merge: the fallback link no longer exists in index.html.
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 async function mockMilestoneList(page: Page) {

@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -14,9 +14,7 @@ const owners = {
 
 test("state tabs own exactly the legacy root, repeated item, and repeated link surface", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");

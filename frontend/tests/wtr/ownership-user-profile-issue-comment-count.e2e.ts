@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -93,14 +93,7 @@ test("authenticated profile top-level issue comment count owns its exact present
     focusedTest,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -243,7 +236,7 @@ test("authenticated profile top-level issue comment count owns its exact present
   expect(route).toContain('data-owner="user-profile-child-comment-count-link"');
   expect(route).not.toContain('className="comments-count comments-count-color"');
 
-  const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+  const mode = "normal";
   const output = `output/playwright/style-user-profile-issue-comment-count/${mode}`;
   await mkdir(output, { recursive: true });
 

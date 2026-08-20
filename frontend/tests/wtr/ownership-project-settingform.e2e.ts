@@ -1,16 +1,11 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/settingform.tsx", import.meta.url),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 
 test("setting form declares route-local Style owners and paint vars", () => {
   // bucket-3: the route's owner names track the legacy shells they port

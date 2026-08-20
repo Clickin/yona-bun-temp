@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
@@ -16,10 +16,10 @@ const appStyles = new URL("../src/app.css", import.meta.url);
 test("issueform editor shell keeps only exact legacy geometry owners", async () => {
   const [route, style, editor, issue, css] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacyEditor, "utf8"),
     readFile(legacyIssue, "utf8"),
-    readFile(appStyles, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
 
   // legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.

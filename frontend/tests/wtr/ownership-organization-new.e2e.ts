@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const owners = {
@@ -13,9 +13,7 @@ const validationSelector = '[data-errtype="name"]';
 
 test("organization create visible skeleton has exactly four route-local Style owner types", () => {
   const routeSource = readFileSync("src/routes/organizations/new.tsx", "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const declaredOwners = new Set(
     [...routeSource.matchAll(/data-owner="([^"]+)"/gu)].map((match) => match[1]),
   );

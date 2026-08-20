@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -6,7 +6,7 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackMode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const fallbackMode = "normal";
 const screenshotDirectory = resolve(
   "output/playwright/style-project-milestone-detail-tabs",
   fallbackMode,
@@ -34,9 +34,7 @@ test(`milestone detail owns the issue tabs (${fallbackMode})`, async ({ page }) 
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
   const yobiLess = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const yobiUiLess = readFileSync(

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -8,9 +8,7 @@ const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
   "../src/routes/$ownerName/$projectName/issues.tsx",
   "utf8",
 );
-const PROJECT_ISSUES_STYLE_SOURCE =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const PROJECT_ISSUES_STYLE_SOURCE = readFileSync("src/app.css", "utf8");
 const LEGACY_ISSUE_LIST_SOURCE = readFileSync(
   "../yona-original/app/views/issue/partial_list.scala.html",
   "utf8",
@@ -196,8 +194,7 @@ for (const viewport of viewports) {
         contentType: "application/json",
       });
 
-      const screenshotMode =
-        process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+      const screenshotMode = "normal";
       const screenshotDirectory = resolve(
         "output/playwright/style-project-issues-due-date-mr20-mt10",
         screenshotMode,

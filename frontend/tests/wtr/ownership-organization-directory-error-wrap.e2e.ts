@@ -1,16 +1,13 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackDisabled = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 
 test.use({ locale: "ko-KR" });
 
 test("organization directory empty state keeps legacy ico-err1 Style parity", async ({ page }) => {
   const route = readFileSync("src/routes/orgs.tsx", "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/organization/list.scala.html", "utf8");
   const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
@@ -109,9 +106,7 @@ test("organization directory empty state keeps legacy ico-err1 Style parity", as
     expect(state.wrap.width).toBeGreaterThan(0);
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    fallbackDisabled ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 async function mockEmptyOrganizations(page: Page) {

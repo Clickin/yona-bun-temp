@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8,7 +8,7 @@ test("moves board post edit editor wrapper to route-local Style", async ({ page 
     "src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx",
     "utf8",
   );
-  const style = readFileSync("src/app.css", "utf8");
+  const style = curatedAppCss();
   const template = readFileSync("../yona-original/app/views/board/edit.scala.html", "utf8");
   const editor = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   expect(template).toContain('<dd style="position: relative;">');

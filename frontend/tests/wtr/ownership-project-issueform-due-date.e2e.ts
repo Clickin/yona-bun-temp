@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("issueform due-date control owns route-scoped geometry with Style", async () => {
@@ -6,7 +6,7 @@ test("issueform due-date control owns route-scoped geometry with Style", async (
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
     "utf8",
   );
-  const style = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const style = curatedAppCss();
   const component = readFileSync(
     new URL("../src/components/issue-due-date-input.tsx", import.meta.url),
     "utf8",
@@ -23,7 +23,7 @@ test("issueform due-date control owns route-scoped geometry with Style", async (
     new URL("../../yona-original/app/assets/stylesheets/less/_yobiUI.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
 
   // legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
   expect(legacy).toContain('id="issueDueDate"');

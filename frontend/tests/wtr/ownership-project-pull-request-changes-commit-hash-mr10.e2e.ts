@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve joins path parts.
@@ -6,10 +6,9 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-project-pull-request-changes-commit-hash-mr10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 const routeSource = readFileSync(
   new URL(
@@ -18,12 +17,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 const legacyViewSource = readFileSync(
   new URL("../../yona-original/app/views/git/viewChanges.scala.html", import.meta.url),
   "utf8",

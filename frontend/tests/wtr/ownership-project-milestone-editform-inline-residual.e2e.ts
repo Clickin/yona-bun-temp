@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,9 +6,7 @@ const routeSource = readFileSync(
   "src/routes/$ownerName/$projectName/milestone/$milestoneId/editform.tsx",
   "utf8",
 );
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const legacySource = readFileSync("../yona-original/app/views/milestone/edit.scala.html", "utf8");
 
 test("moves milestone editor layout declarations to route-local Style", async ({ page }) => {

@@ -6,10 +6,9 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-user-settings-profile-field-rows",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
@@ -96,9 +95,7 @@ test("records the legacy profile field ownership and retained fallback consumer"
   expect(route).not.toContain("addEventListener");
 });
 
-test(`pins profile field row geometry ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-  page,
-}) => {
+test(`pins profile field row geometry ${"normal"}`, async ({ page }) => {
   await mockProfile(page);
   mkdirSync(screenshotDirectory, { recursive: true });
 
@@ -110,9 +107,7 @@ test(`pins profile field row geometry ${fallbackOff ? "fallback-off" : "normal"}
     await page.goto(`${basePath}/user/editform`, { waitUntil: "commit" });
 
     await expect(page.locator('[data-owner="user-settings-profile-form"]')).toBeVisible();
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const rows = page.locator(
       '[data-owner="user-settings-profile-login-id-row"], [data-owner="user-settings-profile-name-row"], [data-owner="user-settings-profile-email-row"]',

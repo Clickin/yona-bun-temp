@@ -2,7 +2,7 @@
 // timeout with no per-test assertion observed (HARNESS_ENV). Suite-hang
 // closure: no route/CSS prescription; needs a short per-test timeout bisect
 // for the unfinished waitForRequest/poll.
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
@@ -13,12 +13,7 @@ const HOVER_POPOVER_SOURCE = readFileSync(
   new URL("../src/components/hover-popover.tsx", import.meta.url),
   "utf8",
 );
-const PROJECT_ISSUES_STYLE_SOURCE =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const PROJECT_ISSUES_STYLE_SOURCE = curatedAppCss();
 const PROJECT_ISSUES_APP_CSS_SOURCE = readFileSync(
   new URL("../src/app.css", import.meta.url),
   "utf8",

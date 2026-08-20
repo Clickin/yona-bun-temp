@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -8,9 +8,7 @@ const resolve = (...parts: string[]) => parts.join("/");
 
 test("pagination directly owns plugin presentation, input variants, and sprite icons", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const plugin = readFileSync(
     "../yona-original/public/javascripts/common/yobi.Pagination.js",
     "utf8",

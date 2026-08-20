@@ -1,16 +1,13 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-project-pull-request-editform-markdown-editor-mt10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 const routeSource = readFileSync(
   new URL(
@@ -19,12 +16,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 const legacyEditorSource = readFileSync(
   new URL("../../yona-original/app/views/common/editor.scala.html", import.meta.url),
   "utf8",
@@ -64,9 +56,7 @@ test("pull-request editform markdown editor keeps legacy mt10 ownership and tabs
     await expect(wrapper).toHaveClass(/\bmt10\b/u);
     await expect(wrapper).toHaveCSS("margin-top", "10px");
     await expect(wrapper).not.toHaveAttribute("style", /.+/u);
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const tabs = wrapper.locator("> ul.nav-tabs > li");
     await expect(tabs).toHaveCount(5);

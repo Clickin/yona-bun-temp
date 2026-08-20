@@ -1,4 +1,6 @@
 import { readFile } from "../wtr-compat.ts";
+// Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
+const fallbackOff = false;
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -44,7 +46,6 @@ test("records the exact three-owner legacy search boundary", () => {
 
 test("pins the empty-state search output and React navigation", async ({ page }) => {
   const requests: string[] = [];
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockEmptyFiles(page, requests);
   mkdirSync(screenshotDirectory, { recursive: true });
 
@@ -97,13 +98,12 @@ test("pins the empty-state search output and React navigation", async ({ page })
     await expect(input).toHaveCSS("padding", "0px 5px");
     await expect(action).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(action).toHaveCSS("border", "0px none rgb(0, 0, 0)");
-    if (process.env.VITE_DISABLE_LEGACY_FALLBACK !== "1") {
-      await expect(icon).toHaveCSS("font-family", "yobicon");
-      await expect(icon).toHaveCSS("line-height", "12px");
-      expect(await icon.evaluate((element) => getComputedStyle(element, "::before").content)).toBe(
-        '""',
-      );
-    }
+    // Post-merge: the yobicon font-face + glyph rules are merged into app.css.
+    await expect(icon).toHaveCSS("font-family", "yobicon");
+    await expect(icon).toHaveCSS("line-height", "12px");
+    expect(await icon.evaluate((element) => getComputedStyle(element, "::before").content)).toBe(
+      '""',
+    );
 
     const geometry = await root.evaluate((element) => {
       const box = (target: Element) => {

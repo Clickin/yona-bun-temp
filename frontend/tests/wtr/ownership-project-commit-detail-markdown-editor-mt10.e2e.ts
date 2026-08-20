@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: screenshot paths are artifact-only no-ops.
@@ -16,12 +16,7 @@ test("commit detail review markdown editor preserves legacy mt10 ownership and b
     new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
     "utf8",
   );
-  const styleSource =
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-    readFileSync(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-      "utf8",
-    );
+  const styleSource = curatedAppCss();
   const legacyViewChanges = readFileSync(
     new URL("../../yona-original/app/views/git/viewChanges.scala.html", import.meta.url),
     "utf8",

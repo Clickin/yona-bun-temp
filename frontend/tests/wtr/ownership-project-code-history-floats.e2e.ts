@@ -130,7 +130,7 @@ async function assertFloatLayout(page: Page, viewportName: string) {
     branchFloat: "right",
     noOverflow: true,
   });
-  const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK ? "fallback-off" : "normal";
+  const mode = "normal";
   mkdirSync(`${screenshotRoot}/${mode}`, { recursive: true });
   await page.screenshot({
     animations: "disabled",

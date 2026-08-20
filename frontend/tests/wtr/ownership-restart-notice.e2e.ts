@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/restart.tsx", import.meta.url);
@@ -23,9 +23,9 @@ test.describe("Style restart notice", () => {
   test("uses route paint ownership while retaining the legacy restart skeleton", async () => {
     const [route, routeTheme, theme, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(routeThemeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
     ]);
 
     expect(route).toContain('data-owner="restart-notice"');

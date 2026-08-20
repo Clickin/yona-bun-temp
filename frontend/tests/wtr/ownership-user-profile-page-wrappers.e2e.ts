@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -56,9 +56,7 @@ async function mockProfile(page: Page, missing = false) {
 
 test("profile page wrappers record the frozen source and ownership boundary", () => {
   const route = readFileSync("src/routes/$user.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const view = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const responsive = readFileSync(

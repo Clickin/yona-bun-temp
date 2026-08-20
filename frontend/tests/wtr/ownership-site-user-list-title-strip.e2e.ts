@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -54,7 +54,7 @@ test.describe("Style site user-list title strip", () => {
   test("reuses canonical global title variables through the explicit owner", async () => {
     const [route, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
 
     expect(route).toContain('data-owner="site-user-list-title-strip"');

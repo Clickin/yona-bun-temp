@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -154,7 +154,7 @@ test("notification project tabs record the frozen five-owner boundary", () => {
     "utf8",
   );
   const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   expect(scala).toContain(
     '<ul id="notification-projects" class="unstyled lst-stacked span3 mr20">',

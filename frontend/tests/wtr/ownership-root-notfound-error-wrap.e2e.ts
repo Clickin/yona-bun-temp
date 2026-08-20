@@ -1,14 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = readFileSync(new URL("../src/routes/__root.tsx", import.meta.url), "utf8");
-const stylesSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const stylesSource = curatedAppCss();
 const notFoundDefault = readFileSync(
   new URL("../../yona-original/app/views/error/notfound_default.scala.html", import.meta.url),
   "utf8",
@@ -161,7 +156,5 @@ test("root alias not-found error-wrap owns frozen legacy Style parity", async ({
     });
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -34,7 +34,7 @@ test("records the five-template source, exact three-owner contract, and retired 
     "utf8",
   );
   const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   for (const template of templates) {
     expect(template).toContain('<div class="site-breadcrumb-outer">');

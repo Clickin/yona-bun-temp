@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7,7 +7,7 @@ const PROJECT = "sample";
 
 test("reviews export action owns legacy padding through route Style", async ({ page }) => {
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+  const styleSource = curatedAppCss();
   expect(routeSource).toContain('data-owner="project-reviews-export-action"');
 
   await page.route("**/api/v1/session", async (route) => {

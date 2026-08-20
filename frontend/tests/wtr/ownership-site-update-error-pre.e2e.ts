@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -37,8 +37,7 @@ async function openError(page: Page) {
 test("update error pre has a stable Style source contract through global theme variables", async () => {
   const [route, theme] = await Promise.all([
     readFile("src/routes/sites/update.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
 
   expect(route).toContain('data-owner="site-update-error-pre"');

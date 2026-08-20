@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -25,9 +25,7 @@ test.use({ locale: "ko-KR" });
 
 test("records the frozen three-owner tab-strip source and route theme boundary", () => {
   const route = readFileSync("src/routes/user/editform.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const partial = readFileSync(
     "../yona-original/app/views/user/partial_edit_tabmenu.scala.html",
     "utf8",

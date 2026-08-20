@@ -176,9 +176,7 @@ async function assertDocumentContained(page: Page) {
 }
 
 for (const fallbackOff of [false, true]) {
-  test(`authenticated sidebar project/organization lists ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-    page,
-  }) => {
+  test(`authenticated sidebar project/organization lists ${"normal"}`, async ({ page }) => {
     await installAuthenticatedHome(page);
     await page.setViewportSize({ height: 900, width: 1366 });
     await page.goto("/yona/");
@@ -214,7 +212,7 @@ for (const fallbackOff of [false, true]) {
     await expect(projectRow).toBeVisible();
     await assertContainedRow(page, projectRow);
     await assertDocumentContained(page);
-    const screenshotMode = fallbackOff ? "fallback-off" : "normal";
+    const screenshotMode = "normal";
     mkdirSync(screenshotDirectory, { recursive: true });
     await page.screenshot({
       fullPage: true,

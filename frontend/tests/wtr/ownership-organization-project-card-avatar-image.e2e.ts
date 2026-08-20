@@ -160,9 +160,7 @@ async function assertAvatarState(page: Page, mobile: boolean) {
 }
 
 for (const fallbackOff of [false, true]) {
-  test(`organization project-card avatar image ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-    page,
-  }) => {
+  test(`organization project-card avatar image ${"normal"}`, async ({ page }) => {
     await mockOrganizationHome(page);
     await page.setViewportSize({ height: 900, width: 1366 });
     await page.goto("/yona/organizations/weblabs");

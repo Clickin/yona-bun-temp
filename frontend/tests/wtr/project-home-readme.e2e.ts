@@ -1,4 +1,11 @@
-import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  mergedLegacyBlock,
+  curatedAppCss,
+} from "../wtr-compat.ts";
 import { readFile, readFileSync } from "../wtr-compat.ts";
 import { compareComputedParity } from "../helpers/computed-css-parity.ts";
 
@@ -836,9 +843,7 @@ test("project home README tab renders README Markdown instead of compatibility H
 test("project home README Edit link owns legacy ml5 spacing and navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
-  const styleSource =
-    (await readFileSync("src/app.css", "utf8")) +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = await curatedAppCss();
   const legacySource = await readFile(
     "../yona-original/app/views/project/partial_readme.scala.html",
     "utf8",

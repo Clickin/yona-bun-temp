@@ -1,11 +1,11 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("user edit avatar visibility uses conditional Style", async () => {
   const [legacy, route, style, commonLess, yobiUiLess] = await Promise.all([
     readFile("../yona-original/app/views/user/edit.scala.html", "utf8"),
     readFile("src/routes/user/editform.tsx", "utf8"),
-    readFile("src/app.css", "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile("../yona-original/app/assets/stylesheets/less/_common.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8"),
   ]);

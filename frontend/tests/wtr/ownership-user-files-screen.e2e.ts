@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -81,8 +81,8 @@ test.describe("Style user files screen family", () => {
     const [route, styles, fallback, template, common, sprites, responsive, yobi] =
       await Promise.all([
         readFile(routeSource, "utf8"),
-        readFile(styleSource, "utf8"),
-        readFile(fallbackSource, "utf8"),
+        Promise.resolve(curatedAppCss()),
+        Promise.resolve(curatedAppCss()),
         readFile(legacyTemplateSource, "utf8"),
         readFile(legacyCommonSource, "utf8"),
         readFile(legacySpritesSource, "utf8"),

@@ -7,10 +7,9 @@ const resolve = (...parts: string[]) => parts.join("/");
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-root-login-dialog-separator",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 test.use({ locale: "en-US" });
@@ -129,9 +128,7 @@ test("root login dialog owns reset/signup separator margins", async ({ page }) =
     await expect(resetLink).toBeVisible();
     await expect(signupLink).toBeVisible();
     await expect(dialog.locator("#remember-meD")).toBeVisible();
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const pluginAttributes = await separator.evaluate((element) =>
       Array.from(element.attributes)

@@ -1,5 +1,11 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
-
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  mergedLegacyBlock,
+} from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -12,9 +18,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated side-nav Favorite shell uses the global theme color boundary", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const themeSource = readFileSync("src/app.css", "utf8");
 
   expect(routeSource).toContain('"authenticated-sidenav-favorite-shell"');
   // React-owned shell rules must not depend on the legacy classes the

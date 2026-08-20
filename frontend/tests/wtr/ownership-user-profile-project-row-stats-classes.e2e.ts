@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -95,8 +95,7 @@ test("Projects rows retire only project and stats literals under fallback-off", 
 
   const [route, styles, view, partial, fallback, focusedTest] = await Promise.all([
     readFile("../src/routes/$user.tsx"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -105,7 +104,7 @@ test("Projects rows retire only project and stats literals under fallback-off", 
       new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
       "utf8",
     ),
-    readFile("/yona/legacy-assets/stylesheets/legacy-fallback.css"),
+    mergedLegacyBlock(),
     readFile(new URL(import.meta.url), "utf8"),
   ]);
 
@@ -146,9 +145,7 @@ test("Projects rows retire only project and stats literals under fallback-off", 
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/yona/admin?selected=projects");
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const rows = page.locator('[data-owner="user-profile-project-row"]');
     const statsOwners = page.locator('[data-owner="user-profile-project-stats"]');

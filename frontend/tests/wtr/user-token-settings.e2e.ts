@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const EXPECTED_USER_TOKEN_SCREEN = `
@@ -199,9 +199,7 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
 
 test("current-user token settings route owns the token form without presentation classes", async () => {
   const source = readFileSync("src/routes/user/editform/token.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   for (const owner of [
     "user-token-settings-wrapper",
     "user-token-settings-form",

@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const projects = [
@@ -87,8 +87,7 @@ test("profile project avatar images and conditional fork icon own the final lega
       // String paths keep the raw fixture: URL reads skip the .txt suffix and
       // come back esbuild-transformed (trailing commas stripped).
       readFile("src/routes/$user.tsx"),
-      readFileSync("src/app.css", "utf8") +
-        readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+      curatedAppCss(),
       readFile(
         new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
         "utf8",

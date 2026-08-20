@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8,10 +8,8 @@ test.use({ locale: "ko-KR" });
 
 test("records project pull request list owners and responsive containment", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const appCss = curatedAppCss();
+  const theme = readFileSync("src/app.css", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const responsive = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap-responsive.css",

@@ -1,15 +1,13 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallback = process.env.VITE_DISABLE_LEGACY_FALLBACK ? "fallback-off" : "normal";
+const fallback = "normal";
 const screenshotDir = resolve(`output/playwright/style-project-issues-action-floats/${fallback}`);
 const routeSource = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const legacyRoot = readFileSync(
   "../yona-original/app/views/issue/partial_list_wrap.scala.html",
   "utf8",

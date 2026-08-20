@@ -2,13 +2,13 @@
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const repoRoot = resolve("..");
 const screenshotDirectory = resolve("../output/playwright/style-organization-search-results");
-const screenshotMode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const screenshotMode = "normal";
 
 const issue = {
   authorLabel: "Admin",
@@ -28,9 +28,7 @@ const issue = {
 
 test("organization search result wave records frozen issue/empty ownership", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/search.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const partial = readFileSync(
     resolve(repoRoot, "yona-original/app/views/search/partial_search.scala.html"),
     "utf8",

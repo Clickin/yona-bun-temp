@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project member guest badge uses route-local Style", async () => {
@@ -14,7 +14,7 @@ test("project member guest badge uses route-local Style", async () => {
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   expect(legacy).toContain('<span class="guest">GUEST</span>');
   expect(less).toContain(".members.project");
   expect(less).toContain("background-color: rgba(255, 165, 0, 0.8)");

@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -6,9 +6,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("user issues left menu keeps the legacy search box contained", async ({ page }) => {
   const route = readFileSync("src/routes/user/issues.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync(
     "../yona-original/app/views/issue/my_partial_search.scala.html",
     "utf8",
@@ -56,9 +54,8 @@ test("user issues left menu keeps the legacy search box contained", async ({ pag
     await expect(page).toHaveURL(/query=legacy\+search|query=legacy%20search/);
   }
 
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
-  }
+  // Post-merge: the fallback link no longer exists in index.html.
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 async function mockUserIssues(page: Page) {

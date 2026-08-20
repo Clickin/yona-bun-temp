@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -121,8 +121,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
     ...imports
   ] = await Promise.all([
     readFile("../src/routes/$user.tsx"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",

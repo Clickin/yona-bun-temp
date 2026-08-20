@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -22,7 +22,7 @@ test("pull-request editform error-wrap preserves both legacy branches and Style 
         ),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(
         new URL("../../yona-original/app/views/git/edit.scala.html", import.meta.url),
         "utf8",
@@ -98,9 +98,7 @@ test("pull-request editform error-wrap preserves both legacy branches and Style 
       await page.goto(`${basePath}/admin/sample/pullRequest/${branch.number}/editform`, {
         waitUntil: "commit",
       });
-      await expect(page.locator(`link[href$="${fallbackHref}"]`)).toHaveCount(
-        process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-      );
+      await expect(page.locator(`link[href$="${fallbackHref}"]`)).toHaveCount(0);
 
       const pageOwner = page.locator('[data-owner="pull-request-edit-error-page"]');
       const wrap = page.locator('[data-owner="pull-request-edit-error-wrap"]');

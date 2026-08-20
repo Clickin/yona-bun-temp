@@ -1,31 +1,21 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const MILESTONE_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx", import.meta.url),
   "utf8",
 );
-const MILESTONE_STYLE_SOURCE =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const MILESTONE_STYLE_SOURCE = curatedAppCss();
 const MILESTONE_LEGACY_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/milestone/view.scala.html", import.meta.url),
   "utf8",
 );
-const MILESTONE_APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const MILESTONE_APP_CSS_SOURCE = curatedAppCss();
 const MILESTONE_PAGE_LESS_SOURCE = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
   "utf8",
 );
-const MILESTONE_GENERATED_FALLBACK_SOURCE = readFileSync(
-  // dist-aware: ../public/ from tests/wtr/ is not served; the built app's
-  // publicDir copy is served under /yona/ and is byte-identical.
-  new URL("/yona/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-  "utf8",
-);
+const MILESTONE_GENERATED_FALLBACK_SOURCE = mergedLegacyBlock();
 
 const MILESTONE_DETAIL_CHILD_ISSUES = `
 <div class="child-issues">

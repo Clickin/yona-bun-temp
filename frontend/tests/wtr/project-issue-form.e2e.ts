@@ -578,6 +578,10 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await page.getByRole("button", { name: "Delete bug" }).click();
   await title.fill("Implement [Bug");
   await expect.poll(() => state.titleQueries.at(-1)).toBe("Bug");
+  // The query state updates before the popup marks its active option — Enter
+  // pressed in that window closes the popup without selecting (gate flake:
+  // title stayed "Implement [Bug"). Wait for the rendered option first.
+  await expect(page.locator(".title-head-options [role=option]").first()).toContainText("Bugfix");
   await title.press("Enter");
   await expect(title).toHaveValue("Implement [Bugfix]");
   const titleQueryCount = state.titleQueries.length;

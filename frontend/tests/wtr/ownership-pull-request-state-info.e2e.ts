@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("pull request state info owns scoped alert paint in Style", async () => {
@@ -23,7 +23,7 @@ test("pull request state info owns scoped alert paint in Style", async () => {
     new URL("../../yona-original/app/views/git/partial_state.scala.html", import.meta.url),
     "utf8",
   );
-  const css = readFileSync("../src/app.css", "utf8");
+  const css = curatedAppCss();
 
   expect(view).toContain('class="pullRequest-stateInfo"');
   expect(changesView).toContain("@partial_state(project, pull,");

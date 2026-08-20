@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
@@ -69,7 +69,7 @@ test("issueform attachment rows own active React-matched Style geometry", async 
     component,
   ] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacyUploader, "utf8"),
     readFile(legacyUploadForm, "utf8"),
     readFile(legacyCreate, "utf8"),
@@ -81,7 +81,7 @@ test("issueform attachment rows own active React-matched Style geometry", async 
     readFile(legacyBootstrap, "utf8"),
     readFile(legacyBootstrapResponsive, "utf8"),
     readFile(legacyMessages, "utf8"),
-    readFile(appStyles, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(uploaderComponent, "utf8"),
   ]);
 

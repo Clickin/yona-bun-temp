@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 // copy-level node:crypto shim: sync SHA-1/SHA-256 (browser has no node:crypto).
 const createHash = (algorithm: string) => {
   const isSha1 = algorithm === "sha1";
@@ -240,7 +239,7 @@ const ownerE2Es = [
 ] as const;
 
 test("shared error-wrap fallback bridge is retired without changing emitters", () => {
-  const appCss = read("../src/app.css");
+  const appCss = curatedAppCss();
   for (const selector of bridgeSelectors) expect(appCss).not.toContain(selector);
   for (const selector of [
     ".reset-password-bad-request > .project-page-wrap {",
@@ -268,7 +267,7 @@ test("shared error-wrap fallback bridge is retired without changing emitters", (
   // This plain-class producer is unreachable and is intentionally excluded from the owner graph.
   expect(deadBody).not.toContain("data-owner");
 
-  const fallback = read("../public/legacy-assets/stylesheets/legacy-fallback.css");
+  const fallback = mergedLegacyBlock();
   expect(fallback).toContain(".error-wrap {");
   expect(fallback).toContain(".error-wrap p {");
   expect(fallback).toContain(".ico-err1 {");
@@ -310,7 +309,5 @@ test("Style error-wrap behavior and fallback stylesheet presence follow the runt
   await expect(wrap).toBeVisible();
   await expect(wrap).toHaveCSS("padding-top", "100px");
   await expect(wrap).toHaveCSS("text-align", "center");
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });

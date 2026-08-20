@@ -9,10 +9,9 @@ const resolve = (...parts: string[]) => parts.join("/");
 const fileURLToPath = (u: URL) => u.pathname;
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-project-code-branch-breadcrumb-ml10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 const source = (relativePath: string) =>

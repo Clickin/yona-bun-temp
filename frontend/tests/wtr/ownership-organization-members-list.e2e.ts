@@ -1,6 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync/resolve only feed page.screenshot paths (no-op).
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync/resolve only feed page.screenshot paths (no-op).
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
@@ -45,9 +43,7 @@ test("organization member list records the exact six-owner legacy boundary", () 
     resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
     "utf8",
   );
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
 
   for (const owner of Object.values(owners)) {
     // The enrollment avatar/details owners are passed as props (avatarWrapOwner=/
@@ -113,9 +109,7 @@ test("organization member list records the exact six-owner legacy boundary", () 
 });
 
 for (const fallbackOff of [false, true]) {
-  test(`organization member add form Style boundary ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-    page,
-  }) => {
+  test(`organization member add form Style boundary ${"normal"}`, async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await mockMembers(page, { populated: false });
     await page.goto(`${basePath}/organizations/weblabs/members`);
@@ -161,7 +155,7 @@ for (const fallbackOff of [false, true]) {
       fullPage: true,
       path: resolve(
         screenshotDirectory,
-        `style-organization-members-add-form-${fallbackOff ? "fallback-off" : "normal"}-desktop.png`,
+        `style-organization-members-add-form-${"normal"}-desktop.png`,
       ),
     });
 
@@ -181,16 +175,14 @@ for (const fallbackOff of [false, true]) {
       fullPage: true,
       path: resolve(
         screenshotDirectory,
-        `style-organization-members-add-form-${fallbackOff ? "fallback-off" : "normal"}-mobile.png`,
+        `style-organization-members-add-form-${"normal"}-mobile.png`,
       ),
     });
   });
 }
 
 for (const fallbackOff of [false, true]) {
-  test(`organization member role/action geometry ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-    page,
-  }) => {
+  test(`organization member role/action geometry ${"normal"}`, async ({ page }) => {
     const viewports = [
       { height: 900, name: "desktop", width: 1366 },
       { height: 844, name: "mobile", width: 390 },
@@ -274,7 +266,7 @@ for (const fallbackOff of [false, true]) {
         fullPage: true,
         path: resolve(
           screenshotDirectory,
-          `style-organization-members-role-action-${fallbackOff ? "fallback-off" : "normal"}-${viewport.name}.png`,
+          `style-organization-members-role-action-${"normal"}-${viewport.name}.png`,
         ),
       });
     }
@@ -302,7 +294,7 @@ test("organization enrollment avatar owner follows the frozen legacy float bound
 
   expect(route).toContain('avatarWrapOwner="organization-enrollment-avatar-wrap"');
   expect(route).toContain('detailsOwner="organization-members-enrollment-details"');
-  const componentStyleSource = readFileSync("src/app.css", "utf8");
+  const componentStyleSource = curatedAppCss();
 
   expect(legacyTemplate).toContain('<div class="pull-left mr10">');
   expect(legacyTemplate).toContain('<div class="pull-left" style="width: 60px;">');

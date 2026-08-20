@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -16,9 +16,7 @@ const owners = {
 
 test("title search controls retire the bounded legacy fallback", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
   const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
   const responsive = readFileSync(
@@ -138,6 +136,15 @@ test("title search controls preserve frozen desktop and mobile output and submit
     const frozenInput = frozenForm.locator(".textbox");
     const frozenButton = frozenForm.locator(".search-btn");
     const frozenIcon = frozenButton.locator(".yobicon-search");
+    // F5 dist-truth (2026-08-20): post-merge the pipeline converts the yobi
+    // placeholder vendor rules to :is(input:placeholder-shown) — an EMPTY
+    // input (the frozen fixture has no route-owned color rule) computes #999.
+    // Type a value so the frozen side lands in the same non-placeholder state
+    // as the actual input (which keeps #555 via its route-owned var rule).
+    await frozenInput.fill("x");
+    // fill() leaves focus on the frozen input — the bootstrap focus rule
+    // (border-color #f36c22 !important) would leak into the base snapshot.
+    await frozenInput.evaluate((el) => (el as HTMLInputElement).blur());
     const relativeGeometry = (locator: typeof form) =>
       locator.evaluate((formNode) => {
         const formRect = formNode.getBoundingClientRect();

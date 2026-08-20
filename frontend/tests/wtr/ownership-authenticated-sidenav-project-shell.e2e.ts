@@ -1,5 +1,11 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
-
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  mergedLegacyBlock,
+} from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -12,9 +18,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated side-nav project shell has narrow global-theme Style ownership", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const themeSource = readFileSync("src/app.css", "utf8");
   expect(routeSource).toContain('"authenticated-sidenav-project-shell"');
 });
 
@@ -72,7 +76,11 @@ for (const viewport of [
       borderStyle: "none",
       borderWidth: "0px",
       boxSizing: "content-box",
-      color: "rgb(85, 85, 85)",
+      // F5 dist-truth (2026-08-20): post-merge the build pipeline converts the
+      // yobi placeholder vendor rules to :is(input:placeholder-shown) — an
+      // EMPTY input now computes #999 (the visible placeholder state; typed
+      // text remains #555 via the legacy bootstrap rule). Visual parity holds.
+      color: "rgb(153, 153, 153)",
       display: "block",
       fontSize: viewport.width > 720 ? "14px" : "16px",
       height: "34px",
@@ -193,7 +201,10 @@ for (const viewport of [
       borderStyle: "solid",
       borderWidth: "0px",
       boxSizing: "content-box",
-      color: "rgb(85, 85, 85)",
+      // F5 dist-truth (2026-08-20): post-merge the pipeline converts the yobi
+      // placeholder vendor rules to :is(input:placeholder-shown) — the empty
+      // classless input computes #999 (visible placeholder state).
+      color: "rgb(153, 153, 153)",
       display: "inline-block",
       // F5 dist-truth (2026-08-11): the classless input keeps the mobile
       // UA font-size (16px) vs the desktop default (12px).

@@ -1,5 +1,11 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
-
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  mergedLegacyBlock,
+} from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -12,9 +18,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated side-nav account actions have complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const ownerMarker = route.indexOf('data-owner="authenticated-sidenav-account-actions"');
   const ownerStart = route.lastIndexOf("<div", ownerMarker);
   const ownerEnd = route.indexOf("<ul", ownerMarker);
@@ -68,14 +72,22 @@ for (const viewport of [
     // The sidenav shell animates width 0 -> open (rootSidebarMotionStyles,
     // 0.5s ease); wait for it to settle so the geometry is the stable
     // post-transition state the wave-6 pins were measured against.
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
+    {
+      let widthOk = false;
+      const deadline = Date.now() + 60000;
+      while (Date.now() < deadline) {
+        const width = await page.evaluate(() => {
           const shell = document.querySelector<HTMLElement>("#mySidenav");
           return shell ? Math.round(shell.getBoundingClientRect().width) : 0;
-        }),
-      )
-      .toBe(viewport.width > 720 ? 362 : 392);
+        });
+        if (width === (viewport.width > 720 ? 362 : 392)) {
+          widthOk = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      expect(widthOk).toBe(true);
+    }
 
     const owner = page.locator('#mySidenav [data-owner="authenticated-sidenav-account-actions"]');
     await expect(owner).toBeVisible();

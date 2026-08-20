@@ -1,12 +1,12 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, curatedAppCss } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 test("post detail modal states use conditional Style visibility", async () => {
   const [legacy, route, style, appCss] = await Promise.all([
     readFile("../yona-original/app/views/board/view.scala.html", "utf8"),
     readFile("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8"),
-    readFile("src/app.css", "utf8"),
-    readFile("src/app.css", "utf8"),
+    Promise.resolve(curatedAppCss()),
+    Promise.resolve(curatedAppCss()),
   ]);
   expect(legacy).toContain('href="#-yona-posting-history"');
   expect(legacy).toContain("commentDeleteModal");

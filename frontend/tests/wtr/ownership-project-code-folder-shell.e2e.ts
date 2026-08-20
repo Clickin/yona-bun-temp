@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 test("code folder shell uses Style", async () => {
   const route = readFileSync(
@@ -13,7 +13,7 @@ test("code folder shell uses Style", async () => {
     new URL("../../yona-original/app/views/code/view.scala.html", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   expect(legacy).toContain("listitem");
   expect(legacyView).toContain("code-viewer-wrap");
   for (const owner of [

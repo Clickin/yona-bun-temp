@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -100,7 +100,7 @@ test.describe("Style site issue-list state tabs", () => {
     const [route, theme, template, yobi, common, responsive, yobiUi, bootstrap] = await Promise.all(
       [
         readFile(routeSource, "utf8"),
-        readFile(themeSource, "utf8"),
+        Promise.resolve(curatedAppCss()),
         readFile(templateSource, "utf8"),
         readFile(yobiSource, "utf8"),
         readFile(commonLessSource, "utf8"),

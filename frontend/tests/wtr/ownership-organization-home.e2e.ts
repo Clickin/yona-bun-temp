@@ -1,12 +1,10 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("organization home owns legacy small-font typography in route-local Style", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
   const variables = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_variables.less",
@@ -228,9 +226,7 @@ test("organization home renders legacy project and member panels", async ({ page
 
 test("organization home membership panels map frozen legacy declarations to route-local Style", () => {
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
 
   expect(legacy).toContain(".project-home {");
@@ -246,9 +242,7 @@ test("organization home membership panels map frozen legacy declarations to rout
 
 test("organization home header and overview map frozen declarations to route-local Style", () => {
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
 
   expect(legacy).toContain(".project-home-header {");

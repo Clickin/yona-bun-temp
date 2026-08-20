@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -19,7 +19,7 @@ test("project webhooks empty state preserves legacy Style parity", async ({ page
         new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(
         new URL("../../yona-original/app/views/project/webhooks.scala.html", import.meta.url),
         "utf8",
@@ -124,7 +124,7 @@ test("project webhooks empty state preserves legacy Style parity", async ({ page
     expect(geometry.iconRight).toBeLessThanOrEqual(geometry.wrapRight);
 
     const fallback = page.locator('link[href*="legacy-fallback.css"]');
-    await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+    await expect(fallback).toHaveCount(0);
   }
 });
 

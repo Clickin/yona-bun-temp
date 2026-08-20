@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -88,8 +88,8 @@ test.describe("Style site diagnostic sidebar", () => {
       mixins,
     ] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(appCssSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
       readFile(templateSource, "utf8"),
       readFile(layoutSource, "utf8"),
       readFile(messagesSource, "utf8"),

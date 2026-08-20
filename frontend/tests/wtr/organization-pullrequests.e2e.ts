@@ -100,6 +100,13 @@ test("organization closed pull request aggregate matches legacy group_pullreques
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Pull request");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  // F5 dist-truth: the usermenu tab content hydrates from the workspace
+  // fetch — snapshot only after the Loading placeholder is replaced.
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.querySelector("#usermenu-tab-content-list")?.textContent ?? ""),
+    )
+    .not.toContain("Loading...");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

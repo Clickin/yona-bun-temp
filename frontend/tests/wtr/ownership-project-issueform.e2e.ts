@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const SOURCE = readFileSync("../src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
@@ -11,7 +11,7 @@ test("project issue form preserves legacy editor layout with Style owners", asyn
 
   await expect(
     page.locator('link[href$="legacy-assets/stylesheets/legacy-fallback.css"]'),
-  ).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+  ).toHaveCount(0);
   await expect(page).toHaveTitle("New issue - admin/sample");
   await expect(page.locator(".app-shell")).toHaveCount(0);
   await expect(page.locator(".project-header-outer")).toBeVisible();
@@ -77,9 +77,7 @@ test("project issue form preserves legacy editor layout with Style owners", asyn
 });
 
 test("issue form upload progress uses a dynamic route-local Style width", async ({ page }) => {
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/issue/create.scala.html", "utf8");
   const uploadLess = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -175,9 +173,7 @@ test("issue form upload progress uses a dynamic route-local Style width", async 
 
 test("issue form attachment save help owns right alignment in Style", async ({ page }) => {
   const route = readFileSync("../src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/common/uploadForm.scala.html", "utf8");
   const uploaderSource = readFileSync("../src/components/file-uploader.tsx", "utf8");
   expect(legacy).toContain('<p class="right-txt help">');

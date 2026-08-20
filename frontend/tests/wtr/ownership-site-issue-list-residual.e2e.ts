@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -69,7 +69,7 @@ test.describe("Style site issue-list residual effects", () => {
   test("keeps shadows as route declarations instead of theme variables", async () => {
     const [route, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
     expect(route).toContain('badgeOwner="site-issue-list-sidebar-badge"');
     expect(route).toContain('data-owner="site-issue-list-pagination-input"');
@@ -94,7 +94,7 @@ test.describe("Style site issue-list residual effects", () => {
       // box-shadow lives on a :hover/:focus rule (app.css:15644) that the WTR
       // iframe does not synthesize (documented pseudo-class ceiling); pin the
       // source rule instead of the computed hover value.
-      const theme = await readFile(themeSource, "utf8");
+      const theme = await Promise.resolve(curatedAppCss());
       expect(theme).toContain('[data-owner="site-issue-list-pagination-input"]:hover');
       expect(theme).toContain("inset -1px -1px 2px rgba(0, 0, 0, 0.1)");
       await input.hover();

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -10,7 +10,6 @@ const readFile = (path: string | URL, encoding?: string | null): Promise<string>
 const routeSource = "../src/routes/resetPassword.tsx";
 const routeThemeSource = "../src/app.css";
 const themeSource = "../src/app.css";
-const legacyFallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -47,7 +46,7 @@ test.describe("Style valid-token reset password form", () => {
       readFile(routeSource, "utf8"),
       readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
-      readFile(legacyFallbackSource, "utf8"),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
 
     expect(route).toContain('data-owner={validTokenReset ? "reset-password-form"');

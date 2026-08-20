@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -44,14 +44,7 @@ test.beforeEach(async ({ page }) => {
 test("authenticated guest profile owns the legacy guest badge geometry", async ({ page }) => {
   const [source, styleSource, scala, pageLess, variables, yobiLess] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",

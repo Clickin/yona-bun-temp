@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -57,7 +57,7 @@ test.describe("Style site project-list title strip", () => {
   test("keeps title geometry inline and paint in the route theme", async () => {
     const [route, globalTheme] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(globalThemeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
 
     expect(route).toContain('data-owner="site-project-list-title-strip"');

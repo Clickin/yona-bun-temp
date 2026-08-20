@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("records pull request changes owner boundary", () => {
@@ -37,9 +37,7 @@ test("pull request changes owns right-aligned review actions and upload help", (
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
     "utf8",
   );
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/git/viewChanges.scala.html", "utf8");
   const threadForm = readFileSync(
     "../yona-original/app/views/partial_comment_form_on_thread.scala.html",

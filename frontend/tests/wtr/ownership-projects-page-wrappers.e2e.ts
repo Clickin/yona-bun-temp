@@ -1,4 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
+import { readFileSync, readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -102,7 +102,7 @@ test("projects page wrappers record exactly two owners and exclude unmatched des
     "../yona-original/app/assets/stylesheets/less/_responsive.less",
     "utf8",
   );
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   expect(scala).toContain('<div class="page-wrap-outer">\n    <div class="project-page-wrap">');
   expect(scala).toContain('<div class="search-wrap">');

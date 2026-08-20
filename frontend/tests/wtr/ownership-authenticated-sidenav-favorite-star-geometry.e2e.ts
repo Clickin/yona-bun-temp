@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const mode = "normal";
 
 test.use({ locale: "en-US" });
 

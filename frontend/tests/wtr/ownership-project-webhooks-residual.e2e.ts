@@ -1,17 +1,12 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const route = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
   "utf8",
 );
-const style =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
-const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const style = curatedAppCss();
+const css = curatedAppCss();
 const legacy = readFileSync(
   new URL("../../yona-original/app/views/project/webhooks.scala.html", import.meta.url),
   "utf8",

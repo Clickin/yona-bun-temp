@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -69,7 +69,7 @@ test.describe("Style site post-list title strip", () => {
   test("reuses canonical global title variables through the explicit owner", async () => {
     const [route, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
 
     expect(route).toContain('data-owner="site-post-list-title-strip"');

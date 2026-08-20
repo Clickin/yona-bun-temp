@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -10,9 +10,7 @@ test.use({ locale: "ko-KR" });
 
 test("issue detail header metadata floats are Style-owned", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyBootstrap = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
@@ -57,18 +55,14 @@ test("issue detail header metadata floats are Style-owned", async ({ page }) => 
   await expect(desktop).not.toHaveAttribute("style", /float|margin|font-size/);
   await expect(mobile).not.toHaveAttribute("style", /float|margin|font-size/);
 
-  const screenshotDirectory = `output/playwright/style-project-issue-detail-header-metadata-floats/${
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal"
-  }`;
+  const screenshotDirectory = `output/playwright/style-project-issue-detail-header-metadata-floats/${"normal"}`;
   mkdirSync(screenshotDirectory, { recursive: true });
   await page.screenshot({ fullPage: true, path: `${screenshotDirectory}/desktop.png` });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    await expect(mobile).toBeHidden();
-  } else {
-    await expect(mobile).toBeVisible();
-  }
+  // Post-merge: the full legacy cascade lives in app.css — the mobile
+  // show/hide classes are present, so the normal-mode branch applies.
+  await expect(mobile).toBeVisible();
   await expect(mobile).toHaveCSS("float", "right");
   const boxes = await page.evaluate(() => {
     const metadata = document.querySelector<HTMLElement>(
@@ -95,9 +89,7 @@ test("issue detail header metadata floats are Style-owned", async ({ page }) => 
 
 test("issue detail owns original-message and editor static declarations", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyEditor = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   const legacyTasklist = readFileSync(
@@ -166,9 +158,7 @@ test("issue detail owns original-message and editor static declarations", async 
   await expect(mobileMetadata).toHaveClass(/show-in-mobile/);
   await expect(mobileMetadata).not.toHaveClass(/pull-right/);
 
-  const screenshotDirectory = `output/playwright/style-project-issue-detail-header-metadata-floats/${
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal"
-  }`;
+  const screenshotDirectory = `output/playwright/style-project-issue-detail-header-metadata-floats/${"normal"}`;
   mkdirSync(screenshotDirectory, { recursive: true });
   await page.screenshot({
     fullPage: true,
@@ -245,17 +235,13 @@ test("issue detail owns original-message and editor static declarations", async 
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    // fallback-off build drops the legacy hide/show-in-mobile classes; the
-    // mobile metadata stays hidden while its computed styles persist.
-    await expect(mobileMetadata).toBeHidden();
-  } else {
-    await expect(mobileMetadata).toBeVisible();
-    const mobileMetadataBox = await mobileMetadata.boundingBox();
-    expect(mobileMetadataBox).not.toBeNull();
-    expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(0);
-    expect(mobileMetadataBox!.x + mobileMetadataBox!.width).toBeLessThanOrEqual(390);
-  }
+  // Post-merge: the full legacy cascade lives in app.css — the mobile
+  // show/hide classes are present, so the normal-mode branch applies.
+  await expect(mobileMetadata).toBeVisible();
+  const mobileMetadataBox = await mobileMetadata.boundingBox();
+  expect(mobileMetadataBox).not.toBeNull();
+  expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(0);
+  expect(mobileMetadataBox!.x + mobileMetadataBox!.width).toBeLessThanOrEqual(390);
   await expect(mobileMetadata).toHaveCSS("font-size", "12.6px");
   await expect(mobileMetadata).toHaveCSS("float", "right");
   await expect(mobileMetadata).not.toHaveAttribute("style", /font-size|fontSize/);

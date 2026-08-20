@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -17,14 +17,7 @@ const ORGANIZATION_ISSUES_ROUTE_SOURCE = readFileSync(
   ),
   "utf8",
 );
-const ORGANIZATION_ISSUES_STYLE_SOURCE =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const ORGANIZATION_ISSUES_STYLE_SOURCE = curatedAppCss() + mergedLegacyBlock();
 const LEGACY_ISSUE_LIST_SOURCE = readFileSync(
   fileURLToPath(
     new URL(
@@ -270,8 +263,7 @@ for (const viewport of viewports) {
         contentType: "application/json",
       });
 
-      const screenshotMode =
-        process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+      const screenshotMode = "normal";
       const screenshotDirectory = resolve(
         "output/playwright/style-organization-issues-due-date-mr20-mt10",
         screenshotMode,

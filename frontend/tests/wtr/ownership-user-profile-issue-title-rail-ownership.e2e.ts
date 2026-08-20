@@ -1,12 +1,11 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
 const mkdir = async () => undefined;
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
-const mode = fallbackOff ? "fallback-off" : "normal";
+const mode = "normal";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("showSubtasksAlways", "false"));
@@ -89,14 +88,7 @@ test(`profile issue title rail owns exact legacy presentation (${mode})`, async 
     focusedTest,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -211,9 +203,7 @@ test(`profile issue title rail owns exact legacy presentation (${mode})`, async 
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/door?selected=issues`, { waitUntil: "domcontentloaded" });
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const row = page.locator('[data-owner="user-profile-issue-row"]');
     const projectName = row.locator('[data-owner="user-profile-issue-project-name"]');

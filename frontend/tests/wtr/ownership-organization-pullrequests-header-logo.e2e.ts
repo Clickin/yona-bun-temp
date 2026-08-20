@@ -1,9 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("organization pull-request header owns the server logo background through Dynamic Style", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/pullrequests.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+  const style = curatedAppCss();
   const template = readFileSync(
     "../yona-original/app/views/organization/header.scala.html",
     "utf8",

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -23,7 +23,7 @@ test("site mail send action wrapper owns legacy centering in Style", async () =>
     readFile(routeSource, "utf8"),
     readFile(legacyTemplate, "utf8"),
     readFile(legacyStyles, "utf8"),
-    readFile(appStyles, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
 
   expect(legacy).toContain('<div class="span12 mail-btn-wrap">');

@@ -1,4 +1,4 @@
-import { expect, test, readFileSync } from "../wtr-compat.ts";
+import { expect, test, readFileSync, curatedAppCss } from "../wtr-compat.ts";
 
 test("retires gray-txt fallback with route-owned separators", async () => {
   const read = (path: string) => readFileSync(path, "utf8");
@@ -13,7 +13,7 @@ test("retires gray-txt fallback with route-owned separators", async () => {
       "organization-pullrequests-review-separator",
     ],
   ] as const;
-  expect(read("src/app.css")).not.toContain(".gray-txt");
+  expect(curatedAppCss()).not.toContain(".gray-txt");
   for (const [route, owner] of routes) {
     const source = read(route);
     expect(source).not.toContain("gray-txt");

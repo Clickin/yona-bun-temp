@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
@@ -25,14 +25,7 @@ test("authenticated public profile owns outer and nested tab-content visibility"
   const [routeSource, styleSource, scala, bootstrap, responsive, yobiLess, appCss, ...lessChain] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-        readFileSync(
-          new URL(
-            "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-            import.meta.url,
-          ),
-          "utf8",
-        ),
+      curatedAppCss(),
       readFile(
         new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
         "utf8",
@@ -52,7 +45,7 @@ test("authenticated public profile owns outer and nested tab-content visibility"
         new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       ...[
         "_variables.less",
         "_mixins.less",

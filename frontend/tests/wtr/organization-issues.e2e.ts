@@ -1088,6 +1088,17 @@ async function mockOrganizationIssues(
 }
 
 async function canonicalizeScreenRoots(page: Page) {
+  // F5 dist-truth: the usermenu tab content hydrates from the workspace
+  // fetch — snapshot only after the Loading placeholder is replaced (the
+  // canonicalized roots include global-gnb-outer).
+  await page.evaluate(async () => {
+    const target = document.querySelector("#usermenu-tab-content-list");
+    if (!target) return;
+    for (let i = 0; i < 100; i += 1) {
+      if (!target.textContent?.includes("Loading")) return;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  });
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(

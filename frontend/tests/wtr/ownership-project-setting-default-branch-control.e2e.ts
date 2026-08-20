@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/setting.tsx", import.meta.url);
@@ -21,7 +21,7 @@ test("project setting default branch Select2 closed/open state owns frozen geome
 }) => {
   const [route, style, view, select2, override] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacyViewSource, "utf8"),
     readFile(legacySelect2Source, "utf8"),
     readFile(legacyOverrideSource, "utf8"),

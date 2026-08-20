@@ -1,6 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -15,10 +13,8 @@ test.use({ locale: "en-US" });
 
 test("authenticated Home page-wrap has bounded global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   const outerMarker = route.indexOf(`data-owner="authenticated-home-page-wrap-outer"`);
   const innerMarker = route.indexOf(`data-owner="authenticated-home-page-wrap"`);

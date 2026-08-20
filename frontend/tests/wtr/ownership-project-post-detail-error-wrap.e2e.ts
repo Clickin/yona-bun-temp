@@ -1,4 +1,11 @@
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import {
+  expect,
+  test,
+  type Page,
+  type Route,
+  mergedLegacyBlock,
+  curatedAppCss,
+} from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,12 +13,7 @@ const route = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber.tsx", import.meta.url),
   "utf8",
 );
-const styles =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styles = curatedAppCss();
 const legacySources = [
   "../../yona-original/app/views/board/view.scala.html",
   "../../yona-original/app/views/board/list.scala.html",
@@ -137,9 +139,7 @@ test("project post not-found error wrap keeps frozen Style parity", async ({ pag
       padding: "100px 0px",
       textAlign: "center",
     });
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
   }
 });
 

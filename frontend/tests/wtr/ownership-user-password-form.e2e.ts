@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -90,9 +90,7 @@ async function open(page: Page) {
 
 test("password form owners trace the legacy skeleton and frozen declarations", () => {
   const route = readFileSync("src/routes/user/editform/password.tsx", "utf8");
-  const colors =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const colors = readFileSync("src/app.css", "utf8");
   const scala = readFileSync("../yona-original/app/views/user/edit_password.scala.html", "utf8");
   const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
   const responsive = readFileSync(

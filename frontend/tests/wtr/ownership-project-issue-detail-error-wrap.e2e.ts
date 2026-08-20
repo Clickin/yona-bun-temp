@@ -1,11 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const route = readFileSync("../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
-const styles =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styles = readFileSync("src/app.css", "utf8");
 const legacy = readFileSync("../yona-original/app/views/error/forbidden.scala.html", "utf8");
 const issueView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
 const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
@@ -94,11 +92,8 @@ test("project issue detail error wrap keeps legacy source, paint, geometry, and 
   }
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    await expect(fallback).toHaveCount(0);
-  } else {
-    await expect(fallback).toHaveCount(1);
-  }
+  // Post-merge: the fallback link no longer exists in index.html.
+  await expect(fallback).toHaveCount(0);
 });
 
 async function mockMissingIssue(page: Page) {

@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -96,8 +96,7 @@ test("Projects residual member, watch, and trash icons are direct Style owners",
   const [route, styles, view, partial, messages, yobicon, common, yobiUi, focusedTest] =
     await Promise.all([
       readFile("../src/routes/$user.tsx"),
-      readFileSync("src/app.css", "utf8") +
-        readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+      curatedAppCss(),
       readFile(
         new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
         "utf8",
@@ -175,9 +174,7 @@ test("Projects residual member, watch, and trash icons are direct Style owners",
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/yona/admin?selected=projects");
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
     expect(
       await page.locator("style").evaluateAll((nodes) =>
         nodes.some((node) => {

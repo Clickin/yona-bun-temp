@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -6,11 +6,7 @@ const mkdir = async () => undefined;
 const resolve = (...parts) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
-const screenshotDirectory = resolve(
-  "output/playwright/style-project-home-action-floats",
-  fallbackOff ? "fallback-off" : "normal",
-);
+const screenshotDirectory = resolve("output/playwright/style-project-home-action-floats", "normal");
 
 test.use({ locale: "en-US" });
 
@@ -18,14 +14,7 @@ test("project home float owners cite the exact legacy evidence", async () => {
   const [route, style, legacyRoot, legacyPartial, bootstrap, pageLess, yobi, messages] =
     await Promise.all([
       readFile(new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-        readFileSync(
-          new URL(
-            "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-            import.meta.url,
-          ),
-          "utf8",
-        ),
+      curatedAppCss(),
       readFile(
         new URL("../../yona-original/app/views/project/home.scala.html", import.meta.url),
         "utf8",

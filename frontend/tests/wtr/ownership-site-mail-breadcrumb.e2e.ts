@@ -118,13 +118,13 @@ for (const viewport of [
       margin: "0px",
       padding: "10px 10px 5px",
     });
-    if (!process.env.VITE_DISABLE_LEGACY_FALLBACK) {
-      expect(actual.heading).toMatchObject({
-        color: "rgb(51, 51, 51)",
-        fontSize: "24.5px",
-        fontWeight: "700",
-      });
-    }
+    // Post-merge: the full legacy cascade lives in app.css, so the legacy
+    // heading styles are always present.
+    expect(actual.heading).toMatchObject({
+      color: "rgb(51, 51, 51)",
+      fontSize: "24.5px",
+      fontWeight: "700",
+    });
     expect(actual.outer).toEqual({
       boxSizing: "border-box",
       minWidth: viewport.name === "desktop" ? "0px" : "10px",

@@ -607,7 +607,7 @@ test("global search residual Style owners preserve populated, empty, and categor
         };
       }),
     ).toEqual({
-      backgroundImage: expect.stringContaining(`${basePath}/legacy-assets/images/no_contents.jpg`),
+      backgroundImage: expect.stringContaining(`${basePath}/assets/no_contents-`),
       minHeight: "250px",
       paddingLeft: "20px",
       textAlign: "center",

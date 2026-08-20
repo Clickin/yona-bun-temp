@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -29,7 +29,7 @@ test("site mass-mail keeps the legacy unadorned project wrapper and selected-pro
     "../yona-original/public/javascripts/service/yobi.site.MassMail.js",
     "utf8",
   );
-  const css = readFileSync("src/app.css", "utf8");
+  const css = curatedAppCss();
 
   // Legacy Scala HTML/LESS is output DOM/UX evidence; behavior remains React-owned.
   expect(legacy).toContain('id="project-list-wrap"');

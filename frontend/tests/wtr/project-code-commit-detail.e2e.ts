@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-// Batch 1117: verify commit diff stat (+insertions, -deletions) and per-file diff card rendering
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Batch 1117: verify commit diff stat (+insertions, -deletions) and per-file diff card rendering
 
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
@@ -54,9 +53,7 @@ const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
 // convention so pins see the raw file; the previous new URL(...) read returned
 // the esbuild/babel-transformed module (style.create compiled, trailing commas
 // normalized), which broke the threadFoldHere/reviewCard block pins.
-const COMMIT_DETAIL_STYLE_SOURCE =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const COMMIT_DETAIL_STYLE_SOURCE = readFileSync("src/app.css", "utf8");
 const DIFF_LINE_VIEW_SOURCE = readFileSync(
   new URL("../src/components/diff-line-view.tsx", import.meta.url),
   "utf8",
@@ -88,7 +85,7 @@ const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
   "utf8",
 );
-const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const APP_CSS_SOURCE = curatedAppCss();
 const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
   "utf8",
@@ -121,10 +118,9 @@ const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
   new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
   "utf8",
 );
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const FOOTER_SCREENSHOT_DIR = resolve(
   "output/playwright/style-project-commit-detail-footer-floats",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 async function captureCommitFooterScreenshot(page: Page, filename: string) {
@@ -1324,9 +1320,7 @@ test("project commit detail Batch 756 owns Git metadata with Style", async ({ pa
     expect(geometry.idStartsWithinWrap).toBe(true);
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project commit detail renders no-author commit with legacy anonymous author copy", async ({
@@ -1464,9 +1458,7 @@ test("project commit detail submits watch and comment mutations through legacy c
   await expect(page.locator("#watch-button")).toHaveClass(/active/);
   await expect(page.locator("#watch-button")).toHaveClass(/ybtn-watching/);
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project commit detail renders legacy partial_filediff rows", async ({ page }) => {
@@ -1694,7 +1686,7 @@ index 1234567..abcdef1 100644
   }
   expect(detailRequests).toEqual(["branch=main"]);
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+  await expect(fallback).toHaveCount(0);
 });
 
 test("project commit detail owns diff-body font family", async ({ page }) => {
@@ -1938,9 +1930,7 @@ index 1234567..abcdef1
     await expect(binaryCell).toHaveCSS("color", "rgb(187, 187, 187)");
     await expect(binaryCell).toHaveCSS("text-shadow", "rgb(255, 255, 255) -1px -1px 0px");
     await expect(binaryCell).toHaveCSS("padding", "5px 10px");
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
   }
 });
 
@@ -2794,9 +2784,7 @@ index 1234567..abcdef1 100644
     expect(geometry.cellHeight).toBeGreaterThan(0);
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project commit detail renders legacy A-side inline range hooks", async ({ page }) => {
@@ -3434,9 +3422,7 @@ test("project SVN commit detail Batch 757 owns commit metadata with Style", asyn
   }
 
   await expect(page.locator(".commitMsg-wrap")).toHaveCount(0);
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project SVN commit detail branch dropdown uses route-local state", async ({ page }) => {
@@ -4167,9 +4153,7 @@ index 1234567..abcdef1 100644
     await expect(links.nth(1)).toHaveAttribute("target", "_blank");
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project commit detail partial-filediff commit ids own the legacy visible Style state", async ({
@@ -4240,9 +4224,7 @@ index 1234567..abcdef1 100644
     await expect(links.nth(1)).toHaveAttribute("target", "_blank");
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project commit detail Batch 750 partial-filediff border owners preserve legacy longhands", async ({
@@ -4318,9 +4300,7 @@ index 1234567..abcdef1 100644
     });
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project commit detail Batch 754 owns the emitted partial-diff table shell", async ({
@@ -4412,7 +4392,5 @@ index 1234567..abcdef1 100644
     expect(Number.parseFloat(shell.tableWidth)).toBeCloseTo(shell.tableBoxWidth, 0);
   }
 
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });

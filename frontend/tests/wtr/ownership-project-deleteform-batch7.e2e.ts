@@ -1,7 +1,5 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
-
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 
 const project = {
   enrolledUsers: [],
@@ -27,9 +25,7 @@ const project = {
 
 test("deleteform batch 7 preserves the legacy bottom action wrapper", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/project/delete.scala.html", "utf8");
   const settingMenu = readFileSync(
     "../yona-original/app/views/project/partial_settingmenu.scala.html",
@@ -48,7 +44,7 @@ test("deleteform batch 7 preserves the legacy bottom action wrapper", async ({ p
   expect(route).not.toContain("dangerouslySetInnerHTML");
 });
 
-test(`deleteform batch 7 preserves action geometry and React modal state ${fallbackOff ? "fallback-off" : "normal"}`, async ({
+test(`deleteform batch 7 preserves action geometry and React modal state ${"normal"}`, async ({
   page,
 }) => {
   await page.route("**/api/v1/session", async (route) => {
@@ -88,9 +84,8 @@ test(`deleteform batch 7 preserves action geometry and React modal state ${fallb
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto("/yona/admin/sample/deleteform");
-  if (fallbackOff) {
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
-  }
+  // Post-merge: the fallback link no longer exists in index.html.
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
   const action = page.locator('div[data-owner="project-delete-action"]');
   const actionButton = page.locator("#btnDelete");

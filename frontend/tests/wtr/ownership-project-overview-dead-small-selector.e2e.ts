@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project overview has no active small selector consumer", async () => {
@@ -6,7 +6,7 @@ test("project overview has no active small selector consumer", async () => {
     new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
     "utf8",
   );
-  const appCss = await readFile(new URL("../src/app.css", import.meta.url), "utf8");
+  const appCss = await Promise.resolve(curatedAppCss());
   const legacy = await readFile(
     new URL("../../yona-original/app/views/project/partial_dashboard.scala.html", import.meta.url),
     "utf8",

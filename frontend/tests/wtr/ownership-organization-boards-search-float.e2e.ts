@@ -13,7 +13,7 @@ const legacy = (path: string) => readFileSync(resolve(root, path), "utf8");
 const screenshotDirectory = resolve(
   root,
   "output/playwright/style-organization-boards-search-float",
-  process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal",
+  "normal",
 );
 
 test("organization boards search owner preserves legacy float and responsive bounds", async ({

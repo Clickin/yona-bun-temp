@@ -2,7 +2,14 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import {
+  expect,
+  test,
+  type Page,
+  type Route,
+  mergedLegacyBlock,
+  curatedAppCss,
+} from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -17,12 +24,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 const legacyMilestoneSource = readFileSync(
   new URL("../../yona-original/app/views/milestone/edit.scala.html", import.meta.url),
   "utf8",
@@ -82,7 +84,24 @@ test("project milestone editform markdown editor keeps legacy mt10 ownership", a
     await page.goto(`${basePath}/admin/sample/milestone/5/editform`, { waitUntil: "commit" });
 
     const editor = page.locator('[data-owner="milestone-edit-form-markdown-editor-wrapper"]');
-    await expect(editor).toBeVisible({ timeout: 15000 });
+    // F5 dist-truth: the editor wrapper can take longer than the harness
+    // visibility timeout to paint under shard load — poll paint with an
+    // explicit 30s window, tolerating the pre-render absence.
+    {
+      let editorVisible = false;
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        if ((await editor.count()) > 0) {
+          editorVisible = await editor.evaluate(
+            (element) =>
+              getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+          );
+          if (editorVisible) break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      expect(editorVisible).toBe(true);
+    }
     await expect(editor).toHaveClass(/\bmt10\b/u);
     await expect(editor).toHaveCSS("margin-top", "10px");
     await expect(editor).not.toHaveAttribute("style", /.+/u);

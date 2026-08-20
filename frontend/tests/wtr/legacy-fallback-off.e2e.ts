@@ -2,13 +2,29 @@ import { globSync, readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
+// Post-merge helpers: the frozen legacy fallback content lives inside app.css
+// between the BEGIN/END markers; the curated React-owned section follows END.
+function mergedLegacyBlock(): string {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const begin = appCss.indexOf("/* BEGIN merged frozen legacy-fallback");
+  const end = appCss.indexOf("/* END merged frozen legacy-fallback */", begin);
+  if (begin === -1 || end === -1) throw new Error("merged legacy block markers missing in app.css");
+  return appCss.slice(begin, end + "/* END merged frozen legacy-fallback */".length);
+}
+function curatedAppCss(): string {
+  // app.css minus the merged frozen legacy block — pre-merge app.css semantics.
+  const appCss = readFileSync("src/app.css", "utf8");
+  const begin = appCss.indexOf("/* BEGIN merged frozen legacy-fallback");
+  const end = appCss.indexOf("/* END merged frozen legacy-fallback */", begin);
+  if (begin === -1 || end === -1) throw new Error("merged legacy block markers missing in app.css");
+  return (
+    appCss.slice(0, begin) + appCss.slice(end + "/* END merged frozen legacy-fallback */".length)
+  );
+}
 
 test("pagination fallback bridge is retired while the exact consumer graph remains owned", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const generatedFallback = readFileSync(
-    "/yona/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const appCss = curatedAppCss();
+  const generatedFallback = mergedLegacyBlock();
   for (const selector of [
     ".page-navigation-wrap {",
     ".page-navigation-wrap .page-nums {",
@@ -47,11 +63,8 @@ test("pagination fallback bridge is retired while the exact consumer graph remai
 });
 
 test("inner-bubble fallback bridge is retired while frozen legacy output remains", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const generatedFallback = readFileSync(
-    "/yona/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const appCss = curatedAppCss();
+  const generatedFallback = mergedLegacyBlock();
   expect(appCss).not.toContain(".inner-bubble {");
   expect(appCss).not.toContain(".inner-bubble .text.uname {");
   expect(generatedFallback).toContain(".inner-bubble {");
@@ -59,7 +72,7 @@ test("inner-bubble fallback bridge is retired while frozen legacy output remains
   expect(generatedFallback).toContain("width: inherit !important;");
 
   const projectMembers = readFileSync("src/routes/$ownerName/$projectName/members.tsx", "utf8");
-  const projectStyles = readFileSync("src/app.css", "utf8");
+  const projectStyles = curatedAppCss();
   const organizationMembers = readFileSync(
     "src/routes/organizations/$organizationName/members.tsx",
     "utf8",
@@ -75,11 +88,8 @@ test("inner-bubble fallback bridge is retired while frozen legacy output remains
 });
 
 test("source-less ml4 and mr3 React utility bridges are retired", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const generatedFallback = readFileSync(
-    "/yona/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const appCss = curatedAppCss();
+  const generatedFallback = mergedLegacyBlock();
   expect(appCss).not.toContain(".ml4 {");
   expect(appCss).not.toContain(".mr3 {");
   expect(generatedFallback).toContain(".ml4 {");
@@ -99,11 +109,8 @@ test("source-less ml4 and mr3 React utility bridges are retired", () => {
 });
 
 test("root Yoram dialog center-txt bridge is retired while legacy fallback remains", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const generatedFallback = readFileSync(
-    "/yona/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const appCss = curatedAppCss();
+  const generatedFallback = mergedLegacyBlock();
   const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
 
   expect(appCss).not.toContain(".center-txt {");
@@ -127,7 +134,7 @@ async function expectLegacySiteLayout(page: Page, owners: readonly string[]) {
 }
 
 test("site-admin routes own the legacy layout classes without app.css emitters", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   // e2e closure ledger (2026-08-11): ROUTE_DOM parity restores the legacy
   // siteMngLayout classes (page-wrap-outer/site-setting-wrap/row-fluid/span)
   // on the React-owned elements; the frozen fallback styles them. The old
@@ -221,16 +228,13 @@ test("site-admin routes own the legacy layout classes without app.css emitters",
 });
 
 test("app-shell fallback bridge has no remaining selector", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".app-shell");
 });
 
 test("error-wrap fallback bridge is retired while legacy fallback remains intact", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const generatedFallback = readFileSync(
-    "/yona/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const appCss = curatedAppCss();
+  const generatedFallback = mergedLegacyBlock();
 
   for (const selector of [
     ".error-wrap {",
@@ -254,12 +258,12 @@ test("error-wrap fallback bridge is retired while legacy fallback remains intact
 });
 
 test("runtime-error-banner fallback bridge has no remaining selector", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".runtime-error-banner");
 });
 
 test("runtime-grid fallback bridge has no remaining selectors", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".runtime-grid {",
     ".runtime-grid div {",
@@ -271,7 +275,7 @@ test("runtime-grid fallback bridge has no remaining selectors", () => {
 });
 
 test("project history generic activity wrappers have no fallback bridge", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".content-container .main-stream {");
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
   // The item-specific first/last rules remain until their conditional Style
@@ -291,7 +295,7 @@ test("project history generic activity wrappers have no fallback bridge", () => 
 });
 
 test("posting-history modal trigger bridge has no remaining selector arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain('.board-view .posting-history > button[data-toggle="modal"]');
   expect(appCss).not.toContain('.posting-history > button[data-toggle="modal"]');
   expect(appCss).not.toContain('.voter-list li > button[data-toggle="modal"]');
@@ -307,7 +311,7 @@ test("posting-history modal trigger bridge has no remaining selector arm", () =>
 });
 
 test("commit-message wrapper fallback arms have no app.css consumer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {");
   expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {");
   expect(appCss).toContain(".code-browse-wrap .commitInfo {");
@@ -318,13 +322,13 @@ test("commit-message wrapper fallback arms have no app.css consumer", () => {
 });
 
 test("row-fluid controls-row fallback bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain('.row-fluid .controls-row [class*="span"] + [class*="span"] {');
   expect(appCss).toContain('.row-fluid [class*="span"]:first-child {');
 });
 
 test("alert-danger fallback bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".alert-danger,");
   expect(appCss).not.toContain(".alert-danger h4,");
   expect(appCss).toContain(".alert-error {");
@@ -332,7 +336,7 @@ test("alert-danger fallback bridge has no app.css arms", () => {
 });
 
 test("dead syntax selector family has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".syntax-comment",
     ".syntax-quote",
@@ -363,7 +367,7 @@ test("dead syntax selector family has no app.css arms", () => {
 });
 
 test("organization home small-font typography has no shared fallback arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
   expect(appCss).not.toContain(".small-font");
   // e2e closure ledger (2026-08-11): the route owns the legacy small-font
@@ -375,7 +379,7 @@ test("organization home small-font typography has no shared fallback arm", () =>
 });
 
 test("sidebar refresh plugin bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".sidebar .nav-tabs li > .refresh-button {",
     ".sidebar .refresh-button:hover,",
@@ -392,7 +396,7 @@ test("sidebar refresh plugin bridge has no app.css arms", () => {
 });
 
 test("issueform legacy insert bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".attached-file .btn-insert",
     ".attached-file .btn-insert:hover",
@@ -413,7 +417,7 @@ test("issueform legacy insert bridge has no app.css arms", () => {
 });
 
 test("issueform legacy picker bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".issue-form-page-wrap .issue-label-trigger",
     ".issue-form-page-wrap .issue-assignee-selection",
@@ -432,7 +436,7 @@ test("issueform legacy picker bridge has no app.css arms", () => {
 });
 
 test("site post-row fallback bridges have no remaining selectors", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [".post-row {", ".post-row-main {", ".post-title {", ".post-row-meta {"]) {
     expect(appCss).not.toContain(selector);
   }
@@ -467,7 +471,7 @@ test("site post-row fallback bridges have no remaining selectors", () => {
 });
 
 test("board form fallback bridges have no remaining selector arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".board-label-picker");
   for (const selector of [
     ".board-comment-form,",
@@ -498,7 +502,7 @@ test("board form fallback bridges have no remaining selector arms", () => {
 });
 
 test("board-comment fallback bridge has no remaining producer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".board-comment {");
   expect(appCss).not.toContain(".board-comments {");
   expect(appCss).toContain(".board-comment-wrap");
@@ -514,7 +518,7 @@ test("board-comment fallback bridge has no remaining producer", () => {
 });
 
 test("board-actions fallback bridge has no remaining selector", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".board-actions {");
   expect(appCss).toContain(".actions {");
   expect(appCss).toContain(".checkbox {");
@@ -530,7 +534,7 @@ test("board-actions fallback bridge has no remaining selector", () => {
 });
 
 test("pull-request action and branch fallback bridges have no remaining selector arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".pull-request-actions");
   expect(appCss).not.toContain(".pull-request-branches");
   expect(appCss).not.toContain(".thread-actrow,");
@@ -547,7 +551,7 @@ test("pull-request action and branch fallback bridges have no remaining selector
 });
 
 test("dead temporary typography bridges have no remaining selectors", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".eyebrow {");
   expect(appCss).not.toContain(".lede {");
   expect(appCss).toContain("h1 {");
@@ -562,7 +566,7 @@ test("dead temporary typography bridges have no remaining selectors", () => {
 });
 
 test("secret-page fallback selector branches have no React emitter", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".secret-page .secret-box",
     ".secret-page .secret-wrap",
@@ -582,7 +586,7 @@ test("secret-page fallback selector branches have no React emitter", () => {
 });
 
 test("code and diff fallback bridges have no remaining selectors", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".diff-file",
     ".diff-stats",
@@ -611,7 +615,7 @@ test("code and diff fallback bridges have no remaining selectors", () => {
 });
 
 test("codediff markdown-editor plugin bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button',
     '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover',
@@ -627,7 +631,7 @@ test("codediff markdown-editor plugin bridge has no app.css arms", () => {
 });
 
 test("commit-message wrapper fallback arms have no current React producer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {");
   expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {");
   expect(appCss).toContain(".code-browse-wrap .commitInfo {");
@@ -635,11 +639,9 @@ test("commit-message wrapper fallback arms have no current React producer", () =
 });
 
 test("primary text fallback arm has Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync("src/routes/$ownerName/$projectName/newFork.tsx", "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(appCss).not.toContain(".primary-txt {");
   expect(route).not.toContain("primary-txt");
@@ -647,14 +649,12 @@ test("primary text fallback arm has Style ownership", () => {
 });
 
 test("pull request author left alignment has Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync(
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(appCss).not.toContain(".left-txt {");
   expect(route).not.toContain("left-txt");
@@ -662,14 +662,12 @@ test("pull request author left alignment has Style ownership", () => {
 });
 
 test("issue edit number secondary color has Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(appCss).not.toContain(".secondary-txt {");
   expect(route).toContain('className="secondary-txt"');
@@ -677,18 +675,14 @@ test("issue edit number secondary color has Style ownership", () => {
 });
 
 test("closed issue due-date color has bounded Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const issuesRoute = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-  const issuesStyle =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const issuesStyle = readFileSync("src/app.css", "utf8");
   const milestoneRoute = readFileSync(
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const milestoneStyle =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const milestoneStyle = readFileSync("src/app.css", "utf8");
 
   expect(appCss).not.toContain(".darkgray-txt {");
   expect(issuesRoute).not.toContain("darkgray-txt");
@@ -696,7 +690,7 @@ test("closed issue due-date color has bounded Style ownership", () => {
 });
 
 test("orange text required markers have Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".orange-txt {");
   const sourceContracts = [
     [
@@ -730,7 +724,7 @@ test("orange text required markers have Style ownership", () => {
 });
 
 test("gray text separators have Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".gray-txt {");
   const sourceContracts = [
     ["src/routes/__root.tsx", "root-login-dialog-separator"],
@@ -751,7 +745,7 @@ test("gray text separators have Style ownership", () => {
 });
 
 test("pull-request tab button bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".pullrequeset-tab-menu > li > button {",
     ".pullrequeset-tab-menu > li > button:hover,",
@@ -773,13 +767,13 @@ test("pull-request tab button bridge has no app.css arms", () => {
 });
 
 test("uneditable-input width bridge has no current React consumer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".uneditable-input");
   expect(appCss).toContain("input,\n  textarea {\n    width: 206px;");
 });
 
 test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".btn-primary {");
   expect(appCss).not.toContain(".btn-primary:hover,");
   expect(appCss).not.toContain(".btn-primary:focus");
@@ -790,7 +784,7 @@ test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
 });
 
 test("milestone mass-update button bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".milesion-wrap .mass-update-list > li > button {",
     ".milesion-wrap .mass-update-list > li > button:hover,",
@@ -803,7 +797,7 @@ test("milestone mass-update button bridge has no app.css arms", () => {
 });
 
 test("dot-variant ybtn bridges have no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".ybtn.primary {");
   expect(appCss).not.toContain(".ybtn.danger {");
   expect(appCss).toContain(".ybtn-primary,");
@@ -811,27 +805,27 @@ test("dot-variant ybtn bridges have no app.css arms", () => {
 });
 
 test("dead label-info and badge-info bridges have no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".label-info {");
   expect(appCss).not.toContain(".badge-info");
 });
 
 test("source-less sr-only bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".sr-only {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("sr-only"))).toBe(false);
 });
 
 test("source-less ml20 utility bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".ml20 {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("ml20"))).toBe(false);
 });
 
 test("source-less number-of-comments bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".number-of-comments {");
   expect(appCss).toContain(".commitMsg.short {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
@@ -840,17 +834,12 @@ test("source-less number-of-comments bridge has no app.css arm", () => {
   expect(
     runtimeSources.some((file) => readFileSync(file, "utf8").includes("number-of-comments")),
   ).toBe(true);
-  expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
-    ".number-of-comments",
-  );
+  expect(mergedLegacyBlock()).toContain(".number-of-comments");
 });
 
 test("yobicon-middle bridge is retired while the generated legacy fallback remains intact", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const generatedFallback = readFileSync(
-    "/yona/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const appCss = curatedAppCss();
+  const generatedFallback = mergedLegacyBlock();
 
   expect(appCss).not.toContain(".yobicon-middle {");
   expect(generatedFallback).toContain(".yobicon-middle {");
@@ -864,21 +853,21 @@ test("yobicon-middle bridge is retired while the generated legacy fallback remai
 });
 
 test("source-less mr6 utility bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".mr6 {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("mr6"))).toBe(false);
 });
 
 test("source-less mt4 utility bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".mt4 {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("mt4"))).toBe(false);
 });
 
 test("source-less vtop utility bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".vtop");
   expect(appCss).not.toContain(".vertical-top {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
@@ -886,7 +875,7 @@ test("source-less vtop utility bridge has no app.css arm", () => {
 });
 
 test("source-less vertical-top utility bridge has no app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".vertical-top {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("vertical-top"))).toBe(
@@ -895,7 +884,7 @@ test("source-less vertical-top utility bridge has no app.css arm", () => {
 });
 
 test("search category owners have no app.css bridge arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".search-category-wrap {",
     ".search-category-wrap li {",
@@ -920,7 +909,7 @@ test("search category owners have no app.css bridge arms", () => {
 });
 
 test("search result owners have no shared app.css bridge arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".search-list-item {");
   for (const retiredSelector of [
     ".search-list-wrap {",
@@ -966,8 +955,8 @@ test("search result owners have no shared app.css bridge arms", () => {
 });
 
 test("search empty-result fallback arm is retired while legacy declarations remain", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
-  const fallbackCss = readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const appCss = curatedAppCss();
+  const fallbackCss = mergedLegacyBlock();
   const frozenPageLess = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_page.less",
     "utf8",
@@ -1002,7 +991,7 @@ test("search empty-result fallback arm is retired while legacy declarations rema
     "margin: 20px 0;",
     "text-align: center;",
     "min-height: 250px;",
-    'background-image: url("../images/no_contents.jpg");',
+    'background-image: url("./assets/legacy/images/no_contents.jpg");',
     "background-repeat: no-repeat;",
     "background-position: center 50%;",
   ]) {
@@ -1034,7 +1023,7 @@ test("search empty-result fallback arm is retired while legacy declarations rema
 });
 
 test("search keyword owners have no generic app.css bridge arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".keyword {");
   const sourceContracts = [
     ["src/routes/search.tsx", 'data-owner="global-search-keyword"'],
@@ -1050,13 +1039,13 @@ test("search keyword owners have no generic app.css bridge arm", () => {
 });
 
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".project-home .issue-wrap {");
   expect(appCss).not.toContain(".project-home .issue-wrap a.btn {");
 });
 
 test("project-home status bridge has no React-side app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".project-home .inner header .project-status {",
     ".project-home .inner header .project-status .ico-like {",
@@ -1065,16 +1054,14 @@ test("project-home status bridge has no React-side app.css arms", () => {
   ]) {
     expect(appCss).not.toContain(selector);
   }
-  expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
-    ".project-home .inner header .project-status {",
-  );
+  expect(mergedLegacyBlock()).toContain(".project-home .inner header .project-status {");
   expect(readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8")).not.toContain(
     "project-status",
   );
 });
 
 test("issue detail event-index bridge has no React-side app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index {");
   expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index .state {");
   expect(appCss).toContain(".issue-detail-page .comments .event .state i {");
@@ -1087,30 +1074,28 @@ test("issue detail event-index bridge has no React-side app.css arms", () => {
 });
 
 test("authenticated user-menu dropdown declaration bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".gnb-usermenu-dropdown {\n");
   expect(appCss).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
   // copy-fix-current-dom: the arm is nested inside @media (max-width: 720px) in app.css
   expect(appCss).toContain(
     "@media (max-width: 720px) {\n    .gnb-usermenu-item {\n      color: #5dbbe0 !important;",
   );
-  expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
-    ".gnb-usermenu-dropdown {",
-  );
+  expect(mergedLegacyBlock()).toContain(".gnb-usermenu-dropdown {");
   expect(readFileSync("src/routes/-home-route-screen.tsx", "utf8")).toContain(
     'data-owner="authenticated-site-user-menu"',
   );
 });
 
 test("authenticated user-menu item bridge keeps only the live standalone arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".gnb-nav > li,\n.gnb-usermenu > li {");
   expect(appCss).toContain(".gnb-nav > li {\n    float: left;\n    position: relative;");
   expect(appCss).toContain(".gnb-usermenu > li {\n    position: relative;\n    float: left;");
 });
 
 test("site mail form-horizontal bridge has no app.css arms", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   // e2e closure ledger (2026-08-11): app.css carries one OWNER-scoped fork-page
   // bridge ([data-owner="project-fork-page"] .form-horizontal …) — anchor the
   // no-bridge check to unowned selectors (line start)
@@ -1123,18 +1108,16 @@ test("site mail form-horizontal bridge has no app.css arms", () => {
 });
 
 test("email verification helper bridge has no React-side app.css arm", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".login-form-wrap .email-verification-help");
   expect(readFileSync("src/routes/users/loginform.tsx", "utf8")).not.toContain(
     'className="email-verification-help"',
   );
-  expect(readFileSync("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
-    ".login-form-wrap .email-verification-help",
-  );
+  expect(mergedLegacyBlock()).toContain(".login-form-wrap .email-verification-help");
 });
 
 test("board toolbar bridge has no current producer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".board-toolbar");
   expect(readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8")).not.toContain(
     "board-toolbar",
@@ -1142,20 +1125,20 @@ test("board toolbar bridge has no current producer", () => {
 });
 
 test("experimental-help action bridge has no current producer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain("#experimentalHelp .actrow");
   expect(readFileSync("src/routes/[_]UIKit.tsx", "utf8")).not.toContain("#experimentalHelp");
 });
 
 test("search-layout fallback bridge has no remaining selector", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".search-layout");
   expect(appCss).not.toContain(".search-category-wrap {");
   expect(appCss).toContain("#searchInnerForm {");
 });
 
 test("search-page fallback bridge has no React or legacy producer", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".search-page {");
 
   for (const route of [
@@ -1168,7 +1151,7 @@ test("search-page fallback bridge has no React or legacy producer", () => {
 });
 
 test("project-issues dead list-reset bridge is retired", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   expect(appCss).not.toContain(".issue-list-page .post-list-wrap {");
   expect(appCss).toContain(".post-list-wrap {");
   expect(appCss).not.toContain(".issue-list-page .issue-item-row {");
@@ -1178,7 +1161,7 @@ test("project-issues dead list-reset bridge is retired", () => {
 });
 
 test("project-issues left-menu scoped search bridge is retired", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".issue-list-page .left-menu #search hr.hide-in-mobile {",
     ".issue-list-page .left-menu .search-bar {",
@@ -1196,7 +1179,7 @@ test("project-issues left-menu scoped search bridge is retired", () => {
 });
 
 test("project-issues dead row and mass-update ancestor bridge is retired", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     ".issue-list-page .mass-update-form .btn-group {",
     ".issue-list-page .post-item .mass-update-check {",
@@ -1872,23 +1855,10 @@ async function mockGlobalSearchSession(page: Page) {
   );
 }
 
-test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
-  test.skip(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1", "normal runtime asset contract");
-
-  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const basePath = configuredBasePath.endsWith("/") ? configuredBasePath : `${configuredBasePath}/`;
-  await page.goto(basePath, { waitUntil: "commit" });
-
-  const fallbackLink = page.locator(`link[href$="${generatedFallbackHref}"]`);
-  await expect(fallbackLink).toHaveCount(1);
-  const fallbackHref = await fallbackLink.getAttribute("href");
-  if (!fallbackHref) {
-    throw new Error("Generated legacy fallback link must have an href.");
-  }
-  const fallbackCss = await page.evaluate(async (href) => {
-    const response = await fetch(href);
-    return response.text();
-  }, fallbackHref);
+test("generated fallback excludes only proven dead Yobi selectors", () => {
+  // The frozen legacy block merged into app.css was generated with the proven
+  // dead selectors pruned — the merged block is the runtime stylesheet now.
+  const fallbackCss = mergedLegacyBlock();
 
   for (const selector of [
     ".all-projects .project .info-wrap .forked",
@@ -1916,22 +1886,20 @@ test("generated fallback excludes only proven dead Yobi selectors", async ({ pag
   expect(fallbackCss).toContain(".milestones .milestone .completion-rate {");
 });
 
-test("fallback-off discovery mode removes the generated legacy stylesheet", async ({ page }) => {
-  test.skip(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK !== "1",
-    "runs only through test:e2e:fallback-off",
-  );
-
+test("merged legacy block replaces the runtime fallback stylesheet", async ({ page }) => {
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const basePath = configuredBasePath.endsWith("/") ? configuredBasePath : `${configuredBasePath}/`;
   await page.goto(basePath, { waitUntil: "commit" });
 
+  // The runtime no longer ships a separate fallback stylesheet: the merged
+  // block in app.css is the single global baseline entry.
   await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
+  expect(mergedLegacyBlock()).toContain("@layer legacy {");
   await expect(page.locator("#root")).toHaveCount(1);
 });
 
 test("issue-state badge fallback has no exact app.css family and has route owners", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   for (const selector of [
     '.badge[class*="badge-issue-"] {',
     ".badge.badge-issue-open {",
@@ -1977,9 +1945,7 @@ test("massmail default and selected-project output retain the runtime fallback b
   await mockMassMailSession(page);
   await page.goto(`${basePath}/sites/massmail`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toBeHidden();
   await expect(page.locator(".app-shell, .site-admin-page, .project-select-row")).toHaveCount(0);
@@ -2007,9 +1973,7 @@ test("project-list output retains the runtime fallback boundary without its dead
   await mockProjectListSession(page);
   await page.goto(`${basePath}/sites/projectList?filter=road`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const container = page.locator('[data-owner="site-project-list-container"]');
   await expect(container).toBeVisible();
   await expect(container.locator('[data-owner="site-project-list-project-name"]')).toHaveText(
@@ -2035,9 +1999,7 @@ test("user-list output retains the runtime fallback boundary without its dead br
   await mockUserListSession(page);
   await page.goto(`${basePath}/sites/userList`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const list = page.locator('[data-owner="site-user-list-row-list"]');
   await expect(list).toBeVisible();
   await expect(list.locator('[data-owner="site-user-list-row-user-name"]')).toHaveText("Alice");
@@ -2063,9 +2025,7 @@ test("post-list output retains the runtime fallback boundary without its dead br
   await mockPostListSession(page);
   await page.goto(`${basePath}/sites/postList`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const container = page.locator('[data-owner="site-post-list-container"]');
   await expect(container).toBeVisible();
   const row = container.locator('[data-owner="site-post-list-row"]');
@@ -2131,9 +2091,7 @@ test("issue-list output retains Style row ownership without the dead post-row br
   await mockIssueListSession(page);
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const row = page.locator('[data-owner="site-issue-list-row"]');
   await expect(row).toHaveCount(1);
   await expect(row.locator(':scope > [data-owner="site-issue-list-project-avatar"]')).toHaveCount(
@@ -2179,9 +2137,7 @@ test("board edit form retains legacy form controls without dead board bridges", 
   await mockBoardEditFormSession(page);
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const form = page.locator("form.nm");
   await expect(form).toBeVisible();
   await expect(form.locator(".content-wrap.frm-wrap")).toHaveCount(1);
@@ -2236,9 +2192,7 @@ test("pull-request edit form retains active action order without dead action and
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const form = page.locator("form.nm");
   await expect(form).toBeVisible();
   await expect(form.locator(".pull-request-wrap")).toHaveCount(1);
@@ -2277,9 +2231,7 @@ test("project posts retains legacy label output without the dead board-badge bri
   await mockProjectPostsSession(page);
   await page.goto(`${basePath}/admin/sample/posts`, { waitUntil: "commit" });
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
   await expect(page.locator('[data-owner="project-posts-page"]')).toBeVisible();
   await expect(page.locator('[data-owner="project-posts-item"]')).toHaveCount(3);
@@ -2298,9 +2250,7 @@ test("project home retains the legacy right rail without the dead runtime-grid b
   await mockRuntimeGridProjectHome(page);
   await page.goto(`${basePath}/admin/sample`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const rail = page.locator(".span-right-pane");
   await expect(rail).toBeVisible();
   await expect(rail.locator('[data-owner="project-home-side-panel"]')).toBeVisible();
@@ -2321,9 +2271,7 @@ test("notifications output retains the runtime fallback boundary without its dea
   await mockAuthenticatedNotificationSession(page);
   await page.goto(`${basePath}/notifications`, { waitUntil: "domcontentloaded" });
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const list = page.locator('[data-owner="authenticated-home-notification-list"]');
   await expect(list).toBeVisible();
   await expect(list).toHaveClass(/\bactivity-streams\b/u);
@@ -2346,9 +2294,7 @@ test("secret setup output retains active fallback classes without secret-page br
   await mockSecretSetup(page);
   await page.goto(`${basePath}/secret`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   const owner = page.locator('[data-owner="secret-setup"]');
   await expect(owner).toBeVisible();
   await expect(owner).toHaveClass(/\bsecret-wrap\b/u);
@@ -2373,9 +2319,7 @@ test("global search output retains the runtime fallback boundary without the dea
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/search?keyword=bug&searchType=issue`);
 
-    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
     await expect(page.locator('[data-owner="global-search-input"]')).toHaveValue("bug");
     await expect(page.locator('[data-owner="global-search-result-wrap"]')).toBeVisible();
     await expect(page.locator('[data-owner="global-search-result-item"]')).toHaveCount(1);

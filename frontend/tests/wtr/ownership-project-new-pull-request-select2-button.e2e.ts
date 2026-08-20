@@ -1,12 +1,12 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("new pull-request Select2 button owns route-scoped geometry in Style", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/newPullRequestForm.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+  const style = curatedAppCss();
   const legacy = readFileSync("../yona-original/app/views/git/create.scala.html", "utf8");
   const less = readFileSync("../yona-original/app/assets/stylesheets/less/_override.less", "utf8");
-  const css = readFileSync("src/app.css", "utf8");
+  const css = curatedAppCss();
 
   // Legacy Scala HTML/LESS is output DOM/UX evidence; behavior remains React-owned.
   expect(legacy).toContain('<div class="pull-request-wrap">');

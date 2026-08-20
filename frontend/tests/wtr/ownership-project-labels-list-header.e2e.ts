@@ -1,4 +1,4 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 test("project labels list header uses colocated Style", async () => {
@@ -14,7 +14,7 @@ test("project labels list header uses colocated Style", async () => {
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   expect(legacy).toContain("label-editor-wrap");
   expect(legacy).toContain("issue-label-list-wrap");
   expect(less).toContain(".label-editor-wrap");

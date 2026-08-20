@@ -1,8 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+// Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
+const fallbackOff = false;
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]`).first();
 
 test.use({ locale: "ko-KR" });
@@ -12,9 +13,7 @@ test("records milestone detail owners and responsive geometry", async ({ page })
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
   const issuePartial = readFileSync(
     "../yona-original/app/views/issue/partial_list.scala.html",

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("OAuth provider logos use route-local Style owners", async () => {
@@ -8,8 +8,8 @@ test("OAuth provider logos use route-local Style owners", async () => {
     "utf8",
   );
   const userSource = readFileSync(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
-  const rootStyle = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
-  const loginStyle = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const rootStyle = curatedAppCss();
+  const loginStyle = curatedAppCss();
   const legacyLess = readFileSync(
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
@@ -26,7 +26,7 @@ test("OAuth provider logos use route-local Style owners", async () => {
     new URL("../../yona-original/app/views/common/loginDialog.scala.html", import.meta.url),
     "utf8",
   );
-  const appCss = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const appCss = curatedAppCss();
 
   expect(legacyLess).toContain(".auth-provider-logo");
   expect(legacyLess).toContain("vertical-align: middle");

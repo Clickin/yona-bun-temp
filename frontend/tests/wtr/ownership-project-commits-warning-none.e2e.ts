@@ -1,6 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: fileURLToPath reduces URL objects to their pathname so
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: fileURLToPath reduces URL objects to their pathname so
 // readFileSync maps them through the fixture middleware.
 const fileURLToPath = (u: URL) => u.pathname;
 
@@ -32,7 +30,7 @@ const LEGACY_BOOTSTRAP_CSS = readFileSync(
   fileURLToPath(new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url)),
   "utf8",
 );
-const APP_CSS = readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8");
+const APP_CSS = curatedAppCss();
 const HOME_ROUTE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/-home-route-screen.tsx", import.meta.url)),
   "utf8",

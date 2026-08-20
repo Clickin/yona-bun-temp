@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const SOURCE = readFileSync(
@@ -9,12 +9,7 @@ const UPLOAD_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
   "utf8",
 );
-const STYLE_SOURCE =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const STYLE_SOURCE = curatedAppCss();
 const EDITOR_COMPONENT_SOURCE = readFileSync(
   new URL("../src/components/markdown-editor.tsx", import.meta.url),
   "utf8",

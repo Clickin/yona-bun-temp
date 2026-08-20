@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -6,16 +6,14 @@ const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallback = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const fallback = "normal";
 const screenshotDirectory = resolve(
   `output/playwright/style-organization-issues-action-floats/${fallback}`,
 );
 const owner = (name: string) => `[data-owner="${name}"]`;
 
 const routeSource = readFileSync("src/routes/organizations/$organizationName/issues.tsx", "utf8");
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const legacyRoot = readFileSync(
   "../yona-original/app/views/organization/group_issue_list.scala.html",
   "utf8",

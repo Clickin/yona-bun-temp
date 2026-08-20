@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -13,9 +12,7 @@ test.use({ locale: "en-US" });
 
 test("anonymous user menu consumes its route-local Style color variables", () => {
   const ownerSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const themeSource = readFileSync("src/app.css", "utf8");
 
   for (const color of ["#a2a2a2", "#5dbbe0", "#fcfcfc", "#788ba7"]) {
     expect(themeSource).toContain(color);

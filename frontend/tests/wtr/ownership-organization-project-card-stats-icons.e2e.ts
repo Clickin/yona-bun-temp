@@ -118,12 +118,9 @@ async function assertStats(page: Page, projectName: string, fallbackOff: boolean
   await expect(membersIcon).toBeAttached();
   await expect(eyeIcon).toBeAttached();
   await expect(lightbulb).toBeAttached();
-  // F6 copy-fix: yobicon glyph visibility is fallback-owned — glyph content/
-  // font-family rules (.yobicon-eye/.yobicon-lightbulb/:before) live only in
-  // legacy-fallback.css (yona-original/public/stylesheets/yobicon/style.css),
-  // never served in the WTR page (dist/index.html built with
-  // VITE_DISABLE_LEGACY_FALLBACK=1 strips the link), so the inline <i> renders
-  // zero-size. Claim attachment/class/style paint, not glyph visibility.
+  // F6 copy-fix: yobicon glyph content/font-family rules were merged into
+  // app.css (single global baseline stylesheet); the glyphs render through
+  // the merged yobicon font-face. Claim attachment/class/style paint.
   await expect(membersIcon).not.toHaveAttribute("style");
   await expect(eyeIcon).not.toHaveAttribute("style");
   await expect(lightbulb).not.toHaveAttribute("style");
@@ -176,9 +173,7 @@ async function assertStats(page: Page, projectName: string, fallbackOff: boolean
 }
 
 for (const fallbackOff of [false, true]) {
-  test(`organization project-card stats icons ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-    page,
-  }) => {
+  test(`organization project-card stats icons ${"normal"}`, async ({ page }) => {
     await mockOrganizationHome(page);
     await page.setViewportSize({ height: 900, width: 1366 });
     await page.goto("/yona/organizations/weblabs");

@@ -1,4 +1,4 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: fileURLToPath reduces URL objects to their pathname so
@@ -9,14 +9,7 @@ const routeSource = readFileSync(
   fileURLToPath(new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url)),
   "utf8",
 );
-const styleSource =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const styleSource = curatedAppCss() + mergedLegacyBlock();
 const owners = [
   "project-webhooks-new-form",
   "project-webhooks-form-legend",

@@ -92,25 +92,47 @@ for (const viewport of [
     await expect(action).toHaveCSS("border", "1px solid rgb(233, 94, 1)");
     await expect(action).toHaveCSS("border-radius", "3px");
 
-    const boxes = await page.evaluate((names) => {
-      const box = (name: string) => {
-        const rect = document
-          .querySelector<HTMLElement>(`[data-owner="${name}"]`)!
-          .getBoundingClientRect();
-        return { height: rect.height, left: rect.left, top: rect.top, width: rect.width };
-      };
-      return { action: box(names.action), form: box(names.form), input: box(names.input) };
-    }, owners);
-    expect(boxes.form.height).toBe(30);
-    expect(boxes.input).toEqual({
-      height: 30,
-      left: boxes.form.left,
-      top: boxes.form.top,
-      width: viewport.inputWidth,
-    });
-    expect(boxes.action.height).toBe(30);
-    expect(boxes.action.top).toBe(boxes.form.top);
-    expect(boxes.action.left - boxes.input.left - boxes.input.width).toBeCloseTo(7.78125, 4);
+    // F5 dist-truth: the rects settle a beat after the style asserts under
+    // shard load, and the add-form surface can briefly re-render — poll the
+    // full geometry contract with an explicit 30s window, tolerating the
+    // transient absence of owner nodes.
+    let geometryOk = false;
+    {
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        try {
+          const boxes = await page.evaluate((names) => {
+            const box = (name: string) => {
+              const node = document.querySelector<HTMLElement>(`[data-owner="${name}"]`);
+              if (!node) return null;
+              const rect = node.getBoundingClientRect();
+              return { height: rect.height, left: rect.left, top: rect.top, width: rect.width };
+            };
+            return { action: box(names.action), form: box(names.form), input: box(names.input) };
+          }, owners);
+          if (
+            boxes.form &&
+            boxes.input &&
+            boxes.action &&
+            boxes.form.height === 30 &&
+            boxes.input.height === 30 &&
+            boxes.input.left === boxes.form.left &&
+            boxes.input.top === boxes.form.top &&
+            boxes.input.width === viewport.inputWidth &&
+            boxes.action.height === 30 &&
+            boxes.action.top === boxes.form.top &&
+            Math.abs(boxes.action.left - boxes.input.left - boxes.input.width - 7.78125) < 0.0001
+          ) {
+            geometryOk = true;
+            break;
+          }
+        } catch {
+          // transient evaluate errors — keep polling
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+    expect(geometryOk).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
 
     mkdirSync(screenshotDirectory, { recursive: true });
@@ -128,12 +150,17 @@ for (const viewport of [
     // Use the native focus() (the harness focus dispatches a synthetic focusin
     // first, which the app's re-render can clear).
     await expect
-      .poll(() =>
-        input.evaluate((element) => {
+      .poll(async () => {
+        // Re-focus + settle the 0.2s border transition inside each iteration:
+        // a late re-render can blur the input, and re-focus restarts the
+        // transition — reading immediately after focus() can catch the start
+        // value forever under shard load.
+        await input.evaluate((element) => {
           (element as HTMLInputElement).focus();
-          return getComputedStyle(element).borderColor;
-        }),
-      )
+        });
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return input.evaluate((element) => getComputedStyle(element).borderColor);
+      })
       .toBe("rgb(243, 108, 34)");
     await expect(input).toHaveCSS("box-shadow", "none");
     await action.hover();

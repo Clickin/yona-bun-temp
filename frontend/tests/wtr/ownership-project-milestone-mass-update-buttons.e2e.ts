@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("milestone mass-update item buttons own milestone geometry and states", async () => {
@@ -6,7 +6,7 @@ test("milestone mass-update item buttons own milestone geometry and states", asy
     new URL("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx", import.meta.url),
     "utf8",
   );
-  const style = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const style = curatedAppCss();
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/issue/partial_massupdate.scala.html", import.meta.url),
     "utf8",
@@ -15,7 +15,7 @@ test("milestone mass-update item buttons own milestone geometry and states", asy
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   // Legacy Scala HTML/JS is output DOM/UX evidence; internal behavior stays React state/events/components + TanStack Router/Query.
   expect(legacy).toContain('class="dropdown-menu mass-update-list"');
   expect(less).toContain(".mass-update-list");

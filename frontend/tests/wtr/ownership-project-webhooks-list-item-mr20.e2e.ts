@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -11,12 +11,7 @@ const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 const legacyPartialSource = readFileSync(
   new URL(
     "../../yona-original/app/views/project/partial_webhooks_list.scala.html",
@@ -106,8 +101,7 @@ for (const viewport of viewports) {
     expect(diagnostic.overflow).toBe("hidden");
     expect(diagnostic.whiteSpace).toBe("nowrap");
 
-    const screenshotMode =
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+    const screenshotMode = "normal";
     const screenshotDirectory = resolve(
       "output/playwright/style-project-webhooks-list-item-mr20",
       screenshotMode,

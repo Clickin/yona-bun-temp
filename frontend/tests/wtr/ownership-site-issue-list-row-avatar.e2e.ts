@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -98,12 +98,12 @@ test.describe("Style site issue-list row and project avatar", () => {
   test("declares the three explicit owners from the frozen final cascade", async () => {
     const [route, theme, template, commonLess, pageLess, yobiUiLess, appCss] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(legacyTemplateSource, "utf8"),
       readFile(legacyCommonLessSource, "utf8"),
       readFile(legacyPageLessSource, "utf8"),
       readFile(legacyYobiUiLessSource, "utf8"),
-      readFile(appCssSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
 
     expect(template).toContain('<li class="row-fluid listitem">');

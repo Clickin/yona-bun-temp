@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -86,7 +86,7 @@ test.describe("Style site project-list residual populated surfaces", () => {
   test("keeps residual geometry inline and delete paint in the route theme", async () => {
     const [route, appCss, legacyTemplate, legacyLayout, legacyPageLess] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(appCssSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(legacyTemplateSource, "utf8"),
       readFile(legacyLayoutSource, "utf8"),
       readFile(legacyPageLessSource, "utf8"),

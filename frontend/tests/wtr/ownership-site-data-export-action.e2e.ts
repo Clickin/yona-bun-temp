@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -106,7 +106,7 @@ test("export owner excludes import controls", async ({ page }) => {
 test("export owner does not expose generated selectors", async () => {
   const [route, theme] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(themeSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
 
   expect(route).toContain('data-owner="site-data-export-action"');

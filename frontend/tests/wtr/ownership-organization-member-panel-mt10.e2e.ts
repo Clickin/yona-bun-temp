@@ -1,16 +1,13 @@
-import { readFile } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync/resolve only feed page.screenshot paths (no-op).
+import { readFile, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync/resolve only feed page.screenshot paths (no-op).
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-organization-member-panel-mt10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 const routeSource = new URL("../src/routes/organizations/$organizationName.tsx", import.meta.url);
@@ -77,7 +74,7 @@ test("organization member panel mt10 preserves frozen source and Style ownership
     messages,
   ] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacyViewSource, "utf8"),
     readFile(legacyCommonSource, "utf8"),
     readFile(legacyPageSource, "utf8"),
@@ -131,16 +128,14 @@ test("organization member panel mt10 preserves frozen source and Style ownership
   expect(route).toContain('data-owner="organization-home-members-panel-inner"');
 });
 
-test(`organization member panel mt10 geometry ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-  page,
-}) => {
+test(`organization member panel mt10 geometry ${"normal"}`, async ({ page }) => {
   await mockOrganizationHome(page);
   mkdirSync(screenshotDirectory, { recursive: true });
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/organizations/weblabs`, { waitUntil: "domcontentloaded" });
 
   // Fallback mode is global shell evidence only; panel assertions are unchanged.
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(fallbackOff ? 0 : 1);
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
   // Panels share one static owner since the 2026-08-05 refactor; kind is DOM order.
   const panels = page.locator('[data-owner="organization-home-members-panel"]');

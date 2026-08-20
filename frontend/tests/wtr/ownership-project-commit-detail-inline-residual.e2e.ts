@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7,9 +7,7 @@ test.use({ locale: "ko-KR" });
 
 test("commit detail owns static legacy tabs and editor tab-content styles", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/commit/$commitId.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/code/diff.scala.html", "utf8");
   const editor = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   expect(legacy).toContain('<ul class="nav nav-tabs" style="margin-bottom:20px;">');

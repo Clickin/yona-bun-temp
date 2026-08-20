@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const fileURLToPath = (u) => u.pathname;
 
@@ -12,15 +12,7 @@ const twoColumnComponentSource = readFileSync(
   fileURLToPath(new URL("../src/components/two-column-mode-checkbox.tsx", import.meta.url)),
   "utf8",
 );
-const styleSource =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
-const legacyFallbackDisabled = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+const styleSource = curatedAppCss() + mergedLegacyBlock();
 const owners = [
   "organization-boards-search",
   "organization-boards-page",
@@ -344,7 +336,7 @@ test("organization boards renders populated post and submits filter through rout
   });
   expect(mobileMetrics).toEqual({
     listRight: 390,
-    searchBorderBottomWidth: legacyFallbackDisabled ? "1px" : "0px",
+    searchBorderBottomWidth: "0px",
     searchRight: 390,
     viewportWidth: 390,
   });

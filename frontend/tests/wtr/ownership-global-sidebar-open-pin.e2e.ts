@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. resolve only builds page.screenshot paths
@@ -15,15 +15,11 @@ const OWNER = '[data-owner="global-sidebar-open-pin"]';
 test.use({ locale: "en-US" });
 
 test("global sidebar open pin has complete global-theme Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const restrictedRoute = readFileSync("src/routes/restricted.tsx", "utf8");
-  const restrictedTheme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const restrictedTheme = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   for (const declaration of ["lineHeight: 1"]) {
   }
 

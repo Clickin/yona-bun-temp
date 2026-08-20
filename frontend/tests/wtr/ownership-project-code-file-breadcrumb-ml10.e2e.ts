@@ -35,9 +35,7 @@ const legacyCommonSource = findSource(
   (file, text) => file.split("/").pop() === "_common.less" && text.includes(".ml10"),
 );
 
-const screenshotRoot = `output/playwright/style-project-code-file-breadcrumb-ml10/${
-  process.env.VITE_DISABLE_LEGACY_FALLBACK ? "fallback-off" : "normal"
-}`;
+const screenshotRoot = `output/playwright/style-project-code-file-breadcrumb-ml10/${"normal"}`;
 
 test("project code file breadcrumbs preserve the legacy ml10 layout", async ({ page }) => {
   expect(legacyViewSource.text).toContain("code-breadcrumb-wrap");

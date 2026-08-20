@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -119,8 +119,10 @@ test.describe("Style site mass mail sidebar", () => {
     expect(variables).toContain("@yobi-orange : #FF7332;");
     expect(variables).toContain("@primary         : @orange;");
     expect(mixins).toContain(".border-radius(@radius: 5px)");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav {");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
+    expect(curatedAppCss()).not.toContain(".site-setting-wrap .site-setting-nav {");
+    expect(curatedAppCss()).not.toContain(
+      ".site-setting-wrap .site-setting-nav li.active a:hover {",
+    );
     // The four explicit sidebar owners are supplied to the shared
     // SiteAdminSidebar component via props; the route declares them here.
     expect(route).toContain('data-owner="site-massmail-sidebar-column"');

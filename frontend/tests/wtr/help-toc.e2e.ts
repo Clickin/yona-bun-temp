@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const HELP_ROUTE_SOURCE = readFileSync(
@@ -16,12 +16,7 @@ const SHARED_MARKDOWN_HELP_SOURCE = readFileSync(
   "utf8",
 );
 
-const SHARED_MARKDOWN_HELP_STYLE_SOURCE =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const SHARED_MARKDOWN_HELP_STYLE_SOURCE = curatedAppCss();
 
 const LEGACY_MARKDOWN_HELP_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),

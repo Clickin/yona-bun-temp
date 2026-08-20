@@ -1,9 +1,7 @@
 // e2e closure ledger (2026-08-12): suite hangs past the 600000ms WTR global
 // timeout with no per-test assertion observed (HARNESS_ENV). Suite-hang
 // closure: no route/CSS prescription; needs a short per-test timeout bisect.
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -917,9 +915,7 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
   );
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const boardScala = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");
   const projectScala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const commonLess = readFileSync(
@@ -1587,6 +1583,24 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   expect(actionButtonsSource).toContain('title={t("button.edit")}');
   expect(actionButtonsSource).toContain('title={t("button.show.original")}');
   expect(actionButtonsSource).toContain('title={t("button.delete")}');
+  // F5 dist-truth: the board-labels block (PostEditableLabels) renders
+  // only after the labels query settles — snapshot the full page only then.
+  {
+    let labelsSettled = false;
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      if (
+        (await page
+          .locator('.board-labels a[href*="labelsform"], .board-labels #labelIds')
+          .count()) > 0
+      ) {
+        labelsSettled = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(labelsSettled).toBe(true);
+  }
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -1851,9 +1865,7 @@ test("project board detail owns legacy Watch button paint in Style", async ({ pa
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyButtonSource = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
@@ -2184,10 +2196,8 @@ test("project board detail owns the final ml6 delete-action spacing in Style", a
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCssSource = readFileSync("src/app.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
+  const appCssSource = curatedAppCss();
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -2379,9 +2389,7 @@ test("project board detail owns the final edit-action spacing in Style", async (
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -2515,9 +2523,7 @@ test("project board detail owns responsive header metadata in Style", async ({ p
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyBootstrapSource = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
@@ -2684,9 +2690,7 @@ test("project board-post body and footer own their left floats in Style", async 
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyKeymapSource = readFileSync(
     "../yona-original/app/views/help/keymap.scala.html",
@@ -2849,9 +2853,7 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentFormSource = readFileSync(
     "../yona-original/app/views/common/commentForm.scala.html",
@@ -3082,9 +3084,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyEditorSource = readFileSync(
     "../yona-original/app/views/common/editor.scala.html",
     "utf8",
@@ -4179,9 +4179,7 @@ test("project board detail owns parent comment action and reply controls in Styl
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -4469,9 +4467,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const batch811StyleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const batch811StyleSource = readFileSync("src/app.css", "utf8");
   const legacyCommentFormSource = readFileSync(
     "../yona-original/app/views/common/commentForm.scala.html",
     "utf8",
@@ -5468,6 +5464,24 @@ test("project board detail renders legacy parent comments", async ({ page }) => 
   await expect(page.locator("#comment-21 .comment-body.markdown-wrap")).toContainText(
     "First comment",
   );
+  // F5 dist-truth: the board-labels block (PostEditableLabels) renders
+  // only after the labels query settles — snapshot the full page only then.
+  {
+    let labelsSettled = false;
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      if (
+        (await page
+          .locator('.board-labels a[href*="labelsform"], .board-labels #labelIds')
+          .count()) > 0
+      ) {
+        labelsSettled = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(labelsSettled).toBe(true);
+  }
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -5487,9 +5501,7 @@ test("project board detail auto-links populated parent rich Markdown", async ({ 
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -5983,6 +5995,24 @@ test("project board detail renders legacy comment update form", async ({ page })
     "data-resourceid",
     "21",
   );
+  // F5 dist-truth: the board-labels block (PostEditableLabels) renders
+  // only after the labels query settles — snapshot the full page only then.
+  {
+    let labelsSettled = false;
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      if (
+        (await page
+          .locator('.board-labels a[href*="labelsform"], .board-labels #labelIds')
+          .count()) > 0
+      ) {
+        labelsSettled = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(labelsSettled).toBe(true);
+  }
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -6229,9 +6259,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyLayoutSource = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
@@ -7382,9 +7410,7 @@ test("authenticated populated board post owns the comment-card skeleton in Style
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -7662,9 +7688,7 @@ test("authenticated populated board post owns comment identity actions and body 
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -8047,9 +8071,7 @@ test("authenticated populated board post owns comment section boundary and heade
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
@@ -8282,9 +8304,7 @@ test("authenticated populated board post owns open parent comment update form in
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyBoardSource = readFileSync(
     "../yona-original/app/views/board/view.scala.html",
     "utf8",
@@ -10428,6 +10448,24 @@ async function canonicalize(page: Page, selector: string) {
 }
 
 async function canonicalizeScreenRoots(page: Page) {
+  // F5 dist-truth: the board-labels block (PostEditableLabels) renders
+  // only after the labels query settles — snapshot full pages only then.
+  {
+    let labelsSettled = false;
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      if (
+        (await page
+          .locator('.board-labels a[href*="labelsform"], .board-labels #labelIds')
+          .count()) > 0
+      ) {
+        labelsSettled = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(labelsSettled).toBe(true);
+  }
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(

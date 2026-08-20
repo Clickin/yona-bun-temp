@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
 const mkdir = async () => undefined;
@@ -96,14 +96,7 @@ test("profile project info wrapper retires only its declaration-free legacy clas
     messages,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -152,7 +145,7 @@ test("profile project info wrapper retires only its declaration-free legacy clas
       new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(
       new URL("../../yona-original/public/javascripts/service/yobi.user.View.js", import.meta.url),
       "utf8",

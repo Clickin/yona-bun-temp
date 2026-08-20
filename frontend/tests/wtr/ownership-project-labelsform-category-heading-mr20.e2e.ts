@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -12,14 +12,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const styleSource = curatedAppCss() + mergedLegacyBlock();
 const legacyShell = readFileSync(
   fileURLToPath(
     new URL("../../yona-original/app/views/project/issuelabels.scala.html", import.meta.url),
@@ -75,7 +68,7 @@ const screenshotDirectory = resolve(
   fileURLToPath(new URL("../output", import.meta.url)),
   "playwright",
   "style-project-labelsform-category-heading-mr20",
-  process.env.VITE_DISABLE_LEGACY_FALLBACK ? "fallback-off" : "normal",
+  "normal",
 );
 
 test("project labels category headings own the legacy mr20 spacing", async ({ page }) => {

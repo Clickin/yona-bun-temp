@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8,9 +8,7 @@ test.use({ locale: "ko-KR" });
 
 test("records fork form owners and responsive containment", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/newFork.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/git/fork.scala.html", "utf8");
   expect(template).toContain('name="projectScope"');
   expect(template).toContain('class="help-messages');

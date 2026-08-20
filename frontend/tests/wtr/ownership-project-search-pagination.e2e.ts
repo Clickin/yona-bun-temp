@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -40,9 +40,7 @@ test.use({ locale: "ko-KR" });
 
 test("project search pagination maps the legacy partials and Style declarations", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/search.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const searchPartial = readFileSync(
     "../yona-original/app/views/search/partial_search.scala.html",
     "utf8",

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project issues owns milestone tag and empty avatar paint with route-local Style", async () => {
@@ -6,7 +6,7 @@ test("project issues owns milestone tag and empty avatar paint with route-local 
     new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
     "utf8",
   );
-  const styleSource = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const styleSource = curatedAppCss();
   const legacySource = readFileSync(
     new URL("../../yona-original/app/views/issue/partial_list.scala.html", import.meta.url),
     "utf8",
@@ -15,7 +15,7 @@ test("project issues owns milestone tag and empty avatar paint with route-local 
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const appCss = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const appCss = curatedAppCss();
 
   expect(legacySource).toContain('class="mileston-tag"');
   expect(legacySource).toContain('class="empty-avatar-wrap">&nbsp;</div>');

@@ -8,10 +8,9 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-project-code-browser-header-floats",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 const source = (relativePath: string) =>
   readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");

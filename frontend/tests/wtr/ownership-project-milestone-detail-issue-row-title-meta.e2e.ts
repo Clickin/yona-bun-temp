@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -6,7 +6,7 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const mode = "normal";
 const screenshotDirectory = resolve(
   "output/playwright/style-project-milestone-detail-issue-row-title-meta",
   mode,
@@ -34,9 +34,7 @@ test(`authenticated milestone issue row title/meta parity (${mode})`, async ({ p
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const view = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
   const issuePartial = readFileSync(
     "../yona-original/app/views/issue/partial_list.scala.html",

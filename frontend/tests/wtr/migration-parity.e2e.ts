@@ -1,11 +1,11 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const MIGRATION_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/migration.tsx", import.meta.url),
   "utf8",
 );
-const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const APP_CSS_SOURCE = curatedAppCss();
 const LEGACY_MIGRATION_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/migration/home.scala.html", import.meta.url),
   "utf8",

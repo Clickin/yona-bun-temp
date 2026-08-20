@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 type BoardFormProjectFixture = {
@@ -22,12 +22,7 @@ const POSTFORM_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/postform.tsx", import.meta.url),
   "utf8",
 );
-const POSTFORM_STYLE_SOURCE =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const POSTFORM_STYLE_SOURCE = curatedAppCss();
 const UPLOAD_FORM_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
   "utf8",

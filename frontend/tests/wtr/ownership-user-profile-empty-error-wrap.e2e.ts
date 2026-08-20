@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -21,7 +21,7 @@ test("public profile empty panels own frozen error-wrap paint, order, and geomet
 }) => {
   const [route, styles, legacy, less, messages] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -62,7 +62,7 @@ test("public profile empty panels own frozen error-wrap paint, order, and geomet
   await page.goto(`${basePath}/empty`, { waitUntil: "networkidle" });
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+  await expect(fallback).toHaveCount(0);
   await assertPanel(page, "open-issues", "recently No issue found");
 
   await page

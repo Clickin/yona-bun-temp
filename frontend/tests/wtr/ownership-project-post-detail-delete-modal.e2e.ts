@@ -1,9 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("post detail delete modal visibility is conditional Style-owned", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+  const theme = curatedAppCss();
   const template = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const modal = readFileSync(
     "../yona-original/app/views/common/commentDeleteModal.scala.html",

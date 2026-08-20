@@ -1,9 +1,9 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("global search populated and empty states retain legacy-backed Style owners", async () => {
   const route = await readFile("src/routes/search.tsx", "utf8");
-  const style = await readFile("src/app.css", "utf8");
+  const style = await Promise.resolve(curatedAppCss());
   const template = await readFile("../yona-original/app/views/search/result.scala.html", "utf8");
   const partial = await readFile(
     "../yona-original/app/views/search/partial_search.scala.html",

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project home dashboard progress owns base geometry", async () => {
@@ -6,8 +6,8 @@ test("project home dashboard progress owns base geometry", async () => {
     new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
     "utf8",
   );
-  const style = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const style = curatedAppCss();
+  const css = curatedAppCss();
   const assignee = readFileSync(
     new URL(
       "../../yona-original/app/views/project/partial_dashboard_issuesbyassignee.scala.html",

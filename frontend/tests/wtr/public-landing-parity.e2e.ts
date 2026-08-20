@@ -162,12 +162,11 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     ogType: "website",
     ogUrl: "/",
     stylesheetHrefs: [
-      `/legacy-assets/stylesheets/legacy-fallback.css`,
       `${basePath}/assets/-home-route-screen-8oXcZy-S.css`,
-      // F5 (2026-08-16): index CSS asset hash re-pinned after the issue-label
+      // F5 (2026-08-20): index CSS asset hash re-pinned after the single-global-baseline merge (legacy fallback moved into app.css)
       // button border reset + markdown code-block copy button rules
       // (sha d13b2c98a74d…).
-      `${basePath}/assets/index-Bcv6kJXb.css`,
+      `${basePath}/assets/index-yA23O6kL.css`,
     ],
     twitterCard: "summary",
     twitterDescription: "Yoram",

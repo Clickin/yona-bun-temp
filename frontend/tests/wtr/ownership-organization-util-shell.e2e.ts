@@ -1,11 +1,11 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("organization header utility shell owns legacy geometry", async () => {
   // Fixture paths as STRINGS (wave-9/10 gotcha: URL-object reads bypass the
   // .txt raw-suffix mapping and get esbuild-transformed).
   const source = await readFile("src/routes/organizations/$organizationName.tsx", "utf8");
-  const styles = await readFile("src/app.css", "utf8");
+  const styles = await Promise.resolve(curatedAppCss());
   const legacy = await readFile("../yona-original/app/views/organization/view.scala.html", "utf8");
   const less = await readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   expect(legacy).toContain("organization");

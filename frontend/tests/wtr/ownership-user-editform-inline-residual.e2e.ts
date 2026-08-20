@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8,9 +8,7 @@ test.use({ locale: "ko-KR" });
 
 test("records the legacy profile separator and avatar image fallback", () => {
   const route = readFileSync("src/routes/user/editform.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/user/edit.scala.html", "utf8");
   const commonLess = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",

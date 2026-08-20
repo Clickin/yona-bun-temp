@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -22,12 +21,8 @@ test.use({ locale: "ko-KR" });
 
 test("anonymous Home hero has complete global-theme Style ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme =
-    readFileSync(resolve("src/app.css"), "utf8") +
-    readFileSync(resolve("public/legacy-assets/stylesheets/legacy-fallback.css"), "utf8");
-  const globalTheme =
-    readFileSync(resolve("src/app.css"), "utf8") +
-    readFileSync(resolve("public/legacy-assets/stylesheets/legacy-fallback.css"), "utf8");
+  const theme = readFileSync(resolve("src/app.css"), "utf8");
+  const globalTheme = readFileSync(resolve("src/app.css"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
@@ -58,7 +53,7 @@ test("anonymous Home hero has complete global-theme Style ownership", () => {
   expect(heroSource).not.toMatch(
     /className="(?:siteintro|siteintro-cover|siteintro-wrap|site-heading|site-features|signup-btn|ybtn)(?:\s|")/u,
   );
-  expect(appCss).not.toMatch(/\.siteintro(?:\s|\{|\.)/u);
+  expect(curatedAppCss()).not.toMatch(/\.siteintro(?:\s|\{|\.)/u);
 });
 
 test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA states", async ({

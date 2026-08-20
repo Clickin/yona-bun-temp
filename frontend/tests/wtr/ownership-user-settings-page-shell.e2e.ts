@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -120,7 +120,7 @@ async function openNotifications(page: Page) {
 
 test("records the legacy profile and avatar owner, theme, class-retirement, and fallback contract", () => {
   const route = readFileSync("src/routes/user/editform.tsx", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const templates = [
     "edit.scala.html",
     "edit_password.scala.html",

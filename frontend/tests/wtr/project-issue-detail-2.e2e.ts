@@ -1,4 +1,4 @@
-import { expect, test, type Page, readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import {
   EXPECTED_ISSUE_DETAIL,
   TASKLIST,
@@ -204,9 +204,7 @@ test("project issue detail owns generic MarkdownEditor notification receiver tit
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(legacyEditor).toContain('<div class="notification-receiver">');
   expect(legacyEditor).toContain('<span class="notification-receiver-title">');
@@ -337,9 +335,7 @@ test("project issue detail owns the child reply form declarations and geometry",
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(legacyForm).toContain(
     '<input class="parentCommentId" type="hidden" name="parentCommentId"',
@@ -513,9 +509,7 @@ test("project issue detail owns the child notification receiver declarations and
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(legacyForm).toContain('<div class="notification-receiver">');
   expect(legacyChildComments).toContain('<div class="child-comment-input-form">');
@@ -693,9 +687,7 @@ test("project issue detail owns the child reply float across desktop and mobile"
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(legacyChildComments).toContain(
     '<div class="add-a-comment pull-right">@Messages("comment.oneline.comment.placeholder")</div>',
@@ -879,9 +871,7 @@ test("project issue detail toggles legacy comment update form through React-owne
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyComment = readFileSync(
     "../yona-original/app/views/issue/partial_comment.scala.html",
     "utf8",
@@ -1061,9 +1051,7 @@ test("project issue detail owns the parent comment action-row float with Style",
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyComment = readFileSync(
     "../yona-original/app/views/issue/partial_comment.scala.html",
     "utf8",
@@ -1539,9 +1527,7 @@ test("project issue detail owns sharer title spacing with route Style", async ({
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",

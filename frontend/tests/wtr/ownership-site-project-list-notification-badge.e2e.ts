@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -40,9 +40,7 @@ async function openProjectList(page: Page, versionToUpdate: string | null) {
 
 test("notification badge owns the exact frozen primitive and retires its class", () => {
   const route = readFileSync("src/routes/sites/projectList.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
   const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
   const variables = readFileSync(

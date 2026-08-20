@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -178,8 +178,10 @@ test.describe("Style site issue list sidebar", () => {
     expect(variables).toContain("@yobi-orange : #FF7332;");
     expect(variables).toContain("@primary         : @orange;");
     expect(mixins).toContain(".border-radius(@radius: 5px)");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav {");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
+    expect(curatedAppCss()).not.toContain(".site-setting-wrap .site-setting-nav {");
+    expect(curatedAppCss()).not.toContain(
+      ".site-setting-wrap .site-setting-nav li.active a:hover {",
+    );
     // The sidebar now lives in the shared SiteAdminSidebar component; the
     // route wires the four owners through props (bucket-3 pin update).
     expect(route).toContain('navOwner="site-issue-list-sidebar"');

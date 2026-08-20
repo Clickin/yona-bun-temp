@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("code browser folder rows use route-local Style", async () => {
@@ -18,7 +18,7 @@ test("code browser folder rows use route-local Style", async () => {
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   expect(legacyView).toContain("code-viewer-wrap");
   expect(legacyFolder).toContain("listitem");
   // The legacy less nests .listitem inside .code-viewer-wrap (less nesting,

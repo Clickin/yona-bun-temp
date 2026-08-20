@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/posts.tsx", import.meta.url);
@@ -12,9 +12,9 @@ const appCssSource = new URL("../src/app.css", import.meta.url);
 test("project posts label buttons preserve legacy reset and spacing", async () => {
   const [route, style, legacy, appCss] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacySource, "utf8"),
-    readFile(appCssSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
   expect(legacy).toContain("board-labels");
   expect(appCss).toContain(".issue-label.list-label");

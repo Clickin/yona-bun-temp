@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
@@ -9,7 +9,7 @@ test("project pull-request empty state owns the legacy error-wrap geometry", asy
       new URL("../src/routes/$ownerName/$projectName/pullRequests.tsx", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(new URL("../../yona-original/app/views/git/list.scala.html", import.meta.url), "utf8"),
     readFile(
       new URL("../../yona-original/app/views/git/partial_list.scala.html", import.meta.url),
@@ -91,9 +91,7 @@ test("project pull-request empty state owns the legacy error-wrap geometry", asy
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/pullRequests`, { waitUntil: "commit" });
-    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
 
     const wrapper = page.locator('[data-owner="project-pullrequests-empty-error-wrap"]');
     const icon = page.locator('[data-owner="project-pullrequests-empty-icon"]');

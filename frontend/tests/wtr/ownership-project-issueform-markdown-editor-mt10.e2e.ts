@@ -47,7 +47,24 @@ test("issueform markdown editor keeps legacy mt10 ownership, tabs, and responsiv
     await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
 
     const wrapper = page.locator('[data-owner="project-issue-form-markdown-editor"]');
-    await expect(wrapper).toBeVisible({ timeout: 15000 });
+    // F5 dist-truth: wrapper can take longer than the harness visibility
+    // timeout to paint under shard load — poll paint with an explicit 30s
+    // window, tolerating the pre-render absence.
+    {
+      let wrapperVisible = false;
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        if ((await wrapper.count()) > 0) {
+          wrapperVisible = await wrapper.evaluate(
+            (element) =>
+              getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+          );
+          if (wrapperVisible) break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      expect(wrapperVisible).toBe(true);
+    }
     await expect(wrapper).toHaveClass(/\bmt10\b/u);
     await expect(wrapper).toHaveCSS("margin-top", "10px");
     await expect(wrapper).not.toHaveAttribute("style", /.+/u);

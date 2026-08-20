@@ -1,11 +1,11 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("unreachable alert-danger app.css branches are retired", async () => {
   const [appCss, bootstrap, fallback] = await Promise.all([
-    readFileSync("src/app.css", "utf8"),
+    curatedAppCss(),
     readFileSync("../frontend/public/legacy-assets/bootstrap/css/bootstrap.css", "utf8"),
-    readFileSync("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    mergedLegacyBlock(),
   ]);
 
   expect(appCss).not.toContain(".alert-danger,");

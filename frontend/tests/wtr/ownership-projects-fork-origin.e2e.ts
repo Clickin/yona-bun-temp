@@ -1,4 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
+import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -123,9 +123,7 @@ async function open(page: Page) {
 
 test("fork origin records its owners and directly owns the split Yobicon", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const variables = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_variables.less",

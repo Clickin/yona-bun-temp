@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -105,14 +105,7 @@ test("public profile parent and child issue labels own their complete final pres
     focusedTest,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -219,9 +212,7 @@ test("public profile parent and child issue labels own their complete final pres
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/door?selected=issues`, { waitUntil: "domcontentloaded" });
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const parent = page.locator('[data-owner="user-profile-parent-issue-label"]');
     const child = page.locator('[data-owner="user-profile-child-issue-label"]');

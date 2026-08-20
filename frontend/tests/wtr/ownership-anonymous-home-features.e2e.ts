@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -80,9 +79,7 @@ const KOREAN = [
 
 test("anonymous Home feature block has complete global-theme Style ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme =
-    readFileSync(resolve("src/app.css"), "utf8") +
-    readFileSync(resolve("public/legacy-assets/stylesheets/legacy-fallback.css"), "utf8");
+  const theme = readFileSync(resolve("src/app.css"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
@@ -110,8 +107,8 @@ test("anonymous Home feature block has complete global-theme Style ownership", (
   expect(route).not.toMatch(
     /className="(?:feature(?:-wrap|-image|-info|-title|-desc)?|row)(?:\s|")/u,
   );
-  expect(appCss).not.toMatch(/\.feature(?:\s|\{|\.)/u);
-  expect(appCss).not.toMatch(/\.feature-wrap/u);
+  expect(curatedAppCss()).not.toMatch(/\.feature(?:\s|\{|\.)/u);
+  expect(curatedAppCss()).not.toMatch(/\.feature-wrap/u);
 });
 
 test.describe("Korean anonymous Home feature geometry", () => {

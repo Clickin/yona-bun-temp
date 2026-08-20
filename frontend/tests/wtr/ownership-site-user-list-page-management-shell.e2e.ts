@@ -32,10 +32,7 @@ test("moves only the active legacy user-list management shell to five Style owne
     "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
     "utf8",
   );
-  const manifest = readFileSync(
-    "public/legacy-assets/stylesheets/legacy-fallback.manifest.json",
-    "utf8",
-  );
+  const manifest = readFileSync("../docs/provenance/legacy-css-merged.manifest.json", "utf8");
 
   expect(userList).toContain("@siteMngLayout(message)");
   for (const token of ["page-wrap-outer", "site-setting-wrap", "row-fluid", "span2", "span10"])

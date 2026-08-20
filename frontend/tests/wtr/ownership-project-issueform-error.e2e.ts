@@ -1,4 +1,4 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, curatedAppCss } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 test("issueform error states share route-local Style geometry", async () => {
@@ -6,7 +6,7 @@ test("issueform error states share route-local Style geometry", async () => {
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
     "utf8",
   );
-  const appCss = await readFile(new URL("../src/app.css", import.meta.url), "utf8");
+  const appCss = await Promise.resolve(curatedAppCss());
   const legacy = await readFile(
     new URL("../../yona-original/app/views/issue/create.scala.html", import.meta.url),
     "utf8",

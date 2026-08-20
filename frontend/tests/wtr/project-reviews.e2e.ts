@@ -1,16 +1,11 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const paginationRouteSource = readFileSync(
   new URL("../src/routes/sites/-pagination.tsx", import.meta.url),
   "utf8",
 );
-const paginationStyleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const paginationStyleSource = curatedAppCss();
 
 const PROJECT_OWNER_NAME = "weblabs";
 const PROJECT_NAME = "portal";

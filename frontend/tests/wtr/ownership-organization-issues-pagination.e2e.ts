@@ -2,7 +2,7 @@
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -16,12 +16,7 @@ test("organization issue pagination records full legacy provenance and route-loc
     new URL("../src/routes/organizations/$organizationName/issues.tsx", import.meta.url),
     "utf8",
   );
-  const styles =
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-    readFileSync(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-      "utf8",
-    );
+  const styles = curatedAppCss();
   const legacyRoot = readFileSync(
     new URL(
       "../../yona-original/app/views/organization/group_issue_list.scala.html",

@@ -1,24 +1,20 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem; mkdirSync only feeds page.screenshot paths (no-op).
 const mkdirSync = () => undefined;
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const testMode =
-  process.env.YONA_E2E_FALLBACK_MODE === "fallback-off" ||
-  process.env.VITE_DISABLE_LEGACY_FALLBACK === "1"
-    ? "fallback-off"
-    : "normal";
+// Post-merge the full legacy cascade lives in app.css — the "normal" (merged)
+// mode is the only runtime mode.
+const testMode = "normal";
 const screenshotDirectory = `output/playwright/style-project-pullrequests-action-floats/${testMode}`;
 
 test.use({ locale: "en-US" });
 
 test("records the three project pull-request float owners and frozen legacy evidence", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacyRoot = readFileSync("../yona-original/app/views/git/list.scala.html", "utf8");
   const partialSearch = readFileSync(
     "../yona-original/app/views/git/partial_search.scala.html",

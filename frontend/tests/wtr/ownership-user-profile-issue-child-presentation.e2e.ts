@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -110,14 +110,7 @@ test("public profile visible child list owns only its matching legacy presentati
     yobicon,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -207,9 +200,7 @@ test("public profile visible child list owns only its matching legacy presentati
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin?selected=issues`, { waitUntil: "domcontentloaded" });
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
     const list = page.locator('[data-owner="user-profile-child-issue-list"]');
     await expect(list).toHaveClass(/(?:^|\s)child-issue-list(?:\s|$)/u);
     await expect(list).toBeHidden();

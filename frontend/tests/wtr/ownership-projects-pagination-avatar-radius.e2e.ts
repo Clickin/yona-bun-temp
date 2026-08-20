@@ -1,4 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
+import { readFileSync, readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -105,7 +105,7 @@ test("projects pagination/avatar residual wave records frozen cascade and retire
     "../yona-original/public/javascripts/common/yobi.Pagination.js",
     "utf8",
   );
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   expect(scala).toContain(
     'class="avatar-wrap">\n                                    <img src="@member.avatarUrl" alt="@member.name">',

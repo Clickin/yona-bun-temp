@@ -1,8 +1,6 @@
-import { expect, test, type Page, readFile } from "../wtr-compat.ts";
-
+import { expect, test, type Page, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 const routeSource = new URL("../src/routes/lostPassword.tsx", import.meta.url);
 const themeSource = new URL("../src/app.css", import.meta.url);
-const fallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockAuthenticated(page: Page) {
@@ -26,7 +24,7 @@ test.describe("Style authenticated lost-password success alert", () => {
     const [route, theme, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
     expect(route).toContain("data-owner={");
     expect(route).toContain('"lost-password-authenticated-success-alert"');

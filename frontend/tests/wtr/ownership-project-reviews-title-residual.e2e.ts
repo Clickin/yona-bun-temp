@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const legacyListSource = new URL(
@@ -17,9 +17,9 @@ test("project reviews title residual fallback is retired", async () => {
   const [legacyList, legacyPartial, css, route, style] = await Promise.all([
     readFile(legacyListSource, "utf8"),
     readFile(legacyPartialSource, "utf8"),
-    readFile(cssSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
 
   expect(legacyList).toContain('<div class="review-list-wrap">');

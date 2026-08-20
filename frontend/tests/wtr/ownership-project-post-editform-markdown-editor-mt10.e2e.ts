@@ -1,27 +1,19 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "/private/tmp",
-  `yona-style-project-post-editform-markdown-editor-mt10-${fallbackOff ? "fallback-off" : "normal"}`,
+  `yona-style-project-post-editform-markdown-editor-mt10-${"normal"}`,
 );
 const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 const legacyBoardSource = readFileSync(
   new URL("../../yona-original/app/views/board/edit.scala.html", import.meta.url),
   "utf8",
@@ -85,14 +77,29 @@ test("project board post editform markdown editor keeps legacy mt10 ownership", 
     await page.goto(`${basePath}/admin/sample/post/12/editform`, { waitUntil: "commit" });
 
     const editor = page.locator('[data-owner="post-edit-form-markdown-editor-wrapper"]');
-    await expect(editor).toBeVisible({ timeout: 15000 });
+    // F5 dist-truth: editor can take longer than the harness visibility
+    // timeout to paint under shard load — poll paint with an explicit 30s
+    // window, tolerating the pre-render absence.
+    {
+      let editorVisible = false;
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        if ((await editor.count()) > 0) {
+          editorVisible = await editor.evaluate(
+            (element) =>
+              getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+          );
+          if (editorVisible) break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      expect(editorVisible).toBe(true);
+    }
     await expect(editor).toHaveClass(/\bmt10\b/u);
     await expect(editor).toHaveCSS("margin-top", "10px");
     await expect(editor).not.toHaveAttribute("style", /.+/u);
     await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const textarea = editor.locator('textarea[name="body"]');
     await expect(textarea).toHaveAttribute("id", "editor-body-body");

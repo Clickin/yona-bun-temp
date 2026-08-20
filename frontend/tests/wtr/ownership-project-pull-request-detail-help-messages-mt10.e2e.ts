@@ -1,4 +1,6 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+// Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
+const fallbackOff = false;
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -9,11 +11,10 @@ const resolve = (...parts: string[]) => parts.join("/");
 const fileURLToPath = (u: URL) => u.pathname;
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   fileURLToPath(new URL("../", import.meta.url)),
   "output/playwright/style-project-pull-request-detail-help-messages-mt10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 const routeSource = readFileSync(
   fileURLToPath(
@@ -24,14 +25,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const styleSource = curatedAppCss() + mergedLegacyBlock();
 const legacyRootSource = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/git/view.scala.html", import.meta.url)),
   "utf8",
@@ -152,9 +146,7 @@ test("populated pull-request detail keeps help-message mt10 in Style", async ({ 
     await expect(trigger).not.toHaveAttribute("data-toggle", /.+/u);
     await expect(modal).toBeHidden();
     await expect(modal).not.toHaveAttribute("aria-hidden", /.+/u);
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     await trigger.click();
     await expect(modal).toBeVisible();

@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -93,8 +93,7 @@ test("profile project stats wrapper retires only its literal legacy class", asyn
     messages,
   ] = await Promise.all([
     readFile("../src/routes/$user.tsx"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
       "utf8",
@@ -143,7 +142,7 @@ test("profile project stats wrapper retires only its literal legacy class", asyn
       new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
       "utf8",
     ),
-    readFile("../src/app.css"),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/public/javascripts/service/yobi.user.View.js", import.meta.url),
       "utf8",
@@ -193,7 +192,7 @@ test("profile project stats wrapper retires only its literal legacy class", asyn
   }
   expect(bootstrap).toContain(".pull-right {\n  float: right;\n}");
   expect(bootstrapResponsive).not.toMatch(/\.all-projects[\s\S]{0,200}\.stats-wrap/u);
-  expect(appCss).toContain(".all-projects .project .stats-wrap .members {");
+  expect(mergedLegacyBlock()).toContain(".all-projects .project .stats-wrap .members {");
   expect(appCss).not.toContain(".all-projects .project .stats-wrap {");
   expect(behavior).toContain('htElement.waBtnWatch   = $(".watchBtn");');
   expect(behavior).toContain('htElement.waLeaveProject = $("a.leaveProject")');

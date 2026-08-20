@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_LOGIN_SCREEN = `
@@ -278,9 +278,7 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
   const routeSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyLogin = readFileSync("../yona-original/app/views/user/login.scala.html", "utf8");
   const legacyNavbar = readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8");
   const legacyUsermenu = readFileSync(

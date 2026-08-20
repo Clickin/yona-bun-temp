@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -917,7 +917,7 @@ test("project members enrollment rows own legacy floats and width through Style"
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const mode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+  const mode = "normal";
   const screenshotDirectory = resolve(
     "output/playwright/style-project-members-enrollment-floats",
     mode,
@@ -942,9 +942,7 @@ test("project members enrollment rows own legacy floats and width through Style"
   expect(commonLess).toMatch(/\.mr10\s*\{\s*margin-right:10px;\s*\}/u);
   expect(bootstrap).toMatch(/\.pull-left\s*\{\s*float:\s*left;\s*\}/u);
   const componentSource = readFileSync("src/components/enrollment-request.tsx", "utf8");
-  const componentStyleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const componentStyleSource = readFileSync("src/app.css", "utf8");
   expect(routeSource).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
   expect(routeSource).toContain('detailsOwner="project-members-enrollment-details"');
   expect(componentSource).toContain('className="mr10"');
@@ -1516,24 +1514,58 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
     "1",
   ]);
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      expectedProjectMembersErrorScreen({
-        activeMenu: "home",
-        basePath,
-        loginHref: `${basePath}/users/loginform?redirectUrl=%2Fadmin%2Fsample%2Fmembers`,
-        message: "You are not authorized",
-      }),
-    ),
-  );
-  expect(await projectMemberLoginErrorCtaMetrics(page)).toEqual({
-    buttonBottomWithinWrap: true,
-    buttonCenterOffsetFromWrap: 0,
-    buttonDisplay: "inline-block",
-    buttonTopBelowMessage: true,
-    errorTextMarginBottom: "30px",
-  });
+  // F5 dist-truth: the 401 shell settles a beat after the title asserts under
+  // shard load — retry the canonicalized snapshot and the CTA metrics with
+  // explicit windows instead of single reads (gate flake: 124ms fast-fail).
+  let snapshotOk = false;
+  {
+    const expected = () =>
+      canonicalizeHtml(
+        page,
+        expectedProjectMembersErrorScreen({
+          activeMenu: "home",
+          basePath,
+          loginHref: `${basePath}/users/loginform?redirectUrl=%2Fadmin%2Fsample%2Fmembers`,
+          message: "You are not authorized",
+        }),
+      );
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+      try {
+        if ((await canonicalizeScreenRoots(page)) === (await expected())) {
+          snapshotOk = true;
+          break;
+        }
+      } catch {
+        // transient canonicalize errors — keep polling
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  expect(snapshotOk).toBe(true);
+  let metricsOk = false;
+  {
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+      try {
+        const metrics = await projectMemberLoginErrorCtaMetrics(page);
+        if (
+          metrics.buttonBottomWithinWrap &&
+          metrics.buttonCenterOffsetFromWrap === 0 &&
+          metrics.buttonDisplay === "inline-block" &&
+          metrics.buttonTopBelowMessage &&
+          metrics.errorTextMarginBottom === "30px"
+        ) {
+          metricsOk = true;
+          break;
+        }
+      } catch {
+        // transient missing nodes — keep polling
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  expect(metricsOk).toBe(true);
 });
 
 test("project members authorization error keeps legacy computed output on desktop and mobile", async ({

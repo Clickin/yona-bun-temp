@@ -1,6 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
@@ -125,10 +123,8 @@ test.use({ locale: "en-US" });
 
 test("framed SiteLayout shell has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
 
   expect(route).toContain('data-owner="framed-site-shell"');
   expect(route).toContain('data-owner="framed-site-main"');
@@ -168,16 +164,16 @@ test("frozen framed SiteLayout sources and generated fallback stay byte-identica
       "../yona-original/public/bootstrap/css/bootstrap.css",
       "a1878fdc8822d0e2419d823bfa1b87276233038857416a31737445502a51e8f9",
     ],
-    [
-      "public/legacy-assets/stylesheets/legacy-fallback.css",
-      "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
-    ],
   ]) {
     expect(createHash("sha256").update(readFileSync(path)).digest("hex")).toBe(hash);
   }
+  // Post-merge: the frozen fallback artifact sha is pinned in the app.css marker.
+  expect(mergedLegacyBlock()).toContain(
+    "sha256:754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
+  );
 
   const manifest = JSON.parse(
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.manifest.json", "utf8"),
+    readFileSync("../docs/provenance/legacy-css-merged.manifest.json", "utf8"),
   ) as {
     layeredViteInputs: Array<{
       input: string;

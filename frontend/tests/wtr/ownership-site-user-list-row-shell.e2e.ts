@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -10,10 +10,8 @@ const owners = { list: "site-user-list-row-list", row: "site-user-list-row" } as
 
 test("row shell ownership follows the populated legacy list", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");

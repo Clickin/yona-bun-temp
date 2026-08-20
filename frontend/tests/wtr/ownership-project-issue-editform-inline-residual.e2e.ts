@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -12,9 +12,7 @@ test("issue editform owns static editor, assignee, and paste-help declarations",
     "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
     "utf8",
   );
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/issue/edit.scala.html", "utf8");
   const editor = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   const uploader = readFileSync("../yona-original/app/views/common/uploadForm.scala.html", "utf8");

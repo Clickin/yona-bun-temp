@@ -1,5 +1,14 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
+> **status: superseded (2026-08-19)** — this StyleX wave plan is superseded by
+> the DOM-Parity Fast Lane pivot: `docs/provenance/tailwind-dom-parity-pivot.md`.
+> The frozen legacy cascade is now merged into `frontend/src/app.css` as a
+> single global baseline stylesheet entry (`@layer homeb, legacy, theme,
+> utilities;`), and verification is split into three independent contracts
+> (CSS equivalence / DOM parity / Browser parity). StyleX wave batches remain
+> historically accurate for the route screens they already converted; new
+> style work follows the 3-contract model.
+
 ### Batch 1107 — root not-found Yoram shell and GNB box — 2026-07-28
 
 The migration-after chunk immediately exposed the root not-found fixture still

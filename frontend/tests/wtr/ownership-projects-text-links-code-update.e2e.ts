@@ -1,5 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
-
+import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -110,9 +109,7 @@ async function open(page: Page) {
 
 test("projects text-link/code-update wave records the final frozen cascade and class retirement", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
   const layout = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");

@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -8,9 +8,7 @@ const resolve = (...parts: string[]) => parts.join("/");
 
 test("row action wrapper and semantic buttons own the frozen ybtn surface", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const siteAdminApi = readFileSync("src/api/site-admin.ts", "utf8");
   const authWorkspaceClient = readFileSync("src/auth-workspace-client.ts", "utf8");
   const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");

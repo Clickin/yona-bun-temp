@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -1011,8 +1011,7 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
     readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('<ul class="nav nav-tabs">');
   expect(legacy).toContain('id="subMenuProjectChangeVCS"');
@@ -1176,8 +1175,7 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   ).toEqual(["20px", "0px", "none"]);
 
   const [linkStyleSource, linkRouteSource] = await Promise.all([
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
   ]);
   expect(linkStyleSource).toMatch(
@@ -1286,8 +1284,7 @@ test("issue template edit preserves the legacy ybtn contract through its route-l
   const [legacy, route, style] = await Promise.all([
     readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('class="ybtn" target="_blank"');
   expect(legacy).toContain("?issueTemplate=true");
@@ -1698,8 +1695,7 @@ test("project settings middle rows own the frozen cu label, description, and not
   const [legacy, route, style] = await Promise.all([
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain(".cu-label");
   expect(legacy).toContain(".inline-block;");
@@ -1842,9 +1838,7 @@ test("project settings middle rows own the frozen cu label, description, and not
   await expect(page.locator("#welReviewerCount")).toBeHidden();
   await page.locator("#reviewerCountEnable").check();
   await expect(page.locator("#welReviewerCount")).toBeVisible();
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project settings middle row shells own the frozen box-wrap middle declarations", async ({
@@ -1855,8 +1849,7 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('<div class="box-wrap middle">');
   expect(frozenStyles).toContain("border-bottom: 1px solid #E9E9E9;");
@@ -1961,9 +1954,7 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
   await expect(page.locator("#welReviewerCount")).toBeHidden();
   await page.locator("#reviewerCountEnable").check();
   await expect(page.locator("#welReviewerCount")).toBeVisible();
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project settings top and bottom shells own the frozen box-wrap boundaries", async ({
@@ -1974,8 +1965,7 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain(
     '<div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;">',
@@ -2091,9 +2081,7 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
   await expect(save).toHaveClass(/\bybtn-success\b/);
   await expect(save).toHaveAttribute("data-owner", "project-setting-save");
   await expect(save).toHaveText("Save");
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project settings form and frame own the frozen shell declarations", async ({ page }) => {
@@ -2102,8 +2090,7 @@ test("project settings form and frame own the frozen shell declarations", async 
     readFile("../yona-original/app/assets/stylesheets/less/_common.less", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('<form id="saveSetting" method="post"');
   expect(legacy).toContain('<div class="bubble-wrap gray" style="overflow: visible">');
@@ -2181,9 +2168,7 @@ test("project settings form and frame own the frozen shell declarations", async 
   await expect(save).toHaveClass(/\bybtn\b/);
   await expect(save).toHaveClass(/\bybtn-success\b/);
   await expect(save).toHaveAttribute("data-owner", "project-setting-save");
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project settings definition-list fields own the frozen frm-wrap declarations", async ({
@@ -2193,8 +2178,7 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
     readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('<dl class="setting-box right">');
   expect(legacy).toContain("<dt>");
@@ -2335,9 +2319,7 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
   await expect(page.locator("#saveSetting")).toHaveAttribute("enctype", "multipart/form-data");
   await expect(page.locator("#save")).toHaveAttribute("type", "submit");
   await expect(page.locator("#save")).toHaveText("Save");
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
@@ -3021,8 +3003,7 @@ test("project settings owns the legacy left-column logo upload surface", async (
     readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('<div class="nbtn medium white fake-file-wrap">');
   expect(legacy).toContain('<i class="yobicon-upload"></i> @Messages("button.upload")');
@@ -3151,8 +3132,7 @@ test("project settings resets the legacy logo description list only", async ({ p
     readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8") +
-      readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+    curatedAppCss(),
   ]);
   expect(legacy).toContain('<ul class="unstyled descs">');
   expect(legacy).toContain('<li><strong>@Messages("project.logo")</strong></li>');

@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,7 +6,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("project home uses Dynamic Style for server-provided milestone progress", async ({ page }) => {
   const [routeSource, styleSource] = [
     readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8"),
-    readFileSync("src/app.css", "utf8"),
+    curatedAppCss(),
   ];
 
   expect(routeSource).toContain('data-owner="project-home-milestone-progress-bar"');

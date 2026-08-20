@@ -1,6 +1,12 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem and no node:crypto. mkdirSync only feeds
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  mergedLegacyBlock,
+  curatedAppCss,
+} from "../wtr-compat.ts"; // Browser harness: no filesystem and no node:crypto. mkdirSync only feeds
 // page.screenshot paths (a recorded shim gap); resolve only builds those
 // paths. createHash backs the frozen-source sha256 pins with a verified
 // byte-identical browser sha256 (checked against node:crypto).
@@ -94,11 +100,9 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 test.use({ locale: "en-US" });
 
 test("authenticated user menu owns its legacy declarations through global Style variables", () => {
-  const appSource = readFileSync("src/app.css", "utf8");
+  const appSource = curatedAppCss();
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const themeSource = readFileSync("src/app.css", "utf8");
   const menu = routeSource.slice(
     routeSource.indexOf('data-owner="authenticated-site-user-menu"'),
     routeSource.indexOf("</ul>", routeSource.indexOf('data-owner="root-usermenu-create-dropdown"')),

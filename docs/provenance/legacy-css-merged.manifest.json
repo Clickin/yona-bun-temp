@@ -1,5 +1,7 @@
 {
   "schemaVersion": 1,
+  "runtime": false,
+  "mergedInto": "frontend/src/app.css",
   "artifact": "legacy-assets/stylesheets/legacy-fallback.css",
   "artifactSha256": "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
   "layer": "legacy",

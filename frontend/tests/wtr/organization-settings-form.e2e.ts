@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const ORGANIZATION_SETTINGS_ROUTE_SOURCE =
@@ -418,7 +418,7 @@ test("organization settings logo input reset source is React-owned", () => {
 
 test("organization settings top-box Style owners preserve legacy declarations", () => {
   const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+  const style = curatedAppCss();
   for (const owner of [
     "organization-setting-box-left",
     "organization-setting-box-right",

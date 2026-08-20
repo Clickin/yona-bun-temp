@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -10,7 +10,7 @@ test("project search Style owners preserve populated and empty result contracts"
         new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(
         new URL("../../yona-original/app/views/search/partial_search.scala.html", import.meta.url),
         "utf8",
@@ -31,9 +31,8 @@ test("project search Style owners preserve populated and empty result contracts"
         new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
-      // ../public/ is not a fixture root; the dist serves the built copy under /yona/.
-      readFile("/yona/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(mergedLegacyBlock()),
     ],
   );
   expect(legacy).toContain("search-category-wrap");
@@ -73,7 +72,7 @@ test("project search Style owners preserve populated and empty result contracts"
     "margin: 20px 0;",
     "text-align: center;",
     "min-height: 250px;",
-    'background-image: url(\"../images/no_contents.jpg\");',
+    'background-image: url(\"./assets/legacy/images/no_contents.jpg\");',
     "background-repeat: no-repeat;",
     "background-position: center 50%;",
   ]) {

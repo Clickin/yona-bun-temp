@@ -1,10 +1,9 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
 const themeSource = new URL("../src/app.css", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
-const legacyFallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -52,7 +51,7 @@ test.describe("Style standalone signup form", () => {
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
       readFile(fallbackSource, "utf8"),
-      readFile(legacyFallbackSource, "utf8"),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
 
     // F6 copy-fix-current-dom: owners are applied unconditionally since 040d9de5a

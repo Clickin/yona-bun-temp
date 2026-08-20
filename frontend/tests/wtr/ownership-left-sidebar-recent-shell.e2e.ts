@@ -1,5 +1,11 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
-
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  mergedLegacyBlock,
+} from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -11,9 +17,7 @@ test.use({ locale: "en-US" });
 
 test("left sidebar Recent History shell has narrow global-theme Style ownership", () => {
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const recentStart = source.indexOf("function SidebarRecentIssueList");
   const recentEnd = source.indexOf("function SidebarRecentIssueItem", recentStart);
 

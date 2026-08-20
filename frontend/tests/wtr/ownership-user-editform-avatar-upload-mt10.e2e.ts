@@ -7,10 +7,9 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 const screenshotDirectory = resolve(
   "output/playwright/style-user-editform-avatar-upload-mt10",
-  fallbackOff ? "fallback-off" : "normal",
+  "normal",
 );
 
 const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
@@ -69,9 +68,7 @@ test("user edit avatar upload preserves legacy source and Style ownership", () =
   expect(route).not.toContain("addEventListener");
 });
 
-test(`user edit avatar upload geometry ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-  page,
-}) => {
+test(`user edit avatar upload geometry ${"normal"}`, async ({ page }) => {
   await mockProfile(page);
   mkdirSync(screenshotDirectory, { recursive: true });
 
@@ -81,9 +78,7 @@ test(`user edit avatar upload geometry ${fallbackOff ? "fallback-off" : "normal"
   ] as const) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/user/editform`, { waitUntil: "commit" });
-    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-      fallbackOff ? 0 : 1,
-    );
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 
     const avatarForm = page.locator("#frmAvatar");
     const uploadWrap = page.locator('[data-owner="user-settings-avatar-upload-wrap"]');

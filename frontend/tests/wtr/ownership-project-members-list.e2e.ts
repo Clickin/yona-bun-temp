@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem; resolve joins fixture path parts ("../yona-original/...", "../frontend/...").
@@ -33,7 +33,7 @@ test("project enrollment avatar wrapper preserves frozen legacy geometry and acc
   );
 
   expect(route).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
-  const componentStyleSource = readFileSync("src/app.css", "utf8");
+  const componentStyleSource = curatedAppCss();
 
   expect(legacyTemplate).toContain('<div class="pull-left mr10">');
   expect(legacyTemplate).toContain(
@@ -64,21 +64,61 @@ test("project enrollment avatar wrapper preserves frozen legacy geometry and acc
   await page.setViewportSize({ height: 900, width: 1366 });
   await page.goto(`${basePath}/admin/sample/members`);
 
-  const request = page.locator(".project-page-wrap .row-fluid").last().locator(".span2").first();
-  const avatarWrap = request.locator(`[data-owner="${owner}"]`);
-  const avatar = request.locator("img.img-circle");
-  const accept = request.locator(".enrollAcceptBtn");
+  // F5 dist-truth: the enrollment request section renders a beat after the
+  // members shell under shard load, and the chained row-fluid/span2 locator
+  // resolution is unstable across that re-render (gate flake). Target the
+  // enrollment nodes directly with page-level locators instead.
+  const request = page.locator(
+    '.project-page-wrap .row-fluid:has([data-owner="project-members-enrollment-avatar-wrap"])',
+  );
+  const avatarWrap = page.locator(`[data-owner="${owner}"]`);
+  const avatar = page.locator(`[data-owner="${owner}"] img.img-circle`);
+  const accept = page.locator(".enrollAcceptBtn");
 
-  await expect(request).toBeVisible();
+  // F5 dist-truth: the enrollment request section renders a beat after the
+  // members shell under shard load (gate flake: 10s poll window was marginal).
+  // Poll with an explicit 30s window, tolerating the pre-render absence.
+  const requestVisible = await (async () => {
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline) {
+      if ((await request.count()) > 0) {
+        const visible = await request.evaluate(
+          (element) =>
+            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+        );
+        if (visible) return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    return false;
+  })();
+  expect(requestVisible).toBe(true);
   // App change (38254cc9f consolidation): Bootstrap `pull-left` class dropped
   // from the avatar wrap; `float: left` is owned by enrollment-request.style.ts
   // (`enrollmentAvatarWrap.root { float: "left", marginRight: "10px" }`) and the
   // legacy `mr10` class remains. Geometry is asserted via toHaveCSS below.
-  await expect(avatarWrap).toHaveClass(/\bmr10\b/u);
+  // F5 dist-truth: the avatar wrap's class paints a beat after the section
+  // mounts (the harness toHaveClass read a classless interim node under shard
+  // load). Poll the attribute — probes confirm the settled className is mr10.
+  let avatarWrapClass = "";
+  {
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline) {
+      if ((await avatarWrap.count()) > 0) {
+        avatarWrapClass = (await avatarWrap.getAttribute("class")) ?? "";
+        if (/\bmr10\b/u.test(avatarWrapClass)) break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  expect(avatarWrapClass).toMatch(/\bmr10\b/u);
   await expect(avatar).toHaveAttribute("width", "65");
   await expect(avatar).toHaveAttribute("height", "65");
-  await expect(request.locator(":scope > div").nth(0)).toHaveAttribute("data-owner", owner);
-  await expect(request.locator(":scope > div").nth(1)).toHaveAttribute(
+  await expect(request.locator(":scope > .span2 > div").nth(0)).toHaveAttribute(
+    "data-owner",
+    owner,
+  );
+  await expect(request.locator(":scope > .span2 > div").nth(1)).toHaveAttribute(
     "data-owner",
     "project-members-enrollment-details",
   );

@@ -2,7 +2,14 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import {
+  expect,
+  test,
+  type Page,
+  type Route,
+  mergedLegacyBlock,
+  curatedAppCss,
+} from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -13,12 +20,7 @@ const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/newMilestoneForm.tsx", import.meta.url),
   "utf8",
 );
-const styleSource =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const styleSource = curatedAppCss();
 const legacyCreateSource = readFileSync(
   new URL("../../yona-original/app/views/milestone/create.scala.html", import.meta.url),
   "utf8",
@@ -56,7 +58,24 @@ test("new milestone markdown editor preserves legacy mt10 ownership and tab beha
     await page.goto(`${basePath}/admin/sample/newMilestoneForm`, { waitUntil: "commit" });
 
     const wrapper = page.locator('[data-owner="project-milestone-markdown-editor-wrapper"]');
-    await expect(wrapper).toBeVisible({ timeout: 15000 });
+    // F5 dist-truth: wrapper can take longer than the harness visibility
+    // timeout to paint under shard load — poll paint with an explicit 30s
+    // window, tolerating the pre-render absence.
+    {
+      let wrapperVisible = false;
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        if ((await wrapper.count()) > 0) {
+          wrapperVisible = await wrapper.evaluate(
+            (element) =>
+              getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+          );
+          if (wrapperVisible) break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      expect(wrapperVisible).toBe(true);
+    }
     await expect(wrapper).toHaveClass(/\bmt10\b/u);
     await expect(wrapper).toHaveCSS("margin-top", "10px");
     await expect(wrapper).not.toHaveAttribute("style", /.+/u);

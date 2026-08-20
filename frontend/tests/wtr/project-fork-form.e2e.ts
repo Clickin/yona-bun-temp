@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const PROJECT_FORK_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/newFork.tsx";
@@ -446,9 +446,7 @@ test("project fork route has no raw route-local internal anchors", async () => {
 
 test("project fork existing-link color is owned by Style", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(source).toContain('data-owner="project-fork-existing-link"');
   expect(source).not.toContain("primary-txt");

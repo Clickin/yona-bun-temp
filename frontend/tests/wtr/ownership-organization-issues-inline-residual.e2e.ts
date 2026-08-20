@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -9,9 +9,7 @@ test("organization issue search moves the static project selector width into Sty
   page,
 }) => {
   const route = readFileSync("src/routes/organizations/$organizationName/issues.tsx", "utf8");
-  const styleSource =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styleSource = readFileSync("src/app.css", "utf8");
   const template = readFileSync(
     "../yona-original/app/views/organization/group_issue_search_partial.scala.html",
     "utf8",

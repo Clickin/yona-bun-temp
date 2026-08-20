@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync/resolve are no-ops for screenshot paths.
@@ -6,11 +6,9 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const testMode =
-  process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ||
-  process.env.YONA_E2E_FALLBACK_MODE === "fallback-off"
-    ? "fallback-off"
-    : "normal";
+// Post-merge the full legacy cascade lives in app.css — the "normal" (merged)
+// mode is the only runtime mode.
+const testMode = "normal";
 const screenshotDirectory = resolve(
   `output/playwright/style-organization-pullrequests-action-floats/${testMode}`,
 );
@@ -22,9 +20,7 @@ const routeSource = readFileSync(
   "src/routes/organizations/$organizationName/pullrequests.tsx",
   "utf8",
 );
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const legacyRootSource = readFileSync(
   "../yona-original/app/views/organization/group_pullrequest_list.scala.html",
   "utf8",

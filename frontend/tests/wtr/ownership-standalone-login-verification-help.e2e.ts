@@ -1,11 +1,10 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/loginform.tsx", import.meta.url);
 const themeSource = new URL("../src/app.css", import.meta.url);
 const loginThemeSource = new URL("../src/app.css", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
-const legacyFallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -59,10 +58,10 @@ test.describe("Style standalone login verification help", () => {
   test("declares globally themed helper ownership without consuming the legacy fallback class", async () => {
     const [route, theme, loginTheme, fallback, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(loginThemeSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
-      readFile(legacyFallbackSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
 
     expect(route).toContain('data-owner="standalone-login-verification-help"');

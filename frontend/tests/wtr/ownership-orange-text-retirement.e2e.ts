@@ -1,4 +1,4 @@
-import { readFileSync, expect, test } from "../wtr-compat.ts";
+import { readFileSync, expect, test, curatedAppCss } from "../wtr-compat.ts";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -13,7 +13,7 @@ test("orange-txt is retired from the three legacy form consumers", () => {
   const organizationSettings = read("src/routes/organizations/$organizationName/settingform.tsx");
   const organizationStyle = read("src/app.css");
 
-  expect(appCss).not.toMatch(/\.orange-txt\s*\{/u);
+  expect(curatedAppCss()).not.toMatch(/\.orange-txt\s*\{/u);
   expect(projectForm).not.toContain("orange-txt");
   expect(projectImport).not.toContain("orange-txt");
   // wave-33 retained-class retention (667398a04): settingform KEEPS orange-txt

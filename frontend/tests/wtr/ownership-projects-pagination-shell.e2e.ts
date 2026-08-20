@@ -1,4 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
+import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -111,9 +111,7 @@ async function open(page: Page, totalPages = 1, currentPage = 1) {
 
 test("pagination shell owns exactly four direct target types and preserves one important fallback", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");

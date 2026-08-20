@@ -1,14 +1,12 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+// Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
+const fallbackOff = false;
 import { expect, test } from "../wtr-compat.ts";
-
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
 
 test("reviews batch 6 restores the legacy project page shell", async ({ page }) => {
   const legacy = readFileSync("../yona-original/app/views/reviewthread/list.scala.html", "utf8");
   const route = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
 
   expect(legacy).toContain('<div class="project-page-wrap">');
   expect(legacy).toContain('<div class="row-fluid issue-list-wrap">');
@@ -16,9 +14,7 @@ test("reviews batch 6 restores the legacy project page shell", async ({ page }) 
   expect(route).not.toContain("dangerouslySetInnerHTML");
 });
 
-test(`reviews batch 6 exposes the legacy shell geometry ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-  page,
-}) => {
+test(`reviews batch 6 exposes the legacy shell geometry ${"normal"}`, async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({

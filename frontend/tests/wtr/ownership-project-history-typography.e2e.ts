@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url);
@@ -17,7 +17,7 @@ test("project history header typography uses route-local Style ownership", async
     readFile(routeSource, "utf8"),
     readFile(legacySource, "utf8"),
     readFile(lessSource, "utf8"),
-    readFile(appCssSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
 
   expect(legacy).toContain('class="activity-desc"');

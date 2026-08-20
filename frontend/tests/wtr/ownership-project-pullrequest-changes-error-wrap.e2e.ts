@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -67,14 +67,7 @@ test("pull-request changes error-wrap owns legacy DOM, copy, sprite, and fallbac
         ),
         "utf8",
       ),
-      readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-        readFileSync(
-          new URL(
-            "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-            import.meta.url,
-          ),
-          "utf8",
-        ),
+      curatedAppCss(),
       readFile(
         new URL("../../yona-original/app/views/git/viewChanges.scala.html", import.meta.url),
         "utf8",
@@ -124,9 +117,7 @@ test("pull-request changes error-wrap owns legacy DOM, copy, sprite, and fallbac
     await page.goto(`${basePath}/admin/sample/pullRequest/11/changes?viewport=${viewport.width}`, {
       waitUntil: "commit",
     });
-    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
     const wrapper = page.locator('[data-owner="pull-request-changes-error-wrap"]');
     const icon = page.locator('[data-owner="pull-request-changes-error-icon"]');
     const message = page.locator('[data-owner="pull-request-changes-error-message"]');

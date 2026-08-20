@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -129,8 +129,8 @@ for (const viewport of [
 test("write action has a stable owner without generated selector contracts", async ({ page }) => {
   const [route, theme, appCss] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(themeSource, "utf8"),
-    readFile(appCssSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
+    Promise.resolve(curatedAppCss()),
   ]);
 
   expect(route).toContain('data-owner="site-massmail-write-action"');

@@ -1,11 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("issueform subtask option controls own route-scoped Style state", async () => {
   const route = readFileSync("../src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
-  const style =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const style = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/issue/create.scala.html", "utf8");
   const partial = readFileSync(
     "../yona-original/app/views/issue/partial_select_subtask.scala.html",

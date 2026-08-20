@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7,9 +7,7 @@ test.use({ locale: "en-US" });
 
 test("project milestones empty state preserves legacy error-wrap parity", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/milestone/list.scala.html", "utf8");
   const projectMenu = readFileSync("../yona-original/app/views/projectMenu.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
@@ -102,7 +100,7 @@ test("project milestones empty state preserves legacy error-wrap parity", async 
   }
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+  await expect(fallback).toHaveCount(0);
   if (await fallback.count()) await fallback.evaluate((element) => element.remove());
   await expect(empty).toHaveCSS("padding-top", "100px");
   await expect(icon).toHaveCSS("background-position", "-5px -160px");

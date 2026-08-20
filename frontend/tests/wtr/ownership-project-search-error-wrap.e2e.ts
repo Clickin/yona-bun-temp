@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -20,14 +20,7 @@ test("project search forbidden body keeps legacy Style parity for anonymous and 
     less,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-      readFileSync(
-        new URL(
-          "../frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    curatedAppCss(),
     readFile(
       new URL("../../yona-original/app/views/search/result.scala.html", import.meta.url),
       "utf8",
@@ -129,7 +122,7 @@ test("project search forbidden body keeps legacy Style parity for anonymous and 
       expect(geometry.height).toBeGreaterThan(0);
 
       const fallback = page.locator('link[href*="legacy-fallback.css"]');
-      await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
+      await expect(fallback).toHaveCount(0);
       if (await fallback.count()) await fallback.evaluate((node) => node.remove());
       await expect(wrap).toHaveCSS("padding-top", "100px");
       await expect(icon).toHaveCSS("background-position", "-80px -160px");

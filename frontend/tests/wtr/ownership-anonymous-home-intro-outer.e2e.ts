@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -16,9 +15,7 @@ test.use({ locale: "ko-KR" });
 
 test("anonymous Home intro outer has complete global-theme Style ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme =
-    readFileSync(resolve("src/app.css"), "utf8") +
-    readFileSync(resolve("public/legacy-assets/stylesheets/legacy-fallback.css"), "utf8");
+  const theme = readFileSync(resolve("src/app.css"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
     "utf8",
@@ -28,7 +25,7 @@ test("anonymous Home intro outer has complete global-theme Style ownership", () 
     "utf8",
   );
   const fallbackManifest = readFileSync(
-    resolve("public/legacy-assets/stylesheets/legacy-fallback.manifest.json"),
+    resolve("../docs/provenance/legacy-css-merged.manifest.json"),
     "utf8",
   );
 

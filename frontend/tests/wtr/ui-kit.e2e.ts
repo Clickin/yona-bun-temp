@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 const fileURLToPath = (u: URL) => u.pathname;
 
@@ -20,14 +20,7 @@ const APP_CSS_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/app.css", import.meta.url)),
   "utf8",
 );
-const UIKIT_STYLE_SOURCE =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const UIKIT_STYLE_SOURCE = curatedAppCss() + mergedLegacyBlock();
 const ORIGINAL_MESSAGE_SOURCE = readFileSync(
   fileURLToPath(
     new URL(

@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -25,7 +25,7 @@ const owner = (name: string) => `[data-owner="help-faq-${name}"]`;
 
 test("source fully owns the legacy help FAQ subtree without presentation classes", async () => {
   const [appCss, pageLess, route, spritesLess, template, yobicon] = await Promise.all([
-    readFile(appCssSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(pageLessSource, "utf8"),
     readFile(routeSource, "utf8"),
     readFile(spritesLessSource, "utf8"),

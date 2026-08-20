@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("pull-request changes owns the comment-delete modal display in Style", () => {
@@ -6,7 +6,7 @@ test("pull-request changes owns the comment-delete modal display in Style", () =
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
     "utf8",
   );
-  const style = readFileSync("src/app.css", "utf8");
+  const style = curatedAppCss();
   const viewChanges = readFileSync("../yona-original/app/views/git/viewChanges.scala.html", "utf8");
   const deletePartial = readFileSync(
     "../yona-original/app/views/common/commentDeleteModal.scala.html",

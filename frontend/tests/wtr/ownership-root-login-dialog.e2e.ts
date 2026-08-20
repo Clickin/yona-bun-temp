@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const rootSource = new URL("../src/routes/__root.tsx", import.meta.url);
@@ -49,7 +49,7 @@ test.describe("Style root login dialog", () => {
   test("declares a globally themed root login-dialog owner and stable parts", async () => {
     const [root, theme] = await Promise.all([
       readFile(rootSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
 
     expect(root).toContain('data-owner="root-login-dialog-frame"');

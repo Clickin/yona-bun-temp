@@ -1,9 +1,8 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
 const themeSource = new URL("../src/app.css", import.meta.url);
-const legacyFallbackSource = "public/legacy-assets/stylesheets/legacy-fallback.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockAnonymousSignup(page: Page, capabilities: Record<string, unknown> = {}) {
@@ -48,8 +47,8 @@ test.describe("Style standalone signup confirmation notice", () => {
   test("retires center-txt only for the confirmation state through a global theme variable", async () => {
     const [route, theme, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(legacyFallbackSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(mergedLegacyBlock()),
     ]);
 
     expect(route).toContain('data-owner="standalone-signup-confirmation-notice"');

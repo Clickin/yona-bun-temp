@@ -158,9 +158,7 @@ async function assertPanelAvatar(page: Page, kind: "manager" | "member") {
 }
 
 for (const fallbackOff of [false, true]) {
-  test(`organization member panel avatars ${fallbackOff ? "fallback-off" : "normal"}`, async ({
-    page,
-  }) => {
+  test(`organization member panel avatars ${"normal"}`, async ({ page }) => {
     await mockOrganizationHome(page);
     await page.setViewportSize({ height: 900, width: 1366 });
     await page.goto("/yona/organizations/weblabs");

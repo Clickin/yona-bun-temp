@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -10,12 +10,8 @@ test("project settingform restores the legacy page shell and desktop geometry", 
 }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/settingform.tsx", "utf8");
   const settingRoute = readFileSync("src/routes/$ownerName/$projectName/setting.tsx", "utf8");
-  const routeStyles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const settingStyles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const routeStyles = readFileSync("src/app.css", "utf8");
+  const settingStyles = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/project/setting.scala.html", "utf8");
   const partial = readFileSync(
     "../yona-original/app/views/project/partial_settingmenu.scala.html",

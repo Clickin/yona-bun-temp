@@ -2,18 +2,16 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallback = process.env.VITE_DISABLE_LEGACY_FALLBACK ? "fallback-off" : "normal";
+const fallback = "normal";
 const screenshotDirectory = resolve(
   `output/playwright/style-project-milestones-action-floats/${fallback}`,
 );
 const routeSource = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
-const styleSource =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const styleSource = readFileSync("src/app.css", "utf8");
 const legacyList = readFileSync("../yona-original/app/views/milestone/list.scala.html", "utf8");
 const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
 const yobiLess = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");

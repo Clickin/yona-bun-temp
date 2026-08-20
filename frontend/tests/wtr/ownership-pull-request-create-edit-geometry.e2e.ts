@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("pull request create/edit selector geometry uses Style", async () => {
@@ -10,7 +10,7 @@ test("pull request create/edit selector geometry uses Style", async () => {
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform.tsx",
     "utf8",
   );
-  const css = readFileSync("../src/app.css", "utf8");
+  const css = curatedAppCss();
   const legacyCreate = readFileSync(
     new URL("../../yona-original/app/views/git/create.scala.html", import.meta.url),
     "utf8",

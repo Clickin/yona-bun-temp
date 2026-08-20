@@ -27,10 +27,7 @@ test("breadcrumb owns only declarations lost with its two presentation classes",
   );
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const manifest = readFileSync(
-    "public/legacy-assets/stylesheets/legacy-fallback.manifest.json",
-    "utf8",
-  );
+  const manifest = readFileSync("../docs/provenance/legacy-css-merged.manifest.json", "utf8");
   const messages = readFileSync("../yona-original/conf/messages", "utf8");
 
   expect(userList).toContain("@siteMngLayout(message)");

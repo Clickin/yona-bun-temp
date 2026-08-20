@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -93,8 +93,10 @@ test.describe("Style site data sidebar", () => {
     expect(legacyPage).toContain(".site-setting-nav {");
     expect(variables).toContain("@yobi-orange : #FF7332;");
     expect(mixins).toContain(".border-radius(@radius: 5px)");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav {");
-    expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
+    expect(curatedAppCss()).not.toContain(".site-setting-wrap .site-setting-nav {");
+    expect(curatedAppCss()).not.toContain(
+      ".site-setting-wrap .site-setting-nav li.active a:hover {",
+    );
     // Sidebar owners moved to the shared SiteAdminSidebar component: data.tsx
     // wires badgeOwner/navOwner/ownerPrefix props and the component emits the
     // data-owner attributes (badge = badgeOwner, item/link = ownerPrefix
@@ -232,10 +234,9 @@ test.describe("Style site data sidebar", () => {
       expect(boxes.badge.top).toBeLessThan(boxes.links[6].bottom);
       expect(boxes.badge.bottom).toBeGreaterThan(boxes.links[6].top);
       // Frozen legacy fallback retired: `.site-setting-wrap .site-setting-nav`
-      // rules were removed from app.css (see the appCss pins above) and
-      // legacy-fallback.css is not loaded under VITE_DISABLE_LEGACY_FALLBACK,
-      // so a legacy-class replay no longer reproduces the style-owned paint
-      // (the toHaveCSS assertions above are the active pins).
+      // rules were removed from the curated app.css section (see the appCss
+      // pins above); the frozen fallback content now lives in the app.css
+      // merged block, so the toHaveCSS assertions above are the active pins.
       expect((await sidebar.screenshot()).byteLength).toBeGreaterThan(0);
       expect((await badge.screenshot()).byteLength).toBeGreaterThan(0);
     }

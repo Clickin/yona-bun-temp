@@ -1,4 +1,4 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test.beforeEach(async ({ page }) => {
@@ -53,12 +53,7 @@ test.beforeEach(async ({ page }) => {
 
 test("authenticated profile project avatar rail owns the legacy left float", async ({ page }) => {
   const route = await readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
-  const styleSource =
-    (await readFileSync(new URL("../src/app.css", import.meta.url), "utf8")) +
-    readFileSync(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-      "utf8",
-    );
+  const styleSource = await curatedAppCss();
   const partial = await readFile(
     new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
     "utf8",

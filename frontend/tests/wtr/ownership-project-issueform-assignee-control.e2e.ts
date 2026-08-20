@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
@@ -21,11 +21,11 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("issueform assignee control keeps route-local Style geometry", async ({ page }) => {
   const [route, style, create, assignee, override, css] = await Promise.all([
     readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(legacyCreate, "utf8"),
     readFile(legacyAssignee, "utf8"),
     readFile(legacyOverride, "utf8"),
-    readFile(appStyles, "utf8"),
+    Promise.resolve(curatedAppCss()),
   ]);
   expect(create).toContain("@partial_assignee(project, null)");
   expect(assignee).toContain('id="assignee"');

@@ -1,4 +1,4 @@
-import { createHash, readFileSync } from "../wtr-compat.ts";
+import { createHash, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -16,10 +16,8 @@ test.use({ locale: "en-US" });
 
 test("SiteLayout footer has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const outerMarker = route.indexOf('data-owner="site-footer"');
   const innerMarker = route.indexOf('data-owner="site-footer-inner"');
   const providerMarker = route.indexOf('data-owner="site-footer-provider"');

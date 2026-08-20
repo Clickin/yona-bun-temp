@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -19,7 +19,7 @@ test("pull-request detail error state preserves legacy Style geometry", async ({
         ),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(
         new URL("../../yona-original/app/views/git/view.scala.html", import.meta.url),
         "utf8",
@@ -124,9 +124,7 @@ test("pull-request detail error state preserves legacy Style geometry", async ({
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/pullRequest/404`, { waitUntil: "commit" });
-    await expect(page.locator('link[href$="legacy-fallback.css"]')).toHaveCount(
-      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-    );
+    await expect(page.locator('link[href$="legacy-fallback.css"]')).toHaveCount(0);
 
     const wrapper = page.locator('[data-owner="pull-request-detail-error-wrap"]');
     const icon = page.locator('[data-owner="pull-request-detail-error-icon"]');
@@ -170,7 +168,5 @@ test("pull-request detail error state preserves legacy Style geometry", async ({
     expect(geometry.bottom).toBeLessThanOrEqual(viewport.height + 1);
   }
 
-  await expect(page.locator('link[href$="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href$="legacy-fallback.css"]')).toHaveCount(0);
 });

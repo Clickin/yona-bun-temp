@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -12,9 +12,7 @@ test.use({ locale: "ko-KR" });
 
 test("password validation owners trace Bootstrap placement and Yobi paint", () => {
   const route = readFileSync("src/routes/user/editform/password.tsx", "utf8");
-  const colors =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const colors = readFileSync("src/app.css", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const ui = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
   const setting = readFileSync(

@@ -1,6 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -15,12 +13,7 @@ const PULL_REQUEST_CHANGES_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
-const PULL_REQUEST_CHANGES_STYLE_SOURCE =
-  readFileSync(new URL("../src/app.css", import.meta.url), "utf8") +
-  readFileSync(
-    new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    "utf8",
-  );
+const PULL_REQUEST_CHANGES_STYLE_SOURCE = curatedAppCss();
 
 const LEGACY_REVIEWLIST_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),

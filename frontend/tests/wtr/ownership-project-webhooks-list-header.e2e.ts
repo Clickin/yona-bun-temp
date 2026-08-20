@@ -1,11 +1,11 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 test("project webhook list owns header and item geometry in Style", async () => {
   const route = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
     "utf8",
   );
-  const style = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const style = curatedAppCss();
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/project/webhooks.scala.html", import.meta.url),
     "utf8",
@@ -14,7 +14,7 @@ test("project webhook list owns header and item geometry in Style", async () => 
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   // Legacy Scala HTML/JS is output DOM/UX evidence; internal behavior stays React state/events/components + TanStack Router/Query.
   expect(legacy).toContain('class="webhook-list-wrap"');
   expect(less).toContain(".webhook-list-wrap");

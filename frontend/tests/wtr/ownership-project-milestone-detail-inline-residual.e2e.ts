@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -10,9 +10,7 @@ test("milestone detail action row owns static inline layout declarations", async
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
 
   expect(template).toContain('class="actrow right-txt row-fluid"');

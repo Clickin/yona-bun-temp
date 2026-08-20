@@ -1,4 +1,4 @@
-import { createHash, readFileSync } from "../wtr-compat.ts";
+import { createHash, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. resolve only builds page.screenshot paths
@@ -20,10 +20,8 @@ test.use({ locale: "en-US" });
 
 test("global GNB search submit has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
-  const appCss = readFileSync("src/app.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const marker = route.indexOf('data-owner="global-gnb-search-submit"');
   const markup = route.slice(
     route.lastIndexOf("<button", marker),
@@ -71,11 +69,9 @@ test("frozen button and Yobicon sources stay byte-identical", () => {
   for (const [path, expected] of hashes) {
     expect(createHash("sha256").update(readFileSync(path)).digest("hex")).toBe(expected);
   }
-  expect(
-    createHash("sha256")
-      .update(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css"))
-      .digest("hex"),
-  ).toBe("754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd");
+  expect(createHash("sha256").update(mergedLegacyBlock()).digest("hex")).toBe(
+    "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
+  );
 });
 
 for (const state of [

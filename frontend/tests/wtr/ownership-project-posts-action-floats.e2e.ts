@@ -4,7 +4,7 @@ const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallback = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
+const fallback = "normal";
 const screenshotDir = resolve(`output/playwright/style-project-posts-action-floats/${fallback}`);
 const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
 const boardSource = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");

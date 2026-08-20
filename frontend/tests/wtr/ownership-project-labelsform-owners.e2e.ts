@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 const fileURLToPath = (u) => u.pathname;
 
@@ -8,14 +8,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const styleSource = curatedAppCss() + mergedLegacyBlock();
 const owners = [
   "project-labels-category-list",
   "project-labels-category-heading",
@@ -250,6 +243,10 @@ test("label edit preview color uses Dynamic Style", async ({ page }) => {
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
 
   const category = page.locator('[data-owner="project-labels-category-list"]').first();
+  // F5 dist-truth: wait for the category list before the modal-open click —
+  // clicking during mount opens the modal against a stale label row and the
+  // preset paint never applies (gate flake: background stayed transparent).
+  await expect(category).toBeVisible();
   await category.locator("button.ybtn-small").last().click();
   const editLabel = page.locator('[data-owner="project-labels-edit-label-modal"]');
   const nameInput = editLabel.locator('input[name="name"]');

@@ -1,13 +1,11 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Fixture paths as STRINGS (wave-9/10 gotcha: URL-object reads bypass the
 // .txt raw-suffix mapping and get esbuild-transformed).
 const SOURCE = readFileSync("src/routes/$ownerName/$projectName/branches.tsx", "utf8");
-const APP_CSS = readFileSync("src/app.css", "utf8");
-const BRANCHES_STYLE =
-  readFileSync("src/app.css", "utf8") +
-  readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+const APP_CSS = curatedAppCss();
+const BRANCHES_STYLE = readFileSync("src/app.css", "utf8");
 const LEGACY_COMMON = readFileSync(
   "../yona-original/app/assets/stylesheets/less/_common.less",
   "utf8",

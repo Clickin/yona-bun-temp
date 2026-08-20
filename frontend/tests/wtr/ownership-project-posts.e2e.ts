@@ -1,11 +1,11 @@
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFile, readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
 
 test("project posts preserves legacy populated-list owners and sort geometry", async ({ page }) => {
   const [appCss, route, legacy, partial, less] = await Promise.all([
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(new URL("../src/routes/$ownerName/$projectName/posts.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../../yona-original/app/views/board/list.scala.html", import.meta.url),
@@ -138,9 +138,7 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   await page.goto(`${basePath}/admin/sample/posts`, { waitUntil: "commit" });
   await expect(page.locator('[data-content-ready="true"]')).toHaveCount(1);
   await expect(page.locator('[data-content-ready="true"]')).toBeVisible();
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
   await expect(page.locator('[data-owner="project-posts-page"]')).toBeVisible();
   await expect(page.locator('[data-owner="project-posts-search"]')).toBeVisible();

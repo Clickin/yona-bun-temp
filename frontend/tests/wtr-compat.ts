@@ -401,6 +401,40 @@ export function readFileSync(source: URL | string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Merged legacy fallback source (post single-global-baseline-merge)
+// ---------------------------------------------------------------------------
+
+// The frozen legacy fallback stylesheet was merged into src/app.css between
+// the BEGIN/END markers; specs that used to read the generated fallback file
+// now read the merged block (identical content, single runtime stylesheet).
+export function mergedLegacyBlock(): string {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const begin = appCss.indexOf("/* BEGIN merged frozen legacy-fallback");
+  const end = appCss.indexOf("/* END merged frozen legacy-fallback */", begin);
+  if (begin === -1 || end === -1) {
+    throw new Error("merged legacy block markers missing in app.css");
+  }
+  return appCss.slice(begin, end + "/* END merged frozen legacy-fallback */".length);
+}
+
+// app.css with the merged frozen legacy block removed — the exact pre-merge
+// "app.css" semantics (layer statement + imports + @theme header + curated
+// React-owned rules). Specs asserting "app.css does NOT contain legacy
+// selector X" must use this: the whole file now legitimately contains the
+// frozen fallback content inside the merged block.
+export function curatedAppCss(): string {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const begin = appCss.indexOf("/* BEGIN merged frozen legacy-fallback");
+  const end = appCss.indexOf("/* END merged frozen legacy-fallback */", begin);
+  if (begin === -1 || end === -1) {
+    throw new Error("merged legacy block markers missing in app.css");
+  }
+  return (
+    appCss.slice(0, begin) + appCss.slice(end + "/* END merged frozen legacy-fallback */".length)
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Glob -> regex (Playwright "**/api/v1/*" patterns)
 // ---------------------------------------------------------------------------
 

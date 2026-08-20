@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve joins path parts.
@@ -12,9 +12,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 // spec's "fallback-off exposes 5px" pin is stale. Bucket-3 fix.
 const expectedProjectOriginalMargin = "0px";
 const screenshotDirectory = resolve(
-  `output/playwright/style-project-new-pull-request-selector-floats/${
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal"
-  }`,
+  `output/playwright/style-project-new-pull-request-selector-floats/${"normal"}`,
 );
 const source = (relativePath: string) =>
   readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
@@ -30,10 +28,7 @@ test("new pull request form owns mr5 only on original project selects", async ({
   const bootstrapResponsiveCss = source(
     "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
   );
-  const legacyFallbackCss = readFileSync(
-    "public/legacy-assets/stylesheets/legacy-fallback.css",
-    "utf8",
-  );
+  const legacyFallbackCss = mergedLegacyBlock();
   const yobiLess = source("../../yona-original/app/assets/stylesheets/yobi.less");
   const messages = source("../../yona-original/conf/messages");
   const pullRequestPageLess = pageLess.split("\n").slice(5458, 5478).join("\n");
@@ -242,12 +237,8 @@ test("new pull request form owns mr5 only on original project selects", async ({
     ];
     expect(geometry.select2Boxes.map((box) => box.id)).toEqual(expectedSelect2Order);
     expect(geometry.select2Boxes.map((box) => box.width)).toEqual([220, 220, 220, 220]);
-    if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-      // Select2 foundation height is fallback-mode-dependent and outside this mr5 migration.
-      expect(geometry.select2Boxes.every((box) => box.height > 0)).toBe(true);
-    } else {
-      expect(geometry.select2Boxes.map((box) => box.height)).toEqual([30, 30, 30, 30]);
-    }
+    // Post-merge: the full legacy cascade (incl. select2 foundation) lives in app.css.
+    expect(geometry.select2Boxes.map((box) => box.height)).toEqual([30, 30, 30, 30]);
     for (const [index, box] of geometry.boxes.entries()) {
       expect(box, `geometry target ${index} at ${viewport.name}`).not.toBeNull();
       expect(box?.left ?? -1, `left at ${viewport.name}`).toBeGreaterThanOrEqual(0);

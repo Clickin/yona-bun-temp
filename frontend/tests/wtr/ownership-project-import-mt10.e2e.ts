@@ -6,11 +6,7 @@ import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
-const screenshotDirectory = resolve(
-  "output/playwright/style-project-import-mt10",
-  fallbackOff ? "fallback-off" : "normal",
-);
+const screenshotDirectory = resolve("output/playwright/style-project-import-mt10", "normal");
 
 const routeSourcePath = "src/routes/[_]import.tsx";
 const styleSourcePath = "src/app.css";

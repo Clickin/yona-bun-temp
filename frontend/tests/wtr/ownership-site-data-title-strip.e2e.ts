@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
@@ -28,7 +28,7 @@ test.describe("Style site data title strip", () => {
   test("reuses global frozen title-strip values", async () => {
     const [route, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
     ]);
     expect(route).toContain('data-owner="site-data-title-strip"');
     expect(route).toContain('data-owner="site-data-title-heading"');

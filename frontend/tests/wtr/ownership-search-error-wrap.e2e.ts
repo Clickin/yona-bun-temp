@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -21,7 +21,7 @@ test("shared search error family preserves legacy DOM, copy, paint, and geometry
     messages,
   ] = await Promise.all([
     readFile(new URL("../src/routes/-search-screen.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+    Promise.resolve(curatedAppCss()),
     readFile(
       new URL("../../yona-original/app/views/error/notfound_default.scala.html", import.meta.url),
       "utf8",
@@ -143,9 +143,7 @@ test("shared search error family preserves legacy DOM, copy, paint, and geometry
     waitUntil: "networkidle",
   });
   await expect(page.locator('[data-owner="search-error-wrap"]')).toHaveCSS("padding", "100px 0px");
-  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(0);
 });
 
 async function mockSearchErrors(page: Page) {

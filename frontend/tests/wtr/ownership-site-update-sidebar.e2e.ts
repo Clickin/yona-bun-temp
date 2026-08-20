@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -81,8 +81,8 @@ test.describe("Style site update sidebar", () => {
       component,
     ] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(appCssSource, "utf8"),
+      Promise.resolve(curatedAppCss()),
+      Promise.resolve(curatedAppCss()),
       readFile(layoutSource, "utf8"),
       readFile(messagesSource, "utf8"),
       readFile(yobiSource, "utf8"),

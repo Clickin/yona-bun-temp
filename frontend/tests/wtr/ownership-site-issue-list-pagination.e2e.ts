@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: node:fs/promises readFile has no browser equivalent; the
@@ -100,7 +100,7 @@ test.describe("Style site issue-list pagination", () => {
     const [route, theme, template, legacyJs, commonLess, pageLess, responsiveLess, spritesLess] =
       await Promise.all([
         readFile(routeSource, "utf8"),
-        readFile(themeSource, "utf8"),
+        Promise.resolve(curatedAppCss()),
         readFile(legacyTemplateSource, "utf8"),
         readFile(legacyJsSource, "utf8"),
         readFile(legacyCommonLessSource, "utf8"),

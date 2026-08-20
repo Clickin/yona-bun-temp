@@ -52,7 +52,7 @@ test("project issue empty error-wrap keeps legacy Style ownership and geometry",
       .error-icon { background-image: url('/assets/legacy/sprite.png'); background-position: -5px -160px; background-repeat: no-repeat; display: inline-block; height: 82px; vertical-align: middle; width: 62px; }
       .error-message { color: #898989; font-size: 16px; font-weight: bold; margin: 30px 0; }
     </style>
-    ${process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "" : '<link rel="stylesheet" href="/legacy-assets/stylesheets/legacy-fallback.css">'}
+    ""
     <div class="error-wrap" data-owner="project-issues-empty-error-wrap">
       <i class="ico ico-err1 error-icon" data-owner="project-issues-empty-error-icon"></i>
       <p class="error-message" data-owner="project-issues-empty-error-message">No issue found</p>
@@ -119,7 +119,5 @@ test("project issue empty error-wrap keeps legacy Style ownership and geometry",
     expect(state!.margin).toBe("30px 0px");
   }
 
-  await expect(page.locator('link[href$="legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(page.locator('link[href$="legacy-fallback.css"]')).toHaveCount(0);
 });

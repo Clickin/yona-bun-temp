@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -51,9 +51,7 @@ test.use({ locale: "ko-KR" });
 
 test("notification table and React switch have an exact six-owner Style boundary", () => {
   const route = readFileSync("src/routes/user/editform/notifications.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
 
   for (const owner of owners) {
     expect(route).toContain(`data-owner="${owner}"`);

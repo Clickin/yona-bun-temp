@@ -1,6 +1,12 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  mergedLegacyBlock,
+  curatedAppCss,
+} from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
@@ -70,11 +76,9 @@ for (const viewport of [
 }
 
 test("left sidebar footer has complete global-theme Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   for (const token of ["leftSidebarFooterText", "leftSidebarFooterHeart"]) {
     if (theme.includes(`${token}:`)) {
     } else {

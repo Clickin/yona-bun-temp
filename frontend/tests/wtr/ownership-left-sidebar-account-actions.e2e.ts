@@ -1,4 +1,11 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  readFileSync,
+  curatedAppCss,
+} from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -54,8 +61,7 @@ for (const viewport of [
       owner,
       `style-left-sidebar-account-primitives-local-${viewport.label}.png`,
     );
-    const evidence = await readEvidence(owner);
-    expect(evidence).toEqual({
+    const expectedEvidence = {
       actionOrder: ["SPAN", "SPAN", "A", "BUTTON"],
       account: viewport.account,
       accountLogoutGap: 3.59375,
@@ -114,7 +120,24 @@ for (const viewport of [
           },
         },
       },
-    });
+    };
+    let evidenceOk = false;
+    {
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        try {
+          const evidence = await readEvidence(owner);
+          if (JSON.stringify(evidence) === JSON.stringify(expectedEvidence)) {
+            evidenceOk = true;
+            break;
+          }
+        } catch {
+          // transient evidence errors — keep polling
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+    expect(evidenceOk).toBe(true);
     await expect(profile).toHaveAttribute("href", `${BASE_PATH}/admin`);
     await expect(account).toHaveAttribute("href", `${BASE_PATH}/user/editform`);
     await expect(logout).toHaveAttribute("href", `${BASE_PATH}/users/logout`);
@@ -170,11 +193,9 @@ for (const viewport of [
 }
 
 test("left sidebar account actions have complete global-theme Style ownership", () => {
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const theme = readFileSync("src/app.css", "utf8");
   for (const token of [
     "leftSidebarAccountText",
     "leftSidebarAccountHoverText",

@@ -43,7 +43,6 @@ test("direct issue create migrates the fallback-off project header geometry from
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockDirectIssueForm(page, { ownerName: "weblabs", projectName: "portal" });
   await page.setViewportSize({ width: 1366, height: 900 });
 
@@ -167,10 +166,8 @@ test("direct issue create migrates the fallback-off project header geometry from
   expect(desktop.breadcrumbStarStyle.fontSize).toBe("24px");
   expect(desktop.breadcrumb.left).toBeCloseTo(desktop.wrap.left + 90, 0);
   expect(desktop.breadcrumb.bottom).toBeCloseTo(desktop.header.bottom - 18, 0);
-  if (!fallbackOff) {
-    expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
-    expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
-  }
+  expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
+  expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
   expect(desktop.utilStyle.position).toBe("absolute");
   expect(desktop.utilStyle.bottom).toBe("20px");
   expect(desktop.util.right).toBeCloseTo(1345.5, 0);
@@ -179,10 +176,8 @@ test("direct issue create migrates the fallback-off project header geometry from
   expect(desktop.watcherItemStyle.position).toBe("relative");
   expect(desktop.watcher.x).toBeCloseTo(desktop.util.x + 15, 0);
   // Button-box alignment still depends on the shared Bootstrap button fallback.
-  if (!fallbackOff) {
-    expect(desktop.watchAction.x).toBeCloseTo(desktop.watcher.right, 0);
-    expect(desktop.watchAction.right).toBeCloseTo(desktop.util.right, 0);
-  }
+  expect(desktop.watchAction.x).toBeCloseTo(desktop.watcher.right, 0);
+  expect(desktop.watchAction.right).toBeCloseTo(desktop.util.right, 0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await page.evaluate(() => {
@@ -215,9 +210,7 @@ test("direct issue create migrates the fallback-off project header geometry from
       ).display,
     };
   });
-  if (!fallbackOff) {
-    expect(mobile.documentWidth).toBe(390);
-  }
+  expect(mobile.documentWidth).toBe(390);
   expect(mobile.header.box.right).toBeLessThanOrEqual(390);
   expect(mobile.header.style.minWidth).toBe("10px");
   expect(mobile.avatar.style.bottom).toBe("-6px");

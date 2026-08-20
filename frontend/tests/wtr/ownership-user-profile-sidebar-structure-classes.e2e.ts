@@ -1,4 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -74,7 +74,7 @@ test("populated public profile sidebar structure is fully owned by Style", async
         new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      Promise.resolve(curatedAppCss()),
       readFile(
         new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
         "utf8",

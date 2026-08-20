@@ -1,4 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -28,7 +28,7 @@ test("breadcrumb source owns exactly the frozen route-local declarations", () =>
     "../yona-original/app/assets/stylesheets/less/_responsive.less",
     "utf8",
   );
-  const appCss = readFileSync("src/app.css", "utf8");
+  const appCss = curatedAppCss();
   const messages = readFileSync("../yona-original/conf/messages", "utf8");
   const koreanMessages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
 

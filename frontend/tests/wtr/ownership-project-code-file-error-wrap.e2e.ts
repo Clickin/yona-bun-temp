@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: fileURLToPath yields the served URL pathname so string
@@ -12,14 +12,7 @@ const route = readFileSync(
   ),
   "utf8",
 );
-const styles =
-  readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8") +
-  readFileSync(
-    fileURLToPath(
-      new URL("../frontend/public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
-    ),
-    "utf8",
-  );
+const styles = curatedAppCss() + mergedLegacyBlock();
 const legacyView = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/code/view.scala.html", import.meta.url)),
   "utf8",
@@ -123,11 +116,8 @@ test("project code file not-found error wrap keeps legacy copy, paint, geometry,
   }
 
   const fallback = page.locator('link[href*="legacy-fallback.css"]');
-  if (process.env.VITE_DISABLE_LEGACY_FALLBACK === "1") {
-    await expect(fallback).toHaveCount(0);
-  } else {
-    await expect(fallback).toHaveCount(1);
-  }
+  // Post-merge: the fallback link no longer exists in index.html.
+  await expect(fallback).toHaveCount(0);
 });
 
 async function mockMissingCodeFile(page: Page) {

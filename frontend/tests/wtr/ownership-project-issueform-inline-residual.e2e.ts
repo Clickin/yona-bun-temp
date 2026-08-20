@@ -1,11 +1,9 @@
-import { readFileSync } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("issue form owns static editor and selector declarations", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
-  const styles =
-    readFileSync("src/app.css", "utf8") +
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const styles = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
 
   expect(legacy).toContain('style="position:relative;overflow: visible;"');

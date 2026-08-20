@@ -1,5 +1,4 @@
-import { readFileSync, expect, test } from "../wtr-compat.ts";
-
+import { readFileSync, expect, test, curatedAppCss } from "../wtr-compat.ts";
 test("project and organization member role menus own base button paint", async () => {
   const project = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/members.tsx", import.meta.url),
@@ -21,7 +20,7 @@ test("project and organization member role menus own base button paint", async (
     new URL("../../yona-original/app/views/organization/members.scala.html", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+  const css = curatedAppCss();
   for (const source of [projectLegacy, organizationLegacy])
     expect(source).toContain('class="dropdown-menu"');
   expect(less).toContain(".member-setting");

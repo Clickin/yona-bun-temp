@@ -1,11 +1,11 @@
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 test("project home side panel owns legacy padding", async () => {
   const source = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
   const legacy = readFileSync("../yona-original/app/views/project/home.scala.html", "utf8");
   const less = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const css = readFileSync("src/app.css", "utf8");
+  const css = curatedAppCss();
   expect(legacy).toContain('class="bubble-wrap gray project-home"');
   expect(less).toContain(".project-home");
   expect(source).toContain('data-owner="project-home-side-panel"');
