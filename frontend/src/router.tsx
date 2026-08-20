@@ -1,6 +1,8 @@
-import { createRouter } from "@tanstack/react-router";
+import { createRouter, type RouterHistory } from "@tanstack/react-router";
 import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
 import { routeTree } from "./routeTree.gen";
+
+export type { RouterHistory };
 
 // Legacy Yona URLs carry plain query values (`?assigneeId=1`) and repeated
 // keys for arrays (`labelIds=8&labelIds=9`), but TanStack's default
@@ -65,7 +67,10 @@ function stringifySearch(search: Record<string, unknown>): string {
   return pairs.length > 0 ? `?${pairs.join("&")}` : "";
 }
 
-export function getRouter(runtimeConfig: RuntimeConfig = readRuntimeConfig()) {
+export function getRouter(
+  runtimeConfig: RuntimeConfig = readRuntimeConfig(),
+  history?: RouterHistory,
+) {
   return createRouter({
     basepath: runtimeConfig.basePath,
     routeTree,
@@ -73,6 +78,7 @@ export function getRouter(runtimeConfig: RuntimeConfig = readRuntimeConfig()) {
       runtimeConfig,
     },
     defaultPreload: "intent",
+    history,
     parseSearch,
     scrollRestoration: true,
     stringifySearch,

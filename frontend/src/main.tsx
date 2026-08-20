@@ -24,7 +24,7 @@ import type * as AuthWorkspaceClient from "./auth-workspace-client";
 import type * as LegacyI18n from "./i18n";
 import type * as QueryClientBoundary from "./query-client";
 import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
-import { getRouter } from "./router";
+import { getRouter, type RouterHistory } from "./router";
 import { YoramQueryProvider } from "./query-client";
 import "./app.css";
 
@@ -60,11 +60,12 @@ type _RetainedFrontendSupportBoundary = RetainedFrontendSupportBoundary;
 
 export interface CreateAppOptions {
   runtimeConfig?: RuntimeConfig;
+  history?: RouterHistory;
 }
 
 export function createApp(options: CreateAppOptions = {}) {
   const runtimeConfig = options.runtimeConfig ?? readRuntimeConfig();
-  const router = getRouter(runtimeConfig);
+  const router = getRouter(runtimeConfig, options.history);
 
   return {
     router,
@@ -79,13 +80,20 @@ export function mountApp(container: Element, options: CreateAppOptions = {}) {
   }
 
   const { router } = createApp(options);
-  return createRoot(container).render(
+  const root = createRoot(container);
+  root.render(
     <div id="main" className="main">
       <YoramQueryProvider>
         <RouterProvider router={router} />
       </YoramQueryProvider>
     </div>,
   );
+  return {
+    unmount(): void {
+      root.unmount();
+    },
+    router,
+  };
 }
 
 if (typeof document !== "undefined") {

@@ -68,6 +68,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "frontend/src/legacy-fallback-mode.ts",
   "frontend/tsconfig.json",
   "frontend/vite.config.ts",
+  "frontend/vitest.config.ts",
 ]);
 
 const TEST_FILE_PATTERN = /(^tests\/)|(\/tests\/)|(\.spec\.)|(\.test\.)|(\.test-helpers\.)/i;

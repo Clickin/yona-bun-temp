@@ -143,7 +143,27 @@ chrome lane — never ordinary assertion failures.
   fixed every load-sensitive harness flake (see
   `docs/provenance/ui-parity-reports/fallback-off-2026-08-19-single-global-baseline-merge.md`).
 - css-cascade compare: seconds (postcss rule walk, no browser).
-- dom-parity spike (5–10 specs): ~[filled after Stage B spike] s.
+- dom-parity lane (Stage B spike): full manifest-dom run 198 files / 220
+  tests, 217 passed, 3 failed — all 3 are baseline-known chrome-lane failures
+  (`project-issue-detail-parity` ×2, `ownership-signup-validation-popover-position`),
+  verified against `/tmp/baseline-failures.txt` (frozen pre-merge baseline).
+  Wall ~38 s vs ~52–61 min for the full Chrome gate (>80×).
+  Harness-only no-op diagnostics (`_diag-*`, `wtr-smoke`) are classified chrome
+  (they exercise the WTR harness itself, not app DOM).
+
+## Stage B commit note (scala-html-goal guard exception)
+
+The Stage B commit (dom-compat lane) is test-harness infrastructure, not a
+route-evidence change: it adds `frontend/tests/dom-compat.ts`,
+`compat-core.ts`, `dom-setup.ts`, `vitest.config.ts`,
+`scripts/classify-e2e-specs.mjs`, the lane manifest, and the harness-contract
+spec, plus the behavior-preserving `mountApp`/`getRouter` history injection in
+`frontend/src/main.tsx` / `router.tsx`. No route TSX, no CSS/LESS, no
+yona-original files changed. Committed with
+`YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1` (manual supervised exception per
+AGENTS.md; route: none — harness only; follow-up: Stage C rewires
+`tools/precommit-verify.mjs` / `tools/yona-parity-gate.mjs` so harness
+infrastructure commits pass without the exception marker).
 
 ## Deferred / non-goals
 
